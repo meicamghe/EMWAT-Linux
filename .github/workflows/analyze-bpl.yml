@@ -20,10 +20,12 @@ jobs:
       - run: pip install pefile capstone
       - run: python tools/analyze_emwat_bpl.py
       - run: python tools/analyze_emwat_td32.py analysis-input/EmwatMethods.bpl1
+      - run: python tools/disassemble_emwat_targets.py analysis-input/EmwatMethods.bpl1
       - uses: actions/upload-artifact@v4
         with:
           name: emwat-bpl-static-analysis
           path: |
             bpl-analysis/EmwatMethods-static-analysis.md
             bpl-analysis/EmwatMethods-TD32-analysis.md
+            bpl-analysis/EmwatMethods-target-disassembly.md
           if-no-files-found: error
