@@ -83,7 +83,10 @@
 4. اگر قالب‌های Word/Excel شامل macro، ActiveX، OLE embedding یا امضای دیجیتال باشند، سازگاری ممکن است محدودیت داشته باشد و باید جداگانه تست شود.
 5. به‌دلیل PE32/x86 بودن اجزای Windows، registry view سی‌ودوبیتی و نسخه Office نصب‌شده در محیط اصلی می‌تواند مهم باشد.
 
-## 6. اقدام بعدی: استخراج بیشتر
+## 6. یافته‌های گزارش Resource Analyzer
+گزارش تکمیلی در [تحلیل COM و PE Resourceها](RESOURCE-ANALYSIS.md) ثبت شده است. literal `Word.Application` در `EmwatMethods.bpl1` کنار `PrintWordDoc` و در ابزارهای چاپ GAM دیده شد؛ این یافته مسیر Word Automation برای چاپ را تقویت می‌کند. hitهای `word.document` و `excel.sheet` در Delphi RTL از MIME database هستند و نباید ProgID activation تلقی شوند. GUIDهای Agent/Service نیز عمدتاً شناسه‌های داخلی termination هستند، نه CLSID Office.
+
+## 7. اقدام بعدی: استخراج بیشتر
 
 از کاربر بخواه گزارش تکمیلی را با اسکریپت `EMWAT-COM-Resource-Analyzer.py` بسازد. اسکریپت باید:
 - همه فایل‌های زیر `D:\EmwatInstaller` را اسکن کند؛
@@ -93,7 +96,7 @@
 
 سپس با رجیستری محیط نصب‌شده و (در صورت وجود) `Emwat.reg` مقایسه شود. از export کل Registry یا اطلاعات حساب کاربری خودداری شود.
 
-## 7. مراجع فنی COM
+## 8. مراجع فنی COM
 - Microsoft Learn, COM Registry Keys: https://learn.microsoft.com/en-us/windows/win32/com/com-registry-keys
 - Microsoft Learn, CLSID Key: https://learn.microsoft.com/en-us/windows/win32/com/clsid-key-hklm
 - Microsoft Learn, ProgID Key: https://learn.microsoft.com/en-us/windows/win32/com/-progid--key
