@@ -14,6 +14,7 @@
 - [تحلیل سرویس HTTP محلی و bridge](docs/HTTP-LOCAL-API-ANALYSIS.md)
 - [تحلیل Import Table و وابستگی‌های Windows](docs/IMPORT-TABLE-ANALYSIS.md)
 - [تحلیل Office Automation و COM](docs/OFFICE-COM-ANALYSIS.md)
+- [تحلیل COM و PE Resourceهای استخراج‌شده](docs/RESOURCE-ANALYSIS.md)
 - ابزار [استخراج GUID/ProgID و Resourceها](tools/EMWAT-COM-Resource-Analyzer.py)
 
 ## گزارش‌ها و فایل‌های مرجع موجود
@@ -38,4 +39,4 @@
 
 ## نقطه شروع جلسه بعد
 
-ابتدا [گزارش وضعیت پروژه](docs/PROJECT-STATUS.md)، [تحلیل HTTP](docs/HTTP-LOCAL-API-ANALYSIS.md)، [تحلیل Importها](docs/IMPORT-TABLE-ANALYSIS.md) و [تحلیل Office/COM](docs/OFFICE-COM-ANALYSIS.md) را بخوان. Word/Excel Automation تأیید شده؛ مرحله بعد اجرای ابزار [COM/Resource Analyzer](tools/EMWAT-COM-Resource-Analyzer.py) روی پوشه استخراج‌شده است. از تکرار مراحل قبلی خودداری کن.
+ابتدا [گزارش وضعیت پروژه](docs/PROJECT-STATUS.md)، [تحلیل HTTP](docs/HTTP-LOCAL-API-ANALYSIS.md)، [تحلیل Importها](docs/IMPORT-TABLE-ANALYSIS.md) و [تحلیل Office/COM](docs/OFFICE-COM-ANALYSIS.md) را بخوان. Word/Excel Automation تأیید شده؛ گزارش COM/Resource Analyzer تولید و بررسی شده است؛ یافته‌ها در [تحلیل Resourceها](docs/RESOURCE-ANALYSIS.md) ثبت شده‌اند. گام بعدی decode محلی فرم‌های Delphi و بررسی هدفمند Office COM است.
