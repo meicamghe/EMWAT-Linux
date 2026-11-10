@@ -66,10 +66,10 @@ def parse_td32(blob, base, end, dir_off):
             p += 1
     modules = {}
     for typ, mod, off, size in entries:
-        if typ != SST_MODULE or size < 32: continue
+        if typ != SST_MODULE or size < 28: continue
         overlay, lib, seg_count, style, name_idx, timestamp = struct.unpack_from("<HHHHII", blob, off)
         segs=[]
-        p=off+32
+        p=off+28
         for _ in range(min(seg_count, 4096)):
             if p+12 > off+size: break
             seg, sflags, soff, ssize = struct.unpack_from("<HHII", blob, p)
