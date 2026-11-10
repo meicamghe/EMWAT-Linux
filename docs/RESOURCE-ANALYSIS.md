@@ -66,3 +66,12 @@
 ## Decode واقعی DFM: فرم ابزارهای تصویر
 
 گزارش کامل [فرم ابزارهای تصویر](IMAGE-TOOLS-DFM.md) اضافه شد. فایل `RCDATA_TFRMIMAGETOOLS_14.bin` با امضای `TPF0` و اندازه 57,832 بایت به‌طور کامل parse شد و parser کل stream را بدون بایت باقی‌مانده مصرف کرد. فرم `TfrmImageTools` شامل مدیریت صفحات تصویر، ورود فایل/اسکن، ابزارهای ویرایش، zoom، قلم و Undo/Redo، درج تصویر در محل جاری/انتهای مجموعه و پنل تنظیمات چاپ است. کلاس‌های ImageEn شامل `TImageEn`، `TImageEnMView`، `TImageEnMIO` و `TImageEnIO` در UI حاضرند. منطق handlerها و رفتار واقعی workflow هنوز باید از BPL استخراج و تست شود.
+
+
+## Decode واقعی DFM: ویرایشگر ساده تصویر
+
+گزارش کامل [فرم ویرایشگر ساده تصویر](SIMPLE-IMAGE-EDITOR-DFM.md) اضافه شد. فایل `RCDATA_TFRMSIMPLEIMAGEEDITOR_18.bin` با امضای `TPF0` و اندازه 11,451 بایت به‌طور کامل parse شد؛ 19 جزء استخراج شد و parser کل stream را بدون بایت باقی‌مانده مصرف کرد. فرم `TfrmSimpleImageEditor` دارای PaintBox، انتخاب صفحه، Rotate، Crop، Flip افقی/عمودی، بازگشت به تصویر اصلی، انتخاب TIFF/JPEG و گزینه ارسال هر صفحه به‌صورت فایل جداست. دکمه‌های تأیید/انصراف نیز به handlerهای اختصاصی متصل‌اند. کنترل‌های خروجی در DFM غیرفعال‌اند؛ فعال‌سازی احتمالی در runtime باید از کد handler بررسی شود.
+
+## مقایسه فرم‌های اسکن/تصویر
+
+اکنون سه فرم `TfrmGScanPreview`، `TfrmSimpleImageEditor` و `TfrmImageTools` decode شده‌اند. مقایسه componentها و قابلیت‌های قابل مشاهده در [SIMPLE-IMAGE-EDITOR-DFM.md](SIMPLE-IMAGE-EDITOR-DFM.md) ثبت شده است. برداشت فعلی از نقش‌ها: پیش‌نمایش اسکن و اصلاح اولیه؛ ویرایش سبک قبل از تأیید/ارسال؛ مدیریت جامع مجموعه تصاویر، اسکن، ویرایش و چاپ. این تفکیک هنوز باید با بررسی call graph و handlerهای BPL اعتبارسنجی شود.
