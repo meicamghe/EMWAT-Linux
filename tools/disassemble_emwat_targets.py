@@ -55,8 +55,8 @@ def main():
         f"- TD32 procedure records: {len(procedures):,}",
         f"- Matched methods: {len(selected)}",
         "- Architecture: x86 / 32-bit",
-        "- Address mapping: TD32 procedure offset is an absolute PE RVA; validated against [segment base, segment base + segment size)",
-        "- Raw file offsets are obtained with pefile.get_offset_from_rva(RVA)",
+        "- Address mapping: TD32 procedure offsets are file offsets, validated against the module segment range",
+        "- PE RVA/VA are calculated from the containing section raw pointer",
         "",
     ]
 
@@ -79,9 +79,9 @@ def main():
         seg_end = seg_base + seg_size
         if rva < seg_base or rva + proc_size > seg_end:
             lines += [
-                f"- TD32 segment base RVA: 0x{seg_base:08X}",
-                f"- TD32 segment end RVA: 0x{seg_end:08X}",
-                f"- Procedure RVA/size: 0x{rva:08X}/0x{proc_size:X}",
+                f"- TD32 segment base file offset: 0x{seg_base:08X}",
+                f"- TD32 segment end file offset: 0x{seg_end:08X}",
+                f"- Procedure file offset/size: 0x{rva:08X}/0x{proc_size:X}",
                 "- **Mapping rejected:** procedure range is outside its TD32 segment.",
                 "",
             ]
@@ -123,8 +123,6 @@ def main():
         va = pe.OPTIONAL_HEADER.ImageBase + rva
         section_name = section.Name.rstrip(bytes([0])).decode("ascii", "replace")
         code = blob[raw:raw + proc_size]
-        va = pe.OPTIONAL_HEADER.ImageBase + rva
-        section_name = section.Name.rstrip(bytes([0])).decode("ascii", "replace")
         lines += [
             f"- TD32 module index: {p['module']}",
             f"- TD32 segment: {p['segment']} (flags 0x{seg_flags:04X})",
