@@ -8,6 +8,7 @@ on:
       - 'tools/analyze_emwat_td32.py'
       - 'tools/disassemble_emwat_targets.py'
       - 'tools/diagnose_emwat_code_offsets.py'
+      - 'tools/inspect_td32_module_map.py'
       - '.github/workflows/analyze-bpl.yml'
 permissions:
   contents: read
@@ -24,6 +25,7 @@ jobs:
       - run: python tools/analyze_emwat_td32.py analysis-input/EmwatMethods.bpl1
       - run: python tools/disassemble_emwat_targets.py analysis-input/EmwatMethods.bpl1
       - run: python tools/diagnose_emwat_code_offsets.py analysis-input/EmwatMethods.bpl1
+      - run: python tools/inspect_td32_module_map.py analysis-input/EmwatMethods.bpl1
       - uses: actions/upload-artifact@v4
         with:
           name: emwat-bpl-static-analysis
@@ -32,4 +34,5 @@ jobs:
             bpl-analysis/EmwatMethods-TD32-analysis.md
             bpl-analysis/EmwatMethods-target-disassembly.md
             bpl-analysis/EmwatMethods-address-diagnostics.md
+            bpl-analysis/EmwatMethods-module-map.md
           if-no-files-found: error
