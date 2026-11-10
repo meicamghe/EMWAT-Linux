@@ -61,11 +61,14 @@
 - Import Table سه فایل Service، Agent و Methods استخراج و در [گزارش تحلیل Importها](IMPORT-TABLE-ANALYSIS.md) مستند شد.
 - COM/OLE در Agent، dependencyهای Indy در Service/Methods، چاپگرهای Windows، ImageEn/WIA/TWAIN، GEAR32PD و GDI+ شناسایی شدند.
 - در importهای مستقیم گزارش‌شده، driver صریح دیتابیس و import مستقیم شناخته‌شده مرورگر پیدا نشد؛ این موارد همچنان باز هستند، چون بارگذاری پویا ممکن است.
-- گام بعدی: استخراج CLSID/ProgID و شواهد Office Automation، سپس تحلیل resourceها و فایل‌های config/data.
+- تحلیل تکمیلی typeinfo نشان داد wrapperهای صریح Word و Excel در Methods وجود دارند؛ COM/OLE و Office Automation اکنون با اطمینان بسیار بالا تأیید شده‌اند. جزئیات در [تحلیل Office/COM](OFFICE-COM-ANALYSIS.md) ثبت شد.
+- رشته‌های CLSID/ProgID literal هنوز یافت نشده‌اند؛ نبود literal، activation پویا یا GUIDهای binary/typeinfo را رد نمی‌کند.
+- نماد `TWordApplication.Get_Browser` به object model خود Word تعلق دارد و نباید به‌عنوان اثبات embedded browser استفاده شود.
+- گام بعدی: استخراج GUID/ProgIDهای binary و Resourceهای PE، سپس بررسی config و Registry محدود و غیرحساس.
 
 ## گام‌های بعدی تحلیل
-1. بررسی کامل `EMWAT-Analysis-Results.txt` و استخراج سرنخ‌های مهم به گزارش ساختاریافته.
-2. Import Table تحلیل شده است؛ مرحله بعدی تحلیل resourceهای EXE/BPL برای شناسایی UI، manifest، COM و احتمال embedded browser است.
+1. بررسی strings و typeinfo انجام شد؛ Word/Excel Automation مستند شد.
+2. استخراج GUID/ProgIDهای احتمالی از تمام فایل‌های استخراج‌شده و تحلیل Resourceهای PE برای manifest، dialog، HTML و داده‌های RCDATA.
 3. بررسی فایل‌های config/INI/REG و محتوای پوشه چاپ؛ ثبت فقط مقادیر غیرحساس.
 4. شناسایی دقیق قرارداد heartbeat و invoke: پارامترها، payload، پاسخ‌ها و مسیرهای دیگر HTTP.
 5. شناسایی دیتابیس از روی فایل‌های واقعی، importها، driverها و تنظیمات؛ نه از روی MIME string.
@@ -73,4 +76,4 @@
 7. پس از تکمیل شواهد، نوشتن specification و سپس پیاده‌سازی ماژول‌به‌ماژول همراه تست.
 
 ## نقطه شروع جلسه بعد
-از [گزارش وضعیت](PROJECT-STATUS.md)، [تحلیل HTTP](HTTP-LOCAL-API-ANALYSIS.md) و [تحلیل Importها](IMPORT-TABLE-ANALYSIS.md) شروع کن. مرحله Import Table تمام شده؛ آن را تکرار نکن. گام بعدی CLSID/ProgID و resourceهاست. از ادعای استخراج ZIP از سمت GitHub خودداری کن. ZIP و فایل‌های گزارش در مخزن قرار دارند، اما محتوای باینری ZIP از طریق نمایشگر متنی GitHub تحلیل نشده است.
+از [گزارش وضعیت](PROJECT-STATUS.md)، [تحلیل HTTP](HTTP-LOCAL-API-ANALYSIS.md)، [تحلیل Importها](IMPORT-TABLE-ANALYSIS.md) و [تحلیل Office/COM](OFFICE-COM-ANALYSIS.md) شروع کن. Office Automation اکنون تأیید شده؛ Import Table را تکرار نکن. گام بعدی استخراج GUID/ProgID و Resourceهاست. از ادعای استخراج ZIP از سمت GitHub خودداری کن. ZIP و فایل‌های گزارش در مخزن قرار دارند، اما محتوای باینری ZIP از طریق نمایشگر متنی GitHub تحلیل نشده است.
