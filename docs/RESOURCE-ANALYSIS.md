@@ -61,3 +61,8 @@
 ## Decode واقعی DFM: فرم پیش‌نمایش اسکن
 
 گزارش کامل [فرم پیش‌نمایش اسکن](SCAN-PREVIEW-DFM.md) ثبت شد. فایل `RCDATA_TFRMGSCANPREVIEW_13.bin` با امضای `TPF0` و اندازه 49,193 بایت به‌طور کامل parse شد؛ 25 component (فرم + 24 کنترل) استخراج شد و parser کل stream را بدون بایت باقی‌مانده مصرف کرد. UI شامل PaintBox برای نمایش/تعامل با تصویر، ابزارهای چرخش، Crop، Flip افقی/عمودی، بازگشت به تصویر اصلی، انتخاب صفحه و خروجی TIFF/JPEG است. handlerهای `doCommand`، Paint و Mouse باید از BPL بررسی شوند؛ DFM به‌تنهایی الگوریتم‌ها و رفتار ذخیره‌سازی را اثبات نمی‌کند.
+
+
+## Decode واقعی DFM: فرم ابزارهای تصویر
+
+گزارش کامل [فرم ابزارهای تصویر](IMAGE-TOOLS-DFM.md) اضافه شد. فایل `RCDATA_TFRMIMAGETOOLS_14.bin` با امضای `TPF0` و اندازه 57,832 بایت به‌طور کامل parse شد و parser کل stream را بدون بایت باقی‌مانده مصرف کرد. فرم `TfrmImageTools` شامل مدیریت صفحات تصویر، ورود فایل/اسکن، ابزارهای ویرایش، zoom، قلم و Undo/Redo، درج تصویر در محل جاری/انتهای مجموعه و پنل تنظیمات چاپ است. کلاس‌های ImageEn شامل `TImageEn`، `TImageEnMView`، `TImageEnMIO` و `TImageEnIO` در UI حاضرند. منطق handlerها و رفتار واقعی workflow هنوز باید از BPL استخراج و تست شود.
