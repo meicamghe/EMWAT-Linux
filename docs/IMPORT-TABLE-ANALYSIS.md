@@ -10,7 +10,7 @@
 | معماری و زبان | فایل‌ها PE32/x86 و وابسته به بسته‌های Delphi 10 Seattle (230) هستند. | بالا |
 | HTTP | شواهد قبلی Indy HTTP server در Service و importهای Indy در Methods با هم سازگارند. | بالا |
 | دیتابیس | در importهای گزارش‌شده، DLL/API صریحی برای SQLite، ODBC، SQL Server، MySQL یا PostgreSQL دیده نشد. موتور DB همچنان نامشخص است. | متوسط؛ نبودن import مستقیم، استفاده پویا/از طریق COM یا ماژول دیگر را رد نمی‌کند |
-| Office/COM | در Agent، `CoCreateInstance`, `GetActiveObject`, `ProgIDFromCLSID`, `Variant*` و SafeArrayها دیده می‌شوند؛ این شواهد از استفاده COM/OLE و احتمال اتوماسیون برنامه‌های Office پشتیبانی می‌کند. | بالا برای COM؛ متوسط برای Office تا CLSID/ProgID مشخص شود |
+| Office/COM | در Agent، `CoCreateInstance`, `GetActiveObject`, `ProgIDFromCLSID`, `Variant*` و SafeArrayها دیده می‌شوند. بررسی تکمیلی typeinfo در Methods، wrapperهای صریح `TWordApplication`/`TWordDocument` و `TExcelApplication`/`TExcelWorkbook` را نشان داد؛ Office Automation اکنون با اطمینان بسیار بالا تأیید می‌شود. | بالا برای COM؛ متوسط برای Office تا CLSID/ProgID مشخص شود |
 | Browser | import مستقیم شناخته‌شده‌ای از `mshtml.dll`, `urlmon.dll`, `wininet.dll`, `winhttp.dll` در بخش‌های بررسی‌شده دیده نشد. این موضوع IE/WebView را رد نمی‌کند؛ ممکن است از COM/ActiveX یا بارگذاری پویا استفاده شود. | متوسط |
 | اسکن/تصویر | Methods به `GEAR32PD.DLL` و APIهای اسکن/تصویر، و به پکیج `PKIECtrl23.bpl` با نمادهای WIA/TWAIN و ImageEn متصل است. | بالا برای وجود dependency |
 | چاپ | Service و Methods به `winspool.drv` متصل‌اند و APIهای enumeration/open/configuration چاپگر را وارد می‌کنند. | بالا |
@@ -70,7 +70,7 @@ Methods package یک لایه مهم desktop/document-imaging integration دار
 خیر. در این import report هیچ اتصال مستقیم آشکاری به SQLite، ODBC، SQL Server، MySQL یا PostgreSQL دیده نشده است. گام بعدی باید بررسی فایل‌های کنار برنامه، نام DLLهای همراه، strings هدفمند در تمام فایل‌ها و تنظیمات غیرحساس باشد. همچنین ممکن است دیتابیس از طریق COM، BPL بارگذاری‌شده، DLL پویا یا سرویس بیرونی قابل دسترسی باشد.
 
 ### آیا موتور مرورگر شناسایی شد؟
-خیر. import مستقیم `mshtml`, `urlmon`, `wininet`, `winhttp` در گزارش فعلی مشخص نشده است. با این حال وجود bridge جاوااسکریپتی `postMessage` از تحلیل رشته‌ها و importهای COM/ActiveX، احتمال استفاده از یک host وب/COM را باز می‌گذارد. برای تشخیص باید resourceها، CLSID/ProgID، نام کلاس‌های window و registry setup بررسی شوند.
+خیر. import مستقیم `mshtml`, `urlmon`, `wininet`, `winhttp` در گزارش فعلی مشخص نشده است. با این حال وجود bridge جاوااسکریپتی `postMessage` از تحلیل رشته‌ها، احتمال استفاده از یک host وب را باز می‌گذارد. نماد `TWordApplication.Get_Browser` متعلق به Word object model است و شاهد کنترل embedded browser محسوب نمی‌شود. برای تشخیص باید resourceها، CLSID/ProgID، نام کلاس‌های window و registry setup بررسی شوند.
 
 ### آیا Office Automation تأیید شد؟
 COM/OLE تأیید شده، Office هنوز قطعی نیست. قدم بعدی استخراج CLSID/ProgIDها و strings مربوط به `Excel.Application`, `Word.Application`, `Outlook.Application`, `Workbook`, `Document`, `Workbooks`, `Documents` از Agent و Methods و تطبیق آن با typeinfo است.
@@ -85,7 +85,7 @@ COM/OLE تأیید شده، Office هنوز قطعی نیست. قدم بعدی �
 
 ## 7. گام‌های بعدی
 
-1. استخراج CLSID/ProgID و رشته‌های Office/COM از Agent و Methods.
+1. Office Automation در typeinfo تأیید شد؛ گام بعدی استخراج CLSID/ProgIDهای binary و Resourceها با اسکریپت تکمیلی.
 2. جست‌وجوی هدفمند نام DLLها و فرمت‌های DB در تمام فایل‌های ZIP استخراج‌شده؛ بررسی config/INI/REG و فایل‌های داده با احتیاط.
 3. تحلیل resourceهای Service و Agent برای شناسایی dialogها، iconها، manifest و احتمال embedded browser/ActiveX.
 4. تحلیل پوشه GAMPrinterSetup به‌عنوان پروژه فرعی: تعیین نام/نسخه driver، سرویس‌های چاپ و معماری x86/x64.
