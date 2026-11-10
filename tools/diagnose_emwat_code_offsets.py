@@ -45,6 +45,16 @@ def section_for_rva(pe, rva, size):
     return None
 
 
+
+def section_for_raw(pe, raw, size):
+    for sec in pe.sections:
+        start = sec.PointerToRawData
+        end = start + sec.SizeOfRawData
+        if start <= raw and raw + size <= end:
+            return sec
+    return None
+
+
 def describe_candidate(blob, pe, md, label, raw, size, preferred_va=None):
     if raw < 0 or raw + size > len(blob):
         return [f"### {label}", f"- Raw offset: {raw}", "- Out of file bounds", ""]
@@ -131,9 +141,19 @@ def main():
         else:
             lines += ["- RVA interpretation: not contained in a PE section", ""]
 
+        raw_sec = section_for_raw(pe, proc, size)
+        if raw_sec:
+            mapped_rva = raw_sec.VirtualAddress + (proc - raw_sec.PointerToRawData)
+            mapped_va = pe.OPTIONAL_HEADER.ImageBase + mapped_rva
+            sec_name = raw_sec.Name.rstrip(bytes([0])).decode("ascii", "replace")
+            lines.append(f"- Raw-offset mapping: section {sec_name}, RVA 0x{mapped_rva:08X}, VA 0x{mapped_va:08X}")
+            lines.append(f"- Raw-offset section executable: {bool(raw_sec.Characteristics & 0x20000000)}")
+        else:
+            mapped_va = None
+            lines.append("- Raw-offset mapping: not contained in PE raw section data")
         lines += describe_candidate(
             blob, pe, md, "Candidate B — TD32 offset treated as raw file offset",
-            proc, size, pe.OPTIONAL_HEADER.ImageBase + proc,
+            proc, size, mapped_va,
         )
 
         relative = proc - seg_base
