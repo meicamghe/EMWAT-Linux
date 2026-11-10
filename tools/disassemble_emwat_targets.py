@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Disassemble Delphi methods using Borland TD32 module segment mappings."""
+"""Disassemble Delphi methods using Borland TD32 absolute procedure RVAs."""
 import pathlib
 import sys
 
@@ -55,7 +55,8 @@ def main():
         f"- TD32 procedure records: {len(procedures):,}",
         f"- Matched methods: {len(selected)}",
         "- Architecture: x86 / 32-bit",
-        "- Address mapping: PE RVA = TD32 segment base + procedure offset; procedure range validated within segment",
+        "- Address mapping: TD32 procedure offset is an absolute PE RVA; validated against [segment base, segment base + segment size)",
+        "- Raw file offsets are obtained with pefile.get_offset_from_rva(RVA)",
         "",
     ]
 
@@ -73,48 +74,72 @@ def main():
             continue
 
         _seg, seg_flags, seg_base, seg_size = seg_info
-        proc_off = p["offset"]
-        if proc_off + p["size"] > seg_size:
+        rva = p["offset"]
+        proc_size = p["size"]
+        seg_end = seg_base + seg_size
+        if rva < seg_base or rva + proc_size > seg_end:
             lines += [
                 f"- TD32 segment base RVA: 0x{seg_base:08X}",
-                f"- TD32 segment size: 0x{seg_size:X}",
-                f"- Procedure offset/size: 0x{proc_off:X}/0x{p['size']:X}",
-                "- **Mapping rejected:** procedure range exceeds its TD32 segment.",
+                f"- TD32 segment end RVA: 0x{seg_end:08X}",
+                f"- Procedure RVA/size: 0x{rva:08X}/0x{proc_size:X}",
+                "- **Mapping rejected:** procedure range is outside its TD32 segment.",
                 "",
             ]
             continue
 
-        rva = seg_base + proc_off
+        section = next(
+            (s for s in pe.sections
+             if s.VirtualAddress <= rva
+             and rva + proc_size <= s.VirtualAddress + max(s.Misc_VirtualSize, s.SizeOfRawData)),
+            None,
+        )
+        if section is None:
+            lines += [
+                f"- Candidate RVA: 0x{rva:08X}",
+                "- **Mapping rejected:** procedure range is not contained in a PE section.",
+                "",
+            ]
+            continue
+        if not (section.Characteristics & 0x20000000):
+            lines += [
+                f"- Candidate RVA: 0x{rva:08X}",
+                f"- PE section: {section.Name.rstrip(bytes([0])).decode('ascii', 'replace')}",
+                "- **Mapping rejected:** containing PE section is not marked executable.",
+                "",
+            ]
+            continue
+
         try:
             raw = pe.get_offset_from_rva(rva)
         except Exception as exc:
             lines += [
-                f"- TD32 segment base RVA: 0x{seg_base:08X}",
-                f"- Procedure offset: 0x{proc_off:08X}",
                 f"- Candidate RVA: 0x{rva:08X}",
-                f"- **Mapping failed:** {exc}",
+                f"- **RVA-to-file mapping failed:** {exc}",
                 "",
             ]
             continue
 
-        code = blob[raw:raw + p["size"]]
+        if raw + proc_size > len(blob):
+            lines += [
+                f"- Candidate RVA: 0x{rva:08X}",
+                f"- Raw file offset: 0x{raw:08X}",
+                "- **Mapping rejected:** procedure bytes extend beyond the file.",
+                "",
+            ]
+            continue
+
+        code = blob[raw:raw + proc_size]
         va = pe.OPTIONAL_HEADER.ImageBase + rva
-        section = next(
-            (s.Name.rstrip(b"\\0").decode("ascii", "replace")
-             for s in pe.sections
-             if s.VirtualAddress <= rva < s.VirtualAddress + max(s.Misc_VirtualSize, s.SizeOfRawData)),
-            "unknown",
-        )
+        section_name = section.Name.rstrip(bytes([0])).decode("ascii", "replace")
         lines += [
             f"- TD32 module index: {p['module']}",
             f"- TD32 segment: {p['segment']} (flags 0x{seg_flags:04X})",
-            f"- TD32 segment base RVA: 0x{seg_base:08X}",
-            f"- Procedure offset within segment: 0x{proc_off:08X}",
-            f"- Candidate RVA: 0x{rva:08X}",
+            f"- TD32 segment RVA range: 0x{seg_base:08X}..0x{seg_end:08X}",
+            f"- Procedure RVA: 0x{rva:08X}",
             f"- VA: 0x{va:08X}",
-            f"- PE section: {section}",
+            f"- PE section: {section_name}",
             f"- Raw file offset: 0x{raw:08X}",
-            f"- TD32 size: 0x{p['size']:X} ({p['size']} bytes)",
+            f"- TD32 size: 0x{proc_size:X} ({proc_size} bytes)",
             "",
             "```asm",
         ]
