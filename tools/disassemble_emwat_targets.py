@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Disassemble Delphi methods using Borland TD32 absolute procedure RVAs."""
+"""Disassemble Delphi methods using TD32 file offsets mapped through PE sections."""
 import pathlib
 import sys
 
@@ -87,55 +87,50 @@ def main():
             ]
             continue
 
+        # TD32 segment/procedure offsets in this BPL are file-relative offsets.
+        # Resolve them through the PE section table; they are not RVAs.
+        raw = rva
         section = next(
             (s for s in pe.sections
-             if s.VirtualAddress <= rva
-             and rva + proc_size <= s.VirtualAddress + max(s.Misc_VirtualSize, s.SizeOfRawData)),
+             if s.PointerToRawData <= raw
+             and raw + proc_size <= s.PointerToRawData + s.SizeOfRawData),
             None,
         )
         if section is None:
             lines += [
-                f"- Candidate RVA: 0x{rva:08X}",
-                "- **Mapping rejected:** procedure range is not contained in a PE section.",
+                f"- TD32 file offset: 0x{raw:08X}",
+                "- **Mapping rejected:** procedure range is not contained in PE raw section data.",
                 "",
             ]
             continue
         if not (section.Characteristics & 0x20000000):
             lines += [
-                f"- Candidate RVA: 0x{rva:08X}",
+                f"- TD32 file offset: 0x{raw:08X}",
                 f"- PE section: {section.Name.rstrip(bytes([0])).decode('ascii', 'replace')}",
                 "- **Mapping rejected:** containing PE section is not marked executable.",
                 "",
             ]
             continue
-
-        try:
-            raw = pe.get_offset_from_rva(rva)
-        except Exception as exc:
-            lines += [
-                f"- Candidate RVA: 0x{rva:08X}",
-                f"- **RVA-to-file mapping failed:** {exc}",
-                "",
-            ]
-            continue
-
+        rva = section.VirtualAddress + (raw - section.PointerToRawData)
         if raw + proc_size > len(blob):
             lines += [
-                f"- Candidate RVA: 0x{rva:08X}",
-                f"- Raw file offset: 0x{raw:08X}",
+                f"- TD32 file offset: 0x{raw:08X}",
                 "- **Mapping rejected:** procedure bytes extend beyond the file.",
                 "",
             ]
             continue
 
+        va = pe.OPTIONAL_HEADER.ImageBase + rva
+        section_name = section.Name.rstrip(bytes([0])).decode("ascii", "replace")
         code = blob[raw:raw + proc_size]
         va = pe.OPTIONAL_HEADER.ImageBase + rva
         section_name = section.Name.rstrip(bytes([0])).decode("ascii", "replace")
         lines += [
             f"- TD32 module index: {p['module']}",
             f"- TD32 segment: {p['segment']} (flags 0x{seg_flags:04X})",
-            f"- TD32 segment RVA range: 0x{seg_base:08X}..0x{seg_end:08X}",
-            f"- Procedure RVA: 0x{rva:08X}",
+            f"- TD32 segment file-offset range: 0x{seg_base:08X}..0x{seg_end:08X}",
+            f"- TD32 procedure file offset: 0x{raw:08X}",
+            f"- Mapped RVA: 0x{rva:08X}",
             f"- VA: 0x{va:08X}",
             f"- PE section: {section_name}",
             f"- Raw file offset: 0x{raw:08X}",
