@@ -18,6 +18,7 @@
 - [تحلیل ساختار فرم تنظیمات چاپ Word](docs/WORD-PRINT-OPTION-DFM.md)
 - [تحلیل فرم پیش‌نمایش اسکن و ابزارهای تصویر](docs/SCAN-PREVIEW-DFM.md)
 - [تحلیل فرم اصلی مدیریت و ویرایش تصاویر](docs/IMAGE-TOOLS-DFM.md)
+- [تحلیل ویرایشگر ساده تصویر و مقایسه سه فرم](docs/SIMPLE-IMAGE-EDITOR-DFM.md)
 - ابزار [استخراج GUID/ProgID و Resourceها](tools/EMWAT-COM-Resource-Analyzer.py)
 
 ## گزارش‌ها و فایل‌های مرجع موجود
@@ -42,4 +43,4 @@
 
 ## نقطه شروع جلسه بعد
 
-ابتدا [گزارش وضعیت پروژه](docs/PROJECT-STATUS.md)، [تحلیل HTTP](docs/HTTP-LOCAL-API-ANALYSIS.md)، [تحلیل Importها](docs/IMPORT-TABLE-ANALYSIS.md) و [تحلیل Office/COM](docs/OFFICE-COM-ANALYSIS.md) را بخوان. Word/Excel Automation تأیید شده؛ گزارش COM/Resource Analyzer تولید و بررسی شده است؛ یافته‌ها در [تحلیل Resourceها](docs/RESOURCE-ANALYSIS.md) ثبت شده‌اند. فرم تنظیمات چاپ Word به‌صورت کامل decode شده است؛ گام بعدی تحلیل فرم‌های اسکن/تصویر و بررسی هدفمند Office COM است.
+ابتدا [گزارش وضعیت پروژه](docs/PROJECT-STATUS.md)، [تحلیل HTTP](docs/HTTP-LOCAL-API-ANALYSIS.md)، [تحلیل Importها](docs/IMPORT-TABLE-ANALYSIS.md) و [تحلیل Office/COM](docs/OFFICE-COM-ANALYSIS.md) را بخوان. Word/Excel Automation تأیید شده؛ گزارش COM/Resource Analyzer تولید و بررسی شده است؛ یافته‌ها در [تحلیل Resourceها](docs/RESOURCE-ANALYSIS.md) ثبت شده‌اند. فرم تنظیمات چاپ Word و هر سه فرم اسکن/تصویر به‌صورت کامل decode شده‌اند؛ گام بعدی ردیابی handlerهای تصویر در BPL و تدوین specification ماژول بومی است.
