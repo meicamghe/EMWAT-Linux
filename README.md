@@ -16,6 +16,7 @@
 - [تحلیل Office Automation و COM](docs/OFFICE-COM-ANALYSIS.md)
 - [تحلیل COM و PE Resourceهای استخراج‌شده](docs/RESOURCE-ANALYSIS.md)
 - [تحلیل ساختار فرم تنظیمات چاپ Word](docs/WORD-PRINT-OPTION-DFM.md)
+- [تحلیل فرم پیش‌نمایش اسکن و ابزارهای تصویر](docs/SCAN-PREVIEW-DFM.md)
 - ابزار [استخراج GUID/ProgID و Resourceها](tools/EMWAT-COM-Resource-Analyzer.py)
 
 ## گزارش‌ها و فایل‌های مرجع موجود
