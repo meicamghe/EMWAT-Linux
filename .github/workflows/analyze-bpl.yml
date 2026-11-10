@@ -5,6 +5,7 @@ on:
     paths:
       - 'analysis-input/EmwatMethods.bpl1'
       - 'tools/analyze_emwat_bpl.py'
+      - 'tools/analyze_emwat_td32.py'
       - '.github/workflows/analyze-bpl.yml'
 permissions:
   contents: read
@@ -18,8 +19,11 @@ jobs:
           python-version: '3.12'
       - run: pip install pefile capstone
       - run: python tools/analyze_emwat_bpl.py
+      - run: python tools/analyze_emwat_td32.py analysis-input/EmwatMethods.bpl1
       - uses: actions/upload-artifact@v4
         with:
           name: emwat-bpl-static-analysis
-          path: bpl-analysis/EmwatMethods-static-analysis.md
+          path: |
+            bpl-analysis/EmwatMethods-static-analysis.md
+            bpl-analysis/EmwatMethods-TD32-analysis.md
           if-no-files-found: error
