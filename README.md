@@ -13,6 +13,7 @@
 - [گزارش وضعیت و نقطه ادامه پروژه](docs/PROJECT-STATUS.md)
 - [تحلیل سرویس HTTP محلی و bridge](docs/HTTP-LOCAL-API-ANALYSIS.md)
 - [تحلیل Import Table و وابستگی‌های Windows](docs/IMPORT-TABLE-ANALYSIS.md)
+- [تحلیل Office Automation و COM](docs/OFFICE-COM-ANALYSIS.md)
 
 ## گزارش‌ها و فایل‌های مرجع موجود
 
@@ -36,4 +37,4 @@
 
 ## نقطه شروع جلسه بعد
 
-ابتدا [گزارش وضعیت پروژه](docs/PROJECT-STATUS.md)، [تحلیل HTTP](docs/HTTP-LOCAL-API-ANALYSIS.md) و [تحلیل Importها](docs/IMPORT-TABLE-ANALYSIS.md) را بخوان. Import Table تحلیل شده است؛ مرحله بعد استخراج CLSID/ProgID و تحلیل resourceهاست. از تکرار مراحل قبلی خودداری کن.
+ابتدا [گزارش وضعیت پروژه](docs/PROJECT-STATUS.md)، [تحلیل HTTP](docs/HTTP-LOCAL-API-ANALYSIS.md)، [تحلیل Importها](docs/IMPORT-TABLE-ANALYSIS.md) و [تحلیل Office/COM](docs/OFFICE-COM-ANALYSIS.md) را بخوان. Word/Excel Automation تأیید شده؛ مرحله بعد استخراج GUID/ProgID و تحلیل Resourceهاست. از تکرار مراحل قبلی خودداری کن.
