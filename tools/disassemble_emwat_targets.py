@@ -55,7 +55,7 @@ def main():
         f"- TD32 procedure records: {len(procedures):,}",
         f"- Matched methods: {len(selected)}",
         "- Architecture: x86 / 32-bit",
-        "- Address mapping: procedure code offset is an RVA; validated against TD32 module segment range",
+        "- Address mapping: PE RVA = TD32 segment base + procedure offset; procedure range validated within segment",
         "",
     ]
 
@@ -73,24 +73,24 @@ def main():
             continue
 
         _seg, seg_flags, seg_base, seg_size = seg_info
-        proc_rva = p["offset"]
-        if proc_rva < seg_base or proc_rva + p["size"] > seg_base + seg_size:
+        proc_off = p["offset"]
+        if proc_off + p["size"] > seg_size:
             lines += [
-                f"- TD32 segment base: 0x{seg_base:08X}",
+                f"- TD32 segment base RVA: 0x{seg_base:08X}",
                 f"- TD32 segment size: 0x{seg_size:X}",
-                f"- Procedure RVA/size: 0x{proc_rva:X}/0x{p['size']:X}",
+                f"- Procedure offset/size: 0x{proc_off:X}/0x{p['size']:X}",
                 "- **Mapping rejected:** procedure range exceeds its TD32 segment.",
                 "",
             ]
             continue
 
-        rva = proc_rva
+        rva = seg_base + proc_off
         try:
             raw = pe.get_offset_from_rva(rva)
         except Exception as exc:
             lines += [
                 f"- TD32 segment base RVA: 0x{seg_base:08X}",
-                f"- Procedure RVA: 0x{proc_rva:08X}",
+                f"- Procedure offset: 0x{proc_off:08X}",
                 f"- Candidate RVA: 0x{rva:08X}",
                 f"- **Mapping failed:** {exc}",
                 "",
@@ -109,7 +109,7 @@ def main():
             f"- TD32 module index: {p['module']}",
             f"- TD32 segment: {p['segment']} (flags 0x{seg_flags:04X})",
             f"- TD32 segment base RVA: 0x{seg_base:08X}",
-            f"- Procedure RVA within segment: 0x{proc_rva:08X}",
+            f"- Procedure offset within segment: 0x{proc_off:08X}",
             f"- Candidate RVA: 0x{rva:08X}",
             f"- VA: 0x{va:08X}",
             f"- PE section: {section}",
