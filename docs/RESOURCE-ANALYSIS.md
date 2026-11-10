@@ -51,3 +51,8 @@
 2. خروجی متنی decode شده و بدون داده عملیاتی/مشتری را ارائه کن؛ resourceهای خام را در GitHub آپلود نکن.
 3. برای تعیین COM activation، فقط registry keys مرتبط با `Word.Application` و `Excel.Application` را از سیستم مرجع بررسی کن؛ export کل Registry لازم نیست.
 4. سپس workflowهای Word/Excel، اسکن/تصویر و چاپ را به specification قابل تست تبدیل کن.
+
+
+## Decode واقعی DFM: فرم تنظیمات چاپ Word
+
+تحلیل کامل component tree، propertyها، event bindingها و نیازهای بازسازی Linux در [گزارش فرم تنظیمات چاپ Word](WORD-PRINT-OPTION-DFM.md) ثبت شده است. فایل `RCDATA_TFRMWORDPRINTOPTION_19.bin` با امضای `TPF0` و اندازه 88,487 بایت به‌طور کامل parse شد؛ 34 component (فرم + 33 فرزند) استخراج شد و parser کل stream را بدون بایت باقی‌مانده مصرف کرد. این نتیجه، وجود UI تنظیمات چاپ، انتخاب چاپگر، گیرندگان/CC، محدوده صفحات و چهار نوع شمارنده نسخه را مستقیماً تأیید می‌کند. منطق handlerها هنوز باید از کد BPL استخراج شود.
