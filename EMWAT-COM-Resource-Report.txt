@@ -1,0 +1,2331 @@
+EMWAT COM / ProgID / PE Resource Analysis
+Root: D:\emwat revers\EmwatInstaller
+Static analysis only; no executable was launched.
+Review this report for private paths, tokens, customer data before upload.
+
+Files discovered: 70
+
+========================================================================
+FILE: _7z.dll
+SIZE: 726016
+SHA256: 6c80e3f49fcf561e6a0b52f9b4c81d1d07b22085f7864ee4cfd30dd10f6b3b12
+  [RESOURCE] type=ICON name=1 lang=1033 size=2216 rva=0x9ff40
+  [RESOURCE] type=ICON name=2 lang=1033 size=1384 rva=0xa07e8
+  [RESOURCE] type=ICON name=3 lang=1033 size=296 rva=0xa0d50
+  [RESOURCE] type=ICON name=4 lang=1033 size=744 rva=0xa0e78
+  [RESOURCE] type=ICON name=5 lang=1033 size=2216 rva=0xa11a0
+  [RESOURCE] type=ICON name=6 lang=1033 size=1384 rva=0xa1a48
+  [RESOURCE] type=ICON name=7 lang=1033 size=2216 rva=0xa1fd8
+  [RESOURCE] type=ICON name=8 lang=1033 size=1384 rva=0xa2880
+  [RESOURCE] type=ICON name=9 lang=1033 size=2216 rva=0xa2e10
+  [RESOURCE] type=ICON name=10 lang=1033 size=1384 rva=0xa36b8
+  [RESOURCE] type=ICON name=11 lang=1033 size=2216 rva=0xa3c48
+  [RESOURCE] type=ICON name=12 lang=1033 size=1384 rva=0xa44f0
+  [RESOURCE] type=ICON name=13 lang=1033 size=2216 rva=0xa4a80
+  [RESOURCE] type=ICON name=14 lang=1033 size=1384 rva=0xa5328
+  [RESOURCE] type=ICON name=15 lang=1033 size=2216 rva=0xa58b8
+  [RESOURCE] type=ICON name=16 lang=1033 size=1384 rva=0xa6160
+  [RESOURCE] type=ICON name=17 lang=1033 size=2216 rva=0xa66f0
+  [RESOURCE] type=ICON name=18 lang=1033 size=1384 rva=0xa6f98
+  [RESOURCE] type=ICON name=19 lang=1033 size=2216 rva=0xa7528
+  [RESOURCE] type=ICON name=20 lang=1033 size=1384 rva=0xa7dd0
+  [RESOURCE] type=ICON name=21 lang=1033 size=2216 rva=0xa8360
+  [RESOURCE] type=ICON name=22 lang=1033 size=1384 rva=0xa8c08
+  [RESOURCE] type=ICON name=23 lang=1033 size=2216 rva=0xa9198
+  [RESOURCE] type=ICON name=24 lang=1033 size=1384 rva=0xa9a40
+  [RESOURCE] type=ICON name=25 lang=1033 size=2216 rva=0xa9fd0
+  [RESOURCE] type=ICON name=26 lang=1033 size=1384 rva=0xaa878
+  [RESOURCE] type=ICON name=27 lang=1033 size=2216 rva=0xaae08
+  [RESOURCE] type=ICON name=28 lang=1033 size=1384 rva=0xab6b0
+  [RESOURCE] type=ICON name=29 lang=1033 size=2216 rva=0xabc40
+  [RESOURCE] type=ICON name=30 lang=1033 size=1384 rva=0xac4e8
+  [RESOURCE] type=ICON name=31 lang=1033 size=2216 rva=0xaca78
+  [RESOURCE] type=ICON name=32 lang=1033 size=1384 rva=0xad320
+  [RESOURCE] type=ICON name=33 lang=1033 size=2216 rva=0xad8b0
+  [RESOURCE] type=ICON name=34 lang=1033 size=1384 rva=0xae158
+  [RESOURCE] type=ICON name=35 lang=1033 size=2216 rva=0xae6e8
+  [RESOURCE] type=ICON name=36 lang=1033 size=1384 rva=0xaef90
+  [RESOURCE] type=ICON name=37 lang=1033 size=2216 rva=0xaf520
+  [RESOURCE] type=ICON name=38 lang=1033 size=1384 rva=0xafdc8
+  [RESOURCE] type=ICON name=39 lang=1033 size=2216 rva=0xb0358
+  [RESOURCE] type=ICON name=40 lang=1033 size=1384 rva=0xb0c00
+  [RESOURCE] type=ICON name=41 lang=1033 size=2216 rva=0xb1190
+  [RESOURCE] type=ICON name=42 lang=1033 size=1384 rva=0xb1a38
+  [RESOURCE] type=STRING name=7 lang=1033 size=414 rva=0xb1fc8
+  [RESOURCE] type=GROUP_ICON name=0 lang=1033 size=62 rva=0xa1160
+  [RESOURCE] type=GROUP_ICON name=1 lang=1033 size=34 rva=0xa1fb0
+  [RESOURCE] type=GROUP_ICON name=2 lang=1033 size=34 rva=0xa2de8
+  [RESOURCE] type=GROUP_ICON name=3 lang=1033 size=34 rva=0xa3c20
+  [RESOURCE] type=GROUP_ICON name=4 lang=1033 size=34 rva=0xa4a58
+  [RESOURCE] type=GROUP_ICON name=5 lang=1033 size=34 rva=0xa5890
+  [RESOURCE] type=GROUP_ICON name=6 lang=1033 size=34 rva=0xa66c8
+  [RESOURCE] type=GROUP_ICON name=7 lang=1033 size=34 rva=0xa7500
+  [RESOURCE] type=GROUP_ICON name=8 lang=1033 size=34 rva=0xa8338
+  [RESOURCE] type=GROUP_ICON name=9 lang=1033 size=34 rva=0xa9170
+  [RESOURCE] type=GROUP_ICON name=10 lang=1033 size=34 rva=0xa9fa8
+  [RESOURCE] type=GROUP_ICON name=11 lang=1033 size=34 rva=0xaade0
+  [RESOURCE] type=GROUP_ICON name=12 lang=1033 size=34 rva=0xabc18
+  [RESOURCE] type=GROUP_ICON name=13 lang=1033 size=34 rva=0xaca50
+  [RESOURCE] type=GROUP_ICON name=14 lang=1033 size=34 rva=0xad888
+  [RESOURCE] type=GROUP_ICON name=15 lang=1033 size=34 rva=0xae6c0
+  [RESOURCE] type=GROUP_ICON name=16 lang=1033 size=34 rva=0xaf4f8
+  [RESOURCE] type=GROUP_ICON name=17 lang=1033 size=34 rva=0xb0330
+  [RESOURCE] type=GROUP_ICON name=18 lang=1033 size=34 rva=0xb1168
+  [RESOURCE] type=GROUP_ICON name=19 lang=1033 size=34 rva=0xb1fa0
+  [RESOURCE] type=VERSION name=1 lang=1033 size=700 rva=0x9fc80
+  [RESOURCE TOTAL] 64
+
+========================================================================
+FILE: Emwat.reg
+SIZE: 664
+SHA256: c75794c0041a85e70abca18c5c9d729aca6f6afa92193df2b39c809c311caffc
+  [PE PARSE] not a PE or parse error: 'DOS Header magic not found.'
+
+========================================================================
+FILE: EmwatAgent.exe
+SIZE: 2924032
+SHA256: 4553c4c65a5697b5e8121ac70e894a1b98a3def470a7165d931f078d258e4157
+  [GUID] 43826D1E-E718-42EE-BC55-A1E261C37BFE | context: %.8X ControlOfs%.8X%.8X DelphiRM_GetObjectInstance USER32 AnimateWindow BUTTON SCROLLBAR {43826D1E-E718-42EE-BC55-A1E261C37BFE} %s%s%s%s%s%s%s%s%s%s Retry Ignore NoToAll YesToAll commdlg_help commdlg_FindReplace WndP
+  [GUID] 5964933A-7514-48F5-B980-FCB0CBFA97D1 | context: e.exe [Kill].Error Code:  [Heartbeat] Cleared from error. Loging Disabled Loging Enabled {5964933A-7514-48F5-B980-FCB0CBFA97D1}_TERMINATE_EM_AGENT {2EC42BF4-EA08-4476-AB86-466763F80E9A}_TERMINATE_EM_SERVICE fPPPP fII
+  [GUID] 2EC42BF4-EA08-4476-AB86-466763F80E9A | context: Loging Disabled Loging Enabled {5964933A-7514-48F5-B980-FCB0CBFA97D1}_TERMINATE_EM_AGENT {2EC42BF4-EA08-4476-AB86-466763F80E9A}_TERMINATE_EM_SERVICE fPPPP fIIIIII fNNNNN S8T`T aaaaa Delphi Picture Delphi Component Ta
+  [GUID] 4369E136-8FCE-4475-9520-045CC47013DD | context:  Chad Z. Hower (Kudzu) and the Indy Pit Crew. All rights reserved. Indy Pit Crew OpenSSL {4369E136-8FCE-4475-9520-045CC47013DD} >> Start Agent [ReadyToStart].Error: Hotkey not registered. >> Stop Agent 00010203040506
+  [ProgID] JUS_I.B1.002 | context: csISO88598E ISO-8859-8-I ISO_8859-8-I csISO88598I CSN_369103 iso-ir-139 csISO139CSN369103 JUS_I.B1.002 iso-ir-141 ISO646-YU csISO141JUSIB1002 ISO_6937-2-add iso-ir-142 csISOTextComm IEC_P27-1 
+  [ProgID] JUS_I.B1.003 | context: P27-1 iso-ir-143 csISO143IECP271 ISO-8859-5 ISO_8859-5:1988 ISO_8859-5 csISOLatinCyrillic JUS_I.B1.003-serb iso-ir-146 serbian csISO146Serbian JUS_I.B1.003-mac macedonian iso-ir-147 csISO147Ma
+  [STRING] clsid
+  [STRING] TOleServer6
+  [STRING] TOleServer
+  [STRING] EmwatFileName
+  [STRING] FEmwatFileName
+  [STRING] TEmwatSentinel?
+  [STRING] TEmwatSentinel
+  [STRING] EmwatAgent
+  [STRING] EmwatConsts
+  [STRING] Emwat.Sys
+  [STRING] OfficeXP
+  [STRING] ProgIDFromCLSID
+  [STRING] StringFromCLSID
+  [STRING] EmwatAgent.exe
+  [STRING] VEmwatAgent
+  [STRING] OEmwatConsts
+  [STRING] Emwat Agent Management
+  [STRING] .mdb=application/x-msaccess
+  [STRING] temp-emwatwf\
+  [STRING] GamElectronic EMWAT
+  [STRING] emwat-diag\
+  [STRING] EmwatService.exe
+  [STRING] SOFTWARE\Emwat
+  [STRING] Emwat reliability sentinel
+  [STRING] /f /im EmwatService.exe
+  [STRING] EmwatService Agent
+  [STRING] Emwat (agent)
+  [RESOURCE] type=CURSOR name=1 lang=1033 size=308 rva=0x2c1108
+  [RESOURCE] type=CURSOR name=2 lang=1033 size=308 rva=0x2c123c
+  [RESOURCE] type=CURSOR name=3 lang=1033 size=308 rva=0x2c1370
+  [RESOURCE] type=CURSOR name=4 lang=1033 size=308 rva=0x2c14a4
+  [RESOURCE] type=CURSOR name=5 lang=1033 size=308 rva=0x2c15d8
+  [RESOURCE] type=CURSOR name=6 lang=1033 size=308 rva=0x2c170c
+  [RESOURCE] type=CURSOR name=7 lang=1033 size=308 rva=0x2c1840
+  [RESOURCE] type=BITMAP name=BBABORT lang=1033 size=464 rva=0x2c1974
+  [RESOURCE] type=BITMAP name=BBALL lang=1033 size=484 rva=0x2c1b44
+  [RESOURCE] type=BITMAP name=BBCANCEL lang=1033 size=464 rva=0x2c1d28
+  [RESOURCE] type=BITMAP name=BBCLOSE lang=1033 size=464 rva=0x2c1ef8
+  [RESOURCE] type=BITMAP name=BBHELP lang=1033 size=464 rva=0x2c20c8
+  [RESOURCE] type=BITMAP name=BBIGNORE lang=1033 size=464 rva=0x2c2298
+  [RESOURCE] type=BITMAP name=BBNO lang=1033 size=464 rva=0x2c2468
+  [RESOURCE] type=BITMAP name=BBOK lang=1033 size=464 rva=0x2c2638
+  [RESOURCE] type=BITMAP name=BBRETRY lang=1033 size=464 rva=0x2c2808
+  [RESOURCE] type=BITMAP name=BBYES lang=1033 size=464 rva=0x2c29d8
+  [RESOURCE] type=BITMAP name=SPINDOWN lang=1033 size=152 rva=0x2c2ba8
+  [RESOURCE] type=BITMAP name=SPINUP lang=1033 size=152 rva=0x2c2c40
+  [RESOURCE] type=ICON name=1 lang=1033 size=3752 rva=0x2c2cd8
+  [RESOURCE] type=ICON name=2 lang=1033 size=2216 rva=0x2c3b80
+  [RESOURCE] type=ICON name=3 lang=1033 size=1736 rva=0x2c4428
+  [RESOURCE] type=ICON name=4 lang=1033 size=1384 rva=0x2c4af0
+  [RESOURCE] type=ICON name=5 lang=1033 size=9640 rva=0x2c5058
+  [RESOURCE] type=ICON name=6 lang=1033 size=4264 rva=0x2c7600
+  [RESOURCE] type=ICON name=7 lang=1033 size=2440 rva=0x2c86a8
+  [RESOURCE] type=ICON name=8 lang=1033 size=1128 rva=0x2c9030
+  [RESOURCE] type=STRING name=4058 lang=0 size=404 rva=0x2c9498
+  [RESOURCE] type=STRING name=4059 lang=0 size=2888 rva=0x2c962c
+  [RESOURCE] type=STRING name=4060 lang=0 size=3580 rva=0x2ca174
+  [RESOURCE] type=STRING name=4061 lang=0 size=2764 rva=0x2caf70
+  [RESOURCE] type=STRING name=4062 lang=0 size=1924 rva=0x2cba3c
+  [RESOURCE] type=STRING name=4063 lang=0 size=2220 rva=0x2cc1c0
+  [RESOURCE] type=STRING name=4064 lang=0 size=832 rva=0x2cca6c
+  [RESOURCE] type=STRING name=4065 lang=0 size=1332 rva=0x2ccdac
+  [RESOURCE] type=STRING name=4066 lang=0 size=1084 rva=0x2cd2e0
+  [RESOURCE] type=STRING name=4067 lang=0 size=968 rva=0x2cd71c
+  [RESOURCE] type=STRING name=4068 lang=0 size=944 rva=0x2cdae4
+  [RESOURCE] type=STRING name=4069 lang=0 size=1040 rva=0x2cde94
+  [RESOURCE] type=STRING name=4070 lang=0 size=1036 rva=0x2ce2a4
+  [RESOURCE] type=STRING name=4071 lang=0 size=860 rva=0x2ce6b0
+  [RESOURCE] type=STRING name=4072 lang=0 size=908 rva=0x2cea0c
+  [RESOURCE] type=STRING name=4073 lang=0 size=708 rva=0x2ced98
+  [RESOURCE] type=STRING name=4074 lang=0 size=1060 rva=0x2cf05c
+  [RESOURCE] type=STRING name=4075 lang=0 size=872 rva=0x2cf480
+  [RESOURCE] type=STRING name=4076 lang=0 size=1036 rva=0x2cf7e8
+  [RESOURCE] type=STRING name=4077 lang=0 size=212 rva=0x2cfbf4
+  [RESOURCE] type=STRING name=4078 lang=0 size=204 rva=0x2cfcc8
+  [RESOURCE] type=STRING name=4079 lang=0 size=296 rva=0x2cfd94
+  [RESOURCE] type=STRING name=4080 lang=0 size=848 rva=0x2cfebc
+  [RESOURCE] type=STRING name=4081 lang=0 size=1036 rva=0x2d020c
+  [RESOURCE] type=STRING name=4082 lang=0 size=972 rva=0x2d0618
+  [RESOURCE] type=STRING name=4083 lang=0 size=1048 rva=0x2d09e4
+  [RESOURCE] type=STRING name=4084 lang=0 size=928 rva=0x2d0dfc
+  [RESOURCE] type=STRING name=4085 lang=0 size=1016 rva=0x2d119c
+  [RESOURCE] type=STRING name=4086 lang=0 size=1512 rva=0x2d1594
+  [RESOURCE] type=STRING name=4087 lang=0 size=1108 rva=0x2d1b7c
+  [RESOURCE] type=STRING name=4088 lang=0 size=896 rva=0x2d1fd0
+  [RESOURCE] type=STRING name=4089 lang=0 size=1104 rva=0x2d2350
+  [RESOURCE] type=STRING name=4090 lang=0 size=428 rva=0x2d27a0
+  [RESOURCE] type=STRING name=4091 lang=0 size=204 rva=0x2d294c
+  [RESOURCE] type=STRING name=4092 lang=0 size=408 rva=0x2d2a18
+  [RESOURCE] type=STRING name=4093 lang=0 size=968 rva=0x2d2bb0
+  [RESOURCE] type=STRING name=4094 lang=0 size=948 rva=0x2d2f78
+  [RESOURCE] type=STRING name=4095 lang=0 size=852 rva=0x2d332c
+  [RESOURCE] type=STRING name=4096 lang=0 size=740 rva=0x2d3680
+  [RESOURCE] type=RCDATA name=DVCLAL lang=0 size=16 rva=0x2d3964
+  [RESOURCE] type=RCDATA name=PACKAGEINFO lang=0 size=3360 rva=0x2d3974
+  [STRING] VEmwatAgent
+  [STRING] OfficeXP
+  [STRING] OEmwatConsts
+  [STRING] Emwat.Sys
+  [RESOURCE] type=RCDATA name=PLATFORMTARGETS lang=1033 size=2 rva=0x2d4694
+  [RESOURCE] type=RCDATA name=TMANAGEFORM lang=0 size=3272 rva=0x2d4698
+  [STRING] Emwat Agent Management
+  [RESOURCE] type=GROUP_CURSOR name=32761 lang=1033 size=20 rva=0x2d5360
+  [RESOURCE] type=GROUP_CURSOR name=32762 lang=1033 size=20 rva=0x2d5374
+  [RESOURCE] type=GROUP_CURSOR name=32763 lang=1033 size=20 rva=0x2d5388
+  [RESOURCE] type=GROUP_CURSOR name=32764 lang=1033 size=20 rva=0x2d539c
+  [RESOURCE] type=GROUP_CURSOR name=32765 lang=1033 size=20 rva=0x2d53b0
+  [RESOURCE] type=GROUP_CURSOR name=32766 lang=1033 size=20 rva=0x2d53c4
+  [RESOURCE] type=GROUP_CURSOR name=32767 lang=1033 size=20 rva=0x2d53d8
+  [RESOURCE] type=GROUP_ICON name=MAINICON lang=1033 size=118 rva=0x2d53ec
+  [RESOURCE] type=VERSION name=1 lang=1033 size=624 rva=0x2d5464
+  [STRING] EmwatService Agent
+  [STRING] Emwat (agent)
+  [RESOURCE] type=MANIFEST name=1 lang=1033 size=752 rva=0x2d56d4
+  [RESOURCE TOTAL] 80
+
+========================================================================
+FILE: EmwatMethods.bpl1
+SIZE: 11106148
+SHA256: 6ff7d262f46ab009e3eecf20fca40cd41ec8ad937adf7bbfe2f6eddd56aaea2d
+  [ProgID] Word.Application | context: oc]. Image file not found. PrintWordDoc function called. PrintWordDoc loading doc file :  Word.Application PrintWordDoc Printing... PrintWordDoc waitout for completting print job of MS.Word... /f 
+  [STRING] OfficeXP
+  [STRING] OfficeXP%
+  [STRING] OfficeXP5
+  [STRING] OfficeXPG
+  [STRING] OfficeXPN
+  [STRING] OfficeXP2
+  [STRING] OfficeXP0
+  [STRING] OfficeDataSourceObject
+  [STRING] OfficeDataSourceObjectDisp
+  [STRING] OfficeXPc
+  [STRING] TWordDocument6
+  [STRING] TWordDocumentt!A
+  [STRING] TWordFont6
+  [STRING] TWordFont8
+  [STRING] TWordParagraphFormat6
+  [STRING] TWordParagraphFormatd
+  [STRING] TWordOLEControl6
+  [STRING] TWordOLEControl
+  [STRING] TWordLetterContent6
+  [STRING] TWordLetterContent
+  [STRING] TWordApplicationDocumentOpen
+  [STRING] #TWordApplicationDocumentBeforeClose
+  [STRING] #TWordApplicationDocumentBeforePrint
+  [STRING] "TWordApplicationDocumentBeforeSave
+  [STRING] TWordApplicationNewDocument
+  [STRING] TWordApplicationWindowActivate
+  [STRING] TWordApplicationWindowDeactivate
+  [STRING] %TWordApplicationWindowSelectionChange
+  [STRING] &TWordApplicationWindowBeforeRightClick
+  [STRING] 'TWordApplicationWindowBeforeDoubleClick
+  [STRING] &TWordApplicationEPostagePropertyDialog
+  [STRING] TWordApplicationEPostageInsert
+  [STRING] #TWordApplicationMailMergeAfterMerge
+  [STRING] )TWordApplicationMailMergeAfterRecordMerge
+  [STRING] $TWordApplicationMailMergeBeforeMerge
+  [STRING] *TWordApplicationMailMergeBeforeRecordMerge
+  [STRING] 'TWordApplicationMailMergeDataSourceLoad
+  [STRING] +TWordApplicationMailMergeDataSourceValidate
+  [STRING] +TWordApplicationMailMergeWizardSendToCustom
+  [STRING] *TWordApplicationMailMergeWizardStateChange
+  [STRING] TWordApplicationWindowSize
+  [STRING] TWordApplication6
+  [STRING] TWordApplication
+  [STRING] etWordConnectException
+  [STRING] etWordDocOpenError
+  [STRING] etExcelConnectException
+  [STRING] etExcelWorkBookOpenError
+  [STRING] EmwatConsts
+  [STRING] Emwat.Sys
+  [STRING] TEmwatInvokeParam
+  [STRING] PEmwatInvokeParam
+  [STRING] IXMLEmwatType
+  [STRING] EmwatXml
+  [STRING] TXMLEmwatType1
+  [STRING] TXMLEmwatType
+  [STRING] clsid
+  [STRING] EmwatUtils
+  [STRING] TEMWATLogPatternLayout
+  [STRING] TEMWATLogPatternLayout\
+  [STRING] EmwatInvokeParam
+  [STRING] TEmwatMethodA
+  [STRING] TEmwatMethod
+  [STRING] EmwatMethod
+  [STRING] TEmwatMethodClass
+  [STRING] >TArray<EmwatMethod.TPair<System.AnsiString,System.AnsiString>>
+  [STRING] CTEnumerator<EmwatMethod.TPair<System.AnsiString,System.AnsiString>>(
+  [STRING] CTEnumerator<EmwatMethod.TPair<System.AnsiString,System.AnsiString>>
+  [STRING] CTEnumerable<EmwatMethod.TPair<System.AnsiString,System.AnsiString>>'
+  [STRING] CTEnumerable<EmwatMethod.TPair<System.AnsiString,System.AnsiString>>
+  [STRING] FTList<EmwatMethod.TPair<System.AnsiString,System.AnsiString>>.arrayofT
+  [STRING] AIComparer<EmwatMethod.TPair<System.AnsiString,System.AnsiString>>
+  [STRING] NTCollectionNotifyEvent<EmwatMethod.TPair<System.AnsiString,System.AnsiString>>
+  [STRING] CIEnumerable<EmwatMethod.TPair<System.AnsiString,System.AnsiString>>
+  [STRING] HTList<EmwatMethod.TPair<System.AnsiString,System.AnsiString>>.TEmptyFunc
+  [STRING] ITList<EmwatMethod.TPair<System.AnsiString,System.AnsiString>>.TEnumerator5
+  [STRING] ITList<EmwatMethod.TPair<System.AnsiString,System.AnsiString>>.TEnumerator
+  [STRING] =TList<EmwatMethod.TPair<System.AnsiString,System.AnsiString>>&
+  [STRING] =TList<EmwatMethod.TPair<System.AnsiString,System.AnsiString>>
+  [STRING] CTComparison<EmwatMethod.TPair<System.AnsiString,System.AnsiString>>
+  [STRING] ATComparer<EmwatMethod.TPair<System.AnsiString,System.AnsiString>>2
+  [STRING] ATComparer<EmwatMethod.TPair<System.AnsiString,System.AnsiString>>
+  [STRING] P.TList`1.Pack$224$0$Intf<EmwatMethod.TPair<System.AnsiString,System.AnsiString>>
+  [STRING] P@TList`1.Pack$224$ActRec<EmwatMethod.TPair<System.AnsiString,System.AnsiString>>
+  [STRING] P.TList`1.Pack$226$0$Intf<EmwatMethod.TPair<System.AnsiString,System.AnsiString>>
+  [STRING] P@TList`1.Pack$226$ActRec<EmwatMethod.TPair<System.AnsiString,System.AnsiString>>
+  [STRING] P@TList`1.Pack$226$ActRec<EmwatMethod.TPair<System.AnsiString,System.AnsiString>>0+G
+  [STRING] JTDelegatedComparer<EmwatMethod.TPair<System.AnsiString,System.AnsiString>>8
+  [STRING] JTDelegatedComparer<EmwatMethod.TPair<System.AnsiString,System.AnsiString>>
+  [STRING] ClsId
+  [STRING] EmwatDocPrintHandlerUnit
+  [STRING] TEmwatDocPrintHandler=
+  [STRING] TEmwatDocPrintHandler
+  [STRING] *TArray<EmwatDocPrintHandlerUnit.TSeleItem>
+  [STRING] /TEnumerator<EmwatDocPrintHandlerUnit.TSeleItem>(
+  [STRING] /TEnumerator<EmwatDocPrintHandlerUnit.TSeleItem>$'J
+  [STRING] /TEnumerable<EmwatDocPrintHandlerUnit.TSeleItem>'
+  [STRING] /TEnumerable<EmwatDocPrintHandlerUnit.TSeleItem>x(J
+  [STRING] 2TList<EmwatDocPrintHandlerUnit.TSeleItem>.arrayofT
+  [STRING] -IComparer<EmwatDocPrintHandlerUnit.TSeleItem>
+  [STRING] :TCollectionNotifyEvent<EmwatDocPrintHandlerUnit.TSeleItem>
+  [STRING] /IEnumerator<EmwatDocPrintHandlerUnit.TSeleItem>
+  [STRING] /IEnumerable<EmwatDocPrintHandlerUnit.TSeleItem>
+  [STRING] 4TList<EmwatDocPrintHandlerUnit.TSeleItem>.TEmptyFunc
+  [STRING] 5TList<EmwatDocPrintHandlerUnit.TSeleItem>.TEnumerator5
+  [STRING] 5TList<EmwatDocPrintHandlerUnit.TSeleItem>.TEnumerator
+  [STRING] )TList<EmwatDocPrintHandlerUnit.TSeleItem>&
+  [STRING] )TList<EmwatDocPrintHandlerUnit.TSeleItem>
+  [STRING] *TArray<EmwatDocPrintHandlerUnit.IPrintJob>
+  [STRING] /TEnumerator<EmwatDocPrintHandlerUnit.IPrintJob>(
+  [STRING] /TEnumerator<EmwatDocPrintHandlerUnit.IPrintJob>
+  [STRING] /TEnumerable<EmwatDocPrintHandlerUnit.IPrintJob>'
+  [STRING] /TEnumerable<EmwatDocPrintHandlerUnit.IPrintJob>D=J
+  [STRING] 2TList<EmwatDocPrintHandlerUnit.IPrintJob>.arrayofT
+  [STRING] -IComparer<EmwatDocPrintHandlerUnit.IPrintJob>
+  [STRING] :TCollectionNotifyEvent<EmwatDocPrintHandlerUnit.IPrintJob>
+  [STRING] /IEnumerator<EmwatDocPrintHandlerUnit.IPrintJob>
+  [STRING] /IEnumerable<EmwatDocPrintHandlerUnit.IPrintJob>
+  [STRING] 4TList<EmwatDocPrintHandlerUnit.IPrintJob>.TEmptyFunc
+  [STRING] 5TList<EmwatDocPrintHandlerUnit.IPrintJob>.TEnumerator5
+  [STRING] 5TList<EmwatDocPrintHandlerUnit.IPrintJob>.TEnumerator
+  [STRING] )TList<EmwatDocPrintHandlerUnit.IPrintJob>&
+  [STRING] )TList<EmwatDocPrintHandlerUnit.IPrintJob>`CJ
+  [STRING] /TComparison<EmwatDocPrintHandlerUnit.TSeleItem>
+  [STRING] -TComparer<EmwatDocPrintHandlerUnit.TSeleItem>2
+  [STRING] -TComparer<EmwatDocPrintHandlerUnit.TSeleItem>
+  [STRING] <.TList`1.Pack$224$0$Intf<EmwatDocPrintHandlerUnit.TSeleItem>
+  [STRING] <@TList`1.Pack$224$ActRec<EmwatDocPrintHandlerUnit.TSeleItem>
+  [STRING] <@TList`1.Pack$224$ActRec<EmwatDocPrintHandlerUnit.TSeleItem>(
+  [STRING] <.TList`1.Pack$226$0$Intf<EmwatDocPrintHandlerUnit.TSeleItem>
+  [STRING] <@TList`1.Pack$226$ActRec<EmwatDocPrintHandlerUnit.TSeleItem>
+  [STRING] <@TList`1.Pack$226$ActRec<EmwatDocPrintHandlerUnit.TSeleItem>$
+  [STRING] /TComparison<EmwatDocPrintHandlerUnit.IPrintJob>
+  [STRING] -TComparer<EmwatDocPrintHandlerUnit.IPrintJob>2
+  [STRING] -TComparer<EmwatDocPrintHandlerUnit.IPrintJob>(
+  [STRING] <.TList`1.Pack$224$0$Intf<EmwatDocPrintHandlerUnit.IPrintJob>
+  [STRING] <@TList`1.Pack$224$ActRec<EmwatDocPrintHandlerUnit.IPrintJob>
+  [STRING] <.TList`1.Pack$226$0$Intf<EmwatDocPrintHandlerUnit.IPrintJob>
+  [STRING] <@TList`1.Pack$226$ActRec<EmwatDocPrintHandlerUnit.IPrintJob>@
+  [STRING] <@TList`1.Pack$226$ActRec<EmwatDocPrintHandlerUnit.IPrintJob>
+  [STRING] 6TDelegatedComparer<EmwatDocPrintHandlerUnit.TSeleItem>8
+  [STRING] 6TDelegatedComparer<EmwatDocPrintHandlerUnit.TSeleItem>
+  [STRING] 6TDelegatedComparer<EmwatDocPrintHandlerUnit.IPrintJob>8
+  [STRING] 6TDelegatedComparer<EmwatDocPrintHandlerUnit.IPrintJob>
+  [STRING] TEmwatFieldType
+  [STRING] :TWord.:1
+  [STRING] TWord
+  [STRING] :TWordViwer.:1
+  [STRING] :TWordViwer.:2@
+  [STRING] :TWordViwer.:3
+  [STRING] :TWordViwer.:4
+  [STRING] EmwatDocument
+  [STRING] TWordViwer&
+  [STRING] TWordViwer
+  [STRING] :TWordViwer.:5
+  [STRING] :TWordViwer.:6
+  [STRING] :TWordViwer.:7
+  [STRING] :TWordViwer.:8
+  [STRING] EmwatComponentsU
+  [STRING] TExcelQueryTableBeforeRefresh
+  [STRING] TExcelQueryTableAfterRefresh
+  [STRING] TExcelQueryTable6
+  [STRING] TExcelQueryTable|$Q
+  [STRING] TExcelApplicationNewWorkbook
+  [STRING] %TExcelApplicationSheetSelectionChange
+  [STRING] 'TExcelApplicationSheetBeforeDoubleClick
+  [STRING] &TExcelApplicationSheetBeforeRightClick
+  [STRING] TExcelApplicationSheetActivate
+  [STRING] TExcelApplicationSheetDeactivate
+  [STRING] TExcelApplicationSheetCalculate
+  [STRING] TExcelApplicationSheetChange
+  [STRING] TExcelApplicationWorkbookOpen
+  [STRING] !TExcelApplicationWorkbookActivate
+  [STRING] #TExcelApplicationWorkbookDeactivate
+  [STRING] $TExcelApplicationWorkbookBeforeClose
+  [STRING] #TExcelApplicationWorkbookBeforeSave
+  [STRING] $TExcelApplicationWorkbookBeforePrint
+  [STRING] !TExcelApplicationWorkbookNewSheet
+  [STRING] %TExcelApplicationWorkbookAddinInstall
+  [STRING] 'TExcelApplicationWorkbookAddinUninstall
+  [STRING] TExcelApplicationWindowResize
+  [STRING] TExcelApplicationWindowActivate
+  [STRING] !TExcelApplicationWindowDeactivate
+  [STRING] %TExcelApplicationSheetFollowHyperlink
+  [STRING] &TExcelApplicationSheetPivotTableUpdate
+  [STRING] 2TExcelApplicationWorkbookPivotTableCloseConnection
+  [STRING] 1TExcelApplicationWorkbookPivotTableOpenConnection
+  [STRING] TExcelApplication6
+  [STRING] TExcelApplication
+  [STRING] TExcelChartMouseDown
+  [STRING] TExcelChartMouseUp
+  [STRING] TExcelChartMouseMove
+  [STRING] TExcelChartBeforeRightClick
+  [STRING] TExcelChartBeforeDoubleClick
+  [STRING] TExcelChartSelect
+  [STRING] TExcelChartSeriesChange
+  [STRING] TExcelChart6
+  [STRING] TExcelChart@
+  [STRING] TExcelWorksheetSelectionChange
+  [STRING] TExcelWorksheetBeforeDoubleClick
+  [STRING] TExcelWorksheetBeforeRightClick
+  [STRING] TExcelWorksheetChange
+  [STRING] TExcelWorksheetFollowHyperlink
+  [STRING] TExcelWorksheetPivotTableUpdate
+  [STRING] TExcelWorksheet6
+  [STRING] TExcelWorksheet
+  [STRING] TExcelGlobal6
+  [STRING] TExcelGlobal
+  [STRING] TExcelWorkbookBeforeClose
+  [STRING] TExcelWorkbookBeforeSave
+  [STRING] TExcelWorkbookBeforePrint
+  [STRING] TExcelWorkbookNewSheet
+  [STRING] TExcelWorkbookWindowResize
+  [STRING] TExcelWorkbookWindowActivate
+  [STRING] TExcelWorkbookWindowDeactivate
+  [STRING] "TExcelWorkbookSheetSelectionChange
+  [STRING] $TExcelWorkbookSheetBeforeDoubleClick
+  [STRING] #TExcelWorkbookSheetBeforeRightClick
+  [STRING] TExcelWorkbookSheetActivate
+  [STRING] TExcelWorkbookSheetDeactivate
+  [STRING] TExcelWorkbookSheetCalculate
+  [STRING] TExcelWorkbookSheetChange
+  [STRING] "TExcelWorkbookSheetFollowHyperlink
+  [STRING] #TExcelWorkbookSheetPivotTableUpdate
+  [STRING] 'TExcelWorkbookPivotTableCloseConnection
+  [STRING] &TExcelWorkbookPivotTableOpenConnection
+  [STRING] TExcelWorkbook6
+  [STRING] TExcelWorkbook
+  [STRING] TExcelOLEObject6
+  [STRING] TExcelOLEObjecth
+  [STRING] progID
+  [STRING] TExcelViewer
+  [STRING] TWordProcessorA
+  [STRING] TWordProcessor
+  [STRING] frmEmwatSetting
+  [STRING] GAM EMWAT SOFTWARE
+  [STRING] GAM EMWAT LOG
+  [STRING] TEditWordDocumentH
+  [STRING] TEditWordDocumentd
+  [STRING] EmwatConnector
+  [STRING] TGetEmwatVersionH
+  [STRING] TGetEmwatVersion
+  [STRING] TSetEmwatVersionH
+  [STRING] TSetEmwatVersion
+  [STRING] TUpgradeEmwatH
+  [STRING] TUpgradeEmwat
+  [STRING] TEditExcelWorkBookH
+  [STRING] TEditExcelWorkBook$
+  [STRING] TShowEmwatSettingH
+  [STRING] TShowEmwatSettingt
+  [STRING] ATArray<EmwatConnector.TPair<System.AnsiString,System.AnsiString>>
+  [STRING] FTEnumerator<EmwatConnector.TPair<System.AnsiString,System.AnsiString>>(
+  [STRING] FTEnumerator<EmwatConnector.TPair<System.AnsiString,System.AnsiString>>8
+  [STRING] FTEnumerable<EmwatConnector.TPair<System.AnsiString,System.AnsiString>>'
+  [STRING] FTEnumerable<EmwatConnector.TPair<System.AnsiString,System.AnsiString>>
+  [STRING] ITList<EmwatConnector.TPair<System.AnsiString,System.AnsiString>>.arrayofT
+  [STRING] DIComparer<EmwatConnector.TPair<System.AnsiString,System.AnsiString>>
+  [STRING] QTCollectionNotifyEvent<EmwatConnector.TPair<System.AnsiString,System.AnsiString>>
+  [STRING] FIEnumerable<EmwatConnector.TPair<System.AnsiString,System.AnsiString>>
+  [STRING] KTList<EmwatConnector.TPair<System.AnsiString,System.AnsiString>>.TEmptyFunc
+  [STRING] LTList<EmwatConnector.TPair<System.AnsiString,System.AnsiString>>.TEnumerator5
+  [STRING] LTList<EmwatConnector.TPair<System.AnsiString,System.AnsiString>>.TEnumerator
+  [STRING] @TList<EmwatConnector.TPair<System.AnsiString,System.AnsiString>>&
+  [STRING] @TList<EmwatConnector.TPair<System.AnsiString,System.AnsiString>>
+  [STRING] FTComparison<EmwatConnector.TPair<System.AnsiString,System.AnsiString>>
+  [STRING] DTComparer<EmwatConnector.TPair<System.AnsiString,System.AnsiString>>2
+  [STRING] DTComparer<EmwatConnector.TPair<System.AnsiString,System.AnsiString>>
+  [STRING] S.TList`1.Pack$224$0$Intf<EmwatConnector.TPair<System.AnsiString,System.AnsiString>>
+  [STRING] S@TList`1.Pack$224$ActRec<EmwatConnector.TPair<System.AnsiString,System.AnsiString>>
+  [STRING] S.TList`1.Pack$226$0$Intf<EmwatConnector.TPair<System.AnsiString,System.AnsiString>>
+  [STRING] S@TList`1.Pack$226$ActRec<EmwatConnector.TPair<System.AnsiString,System.AnsiString>>
+  [STRING] MTDelegatedComparer<EmwatConnector.TPair<System.AnsiString,System.AnsiString>>8
+  [STRING] MTDelegatedComparer<EmwatConnector.TPair<System.AnsiString,System.AnsiString>>T-_
+  [STRING] TXMLEmwatType(2a
+  [STRING] TXMLEmwatType4
+  [STRING] @Vcl@Oleserver@TOleServer@QueryInterface$qqsrx5_GUIDpv
+  [STRING] @Vcl@Oleserver@TOleServer@SetConnectKind$qqr26Vcl@Oleserver@TConnectKind
+  [STRING] @Vcl@Oleserver@TOleServer@DisconnectEvents$qqrx44System@%DelphiInterface$17System@IInterface%
+  [STRING] @Vcl@Oleserver@TOleServer@ConnectEvents$qqrx44System@%DelphiInterface$17System@IInterface%
+  [STRING] @Vcl@Oleserver@TOleServer@GetServer$qqrv
+  [STRING] @Vcl@Oleserver@TOleServer@InvokeEvent$qqrir41System@%DynamicArray$17System@OleVariant%
+  [STRING] @Vcl@Oleserver@TOleServer@Loaded$qqrv
+  [STRING] @Vcl@Oleserver@TOleServer@$bdtr$qqrv
+  [STRING] @Vcl@Oleserver@TOleServer@$bctr$qqrp25System@Classes@TComponent
+  [STRING] @$xp$24Vcl@Oleserver@TOleServer
+  [STRING] @Vcl@Oleserver@TOleServer@
+  [STRING] EmwatMethods.bpl
+  [STRING] @$xp$102System@Generics@Collections@%TList__1$61System@%DelphiInterface$34Emwatdocprinthandlerunit@IPrintJob%%
+  [STRING] @$xp$103System@Generics@Defaults@%IComparer__1$61System@%DelphiInterface$34Emwatdocprinthandlerunit@IPrintJob%%
+  [STRING] @$xp$108System@Generics@Collections@%TEnumerable__1$61System@%DelphiInterface$34Emwatdocprinthandlerunit@IPrintJob%%
+  [STRING] @$xp$108System@Generics@Collections@%TEnumerator__1$61System@%DelphiInterface$34Emwatdocprinthandlerunit@IPrintJob%%
+  [STRING] @$xp$111System@Generics@Collections@%TList__1$61System@%DelphiInterface$34Emwatdocprinthandlerunit@IPrintJob%%@arrayofT
+  [STRING] @$xp$113System@Generics@Collections@%TList__1$61System@%DelphiInterface$34Emwatdocprinthandlerunit@IPrintJob%%@TEmptyFunc
+  [STRING] @$xp$114System@Generics@Collections@%TList__1$61System@%DelphiInterface$34Emwatdocprinthandlerunit@IPrintJob%%@TEnumerator
+  [STRING] @$xp$119System@Generics@Collections@%TCollectionNotifyEvent__1$61System@%DelphiInterface$34Emwatdocprinthandlerunit@IPrintJob%%
+  [STRING] @$xp$13Officexp@Sync
+  [STRING] @$xp$14Officexp@IFind
+  [STRING] @$xp$14Officexp@Shape
+  [STRING] @$xp$15Officexp@Script
+  [STRING] @$xp$15Officexp@Shapes
+  [STRING] @$xp$16Officexp@Balloon
+  [RESOURCE] type=STRING name=4091 lang=0 size=444 rva=0x31465c
+  [RESOURCE] type=STRING name=4092 lang=0 size=1056 rva=0x314818
+  [RESOURCE] type=STRING name=4093 lang=0 size=880 rva=0x314c38
+  [RESOURCE] type=STRING name=4094 lang=0 size=980 rva=0x314fa8
+  [RESOURCE] type=STRING name=4095 lang=0 size=880 rva=0x31537c
+  [RESOURCE] type=STRING name=4096 lang=0 size=1024 rva=0x3156ec
+  [RESOURCE] type=RCDATA name=DESCRIPTION lang=0 size=44 rva=0x315aec
+  [STRING] Emwat Methods Package
+  [RESOURCE] type=RCDATA name=PACKAGEINFO lang=0 size=1240 rva=0x315b18
+  [STRING] EmwatMethods
+  [STRING] OfficeXP
+  [STRING] EmwatUtils
+  [STRING] Emwat.Sys
+  [STRING] OEmwatConsts
+  [STRING] efrmEmwatSetting
+  [STRING] EmwatDocPrintHandlerUnit
+  [STRING] FEmwatXml
+  [STRING] EmwatComponentsU
+  [STRING] {EmwatMethod
+  [STRING] _EmwatConnector
+  [RESOURCE] type=RCDATA name=PACKAGEOPTIONS lang=0 size=256 rva=0x315ff0
+  [STRING] Emwat Methods Package
+  [RESOURCE] type=RCDATA name=PLATFORMTARGETS lang=1033 size=2 rva=0x3160f0
+  [RESOURCE] type=RCDATA name=TEMSETTINGFORM lang=0 size=2209 rva=0x3160f4
+  [RESOURCE] type=RCDATA name=TFRMFAXRECIPIENTSFORM lang=0 size=1774 rva=0x316998
+  [RESOURCE] type=RCDATA name=TFRMGSCANPREVIEW lang=0 size=49193 rva=0x317088
+  [RESOURCE] type=RCDATA name=TFRMIMAGETOOLS lang=0 size=57832 rva=0x3230b4
+  [RESOURCE] type=RCDATA name=TFRMSCANERROR lang=0 size=2914 rva=0x33129c
+  [RESOURCE] type=RCDATA name=TFRMSENDLOG lang=0 size=2007 rva=0x331e00
+  [RESOURCE] type=RCDATA name=TFRMSHOWAUTOSAVEFILES lang=0 size=1149 rva=0x3325d8
+  [RESOURCE] type=RCDATA name=TFRMSIMPLEIMAGEEDITOR lang=0 size=11451 rva=0x332a58
+  [RESOURCE] type=RCDATA name=TFRMWORDPRINTOPTION lang=0 size=88487 rva=0x335714
+  [RESOURCE] type=RCDATA name=TPROCESSINGFORM lang=0 size=674 rva=0x34b0bc
+  [RESOURCE] type=VERSION name=1 lang=1033 size=676 rva=0x34b360
+  [STRING] Empowered Web Application Technology (Emwat) Service
+  [STRING] Emwat
+  [RESOURCE] type=MANIFEST name=1 lang=1033 size=752 rva=0x34b604
+  [RESOURCE TOTAL] 22
+
+========================================================================
+FILE: EmwatService.exe
+SIZE: 679936
+SHA256: 9b07e270fa216095fe6648694a4896f6f8a190e69002c6742dc894c11a002659
+  [GUID] 2EC42BF4-EA08-4476-AB86-466763F80E9A | context: Tack HSrvr_Expt_Handler MainSvcLogger emwat-diag\ Word Print Dialog Started. Application {2EC42BF4-EA08-4476-AB86-466763F80E9A}_TERMINATE_EM_SERVICE_ Listenning on port  Port binding failed. Make sure Emwat is not ru
+  [GUID] E67A99F0-E7AF-4083-8FD3-B3EBB601C920 | context: re\Emwat\Dynamic Config GetFileSizeEx Kernel32.dll FALSE debug error fatal Emwat Service {E67A99F0-E7AF-4083-8FD3-B3EBB601C920} CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC C8D|D %%%%%%%
+  [ProgID] JUS_I.B1.002 | context: csISO88598E ISO-8859-8-I ISO_8859-8-I csISO88598I CSN_369103 iso-ir-139 csISO139CSN369103 JUS_I.B1.002 iso-ir-141 ISO646-YU csISO141JUSIB1002 ISO_6937-2-add iso-ir-142 csISOTextComm IEC_P27-1 
+  [ProgID] JUS_I.B1.003 | context: SO143IECP271 ISO-8859-5 ISO_8859-5:1988 iso-ir-144 ISO_8859-5 cyrillic csISOLatinCyrillic JUS_I.B1.003-serb iso-ir-146 serbian csISO146Serbian JUS_I.B1.003-mac macedonian iso-ir-147 csISO147Ma
+  [STRING] TEmwatInvokeParam
+  [STRING] >TArray<EmwatMethod.TPair<System.AnsiString,System.AnsiString>>
+  [STRING] CTEnumerator<EmwatMethod.TPair<System.AnsiString,System.AnsiString>>(
+  [STRING] CTEnumerator<EmwatMethod.TPair<System.AnsiString,System.AnsiString>>
+  [STRING] CTEnumerable<EmwatMethod.TPair<System.AnsiString,System.AnsiString>>'
+  [STRING] CTEnumerable<EmwatMethod.TPair<System.AnsiString,System.AnsiString>>x
+  [STRING] FTList<EmwatMethod.TPair<System.AnsiString,System.AnsiString>>.arrayofT
+  [STRING] AIComparer<EmwatMethod.TPair<System.AnsiString,System.AnsiString>>
+  [STRING] NTCollectionNotifyEvent<EmwatMethod.TPair<System.AnsiString,System.AnsiString>>
+  [STRING] CIEnumerable<EmwatMethod.TPair<System.AnsiString,System.AnsiString>>
+  [STRING] HTList<EmwatMethod.TPair<System.AnsiString,System.AnsiString>>.TEmptyFunc
+  [STRING] ITList<EmwatMethod.TPair<System.AnsiString,System.AnsiString>>.TEnumerator5
+  [STRING] ITList<EmwatMethod.TPair<System.AnsiString,System.AnsiString>>.TEnumerator
+  [STRING] =TList<EmwatMethod.TPair<System.AnsiString,System.AnsiString>>&
+  [STRING] =TList<EmwatMethod.TPair<System.AnsiString,System.AnsiString>>p
+  [STRING] CTComparison<EmwatMethod.TPair<System.AnsiString,System.AnsiString>>
+  [STRING] ATComparer<EmwatMethod.TPair<System.AnsiString,System.AnsiString>>2
+  [STRING] ATComparer<EmwatMethod.TPair<System.AnsiString,System.AnsiString>>t
+  [STRING] P.TList`1.Pack$224$0$Intf<EmwatMethod.TPair<System.AnsiString,System.AnsiString>>
+  [STRING] P@TList`1.Pack$224$ActRec<EmwatMethod.TPair<System.AnsiString,System.AnsiString>>
+  [STRING] P@TList`1.Pack$224$ActRec<EmwatMethod.TPair<System.AnsiString,System.AnsiString>>X
+  [STRING] P.TList`1.Pack$226$0$Intf<EmwatMethod.TPair<System.AnsiString,System.AnsiString>>
+  [STRING] P@TList`1.Pack$226$ActRec<EmwatMethod.TPair<System.AnsiString,System.AnsiString>>
+  [STRING] JTDelegatedComparer<EmwatMethod.TPair<System.AnsiString,System.AnsiString>>8
+  [STRING] JTDelegatedComparer<EmwatMethod.TPair<System.AnsiString,System.AnsiString>>
+  [STRING] Emwat
+  [STRING] emwat
+  [STRING] msgTerminateEmwatService
+  [STRING] <?xml version="1.0" encoding="utf-8" ?> <emwat version="1.0">  <method class="ShowEmwatSetting"> </method> </emwat>
+  [STRING] <?xml version="1.0" encoding="utf-8" ?> <emwat version="1.0">  <method class="ShowSendLog"> </method> </emwat>
+  [STRING] <?xml version="1.0" encoding="utf-8" ?> <emwat version="1.0">  <method class="ShowLastEditedDocs"> </method> </emwat>
+  [STRING] EmwatConsts
+  [STRING] Emwat.Sys
+  [STRING] OfficeXP
+  [STRING] EmwatMethod
+  [STRING] EmwatService.exe
+  [STRING] EmwatService
+  [STRING] OEmwatConsts
+  [STRING] {EmwatMethod
+  [STRING] 4Empowered Web Application Technology (Emwat) Service
+  [STRING] .mdb=application/x-msaccess
+  [STRING] temp-emwatwf\
+  [STRING] GamElectronic EMWAT
+  [STRING] TUpgradeEmwat
+  [STRING] Emwat method called from
+  [STRING] Unable to load "EmwatMethods.bpl".
+  [STRING] Emwat init script requested from
+  [STRING] emwat-diag\
+  [STRING] Port binding failed. Make sure Emwat is not running and port 1984 is free.
+  [STRING] \EmwatMethods.bpl
+  [STRING] EmwatMethods.bpl
+  [STRING] "EmwatMethods.bpl" loaded.
+  [STRING] Software\Emwat\Dynamic Config
+  [STRING] Emwat Service
+  [STRING] Empowered Web Application Technology (Emwat) Service
+  [STRING] Empowered Web Application Technology (Emwat)
+  [RESOURCE] type=ICON name=1 lang=1033 size=9640 rva=0xa24e4
+  [RESOURCE] type=ICON name=2 lang=1033 size=4264 rva=0xa4a8c
+  [RESOURCE] type=ICON name=3 lang=1033 size=1128 rva=0xa5b34
+  [RESOURCE] type=STRING name=4085 lang=0 size=656 rva=0xa5f9c
+  [RESOURCE] type=STRING name=4086 lang=0 size=936 rva=0xa622c
+  [RESOURCE] type=STRING name=4087 lang=0 size=836 rva=0xa65d4
+  [RESOURCE] type=STRING name=4088 lang=0 size=516 rva=0xa6918
+  [RESOURCE] type=STRING name=4089 lang=0 size=552 rva=0xa6b1c
+  [RESOURCE] type=STRING name=4090 lang=0 size=1196 rva=0xa6d44
+  [RESOURCE] type=STRING name=4091 lang=0 size=816 rva=0xa71f0
+  [RESOURCE] type=STRING name=4092 lang=0 size=1140 rva=0xa7520
+  [RESOURCE] type=STRING name=4093 lang=0 size=928 rva=0xa7994
+  [RESOURCE] type=STRING name=4094 lang=0 size=984 rva=0xa7d34
+  [RESOURCE] type=STRING name=4095 lang=0 size=752 rva=0xa810c
+  [RESOURCE] type=STRING name=4096 lang=0 size=796 rva=0xa83fc
+  [RESOURCE] type=RCDATA name=DVCLAL lang=0 size=16 rva=0xa8718
+  [RESOURCE] type=RCDATA name=PACKAGEINFO lang=0 size=1100 rva=0xa8728
+  [STRING] EmwatService
+  [STRING] OfficeXP
+  [STRING] OEmwatConsts
+  [STRING] Emwat.Sys
+  [STRING] {EmwatMethod
+  [STRING] Emwat
+  [RESOURCE] type=RCDATA name=PLATFORMTARGETS lang=1033 size=2 rva=0xa8b74
+  [RESOURCE] type=RCDATA name=TMAINFORM lang=0 size=7507 rva=0xa8b78
+  [STRING] 4Empowered Web Application Technology (Emwat) Service
+  [RESOURCE] type=GROUP_ICON name=MAINICON lang=1033 size=48 rva=0xaa8cc
+  [RESOURCE] type=VERSION name=1 lang=1033 size=828 rva=0xaa8fc
+  [STRING] Empowered Web Application Technology (Emwat) Service
+  [STRING] EmwatService.exe
+  [STRING] Empowered Web Application Technology (Emwat)
+  [RESOURCE TOTAL] 21
+
+========================================================================
+FILE: EmwatUpdate.exe
+SIZE: 143872
+SHA256: 56ad8bfe89fc2abca6141fe8ab843128124d47ff8b5d33f1677d11851cbc7da9
+  [GUID] 4369E136-8FCE-4475-9520-045CC47013DD | context: m HH:mm:ss GetDiskFreeSpaceExW %s-%s EmwatService.exe /f /im EmwatAgent.exe taskkill.exe {4369E136-8FCE-4475-9520-045CC47013DD} /f /im EmwatService.exe {2EC42BF4-EA08-4476-AB86-466763F80E9A} EmwatAgent.exe 0001020304
+  [GUID] 2EC42BF4-EA08-4476-AB86-466763F80E9A | context: watAgent.exe taskkill.exe {4369E136-8FCE-4475-9520-045CC47013DD} /f /im EmwatService.exe {2EC42BF4-EA08-4476-AB86-466763F80E9A} EmwatAgent.exe 0001020304050607080910111213141516171819202122232425262728293031323334353
+  [STRING] EmwatUpdate.exe
+  [STRING] Emwat Methods Package
+  [STRING] EmwatUpdate
+  [STRING] EmwatService.exe
+  [STRING] /f /im EmwatAgent.exe
+  [STRING] /f /im EmwatService.exe
+  [STRING] EmwatAgent.exe
+  [STRING] Integer overflow Invalid floating point operationEmwat Methods Package
+  [RESOURCE] type=ICON name=1 lang=1033 size=2216 rva=0x2a4d0
+  [RESOURCE] type=ICON name=2 lang=1033 size=1736 rva=0x2ad78
+  [RESOURCE] type=ICON name=3 lang=1033 size=1384 rva=0x2b440
+  [RESOURCE] type=ICON name=4 lang=1033 size=4264 rva=0x2b9a8
+  [RESOURCE] type=ICON name=5 lang=1033 size=2440 rva=0x2ca50
+  [RESOURCE] type=ICON name=6 lang=1033 size=1128 rva=0x2d3d8
+  [RESOURCE] type=STRING name=4090 lang=0 size=428 rva=0x2d840
+  [RESOURCE] type=STRING name=4091 lang=0 size=508 rva=0x2d9ec
+  [RESOURCE] type=STRING name=4092 lang=0 size=196 rva=0x2dbe8
+  [RESOURCE] type=STRING name=4093 lang=0 size=304 rva=0x2dcac
+  [RESOURCE] type=STRING name=4094 lang=0 size=796 rva=0x2dddc
+  [RESOURCE] type=STRING name=4095 lang=0 size=852 rva=0x2e0f8
+  [RESOURCE] type=STRING name=4096 lang=0 size=696 rva=0x2e44c
+  [RESOURCE] type=RCDATA name=DESCRIPTION lang=0 size=44 rva=0x2e704
+  [STRING] Emwat Methods Package
+  [RESOURCE] type=RCDATA name=DVCLAL lang=0 size=16 rva=0x2e730
+  [RESOURCE] type=RCDATA name=PACKAGEINFO lang=0 size=316 rva=0x2e740
+  [STRING] EmwatUpdate
+  [RESOURCE] type=RCDATA name=PLATFORMTARGETS lang=1033 size=2 rva=0x2e87c
+  [RESOURCE] type=GROUP_ICON name=MAINICON lang=1033 size=90 rva=0x2e880
+  [RESOURCE] type=VERSION name=1 lang=1033 size=328 rva=0x2e8dc
+  [RESOURCE] type=MANIFEST name=1 lang=1033 size=781 rva=0x2ea24
+  [RESOURCE TOTAL] 20
+
+========================================================================
+FILE: GAMPrinterSetup\advimage.ini
+SIZE: 566
+SHA256: a1f8a7a9ef7ff570fe48960eaf232b431a4dd01051c62df7055e26fa2e8d6c89
+  [PE PARSE] not a PE or parse error: 'DOS Header magic not found.'
+
+========================================================================
+FILE: GAMPrinterSetup\app.ini
+SIZE: 222
+SHA256: 0a4b0cb24e6721e0e22cdd753f928e341ed8bdf3af7ae126d5e7aaa2e156c7c1
+  [PE PARSE] not a PE or parse error: 'DOS Header magic not found.'
+
+========================================================================
+FILE: GAMPrinterSetup\AutoRegister.exe
+SIZE: 319488
+SHA256: ede22b2249e57b4377e3761a9851d8b591c1bfcdd807bd14824de032dc0562fb
+  [RESOURCE] type=STRING name=4088 lang=0 size=500 rva=0x4e304
+  [RESOURCE] type=STRING name=4089 lang=0 size=900 rva=0x4e4f8
+  [RESOURCE] type=STRING name=4090 lang=0 size=912 rva=0x4e87c
+  [RESOURCE] type=STRING name=4091 lang=0 size=232 rva=0x4ec0c
+  [RESOURCE] type=STRING name=4092 lang=0 size=196 rva=0x4ecf4
+  [RESOURCE] type=STRING name=4093 lang=0 size=604 rva=0x4edb8
+  [RESOURCE] type=STRING name=4094 lang=0 size=1084 rva=0x4f014
+  [RESOURCE] type=STRING name=4095 lang=0 size=888 rva=0x4f450
+  [RESOURCE] type=STRING name=4096 lang=0 size=676 rva=0x4f7c8
+  [RESOURCE] type=RCDATA name=CHARTABLE lang=1033 size=33512 rva=0x4fa6c
+  [RESOURCE] type=RCDATA name=DESCRIPTION lang=0 size=52 rva=0x57d54
+  [RESOURCE] type=RCDATA name=DVCLAL lang=0 size=16 rva=0x57d88
+  [RESOURCE] type=RCDATA name=PACKAGEINFO lang=0 size=256 rva=0x57d98
+  [RESOURCE TOTAL] 13
+
+========================================================================
+FILE: GAMPrinterSetup\docuname.ini
+SIZE: 164
+SHA256: 5583eb7942458a7cfbb98f9a717e2e871c4b94341d0bdfc6aaae225e1d8c1bf3
+  [PE PARSE] not a PE or parse error: 'DOS Header magic not found.'
+
+========================================================================
+FILE: GAMPrinterSetup\email.ini
+SIZE: 466
+SHA256: 065427ef80385cde1041089867c8cf54e396c22c598507b9b1d71c9cae803dbc
+  [PE PARSE] not a PE or parse error: 'DOS Header magic not found.'
+
+========================================================================
+FILE: GAMPrinterSetup\event.ini
+SIZE: 272
+SHA256: 086613935c05d18458a637c31a0050bd9ba3eef680c6b10279949468278b5e74
+  [PE PARSE] not a PE or parse error: 'DOS Header magic not found.'
+
+========================================================================
+FILE: GAMPrinterSetup\ftp.ini
+SIZE: 136
+SHA256: d239fa4f4f778f4068ae40e394af0f84261a6c654d2ae374f8b4c416945b44a2
+  [PE PARSE] not a PE or parse error: 'DOS Header magic not found.'
+
+========================================================================
+FILE: GAMPrinterSetup\general.ini
+SIZE: 508
+SHA256: 76dec37975ede9b9eea91155b2db12a27f62e7b7e47e31fd395b9a9123bf0162
+  [PE PARSE] not a PE or parse error: 'DOS Header magic not found.'
+
+========================================================================
+FILE: GAMPrinterSetup\histdb_docuname.ini
+SIZE: 96
+SHA256: 8bfe0058229ae654b9da4dbe94659dae5a3e99458056159f94650a1525ff6429
+  [PE PARSE] not a PE or parse error: 'DOS Header magic not found.'
+
+========================================================================
+FILE: GAMPrinterSetup\histdb_emailserver.ini
+SIZE: 422
+SHA256: 76b8253d0d3600c9c2e6a6e66069633f4cfaae0eddac515091e125a5da91935b
+  [PE PARSE] not a PE or parse error: 'DOS Header magic not found.'
+
+========================================================================
+FILE: GAMPrinterSetup\histdb_ftpusername.ini
+SIZE: 58
+SHA256: ec8be0919cf65720671290e80dd734eb815de6f595610c7b1e1e59684ea0129d
+  [PE PARSE] not a PE or parse error: 'Unable to read the DOS Header, possibly a truncated file.'
+
+========================================================================
+FILE: GAMPrinterSetup\image_bw.ini
+SIZE: 502
+SHA256: 47d6239d680f748e05ada767504390478b25300735da8918fcbe48355bd073ab
+  [PE PARSE] not a PE or parse error: 'DOS Header magic not found.'
+
+========================================================================
+FILE: GAMPrinterSetup\image_color.ini
+SIZE: 502
+SHA256: 445236f73369982c7ab6c71d7ba5b8867048147931a35639340005565175b0d8
+  [PE PARSE] not a PE or parse error: 'DOS Header magic not found.'
+
+========================================================================
+FILE: GAMPrinterSetup\image_fax.ini
+SIZE: 502
+SHA256: d8c4f3698e67d07d24af977a2b5b9eed18b5c57ce1b09dc48f99bf0c3c6e091f
+  [PE PARSE] not a PE or parse error: 'DOS Header magic not found.'
+
+========================================================================
+FILE: GAMPrinterSetup\message.ini
+SIZE: 166
+SHA256: f1a31b75477c810849b7cc50e0bc27a302d905a06b8137006ebc77edde086d30
+  [PE PARSE] not a PE or parse error: 'DOS Header magic not found.'
+
+========================================================================
+FILE: GAMPrinterSetup\orientation.ini
+SIZE: 80
+SHA256: 0a15b3173d69c9f562bec0118d749739d984c62384d3c8f67633a4fec4ea0797
+  [PE PARSE] not a PE or parse error: 'DOS Header magic not found.'
+
+========================================================================
+FILE: GAMPrinterSetup\printerredirection.ini
+SIZE: 842
+SHA256: b35ae11eebadfb5b0e4b52d85e25b4a82d507851dd806aebb0bbfebb94f2adb5
+  [PE PARSE] not a PE or parse error: 'DOS Header magic not found.'
+
+========================================================================
+FILE: GAMPrinterSetup\save.ini
+SIZE: 186
+SHA256: 0efd0151b03f00ecdc642a1cff1966db62a810a397b09c774ed5de7fdcd92ccd
+  [PE PARSE] not a PE or parse error: 'DOS Header magic not found.'
+
+========================================================================
+FILE: GAMPrinterSetup\sentineltemplate.txt
+SIZE: 40
+SHA256: 3813c0a65ad3f24416d34303c94f7ea2660401d4c58551c7f3c4a8831051c54e
+  [PE PARSE] not a PE or parse error: 'Unable to read the DOS Header, possibly a truncated file.'
+
+========================================================================
+FILE: GAMPrinterSetup\setup.ini
+SIZE: 2119
+SHA256: ea0b5f2fa620593c9c0dbde2a7274d726b3d6a6d77864e70e151aa3491f3a18c
+  [PE PARSE] not a PE or parse error: 'DOS Header magic not found.'
+
+========================================================================
+FILE: GAMPrinterSetup\text.ini
+SIZE: 252
+SHA256: d9c3bd1afec8df8fb20ba2928f343a8a5adc6906bb47aaeeb5dd131a5a67ec0f
+  [PE PARSE] not a PE or parse error: 'DOS Header magic not found.'
+
+========================================================================
+FILE: GAMPrinterSetup\uninstall_x64.exe
+SIZE: 360960
+SHA256: 9416cc8c69548c1d570136b2e3f8f153e199aeeeb1ebb9c0c45adb56ff5a2d3a
+  [GUID] ADB880A6-D8FF-11CF-9377-00AA003B7A11 | context:  change mind, but not allowed Zip-bug: an internal error during flation hhctrl.ocx CLSID\{ADB880A6-D8FF-11CF-9377-00AA003B7A11}\InprocServer32 C:\bmpzan\uninstall\uninstall___Win32_Release_AMD64\uninstall_x64.pdb Out
+  [STRING] CLSID\{ADB880A6-D8FF-11CF-9377-00AA003B7A11}\InprocServer32
+  [RESOURCE] type=DIALOG name=101 lang=1033 size=224 rva=0x7b1c0
+  [RESOURCE] type=STRING name=1 lang=1033 size=56 rva=0x7b9f8
+  [RESOURCE] type=STRING name=2 lang=1033 size=164 rva=0x7ba30
+  [RESOURCE] type=STRING name=3 lang=1033 size=728 rva=0x7bad8
+  [RESOURCE] type=STRING name=4 lang=1033 size=244 rva=0x7b900
+  [RESOURCE] type=VERSION name=1 lang=1033 size=784 rva=0x7b2a0
+  [RESOURCE] type=MANIFEST name=1 lang=1033 size=846 rva=0x7b5b0
+  [RESOURCE TOTAL] 7
+
+========================================================================
+FILE: GAMPrinterSetup\uninstall_x86.exe
+SIZE: 335872
+SHA256: d1709dbb13ad49a0aeed83b8f542edc723d0e25a22c99fa3618ea9fa6d283416
+  [GUID] ADB880A6-D8FF-11CF-9377-00AA003B7A11 | context:  change mind, but not allowed Zip-bug: an internal error during flation hhctrl.ocx CLSID\{ADB880A6-D8FF-11CF-9377-00AA003B7A11}\InprocServer32  (8PX 700WP `h```` ppxxxx (null) SunMonTueWedThuFriSat JanFebMarAprMayJun
+  [STRING] CLSID\{ADB880A6-D8FF-11CF-9377-00AA003B7A11}\InprocServer32
+  [RESOURCE] type=DIALOG name=101 lang=1033 size=224 rva=0x741c0
+  [RESOURCE] type=STRING name=1 lang=1033 size=56 rva=0x749f8
+  [RESOURCE] type=STRING name=2 lang=1033 size=164 rva=0x74a30
+  [RESOURCE] type=STRING name=3 lang=1033 size=728 rva=0x74ad8
+  [RESOURCE] type=STRING name=4 lang=1033 size=244 rva=0x74900
+  [RESOURCE] type=VERSION name=1 lang=1033 size=784 rva=0x742a0
+  [RESOURCE] type=MANIFEST name=1 lang=1033 size=846 rva=0x745b0
+  [RESOURCE TOTAL] 7
+
+========================================================================
+FILE: GAMPrinterSetup\watermark.ini
+SIZE: 3704
+SHA256: 6de3951503e1680a6b323641ad1f99eff0b0975c5136f9aef764acfde71bca08
+  [PE PARSE] not a PE or parse error: 'DOS Header magic not found.'
+
+========================================================================
+FILE: GAMPrinterSetup\zvprt.bin
+SIZE: 280
+SHA256: 688ce80ab4d0dd62220082b086e2f307d3889ac11f7bc2f248fe5aa23e688b12
+  [PE PARSE] not a PE or parse error: 'DOS Header magic not found.'
+
+========================================================================
+FILE: GAMPrinterSetup\zvprt5.ini
+SIZE: 77
+SHA256: 49dc01293773ffe028dc017637f3a39dba38e52aea4e47a8f6142dd628e640c6
+  [PE PARSE] not a PE or parse error: 'DOS Header magic not found.'
+
+========================================================================
+FILE: GAMPrinterSetup\zvprt5.sed
+SIZE: 2602
+SHA256: 1d22c45b934eeb706dd05d032d195e7d2f23e1484a1650103b43e475c9ca10a8
+  [PE PARSE] not a PE or parse error: 'DOS Header magic not found.'
+
+========================================================================
+FILE: GAMPrinterSetup\zvprt5_setup.exe
+SIZE: 23552
+SHA256: c2e7906835768728f75a5dc051685892f8cf3a5e928d608017b79587c186e4c8
+  [RESOURCES] none
+
+========================================================================
+FILE: GAMPrinterSetup\zvprt5_setup_x64.exe
+SIZE: 396288
+SHA256: 8006a0fb025348b5b56ac12247b75384f796cf4a745a4a1fb0c1fc5918015b34
+  [GUID] ADB880A6-D8FF-11CF-9377-00AA003B7A11 | context:  change mind, but not allowed Zip-bug: an internal error during flation hhctrl.ocx CLSID\{ADB880A6-D8FF-11CF-9377-00AA003B7A11}\InprocServer32 C:\bmpzan\setup\setup___Win32_Release_AMD64\zvprt5_setup_x64.pdb OutputDe
+  [GUID] e2011457-1546-43c5-a5fe-008deee3d3f0 | context: -The ID below indicates application support for Windows Vista -->       <supportedOS Id="{e2011457-1546-43c5-a5fe-008deee3d3f0}"/>     <!--The ID below indicates application support for Windows 7 -->       <supported
+  [GUID] 35138b9a-5d96-4fbd-8e2d-a2440225f93a | context:  <!--The ID below indicates application support for Windows 7 -->       <supportedOS Id="{35138b9a-5d96-4fbd-8e2d-a2440225f93a}"/>   </application> </compatibility> </assembly> %d:%02d:%02d--- logfile debuglogging en
+  [STRING] CLSID\{ADB880A6-D8FF-11CF-9377-00AA003B7A11}\InprocServer32
+  [RESOURCE] type=MENU name=116 lang=1033 size=74 rva=0x841d8
+  [RESOURCE] type=MENU name=117 lang=1033 size=82 rva=0x84228
+  [RESOURCE] type=DIALOG name=102 lang=1033 size=1742 rva=0x82390
+  [RESOURCE] type=DIALOG name=103 lang=1033 size=824 rva=0x82a60
+  [RESOURCE] type=DIALOG name=109 lang=1033 size=750 rva=0x82d98
+  [RESOURCE] type=DIALOG name=110 lang=1033 size=598 rva=0x83088
+  [RESOURCE] type=DIALOG name=111 lang=1033 size=566 rva=0x832e0
+  [RESOURCE] type=DIALOG name=112 lang=1033 size=424 rva=0x83518
+  [RESOURCE] type=DIALOG name=151 lang=1033 size=376 rva=0x836c0
+  [RESOURCE] type=DIALOG name=152 lang=1033 size=562 rva=0x83838
+  [RESOURCE] type=STRING name=1 lang=1033 size=650 rva=0x84280
+  [RESOURCE] type=STRING name=2 lang=1033 size=1200 rva=0x84510
+  [RESOURCE] type=STRING name=3 lang=1033 size=1646 rva=0x849c0
+  [RESOURCE] type=STRING name=4 lang=1033 size=366 rva=0x85030
+  [RESOURCE] type=VERSION name=1 lang=1033 size=644 rva=0x83a70
+  [RESOURCE] type=MANIFEST name=1 lang=1033 size=1243 rva=0x83cf8
+  [GUID] e2011457-1546-43c5-a5fe-008deee3d3f0 | context: -The ID below indicates application support for Windows Vista -->       <supportedOS Id="{e2011457-1546-43c5-a5fe-008deee3d3f0}"/>     <!--The ID below indicates application support for Windows 7 -->       <supported
+  [GUID] 35138b9a-5d96-4fbd-8e2d-a2440225f93a | context:  <!--The ID below indicates application support for Windows 7 -->       <supportedOS Id="{35138b9a-5d96-4fbd-8e2d-a2440225f93a}"/>   </application> </compatibility> </assembly>
+  [RESOURCE TOTAL] 16
+
+========================================================================
+FILE: GAMPrinterSetup\zvprt5_setup_x86.exe
+SIZE: 372736
+SHA256: 76b67dc1b7917432e592fa17edbd4e8f80233e7f33ab61eaacc8b7a76691c4a0
+  [GUID] ADB880A6-D8FF-11CF-9377-00AA003B7A11 | context:  change mind, but not allowed Zip-bug: an internal error during flation hhctrl.ocx CLSID\{ADB880A6-D8FF-11CF-9377-00AA003B7A11}\InprocServer32  (8PX 700WP `h```` ppxxxx (null) SunMonTueWedThuFriSat JanFebMarAprMayJun
+  [GUID] e2011457-1546-43c5-a5fe-008deee3d3f0 | context: -The ID below indicates application support for Windows Vista -->       <supportedOS Id="{e2011457-1546-43c5-a5fe-008deee3d3f0}"/>     <!--The ID below indicates application support for Windows 7 -->       <supported
+  [GUID] 35138b9a-5d96-4fbd-8e2d-a2440225f93a | context:  <!--The ID below indicates application support for Windows 7 -->       <supportedOS Id="{35138b9a-5d96-4fbd-8e2d-a2440225f93a}"/>   </application> </compatibility> </assembly> jjjjj jjjjjj jjjjjjj %d:%02d:%02d--- lo
+  [STRING] CLSID\{ADB880A6-D8FF-11CF-9377-00AA003B7A11}\InprocServer32
+  [RESOURCE] type=MENU name=116 lang=1033 size=74 rva=0x7c1d8
+  [RESOURCE] type=MENU name=117 lang=1033 size=82 rva=0x7c228
+  [RESOURCE] type=DIALOG name=102 lang=1033 size=1742 rva=0x7a390
+  [RESOURCE] type=DIALOG name=103 lang=1033 size=824 rva=0x7aa60
+  [RESOURCE] type=DIALOG name=109 lang=1033 size=750 rva=0x7ad98
+  [RESOURCE] type=DIALOG name=110 lang=1033 size=598 rva=0x7b088
+  [RESOURCE] type=DIALOG name=111 lang=1033 size=566 rva=0x7b2e0
+  [RESOURCE] type=DIALOG name=112 lang=1033 size=424 rva=0x7b518
+  [RESOURCE] type=DIALOG name=151 lang=1033 size=376 rva=0x7b6c0
+  [RESOURCE] type=DIALOG name=152 lang=1033 size=562 rva=0x7b838
+  [RESOURCE] type=STRING name=1 lang=1033 size=650 rva=0x7c280
+  [RESOURCE] type=STRING name=2 lang=1033 size=1200 rva=0x7c510
+  [RESOURCE] type=STRING name=3 lang=1033 size=1646 rva=0x7c9c0
+  [RESOURCE] type=STRING name=4 lang=1033 size=366 rva=0x7d030
+  [RESOURCE] type=VERSION name=1 lang=1033 size=644 rva=0x7ba70
+  [RESOURCE] type=MANIFEST name=1 lang=1033 size=1243 rva=0x7bcf8
+  [GUID] e2011457-1546-43c5-a5fe-008deee3d3f0 | context: -The ID below indicates application support for Windows Vista -->       <supportedOS Id="{e2011457-1546-43c5-a5fe-008deee3d3f0}"/>     <!--The ID below indicates application support for Windows 7 -->       <supported
+  [GUID] 35138b9a-5d96-4fbd-8e2d-a2440225f93a | context:  <!--The ID below indicates application support for Windows 7 -->       <supportedOS Id="{35138b9a-5d96-4fbd-8e2d-a2440225f93a}"/>   </application> </compatibility> </assembly>
+  [RESOURCE TOTAL] 16
+
+========================================================================
+FILE: GAMPrinterSetup\zvprtcfg_win32_x64.exe
+SIZE: 739328
+SHA256: b4e608a368fee90c409b050d85616a9d655201e83db9eaf0b5463668eb2d4b1c
+  [GUID] ADB880A6-D8FF-11CF-9377-00AA003B7A11 | context: irtual Image Printer" print.shellexecute=c:\testfiles\*.txt;*.doc;*.xls hhctrl.ocx CLSID\{ADB880A6-D8FF-11CF-9377-00AA003B7A11}\InprocServer32  (8PX 700WP `h```` ppxxxx (null)  !"#$%&'()*+,-./0123456789:;<=>?@ABCDEFG
+  [ProgID] Word.Application | context: ug=%d pszCmdLine=%s SignalPrintDone enddoc Unable to create event "%s" 0 bytes: file "%s" Word.Application dwLoadDelay=%d ms dwQuitDelay=%d ms Printing file %s Submitting file "%s" for printing Pr
+  [STRING] CLSID\{ADB880A6-D8FF-11CF-9377-00AA003B7A11}\InprocServer32
+  [STRING] CLSIDFromProgID
+  [STRING] Word.Application
+  [RESOURCE] type=VERSION name=1 lang=1033 size=820 rva=0xb9060
+  [RESOURCE TOTAL] 1
+
+========================================================================
+FILE: GAMPrinterSetup\zvprtcfg_win32_x86.exe
+SIZE: 499712
+SHA256: 9c3c8deb721c6a5541c921d3b14400cffb81c6d36236c08b767756d3884dadce
+  [GUID] ADB880A6-D8FF-11CF-9377-00AA003B7A11 | context: irtual Image Printer" print.shellexecute=c:\testfiles\*.txt;*.doc;*.xls hhctrl.ocx CLSID\{ADB880A6-D8FF-11CF-9377-00AA003B7A11}\InprocServer32 Unknown exception  (8PX 700WP `h```` ppxxxx (null) SunMonTueWedThuFriSat 
+  [ProgID] Word.Application | context: ug=%d pszCmdLine=%s SignalPrintDone enddoc Unable to create event "%s" 0 bytes: file "%s" Word.Application dwLoadDelay=%d ms dwQuitDelay=%d ms Printing file %s Submitting file "%s" for printing Pr
+  [STRING] CLSID\{ADB880A6-D8FF-11CF-9377-00AA003B7A11}\InprocServer32
+  [STRING] CLSIDFromProgID
+  [STRING] Word.Application
+  [RESOURCE] type=VERSION name=1 lang=1033 size=820 rva=0x7b060
+  [RESOURCE TOTAL] 1
+
+========================================================================
+FILE: GAMPrinterSetup\zvprtcfg_x64.exe
+SIZE: 745984
+SHA256: 02256ef2cb27f540a703636c0a5ee025ba1419b7af46363d1badcb1d4dff88af
+  [GUID] ADB880A6-D8FF-11CF-9377-00AA003B7A11 | context: ecute=c:\testfiles\*.txt;*.doc;*.xls Error, no key-value pair specified hhctrl.ocx CLSID\{ADB880A6-D8FF-11CF-9377-00AA003B7A11}\InprocServer32  (8PX 700WP `h```` ppxxxx (null)  !"#$%&'()*+,-./0123456789:;<=>?@ABCDEFG
+  [ProgID] Word.Application | context: ug=%d pszCmdLine=%s SignalPrintDone enddoc Unable to create event "%s" 0 bytes: file "%s" Word.Application dwLoadDelay=%d ms dwQuitDelay=%d ms Printing file %s Submitting file "%s" for printing Pr
+  [STRING] CLSID\{ADB880A6-D8FF-11CF-9377-00AA003B7A11}\InprocServer32
+  [STRING] CLSIDFromProgID
+  [STRING] Word.Application
+  [RESOURCE] type=VERSION name=1 lang=1033 size=784 rva=0xba060
+  [RESOURCE TOTAL] 1
+
+========================================================================
+FILE: GAMPrinterSetup\zvprtcfg_x86.exe
+SIZE: 503808
+SHA256: a35983f232aa57015122ff4ad42b3db5ede584c808747667bb61e0d91fc9a424
+  [GUID] ADB880A6-D8FF-11CF-9377-00AA003B7A11 | context: ecute=c:\testfiles\*.txt;*.doc;*.xls Error, no key-value pair specified hhctrl.ocx CLSID\{ADB880A6-D8FF-11CF-9377-00AA003B7A11}\InprocServer32 Unknown exception  (8PX 700WP `h```` ppxxxx (null) SunMonTueWedThuFriSat 
+  [ProgID] Word.Application | context: ug=%d pszCmdLine=%s SignalPrintDone enddoc Unable to create event "%s" 0 bytes: file "%s" Word.Application dwLoadDelay=%d ms dwQuitDelay=%d ms Printing file %s Submitting file "%s" for printing Pr
+  [STRING] CLSID\{ADB880A6-D8FF-11CF-9377-00AA003B7A11}\InprocServer32
+  [STRING] CLSIDFromProgID
+  [STRING] Word.Application
+  [RESOURCE] type=VERSION name=1 lang=1033 size=784 rva=0x7c060
+  [RESOURCE TOTAL] 1
+
+========================================================================
+FILE: GAMPrinterSetup\zvprtemail_x64.exe
+SIZE: 2178048
+SHA256: 44eb61e05fd861ce6622cbdbb2f26df776a6f96ef20e295ad5bbf017ea726fea
+  [STRING] StringFromCLSID
+  [STRING] CLSIDFromString
+  [STRING] CLSID
+  [RESOURCE] type=VERSION name=1 lang=1033 size=632 rva=0x21e0a0
+  [RESOURCE] type=MANIFEST name=1 lang=1033 size=364 rva=0x21e318
+  [RESOURCE TOTAL] 2
+
+========================================================================
+FILE: GAMPrinterSetup\zvprtemail_x86.exe
+SIZE: 1355776
+SHA256: 774f64a51567984a262320732e3c0e81a612de9cc60bbeadc56897d2ec1334c6
+  [STRING] StringFromCLSID
+  [STRING] CLSIDFromString
+  [STRING] CLSID
+  [RESOURCE] type=VERSION name=1 lang=1033 size=632 rva=0x1500a0
+  [RESOURCE] type=MANIFEST name=1 lang=1033 size=362 rva=0x150318
+  [RESOURCE TOTAL] 2
+
+========================================================================
+FILE: GAMPrinterSetup\zvprthlp.chm
+SIZE: 0
+SHA256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+  [PE PARSE] not a PE or parse error: 'Unable to read the DOS Header, possibly a truncated file.'
+
+========================================================================
+FILE: GAMPrinterSetup\zvprtmon5_x64.dll
+SIZE: 22528
+SHA256: 7f26bbdb0ee1d40d2893124ae668e9f9734832e596b75a4775459f4cd142fa38
+  [RESOURCE] type=STRING name=32 lang=1033 size=270 rva=0x83c8
+  [RESOURCE] type=VERSION name=1 lang=1033 size=808 rva=0x80a0
+  [RESOURCE TOTAL] 2
+
+========================================================================
+FILE: GAMPrinterSetup\zvprtmon5_x86.dll
+SIZE: 13921
+SHA256: 4110a7fa9e25d41fa6ce5cc103dc58c524afe639545e9062d71a3f4822431459
+  [RESOURCE] type=DIALOG name=600 lang=1033 size=242 rva=0x40f0
+  [RESOURCE] type=STRING name=32 lang=1033 size=270 rva=0x4510
+  [RESOURCE] type=VERSION name=1 lang=1033 size=808 rva=0x41e8
+  [RESOURCE TOTAL] 3
+
+========================================================================
+FILE: GAMPrinterSetup\zvprtmonui5_x64.dll
+SIZE: 16384
+SHA256: 4512ed484d6105e47f54aeb08b4ade74848fff3d72ccef100c96fe8ce3884cc8
+  [RESOURCE] type=DIALOG name=200 lang=1033 size=234 rva=0x6458
+  [RESOURCE] type=DIALOG name=300 lang=1033 size=314 rva=0x6548
+  [RESOURCE] type=STRING name=19 lang=1033 size=244 rva=0x69c0
+  [RESOURCE] type=VERSION name=1 lang=1033 size=820 rva=0x6688
+  [RESOURCE] type=MANIFEST name=123 lang=1033 size=759 rva=0x6160
+  [RESOURCE TOTAL] 5
+
+========================================================================
+FILE: GAMPrinterSetup\zvprtmonui5_x86.dll
+SIZE: 9443
+SHA256: 8fc621f0f2ced5121933a5356ab1c1923b441b85f33fba81f6cd4eb1db813ed6
+  [RESOURCE] type=DIALOG name=200 lang=1033 size=234 rva=0x4120
+  [RESOURCE] type=DIALOG name=300 lang=1033 size=314 rva=0x4210
+  [RESOURCE] type=STRING name=19 lang=1033 size=244 rva=0x4688
+  [RESOURCE] type=VERSION name=1 lang=1033 size=820 rva=0x4350
+  [RESOURCE TOTAL] 4
+
+========================================================================
+FILE: GAMPrinterSetup\zvprtres_x64.dll
+SIZE: 127488
+SHA256: f5ec78f269d0e280a8eb5b5b5087aa9b0672ee0bcc7643f2d799219bee1b892c
+  [RESOURCE] type=BITMAP name=120 lang=1033 size=15660 rva=0x1bac0
+  [RESOURCE] type=BITMAP name=130 lang=1033 size=144 rva=0x1f7f0
+  [RESOURCE] type=ICON name=1 lang=1033 size=296 rva=0x16450
+  [RESOURCE] type=ICON name=2 lang=1033 size=2216 rva=0x16590
+  [RESOURCE] type=ICON name=3 lang=1033 size=2216 rva=0x16e50
+  [RESOURCE] type=ICON name=4 lang=1033 size=744 rva=0x17710
+  [RESOURCE] type=ICON name=5 lang=1033 size=2216 rva=0x17a10
+  [RESOURCE] type=ICON name=6 lang=1033 size=744 rva=0x182d0
+  [RESOURCE] type=ICON name=7 lang=1033 size=168 rva=0x185b8
+  [RESOURCE] type=ICON name=8 lang=1033 size=296 rva=0x18660
+  [RESOURCE] type=ICON name=9 lang=1033 size=744 rva=0x187b8
+  [RESOURCE] type=ICON name=10 lang=1033 size=168 rva=0x18aa0
+  [RESOURCE] type=ICON name=11 lang=1033 size=296 rva=0x18b48
+  [RESOURCE] type=ICON name=12 lang=1033 size=1384 rva=0x18ca0
+  [RESOURCE] type=ICON name=13 lang=1033 size=1384 rva=0x19220
+  [RESOURCE] type=ICON name=14 lang=1033 size=1384 rva=0x197a0
+  [RESOURCE] type=MENU name=116 lang=1033 size=3418 rva=0x19d20
+  [RESOURCE] type=MENU name=117 lang=1033 size=4080 rva=0x1aa80
+  [RESOURCE] type=MENU name=118 lang=1033 size=74 rva=0x1ba70
+  [RESOURCE] type=DIALOG name=102 lang=1033 size=734 rva=0xe470
+  [RESOURCE] type=DIALOG name=106 lang=1033 size=966 rva=0xd878
+  [RESOURCE] type=DIALOG name=107 lang=1033 size=530 rva=0xdf70
+  [RESOURCE] type=DIALOG name=108 lang=1033 size=818 rva=0xd540
+  [RESOURCE] type=DIALOG name=110 lang=1033 size=1184 rva=0xe750
+  [RESOURCE] type=DIALOG name=111 lang=1033 size=802 rva=0xebf0
+  [RESOURCE] type=DIALOG name=112 lang=1033 size=210 rva=0xef18
+  [RESOURCE] type=DIALOG name=113 lang=1033 size=1036 rva=0xeff0
+  [RESOURCE] type=DIALOG name=115 lang=1033 size=2694 rva=0xf400
+  [RESOURCE] type=DIALOG name=117 lang=1033 size=810 rva=0xdc40
+  [RESOURCE] type=DIALOG name=122 lang=1033 size=162 rva=0x10fc0
+  [RESOURCE] type=DIALOG name=123 lang=1033 size=1310 rva=0x11ee0
+  [RESOURCE] type=DIALOG name=126 lang=1033 size=290 rva=0xe188
+  [RESOURCE] type=DIALOG name=127 lang=1033 size=444 rva=0xe2b0
+  [RESOURCE] type=DIALOG name=128 lang=1033 size=286 rva=0x130c8
+  [RESOURCE] type=DIALOG name=129 lang=1033 size=2068 rva=0x131e8
+  [RESOURCE] type=DIALOG name=130 lang=1033 size=1328 rva=0xfe88
+  [RESOURCE] type=DIALOG name=131 lang=1033 size=1022 rva=0x103b8
+  [RESOURCE] type=DIALOG name=132 lang=1033 size=498 rva=0x107b8
+  [RESOURCE] type=DIALOG name=133 lang=1033 size=606 rva=0x109b0
+  [RESOURCE] type=DIALOG name=134 lang=1033 size=1612 rva=0x14150
+  [RESOURCE] type=DIALOG name=135 lang=1033 size=942 rva=0x10c10
+  [RESOURCE] type=DIALOG name=136 lang=1033 size=1306 rva=0x11068
+  [RESOURCE] type=DIALOG name=137 lang=1033 size=1118 rva=0x11588
+  [RESOURCE] type=DIALOG name=138 lang=1033 size=1272 rva=0x119e8
+  [RESOURCE] type=DIALOG name=139 lang=1033 size=626 rva=0x12400
+  [RESOURCE] type=DIALOG name=140 lang=1033 size=288 rva=0x12678
+  [RESOURCE] type=DIALOG name=141 lang=1033 size=336 rva=0x12798
+  [RESOURCE] type=DIALOG name=142 lang=1033 size=262 rva=0x128e8
+  [RESOURCE] type=DIALOG name=143 lang=1033 size=618 rva=0x129f0
+  [RESOURCE] type=DIALOG name=144 lang=1033 size=526 rva=0x12c60
+  [RESOURCE] type=DIALOG name=145 lang=1033 size=598 rva=0x12e70
+  [RESOURCE] type=DIALOG name=146 lang=1033 size=1872 rva=0x13a00
+  [RESOURCE] type=DIALOG name=147 lang=1033 size=1020 rva=0x147a0
+  [RESOURCE] type=DIALOG name=148 lang=1033 size=1112 rva=0x14ba0
+  [RESOURCE] type=DIALOG name=149 lang=1033 size=212 rva=0x14ff8
+  [RESOURCE] type=DIALOG name=150 lang=1033 size=1290 rva=0x150d0
+  [RESOURCE] type=DIALOG name=151 lang=1033 size=516 rva=0x155e0
+  [RESOURCE] type=DIALOG name=152 lang=1033 size=524 rva=0x157e8
+  [RESOURCE] type=DIALOG name=153 lang=1033 size=830 rva=0x159f8
+  [RESOURCE] type=DIALOG name=154 lang=1033 size=456 rva=0x15d38
+  [RESOURCE] type=DIALOG name=155 lang=1033 size=836 rva=0x15f00
+  [RESOURCE] type=DIALOG name=156 lang=1033 size=274 rva=0x16248
+  [RESOURCE] type=STRING name=19 lang=1033 size=160 rva=0x20250
+  [RESOURCE] type=STRING name=20 lang=1033 size=38 rva=0x202f0
+  [RESOURCE] type=STRING name=26 lang=1033 size=64 rva=0x20318
+  [RESOURCE] type=STRING name=29 lang=1033 size=194 rva=0x20358
+  [RESOURCE] type=STRING name=30 lang=1033 size=150 rva=0x20420
+  [RESOURCE] type=STRING name=79 lang=1033 size=316 rva=0x204b8
+  [RESOURCE] type=STRING name=80 lang=1033 size=1894 rva=0x205f8
+  [RESOURCE] type=STRING name=81 lang=1033 size=886 rva=0x20d60
+  [RESOURCE] type=STRING name=82 lang=1033 size=1740 rva=0x210d8
+  [RESOURCE] type=STRING name=83 lang=1033 size=1136 rva=0x217a8
+  [RESOURCE] type=STRING name=84 lang=1033 size=280 rva=0x21c18
+  [RESOURCE] type=STRING name=85 lang=1033 size=256 rva=0x21d30
+  [RESOURCE] type=STRING name=86 lang=1033 size=282 rva=0x21e30
+  [RESOURCE] type=STRING name=87 lang=1033 size=542 rva=0x21f50
+  [RESOURCE] type=STRING name=88 lang=1033 size=490 rva=0x22170
+  [RESOURCE] type=STRING name=89 lang=1033 size=810 rva=0x22360
+  [RESOURCE] type=STRING name=90 lang=1033 size=612 rva=0x22690
+  [RESOURCE] type=RCDATA name=119 lang=1033 size=2506 rva=0x1f880
+  [RESOURCE] type=GROUP_ICON name=101 lang=1033 size=20 rva=0x16578
+  [RESOURCE] type=GROUP_ICON name=105 lang=1033 size=20 rva=0x179f8
+  [RESOURCE] type=GROUP_ICON name=127 lang=1033 size=48 rva=0x18788
+  [RESOURCE] type=GROUP_ICON name=130 lang=1033 size=20 rva=0x182b8
+  [RESOURCE] type=GROUP_ICON name=161 lang=1033 size=20 rva=0x19208
+  [RESOURCE] type=GROUP_ICON name=162 lang=1033 size=20 rva=0x19d08
+  [RESOURCE] type=GROUP_ICON name=210 lang=1033 size=20 rva=0x16e38
+  [RESOURCE] type=GROUP_ICON name=213 lang=1033 size=20 rva=0x176f8
+  [RESOURCE] type=GROUP_ICON name=214 lang=1033 size=48 rva=0x18c70
+  [RESOURCE] type=GROUP_ICON name=215 lang=1033 size=20 rva=0x19788
+  [RESOURCE] type=VERSION name=1 lang=1033 size=784 rva=0xd230
+  [RESOURCE] type=240 name=126 lang=1033 size=233 rva=0x16360
+  [RESOURCE TOTAL] 92
+
+========================================================================
+FILE: GAMPrinterSetup\zvprtres_x86.dll
+SIZE: 135168
+SHA256: 6f85c842c42da878f96eb05b168877f3ad7c78a816d8bf681000f586fc3b8400
+  [RESOURCE] type=BITMAP name=120 lang=1033 size=15660 rva=0x19ac0
+  [RESOURCE] type=BITMAP name=130 lang=1033 size=144 rva=0x1d7f0
+  [RESOURCE] type=ICON name=1 lang=1033 size=296 rva=0x14450
+  [RESOURCE] type=ICON name=2 lang=1033 size=2216 rva=0x14590
+  [RESOURCE] type=ICON name=3 lang=1033 size=2216 rva=0x14e50
+  [RESOURCE] type=ICON name=4 lang=1033 size=744 rva=0x15710
+  [RESOURCE] type=ICON name=5 lang=1033 size=2216 rva=0x15a10
+  [RESOURCE] type=ICON name=6 lang=1033 size=744 rva=0x162d0
+  [RESOURCE] type=ICON name=7 lang=1033 size=168 rva=0x165b8
+  [RESOURCE] type=ICON name=8 lang=1033 size=296 rva=0x16660
+  [RESOURCE] type=ICON name=9 lang=1033 size=744 rva=0x167b8
+  [RESOURCE] type=ICON name=10 lang=1033 size=168 rva=0x16aa0
+  [RESOURCE] type=ICON name=11 lang=1033 size=296 rva=0x16b48
+  [RESOURCE] type=ICON name=12 lang=1033 size=1384 rva=0x16ca0
+  [RESOURCE] type=ICON name=13 lang=1033 size=1384 rva=0x17220
+  [RESOURCE] type=ICON name=14 lang=1033 size=1384 rva=0x177a0
+  [RESOURCE] type=MENU name=116 lang=1033 size=3418 rva=0x17d20
+  [RESOURCE] type=MENU name=117 lang=1033 size=4080 rva=0x18a80
+  [RESOURCE] type=MENU name=118 lang=1033 size=74 rva=0x19a70
+  [RESOURCE] type=DIALOG name=102 lang=1033 size=734 rva=0xc470
+  [RESOURCE] type=DIALOG name=106 lang=1033 size=966 rva=0xb878
+  [RESOURCE] type=DIALOG name=107 lang=1033 size=530 rva=0xbf70
+  [RESOURCE] type=DIALOG name=108 lang=1033 size=818 rva=0xb540
+  [RESOURCE] type=DIALOG name=110 lang=1033 size=1184 rva=0xc750
+  [RESOURCE] type=DIALOG name=111 lang=1033 size=802 rva=0xcbf0
+  [RESOURCE] type=DIALOG name=112 lang=1033 size=210 rva=0xcf18
+  [RESOURCE] type=DIALOG name=113 lang=1033 size=1036 rva=0xcff0
+  [RESOURCE] type=DIALOG name=115 lang=1033 size=2694 rva=0xd400
+  [RESOURCE] type=DIALOG name=117 lang=1033 size=810 rva=0xbc40
+  [RESOURCE] type=DIALOG name=122 lang=1033 size=162 rva=0xefc0
+  [RESOURCE] type=DIALOG name=123 lang=1033 size=1310 rva=0xfee0
+  [RESOURCE] type=DIALOG name=126 lang=1033 size=290 rva=0xc188
+  [RESOURCE] type=DIALOG name=127 lang=1033 size=444 rva=0xc2b0
+  [RESOURCE] type=DIALOG name=128 lang=1033 size=286 rva=0x110c8
+  [RESOURCE] type=DIALOG name=129 lang=1033 size=2068 rva=0x111e8
+  [RESOURCE] type=DIALOG name=130 lang=1033 size=1328 rva=0xde88
+  [RESOURCE] type=DIALOG name=131 lang=1033 size=1022 rva=0xe3b8
+  [RESOURCE] type=DIALOG name=132 lang=1033 size=498 rva=0xe7b8
+  [RESOURCE] type=DIALOG name=133 lang=1033 size=606 rva=0xe9b0
+  [RESOURCE] type=DIALOG name=134 lang=1033 size=1612 rva=0x12150
+  [RESOURCE] type=DIALOG name=135 lang=1033 size=942 rva=0xec10
+  [RESOURCE] type=DIALOG name=136 lang=1033 size=1306 rva=0xf068
+  [RESOURCE] type=DIALOG name=137 lang=1033 size=1118 rva=0xf588
+  [RESOURCE] type=DIALOG name=138 lang=1033 size=1272 rva=0xf9e8
+  [RESOURCE] type=DIALOG name=139 lang=1033 size=626 rva=0x10400
+  [RESOURCE] type=DIALOG name=140 lang=1033 size=288 rva=0x10678
+  [RESOURCE] type=DIALOG name=141 lang=1033 size=336 rva=0x10798
+  [RESOURCE] type=DIALOG name=142 lang=1033 size=262 rva=0x108e8
+  [RESOURCE] type=DIALOG name=143 lang=1033 size=618 rva=0x109f0
+  [RESOURCE] type=DIALOG name=144 lang=1033 size=526 rva=0x10c60
+  [RESOURCE] type=DIALOG name=145 lang=1033 size=598 rva=0x10e70
+  [RESOURCE] type=DIALOG name=146 lang=1033 size=1872 rva=0x11a00
+  [RESOURCE] type=DIALOG name=147 lang=1033 size=1020 rva=0x127a0
+  [RESOURCE] type=DIALOG name=148 lang=1033 size=1112 rva=0x12ba0
+  [RESOURCE] type=DIALOG name=149 lang=1033 size=212 rva=0x12ff8
+  [RESOURCE] type=DIALOG name=150 lang=1033 size=1290 rva=0x130d0
+  [RESOURCE] type=DIALOG name=151 lang=1033 size=516 rva=0x135e0
+  [RESOURCE] type=DIALOG name=152 lang=1033 size=524 rva=0x137e8
+  [RESOURCE] type=DIALOG name=153 lang=1033 size=830 rva=0x139f8
+  [RESOURCE] type=DIALOG name=154 lang=1033 size=456 rva=0x13d38
+  [RESOURCE] type=DIALOG name=155 lang=1033 size=836 rva=0x13f00
+  [RESOURCE] type=DIALOG name=156 lang=1033 size=274 rva=0x14248
+  [RESOURCE] type=STRING name=19 lang=1033 size=160 rva=0x1e250
+  [RESOURCE] type=STRING name=20 lang=1033 size=38 rva=0x1e2f0
+  [RESOURCE] type=STRING name=26 lang=1033 size=64 rva=0x1e318
+  [RESOURCE] type=STRING name=29 lang=1033 size=194 rva=0x1e358
+  [RESOURCE] type=STRING name=30 lang=1033 size=150 rva=0x1e420
+  [RESOURCE] type=STRING name=79 lang=1033 size=316 rva=0x1e4b8
+  [RESOURCE] type=STRING name=80 lang=1033 size=1894 rva=0x1e5f8
+  [RESOURCE] type=STRING name=81 lang=1033 size=886 rva=0x1ed60
+  [RESOURCE] type=STRING name=82 lang=1033 size=1740 rva=0x1f0d8
+  [RESOURCE] type=STRING name=83 lang=1033 size=1136 rva=0x1f7a8
+  [RESOURCE] type=STRING name=84 lang=1033 size=280 rva=0x1fc18
+  [RESOURCE] type=STRING name=85 lang=1033 size=256 rva=0x1fd30
+  [RESOURCE] type=STRING name=86 lang=1033 size=282 rva=0x1fe30
+  [RESOURCE] type=STRING name=87 lang=1033 size=542 rva=0x1ff50
+  [RESOURCE] type=STRING name=88 lang=1033 size=490 rva=0x20170
+  [RESOURCE] type=STRING name=89 lang=1033 size=810 rva=0x20360
+  [RESOURCE] type=STRING name=90 lang=1033 size=612 rva=0x20690
+  [RESOURCE] type=RCDATA name=119 lang=1033 size=2506 rva=0x1d880
+  [RESOURCE] type=GROUP_ICON name=101 lang=1033 size=20 rva=0x14578
+  [RESOURCE] type=GROUP_ICON name=105 lang=1033 size=20 rva=0x159f8
+  [RESOURCE] type=GROUP_ICON name=127 lang=1033 size=48 rva=0x16788
+  [RESOURCE] type=GROUP_ICON name=130 lang=1033 size=20 rva=0x162b8
+  [RESOURCE] type=GROUP_ICON name=161 lang=1033 size=20 rva=0x17208
+  [RESOURCE] type=GROUP_ICON name=162 lang=1033 size=20 rva=0x17d08
+  [RESOURCE] type=GROUP_ICON name=210 lang=1033 size=20 rva=0x14e38
+  [RESOURCE] type=GROUP_ICON name=213 lang=1033 size=20 rva=0x156f8
+  [RESOURCE] type=GROUP_ICON name=214 lang=1033 size=48 rva=0x16c70
+  [RESOURCE] type=GROUP_ICON name=215 lang=1033 size=20 rva=0x17788
+  [RESOURCE] type=VERSION name=1 lang=1033 size=784 rva=0xb230
+  [RESOURCE] type=240 name=126 lang=1033 size=233 rva=0x14360
+  [RESOURCE TOTAL] 92
+
+========================================================================
+FILE: GAMPrinterSetup\zvprtsrv_x64.exe
+SIZE: 3770368
+SHA256: af13dc1a127a2c45393fe1800561d4852d2e7765a6068169b22fbbd2d14b7d40
+  [GUID] ADB880A6-D8FF-11CF-9377-00AA003B7A11 | context: v: registered(%s) -stopall -dumpall  -runmutexcheck -autostart 16:11:00 hhctrl.ocx CLSID\{ADB880A6-D8FF-11CF-9377-00AA003B7A11}\InprocServer32 =UUUUUU {9UUUUUU Unknown exception SetThreadStackGuarantee kernel32.dll  
+  [STRING] CLSID\{ADB880A6-D8FF-11CF-9377-00AA003B7A11}\InprocServer32
+  [RESOURCE] type=VERSION name=1 lang=1033 size=784 rva=0x3ad310
+  [RESOURCE] type=MANIFEST name=1 lang=1033 size=619 rva=0x3ad0a0
+  [RESOURCE TOTAL] 2
+
+========================================================================
+FILE: GAMPrinterSetup\zvprtsrv_x86.exe
+SIZE: 2506752
+SHA256: 7ed0c5433d7429798dbfa5ddfa1205eb845d27b7af565f547dd039c27cb54f46
+  [GUID] ADB880A6-D8FF-11CF-9377-00AA003B7A11 | context: v: registered(%s) -stopall -dumpall  -runmutexcheck -autostart 16:14:04 hhctrl.ocx CLSID\{ADB880A6-D8FF-11CF-9377-00AA003B7A11}\InprocServer32 _TIFFVSetField TIFFAdvanceDirectory TIFFUnlinkDirectory TIFFOpen TIFFOpen
+  [STRING] CLSID\{ADB880A6-D8FF-11CF-9377-00AA003B7A11}\InprocServer32
+  [RESOURCE] type=VERSION name=1 lang=1033 size=784 rva=0x274310
+  [RESOURCE] type=MANIFEST name=1 lang=1033 size=619 rva=0x2740a0
+  [RESOURCE TOTAL] 2
+
+========================================================================
+FILE: GAMPrinterSetup\zvprtui5_x64.dll
+SIZE: 303104
+SHA256: 86accabbd499dc1f60211c489a813e9144fefebb9134bf1ea7c10390374834cf
+  [GUID] ADB880A6-D8FF-11CF-9377-00AA003B7A11 | context: etOneProp@12 MAPIFreeBuffer MAPIUninitialize MAPILogonEx MAPIInitialize hhctrl.ocx CLSID\{ADB880A6-D8FF-11CF-9377-00AA003B7A11}\InprocServer32 FRSDS C:\bmpzan\setup\Release\files\amd64\zvprtui5.pdb PNAZ3 H9](@ d$Xt{ 
+  [STRING] CLSID\{ADB880A6-D8FF-11CF-9377-00AA003B7A11}\InprocServer32
+  [RESOURCE] type=DIALOG name=106 lang=1033 size=172 rva=0x4c718
+  [RESOURCE] type=STRING name=1 lang=1033 size=100 rva=0x4c7c8
+  [RESOURCE] type=VERSION name=1 lang=1033 size=772 rva=0x4c410
+  [RESOURCE] type=MANIFEST name=2 lang=1033 size=732 rva=0x4c130
+  [RESOURCE TOTAL] 4
+
+========================================================================
+FILE: GAMPrinterSetup\zvprtui5_x86.dll
+SIZE: 195072
+SHA256: 5d16f384a9c87d0e517ad617448c50d533a91a85afedfd4b165f9cb51fc9ff0f
+  [GUID] ADB880A6-D8FF-11CF-9377-00AA003B7A11 | context: tOneProp@12 MAPIFreeBuffer MAPIUninitialize MAPILogonEx MAPIInitialize Phhctrl.ocx CLSID\{ADB880A6-D8FF-11CF-9377-00AA003B7A11}\InprocServer32 C:\bmpzan\setup\Release\files\i386\zvprtui5.pdb PNAZ3 IuHVR PWjGYj PRPj@ 
+  [STRING] CLSID\{ADB880A6-D8FF-11CF-9377-00AA003B7A11}\InprocServer32
+  [RESOURCE] type=DIALOG name=106 lang=1033 size=172 rva=0x2e710
+  [RESOURCE] type=STRING name=1 lang=1033 size=100 rva=0x2e7c0
+  [RESOURCE] type=VERSION name=1 lang=1033 size=772 rva=0x2e408
+  [RESOURCE] type=MANIFEST name=2 lang=1033 size=728 rva=0x2e130
+  [RESOURCE TOTAL] 4
+
+========================================================================
+FILE: GAMPrinterSetup\zvprtuni5_x64.dll
+SIZE: 69632
+SHA256: df801876b6748769ad2acdc1f9b13933d0a6e2dc06b0b0cd9d57810575c22e5c
+  [GUID] ADB880A6-D8FF-11CF-9377-00AA003B7A11 | context: rateSessionsW WTSGetActiveConsoleSessionId WTSQuerySessionInformationW Fhhctrl.ocx CLSID\{ADB880A6-D8FF-11CF-9377-00AA003B7A11}\InprocServer32 RSDS) C:\bmpzan\setup\Release\files\amd64\zvprtuni5.pdb PNAZ3 xVt_H L$HE3
+  [STRING] CLSID\{ADB880A6-D8FF-11CF-9377-00AA003B7A11}\InprocServer32
+  [RESOURCE] type=VERSION name=1 lang=1033 size=784 rva=0x15060
+  [RESOURCE TOTAL] 1
+
+========================================================================
+FILE: GAMPrinterSetup\zvprtuni5_x86.dll
+SIZE: 44544
+SHA256: 6862709326702e1e2cef24369185a218a0a01aaae6268f491707d3844e0c7236
+  [GUID] ADB880A6-D8FF-11CF-9377-00AA003B7A11 | context: rateSessionsW WTSGetActiveConsoleSessionId WTSQuerySessionInformationW Fhhctrl.ocx CLSID\{ADB880A6-D8FF-11CF-9377-00AA003B7A11}\InprocServer32 C:\bmpzan\setup\Release\files\i386\zvprtuni5.pdb PNAZ3 xV9^ttU IuHVR PVVV
+  [STRING] CLSID\{ADB880A6-D8FF-11CF-9377-00AA003B7A11}\InprocServer32
+  [RESOURCE] type=VERSION name=1 lang=1033 size=784 rva=0xd060
+  [RESOURCE TOTAL] 1
+
+========================================================================
+FILE: GAMPrinterSetup.exe
+SIZE: 4008872
+SHA256: cdec0363d420d8b1e7109e2a5624e0ed834a82b43b437c8d1c85a3c6303a6d15
+  [RESOURCE] type=ICON name=1 lang=0 size=67624 rva=0xa2f0
+  [RESOURCE] type=ICON name=2 lang=0 size=38056 rva=0x1ab18
+  [RESOURCE] type=ICON name=3 lang=0 size=21640 rva=0x23fc0
+  [RESOURCE] type=ICON name=4 lang=0 size=16936 rva=0x29448
+  [RESOURCE] type=ICON name=5 lang=0 size=9640 rva=0x2d670
+  [RESOURCE] type=ICON name=6 lang=0 size=4264 rva=0x2fc18
+  [RESOURCE] type=ICON name=7 lang=0 size=2440 rva=0x30cc0
+  [RESOURCE] type=ICON name=8 lang=0 size=1128 rva=0x31648
+  [RESOURCE] type=RCDATA name=ENG lang=1033 size=71632 rva=0x31ab0
+  [RESOURCE] type=GROUP_ICON name=MAINICON lang=0 size=118 rva=0x43280
+  [RESOURCE] type=VERSION name=1 lang=0 size=868 rva=0x432f8
+  [RESOURCE] type=MANIFEST name=1 lang=1033 size=709 rva=0x4365c
+  [RESOURCE TOTAL] 12
+
+========================================================================
+FILE: Gear32pd.dll
+SIZE: 1293824
+SHA256: f535920d75894039d488759573b6c04dd9d35ffc7c76f9f7de864014f90b6939
+  [STRING] CLSID\{%lX0-%lX-%lX-%lX-%.8lX%.4lX}\IID
+  [RESOURCE] type=CURSOR name=1 lang=1033 size=308 rva=0x139330
+  [RESOURCE] type=CURSOR name=2 lang=1033 size=308 rva=0x139480
+  [RESOURCE] type=ICON name=3 lang=1033 size=744 rva=0x1395d0
+  [RESOURCE] type=ICON name=4 lang=1033 size=744 rva=0x1398d0
+  [RESOURCE] type=MENU name=104 lang=1033 size=180 rva=0x139bd0
+  [RESOURCE] type=MENU name=105 lang=1033 size=300 rva=0x139c88
+  [RESOURCE] type=DIALOG name=106 lang=1033 size=1502 rva=0x139db8
+  [RESOURCE] type=DIALOG name=107 lang=1033 size=488 rva=0x13a398
+  [RESOURCE] type=GROUP_CURSOR name=100 lang=1033 size=20 rva=0x139468
+  [RESOURCE] type=GROUP_CURSOR name=101 lang=1033 size=20 rva=0x1395b8
+  [RESOURCE] type=GROUP_ICON name=102 lang=1033 size=20 rva=0x1398b8
+  [RESOURCE] type=GROUP_ICON name=103 lang=1033 size=20 rva=0x139bb8
+  [RESOURCE] type=VERSION name=1 lang=1033 size=892 rva=0x13a580
+  [RESOURCE TOTAL] 13
+
+========================================================================
+FILE: IGLZW32S.DLL
+SIZE: 36352
+SHA256: 5cbb9352d71b74836c99429a1eaf39f77db753bfae6d5307199aaffbdeeee6cd
+  [RESOURCE] type=VERSION name=1 lang=1033 size=896 rva=0xb060
+  [RESOURCE TOTAL] 1
+
+========================================================================
+FILE: IndyCore230.bpl
+SIZE: 407552
+SHA256: 1b14346893c78f06dfeaf1c67790b1b3e94791a9e9a8e342f95e00515b939558
+  [RESOURCE] type=STRING name=4088 lang=0 size=604 rva=0x66368
+  [RESOURCE] type=STRING name=4089 lang=0 size=924 rva=0x665c4
+  [RESOURCE] type=STRING name=4090 lang=0 size=1228 rva=0x66960
+  [RESOURCE] type=STRING name=4091 lang=0 size=1116 rva=0x66e2c
+  [RESOURCE] type=STRING name=4092 lang=0 size=1192 rva=0x67288
+  [RESOURCE] type=STRING name=4093 lang=0 size=872 rva=0x67730
+  [RESOURCE] type=STRING name=4094 lang=0 size=1092 rva=0x67a98
+  [RESOURCE] type=STRING name=4095 lang=0 size=780 rva=0x67edc
+  [RESOURCE] type=STRING name=4096 lang=0 size=1032 rva=0x681e8
+  [RESOURCE] type=RCDATA name=DESCRIPTION lang=0 size=28 rva=0x685f0
+  [RESOURCE] type=RCDATA name=PACKAGEINFO lang=0 size=1028 rva=0x6860c
+  [RESOURCE] type=RCDATA name=PACKAGEOPTIONS lang=0 size=240 rva=0x68a10
+  [RESOURCE] type=RCDATA name=PLATFORMTARGETS lang=1033 size=2 rva=0x68b00
+  [RESOURCE] type=VERSION name=1 lang=1033 size=1048 rva=0x68b04
+  [RESOURCE TOTAL] 14
+
+========================================================================
+FILE: IndyProtocols230.bpl
+SIZE: 2630656
+SHA256: d327a5d73cdaadeeb0695aaf1bff54e2e2591cc583e172bd042e0e58036b6147
+  [ProgID] JUS_I.B1.002 | context: csISO88598E ISO-8859-8-I ISO_8859-8-I csISO88598I CSN_369103 iso-ir-139 csISO139CSN369103 JUS_I.B1.002 iso-ir-141 ISO646-YU csISO141JUSIB1002 ISO_6937-2-add iso-ir-142 csISOTextComm IEC_P27-1 
+  [ProgID] JUS_I.B1.003 | context: SO143IECP271 ISO-8859-5 ISO_8859-5:1988 iso-ir-144 ISO_8859-5 cyrillic csISOLatinCyrillic JUS_I.B1.003-serb iso-ir-146 serbian csISO146Serbian JUS_I.B1.003-mac macedonian iso-ir-147 csISO147Ma
+  [STRING] @Idglobalprotocols@CopyBytesToHostWord$qqrx24System@%DynamicArray$uc%xirus
+  [STRING] @Idglobalprotocols@UpCaseFirstWord$qqrx20System@UnicodeString
+  [STRING] @Idimap4@TIdIMAP4@GetNextWord$qqr20System@UnicodeString
+  [STRING] .mdb=application/x-msaccess
+  [RESOURCE] type=STRING name=4053 lang=0 size=664 rva=0x2789f8
+  [RESOURCE] type=STRING name=4054 lang=0 size=1680 rva=0x278c90
+  [RESOURCE] type=STRING name=4055 lang=0 size=4364 rva=0x279320
+  [RESOURCE] type=STRING name=4056 lang=0 size=2612 rva=0x27a42c
+  [RESOURCE] type=STRING name=4057 lang=0 size=2264 rva=0x27ae60
+  [RESOURCE] type=STRING name=4058 lang=0 size=2244 rva=0x27b738
+  [RESOURCE] type=STRING name=4059 lang=0 size=1256 rva=0x27bffc
+  [RESOURCE] type=STRING name=4060 lang=0 size=668 rva=0x27c4e4
+  [RESOURCE] type=STRING name=4061 lang=0 size=1472 rva=0x27c780
+  [RESOURCE] type=STRING name=4062 lang=0 size=916 rva=0x27cd40
+  [RESOURCE] type=STRING name=4063 lang=0 size=956 rva=0x27d0d4
+  [RESOURCE] type=STRING name=4064 lang=0 size=1768 rva=0x27d490
+  [RESOURCE] type=STRING name=4065 lang=0 size=1152 rva=0x27db78
+  [RESOURCE] type=STRING name=4066 lang=0 size=936 rva=0x27dff8
+  [RESOURCE] type=STRING name=4067 lang=0 size=616 rva=0x27e3a0
+  [RESOURCE] type=STRING name=4068 lang=0 size=824 rva=0x27e608
+  [RESOURCE] type=STRING name=4069 lang=0 size=844 rva=0x27e940
+  [RESOURCE] type=STRING name=4070 lang=0 size=1128 rva=0x27ec8c
+  [RESOURCE] type=STRING name=4071 lang=0 size=992 rva=0x27f0f4
+  [RESOURCE] type=STRING name=4072 lang=0 size=1312 rva=0x27f4d4
+  [RESOURCE] type=STRING name=4073 lang=0 size=980 rva=0x27f9f4
+  [RESOURCE] type=STRING name=4074 lang=0 size=1096 rva=0x27fdc8
+  [RESOURCE] type=STRING name=4075 lang=0 size=592 rva=0x280210
+  [RESOURCE] type=STRING name=4076 lang=0 size=1140 rva=0x280460
+  [RESOURCE] type=STRING name=4077 lang=0 size=1220 rva=0x2808d4
+  [RESOURCE] type=STRING name=4078 lang=0 size=712 rva=0x280d98
+  [RESOURCE] type=STRING name=4079 lang=0 size=1200 rva=0x281060
+  [RESOURCE] type=STRING name=4080 lang=0 size=1024 rva=0x281510
+  [RESOURCE] type=STRING name=4081 lang=0 size=836 rva=0x281910
+  [RESOURCE] type=STRING name=4082 lang=0 size=1080 rva=0x281c54
+  [RESOURCE] type=STRING name=4083 lang=0 size=972 rva=0x28208c
+  [RESOURCE] type=STRING name=4084 lang=0 size=1524 rva=0x282458
+  [RESOURCE] type=STRING name=4085 lang=0 size=752 rva=0x282a4c
+  [RESOURCE] type=STRING name=4086 lang=0 size=1680 rva=0x282d3c
+  [RESOURCE] type=STRING name=4087 lang=0 size=748 rva=0x2833cc
+  [RESOURCE] type=STRING name=4088 lang=0 size=1080 rva=0x2836b8
+  [RESOURCE] type=STRING name=4089 lang=0 size=1016 rva=0x283af0
+  [RESOURCE] type=STRING name=4090 lang=0 size=1564 rva=0x283ee8
+  [RESOURCE] type=STRING name=4091 lang=0 size=1020 rva=0x284504
+  [RESOURCE] type=STRING name=4092 lang=0 size=876 rva=0x284900
+  [RESOURCE] type=STRING name=4093 lang=0 size=628 rva=0x284c6c
+  [RESOURCE] type=STRING name=4094 lang=0 size=428 rva=0x284ee0
+  [RESOURCE] type=STRING name=4095 lang=0 size=1096 rva=0x28508c
+  [RESOURCE] type=STRING name=4096 lang=0 size=948 rva=0x2854d4
+  [RESOURCE] type=RCDATA name=DESCRIPTION lang=0 size=36 rva=0x285888
+  [RESOURCE] type=RCDATA name=PACKAGEINFO lang=0 size=4368 rva=0x2858ac
+  [RESOURCE] type=RCDATA name=PACKAGEOPTIONS lang=0 size=344 rva=0x2869bc
+  [RESOURCE] type=RCDATA name=PLATFORMTARGETS lang=1033 size=2 rva=0x286b14
+  [RESOURCE] type=VERSION name=1 lang=1033 size=1080 rva=0x286b18
+  [RESOURCE TOTAL] 49
+
+========================================================================
+FILE: IndySystem230.bpl
+SIZE: 314880
+SHA256: deeb32d80585b5eb59c59b95b321b9c12614262756fea2b85e972040064d185b
+  [RESOURCE] type=STRING name=4092 lang=0 size=884 rva=0x502a8
+  [RESOURCE] type=STRING name=4093 lang=0 size=880 rva=0x5061c
+  [RESOURCE] type=STRING name=4094 lang=0 size=912 rva=0x5098c
+  [RESOURCE] type=STRING name=4095 lang=0 size=636 rva=0x50d1c
+  [RESOURCE] type=STRING name=4096 lang=0 size=1024 rva=0x50f98
+  [RESOURCE] type=RCDATA name=DESCRIPTION lang=0 size=32 rva=0x51398
+  [RESOURCE] type=RCDATA name=PACKAGEINFO lang=0 size=296 rva=0x513b8
+  [RESOURCE] type=RCDATA name=PACKAGEOPTIONS lang=0 size=240 rva=0x514e0
+  [RESOURCE] type=RCDATA name=PLATFORMTARGETS lang=1033 size=2 rva=0x515d0
+  [RESOURCE] type=VERSION name=1 lang=1033 size=1064 rva=0x515d4
+  [RESOURCE TOTAL] 10
+
+========================================================================
+FILE: klc.exe
+SIZE: 2174464
+SHA256: f97231036cce96074291db40ff913e2bb573486fd09d8f8004f0ee3e5f4421eb
+  [GUID] 43826D1E-E718-42EE-BC55-A1E261C37BFE | context: 8X DelphiRM_GetObjectInstance USER32 AnimateWindow RRRRR RRRRR8 BUTTON LISTBOX SCROLLBAR {43826D1E-E718-42EE-BC55-A1E261C37BFE} %s%s%s%s%s%s%s%s%s%s Retry Ignore NoToAll YesToAll commdlg_help commdlg_FindReplace WndP
+  [GUID] D171DF8F-FFAD-4837-B311-17EDC5EE0C05 | context: TTT ]ZZZZZZZZZZZZZZZ Delphi Picture Delphi Component TaskbarCreated TaskbarButtonCreated {D171DF8F-FFAD-4837-B311-17EDC5EE0C05} 0001020304050607080910111213141516171819202122232425262728293031323334353637383940414243
+  [STRING] clsid
+  [RESOURCE] type=CURSOR name=1 lang=1033 size=308 rva=0x21893c
+  [RESOURCE] type=CURSOR name=2 lang=1033 size=308 rva=0x218a70
+  [RESOURCE] type=CURSOR name=3 lang=1033 size=308 rva=0x218ba4
+  [RESOURCE] type=CURSOR name=4 lang=1033 size=308 rva=0x218cd8
+  [RESOURCE] type=CURSOR name=5 lang=1033 size=308 rva=0x218e0c
+  [RESOURCE] type=CURSOR name=6 lang=1033 size=308 rva=0x218f40
+  [RESOURCE] type=CURSOR name=7 lang=1033 size=308 rva=0x219074
+  [RESOURCE] type=ICON name=1 lang=1033 size=4264 rva=0x2191a8
+  [RESOURCE] type=STRING name=4075 lang=0 size=852 rva=0x21a250
+  [RESOURCE] type=STRING name=4076 lang=0 size=900 rva=0x21a5a4
+  [RESOURCE] type=STRING name=4077 lang=0 size=1036 rva=0x21a928
+  [RESOURCE] type=STRING name=4078 lang=0 size=248 rva=0x21ad34
+  [RESOURCE] type=STRING name=4079 lang=0 size=204 rva=0x21ae2c
+  [RESOURCE] type=STRING name=4080 lang=0 size=668 rva=0x21aef8
+  [RESOURCE] type=STRING name=4081 lang=0 size=976 rva=0x21b194
+  [RESOURCE] type=STRING name=4082 lang=0 size=980 rva=0x21b564
+  [RESOURCE] type=STRING name=4083 lang=0 size=1228 rva=0x21b938
+  [RESOURCE] type=STRING name=4084 lang=0 size=496 rva=0x21be04
+  [RESOURCE] type=STRING name=4085 lang=0 size=1112 rva=0x21bff4
+  [RESOURCE] type=STRING name=4086 lang=0 size=1236 rva=0x21c44c
+  [RESOURCE] type=STRING name=4087 lang=0 size=1168 rva=0x21c920
+  [RESOURCE] type=STRING name=4088 lang=0 size=912 rva=0x21cdb0
+  [RESOURCE] type=STRING name=4089 lang=0 size=1112 rva=0x21d140
+  [RESOURCE] type=STRING name=4090 lang=0 size=492 rva=0x21d598
+  [RESOURCE] type=STRING name=4091 lang=0 size=196 rva=0x21d784
+  [RESOURCE] type=STRING name=4092 lang=0 size=368 rva=0x21d848
+  [RESOURCE] type=STRING name=4093 lang=0 size=820 rva=0x21d9b8
+  [RESOURCE] type=STRING name=4094 lang=0 size=1032 rva=0x21dcec
+  [RESOURCE] type=STRING name=4095 lang=0 size=908 rva=0x21e0f4
+  [RESOURCE] type=STRING name=4096 lang=0 size=692 rva=0x21e480
+  [RESOURCE] type=RCDATA name=DVCLAL lang=0 size=16 rva=0x21e734
+  [RESOURCE] type=RCDATA name=PACKAGEINFO lang=0 size=1660 rva=0x21e744
+  [RESOURCE] type=RCDATA name=PLATFORMTARGETS lang=1033 size=2 rva=0x21edc0
+  [RESOURCE] type=RCDATA name=TKLCMAINFORM lang=0 size=3366 rva=0x21edc4
+  [RESOURCE] type=GROUP_CURSOR name=32761 lang=1033 size=20 rva=0x21faec
+  [RESOURCE] type=GROUP_CURSOR name=32762 lang=1033 size=20 rva=0x21fb00
+  [RESOURCE] type=GROUP_CURSOR name=32763 lang=1033 size=20 rva=0x21fb14
+  [RESOURCE] type=GROUP_CURSOR name=32764 lang=1033 size=20 rva=0x21fb28
+  [RESOURCE] type=GROUP_CURSOR name=32765 lang=1033 size=20 rva=0x21fb3c
+  [RESOURCE] type=GROUP_CURSOR name=32766 lang=1033 size=20 rva=0x21fb50
+  [RESOURCE] type=GROUP_CURSOR name=32767 lang=1033 size=20 rva=0x21fb64
+  [RESOURCE] type=GROUP_ICON name=MAINICON lang=1033 size=20 rva=0x21fb78
+  [RESOURCE] type=VERSION name=1 lang=1033 size=640 rva=0x21fb8c
+  [RESOURCE TOTAL] 43
+
+========================================================================
+FILE: PKIECtrl23.bpl
+SIZE: 4952064
+SHA256: a68c912144e9009409bc4aa0c8ed8252d52c9e3e6799caf7084d37fb00ff22e9
+  [STRING] tagCACLSID
+  [STRING] iettWordWipeOut
+  [STRING] iettWordWipeIn
+  [STRING] iettWordWipeInAndOut
+  [STRING] iettWordHalfSweep
+  [STRING] iettWordFullSweep
+  [STRING] iettWordFullExpandingSweep
+  [STRING] clsid
+  [STRING] @Ievfw@CLSID_AVIFile
+  [STRING] @Ievfw@CLSID_AVISimpleUnMarshal
+  [STRING] D:\Projects\Emwat\Components\ImageEn\Source\iewic.pas
+  [STRING] D:\Projects\Emwat\Components\ImageEn\Source\hyieutils.pas
+  [RESOURCE] type=CURSOR name=1 lang=1040 size=308 rva=0x4a306c
+  [RESOURCE] type=CURSOR name=2 lang=1040 size=308 rva=0x4a31a0
+  [RESOURCE] type=CURSOR name=3 lang=1040 size=308 rva=0x4a32d4
+  [RESOURCE] type=CURSOR name=4 lang=1040 size=308 rva=0x4a3408
+  [RESOURCE] type=CURSOR name=5 lang=1040 size=308 rva=0x4a353c
+  [RESOURCE] type=CURSOR name=6 lang=1040 size=308 rva=0x4a3670
+  [RESOURCE] type=CURSOR name=7 lang=1040 size=308 rva=0x4a37a4
+  [RESOURCE] type=CURSOR name=8 lang=1040 size=308 rva=0x4a38d8
+  [RESOURCE] type=CURSOR name=9 lang=1040 size=308 rva=0x4a3a0c
+  [RESOURCE] type=CURSOR name=10 lang=1040 size=308 rva=0x4a3b40
+  [RESOURCE] type=CURSOR name=11 lang=1040 size=308 rva=0x4a3c74
+  [RESOURCE] type=CURSOR name=12 lang=1040 size=308 rva=0x4a3da8
+  [RESOURCE] type=CURSOR name=13 lang=1040 size=308 rva=0x4a3edc
+  [RESOURCE] type=CURSOR name=14 lang=1040 size=308 rva=0x4a4010
+  [RESOURCE] type=CURSOR name=15 lang=1040 size=308 rva=0x4a4144
+  [RESOURCE] type=CURSOR name=16 lang=1040 size=308 rva=0x4a4278
+  [RESOURCE] type=CURSOR name=17 lang=1040 size=308 rva=0x4a43ac
+  [RESOURCE] type=CURSOR name=18 lang=1040 size=308 rva=0x4a44e0
+  [RESOURCE] type=CURSOR name=19 lang=1040 size=308 rva=0x4a4614
+  [RESOURCE] type=CURSOR name=20 lang=1040 size=308 rva=0x4a4748
+  [RESOURCE] type=CURSOR name=21 lang=1040 size=308 rva=0x4a487c
+  [RESOURCE] type=CURSOR name=22 lang=1033 size=308 rva=0x4a49b0
+  [RESOURCE] type=CURSOR name=23 lang=1033 size=180 rva=0x4a4ae4
+  [RESOURCE] type=CURSOR name=24 lang=1040 size=308 rva=0x4a4b98
+  [RESOURCE] type=CURSOR name=25 lang=1040 size=308 rva=0x4a4ccc
+  [RESOURCE] type=CURSOR name=26 lang=1040 size=308 rva=0x4a4e00
+  [RESOURCE] type=CURSOR name=27 lang=1040 size=3244 rva=0x4a4f34
+  [RESOURCE] type=CURSOR name=28 lang=1040 size=308 rva=0x4a5be0
+  [RESOURCE] type=CURSOR name=29 lang=1040 size=3244 rva=0x4a5d14
+  [RESOURCE] type=CURSOR name=30 lang=1040 size=308 rva=0x4a69c0
+  [RESOURCE] type=CURSOR name=31 lang=1040 size=3244 rva=0x4a6af4
+  [RESOURCE] type=CURSOR name=32 lang=1040 size=308 rva=0x4a77a0
+  [RESOURCE] type=CURSOR name=33 lang=1040 size=3244 rva=0x4a78d4
+  [RESOURCE] type=CURSOR name=34 lang=1040 size=308 rva=0x4a8580
+  [RESOURCE] type=CURSOR name=35 lang=1040 size=3244 rva=0x4a86b4
+  [RESOURCE] type=CURSOR name=36 lang=1040 size=308 rva=0x4a9360
+  [RESOURCE] type=CURSOR name=37 lang=1040 size=3244 rva=0x4a9494
+  [RESOURCE] type=CURSOR name=38 lang=1040 size=308 rva=0x4aa140
+  [RESOURCE] type=CURSOR name=39 lang=1040 size=3244 rva=0x4aa274
+  [RESOURCE] type=CURSOR name=40 lang=1040 size=308 rva=0x4aaf20
+  [RESOURCE] type=CURSOR name=41 lang=1040 size=3244 rva=0x4ab054
+  [RESOURCE] type=CURSOR name=42 lang=1040 size=308 rva=0x4abd00
+  [RESOURCE] type=CURSOR name=43 lang=1040 size=3244 rva=0x4abe34
+  [RESOURCE] type=CURSOR name=44 lang=1040 size=308 rva=0x4acae0
+  [RESOURCE] type=CURSOR name=45 lang=1040 size=3244 rva=0x4acc14
+  [RESOURCE] type=CURSOR name=46 lang=1040 size=308 rva=0x4ad8c0
+  [RESOURCE] type=CURSOR name=47 lang=1040 size=3244 rva=0x4ad9f4
+  [RESOURCE] type=CURSOR name=48 lang=1040 size=308 rva=0x4ae6a0
+  [RESOURCE] type=CURSOR name=49 lang=1040 size=3244 rva=0x4ae7d4
+  [RESOURCE] type=BITMAP name=IDB_PLAY lang=1040 size=1320 rva=0x4af480
+  [RESOURCE] type=BITMAP name=IDB_PREVIEW lang=0 size=1320 rva=0x4af9a8
+  [RESOURCE] type=BITMAP name=IDB_STOP lang=0 size=232 rva=0x4afed0
+  [RESOURCE] type=ICON name=1 lang=1033 size=4264 rva=0x4affb8
+  [RESOURCE] type=DIALOG name=IDD_IETEMPLATE lang=0 size=80 rva=0x4b1060
+  [RESOURCE] type=DIALOG name=IDD_IETEMPLATE1 lang=0 size=62 rva=0x4b10b0
+  [RESOURCE] type=DIALOG name=IDD_IETEMPLATE2 lang=0 size=80 rva=0x4b10f0
+  [RESOURCE] type=STRING name=4051 lang=0 size=48 rva=0x4b1140
+  [RESOURCE] type=STRING name=4052 lang=0 size=588 rva=0x4b1170
+  [RESOURCE] type=STRING name=4053 lang=0 size=532 rva=0x4b13bc
+  [RESOURCE] type=STRING name=4054 lang=0 size=412 rva=0x4b15d0
+  [RESOURCE] type=STRING name=4055 lang=0 size=424 rva=0x4b176c
+  [RESOURCE] type=STRING name=4056 lang=0 size=528 rva=0x4b1914
+  [RESOURCE] type=STRING name=4057 lang=0 size=564 rva=0x4b1b24
+  [RESOURCE] type=STRING name=4058 lang=0 size=540 rva=0x4b1d58
+  [RESOURCE] type=STRING name=4059 lang=0 size=312 rva=0x4b1f74
+  [RESOURCE] type=STRING name=4060 lang=0 size=488 rva=0x4b20ac
+  [RESOURCE] type=STRING name=4061 lang=0 size=412 rva=0x4b2294
+  [RESOURCE] type=STRING name=4062 lang=0 size=368 rva=0x4b2430
+  [RESOURCE] type=STRING name=4063 lang=0 size=480 rva=0x4b25a0
+  [RESOURCE] type=STRING name=4064 lang=0 size=492 rva=0x4b2780
+  [RESOURCE] type=STRING name=4065 lang=0 size=612 rva=0x4b296c
+  [RESOURCE] type=STRING name=4066 lang=0 size=680 rva=0x4b2bd0
+  [RESOURCE] type=STRING name=4067 lang=0 size=444 rva=0x4b2e78
+  [RESOURCE] type=STRING name=4068 lang=0 size=448 rva=0x4b3034
+  [RESOURCE] type=STRING name=4069 lang=0 size=376 rva=0x4b31f4
+  [RESOURCE] type=STRING name=4070 lang=0 size=748 rva=0x4b336c
+  [RESOURCE] type=STRING name=4071 lang=0 size=924 rva=0x4b3658
+  [RESOURCE] type=STRING name=4072 lang=0 size=456 rva=0x4b39f4
+  [RESOURCE] type=STRING name=4073 lang=0 size=1032 rva=0x4b3bbc
+  [RESOURCE] type=STRING name=4074 lang=0 size=1324 rva=0x4b3fc4
+  [RESOURCE] type=STRING name=4075 lang=0 size=1296 rva=0x4b44f0
+  [RESOURCE] type=STRING name=4076 lang=0 size=1508 rva=0x4b4a00
+  [RESOURCE] type=STRING name=4077 lang=0 size=1280 rva=0x4b4fe4
+  [RESOURCE] type=STRING name=4078 lang=0 size=1252 rva=0x4b54e4
+  [RESOURCE] type=STRING name=4079 lang=0 size=1340 rva=0x4b59c8
+  [RESOURCE] type=STRING name=4080 lang=0 size=1192 rva=0x4b5f04
+  [RESOURCE] type=STRING name=4081 lang=0 size=532 rva=0x4b63ac
+  [RESOURCE] type=STRING name=4082 lang=0 size=444 rva=0x4b65c0
+  [RESOURCE] type=STRING name=4083 lang=0 size=496 rva=0x4b677c
+  [RESOURCE] type=STRING name=4084 lang=0 size=472 rva=0x4b696c
+  [RESOURCE] type=STRING name=4085 lang=0 size=448 rva=0x4b6b44
+  [RESOURCE] type=STRING name=4086 lang=0 size=484 rva=0x4b6d04
+  [RESOURCE] type=STRING name=4087 lang=0 size=308 rva=0x4b6ee8
+  [RESOURCE] type=STRING name=4088 lang=0 size=380 rva=0x4b701c
+  [RESOURCE] type=STRING name=4089 lang=0 size=328 rva=0x4b7198
+  [RESOURCE] type=STRING name=4090 lang=0 size=368 rva=0x4b72e0
+  [RESOURCE] type=STRING name=4091 lang=0 size=316 rva=0x4b7450
+  [RESOURCE] type=STRING name=4092 lang=0 size=332 rva=0x4b758c
+  [RESOURCE] type=STRING name=4093 lang=0 size=408 rva=0x4b76d8
+  [RESOURCE] type=STRING name=4094 lang=0 size=384 rva=0x4b7870
+  [RESOURCE] type=STRING name=4095 lang=0 size=236 rva=0x4b79f0
+  [RESOURCE] type=STRING name=4096 lang=0 size=452 rva=0x4b7adc
+  [RESOURCE] type=RCDATA name=DESCRIPTION lang=0 size=32 rva=0x4b7ca0
+  [RESOURCE] type=RCDATA name=PACKAGEINFO lang=0 size=980 rva=0x4b7cc0
+  [RESOURCE] type=RCDATA name=PACKAGEOPTIONS lang=0 size=248 rva=0x4b8094
+  [RESOURCE] type=RCDATA name=PLATFORMTARGETS lang=1033 size=2 rva=0x4b818c
+  [RESOURCE] type=RCDATA name=TFIEPRNFORM1 lang=0 size=19431 rva=0x4b8190
+  [RESOURCE] type=RCDATA name=TFIEPRNFORM2 lang=0 size=19626 rva=0x4bcd78
+  [RESOURCE] type=RCDATA name=TFIEPRNFORM3 lang=0 size=22306 rva=0x4c1a24
+  [RESOURCE] type=RCDATA name=TFIOPREVIEWS lang=0 size=16690 rva=0x4c7148
+  [RESOURCE] type=RCDATA name=TFPREVIEWS lang=0 size=24446 rva=0x4cb27c
+  [RESOURCE] type=RCDATA name=TIEXACQUIREFORM lang=0 size=8707 rva=0x4d11fc
+  [RESOURCE] type=GROUP_CURSOR name=1795 lang=1040 size=34 rva=0x4d3400
+  [RESOURCE] type=GROUP_CURSOR name=1796 lang=1040 size=34 rva=0x4d3424
+  [RESOURCE] type=GROUP_CURSOR name=1797 lang=1040 size=34 rva=0x4d3448
+  [RESOURCE] type=GROUP_CURSOR name=1798 lang=1040 size=34 rva=0x4d346c
+  [RESOURCE] type=GROUP_CURSOR name=1799 lang=1040 size=34 rva=0x4d3490
+  [RESOURCE] type=GROUP_CURSOR name=1800 lang=1040 size=34 rva=0x4d34b4
+  [RESOURCE] type=GROUP_CURSOR name=1801 lang=1040 size=34 rva=0x4d34d8
+  [RESOURCE] type=GROUP_CURSOR name=1802 lang=1040 size=34 rva=0x4d34fc
+  [RESOURCE] type=GROUP_CURSOR name=1803 lang=1040 size=20 rva=0x4d3520
+  [RESOURCE] type=GROUP_CURSOR name=1805 lang=1040 size=34 rva=0x4d3534
+  [RESOURCE] type=GROUP_CURSOR name=1806 lang=1040 size=34 rva=0x4d3558
+  [RESOURCE] type=GROUP_CURSOR name=1807 lang=1040 size=34 rva=0x4d357c
+  [RESOURCE] type=GROUP_CURSOR name=1808 lang=1040 size=34 rva=0x4d35a0
+  [RESOURCE] type=GROUP_CURSOR name=CROCE lang=2048 size=20 rva=0x4d35c4
+  [RESOURCE] type=GROUP_CURSOR name=CROCE1 lang=2048 size=20 rva=0x4d35d8
+  [RESOURCE] type=GROUP_CURSOR name=CROCE2 lang=2048 size=20 rva=0x4d35ec
+  [RESOURCE] type=GROUP_CURSOR name=CROCE2+ lang=1040 size=20 rva=0x4d3600
+  [RESOURCE] type=GROUP_CURSOR name=CROCE2- lang=1040 size=20 rva=0x4d3614
+  [RESOURCE] type=GROUP_CURSOR name=CROCE3 lang=1040 size=20 rva=0x4d3628
+  [RESOURCE] type=GROUP_CURSOR name=CROCE3+ lang=2048 size=20 rva=0x4d363c
+  [RESOURCE] type=GROUP_CURSOR name=CROCE3- lang=2048 size=20 rva=0x4d3650
+  [RESOURCE] type=GROUP_CURSOR name=GOMMA lang=2048 size=20 rva=0x4d3664
+  [RESOURCE] type=GROUP_CURSOR name=MANO lang=2048 size=20 rva=0x4d3678
+  [RESOURCE] type=GROUP_CURSOR name=MOVE lang=2048 size=20 rva=0x4d368c
+  [RESOURCE] type=GROUP_CURSOR name=MOVE1 lang=2048 size=20 rva=0x4d36a0
+  [RESOURCE] type=GROUP_CURSOR name=MOVE2 lang=2048 size=20 rva=0x4d36b4
+  [RESOURCE] type=GROUP_CURSOR name=MOVEX lang=2048 size=20 rva=0x4d36c8
+  [RESOURCE] type=GROUP_CURSOR name=MOVEY lang=2048 size=20 rva=0x4d36dc
+  [RESOURCE] type=GROUP_CURSOR name=PENNA lang=2048 size=20 rva=0x4d36f0
+  [RESOURCE] type=GROUP_CURSOR name=RESIZE lang=2048 size=34 rva=0x4d3704
+  [RESOURCE] type=GROUP_CURSOR name=ROT1 lang=1040 size=20 rva=0x4d3728
+  [RESOURCE] type=GROUP_CURSOR name=ROT2 lang=1040 size=20 rva=0x4d373c
+  [RESOURCE] type=GROUP_CURSOR name=ROT3 lang=1040 size=20 rva=0x4d3750
+  [RESOURCE] type=GROUP_CURSOR name=ROT4 lang=1040 size=20 rva=0x4d3764
+  [RESOURCE] type=GROUP_CURSOR name=ZOOMMENO lang=2048 size=20 rva=0x4d3778
+  [RESOURCE] type=GROUP_CURSOR name=ZOOMPIU lang=2048 size=20 rva=0x4d378c
+  [RESOURCE] type=GROUP_ICON name=MAINICON lang=1033 size=20 rva=0x4d37a0
+  [RESOURCE] type=VERSION name=1 lang=1033 size=320 rva=0x4d37b4
+  [RESOURCE TOTAL] 150
+
+========================================================================
+FILE: rtl230.bpl
+SIZE: 9396608
+SHA256: d8f19308793792f43948205a491d16697b57e01b40623857bd7989ca1f9adba2
+  [ProgID] mophun.application | context: tion/vnd.mobius.msl application/vnd.mobius.plc application/vnd.mobius.txf application/vnd.mophun.application application/vnd.mophun.certificate application/vnd.mozilla.xul+xml application/vnd.ms-art
+  [ProgID] addin.macroenabled.12 | context: galry application/vnd.ms-cab-compressed application/vnd.ms-excel application/vnd.ms-excel.addin.macroenabled.12 application/vnd.ms-excel.sheet.binary.macroenabled.12 application/vnd.ms-excel.sheet.macr
+  [ProgID] excel.sheet | context: pplication/vnd.ms-excel application/vnd.ms-excel.addin.macroenabled.12 application/vnd.ms-excel.sheet.binary.macroenabled.12 application/vnd.ms-excel.sheet.macroenabled.12 application/vnd.ms-
+  [ProgID] binary.macroenabled.12 | context: nd.ms-excel application/vnd.ms-excel.addin.macroenabled.12 application/vnd.ms-excel.sheet.binary.macroenabled.12 application/vnd.ms-excel.sheet.macroenabled.12 application/vnd.ms-excel.template.macroena
+  [ProgID] template.macroenabled.12 | context: y.macroenabled.12 application/vnd.ms-excel.sheet.macroenabled.12 application/vnd.ms-excel.template.macroenabled.12 application/vnd.ms-fontobject application/vnd.ms-htmlhelp application/vnd.ms-ims applicat
+  [ProgID] presentation.macroenabled.12 | context: erpoint application/vnd.ms-powerpoint.addin.macroenabled.12 application/vnd.ms-powerpoint.presentation.macroenabled.12 application/vnd.ms-powerpoint.slide.macroenabled.12 application/vnd.ms-powerpoint.slidesh
+  [ProgID] slide.macroenabled.12 | context:  application/vnd.ms-powerpoint.presentation.macroenabled.12 application/vnd.ms-powerpoint.slide.macroenabled.12 application/vnd.ms-powerpoint.slideshow.macroenabled.12 application/vnd.ms-powerpoint.tem
+  [ProgID] slideshow.macroenabled.12 | context: bled.12 application/vnd.ms-powerpoint.slide.macroenabled.12 application/vnd.ms-powerpoint.slideshow.macroenabled.12 application/vnd.ms-powerpoint.template.macroenabled.12 application/vnd.ms-project applica
+  [ProgID] word.document | context: /vnd.ms-powerpoint.template.macroenabled.12 application/vnd.ms-project application/vnd.ms-word.document.macroenabled.12 application/vnd.ms-word.template.macroenabled.12 application/vnd.ms-works
+  [ProgID] spreadsheetml.sheet | context: mats-officedocument.presentationml.template application/vnd.openxmlformats-officedocument.spreadsheetml.sheet application/vnd.openxmlformats-officedocument.spreadsheetml.template application/vnd.open
+  [ProgID] wordprocessingml.document | context: rmats-officedocument.spreadsheetml.template application/vnd.openxmlformats-officedocument.wordprocessingml.document application/vnd.openxmlformats-officedocument.wordprocessingml.template application/vnd.o
+  [STRING] TWordDynArray
+  [STRING] TWordArray
+  [STRING] GetWords
+  [STRING] SetWords
+  [STRING] TWordHelper
+  [STRING] TWordBoolHelper
+  [STRING] TWordBoolHelperP
+  [STRING] clsid
+  [STRING] ProgID
+  [STRING] CCLSIDData,
+  [STRING] m_clsid
+  [STRING] pclsid
+  [STRING] clsidEncoder
+  [STRING] TOleServer6
+  [STRING] TOleServer4FFP<
+  [STRING] IWebBrowser
+  [STRING] IWebBrowserDisp
+  [STRING] DWebBrowserEvents
+  [STRING] IWebBrowserAppHOFP
+  [STRING] IWebBrowserAppDisp
+  [STRING] IWebBrowser2,PFP
+  [STRING] IWebBrowser2Disp
+  [STRING] DWebBrowserEvents2
+  [STRING] TWebBrowserStatusTextChange
+  [STRING] TWebBrowserProgressChange
+  [STRING] TWebBrowserCommandStateChange
+  [STRING] TWebBrowserTitleChange
+  [STRING] TWebBrowserPropertyChange
+  [STRING] TWebBrowserBeforeNavigate2
+  [STRING] TWebBrowserNewWindow2
+  [STRING] TWebBrowserNavigateComplete2
+  [STRING] TWebBrowserDocumentComplete
+  [STRING] TWebBrowserOnVisible
+  [STRING] TWebBrowserOnToolBar
+  [STRING] TWebBrowserOnMenuBar
+  [STRING] TWebBrowserOnStatusBar
+  [STRING] TWebBrowserOnFullScreen
+  [STRING] TWebBrowserOnTheaterMode
+  [STRING] TWebBrowserWindowSetResizable
+  [STRING] TWebBrowserWindowSetLeft
+  [STRING] TWebBrowserWindowSetTop
+  [STRING] TWebBrowserWindowSetWidth
+  [STRING] TWebBrowserWindowSetHeight
+  [STRING] TWebBrowserWindowClosing
+  [STRING] TWebBrowserClientToHostWindow
+  [STRING] TWebBrowserSetSecureLockIcon
+  [STRING] TWebBrowserFileDownload
+  [STRING] TWebBrowserNavigateError
+  [STRING] %TWebBrowserPrintTemplateInstantiation
+  [STRING] TWebBrowserPrintTemplateTeardown
+  [STRING] TWebBrowserUpdatePageStatus
+  [STRING] %TWebBrowserPrivacyImpactedStateChange
+  [STRING] TWebBrowserNewWindow3
+  [STRING] "TWebBrowserSetPhishingFilterStatus
+  [STRING] TWebBrowserWindowStateChanged
+  [STRING] TWebBrowserNewProcess
+  [STRING] TWebBrowserThirdPartyUrlBlocked
+  [STRING] !TWebBrowserRedirectXDomainBlocked
+  [STRING] TWebBrowserBeforeScriptExecute
+  [STRING] TWebBrowserWebWorkerStarted
+  [STRING] TWebBrowserWebWorkerFinsihed
+  [STRING] TOleWebBrowser&
+  [STRING] pvaClsid
+  [STRING] TOleWebBrowserdpFP
+  [STRING] IHTMLDocument
+  [STRING] IHTMLDocument2,;HP
+  [STRING] System.Sqlite
+  [STRING] CLSIDFromProgID
+  [STRING] ProgIDFromCLSID
+  [STRING] CLSIDFromString
+  [STRING] StringFromCLSID
+  [STRING] @$xp$10CCLSIDData
+  [STRING] @$xp$13TWordDynArray
+  [STRING] @$xp$26System@Sysutils@TWordArray
+  [STRING] @$xp$27System@Sysutils@TWordHelper
+  [STRING] @$xp$31System@Sysutils@TWordBoolHelper
+  [STRING] @$xp$32System@Win@Oleservers@TOleServer
+  [STRING] @$xp$37System@Win@Ieinterfaces@IHTMLDocument
+  [STRING] @$xp$38System@Win@Ieinterfaces@IHTMLDocument2
+  [STRING] @$xp$39System@Win@Internetexplorer@IWebBrowser
+  [STRING] @$xp$40System@Win@Internetexplorer@IWebBrowser2
+  [STRING] @$xp$42System@Win@Internetexplorer@IWebBrowserApp
+  [STRING] @$xp$42System@Win@Internetexplorer@TOleWebBrowser
+  [STRING] @$xp$43System@Win@Internetexplorer@IWebBrowserDisp
+  [STRING] @$xp$44System@Win@Internetexplorer@IWebBrowser2Disp
+  [STRING] @$xp$45System@Win@Internetexplorer@DWebBrowserEvents
+  [STRING] @$xp$46System@Win@Internetexplorer@DWebBrowserEvents2
+  [STRING] @$xp$46System@Win@Internetexplorer@IWebBrowserAppDisp
+  [STRING] @$xp$48System@Win@Internetexplorer@TWebBrowserOnMenuBar
+  [STRING] @$xp$48System@Win@Internetexplorer@TWebBrowserOnToolBar
+  [STRING] @$xp$48System@Win@Internetexplorer@TWebBrowserOnVisible
+  [STRING] @$xp$49System@Win@Internetexplorer@TWebBrowserNewProcess
+  [STRING] @$xp$49System@Win@Internetexplorer@TWebBrowserNewWindow2
+  [STRING] @$xp$49System@Win@Internetexplorer@TWebBrowserNewWindow3
+  [STRING] @$xp$50System@Win@Internetexplorer@TWebBrowserOnStatusBar
+  [STRING] @$xp$50System@Win@Internetexplorer@TWebBrowserTitleChange
+  [STRING] @$xp$51System@Win@Internetexplorer@TWebBrowserFileDownload
+  [STRING] @$xp$51System@Win@Internetexplorer@TWebBrowserOnFullScreen
+  [STRING] @$xp$51System@Win@Internetexplorer@TWebBrowserWindowSetTop
+  [STRING] @$xp$52System@Win@Internetexplorer@TWebBrowserNavigateError
+  [STRING] @$xp$52System@Win@Internetexplorer@TWebBrowserOnTheaterMode
+  [STRING] @$xp$52System@Win@Internetexplorer@TWebBrowserWindowClosing
+  [STRING] @$xp$52System@Win@Internetexplorer@TWebBrowserWindowSetLeft
+  [STRING] @$xp$53System@Win@Internetexplorer@TWebBrowserProgressChange
+  [STRING] @$xp$53System@Win@Internetexplorer@TWebBrowserPropertyChange
+  [STRING] @$xp$53System@Win@Internetexplorer@TWebBrowserWindowSetWidth
+  [STRING] @$xp$54System@Win@Internetexplorer@TWebBrowserBeforeNavigate2
+  [STRING] @$xp$54System@Win@Internetexplorer@TWebBrowserWindowSetHeight
+  [STRING] @$xp$55System@Win@Internetexplorer@TWebBrowserDocumentComplete
+  [STRING] @$xp$55System@Win@Internetexplorer@TWebBrowserStatusTextChange
+  [STRING] @$xp$55System@Win@Internetexplorer@TWebBrowserUpdatePageStatus
+  [STRING] @$xp$55System@Win@Internetexplorer@TWebBrowserWebWorkerStarted
+  [STRING] @$xp$56System@Win@Internetexplorer@TWebBrowserNavigateComplete2
+  [STRING] @$xp$56System@Win@Internetexplorer@TWebBrowserSetSecureLockIcon
+  [STRING] @$xp$56System@Win@Internetexplorer@TWebBrowserWebWorkerFinsihed
+  [STRING] @$xp$57System@Win@Internetexplorer@TWebBrowserClientToHostWindow
+  [STRING] @$xp$57System@Win@Internetexplorer@TWebBrowserCommandStateChange
+  [STRING] @$xp$57System@Win@Internetexplorer@TWebBrowserWindowSetResizable
+  [STRING] @$xp$57System@Win@Internetexplorer@TWebBrowserWindowStateChanged
+  [STRING] @$xp$58System@Win@Internetexplorer@TWebBrowserBeforeScriptExecute
+  [STRING] @$xp$59System@Win@Internetexplorer@TWebBrowserThirdPartyUrlBlocked
+  [STRING] @$xp$60System@Win@Internetexplorer@TWebBrowserPrintTemplateTeardown
+  [STRING] @$xp$61System@Win@Internetexplorer@TWebBrowserRedirectXDomainBlocked
+  [STRING] @$xp$62System@Win@Internetexplorer@TWebBrowserSetPhishingFilterStatus
+  [STRING] @$xp$65System@Win@Internetexplorer@TWebBrowserPrintTemplateInstantiation
+  [STRING] @$xp$65System@Win@Internetexplorer@TWebBrowserPrivacyImpactedStateChange
+  [STRING] @System@Sysutils@TDoubleHelper@GetWords$qqrui
+  [STRING] @System@Sysutils@TDoubleHelper@InternalGetWords$qqrui
+  [STRING] @System@Sysutils@TDoubleHelper@InternalSetWords$qqruixus
+  [STRING] @System@Sysutils@TDoubleHelper@SetWords$qqruixus
+  [STRING] @System@Sysutils@TExtendedHelper@GetWords$qqrui
+  [STRING] @System@Sysutils@TExtendedHelper@InternalGetWords$qqrui
+  [STRING] @System@Sysutils@TExtendedHelper@InternalSetWords$qqruixus
+  [STRING] @System@Sysutils@TExtendedHelper@SetWords$qqruixus
+  [STRING] @System@Sysutils@TSingleHelper@GetWords$qqrui
+  [STRING] @System@Sysutils@TSingleHelper@InternalGetWords$qqrui
+  [STRING] @System@Sysutils@TSingleHelper@InternalSetWords$qqruixus
+  [STRING] @System@Sysutils@TSingleHelper@SetWords$qqruixus
+  [STRING] @System@Sysutils@TWordBoolHelper@
+  [STRING] @System@Sysutils@TWordBoolHelper@Parse$qqrx20System@UnicodeString
+  [STRING] @System@Sysutils@TWordBoolHelper@Size$qqrv
+  [STRING] @System@Sysutils@TWordBoolHelper@ToInteger$qqrv
+  [STRING] @System@Sysutils@TWordBoolHelper@ToString$qqrv
+  [STRING] @System@Sysutils@TWordBoolHelper@ToString$qqrxo
+  [STRING] @System@Sysutils@TWordBoolHelper@TryToParse$qqrx20System@UnicodeStringro
+  [STRING] @System@Sysutils@TWordHelper@
+  [STRING] @System@Sysutils@TWordHelper@Parse$qqrx20System@UnicodeString
+  [STRING] @System@Sysutils@TWordHelper@Size$qqrv
+  [STRING] @System@Sysutils@TWordHelper@ToBoolean$qqrv
+  [STRING] @System@Sysutils@TWordHelper@ToDouble$qqrv
+  [STRING] @System@Sysutils@TWordHelper@ToExtended$qqrv
+  [STRING] @System@Sysutils@TWordHelper@ToHexString$qqrv
+  [STRING] @System@Sysutils@TWordHelper@ToHexString$qqrxi
+  [STRING] @System@Sysutils@TWordHelper@ToSingle$qqrv
+  [STRING] @System@Sysutils@TWordHelper@ToString$qqrv
+  [STRING] @System@Sysutils@TWordHelper@ToString$qqrxus
+  [STRING] @System@Sysutils@TWordHelper@TryParse$qqrx20System@UnicodeStringrus
+  [STRING] @System@TDoubleRec@GetWords$qqrui
+  [STRING] @System@TDoubleRec@InternalGetWords$qqrui
+  [STRING] @System@TDoubleRec@InternalSetWords$qqruixus
+  [STRING] @System@TDoubleRec@SetWords$qqruixus
+  [STRING] @System@TExtended80Rec@GetWords$qqrui
+  [STRING] @System@TExtended80Rec@InternalGetWords$qqrui
+  [STRING] @System@TExtended80Rec@InternalSetWords$qqruixus
+  [STRING] @System@TExtended80Rec@SetWords$qqruixus
+  [STRING] @System@TSingleRec@GetWords$qqrui
+  [STRING] @System@TSingleRec@InternalGetWords$qqrui
+  [STRING] @System@TSingleRec@InternalSetWords$qqruixus
+  [STRING] @System@TSingleRec@SetWords$qqruixus
+  [STRING] @System@Win@Comobj@ClassIDToProgID$qqrrx5_GUID
+  [STRING] @System@Win@Comobj@ProgIDToClassID$qqrx20System@UnicodeString
+  [STRING] @System@Win@Comobj@TComObjectFactory@GetProgID$qqrv
+  [STRING] @System@Win@Internetexplorer@CLASS_WebBrowser
+  [STRING] @System@Win@Internetexplorer@CLASS_WebBrowser_V1
+  [STRING] @System@Win@Internetexplorer@DIID_DWebBrowserEvents
+  [STRING] @System@Win@Internetexplorer@DIID_DWebBrowserEvents2
+  [STRING] @System@Win@Internetexplorer@IID_IWebBrowser
+  [STRING] @System@Win@Internetexplorer@IID_IWebBrowser2
+  [STRING] @System@Win@Internetexplorer@IID_IWebBrowserApp
+  [STRING] @System@Win@Internetexplorer@LIBID_SHDocVw
+  [STRING] @System@Win@Internetexplorer@TInternetExplorer@ConnectTo$qqr67System@%DelphiInterface$40System@Win@Internetexplorer@IWebBrowser2%
+  [STRING] @System@Win@Internetexplorer@TInternetExplorerMedium@ConnectTo$qqr67System@%DelphiInterface$40System@Win@Internetexplorer@IWebBrowser2%
+  [STRING] @System@Win@Internetexplorer@TOleWebBrowser@
+  [STRING] @System@Win@Internetexplorer@TOleWebBrowser@ClientToWindow$qqrrit1
+  [STRING] @System@Win@Internetexplorer@TOleWebBrowser@CreateControl$qqrv
+  [STRING] @System@Win@Internetexplorer@TOleWebBrowser@CreateWnd$qqrv
+  [STRING] @System@Win@Internetexplorer@TOleWebBrowser@DestroyWnd$qqrv
+  [STRING] @System@Win@Internetexplorer@TOleWebBrowser@ExecWB$qqruiui
+  [STRING] @System@Win@Internetexplorer@TOleWebBrowser@ExecWB$qqruiuirx17System@OleVariant
+  [STRING] @System@Win@Internetexplorer@TOleWebBrowser@ExecWB$qqruiuirx17System@OleVariantr17System@OleVariant
+  [STRING] @System@Win@Internetexplorer@TOleWebBrowser@GetControlInterface$qqrv
+  [STRING] @System@Win@Internetexplorer@TOleWebBrowser@GetProperty$qqrx17System@WideString
+  [STRING] @System@Win@Internetexplorer@TOleWebBrowser@GetVisible$qqrv
+  [STRING] @System@Win@Internetexplorer@TOleWebBrowser@Get_Application$qqrv
+  [STRING] @System@Win@Internetexplorer@TOleWebBrowser@Get_Container$qqrv
+  [STRING] @System@Win@Internetexplorer@TOleWebBrowser@Get_Document$qqrv
+  [STRING] @System@Win@Internetexplorer@TOleWebBrowser@Get_HWND_$qqrv
+  [STRING] @System@Win@Internetexplorer@TOleWebBrowser@Get_Parent$qqrv
+  [STRING] @System@Win@Internetexplorer@TOleWebBrowser@GoBack$qqrv
+  [STRING] @System@Win@Internetexplorer@TOleWebBrowser@GoForward$qqrv
+  [STRING] @System@Win@Internetexplorer@TOleWebBrowser@GoHome$qqrv
+  [STRING] @System@Win@Internetexplorer@TOleWebBrowser@GoSearch$qqrv
+  [STRING] @System@Win@Internetexplorer@TOleWebBrowser@InitControlData$qqrv
+  [STRING] @System@Win@Internetexplorer@TOleWebBrowser@Navigate$qqrx17System@WideString
+  [STRING] @System@Win@Internetexplorer@TOleWebBrowser@Navigate$qqrx17System@WideStringrx17System@OleVariant
+  [STRING] @System@Win@Internetexplorer@TOleWebBrowser@Navigate$qqrx17System@WideStringrx17System@OleVariantt2
+  [STRING] @System@Win@Internetexplorer@TOleWebBrowser@Navigate$qqrx17System@WideStringrx17System@OleVariantt2t2
+  [STRING] @System@Win@Internetexplorer@TOleWebBrowser@Navigate$qqrx17System@WideStringrx17System@OleVariantt2t2t2
+  [STRING] @System@Win@Internetexplorer@TOleWebBrowser@Navigate2$qqrrx17System@OleVariant
+  [STRING] @System@Win@Internetexplorer@TOleWebBrowser@Navigate2$qqrrx17System@OleVariantt1
+  [STRING] @System@Win@Internetexplorer@TOleWebBrowser@Navigate2$qqrrx17System@OleVariantt1t1
+  [STRING] @System@Win@Internetexplorer@TOleWebBrowser@Navigate2$qqrrx17System@OleVariantt1t1t1
+  [STRING] @System@Win@Internetexplorer@TOleWebBrowser@Navigate2$qqrrx17System@OleVariantt1t1t1t1
+  [STRING] @System@Win@Internetexplorer@TOleWebBrowser@PutProperty$qqrx17System@WideStringrx17System@OleVariant
+  [STRING] @System@Win@Internetexplorer@TOleWebBrowser@QueryStatusWB$qqrui
+  [STRING] @System@Win@Internetexplorer@TOleWebBrowser@Quit$qqrv
+  [STRING] @System@Win@Internetexplorer@TOleWebBrowser@Refresh$qqrv
+  [STRING] @System@Win@Internetexplorer@TOleWebBrowser@Refresh2$qqrrx17System@OleVariant
+  [STRING] @System@Win@Internetexplorer@TOleWebBrowser@Refresh2$qqrv
+  [STRING] @System@Win@Internetexplorer@TOleWebBrowser@SetVisible$qqrxus
+  [STRING] @System@Win@Internetexplorer@TOleWebBrowser@ShowBrowserBar$qqrrx17System@OleVariant
+  [STRING] @System@Win@Internetexplorer@TOleWebBrowser@ShowBrowserBar$qqrrx17System@OleVariantt1
+  [STRING] @System@Win@Internetexplorer@TOleWebBrowser@ShowBrowserBar$qqrrx17System@OleVariantt1t1
+  [STRING] @System@Win@Internetexplorer@TOleWebBrowser@Stop$qqrv
+  [STRING] @System@Win@Olecontrols@TDelegatedOleControl@GetWordBoolProp$qqri
+  [STRING] @System@Win@Olecontrols@TDelegatedOleControl@GetWordProp$qqri
+  [STRING] @System@Win@Olecontrols@TDelegatedOleControl@SetWordBoolProp$qqrius
+  [STRING] @System@Win@Olecontrols@TDelegatedOleControl@SetWordProp$qqrius
+  [STRING] @System@Win@Oleservers@TOleServer@
+  [STRING] @System@Win@Oleservers@TOleServer@$bctr$qqrp25System@Classes@TComponent
+  [STRING] @System@Win@Oleservers@TOleServer@$bdtr$qqrv
+  [STRING] @System@Win@Oleservers@TOleServer@ConnectEvents$qqrx44System@%DelphiInterface$17System@IInterface%
+  [STRING] @System@Win@Oleservers@TOleServer@DisconnectEvents$qqrx44System@%DelphiInterface$17System@IInterface%
+  [STRING] @System@Win@Oleservers@TOleServer@GetAutoConnect$qqrv
+  [STRING] @System@Win@Oleservers@TOleServer@GetConnectKind$qqrv
+  [STRING] @System@Win@Oleservers@TOleServer@GetServer$qqrv
+  [STRING] @System@Win@Oleservers@TOleServer@InvokeEvent$qqrir41System@%DynamicArray$17System@OleVariant%
+  [STRING] @System@Win@Oleservers@TOleServer@Loaded$qqrv
+  [STRING] @System@Win@Oleservers@TOleServer@QueryInterface$qqsrx5_GUIDpv
+  [STRING] @System@Win@Oleservers@TOleServer@SetAutoConnect$qqro
+  [STRING] @System@Win@Oleservers@TOleServer@SetConnectKind$qqr34System@Win@Oleservers@TConnectKind
+  [STRING] @System@Win@Oleservers@TOleServer@_AddRef$qqsv
+  [STRING] @System@Win@Oleservers@TOleServer@_Release$qqsv
+  [STRING] @System@Win@Oleservers@TServerEventDispatch@$bctr$qqrp32System@Win@Oleservers@TOleServer
+  [STRING] @Winapi@D2d1@DWRITE_CLUSTER_METRICS@GetWord$qqrxi
+  [STRING] @Winapi@D2d1@DWRITE_CLUSTER_METRICS@SetWord$qqrxius
+  [STRING] @Winapi@D2d1@DWRITE_SHAPING_GLYPH_PROPERTIES@GetWord$qqrxi
+  [STRING] @Winapi@D2d1@DWRITE_SHAPING_GLYPH_PROPERTIES@SetWord$qqrxius
+  [STRING] @Winapi@D2d1@DWRITE_SHAPING_TEXT_PROPERTIES@GetWord$qqrxi
+  [STRING] @Winapi@D2d1@DWRITE_SHAPING_TEXT_PROPERTIES@SetWord$qqrxius
+  [STRING] @Winapi@Mlang@CLSID_CMLangConvertCharset
+  [STRING] @Winapi@Mlang@CLSID_CMLangString
+  [STRING] @Winapi@Mlang@CLSID_CMultiLanguage
+  [STRING] @Winapi@Oledb@CLSID_DATALINKS
+  [STRING] @Winapi@Oledb@CLSID_EXTENDEDERRORINFO
+  [STRING] @Winapi@Oledb@CLSID_MSDAVTM
+  [STRING] @Winapi@Oledb@CLSID_OLEDB_CONVERSIONLIBRARY
+  [STRING] @Winapi@Oledb@CLSID_OLEDB_ENUMERATOR
+  [STRING] @Winapi@Oledb@CLSID_OLEDB_ROWPOSITIONLIBRARY
+  [STRING] @Winapi@Oledb@DBCOLUMN_CLSID
+  [STRING] @Winapi@Wincodec@CLSID_WICBmpDecoder
+  [STRING] @Winapi@Wincodec@CLSID_WICBmpEncoder
+  [STRING] @Winapi@Wincodec@CLSID_WICDefaultFormatConverter
+  [STRING] @Winapi@Wincodec@CLSID_WICFormatConverterHighColor
+  [STRING] @Winapi@Wincodec@CLSID_WICFormatConverterNChannel
+  [STRING] @Winapi@Wincodec@CLSID_WICFormatConverterWMPhoto
+  [STRING] @Winapi@Wincodec@CLSID_WICGifDecoder
+  [STRING] @Winapi@Wincodec@CLSID_WICGifEncoder
+  [STRING] @Winapi@Wincodec@CLSID_WICIcoDecoder
+  [STRING] @Winapi@Wincodec@CLSID_WICImagingCategories
+  [STRING] @Winapi@Wincodec@CLSID_WICImagingFactory
+  [STRING] @Winapi@Wincodec@CLSID_WICJpegDecoder
+  [STRING] @Winapi@Wincodec@CLSID_WICJpegEncoder
+  [STRING] @Winapi@Wincodec@CLSID_WICPngDecoder
+  [STRING] @Winapi@Wincodec@CLSID_WICPngEncoder
+  [STRING] @Winapi@Wincodec@CLSID_WICTiffDecoder
+  [STRING] @Winapi@Wincodec@CLSID_WICTiffEncoder
+  [STRING] @Winapi@Wincodec@CLSID_WICWmpDecoder
+  [STRING] @Winapi@Wincodec@CLSID_WICWmpEncoder
+  [STRING] CLSID\
+  [STRING] \Clsid
+  [STRING] \ProgID
+  [STRING] %s, ProgID: "%s"
+  [RESOURCE] type=STRING name=4043 lang=0 size=972 rva=0x8f5c20
+  [RESOURCE] type=STRING name=4044 lang=0 size=1472 rva=0x8f5fec
+  [RESOURCE] type=STRING name=4045 lang=0 size=1128 rva=0x8f65ac
+  [RESOURCE] type=STRING name=4046 lang=0 size=1340 rva=0x8f6a14
+  [RESOURCE] type=STRING name=4047 lang=0 size=1132 rva=0x8f6f50
+  [RESOURCE] type=STRING name=4048 lang=0 size=1068 rva=0x8f73bc
+  [RESOURCE] type=STRING name=4049 lang=0 size=1064 rva=0x8f77e8
+  [RESOURCE] type=STRING name=4050 lang=0 size=1020 rva=0x8f7c10
+  [RESOURCE] type=STRING name=4051 lang=0 size=1544 rva=0x8f800c
+  [RESOURCE] type=STRING name=4052 lang=0 size=1396 rva=0x8f8614
+  [RESOURCE] type=STRING name=4053 lang=0 size=1496 rva=0x8f8b88
+  [RESOURCE] type=STRING name=4054 lang=0 size=1100 rva=0x8f9160
+  [RESOURCE] type=STRING name=4055 lang=0 size=1156 rva=0x8f95ac
+  [RESOURCE] type=STRING name=4056 lang=0 size=1824 rva=0x8f9a30
+  [RESOURCE] type=STRING name=4057 lang=0 size=1732 rva=0x8fa150
+  [RESOURCE] type=STRING name=4058 lang=0 size=1328 rva=0x8fa814
+  [RESOURCE] type=STRING name=4059 lang=0 size=1648 rva=0x8fad44
+  [RESOURCE] type=STRING name=4060 lang=0 size=1408 rva=0x8fb3b4
+  [RESOURCE] type=STRING name=4061 lang=0 size=984 rva=0x8fb934
+  [RESOURCE] type=STRING name=4062 lang=0 size=1156 rva=0x8fbd0c
+  [RESOURCE] type=STRING name=4063 lang=0 size=616 rva=0x8fc190
+  [RESOURCE] type=STRING name=4064 lang=0 size=1240 rva=0x8fc3f8
+  [RESOURCE] type=STRING name=4065 lang=0 size=1240 rva=0x8fc8d0
+  [RESOURCE] type=STRING name=4066 lang=0 size=1048 rva=0x8fcda8
+  [RESOURCE] type=STRING name=4067 lang=0 size=328 rva=0x8fd1c0
+  [RESOURCE] type=STRING name=4068 lang=0 size=256 rva=0x8fd308
+  [RESOURCE] type=STRING name=4069 lang=0 size=292 rva=0x8fd408
+  [RESOURCE] type=STRING name=4070 lang=0 size=364 rva=0x8fd52c
+  [RESOURCE] type=STRING name=4071 lang=0 size=324 rva=0x8fd698
+  [RESOURCE] type=STRING name=4072 lang=0 size=384 rva=0x8fd7dc
+  [RESOURCE] type=STRING name=4073 lang=0 size=380 rva=0x8fd95c
+  [RESOURCE] type=STRING name=4074 lang=0 size=288 rva=0x8fdad8
+  [RESOURCE] type=STRING name=4075 lang=0 size=680 rva=0x8fdbf8
+  [RESOURCE] type=STRING name=4076 lang=0 size=1000 rva=0x8fdea0
+  [RESOURCE] type=STRING name=4077 lang=0 size=1928 rva=0x8fe288
+  [RESOURCE] type=STRING name=4078 lang=0 size=892 rva=0x8fea10
+  [RESOURCE] type=STRING name=4079 lang=0 size=808 rva=0x8fed8c
+  [RESOURCE] type=STRING name=4080 lang=0 size=1288 rva=0x8ff0b4
+  [RESOURCE] type=STRING name=4081 lang=0 size=1224 rva=0x8ff5bc
+  [RESOURCE] type=STRING name=4082 lang=0 size=1144 rva=0x8ffa84
+  [RESOURCE] type=STRING name=4083 lang=0 size=808 rva=0x8ffefc
+  [RESOURCE] type=STRING name=4084 lang=0 size=972 rva=0x900224
+  [RESOURCE] type=STRING name=4085 lang=0 size=896 rva=0x9005f0
+  [RESOURCE] type=STRING name=4086 lang=0 size=1100 rva=0x900970
+  [RESOURCE] type=STRING name=4087 lang=0 size=996 rva=0x900dbc
+  [RESOURCE] type=STRING name=4088 lang=0 size=208 rva=0x9011a0
+  [RESOURCE] type=STRING name=4089 lang=0 size=184 rva=0x901270
+  [RESOURCE] type=STRING name=4090 lang=0 size=816 rva=0x901328
+  [RESOURCE] type=STRING name=4091 lang=0 size=952 rva=0x901658
+  [RESOURCE] type=STRING name=4092 lang=0 size=1140 rva=0x901a10
+  [RESOURCE] type=STRING name=4093 lang=0 size=1268 rva=0x901e84
+  [RESOURCE] type=STRING name=4094 lang=0 size=700 rva=0x902378
+  [RESOURCE] type=STRING name=4095 lang=0 size=752 rva=0x902634
+  [RESOURCE] type=STRING name=4096 lang=0 size=884 rva=0x902924
+  [RESOURCE] type=RCDATA name=BORLAND_SIG lang=1033 size=178 rva=0x902c98
+  [RESOURCE] type=RCDATA name=DESCRIPTION lang=0 size=60 rva=0x902d4c
+  [RESOURCE] type=RCDATA name=PACKAGEINFO lang=0 size=5228 rva=0x902d88
+  [STRING] System.Sqlite
+  [RESOURCE] type=RCDATA name=PACKAGEOPTIONS lang=0 size=260 rva=0x9041f4
+  [RESOURCE] type=RCDATA name=PLATFORMTARGETS lang=1033 size=2 rva=0x9042f8
+  [RESOURCE] type=VERSION name=1 lang=1033 size=908 rva=0x9042fc
+  [RESOURCE TOTAL] 60
+
+========================================================================
+FILE: tee9230.bpl
+SIZE: 1916416
+SHA256: a5c1ef75a35272da73ce7d4ba4461e74bfc26dbf03155d7c92b39ebff7b557aa
+  [RESOURCE] type=CURSOR name=1 lang=1033 size=308 rva=0x182628
+  [RESOURCE] type=BITMAP name=TBUTTONCOLOR lang=1033 size=1640 rva=0x18275c
+  [RESOURCE] type=BITMAP name=TBUTTONGRADIENT lang=1033 size=1640 rva=0x182dc4
+  [RESOURCE] type=BITMAP name=TBUTTONPEN lang=1033 size=1640 rva=0x18342c
+  [RESOURCE] type=BITMAP name=TCOMBOFLAT lang=1033 size=1640 rva=0x183a94
+  [RESOURCE] type=BITMAP name=TEEARROWDOWN lang=1033 size=272 rva=0x1840fc
+  [RESOURCE] type=BITMAP name=TEEARROWUP lang=1033 size=272 rva=0x18420c
+  [RESOURCE] type=BITMAP name=TIMAGEFILTERED lang=1033 size=1640 rva=0x18431c
+  [RESOURCE] type=BITMAP name=TTEEINSPECTOR lang=1033 size=1640 rva=0x184984
+  [RESOURCE] type=BITMAP name=TTEEPREVIEWPANEL lang=1033 size=1640 rva=0x184fec
+  [RESOURCE] type=RCDATA name=BORLAND_SIG lang=1033 size=178 rva=0x185654
+  [RESOURCE] type=RCDATA name=DESCRIPTION lang=0 size=40 rva=0x185708
+  [RESOURCE] type=RCDATA name=PACKAGEINFO lang=0 size=396 rva=0x185730
+  [RESOURCE] type=RCDATA name=PACKAGEOPTIONS lang=0 size=252 rva=0x1858bc
+  [RESOURCE] type=RCDATA name=PLATFORMTARGETS lang=1033 size=2 rva=0x1859b8
+  [RESOURCE] type=RCDATA name=TEELCDFONT lang=1033 size=267720 rva=0x1859bc
+  [RESOURCE] type=RCDATA name=TEELEDFONT lang=1033 size=24448 rva=0x1c6f84
+  [RESOURCE] type=RCDATA name=TTEEABOUTFORM lang=0 size=53366 rva=0x1ccf04
+  [RESOURCE] type=GROUP_CURSOR name=TEE_CURSOR_HAND lang=1033 size=20 rva=0x1d9f7c
+  [RESOURCE] type=VERSION name=1 lang=1033 size=696 rva=0x1d9f90
+  [RESOURCE TOTAL] 20
+
+========================================================================
+FILE: vcl230.bpl
+SIZE: 3991936
+SHA256: a6d385b8c91a05e3494388a527b502fe84d237367ddb196009b3f373aa7f47eb
+  [GUID] 43826D1E-E718-42EE-BC55-A1E261C37BFE | context: ger ComboBoxEx32 ExtendedImage SubsetTitle TopDescription BottomDescription dd mmmm yyyy {43826D1E-E718-42EE-BC55-A1E261C37BFE} {D57C7288-D4AD-4768-BE02-9D969532D960} {84BCCD23-5FDE-4CDB-AEA4-AF64B83D78AB} %s%s%s%s%s
+  [GUID] D57C7288-D4AD-4768-BE02-9D969532D960 | context: tle TopDescription BottomDescription dd mmmm yyyy {43826D1E-E718-42EE-BC55-A1E261C37BFE} {D57C7288-D4AD-4768-BE02-9D969532D960} {84BCCD23-5FDE-4CDB-AEA4-AF64B83D78AB} %s%s%s%s%s%s%s%s%s%s Retry Ignore NoToAll YesToAl
+  [GUID] 84BCCD23-5FDE-4CDB-AEA4-AF64B83D78AB | context:  mmmm yyyy {43826D1E-E718-42EE-BC55-A1E261C37BFE} {D57C7288-D4AD-4768-BE02-9D969532D960} {84BCCD23-5FDE-4CDB-AEA4-AF64B83D78AB} %s%s%s%s%s%s%s%s%s%s Retry Ignore NoToAll YesToAll commdlg_help commdlg_FindReplace WndP
+  [STRING] TWordFiller
+  [STRING] clsid
+  [STRING] cClsidExclude
+  [STRING] lpClsidExclude
+  [STRING] TOleServer6
+  [STRING] TOleServerP
+  [STRING] dsCLSIDCanInstantiate
+  [STRING] bstrCLSIDOrProgId
+  [STRING] varCLSIDS
+  [STRING] varProgIDs
+  [STRING] @Winapi@Wincodec@CLSID_WICImagingFactory
+  [STRING] @System@Win@Comobj@ClassIDToProgID$qqrrx5_GUID
+  [STRING] @System@Win@Comobj@ProgIDToClassID$qqrx20System@UnicodeString
+  [STRING] @System@Win@Comobj@TComObjectFactory@GetProgID$qqrv
+  [STRING] @$xp$24Vcl@Oleserver@TOleServer
+  [STRING] @Vcl@Extctrls@TCustomRadioGroup@SetWordWrap$qqro
+  [STRING] @Vcl@Olectrls@TOleControl@GetWordBoolProp$qqri
+  [STRING] @Vcl@Olectrls@TOleControl@GetWordProp$qqri
+  [STRING] @Vcl@Olectrls@TOleControl@SetWordBoolProp$qqrius
+  [STRING] @Vcl@Olectrls@TOleControl@SetWordProp$qqrius
+  [STRING] @Vcl@Oleserver@TOleServer@
+  [STRING] @Vcl@Oleserver@TOleServer@$bctr$qqrp25System@Classes@TComponent
+  [STRING] @Vcl@Oleserver@TOleServer@$bdtr$qqrv
+  [STRING] @Vcl@Oleserver@TOleServer@ConnectEvents$qqrx44System@%DelphiInterface$17System@IInterface%
+  [STRING] @Vcl@Oleserver@TOleServer@DisconnectEvents$qqrx44System@%DelphiInterface$17System@IInterface%
+  [STRING] @Vcl@Oleserver@TOleServer@GetAutoConnect$qqrv
+  [STRING] @Vcl@Oleserver@TOleServer@GetConnectKind$qqrv
+  [STRING] @Vcl@Oleserver@TOleServer@GetServer$qqrv
+  [STRING] @Vcl@Oleserver@TOleServer@InvokeEvent$qqrir41System@%DynamicArray$17System@OleVariant%
+  [STRING] @Vcl@Oleserver@TOleServer@Loaded$qqrv
+  [STRING] @Vcl@Oleserver@TOleServer@QueryInterface$qqsrx5_GUIDpv
+  [STRING] @Vcl@Oleserver@TOleServer@SetAutoConnect$qqro
+  [STRING] @Vcl@Oleserver@TOleServer@SetConnectKind$qqr26Vcl@Oleserver@TConnectKind
+  [STRING] @Vcl@Oleserver@TOleServer@_AddRef$qqsv
+  [STRING] @Vcl@Oleserver@TOleServer@_Release$qqsv
+  [STRING] @Vcl@Oleserver@TServerEventDispatch@$bctr$qqrp24Vcl@Oleserver@TOleServer
+  [STRING] @Vcl@Stdctrls@TButtonControl@SetWordWrap$qqrxo
+  [STRING] @Vcl@Stdctrls@TCustomLabel@SetWordWrap$qqro
+  [STRING] @Vcl@Stdctrls@TCustomMemo@SetWordWrap$qqro
+  [STRING] CLSID\
+  [RESOURCE] type=AVI name=150 lang=1033 size=24064 rva=0x3b79b0
+  [RESOURCE] type=AVI name=151 lang=1033 size=6656 rva=0x3bd7b0
+  [RESOURCE] type=AVI name=152 lang=1033 size=6656 rva=0x3bf1b0
+  [RESOURCE] type=AVI name=160 lang=1033 size=28160 rva=0x3c0bb0
+  [RESOURCE] type=AVI name=161 lang=1033 size=17408 rva=0x3c79b0
+  [RESOURCE] type=AVI name=162 lang=1033 size=17408 rva=0x3cbdb0
+  [RESOURCE] type=AVI name=163 lang=1033 size=15872 rva=0x3d01b0
+  [RESOURCE] type=AVI name=164 lang=1033 size=15872 rva=0x3d3fb0
+  [RESOURCE] type=CURSOR name=1 lang=1033 size=308 rva=0x3d7db0
+  [RESOURCE] type=CURSOR name=2 lang=1033 size=308 rva=0x3d7ee4
+  [RESOURCE] type=CURSOR name=3 lang=1033 size=308 rva=0x3d8018
+  [RESOURCE] type=CURSOR name=4 lang=1033 size=308 rva=0x3d814c
+  [RESOURCE] type=CURSOR name=5 lang=1033 size=308 rva=0x3d8280
+  [RESOURCE] type=CURSOR name=6 lang=1033 size=308 rva=0x3d83b4
+  [RESOURCE] type=CURSOR name=7 lang=1033 size=308 rva=0x3d84e8
+  [RESOURCE] type=CURSOR name=8 lang=1033 size=308 rva=0x3d861c
+  [RESOURCE] type=CURSOR name=9 lang=1033 size=308 rva=0x3d8750
+  [RESOURCE] type=CURSOR name=10 lang=1033 size=308 rva=0x3d8884
+  [RESOURCE] type=CURSOR name=11 lang=1033 size=308 rva=0x3d89b8
+  [RESOURCE] type=CURSOR name=12 lang=1033 size=308 rva=0x3d8aec
+  [RESOURCE] type=CURSOR name=13 lang=1033 size=308 rva=0x3d8c20
+  [RESOURCE] type=CURSOR name=14 lang=1033 size=308 rva=0x3d8d54
+  [RESOURCE] type=CURSOR name=15 lang=1033 size=308 rva=0x3d8e88
+  [RESOURCE] type=CURSOR name=16 lang=1033 size=308 rva=0x3d8fbc
+  [RESOURCE] type=CURSOR name=17 lang=1033 size=308 rva=0x3d90f0
+  [RESOURCE] type=CURSOR name=18 lang=1033 size=308 rva=0x3d9224
+  [RESOURCE] type=CURSOR name=19 lang=1033 size=308 rva=0x3d9358
+  [RESOURCE] type=BITMAP name=BBABORT lang=1033 size=464 rva=0x3d948c
+  [RESOURCE] type=BITMAP name=BBALL lang=1033 size=484 rva=0x3d965c
+  [RESOURCE] type=BITMAP name=BBCANCEL lang=1033 size=464 rva=0x3d9840
+  [RESOURCE] type=BITMAP name=BBCLOSE lang=1033 size=464 rva=0x3d9a10
+  [RESOURCE] type=BITMAP name=BBHELP lang=1033 size=464 rva=0x3d9be0
+  [RESOURCE] type=BITMAP name=BBIGNORE lang=1033 size=464 rva=0x3d9db0
+  [RESOURCE] type=BITMAP name=BBNO lang=1033 size=464 rva=0x3d9f80
+  [RESOURCE] type=BITMAP name=BBOK lang=1033 size=464 rva=0x3da150
+  [RESOURCE] type=BITMAP name=BBRETRY lang=1033 size=464 rva=0x3da320
+  [RESOURCE] type=BITMAP name=BBYES lang=1033 size=464 rva=0x3da4f0
+  [RESOURCE] type=BITMAP name=PREVIEWGLYPH lang=1033 size=232 rva=0x3da6c0
+  [RESOURCE] type=BITMAP name=SBDOWN lang=1033 size=200 rva=0x3da7a8
+  [RESOURCE] type=BITMAP name=SBDOWNDIS lang=1033 size=200 rva=0x3da870
+  [RESOURCE] type=BITMAP name=SBDOWNDN lang=1033 size=1256 rva=0x3da938
+  [RESOURCE] type=BITMAP name=SBLEFT lang=1033 size=208 rva=0x3dae20
+  [RESOURCE] type=BITMAP name=SBLEFTDIS lang=1033 size=208 rva=0x3daef0
+  [RESOURCE] type=BITMAP name=SBLEFTDN lang=1033 size=208 rva=0x3dafc0
+  [RESOURCE] type=BITMAP name=SBRIGHT lang=1033 size=208 rva=0x3db090
+  [RESOURCE] type=BITMAP name=SBRIGHTDIS lang=1033 size=208 rva=0x3db160
+  [RESOURCE] type=BITMAP name=SBRIGHTDN lang=1033 size=208 rva=0x3db230
+  [RESOURCE] type=BITMAP name=SBUP lang=1033 size=1256 rva=0x3db300
+  [RESOURCE] type=BITMAP name=SBUPDIS lang=1033 size=1256 rva=0x3db7e8
+  [RESOURCE] type=BITMAP name=SBUPDN lang=1033 size=1256 rva=0x3dbcd0
+  [RESOURCE] type=ICON name=1 lang=1033 size=2920 rva=0x3dc1b8
+  [RESOURCE] type=ICON name=2 lang=1033 size=2920 rva=0x3dcd20
+  [RESOURCE] type=ICON name=3 lang=1033 size=2920 rva=0x3dd888
+  [RESOURCE] type=DIALOG name=DLGTEMPLATE lang=0 size=82 rva=0x3de3f0
+  [RESOURCE] type=DIALOG name=TEXTFILEDLG lang=0 size=82 rva=0x3de444
+  [RESOURCE] type=STRING name=4068 lang=0 size=812 rva=0x3de498
+  [RESOURCE] type=STRING name=4069 lang=0 size=1248 rva=0x3de7c4
+  [RESOURCE] type=STRING name=4070 lang=0 size=972 rva=0x3deca4
+  [RESOURCE] type=STRING name=4071 lang=0 size=1256 rva=0x3df070
+  [RESOURCE] type=STRING name=4072 lang=0 size=1412 rva=0x3df558
+  [RESOURCE] type=STRING name=4073 lang=0 size=568 rva=0x3dfadc
+  [RESOURCE] type=STRING name=4074 lang=0 size=496 rva=0x3dfd14
+  [RESOURCE] type=STRING name=4075 lang=0 size=284 rva=0x3dff04
+  [RESOURCE] type=STRING name=4076 lang=0 size=668 rva=0x3e0020
+  [RESOURCE] type=STRING name=4077 lang=0 size=968 rva=0x3e02bc
+  [RESOURCE] type=STRING name=4078 lang=0 size=840 rva=0x3e0684
+  [RESOURCE] type=STRING name=4079 lang=0 size=732 rva=0x3e09cc
+  [RESOURCE] type=STRING name=4080 lang=0 size=1316 rva=0x3e0ca8
+  [RESOURCE] type=STRING name=4081 lang=0 size=868 rva=0x3e11cc
+  [RESOURCE] type=STRING name=4082 lang=0 size=932 rva=0x3e1530
+  [RESOURCE] type=STRING name=4083 lang=0 size=892 rva=0x3e18d4
+  [RESOURCE] type=STRING name=4084 lang=0 size=668 rva=0x3e1c50
+  [RESOURCE] type=STRING name=4085 lang=0 size=284 rva=0x3e1eec
+  [RESOURCE] type=STRING name=4086 lang=0 size=900 rva=0x3e2008
+  [RESOURCE] type=STRING name=4087 lang=0 size=652 rva=0x3e238c
+  [RESOURCE] type=STRING name=4088 lang=0 size=312 rva=0x3e2618
+  [RESOURCE] type=STRING name=4089 lang=0 size=204 rva=0x3e2750
+  [RESOURCE] type=STRING name=4090 lang=0 size=412 rva=0x3e281c
+  [RESOURCE] type=STRING name=4091 lang=0 size=884 rva=0x3e29b8
+  [RESOURCE] type=STRING name=4092 lang=0 size=696 rva=0x3e2d2c
+  [RESOURCE] type=STRING name=4093 lang=0 size=752 rva=0x3e2fe4
+  [RESOURCE] type=STRING name=4094 lang=0 size=960 rva=0x3e32d4
+  [RESOURCE] type=STRING name=4095 lang=0 size=988 rva=0x3e3694
+  [RESOURCE] type=STRING name=4096 lang=0 size=952 rva=0x3e3a70
+  [RESOURCE] type=RCDATA name=BORLAND_SIG lang=1033 size=178 rva=0x3e3e28
+  [RESOURCE] type=RCDATA name=DESCRIPTION lang=0 size=76 rva=0x3e3edc
+  [RESOURCE] type=RCDATA name=PACKAGEINFO lang=0 size=788 rva=0x3e3f28
+  [RESOURCE] type=RCDATA name=PACKAGEOPTIONS lang=0 size=264 rva=0x3e423c
+  [RESOURCE] type=RCDATA name=PLATFORMTARGETS lang=1033 size=2 rva=0x3e4344
+  [RESOURCE] type=GROUP_CURSOR name=CAT_DRAG_COPY lang=1033 size=20 rva=0x3e4348
+  [RESOURCE] type=GROUP_CURSOR name=PAN_ALL lang=1033 size=20 rva=0x3e435c
+  [RESOURCE] type=GROUP_CURSOR name=PAN_DOWN lang=1033 size=20 rva=0x3e4370
+  [RESOURCE] type=GROUP_CURSOR name=PAN_DOWNLEFT lang=1033 size=20 rva=0x3e4384
+  [RESOURCE] type=GROUP_CURSOR name=PAN_DOWNRIGHT lang=1033 size=20 rva=0x3e4398
+  [RESOURCE] type=GROUP_CURSOR name=PAN_LEFT lang=1033 size=20 rva=0x3e43ac
+  [RESOURCE] type=GROUP_CURSOR name=PAN_LEFTRIGHT lang=1033 size=20 rva=0x3e43c0
+  [RESOURCE] type=GROUP_CURSOR name=PAN_RIGHT lang=1033 size=20 rva=0x3e43d4
+  [RESOURCE] type=GROUP_CURSOR name=PAN_UP lang=1033 size=20 rva=0x3e43e8
+  [RESOURCE] type=GROUP_CURSOR name=PAN_UPDOWN lang=1033 size=20 rva=0x3e43fc
+  [RESOURCE] type=GROUP_CURSOR name=PAN_UPLEFT lang=1033 size=20 rva=0x3e4410
+  [RESOURCE] type=GROUP_CURSOR name=PAN_UPRIGHT lang=1033 size=20 rva=0x3e4424
+  [RESOURCE] type=GROUP_CURSOR name=32761 lang=1033 size=20 rva=0x3e4438
+  [RESOURCE] type=GROUP_CURSOR name=32762 lang=1033 size=20 rva=0x3e444c
+  [RESOURCE] type=GROUP_CURSOR name=32763 lang=1033 size=20 rva=0x3e4460
+  [RESOURCE] type=GROUP_CURSOR name=32764 lang=1033 size=20 rva=0x3e4474
+  [RESOURCE] type=GROUP_CURSOR name=32765 lang=1033 size=20 rva=0x3e4488
+  [RESOURCE] type=GROUP_CURSOR name=32766 lang=1033 size=20 rva=0x3e449c
+  [RESOURCE] type=GROUP_CURSOR name=32767 lang=1033 size=20 rva=0x3e44b0
+  [RESOURCE] type=GROUP_ICON name=VCL_EW lang=1033 size=20 rva=0x3e44c4
+  [RESOURCE] type=GROUP_ICON name=VCL_NESW lang=1033 size=20 rva=0x3e44d8
+  [RESOURCE] type=GROUP_ICON name=VCL_NS lang=1033 size=20 rva=0x3e44ec
+  [RESOURCE] type=VERSION name=1 lang=1033 size=908 rva=0x3e4500
+  [RESOURCE] type=MANIFEST name=1 lang=1033 size=752 rva=0x3e488c
+  [RESOURCE TOTAL] 113
+
+========================================================================
+FILE: vclimg230.bpl
+SIZE: 355712
+SHA256: f616349ec9c3342243a3ea489ae4cb1e7e4762b81225c948cb6337469418e853
+  [RESOURCE] type=STRING name=4092 lang=0 size=1408 rva=0x582f0
+  [RESOURCE] type=STRING name=4093 lang=0 size=2920 rva=0x58870
+  [RESOURCE] type=STRING name=4094 lang=0 size=992 rva=0x593d8
+  [RESOURCE] type=STRING name=4095 lang=0 size=968 rva=0x597b8
+  [RESOURCE] type=STRING name=4096 lang=0 size=1056 rva=0x59b80
+  [RESOURCE] type=RCDATA name=BORLAND_SIG lang=1033 size=178 rva=0x59fa0
+  [RESOURCE] type=RCDATA name=DESCRIPTION lang=0 size=84 rva=0x5a054
+  [RESOURCE] type=RCDATA name=PACKAGEINFO lang=0 size=196 rva=0x5a0a8
+  [RESOURCE] type=RCDATA name=PACKAGEOPTIONS lang=0 size=268 rva=0x5a16c
+  [RESOURCE] type=RCDATA name=PLATFORMTARGETS lang=1033 size=2 rva=0x5a278
+  [RESOURCE] type=VERSION name=1 lang=1033 size=912 rva=0x5a27c
+  [RESOURCE TOTAL] 11
+
+========================================================================
+FILE: vclsmp230.bpl
+SIZE: 99712
+SHA256: 0e0ed94791fd3254df1f1e3ae639534980bdcab777618a8db8ae1a5f4240a9f2
+  [RESOURCE] type=BITMAP name=SPINDOWN lang=1033 size=152 rva=0x1d238
+  [RESOURCE] type=BITMAP name=SPINUP lang=1033 size=152 rva=0x1d2d0
+  [RESOURCE] type=RCDATA name=DESCRIPTION lang=0 size=60 rva=0x1d368
+  [RESOURCE] type=RCDATA name=PACKAGEINFO lang=0 size=164 rva=0x1d3a4
+  [RESOURCE] type=RCDATA name=PACKAGEOPTIONS lang=0 size=256 rva=0x1d448
+  [RESOURCE] type=RCDATA name=PLATFORMTARGETS lang=1033 size=2 rva=0x1d548
+  [RESOURCE] type=VERSION name=1 lang=1033 size=920 rva=0x1d54c
+  [RESOURCE TOTAL] 7
+
+========================================================================
+FILE: vclx230.bpl
+SIZE: 272768
+SHA256: aa1000c969b60f3fe966c8384d0bc3501f1a8b4621532d535bd2eb3224a4e951
+  [STRING] @Vcl@Stdctrls@TCustomLabel@SetWordWrap$qqro
+  [RESOURCE] type=BITMAP name=CDROM lang=1033 size=192 rva=0x43d44
+  [RESOURCE] type=BITMAP name=CLOSED lang=1033 size=216 rva=0x43e04
+  [RESOURCE] type=BITMAP name=CLOSEDFOLDER lang=1033 size=224 rva=0x43edc
+  [RESOURCE] type=BITMAP name=CL_MPBACK lang=1033 size=296 rva=0x43fbc
+  [RESOURCE] type=BITMAP name=CL_MPEJECT lang=1033 size=296 rva=0x440e4
+  [RESOURCE] type=BITMAP name=CL_MPNEXT lang=1033 size=296 rva=0x4420c
+  [RESOURCE] type=BITMAP name=CL_MPPAUSE lang=1033 size=232 rva=0x44334
+  [RESOURCE] type=BITMAP name=CL_MPPLAY lang=1033 size=296 rva=0x4441c
+  [RESOURCE] type=BITMAP name=CL_MPPREV lang=1033 size=296 rva=0x44544
+  [RESOURCE] type=BITMAP name=CL_MPRECORD lang=1033 size=208 rva=0x4466c
+  [RESOURCE] type=BITMAP name=CL_MPSTEP lang=1033 size=296 rva=0x4473c
+  [RESOURCE] type=BITMAP name=CL_MPSTOP lang=1033 size=296 rva=0x44864
+  [RESOURCE] type=BITMAP name=CURRENTFOLDER lang=1033 size=224 rva=0x4498c
+  [RESOURCE] type=BITMAP name=DI_MPBACK lang=1033 size=296 rva=0x44a6c
+  [RESOURCE] type=BITMAP name=DI_MPEJECT lang=1033 size=296 rva=0x44b94
+  [RESOURCE] type=BITMAP name=DI_MPNEXT lang=1033 size=296 rva=0x44cbc
+  [RESOURCE] type=BITMAP name=DI_MPPAUSE lang=1033 size=232 rva=0x44de4
+  [RESOURCE] type=BITMAP name=DI_MPPLAY lang=1033 size=296 rva=0x44ecc
+  [RESOURCE] type=BITMAP name=DI_MPPREV lang=1033 size=296 rva=0x44ff4
+  [RESOURCE] type=BITMAP name=DI_MPRECORD lang=1033 size=208 rva=0x4511c
+  [RESOURCE] type=BITMAP name=DI_MPSTEP lang=1033 size=296 rva=0x451ec
+  [RESOURCE] type=BITMAP name=DI_MPSTOP lang=1033 size=296 rva=0x45314
+  [RESOURCE] type=BITMAP name=EN_MPBACK lang=1033 size=296 rva=0x4543c
+  [RESOURCE] type=BITMAP name=EN_MPEJECT lang=1033 size=296 rva=0x45564
+  [RESOURCE] type=BITMAP name=EN_MPNEXT lang=1033 size=296 rva=0x4568c
+  [RESOURCE] type=BITMAP name=EN_MPPAUSE lang=1033 size=232 rva=0x457b4
+  [RESOURCE] type=BITMAP name=EN_MPPLAY lang=1033 size=296 rva=0x4589c
+  [RESOURCE] type=BITMAP name=EN_MPPREV lang=1033 size=296 rva=0x459c4
+  [RESOURCE] type=BITMAP name=EN_MPRECORD lang=1033 size=208 rva=0x45aec
+  [RESOURCE] type=BITMAP name=EN_MPSTEP lang=1033 size=296 rva=0x45bbc
+  [RESOURCE] type=BITMAP name=EN_MPSTOP lang=1033 size=296 rva=0x45ce4
+  [RESOURCE] type=BITMAP name=EXECUTABLE lang=1033 size=224 rva=0x45e0c
+  [RESOURCE] type=BITMAP name=FLOPPY lang=1033 size=192 rva=0x45eec
+  [RESOURCE] type=BITMAP name=HARD lang=1033 size=192 rva=0x45fac
+  [RESOURCE] type=BITMAP name=KNOWNFILE lang=1033 size=224 rva=0x4606c
+  [RESOURCE] type=BITMAP name=LEAF lang=1033 size=216 rva=0x4614c
+  [RESOURCE] type=BITMAP name=MINUS lang=1033 size=216 rva=0x46224
+  [RESOURCE] type=BITMAP name=NETWORK lang=1033 size=192 rva=0x462fc
+  [RESOURCE] type=BITMAP name=OPEN lang=1033 size=216 rva=0x463bc
+  [RESOURCE] type=BITMAP name=OPENFOLDER lang=1033 size=224 rva=0x46494
+  [RESOURCE] type=BITMAP name=PLUS lang=1033 size=216 rva=0x46574
+  [RESOURCE] type=BITMAP name=RAM lang=1033 size=192 rva=0x4664c
+  [RESOURCE] type=BITMAP name=UNKNOWNFILE lang=1033 size=224 rva=0x4670c
+  [RESOURCE] type=RCDATA name=BORLAND_SIG lang=1033 size=178 rva=0x467ec
+  [RESOURCE] type=RCDATA name=DESCRIPTION lang=0 size=72 rva=0x468a0
+  [RESOURCE] type=RCDATA name=PACKAGEINFO lang=0 size=148 rva=0x468e8
+  [RESOURCE] type=RCDATA name=PACKAGEOPTIONS lang=0 size=260 rva=0x4697c
+  [RESOURCE] type=RCDATA name=PLATFORMTARGETS lang=1033 size=2 rva=0x46a80
+  [RESOURCE] type=VERSION name=1 lang=1033 size=928 rva=0x46a84
+  [RESOURCE TOTAL] 49
+
+========================================================================
+FILE: xmlrtl230.bpl
+SIZE: 2400128
+SHA256: f075aa715df37a9011e6a679b6c951c5e7913bde97d9a573335476485566c795
+  [ProgID] JUS_I.B1.002 | context: SO-8859-8-E ISO_8859-8-I csISO88598I ISO-8859-8-I CSN_369103 iso-ir-139 csISO139CSN369103 JUS_I.B1.002 iso-ir-141 ISO646-YU csISO141JUSIB1002 IEC_P27-1 iso-ir-143 csISO143IECP271 JUS_I.B1.003-
+  [ProgID] JUS_I.B1.003 | context:  JUS_I.B1.002 iso-ir-141 ISO646-YU csISO141JUSIB1002 IEC_P27-1 iso-ir-143 csISO143IECP271 JUS_I.B1.003-serb iso-ir-146 serbian csISO146Serbian JUS_I.B1.003-mac macedonian iso-ir-147 csISO147Ma
+  [RESOURCE] type=STRING name=4091 lang=0 size=1112 rva=0x24b320
+  [RESOURCE] type=STRING name=4092 lang=0 size=1100 rva=0x24b778
+  [RESOURCE] type=STRING name=4093 lang=0 size=1120 rva=0x24bbc4
+  [RESOURCE] type=STRING name=4094 lang=0 size=1344 rva=0x24c024
+  [RESOURCE] type=STRING name=4095 lang=0 size=1108 rva=0x24c564
+  [RESOURCE] type=STRING name=4096 lang=0 size=1088 rva=0x24c9b8
+  [RESOURCE] type=RCDATA name=BORLAND_SIG lang=1033 size=178 rva=0x24cdf8
+  [RESOURCE] type=RCDATA name=DESCRIPTION lang=0 size=56 rva=0x24ceac
+  [RESOURCE] type=RCDATA name=PACKAGEINFO lang=0 size=712 rva=0x24cee4
+  [RESOURCE] type=RCDATA name=PACKAGEOPTIONS lang=0 size=252 rva=0x24d1ac
+  [RESOURCE] type=RCDATA name=PLATFORMTARGETS lang=1033 size=2 rva=0x24d2a8
+  [RESOURCE] type=VERSION name=1 lang=1033 size=924 rva=0x24d2ac
+  [RESOURCE TOTAL] 12
