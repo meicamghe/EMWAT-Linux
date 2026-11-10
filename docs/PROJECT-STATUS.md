@@ -58,11 +58,14 @@
 - سند مستقل [تحلیل HTTP محلی و bridge](HTTP-LOCAL-API-ANALYSIS.md) اضافه شد.
 - شواهد heartbeat و invoke در قالب جدول مستند شدند و مدل ارتباطی موقت ترسیم شد.
 - موارد نامعلوم API و ملاحظات امنیتی نسخه Linux تفکیک شدند.
-- اقدام بعدی مشخص: استخراج Import Table فایل‌های Service، Agent و Methods برای شناسایی APIهای شبکه، COM/Browser، سرویس ویندوز و دیتابیس.
+- Import Table سه فایل Service، Agent و Methods استخراج و در [گزارش تحلیل Importها](IMPORT-TABLE-ANALYSIS.md) مستند شد.
+- COM/OLE در Agent، dependencyهای Indy در Service/Methods، چاپگرهای Windows، ImageEn/WIA/TWAIN، GEAR32PD و GDI+ شناسایی شدند.
+- در importهای مستقیم گزارش‌شده، driver صریح دیتابیس و import مستقیم شناخته‌شده مرورگر پیدا نشد؛ این موارد همچنان باز هستند، چون بارگذاری پویا ممکن است.
+- گام بعدی: استخراج CLSID/ProgID و شواهد Office Automation، سپس تحلیل resourceها و فایل‌های config/data.
 
 ## گام‌های بعدی تحلیل
 1. بررسی کامل `EMWAT-Analysis-Results.txt` و استخراج سرنخ‌های مهم به گزارش ساختاریافته.
-2. تحلیل import table و resourceهای EXE/BPL برای شناسایی APIهای Windows، DLLهای خارجی و مؤلفه‌های مرورگر/دیتابیس.
+2. Import Table تحلیل شده است؛ مرحله بعدی تحلیل resourceهای EXE/BPL برای شناسایی UI، manifest، COM و احتمال embedded browser است.
 3. بررسی فایل‌های config/INI/REG و محتوای پوشه چاپ؛ ثبت فقط مقادیر غیرحساس.
 4. شناسایی دقیق قرارداد heartbeat و invoke: پارامترها، payload، پاسخ‌ها و مسیرهای دیگر HTTP.
 5. شناسایی دیتابیس از روی فایل‌های واقعی، importها، driverها و تنظیمات؛ نه از روی MIME string.
@@ -70,4 +73,4 @@
 7. پس از تکمیل شواهد، نوشتن specification و سپس پیاده‌سازی ماژول‌به‌ماژول همراه تست.
 
 ## نقطه شروع جلسه بعد
-از همین گزارش و فایل `EMWAT-Analysis-Results.txt` شروع کن. ابتدا داده‌های تازه را با یافته‌های بالا تطبیق بده؛ از تکرار مراحل قبلی و ادعای استخراج ZIP از سمت GitHub خودداری کن. ZIP و فایل‌های گزارش در مخزن قرار دارند، اما محتوای باینری ZIP از طریق نمایشگر متنی GitHub تحلیل نشده است.
+از [گزارش وضعیت](PROJECT-STATUS.md)، [تحلیل HTTP](HTTP-LOCAL-API-ANALYSIS.md) و [تحلیل Importها](IMPORT-TABLE-ANALYSIS.md) شروع کن. مرحله Import Table تمام شده؛ آن را تکرار نکن. گام بعدی CLSID/ProgID و resourceهاست. از ادعای استخراج ZIP از سمت GitHub خودداری کن. ZIP و فایل‌های گزارش در مخزن قرار دارند، اما محتوای باینری ZIP از طریق نمایشگر متنی GitHub تحلیل نشده است.
