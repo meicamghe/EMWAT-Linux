@@ -127,3 +127,39 @@ The mouse-up handler only updates the on-screen rectangle during dragging; it do
 The vendor's ImageGear C/C++ reference documents the crop declaration as `AT_ERRCOUNT ACCUAPI IG_IP_crop(HIGEAR hIGear, LPAT_RECT lpCropRect)`. It keeps the pixels on or inside the supplied `AT_RECT`, discards the remainder, and returns an ImageGear error count (zero indicates success in the v18 reference). The Win32 caller's two pushed arguments match this parameter order: image handle first, rectangle pointer second. The four consecutive `movsd` operations in `0x004EEE24` copy 16 bytes from the Delphi rectangle into a local buffer, consistent with a four-32-bit-field rectangle.
 
 For the native port, model the operation as `crop(image_handle, Rect{left, top, right, bottom})` and return/propagate an error result. Do not copy the Win32 calling convention into the Linux ABI. The public reference consulted is for ImageGear v18; EMWAT's exact bundled `GEAR32PD.DLL` version remains unverified, so confirm the installed header/version before relying on any version-specific edge semantics. The vendor reference describes the rectangle as pixels kept inside/on the rectangle; it does not by itself prove whether EMWAT's Delphi-side right/bottom values are inclusive or exclusive.
+
+
+## Run 57: crop coordinate conversion uses Delphi `System.Round`
+
+The new PE thunk trace for `0x00401058` resolves through IAT slot `0x0062EE2C` to `rtl230.bpl!@System@@ROUND$qqrv`. Therefore the helper is Delphi's RTL `System.Round`, not an application-specific coordinate conversion routine.
+
+### Confirmed mouse-down conversion
+
+In `pbImgViewerMouseDown` at `0x004F1274`:
+
+- X scale = image width `[processor+0x40]` divided by viewer width `[viewer+0x58]`.
+- Y scale = image height `[processor+0x3C]` divided by viewer height `[viewer+0x5C]`.
+- The four stored crop edges are multiplied by the appropriate scale and each floating-point result is passed through `System.Round`.
+- The resulting local `TRect` is laid out in standard Delphi order: `Left, Top, Right, Bottom`. The instruction order is left (field `[self+0x40C]`, X scale), right (`[self+0x414]`, X scale), top (`[self+0x410]`, Y scale), bottom (`[self+0x418]`, Y scale); the local stack slots are arranged so the pointer passed to `0x004EEE24` reads as Left/Top/Right/Bottom.
+- This is the final UI-to-image coordinate conversion immediately before the ImageGear crop call.
+
+The x87 sequence is `FILD`, `FMUL`, then the `System.Round` thunk. Delphi's `Round` follows the active x87 floating-point rounding mode; the usual default mode is round-to-nearest-even (banker's rounding). A native port should explicitly choose and test the intended rounding mode rather than silently substituting truncation or always rounding half values away from zero.
+
+### Native-port contract now supported by the binary
+
+```text
+scale_x = image_width  / viewer_width
+scale_y = image_height / viewer_height
+
+rect.left   = DelphiRound(ui.left   * scale_x)
+rect.top    = DelphiRound(ui.top    * scale_y)
+rect.right  = DelphiRound(ui.right  * scale_x)
+rect.bottom = DelphiRound(ui.bottom * scale_y)
+
+ImageGearCrop(image_handle, rect)
+ReloadPage()
+GetImageResolution()
+modified = true
+```
+
+This confirms the crop rectangle's four-field shape, field ordering, independent axis scaling, and the RTL rounding function. It still does not establish whether the deployed ImageGear build treats right/bottom as inclusive or exclusive, nor the exact DLL version. The new generated trace is `EmwatMethods-crop-coordinate-helper.md` in the Run 57 artifact.
