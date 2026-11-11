@@ -271,3 +271,23 @@
 2. نوع runtime شیء [TGearImgProc+0x28] را از constructor، setter و VMT معتبر شناسایی کنیم؛ نه از parent pointer فعلی.
 3. نسخه دقیق GEAR32PD.DLL یا header/import library متناظر را پیدا کنیم تا ABI دو تابع اسکن قطعی شود.
 4. تا آن زمان مقادیر عددی و نوع آرگومان‌ها را نام‌گذاری نکنیم؛ backend لینوکس همچنان مستقل و مبتنی بر SANE طراحی شود.
+
+
+## Run 76 — شناسایی قطعی‌تر interface فیلد +0x24 و حل HWND
+
+اجرای 43027580174 موفق شد؛ artifact برابر 13857623235 است.
+
+- فیلد [TGearImgProc+0x24] همان interface از نوع IIPEditor است، نه interface خطا. تابع setter در 0x004F0084 آن را با helper مدیریت interface مقداردهی می‌کند.
+- در caller مربوط به TScanCommand.$bdtr، مقدار EDX با offset برابر 0x430 تنظیم و به setter داده می‌شود. این offset دقیقاً با IOffset رابط IIPEditor در TfrmSimpleImageEditor برابر است.
+- caller دوم در 0x004F1151 مقدار nil را به همان setter می‌دهد؛ این با پاک‌کردن/release رابط هنگام teardown سازگار است.
+- IID رابط 7834c511-9078-411c-ab08-8b15ef1fd700 و VTable آن 0x004F03D4 است؛ پیاده‌سازی در TfrmSimpleImageEditor با offset برابر 0x430 ثبت شده.
+- TGearImgProc.HasError در واقع slot +0x0C رابط IIPEditor را صدا می‌زند. پیاده‌سازی متناظر در 0x004F1158 تابع TWinControl.GetHandle را اجرا و مقدار HWND را برمی‌گرداند.
+- بنابراین مقدار ارسالی از Gear به IG_scan_pages و IG_scan_source_select هم HWND است؛ تفاوت قبلی فقط تفاوت مسیر دستیابی به handle بود، نه تفاوت نوع مقدار.
+- فیلد +0x28 همچنان یک آبجکت جداگانه با VMT و stateهای +4/+8 است و کلاس runtime آن هنوز مشخص نشده.
+- RTTI اسمی IImageProcessor هم پیدا شد، اما GUID آن صفر است و در این BPL پیاده‌سازی متناظری پیدا نشد؛ این یافته دلیل نمی‌شود +0x24 را IImageProcessor بدانیم.
+
+### گام بعد
+1. شناسایی runtime class و قرارداد virtualهای آبجکت مستقل +0x28.
+2. تعیین رفتار واقعی slotهای IIPEditor در +0x10، +0x14 و +0x18؛ نام‌های TD32 برای wrapperهای Gear قابل اتکا نیستند.
+3. بازیابی prototype کامل IG_scan_pages و IG_scan_source_select؛ HWND اکنون مشخص است اما آرگومان‌های دیگر و ثابت‌ها هنوز نه.
+4. ادامه طراحی backend لینوکس با SANE، بدون تقلید layout و ABI ویندوز.
