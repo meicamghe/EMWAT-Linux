@@ -1,6 +1,6 @@
 # IIPEditor ABI investigation
 
-## Confirmed from Run 47
+## Confirmed from Run 47 and Run 49
 
 - Interface IID: `7834c511-9078-411c-ab08-8b15ef1fd700`
 - Implementing class: `TfrmSimpleImageEditor`
@@ -10,32 +10,38 @@
 - Interface offset: `0x430` (decimal 1072)
 - Interface table entry count: 1
 - `ImplGetter = 0`
+- Seven vtable entries are present: three IUnknown entries and four interface-specific entries.
 
-The vtable contains seven executable entries before adjacent RTTI/data begins. The first three entries are the standard IUnknown slots; the remaining four are the interface-specific slots. Do not read beyond these seven entries as vtable pointers.
+The interface pointer is an embedded subobject at offset `0x430`. The adjustment thunks subtract `0x430` from the interface pointer to recover the containing `TfrmSimpleImageEditor` instance.
 
-All seven entries point to small adjustment thunks around `0x004F0381..``0x004F03C7`. The disassembly begins with an adjustment by `-0x430`, consistent with converting the interface subobject pointer back to the containing `TfrmSimpleImageEditor` instance. The first three wrappers adjust a stack argument; the four custom wrappers adjust EAX. Full thunk bodies and jump destinations are being emitted by the updated analyzer; method-to-slot assignments remain unconfirmed until those destinations are inspected.
+## Vtable mapping from the actual thunk destinations
 
-## Candidate class methods
+| Interface slot | Thunk VA | Destination / behavior | Status |
+|---:|---:|---|---|
+| 0 — QueryInterface | `0x004F03A9` | Adjusts stack argument, then dispatches through class VMT offset `+0x38` | IUnknown wrapper |
+| 1 — AddRef | `0x004F03BA` | Adjusts stack argument, jumps to `0x004042F4` | IUnknown wrapper |
+| 2 — Release | `0x004F03C7` | Adjusts stack argument, jumps to `0x004042FC` | IUnknown wrapper |
+| 3 | `0x004F0381` | Adjusts EAX by `-0x430`, jumps to `0x004F1158` | Direct target identified as `GetModalRresult` |
+| 4 | `0x004F038B` | Adjusts EAX by `-0x430`, jumps to `0x004F1164` | Direct target identified as `Hello` |
+| 5 | `0x004F0395` | Adjusts EAX by `-0x430`, jumps to `0x004F116C` | Direct target identified as `Initial` |
+| 6 | `0x004F039F` | Adjusts EAX by `-0x430`, jumps to `0x004F17B4` | Destination is adjacent to `Update`; exact symbol/ABI needs verification |
 
-The TD32 symbol stream identifies four methods on `TfrmSimpleImageEditor` that are plausible implementations of the four custom interface slots:
+The analyzer prints several instructions after each thunk because it disassembles a fixed byte window. Those later instructions belong to the next thunk and must not be interpreted as part of the current thunk. The actual thunk bodies are the initial pointer-adjustment instruction followed by its unconditional jump.
 
-| Method | VA | TD32 size | Observed behavior |
-|---|---:|---:|---|
-| `GetHandle` | `0x004F1140` | `0x18` | Reads field `[self+0x408]`; if non-null, calls helper `0x004F0084`; returns result |
-| `GetModalRresult` | `0x004F1158` | `0x0A` | Calls `0x004049CC` and returns |
-| `Hello` | `0x004F1164` | `0x07` | Returns field `[self+0x42C]` |
-| `Update` | `0x004F1730` | `0x81` | Uses editor controls/state and accepts `TEditorNotificationType` |
+## Important correction to earlier hypotheses
 
-These are candidates, not a confirmed slot ordering. The original method signatures from TD32 are:
+The earlier candidate list incorrectly treated `GetHandle` and `Update` as confirmed interface methods. The vtable does **not** contain a direct thunk to `GetHandle` at `0x004F1140`, nor to the TD32 entry for `Update` at `0x004F1730`.
 
-- `GetHandle()`
-- `GetModalRresult()`
-- `Hello(Imageprocessing::TImageProcessor)`
-- `Update(Imageprocessing::TEditorNotificationType)`
+- `GetHandle` at `0x004F1140` is a separate class method. It reads `[self+0x408]` and calls helper `0x004F0084` when non-null.
+- `GetModalRresult` at `0x004F1158` is a direct vtable target.
+- `Hello` at `0x004F1164` is a direct vtable target.
+- `Initial` at `0x004F116C` is a direct vtable target.
+- `Update` at `0x004F1730` accepts `TEditorNotificationType`, but is not the direct destination of the fourth custom thunk.
+- The fourth thunk lands at `0x004F17B4`. This is close to the end of `Update` and must be resolved against TD32 procedure boundaries and raw bytes before assigning a method name or signature.
 
-## Implications for the native port
+## Native-port implications
 
-1. Model `IIPEditor` as a four-method interface in addition to IUnknown semantics.
-2. Preserve the subobject offset `0x430` only when reproducing the original Win32 object layout; a native implementation should use an explicit interface adapter instead.
-3. Do not implement the four methods based only on their names. In particular, `GetHandle` delegates to helper `0x004F0084`, and `GetModalRresult` delegates to `0x004049CC`; those helpers still need semantic analysis.
-4. Confirm each custom vtable slot by following the corresponding adjustment thunk to its final jump/call target. The updated workflow now emits the full thunk instruction sequence.
+1. Represent the interface with IUnknown semantics plus four custom entries, but do not finalize the fourth method's signature yet.
+2. Do not preserve the Win32 subobject offset `0x430` in a native object layout. Use an explicit adapter/interface object and translate calls to native methods.
+3. Analyze the code at `0x004F17B4` and its TD32 procedure boundary before writing the interface adapter.
+4. Separately inspect `GetHandle`, `GetModalRresult`, `Hello`, and `Initial` bodies. Their names alone are insufficient to define safe native behavior.
