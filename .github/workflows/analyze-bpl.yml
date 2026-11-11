@@ -51,6 +51,13 @@ jobs:
       - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004ECF30 bpl-analysis/EmwatMethods-helper-4ECF30.md
       - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004F0258 bpl-analysis/EmwatMethods-helper-4F0258.md
       - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x0045574C bpl-analysis/EmwatMethods-helper-45574C.md
+      - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004F0258 bpl-analysis/EmwatMethods-helper-4F0258-extended.md 40 ret
+      - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004ECF38 bpl-analysis/EmwatMethods-helper-4ECF38-extended.md 40 ret
+      - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x0045574C bpl-analysis/EmwatMethods-helper-45574C-extended.md 40 ret
+      - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004EF240 bpl-analysis/EmwatMethods-helper-4EF240-extended.md 40 ret
+      - run: python tools/inspect_delphi_vmt_address.py analysis-input/EmwatMethods.bpl1 0x004EDE18 bpl-analysis/EmwatMethods-vmt-parent-4EDE18.md
+      - run: python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004ECF38 bpl-analysis/EmwatMethods-callers-4ECF38.md
+      - run: python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004EF240 bpl-analysis/EmwatMethods-callers-4EF240.md
       - run: python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004EFF94 bpl-analysis/EmwatMethods-callers-4EFF94.md
       - run: python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004ECF30 bpl-analysis/EmwatMethods-callers-4ECF30.md
       - run: python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004F0258 bpl-analysis/EmwatMethods-callers-4F0258.md
@@ -101,6 +108,13 @@ jobs:
             bpl-analysis/EmwatMethods-helper-4ECF30.md
             bpl-analysis/EmwatMethods-helper-4F0258.md
             bpl-analysis/EmwatMethods-helper-45574C.md
+            bpl-analysis/EmwatMethods-helper-4F0258-extended.md
+            bpl-analysis/EmwatMethods-helper-4ECF38-extended.md
+            bpl-analysis/EmwatMethods-helper-45574C-extended.md
+            bpl-analysis/EmwatMethods-helper-4EF240-extended.md
+            bpl-analysis/EmwatMethods-vmt-parent-4EDE18.md
+            bpl-analysis/EmwatMethods-callers-4ECF38.md
+            bpl-analysis/EmwatMethods-callers-4EF240.md
             bpl-analysis/EmwatMethods-callers-4EFF94.md
             bpl-analysis/EmwatMethods-callers-4ECF30.md
             bpl-analysis/EmwatMethods-callers-4F0258.md
