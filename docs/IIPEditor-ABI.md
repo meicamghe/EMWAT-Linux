@@ -163,3 +163,12 @@ modified = true
 ```
 
 This confirms the crop rectangle's four-field shape, field ordering, independent axis scaling, and the RTL rounding function. It still does not establish whether the deployed ImageGear build treats right/bottom as inclusive or exclusive, nor the exact DLL version. The new generated trace is `EmwatMethods-crop-coordinate-helper.md` in the Run 57 artifact.
+
+
+## Run 76 — IIPEditor is stored at TGearImgProc+0x24
+
+The setter-like routine at 0x004F0084 assigns the interface field [TGearImgProc+0x24]. Its direct caller in TScanCommand.$bdtr adjusts an object pointer by +0x430 before passing it to the setter. This matches the confirmed IIPEditor IOffset 0x430 on TfrmSimpleImageEditor exactly (IID 7834c511-9078-411c-ab08-8b15ef1fd700; VTable 0x004F03D4). A second caller passes nil to the setter, consistent with clearing the reference during editor teardown.
+
+This establishes [TGearImgProc+0x24] as the IIPEditor interface reference; it supersedes earlier descriptions of this field as an unidentified error/result interface. [TGearImgProc+0x28] remains a separate processor/context object and must not be conflated with IIPEditor.
+
+The Gear wrapper at 0x004EF1C4 (TD32 label HasError) dispatches through IIPEditor slot +0x0C. The implementing method at 0x004F1158 calls TWinControl.GetHandle and returns the HWND. Thus the value passed from TGearImgProc to IG_scan_pages and IG_scan_source_select through this dispatch is an HWND, not an error flag. The wrapper symbol names should not be treated as semantic names for the underlying interface methods.
