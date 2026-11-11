@@ -13,6 +13,7 @@ on:
       - 'tools/resolve_delphi_vmt_slots.py'
       - 'tools/trace_rotate90_object.py'
       - 'tools/trace_rotate90_dispatch.py'
+      - 'tools/trace_pe_target.py'
       - 'tools/trace_delphi_interfaces.py'
       - '.github/workflows/analyze-bpl.yml'
 permissions:
@@ -35,6 +36,7 @@ jobs:
       - run: python tools/resolve_delphi_vmt_slots.py analysis-input/EmwatMethods.bpl1
       - run: python tools/trace_rotate90_object.py analysis-input/EmwatMethods.bpl1
       - run: python tools/trace_rotate90_dispatch.py analysis-input/EmwatMethods.bpl1
+      - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004AFF38
       - run: python tools/trace_delphi_interfaces.py analysis-input/EmwatMethods.bpl1
       - uses: actions/upload-artifact@v4
         with:
@@ -50,4 +52,5 @@ jobs:
             bpl-analysis/EmwatMethods-rotate90-trace.md
             bpl-analysis/EmwatMethods-rotate90-deep-trace.md
             bpl-analysis/EmwatMethods-interface-tables.md
+            bpl-analysis/EmwatMethods-target-address-trace.md
           if-no-files-found: error
