@@ -57,7 +57,9 @@ jobs:
       - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004EF1B4 bpl-analysis/EmwatMethods-gearp-parent-handle.md
       - run: python tools/trace_field_accesses.py analysis-input/EmwatMethods.bpl1 0x24 bpl-analysis/EmwatMethods-field-offset-24.md
       - run: python tools/trace_field_accesses.py analysis-input/EmwatMethods.bpl1 0x28 bpl-analysis/EmwatMethods-field-offset-28.md
+      - run: python tools/trace_field_accesses.py analysis-input/EmwatMethods.bpl1 0x30 bpl-analysis/EmwatMethods-field-offset-30.md
       - run: python tools/trace_field_accesses.py analysis-input/EmwatMethods.bpl1 0x34 bpl-analysis/EmwatMethods-field-offset-34.md
+      - run: python tools/trace_field_accesses.py analysis-input/EmwatMethods.bpl1 0x38 bpl-analysis/EmwatMethods-field-offset-38.md
       - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004F0174 bpl-analysis/EmwatMethods-gearp-show-editor.md
       - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004EFF6C bpl-analysis/EmwatMethods-gearp-set-current-page.md
       - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x0061E3C8 bpl-analysis/EmwatMethods-gscan-show-crop-rectangle.md
@@ -98,7 +100,9 @@ jobs:
             bpl-analysis/EmwatMethods-gearp-parent-handle.md
             bpl-analysis/EmwatMethods-field-offset-24.md
             bpl-analysis/EmwatMethods-field-offset-28.md
+            bpl-analysis/EmwatMethods-field-offset-30.md
             bpl-analysis/EmwatMethods-field-offset-34.md
+            bpl-analysis/EmwatMethods-field-offset-38.md
             bpl-analysis/EmwatMethods-gearp-show-editor.md
             bpl-analysis/EmwatMethods-gearp-set-current-page.md
             bpl-analysis/EmwatMethods-gscan-show-crop-rectangle.md
