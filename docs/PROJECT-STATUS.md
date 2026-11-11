@@ -161,6 +161,16 @@
 - workflow گسترش یافت تا constructor، `HasError`، `GetParentHandle`، `ShowEditor`، `SetCurrentPage` و `TfrmGScanPreview.ShowCropRectangle` را نیز در CI ردیابی کند.
 - جزئیات و مرز اطمینان در [SCANNER-INTERFACE-ANALYSIS.md](SCANNER-INTERFACE-ANALYSIS.md) ثبت شد. هنوز هیچ backend اسکنر بومی پیاده‌سازی یا ادعای تکمیل نشده است.
 
+### Run 77 — بازیابی ترتیب آرگومان‌های IG_scan_pages
+
+- بدنه کامل `TGearImgProc.SelectScanner` در `0x004EF9CC` ترتیب چهار آرگومان فراخوانی `IG_scan_pages` در `0x004EFA96` را مشخص می‌کند.
+- آرگومان اول HWND است؛ از slot مجازی +0x0C رابط IIPEditor در فیلد +0x24 به دست می‌آید.
+- آرگومان دوم مقدار path-like است که از slot +0x0C آبجکت جداگانه +0x28 گرفته و از helper رشته‌ای `0x004012E0` عبور می‌کند؛ نوع pointer و encoding هنوز مشخص نیست.
+- آرگومان سوم کد فرمت خروجی است که mapper در `0x004EF048` تولید می‌کند؛ نام ثابت‌های فرمت هنوز ناشناخته است.
+- آرگومان چهارم یک byte از `[EBP+8]` است که zero-extend می‌شود؛ احتمالاً flag مربوط به UI/control است، اما معنای دقیقش به caller وابسته است.
+- مقدار برگشتی IG_scan_pages در `[TGearImgProc+0x4C]` ذخیره و سپس از مسیر CheckOutputParameter بررسی می‌شود.
+- شش trace مربوط به اسلات‌های VMT والد فرضی در Run 76 کد اجرایی معتبر نشان ندادند؛ برای شناسایی کلاس والد استفاده نمی‌شوند.
+
 ### گام بعدی
 1. ردیابی همه writeها و lifetime شیء `[TGearImgProc+0x24]`.
 2. بازسازی جداگانه ترتیب آرگومان‌های `IG_scan_pages`؛ بدون حدس درباره prototype یا enumها.
