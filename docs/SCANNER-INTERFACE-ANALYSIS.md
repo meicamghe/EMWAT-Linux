@@ -501,6 +501,17 @@ The TD32 method label `SelectScanner$qqrv` omits parameters that are visible in 
 
 The context object at +0x28 remains distinct from IIPEditor at +0x24. The six attempted parent-VMT slot traces from Run 76 produced non-code-looking disassembly and are not valid evidence for identifying the parent class; keep that parent relationship unresolved.
 
+### Run 78 — TScanCommand state wrapper
+
+The application-side scanner request is mediated by `TScanCommand`, a Delphi class whose candidate instance size is `0x40` bytes (its recovered VMT candidate is not structurally valid, so virtual slots are not assigned from it).
+
+- `DoRequest` writes state byte `[self+0x28]` to `1`, `2`, or `3` on separate request paths.
+- `HasError` checks enable byte `[self+0x29]`; if enabled, it queries the nested object at `[self+0x20]`, invokes its virtual slot +0x10, and then calls helper `0x004ECFC8`.
+- The result sets `[self+0x28]` to `2` (nested error check true) or `4` (false). This is an application-level state update, not proof that numeric states map directly to success/failure without examining the caller.
+- `0x004ECFC8` checks a nested interface-like reference at `[object+0x10]`, invokes VMT slot +0x04 to retrieve an output value, and passes it to a Boolean helper. Exact interface type and helper semantics remain unresolved.
+
+The earlier GetNextPage trace began mid-procedure; the next run adds broader context around its likely entry and the surrounding ScanCommand methods. Do not treat the partial disassembly at `0x004F2600` as a complete method body.
+
 ### Remaining work
 
 1. Identify the runtime class and virtual contract of the distinct object at +0x28; do not conflate it with IIPEditor at +0x24.
