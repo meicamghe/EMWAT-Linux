@@ -22,7 +22,7 @@ PATTERNS = [
 "TfrmGScanPreview@Scan","TGearImgProc@Rotate90","TGearImgProc@RotateLeft",
 "TGearImgProc@RotateRight","TGearImgProc@FlipHorizontal",
 "TGearImgProc@FlipVertical","TGearImgProc@SaveToFile","TGearImgProc@ScanToFile",
-"TGearImgProc@$bctr","TGearImgProc@Crop","TGearImgProc@Flip",
+"TGearImgProc@$bctr","TGearImgProc@$bdtr","TGearImgProc@Crop","TGearImgProc@Flip",
 "TGearImgProc@SetEditorForm","TGearImgProc@ShowEditor",
 "TGearImgProc@NotifyEditor","TGearImgProc@LoadPage",
 "TGearImgProc@PaintCanvas","TGearImgProc@CheckErrors",
