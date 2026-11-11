@@ -1,14 +1,37 @@
 #!/usr/bin/env python3
-"""Resolve called helper VAs to TD32 procedure symbols and nearby symbols."""
+"""Build a TD32-resolved direct-call graph for EMWAT image/scanning methods."""
 import pathlib
 import sys
 import pefile
+from capstone import Cs, CS_ARCH_X86, CS_MODE_32, CS_OP_IMM
 from analyze_emwat_td32 import find_td32, parse_td32
 
-TARGET_VAS=(0x004AFEA8,0x004AFEC8,0x004AFED0,0x004EF0E4,0x004EEEC4,0x0061D36C,0x0061E680)
+TARGETS=(
+"TfrmSimpleImageEditor@CropImage","TfrmSimpleImageEditor@ToggleCropMode",
+"TfrmSimpleImageEditor@btnRegisterClick","TfrmSimpleImageEditor@doCommand",
+"TfrmSimpleImageEditor@pbImgViewerMouseDown","TfrmSimpleImageEditor@pbImgViewerMouseMove",
+"TfrmSimpleImageEditor@pbImgViewerMouseUp","TfrmSimpleImageEditor@ShowCropRectangle",
+"TfrmGScanPreview@doCommand","TfrmGScanPreview@btnCropClick",
+"TfrmGScanPreview@btnHFlipClick","TfrmGScanPreview@btnLRotateClick",
+"TfrmGScanPreview@btnRRotateClick","TfrmGScanPreview@btnVFlipClick",
+"TfrmGScanPreview@uibtnRegisterClick","TfrmGScanPreview@Save_Tiff_MultyPages",
+"TfrmGScanPreview@Scan","TGearImgProc@Rotate90","TGearImgProc@RotateLeft",
+"TGearImgProc@RotateRight","TGearImgProc@FlipHorizontal",
+"TGearImgProc@FlipVertical","TGearImgProc@SaveToFile","TGearImgProc@ScanToFile")
 
 def secname(sec):
     return sec.Name.rstrip(bytes([0])).decode("ascii","replace")
+
+def map_va(pe,va):
+    rva=va-pe.OPTIONAL_HEADER.ImageBase
+    for index,sec in enumerate(pe.sections,1):
+        if sec.VirtualAddress<=rva<sec.VirtualAddress+max(sec.Misc_VirtualSize,sec.SizeOfRawData):
+            return index,sec,rva-sec.VirtualAddress
+    return None,None,None
+
+def resolve_symbol(procedures,segment,offset):
+    matches=[p for p in procedures if p["segment"]==segment and p["offset"]<=offset<p["offset"]+p["size"]]
+    return matches
 
 def main():
     src=pathlib.Path(sys.argv[1])
@@ -19,40 +42,65 @@ def main():
     base,end,directory,_=hit
     _,names,modules,procedures=parse_td32(blob,base,end,directory)
     pe=pefile.PE(data=blob,fast_load=False)
-    lines=["# EMWAT helper address to TD32 symbol resolution","",f"- Input: {src}",f"- Procedure records: {len(procedures):,}","- Target helper addresses: "+", ".join(f"0x{x:08X}" for x in TARGET_VAS),"",""]
-    for va in TARGET_VAS:
-        rva=va-pe.OPTIONAL_HEADER.ImageBase
-        sec=None
-        for s in pe.sections:
-            if s.VirtualAddress<=rva<s.VirtualAddress+max(s.Misc_VirtualSize,s.SizeOfRawData):
-                sec=s; break
-        lines += [f"## VA 0x{va:08X}",""]
-        if sec is None:
-            lines += [f"- RVA: 0x{rva:08X}; no containing PE section.",""]; continue
-        segno=pe.sections.index(sec)+1
-        offset=rva-sec.VirtualAddress
-        raw=pe.get_offset_from_rva(rva)
-        lines += [f"- PE section: {secname(sec)} (index {segno})",f"- Section-relative TD32 offset: 0x{offset:08X}",f"- Raw file offset: 0x{raw:08X}"]
-        same=[p for p in procedures if p["segment"]==segno]
-        containing=[p for p in same if p["offset"]<=offset<p["offset"]+p["size"]]
-        if containing:
-            lines.append("- Containing TD32 procedure symbol(s):")
-            for p in containing:
-                lines.append(f"  - {p['name']} (module {p['module']}, offset 0x{p['offset']:08X}, size 0x{p['size']:X}, +0x{offset-p['offset']:X})")
+    md=Cs(CS_ARCH_X86,CS_MODE_32)
+    selected=[p for p in procedures if any(t.lower() in p["name"].lower() for t in TARGETS)]
+    lines=["# EMWAT image/scanning call graph","",f"- Input: {src}",f"- TD32 procedure records: {len(procedures):,}",f"- Target methods analyzed: {len(selected)}","- Direct call targets are resolved against TD32 procedure ranges using the validated PE section-relative mapping.","- Virtual/indirect calls are retained as unresolved dispatches.",""]
+    unique_targets=set()
+    for p in selected:
+        if not (1<=p["segment"]<=len(pe.sections)):
+            continue
+        sec=pe.sections[p["segment"]-1]
+        mod=modules.get(p["module"])
+        seg=next((x for x in mod[1] if x[0]==p["segment"]),None) if mod else None
+        if not seg: continue
+        _,_,sbase,ssize=seg
+        if not (sbase<=p["offset"] and p["offset"]+p["size"]<=sbase+ssize and p["offset"]+p["size"]<=sec.SizeOfRawData):
+            continue
+        raw=sec.PointerToRawData+p["offset"]
+        rva=sec.VirtualAddress+p["offset"]
+        va=pe.OPTIONAL_HEADER.ImageBase+rva
+        data=blob[raw:raw+p["size"]]
+        ins=list(md.disasm(data,va))
+        direct=[]
+        indirect=[]
+        for x in ins:
+            if x.mnemonic=="call" and x.operands:
+                op=x.operands[0]
+                if op.type==CS_OP_IMM:
+                    target=op.imm & 0xFFFFFFFF
+                    direct.append((x.address,target))
+                    unique_targets.add(target)
+                else:
+                    indirect.append((x.address,x.op_str))
+        lines += [f"## {p['name']}","",f"- Entry VA: 0x{va:08X}; size: 0x{p['size']:X}"]
+        if direct:
+            lines.append("- Direct calls:")
+            for call_va,target in direct:
+                segno,tsec,toff=map_va(pe,target)
+                resolved=resolve_symbol(procedures,segno,toff) if segno else []
+                if resolved:
+                    for sym in resolved:
+                        lines.append(f"  - 0x{call_va:08X} -> 0x{target:08X} {sym['name']} (segment {segno}, +0x{toff-sym['offset']:X})")
+                else:
+                    lines.append(f"  - 0x{call_va:08X} -> 0x{target:08X} {secname(tsec) if tsec else 'outside PE sections'} (no containing TD32 procedure)")
         else:
-            lines.append("- No TD32 procedure symbol contains this address.")
-        previous=sorted((p for p in same if p["offset"]<offset),key=lambda p:p["offset"],reverse=True)[:4]
-        following=sorted((p for p in same if p["offset"]>offset),key=lambda p:p["offset"])[:4]
-        lines.append("- Nearest preceding symbols:")
-        for p in previous:
-            lines.append(f"  - {p['name']} @ 0x{p['offset']:08X} (size 0x{p['size']:X})")
-        lines.append("- Nearest following symbols:")
-        for p in following:
-            lines.append(f"  - {p['name']} @ 0x{p['offset']:08X} (size 0x{p['size']:X})")
-        data=blob[raw:raw+24]
-        lines += [f"- Bytes: {data.hex(' ')}",""]
+            lines.append("- No direct calls.")
+        if indirect:
+            lines.append("- Indirect/virtual calls:")
+            for call_va,opstr in indirect:
+                lines.append(f"  - 0x{call_va:08X}: call {opstr}")
+        lines.append("")
+    lines += ["## Unique direct call targets","",f"- Unique direct-call addresses: {len(unique_targets)}","","| VA | Resolved TD32 symbol(s) |","|---:|---|"]
+    for target in sorted(unique_targets):
+        segno,sec,off=map_va(pe,target)
+        resolved=resolve_symbol(procedures,segno,off) if segno else []
+        if resolved:
+            label="; ".join(x["name"] for x in resolved)
+        else:
+            label=f"unresolved ({secname(sec) if sec else 'outside PE sections'})"
+        lines.append(f"| 0x{target:08X} | {label} |")
     out.parent.mkdir(parents=True,exist_ok=True)
     out.write_text("\n".join(lines)+"\n",encoding="utf-8")
-    print(f"Wrote {out}; resolved {len(TARGET_VAS)} helper addresses")
+    print(f"Wrote {out}; analyzed {len(selected)} methods and {len(unique_targets)} unique direct-call targets")
 
 if __name__=="__main__": main()
