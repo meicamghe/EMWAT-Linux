@@ -92,3 +92,27 @@ The four extra target traces from Run 62 resolve the target identities and corre
 The `GetEditorModalResult` disassembly shows a byte-sized selector in `DL`, a switch-like branch, and a Boolean result. Its exact selector meanings still need callsite/context correlation. `GetImagePageNumber` uses `IG_error_check`, iterates a count, and calls `IG_page_count_get`/related imported routines while constructing page-related state; its exact UI semantics need the DFM and caller context. `LoadPage` checks an interface-like object at `[self+0x0C]` using helper `0x00401398`, returning a Boolean-like status. These facts narrow the work but do not identify the object type stored at `[TGearImgProc+0x28]`.
 
 **Correction to previous next-step wording:** these four addresses are now symbol-resolved identities, not four anonymous helper routines. The open scanner question is the runtime type and construction/population path of the object at `[TGearImgProc+0x28]`, plus the semantics of the virtual methods at offsets `+0x0C`, `+4`, and the instance VMT's slot `+0`.
+
+
+## Run 62 — identifying the editor interface stored at `TGearImgProc+0x28`
+
+Run 62 provides a much stronger identification than the earlier layout-only inference:
+
+- The TD32 symbol for `TGearImgProc.SetEditorForm` explicitly declares its parameter as `System.DelphiInterface<ImageProcessing.IIPEditor>`.
+- In `SetEditorForm` (`0x004EFF94`), the supplied interface is written into `[TGearImgProc+0x28]` and the code invokes its VTable slot `+0x20` to retrieve an integer result before updating the editor/page state.
+- The RTTI/interface-table report decodes `IIPEditor` with IID `7834c511-9078-411c-ab08-8b15ef1fd700`.
+- The only implementing class identified in this BPL is `TfrmSimpleImageEditor` (VMT `0x004F046C`), with interface VTable `0x004F03D4` and interface offset `0x430`.
+- The interface VTable's first three entries are IUnknown methods. The interface-specific thunk entries include `+0x0C` → `TfrmSimpleImageEditor.GetModalRresult` (`0x004F1158`), `+0x10` → `Hello` (`0x004F1164`), `+0x14` → `Initial` (`0x004F116C`), and `+0x18` → `btnRegisterClick` (`0x004F17B4`).
+
+Therefore `[TGearImgProc+0x28]` is the `IIPEditor` Delphi interface reference, not a scanner-driver/provider object. The `SelectScanner` calls through interface VTable `+0x0C` are calls to the editor's `GetModalRresult` method. The name and body indicate an editor-modal-result query, not scanner source enumeration. This materially changes the interpretation of the earlier scanner-selection sequence.
+
+### Revised interpretation
+
+`TGearImgProc.SelectScanner` is coordinating with the registered image editor (`IIPEditor`) while invoking ImageGear's `IG_scan_pages`; it is not obtaining a SANE-like device interface from `[self+0x28]`. Device/provider discovery remains unresolved and must be located elsewhere (likely in the scanner/preview form or a separate component path).
+
+### Next targets
+
+1. Trace `TGearImgProc.SetEditorForm` callers and the `IIPEditor` lifetime (interface assignment, AddRef/Release, and clearing on editor close).
+2. Decode `TfrmSimpleImageEditor.GetModalRresult`, `Hello`, `Initial`, and `btnRegisterClick` in context to understand the editor handshake.
+3. Revisit `TGearImgProc.SelectScanner` with this corrected type: identify the actual object passed to `IG_scan_pages` from the VMT call at `[self]`, plus the output stored at `[self+0x4C]`.
+4. Search the full BPL and DFM resources for the true scanner-device selection/control path; do not assume the `IIPEditor` field represents a scanner interface.
