@@ -9,7 +9,7 @@ TARGET_CLASSES = (
     "TfrmSimpleImageEditor", "TfrmGScanPreview", "TfrmImageTools",
     "TGearImgProc", "TfrmScanError", "TImageProcessor",
     "TResultImage", "TMultiPageImage", "TSetOfMultiPageImages",
-    "TSetOfSinglePageImages", "TProcessResult",
+    "TSetOfSinglePageImages", "TProcessResult", "TScanCommand",
 )
 SLOTS = tuple(range(0x00, 0x64, 4)) + (0x64, 0x88, 0xA8, 0x108)
 VMT_SELF = -88
