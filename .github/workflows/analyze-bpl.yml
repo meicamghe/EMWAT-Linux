@@ -39,6 +39,10 @@ jobs:
       - run: python tools/trace_rotate90_dispatch.py analysis-input/EmwatMethods.bpl1
       - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004AFF38
       - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x00401058 bpl-analysis/EmwatMethods-crop-coordinate-helper.md
+      - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004EF048 bpl-analysis/EmwatMethods-scanner-helper-4EF048.md
+      - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004EF1DC bpl-analysis/EmwatMethods-scanner-helper-4EF1DC.md
+      - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004049CC bpl-analysis/EmwatMethods-scanner-helper-4049CC.md
+      - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x0061D100 bpl-analysis/EmwatMethods-scanner-helper-61D100.md
       - run: python tools/trace_delphi_interfaces.py analysis-input/EmwatMethods.bpl1
       - run: python tools/trace_imaging_import_callers.py analysis-input/EmwatMethods.bpl1
       - uses: actions/upload-artifact@v4
@@ -58,4 +62,8 @@ jobs:
             bpl-analysis/EmwatMethods-target-address-trace.md
             bpl-analysis/EmwatMethods-crop-coordinate-helper.md
             bpl-analysis/EmwatMethods-imaging-import-callers.md
+            bpl-analysis/EmwatMethods-scanner-helper-4EF048.md
+            bpl-analysis/EmwatMethods-scanner-helper-4EF1DC.md
+            bpl-analysis/EmwatMethods-scanner-helper-4049CC.md
+            bpl-analysis/EmwatMethods-scanner-helper-61D100.md
           if-no-files-found: error
