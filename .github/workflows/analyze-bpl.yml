@@ -50,7 +50,7 @@ jobs:
       - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004EFF94 bpl-analysis/EmwatMethods-set-editor-form.md
       - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004EF1C4 bpl-analysis/EmwatMethods-gearp-has-error.md
       - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004EEC7C bpl-analysis/EmwatMethods-gearp-constructor.md
-      - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004EE1B4 bpl-analysis/EmwatMethods-gearp-parent-handle.md
+      - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004EF1B4 bpl-analysis/EmwatMethods-gearp-parent-handle.md
       - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004F0174 bpl-analysis/EmwatMethods-gearp-show-editor.md
       - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004EFF6C bpl-analysis/EmwatMethods-gearp-set-current-page.md
       - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x0061D3C8 bpl-analysis/EmwatMethods-gscan-show-crop-rectangle.md
