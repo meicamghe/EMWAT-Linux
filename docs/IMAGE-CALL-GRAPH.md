@@ -2,40 +2,69 @@
 
 ## Analysis coverage
 
-- 24 target procedures were disassembled using the corrected TD32 segment-relative mapping.
-- 73 unique direct-call addresses were collected.
-- Direct calls were resolved against 8,411 TD32 procedure records.
-- Four shared inherited VMT slots used by the three form classes were resolved through the PE import address table (IAT) to VCL 23.0 package symbols.
-- CI artifact: `EmwatMethods-helper-symbols.md` from workflow run 42978953736.
+- The three image-related Binary DFM resources have been decoded and documented.
+- Targeted TD32 disassembly resolves the main image-editor and scan-preview methods.
+- Run 60 mapped 8,411 TD32 procedures to executable code and decoded 46,620 CALL instructions.
+- Run 60 attributes imported ImageGear/ImageEn calls to bounded Delphi procedure symbols.
+- Full caller table: `EmwatMethods-imaging-import-callers.md` in CI artifact for workflow run 42992351195.
 
-## GEAR API calls confirmed
+## ImageGear import identity
 
-| API | Observed use |
-|---|---|
-| `IG_display_image` | Called from `TGearImgProc.Rotate90` and `SaveToFile` |
-| `IG_IP_rotate_multiple_90` | Called from `SaveToFile` and `ScanToFile` |
-| `IG_IP_flip` | Called from `TGearImgProc.RotateLeft`; `RotateRight` delegates to it with EDX=3; also called by `btnRRotateClick` with EDX=3 and `btnVFlipClick` with EDX=1 |
-| `IG_error_check` | Called from `TGearImgProc.FlipHorizontal` and `btnLRotateClick` |
-| `IG_load_FD` | Used in save/scan file handling |
-| `IG_save_JPEG_quality_set` | Used in save/scan paths |
+Use the PE import descriptor, IAT slot, and actual thunk bytes as the source of truth. Older helper-symbol labels for these thunk addresses were wrong.
 
-The ImageGear API documentation describes `IG_IP_flip` as horizontal/vertical flipping and `IG_IP_rotate_multiple_90` as 90/180/270-degree rotation. The exact enum constants for the deployed GEAR version remain to be verified:
-- https://help.accusoft.com/ImageGear/v15/Unix/Core/IG_Unix.pdf
-- https://help.accusoft.com/ImageGear/v21.0/Linux/IGDLL-19-529.html
+| Thunk VA | Imported API |
+|---:|---|
+| `0x004AFF38` | `IG_IP_crop` |
+| `0x004AFEC8` | `IG_IP_rotate_multiple_90` |
+| `0x004AFED0` | `IG_IP_flip` |
+| `0x004AFED8` | `IG_error_check` |
+| `0x004AFE88` | `IG_load_file` |
+| `0x004AFE98` | `IG_load_FD` |
+| `0x004AFE90` | `IG_save_file` |
+| `0x004AFEA0` | `IG_save_FD` |
 
-## Internal calls confirmed
+See [GEAR-API-CALLS.md](GEAR-API-CALLS.md) for the corrected API/caller table and per-method details.
 
-- `TGearImgProc.RotateLeft` calls `ReloadPage` and `GetImageResolution`.
-- `TGearImgProc.RotateRight` delegates to `RotateLeft` after setting EDX=3.
-- `TGearImgProc.FlipVertical` delegates to `FlipHorizontal`.
-- `TGearImgProc.SaveToFile` calls `SavePage` on one path.
-- `TfrmSimpleImageEditor.CropImage` calls `GetImageBPP` and then `btnRegisterClick`; its virtual call at vtable offset `0x88` resolves to inherited `TControl.SetEnabled` from `vcl230.bpl`.
-- GScan preview button handlers call `LoadImageToGearHandle` and `cmbPagesChange` after their GEAR API call.
-- Their virtual call at vtable offset `0xA8` resolves to inherited `TWinControl.Invalidate` from `vcl230.bpl`, i.e. a UI invalidation/redraw request rather than an image transform.
+## Confirmed Gear processing paths
+
+- `TGearImgProc@$bdtr` calls `IG_IP_crop`, then `ReloadPage`, `GetImageResolution`, and marks the image modified.
+- `TGearImgProc.RotateLeft` calls `IG_IP_rotate_multiple_90`, then reloads the page, refreshes resolution, and marks the image modified.
+- `TGearImgProc.RotateRight` sets `EDX=3` and delegates to `RotateLeft`.
+- `TGearImgProc.FlipHorizontal` calls `IG_IP_flip`, then reloads the page, refreshes resolution, and marks the image modified.
+- `TGearImgProc.FlipVertical` sets `EDX=0` and delegates to `FlipHorizontal`.
+- `TGearImgProc.SaveToFile` and `TGearImgProc.ScanToFile` both call `IG_save_file`.
+- `TGearImgProc.SavePage` contains `IG_load_FD` and `IG_save_FD` calls; file-descriptor semantics and lifecycle still need tracing.
+- `TWordViwer.EmbedTextToImage` calls `IG_load_file`; do not mislabel it as the application's main document-open path.
+
+## GScan Preview handler calls
+
+The bounded disassembly establishes these imported calls, which do not consistently match the Delphi handler names:
+
+| Handler | API | EDX/direction value |
+|---|---|---:|
+| `btnLRotateClick` | `IG_IP_flip` | 0 |
+| `btnRRotateClick` | `IG_IP_rotate_multiple_90` | 3 |
+| `btnVFlipClick` | `IG_IP_rotate_multiple_90` | 1 |
+
+After each imported call, the handlers invoke `LoadImageToGearHandle`, `cmbPagesChange`, and a virtual method at `[object VMT + 0xA8]`. Do not map the numeric direction values to visible actions until the exact ImageGear version and enum definitions are identified. The `btnHFlipClick` body changes a stored rectangle/flag and invalidates the view; it has no direct GEAR transform import in its bounded body.
+
+## ImageEn call graph
+
+Run 60 attributes these imported ImageEn methods to `TfrmImageTools` paths:
+
+- `TImageEnMIO.Acquire` from `InsertPicture`.
+- `TImageEnMIO.LoadFromFileAuto` from `FreeRotate` and `DeletePicture`.
+- `TImageEnProc.CropSel` from `iePageHolderImageChange`.
+- `TImageEnProc.RotateAndCrop` from `ActiveMe`.
+- `TImageEnProc.Flip` from `AutoOrient`.
+- `TImageEnView.SetZoom`, `XScr2Bmp`, and `YScr2Bmp` from viewer/toolbar/mouse handlers.
+- `TImageEnMView.AppendImage` and related multi-image methods from image insertion and page-management handlers.
+
+These are static caller attributions. Confirm argument setup and runtime paths before reproducing every behavior.
 
 ## Resolved inherited VCL virtual slots
 
-The VMTs for `TfrmSimpleImageEditor`, `TfrmGScanPreview`, and `TfrmImageTools` all point to the same parent VMT at `0x00630140`. Their shared inherited slots resolve as follows:
+The VMTs for `TfrmSimpleImageEditor`, `TfrmGScanPreview`, and `TfrmImageTools` share a parent VMT at `0x00630140`. The following inherited slots were resolved through the PE IAT:
 
 | VMT byte offset | Imported VCL symbol | Interpretation |
 |---:|---|---|
@@ -44,39 +73,20 @@ The VMTs for `TfrmSimpleImageEditor`, `TfrmGScanPreview`, and `TfrmImageTools` a
 | `+0xA8` | `vcl230.bpl!@Vcl@Controls@TWinControl@Invalidate$qqrv` | `TWinControl.Invalidate` |
 | `+0x108` | `vcl230.bpl!@Vcl@Forms@TScrollingWinControl@AutoScrollEnabled$qqrv` | `TScrollingWinControl.AutoScrollEnabled` |
 
-This resolves the previously ambiguous virtual calls at `[object+0x88]` and `[object+0xA8]`: they are inherited VCL UI-state/redraw operations, not custom image-processing methods. The imported symbol names are taken directly from the PE IAT; the parent RTTI byte sequence itself is not yet cleanly decoded.
+The virtual call at `[object+0xA8]` in the GScan handlers is therefore a redraw/invalidation request, not an image transformation.
 
 ## Important unresolved behavior
 
-The GScan preview button names and direct calls do not yet line up cleanly:
-- `btnLRotateClick` calls `IG_error_check` with EDX=0.
-- `btnRRotateClick` calls `IG_IP_flip` with EDX=3.
-- `btnVFlipClick` calls `IG_IP_flip` with EDX=1.
-
-Do not translate these values into Linux operations based on names alone. The exact GEAR version, enum definitions, and virtual method at `[object vtable + 0xA8]` must be identified first.
+1. The exact ImageGear version shipped with EMWAT and its enum constants are unknown.
+2. The GScan button names do not consistently match the imported API names and direction values. Do not infer the visible transformation from names.
+3. File-descriptor load/save lifecycle and multi-page semantics need contextual tracing.
+4. Scanner source-selection call references need validation against the complete method bodies.
+5. ImageEn acquisition and viewer behavior need a native Linux design; WIA/TWAIN DLLs should not be emulated.
 
 ## Next reverse-engineering targets
 
-1. Identify the exact GEAR32PD version and its `IG_FLIP_*` / `IG_ROTATE_*` constants.
-2. Trace `TGearImgProc.Rotate90`'s virtual call through the object at `[self+0x28]`.
-3. Resolve the remaining virtual dispatches in the image editor by tracing the actual object VMTs at each call site (rather than assuming the form VMT).
-4. Implement the verified transformation sequence in the native Linux image layer and test it against the Windows app's output.
-
-## TGearImgProc.Rotate90 dispatch trace (run 38)
-
-The call at `0x004EF165` is **not** one of the form VMT slots listed above. The method does this:
-
-1. Checks the object pointer stored at `[TGearImgProc+0x28]`.
-2. Calls `IG_display_image` with the image handle at `[self+0x38]` and a local output value.
-3. Stores the returned value at `[self+0x4C]`.
-4. Loads the object pointer from `[self+0x28]`, reads its VMT pointer from `[object]`, then invokes the **first VMT entry** via `call dword ptr [vmt]`. Two stack arguments are prepared immediately before this dispatch (the output value and zero).
-5. Treats the virtual method's EAX result as a signed 64-bit value (via `cdq`) and passes that pair to internal routine `0x004035D8`; stores that routine's EAX result at `[self+0x30]`.
-
-The virtual target belongs to the object held in the field at offset `+0x28`, not to `TGearImgProc` itself and not to the three form classes. Its class/VMT and the semantics of `0x004035D8` are still unresolved. Do not substitute `TWinControl.Invalidate` or another inherited form slot here.
-
-### Revised next steps
-
-1. Resolve the runtime/static type and VMT of the object held at `[TGearImgProc+0x28]`; trace its constructor/assignment sites and first VMT entry.
-2. Disassemble and identify internal routine `0x004035D8`, including its callers and return-value contract.
-3. Only then decide whether `Rotate90`'s virtual call is display/rendering, geometry, or another operation.
-4. Obtain the exact deployed `GEAR32PD.DLL` before implementing enum/ABI-dependent operations.
+1. Trace arguments and handle lifetime for `SavePage`, `NotifyEditor`, `ReloadPage`, and the ImageGear file-descriptor APIs.
+2. Validate the scanner method call sites and inspect source selection/acquisition parameters.
+3. Identify the exact ImageGear package/version and constants used by the shipped DLL.
+4. Write the native image-backend specification (pixel buffer, color model, DPI, pages, errors, undo/dirty state) before coding the compatibility layer.
+5. Implement and test the verified Gear image operations, then the separate ImageEn ImageTools workflow.
