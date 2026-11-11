@@ -248,3 +248,26 @@ The new CI workflow scans displacements +0x28 and +0x34 across all TD32-bounded 
 4. Keep the +0x24 error/result interface, +0x28 processor/context object and IIPEditor parameter separate until a complete field/lifetime proof exists.
 
 **Confidence:** The stores/loads at +0x28/+0x34 and the fact that SelectScanner's calls are through +0x28 are high-confidence static findings. The runtime class of +0x28 and semantic meaning/lifetime of +0x34 remain unresolved.
+
+
+## Run 70 — IG_scan_source_select callsites confirmed (2026-11-11)
+
+The full TD32-bounded method disassembly in artifact 13848571670 (run 43006403083) validates both previously disputed raw callsites. The import-caller report maps GEAR32PD.DLL!IG_scan_source_select to IAT 0x00630CE8 and thunk 0x004AFF28, and lists exactly these two callers:
+
+| Caller | Callsite | Verified argument dataflow |
+|---|---:|---|
+| TfrmGScanPreview.ShowCropRectangle | 0x0061E3DF | Calls VCL TWinControl.GetHandle at 0x004049CC, pushes the returned window handle, then calls IG_scan_source_select. |
+| TGearImgProc.SetCurrentPage | 0x004EFF83 | Calls TGearImgProc VMT slot +0x00, pushes its EAX return, then calls IG_scan_source_select. |
+
+The correct mapped entry of TfrmGScanPreview.ShowCropRectangle is 0x0061E3C8 (not 0x0061D3C8). Its 0x28-byte body gets the form handle twice, calls helper 0x0045574C between those reads, and passes the second handle to IG_scan_source_select. The workflow target-address trace was corrected to 0x0061E3C8.
+
+For TGearImgProc.SetCurrentPage, the bounded body at 0x004EFF6C calls helper 0x004F0258, loads the TGearImgProc VMT and invokes slot +0x00, then pushes that result into IG_scan_source_select. Slot +0x00 resolves to TGearImgProc.HasError at 0x004EF1C4. This establishes a second, distinct source-selection argument path; it does not establish what the returned value means to ImageGear.
+
+This supersedes the earlier wording that the two IG_scan_source_select attributions were merely suspect. They are now confirmed by the actual CALL instructions, their import thunk, and the IAT mapping. Keep their arguments separate: one is a native window handle; the other is the return value of the Gear object's HasError dispatch.
+
+### Next probes
+
+1. Identify the object passed to ShowEditor and stored at TGearImgProc+0x28, including its runtime VMT and virtual slots.
+2. Trace helper 0x004F0258 and the object/method used to produce the HasError result passed to IG_scan_source_select.
+3. Trace helper 0x0045574C and determine what ShowCropRectangle prepares between its two GetHandle calls.
+4. Recover the exact GEAR32PD prototype before naming the IG_scan_source_select argument types or behavior beyond the observed handle/result dataflow.
