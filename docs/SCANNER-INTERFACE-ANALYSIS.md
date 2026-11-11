@@ -497,6 +497,8 @@ The full `TGearImgProc.SelectScanner` body at `0x004EF9CC` confirms the four sta
 
 The return value from `IG_scan_pages` is stored in `[TGearImgProc+0x4C]`, then checked through the processor's virtual `CheckOutputParameter` slot (+0x04). This recovers argument order and HWND provenance, but not the exact C prototype, string encoding, or format-code names.
 
+The TD32 method label `SelectScanner$qqrv` omits parameters that are visible in the machine code: entry EDX is copied to BL, entry ECX is saved as a selector byte, and a further byte is read from `[EBP+8]`. The routine later re-enters itself through VMT slot +0x08 with EDX=1 while preserving the selector and stack byte. This supports treating EDX as an internal re-entry/mode flag and ECX as the format-selector byte, but the exact external caller contract still needs confirmation.
+
 The context object at +0x28 remains distinct from IIPEditor at +0x24. The six attempted parent-VMT slot traces from Run 76 produced non-code-looking disassembly and are not valid evidence for identifying the parent class; keep that parent relationship unresolved.
 
 ### Remaining work
