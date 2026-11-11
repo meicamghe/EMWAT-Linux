@@ -172,6 +172,15 @@
 - امضای TD32 برای SelectScanner پارامترها را جا انداخته است: در machine code، EDX به BL، ECX به selector byte و آرگومان stack در `[EBP+8]` خوانده می‌شود؛ مسیر داخلی از طریق VMT slot +8 با EDX=1 دوباره وارد همین تابع می‌شود. معنی دقیق flag و قرارداد caller هنوز نیازمند تأیید است.
 - شش trace مربوط به اسلات‌های VMT والد فرضی در Run 76 کد اجرایی معتبر نشان ندادند؛ برای شناسایی کلاس والد استفاده نمی‌شوند.
 
+### Run 78 — TScanCommand state-machine evidence (static trace)
+
+- The TD32-derived class map identifies `TScanCommand` with candidate instance size `0x40`; its VMT candidate is not structurally valid, so virtual-slot mapping remains unresolved.
+- `TScanCommand.DoRequest` writes byte field `[self+0x28]` with states `1`, `2`, and `3` along distinct request paths.
+- `TScanCommand.HasError` first checks byte `[self+0x29]`; when enabled, it queries the object/interface stored at `[self+0x20]` (including virtual slot +0x10) and calls helper `0x004ECFC8`. It then writes state `2` when the nested error check is true, otherwise state `4`.
+- Helper `0x004ECFC8` checks a non-null interface at `[object+0x10]`, calls the object's VMT slot +0x04 to obtain an output value, then passes that value to a Boolean helper. This is consistent with a nested error/output validation path, but exact interface and helper semantics are not named.
+- The trace target used for `GetNextPage` began inside the procedure rather than at a verified entry boundary; no behavioral conclusion is drawn from that partial disassembly. Run 79 adds wider context traces around constructor, DoRequest, GetNextPage, and HasError.
+- No SANE implementation or scanner ABI emulation has been added yet.
+
 ### گام بعدی
 1. ردیابی همه writeها و lifetime شیء `[TGearImgProc+0x24]`.
 2. بازسازی جداگانه ترتیب آرگومان‌های `IG_scan_pages`؛ بدون حدس درباره prototype یا enumها.
