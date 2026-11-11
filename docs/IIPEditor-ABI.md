@@ -54,6 +54,36 @@ The binary contains two distinct methods with similar names:
 
 Do not equate these two methods or implement either as the crop pixel algorithm without tracing their downstream calls. The actual image crop operation remains to be located in the GEAR/ImageEn call chain.
 
+
+## Run 52: crop interaction and geometry
+
+The Run 52 target disassembly adds `chkForceSinglePageClick` and confirms the crop UI's coordinate model.
+
+### `chkForceSinglePageClick` — VA `0x004F1A04`
+
+- Reads the image-view control client rectangle through VMT slot `+0x64` on `[self+0x3C0]`.
+- Uses a 10-pixel inset when deriving the available display rectangle.
+- Reads image dimensions from the processor object at `[self+0x408]`: width at `+0x40`, height at `+0x3C`.
+- Compares available display width/height against image width/height, computes a scale ratio using x87 floating-point operations, and fits/centers a rectangle within the available view.
+- Writes the resulting left/top/right/bottom coordinates to the crop-control object `[self+0x3C4]` through four helper calls: `0x00404844`, `0x00404854`, `0x0040484C`, and `0x0040485C`.
+
+This is crop-rectangle fitting/constraint logic, not pixel manipulation. The helper calls appear to set the four rectangle edges; their public semantic names remain unresolved.
+
+### Mouse interaction
+
+- `pbImgViewerMouseDown` at `0x004F1274`: if crop mode is active (`[self+0x428]`), converts the stored mouse coordinates to image-space using independent width and height scale factors. It then passes a four-coordinate rectangle to `0x004EEE24).
+- `pbImgViewerMouseMove` at `0x004F1308`: hit-tests near the four crop edges and inside the rectangle. It stores an interaction mode in `[self+0x41C]` (values 1–5) and the active mouse coordinates in `[self+0x420]` / `[self+0x424]`.
+- `pbImgViewerMouseUp` at `0x004F1404`: applies the selected edge/corner/interior drag delta to the crop coordinates at `[self+0x40C]`, `[self+0x410]`, `[self+0x414]`, and `[self+0x418]`; updates the crop-control edges through the same four helpers; and invalidates the viewer via VMT slot `+0xA8`.
+
+The mouse handlers establish a useful native-port model: keep crop geometry in image coordinates, transform pointer positions with separate X/Y scale factors, and treat the view-control rectangle as presentation geometry only. The exact interaction-mode enum and the helper setter signatures still need caller/callee cross-checking.
+
+### Distinguish object setup from the crop algorithm
+
+The TD32 symbol `TGearImgProc.Crop(TRect)` maps to `0x004EEDB4` (size `0x70`). Its body creates/initializes the object field at `[self+0x20]` through helper `0x004AFE78` and factory/constructor dispatch at `0x00404614`, passing three addresses in the method's local data area. It does not visibly call an image crop API or process pixels in this body. Therefore, do not implement this method as the actual crop pixel operation based on its name alone.
+
+The editor command `DL=4` still invokes `TfrmSimpleImageEditor.CropImage` (`0x004F11E8`), then `TGearImgProc.Rotate90` and `ShowCropRectangle`. This command path is orchestration/UI refresh, not proof that the pixel crop occurs inside `CropImage`. The actual crop operation must be traced through the object initialized by `TGearImgProc.Crop` and its downstream calls.
+
+
 ## Native-port guidance
 
 1. Implement a native editor interface adapter with IUnknown-equivalent lifetime semantics and four custom operations.
