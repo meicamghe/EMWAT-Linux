@@ -120,3 +120,10 @@ The editor's image-space rectangle is passed to the Gear layer as four integer c
 The PE thunk tracer follows `0x004AFF38` to the IAT and identifies the imported function as `GEAR32PD.DLL!IG_IP_crop` (IAT slot `0x00630CE0`). This removes the previous uncertainty about the operation's API identity: `TGearImgProc` forwards the image handle and image-space rectangle to ImageGear's crop function, then reloads the page, refreshes resolution, and marks the image dirty.
 
 The mouse-up handler only updates the on-screen rectangle during dragging; it does not execute the pixel crop. The crop is submitted from the mouse-down handler through `0x004EEE24`. Native implementation should therefore separate interactive rectangle editing from the final `IG_IP_crop`-equivalent pixel operation. Do not assume the Win32 import's exact calling convention or inclusive/exclusive edge semantics without confirming the deployed GEAR32PD ABI.
+
+
+## ImageGear crop API contract cross-check
+
+The vendor's ImageGear C/C++ reference documents the crop declaration as `AT_ERRCOUNT ACCUAPI IG_IP_crop(HIGEAR hIGear, LPAT_RECT lpCropRect)`. It keeps the pixels on or inside the supplied `AT_RECT`, discards the remainder, and returns an ImageGear error count (zero indicates success in the v18 reference). The Win32 caller's two pushed arguments match this parameter order: image handle first, rectangle pointer second. The four consecutive `movsd` operations in `0x004EEE24` copy 16 bytes from the Delphi rectangle into a local buffer, consistent with a four-32-bit-field rectangle.
+
+For the native port, model the operation as `crop(image_handle, Rect{left, top, right, bottom})` and return/propagate an error result. Do not copy the Win32 calling convention into the Linux ABI. The public reference consulted is for ImageGear v18; EMWAT's exact bundled `GEAR32PD.DLL` version remains unverified, so confirm the installed header/version before relying on any version-specific edge semantics. The vendor reference describes the rectangle as pixels kept inside/on the rectangle; it does not by itself prove whether EMWAT's Delphi-side right/bottom values are inclusive or exclusive.
