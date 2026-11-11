@@ -60,7 +60,7 @@ jobs:
       - run: python tools/trace_field_accesses.py analysis-input/EmwatMethods.bpl1 0x34 bpl-analysis/EmwatMethods-field-offset-34.md
       - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004F0174 bpl-analysis/EmwatMethods-gearp-show-editor.md
       - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004EFF6C bpl-analysis/EmwatMethods-gearp-set-current-page.md
-      - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x0061D3C8 bpl-analysis/EmwatMethods-gscan-show-crop-rectangle.md
+      - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x0061E3C8 bpl-analysis/EmwatMethods-gscan-show-crop-rectangle.md
       - run: python tools/trace_delphi_interfaces.py analysis-input/EmwatMethods.bpl1
       - run: python tools/trace_imaging_import_callers.py analysis-input/EmwatMethods.bpl1
       - uses: actions/upload-artifact@v4
