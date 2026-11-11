@@ -22,6 +22,7 @@
 - [نقشه وابستگی‌های ImageGear و ImageEn](docs/Imaging-Dependency-Map.md)
 - [گراف فراخوانی‌های تصویر و اسکن](docs/IMAGE-CALL-GRAPH.md)
 - [تحلیل دقیق APIهای ImageGear](docs/GEAR-API-CALLS.md)
+- [تحلیل قرارداد انتخاب اسکنر و رابط‌های callback](docs/SCANNER-INTERFACE-ANALYSIS.md)
 - ابزار [استخراج GUID/ProgID و Resourceها](tools/EMWAT-COM-Resource-Analyzer.py)
 
 ## گزارش‌ها و فایل‌های مرجع موجود
