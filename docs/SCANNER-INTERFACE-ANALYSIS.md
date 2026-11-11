@@ -304,3 +304,45 @@ This section supersedes Run 69's statement that +0x34 stores the IIPEditor param
 4. Trace 0x004ECF30 and 0x004F0258 to understand the processor/context object's values and its use in IG_scan_pages / IG_scan_source_select.
 
 **Confidence:** The integer comparisons and +0x34 page-state dataflow are high-confidence machine-code findings. The method's correct source-level name, the exact +0x28 class, and +0x38 type remain unresolved.
+
+
+## Run 72 — processor object, page setter callers and helper semantics
+
+Run 72 (43007155812; artifact 13848178593) completed successfully. The new direct-call xref report resolves the callers of 0x004EFF94 and clarifies the page-state fields.
+
+### 0x004EFF94 is called as an integer page setter
+
+The TD32 record labels 0x004EFF94 as TGearImgProc.SetEditorForm with a DelphiInterface<IIPEditor> parameter, but all four direct callers pass small integer page values in EDX:
+
+| Caller | Callsite | EDX value/dataflow |
+|---|---:|---|
+| TGearImgProc.SaveCPinMultiPageFile | 0x004EF498 | Loop page index, starting at 1 |
+| TGearImgProc.Flip | 0x004F01FD | Constant 1 |
+| TfrmSimpleImageEditor.doCommand | 0x004F1D21 | UI page index plus 1; EAX is [editor+0x408] |
+| ScanCommandUnit.Finalization | 0x004F333A | Constant 1 |
+
+The body compares EDX against 1 and [self+0x30], writes the value to [self+0x34], then calls VTable +0x20 on [self+0x28] and stores a returned value/string-like object at [self+0x38]. The machine-code behavior is a page-selection/update operation. The TD32 symbol name/signature is not reliable for this routine and is superseded by the direct caller evidence.
+
+### Refined field/object map
+
+- +0x28 is a class-like processor/context object with a VMT. Gear code calls its slots +0, +4, +0x0C, +0x14, +0x1C and +0x20 in different paths. ShowEditor stores the supplied object here. SaveCPinMultiPageFile invokes its +0x1C method and then releases/replaces the reference. The exact runtime class is not resolved; TImageProcessor is a candidate association from editor signatures, but the VMT scan found no local TImageProcessor VMT candidate.
+- Helper 0x004ECF30 is a simple byte getter: movzx EAX, byte ptr [EAX+4]; ret. It is used on the +0x28 object in TGearImgProc constructor, ShowEditor and SaveCPinMultiPageFile. It is not an editor-modal-result call.
+- +0x30 is the page-count/upper-bound field. Rotate90 writes the computed page count here; the 0x004EFF94 range check and SavePage/SaveCPinMultiPageFile read it.
+- +0x34 is the current-page index. The 0x004EFF94 body writes it, SavePage compares it to the requested page, ReNewPageCount forwards it to 0x004EF240, and ShowEditor/SelectScanner reset it.
+- +0x38 is a string/object state populated by helper 0x004012F8 from values returned through the +0x28 object's virtual methods; its exact type remains unresolved.
+- +0x24 remains a separate error/result interface-like field, used by HasError/GetErrorCode/SaveAsType.
+
+### Helper corrections
+
+- 0x004EF048, named GetEditorModalResult by TD32, maps DL to constants: 0→0, 1→0x80028, 2→0x15, 3→2, and other values→0. It is a status/result mapper, not a query to IIPEditor or a form's ModalResult.
+- 0x004F0258 is called from SelectScanner and SetCurrentPage. Its entry calls the processor object's VMT slot +0, then passes the result to helper 0x00402AE0. Full routine semantics still need a wider disassembly.
+- 0x0045574C is a shared form/handle helper called from ShowCropRectangle, GearErrorHandling and unrelated forms. Its first instructions use a window handle and call 0x00404D5C; do not treat it as a scanner callback.
+
+This supersedes the Run 71 provisional statement that +0x28 was merely an unidentified interface pointer and further confirms +0x30/+0x34 as page count/current page. It also withdraws any use of the TD32 SetEditorForm parameter signature as proof of an IIPEditor assignment to +0x34.
+
+### Next probes
+
+1. Resolve the parent VMT 0x004EDE18 and determine whether TImageProcessor is an ancestor or external class.
+2. Expand disassembly for 0x004F0258, 0x004ECF38 and 0x0045574C; correlate their object fields and return values.
+3. Trace the VTable slot +0x20 on the +0x28 processor object and identify the value stored at +0x38.
+4. Trace the IIPEditor interface's actual registration/lifetime separately from the TGearImgProc page-state methods.
