@@ -43,6 +43,11 @@ jobs:
       - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004EF1DC bpl-analysis/EmwatMethods-scanner-helper-4EF1DC.md
       - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004049CC bpl-analysis/EmwatMethods-scanner-helper-4049CC.md
       - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x0061D100 bpl-analysis/EmwatMethods-scanner-helper-61D100.md
+      - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004F1158 bpl-analysis/EmwatMethods-editor-get-modal-result.md
+      - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004F1164 bpl-analysis/EmwatMethods-editor-hello.md
+      - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004F116C bpl-analysis/EmwatMethods-editor-initial.md
+      - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004F17B4 bpl-analysis/EmwatMethods-editor-register-click.md
+      - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004EFF94 bpl-analysis/EmwatMethods-set-editor-form.md
       - run: python tools/trace_delphi_interfaces.py analysis-input/EmwatMethods.bpl1
       - run: python tools/trace_imaging_import_callers.py analysis-input/EmwatMethods.bpl1
       - uses: actions/upload-artifact@v4
@@ -66,4 +71,9 @@ jobs:
             bpl-analysis/EmwatMethods-scanner-helper-4EF1DC.md
             bpl-analysis/EmwatMethods-scanner-helper-4049CC.md
             bpl-analysis/EmwatMethods-scanner-helper-61D100.md
+            bpl-analysis/EmwatMethods-editor-get-modal-result.md
+            bpl-analysis/EmwatMethods-editor-hello.md
+            bpl-analysis/EmwatMethods-editor-initial.md
+            bpl-analysis/EmwatMethods-editor-register-click.md
+            bpl-analysis/EmwatMethods-set-editor-form.md
           if-no-files-found: error
