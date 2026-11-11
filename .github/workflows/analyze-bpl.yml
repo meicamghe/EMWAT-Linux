@@ -85,6 +85,10 @@ jobs:
       - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004F26F2 bpl-analysis/EmwatMethods-scancommand-next-page-continuation.md 180 ret
       - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004F27C4 bpl-analysis/EmwatMethods-scancommand-next-page-dispatch.md 180 ret
       - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004F29E0 bpl-analysis/EmwatMethods-scancommand-request-helper.md 100 ret
+      - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004F2278 bpl-analysis/EmwatMethods-scancommand-dorequest-continuation.md 240 ret
+      - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004F28C0 bpl-analysis/EmwatMethods-scancommand-dispatch-continuation.md 220 ret
+      - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004F22E4 bpl-analysis/EmwatMethods-scancommand-helper-22E4.md 100 ret
+      - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004F2B18 bpl-analysis/EmwatMethods-scancommand-helper-2B18.md 100 ret
       - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004EC8B4 bpl-analysis/EmwatMethods-helper-4EC8B4.md 100 ret
       - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004ECFC8 bpl-analysis/EmwatMethods-helper-4ECFC8.md 60 ret
       - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004F0084 bpl-analysis/EmwatMethods-gearp-set-force-single-page-extended.md 50 ret
