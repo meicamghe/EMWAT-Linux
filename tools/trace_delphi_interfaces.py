@@ -131,6 +131,59 @@ def main():
                 for slot,target,desc in disasm_vtable(vt):
                     lines.append(f"  - +0x{slot*4:02X}: 0x{target:08X} — {desc}")
         lines.append("")
+    # Decode the concrete Delphi tkInterface RTTI record for IIPEditor.
+    # Win32 tkInterface TTypeData: IntfParent (4), IntfFlags (1), GUID (16), UnitName (ShortString).
+    lines += ["## IIPEditor interface RTTI decode", ""]
+    ii_hits=[]
+    for m in __import__("re").finditer(rb"IIPEditor", blob):
+        name_raw=m.start()
+        type_raw=name_raw-2
+        if type_raw < 0 or blob[type_raw] != 15 or blob[type_raw+1] != 9:
+            continue
+        data_raw=name_raw+9
+        if data_raw+22 > len(blob):
+            continue
+        parent_ref=u32(blob,data_raw)
+        flags=blob[data_raw+4]
+        iid_raw=blob[data_raw+5:data_raw+21]
+        unit=shortstr(data_raw+21)
+        iid=str(uuid.UUID(bytes_le=iid_raw))
+        type_va=raw_va(type_raw)
+        ii_hits.append((type_va,parent_ref,flags,iid,unit))
+    for type_va,parent_ref,flags,iid,unit in ii_hits:
+        lines.append(f"- TypeInfo: 0x{(type_va or 0):08X}; parent reference: 0x{parent_ref:08X}; flags: 0x{flags:02X}")
+        lines.append(f"- IID: {iid}; unit: {unit or 'unknown'}")
+        matches=[]
+        for vmt,(name,vr,size,parent) in candidates.items():
+            intf=ptr(vmt+VMT_INTF)
+            ir=va_raw(intf) if intf else None
+            if ir is None: continue
+            n=struct.unpack_from("<I",blob,ir)[0]
+            if n>64: continue
+            for i in range(n):
+                e=ir+4+i*ENTRY_SIZE
+                if e+ENTRY_SIZE>len(blob): continue
+                if str(uuid.UUID(bytes_le=blob[e:e+16])) == iid:
+                    vt=u32(blob,e+16)
+                    matches.append((name,vmt,vt,u32(blob,e+20)))
+        for name,vmt,vt,ioffset in matches:
+            lines.append(f"- Implementing class: {name}; VMT: 0x{vmt:08X}; interface VTable: 0x{vt:08X}; IOffset: 0x{ioffset:X}")
+            vr=va_raw(vt)
+            if vr is None: continue
+            lines.append("- Interface vtable slots (first 8; slots 0-2 are IUnknown):")
+            for slot in range(8):
+                target=u32(blob,vr+slot*4)
+                tr=va_raw(target)
+                if tr is None:
+                    lines.append(f"  - +0x{slot*4:02X}: 0x{target:08X} (unmapped)")
+                    continue
+                insns=list(md.disasm(blob[tr:tr+32],target))[:6]
+                desc="; ".join(f"{x.mnemonic} {x.op_str}" for x in insns) or "no decode"
+                lines.append(f"  - +0x{slot*4:02X}: 0x{target:08X} — {desc}")
+    if not ii_hits:
+        lines.append("- No structurally valid IIPEditor tkInterface RTTI record found.")
+    lines.append("")
+
     # Find IIPEditor shortstring/typeinfo occurrences and nearby references.
     lines += ["## IIPEditor RTTI/string candidates",""]
     hits=[]
