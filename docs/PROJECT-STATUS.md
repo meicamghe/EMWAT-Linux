@@ -252,3 +252,22 @@
 - امضای عمومی توابع با مستندات Accusoft برای ImageGear v18.7/v21 تطبیق دارد، اما نسخه دقیق GEAR32PD.DLL هنوز مشخص نیست.
 
 گام بعد: تعیین file-open flags و نوع رشته +0x38، معنی format constantها و تحلیل parent slotها.
+
+
+## Run 75 — آرگومان‌های واقعی مسیر اسکن و محدودیت VMT والد
+
+اجرای workflow با شناسه 43008058751 موفق شد؛ artifact برابر 13850020148 است.
+
+- در TfrmGScanPreview.SelectScanner، IG_scan_pages چهار مقدار می‌گیرد: HWND از TWinControl.GetHandle، رشته/مسیر از فیلد +0x458، یکی از ثابت‌های 0x28 یا 2 و مقدار 1.
+- در TGearImgProc.SelectScanner منشأ چهار آرگومان متفاوت است: خروجی VMT slot +0 یعنی HasError، مقدار رشته‌ای از آبجکت +0x28 از طریق virtual +0x0C، خروجی mapper در 0x004EF048 و byte ورودی متد.
+- خروجی IG_scan_pages در مسیر Gear داخل [self+0x4C] ذخیره می‌شود؛ در مسیر Preview بلافاصله مصرف نمی‌شود.
+- مقدار HasError از interface ناشناخته در [self+0x24] و slot +0x0C آن می‌آید؛ فعلاً نباید آن را HWND یا شناسه دستگاه فرض کرد.
+- امضای TD32 تابع @Gear@IG_scan_pages$qqsp6HWND__pxcuio است، اما تفاوت منشأ آرگومان اول بین دو caller هنوز با prototype دقیق GEAR32PD حل نشده است.
+- دو callsite تأییدشده IG_scan_source_select نیز داده‌های متفاوت می‌فرستند: مسیر Preview یک HWND واقعی و مسیر Gear خروجی slot صفر VMT را.
+- شش target اسلات والد در 0x004EDE18 به محدوده‌های TD32 قابل اتکا وصل نشدند و header استاندارد Delphi هم با این آدرس سازگار نیست؛ بنابراین هنوز نمی‌توان آن را TImageProcessor نامید.
+
+### گام بعد
+1. تمام writeها و referenceهای فیلد [TGearImgProc+0x24] را استخراج و منبع interface را پیدا کنیم.
+2. نوع runtime شیء [TGearImgProc+0x28] را از constructor، setter و VMT معتبر شناسایی کنیم؛ نه از parent pointer فعلی.
+3. نسخه دقیق GEAR32PD.DLL یا header/import library متناظر را پیدا کنیم تا ABI دو تابع اسکن قطعی شود.
+4. تا آن زمان مقادیر عددی و نوع آرگومان‌ها را نام‌گذاری نکنیم؛ backend لینوکس همچنان مستقل و مبتنی بر SANE طراحی شود.
