@@ -28,6 +28,7 @@ jobs:
       - run: python tools/diagnose_emwat_code_offsets.py analysis-input/EmwatMethods.bpl1
       - run: python tools/inspect_td32_module_map.py analysis-input/EmwatMethods.bpl1
       - run: python tools/resolve_td32_helpers.py analysis-input/EmwatMethods.bpl1
+      - run: python tools/resolve_delphi_vmt_slots.py analysis-input/EmwatMethods.bpl1
       - uses: actions/upload-artifact@v4
         with:
           name: emwat-bpl-static-analysis
@@ -38,4 +39,5 @@ jobs:
             bpl-analysis/EmwatMethods-address-diagnostics.md
             bpl-analysis/EmwatMethods-module-map.md
             bpl-analysis/EmwatMethods-helper-symbols.md
+            bpl-analysis/EmwatMethods-vmt-slots.md
           if-no-files-found: error
