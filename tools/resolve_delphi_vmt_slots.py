@@ -103,13 +103,33 @@ def main():
         destination = normalize_image_pointer(stored_value)
         if destination is None:
             return f"indirect through [0x{mem_va:08X}] -> stored 0x{(stored_value or 0):08X} (unmapped)"
-        names = by_va.get(destination, [])
-        if not names:
-            names = [name for start, end, name in proc_ranges if start <= destination < end]
-        label = f"0x{destination:08X}"
-        if names:
-            label += " (" + ", ".join(names) + ")"
-        return f"indirect through [0x{mem_va:08X}] -> {label}"
+        chain = []
+        current = destination
+        seen = set()
+        for depth in range(4):
+            if current in seen:
+                chain.append(f"0x{current:08X} (cycle)")
+                break
+            seen.add(current)
+            names = by_va.get(current, [])
+            if not names:
+                names = [name for start, end, name in proc_ranges if start <= current < end]
+            label = f"0x{current:08X}"
+            if names:
+                label += " (" + ", ".join(names) + ")"
+                chain.append(label)
+                break
+            chain.append(label)
+            next_value = read_u32_va(current)
+            next_va = normalize_image_pointer(next_value)
+            if next_va is None or next_va == current:
+                raw_current = va_to_raw(pe, current)
+                if raw_current is not None:
+                    sample = blob[raw_current:raw_current + 16]
+                    chain[-1] += " bytes=" + sample.hex(" ")
+                break
+            current = next_va
+        return f"indirect through [0x{mem_va:08X}] -> " + " -> ".join(chain)
 
     lines = ["# Delphi VMT slot resolution", "",
              "- PE32 Delphi package; VMT slots are 32-bit method pointers.",
@@ -157,9 +177,14 @@ def main():
             parent_name_value = read_u32_va(parent + VMT_CLASSNAME) if parent else None
             parent_name_field = normalize_image_pointer(parent_name_value)
             parent_name = shortstring_at_va(parent_name_field) if parent_name_field else None
-            parent_note = f" ({parent_name})" if parent_name else (
-                f" (class-name stored=0x{(parent_name_value or 0):08X})" if parent_name_value else ""
-            )
+            parent_note = f" ({parent_name})" if parent_name else ""
+            if parent_name_field and not parent_name:
+                name_raw = va_to_raw(pe, parent_name_field)
+                if name_raw is not None:
+                    sample = blob[name_raw:name_raw + 24]
+                    parent_note = f" (class-name target 0x{parent_name_field:08X}, bytes={sample.hex(' ')})"
+            elif parent_name_value and not parent_name_field:
+                parent_note = f" (class-name stored=0x{parent_name_value:08X}, unresolved)"
             lines += ["", f"### Candidate VMT 0x{vmt_va:08X}",
                       f"- Raw offset: 0x{vmt_raw:X}",
                       f"- Self pointer matches VMT: {'yes' if self_ok else 'no'}",
