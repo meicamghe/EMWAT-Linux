@@ -10,6 +10,7 @@ on:
       - 'tools/diagnose_emwat_code_offsets.py'
       - 'tools/inspect_td32_module_map.py'
       - 'tools/resolve_td32_helpers.py'
+      - 'tools/resolve_delphi_vmt_slots.py'
       - '.github/workflows/analyze-bpl.yml'
 permissions:
   contents: read
