@@ -536,3 +536,12 @@ TGearImgProc.ShowEditor stores the exact pointer received from TScanCommand+0x20
 TScanCommand.HasError calls the context object's virtual slot +0x10 and then helper 0x004ECFC8, using the result to update TScanCommand status byte +0x28 (values 2 or 4). The concrete class name and exact virtual method contract remain unresolved; do not assume this is the IImageProcessor interface merely because that interface RTTI exists in the module.
 
 The next probes are the full bodies of 0x004EC8B4 and 0x004ECFC8 plus the complete GetNextPage procedure. Workflow 43030170561 adds those traces.
+
+
+### Run 79 — ScanCommand constructor and page-context lifecycle
+
+Workflow run 43032078996 succeeded. The aligned constructor trace at 0x004F21F0 shows a base object created by 0x004EEDB4 and stored at [self+0x04], a separately created interface stored at [self+0x24], and another object returned by 0x004EB7F4 stored at [self+0x34] before virtual slot +0xB8 is called. The +0x24 interface path is consistent with the previously confirmed IIPEditor ownership; the +0x34 dependency remains unidentified.
+
+The useful GetNextPage block begins around 0x004F25CC, not at the earlier requested trace boundary. It uses two state bytes at [self+0x1D] and [self+0x1E]. Helper 0x004EC8B4 creates the per-page processing context stored at [self+0x20], using the mode/selector byte pair. In one branch, a mode value of 2 is remapped to factory mode 3; otherwise the current mode is passed through. A helper call through 0x00401398 with constant argument 1 checks request/page data; a positive result changes [self+0x1E] to 2, after which HasError is invoked. A later block rebuilds [self+0x20] from the updated state-byte pair. Thus +0x20 is a state-dependent processing context, not a single immutable object for the entire command lifetime.
+
+The broader context probes at 0x004F2250 and 0x004F25C0 begin mid-instruction, and the 0x004F2A80 probe is not aligned to code. They are not used to infer complete method boundaries. Run 80 adds aligned probes at 0x004F2274, 0x004F25CC, 0x004F26F2, 0x004F27C4, and 0x004F29E0.
