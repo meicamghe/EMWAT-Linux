@@ -229,3 +229,14 @@
 - ابزار جدید trace_td32_callers.py اضافه شد و callsiteهای مستقیم 0x004EFF94 و helperهای مهم را در CI استخراج می‌کند.
 
 گام بعد: تعیین parent VMT در 0x004EDE18، گسترش disassembly helperهای 0x004F0258 و 0x004ECF38، و شناسایی slot +0x20 و داده +0x38.
+
+
+## Run 73 — مسیر NotifyEditor و فیلد مسیر خروجی
+
+- 0x004EF240 به‌طور قطعی TGearImgProc.NotifyEditor است، نه helper ناشناس. ReNewPageCount و setter صفحه آن را با مقدار +0x34 صدا می‌زنند.
+- NotifyEditor handle تصویر در +0x10 را اعتبارسنجی می‌کند، مقدار path/string-like از +0x38 می‌گیرد و دو بار IG_save_FD را از thunk 0x004AFE98 فراخوانی می‌کند؛ سپس CheckOutputParameter را بررسی می‌کند، dirty flag را پاک می‌کند و ReloadPage/GetImageResolution را اجرا می‌کند.
+- +0x38 به احتمال زیاد مسیر فایل/خروجی است و در page setter از VTable +0x20 شیء +0x28 مقدار می‌گیرد. نوع دقیق string و قرارداد FD هنوز مشخص نیست.
+- helper 0x004ECF38 مقدار فیلد +8 شیء +0x28 را از طریق helper 0x00401240 به خروجی کپی می‌کند؛ helper 0x004ECF30 هم byte فیلد +4 را می‌خواند.
+- بررسی header آدرس parent VMT در 0x004EDE18 با offsetهای استاندارد Delphi سازگار نبود؛ تا تحلیل بدنه slotها، آن را TImageProcessor نام‌گذاری نمی‌کنیم.
+
+گام بعد: تحلیل بدنه slotهای parent در 0x004EDE18، شناسایی +0x28 و تعیین قرارداد IG_save_FD و path.
