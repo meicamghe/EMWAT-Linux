@@ -80,6 +80,11 @@ jobs:
       - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004F2250 bpl-analysis/EmwatMethods-scancommand-dorequest-context.md 220 ret
       - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004F25C0 bpl-analysis/EmwatMethods-scancommand-get-next-page-context.md 140 ret
       - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004F2A80 bpl-analysis/EmwatMethods-scancommand-has-error-context.md 100 ret
+      - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004F2274 bpl-analysis/EmwatMethods-scancommand-dorequest-entry.md 220 ret
+      - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004F25CC bpl-analysis/EmwatMethods-scancommand-next-page-entry.md 260 ret
+      - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004F26F2 bpl-analysis/EmwatMethods-scancommand-next-page-continuation.md 180 ret
+      - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004F27C4 bpl-analysis/EmwatMethods-scancommand-next-page-dispatch.md 180 ret
+      - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004F29E0 bpl-analysis/EmwatMethods-scancommand-request-helper.md 100 ret
       - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004EC8B4 bpl-analysis/EmwatMethods-helper-4EC8B4.md 100 ret
       - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004ECFC8 bpl-analysis/EmwatMethods-helper-4ECFC8.md 60 ret
       - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004F0084 bpl-analysis/EmwatMethods-gearp-set-force-single-page-extended.md 50 ret
@@ -177,6 +182,11 @@ jobs:
             bpl-analysis/EmwatMethods-scancommand-dorequest-context.md
             bpl-analysis/EmwatMethods-scancommand-get-next-page-context.md
             bpl-analysis/EmwatMethods-scancommand-has-error-context.md
+            bpl-analysis/EmwatMethods-scancommand-dorequest-entry.md
+            bpl-analysis/EmwatMethods-scancommand-next-page-entry.md
+            bpl-analysis/EmwatMethods-scancommand-next-page-continuation.md
+            bpl-analysis/EmwatMethods-scancommand-next-page-dispatch.md
+            bpl-analysis/EmwatMethods-scancommand-request-helper.md
             bpl-analysis/EmwatMethods-helper-4EC8B4.md
             bpl-analysis/EmwatMethods-helper-4ECFC8.md
             bpl-analysis/EmwatMethods-gearp-set-force-single-page-extended.md
