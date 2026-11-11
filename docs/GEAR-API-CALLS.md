@@ -134,3 +134,17 @@ The TD32 decorated symbol is @Gear@IG_scan_pages$qqsp6HWND__pxcuio. This is insu
 IG_scan_source_select (thunk 0x004AFF28, IAT 0x00630CE8) also has two confirmed callers with different value provenance: ShowCropRectangle passes TWinControl.GetHandle; TGearImgProc.SetCurrentPage passes the result of VMT slot +0. Its decorated symbol @Gear@IG_scan_source_select$qqsp6HWND__ and the second caller's dataflow are not fully reconciled.
 
 Public Accusoft references to IG_TWAIN_scan_pages describe a related TWAIN acquisition family, but do not establish ABI identity with IG_scan_pages in EMWAT's GEAR32PD.DLL. The extended parent-slot traces did not identify the class behind 0x004EDE18; no TImageProcessor attribution is made.
+
+
+## Run 76 — IIPEditor pointer and HWND provenance correction
+
+The interface stored at [TGearImgProc+0x24] is now identified as IIPEditor, superseding earlier notes that described it as an unidentified error/result interface:
+
+- TScanCommand.$bdtr calls the setter-like routine at 0x004F0084 with EDX adjusted by +0x430.
+- TfrmSimpleImageEditor implements IIPEditor at interface offset 0x430 (IID 7834c511-9078-411c-ab08-8b15ef1fd700; interface VTable 0x004F03D4).
+- The same setter is called with nil at 0x004F1151, consistent with interface release/clear.
+- TGearImgProc.HasError (0x004EF1C4) dispatches to IIPEditor slot +0x0C. The implementing method at 0x004F1158 calls TWinControl.GetHandle and returns its value.
+
+Thus the Gear-path value previously described only as a HasError result is actually an HWND obtained through IIPEditor. Both confirmed IG_scan_source_select callsites pass an HWND-like value, and the first argument of TGearImgProc.SelectScanner's IG_scan_pages call is likewise an HWND. This resolves the Run 75 value-provenance discrepancy, but does not recover the complete GEAR32PD prototypes or the meanings of the remaining arguments/constants.
+
+Do not treat the TD32 wrapper labels HasError, GetErrorCode, SaveAsType or SetForceSinglePage as semantic proof for the interface methods. The distinct object at [TGearImgProc+0x28] remains unresolved.
