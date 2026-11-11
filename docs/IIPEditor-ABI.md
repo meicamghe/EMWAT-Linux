@@ -73,7 +73,7 @@ This is crop-rectangle fitting/constraint logic, not pixel manipulation. The hel
 
 - `pbImgViewerMouseDown` at `0x004F1274`: if crop mode is active (`[self+0x428]`), converts the stored mouse coordinates to image-space using independent width and height scale factors. It then passes a four-coordinate rectangle to `0x004EEE24).
 - `pbImgViewerMouseMove` at `0x004F1308`: hit-tests near the four crop edges and inside the rectangle. It stores an interaction mode in `[self+0x41C]` (values 1–5) and the active mouse coordinates in `[self+0x420]` / `[self+0x424]`.
-- `pbImgViewerMouseUp` at `0x004F1404`: applies the selected edge/corner/interior drag delta to the crop coordinates at `[self+0x40C]`, `[self+0x410]`, `[self+0x414]`, and `[self+0x418]`; updates the crop-control edges through the same four helpers; and invalidates the viewer via VMT slot `+0xA8`.
+- `pbImgViewerMouseUp` at `0x004F1404`: applies the selected edge/corner/interior drag delta to the crop coordinates at `[self+0x40C]`, `[self+0x410]`, `[self+0x414]`, and `[self+0x418]`; updates the crop-control edges through the same four helpers; and invalidates the viewer via VMT slot `+0xA8`. The full method ends at `0x004F15F8` and does not call `0x004EEE24`; pixel cropping is performed in the separate mouse-down path when the crop rectangle is submitted.
 
 The mouse handlers establish a useful native-port model: keep crop geometry in image coordinates, transform pointer positions with separate X/Y scale factors, and treat the view-control rectangle as presentation geometry only. The exact interaction-mode enum and the helper setter signatures still need caller/callee cross-checking.
 
@@ -98,7 +98,7 @@ TD32 labels this procedure as a destructor (`$bdtr`), but its observed call site
 - It reads the image handle from `[self+0x10]`; if the handle is positive, it calls `0x004AFF38` with the handle and the rectangle pointer.
 - It then calls `ReloadPage` (`0x004EF0E4`) and `GetImageResolution` (`0x004EEEC4`), and sets `[self+0x54]=1` (modified/dirty state).
 
-The `0x004AFF38` target is not yet symbolically resolved in the current helper-symbol report. Its argument pattern and placement in this path make it a strong candidate for the underlying Gear image-processing rectangle operation, but do not assign it an API name until the import/thunk target is verified.
+The Run 55 PE thunk trace resolves `0x004AFF38` to the import `GEAR32PD.DLL!IG_IP_crop` through IAT slot `0x00630CE0`. This confirms that the call is the underlying ImageGear crop operation. The caller pushes the image handle followed by a pointer to the four-integer rectangle before invoking the thunk. The exact imported function prototype, stack-cleanup convention, and rectangle edge convention still need verification against the deployed GEAR32PD version.
 
 The TD32 destructor label and the observed rectangle call convention are not fully reconciled. Treat the observed behavior as confirmed, but retain uncertainty about the source-level symbol/overload identity. Do not rename this method as a confirmed crop API yet.
 
@@ -113,3 +113,10 @@ The editor's image-space rectangle is passed to the Gear layer as four integer c
 3. Treat custom slot 6 as an enum/command dispatch pending confirmation of the Delphi calling convention and all call sites. Do not expose it as a raw `TObject*` API.
 4. Analyze `Initial` (`0x004F116C`), `GetModalRresult` (`0x004F1158`), and `Hello` (`0x004F1164`) bodies and all call sites before implementing behavior.
 5. Keep `Update` separate; trace its callers and the `TEditorNotificationType` values to determine its role in the editor lifecycle.
+
+
+## Run 55: ImageGear crop import resolved
+
+The PE thunk tracer follows `0x004AFF38` to the IAT and identifies the imported function as `GEAR32PD.DLL!IG_IP_crop` (IAT slot `0x00630CE0`). This removes the previous uncertainty about the operation's API identity: `TGearImgProc` forwards the image handle and image-space rectangle to ImageGear's crop function, then reloads the page, refreshes resolution, and marks the image dirty.
+
+The mouse-up handler only updates the on-screen rectangle during dragging; it does not execute the pixel crop. The crop is submitted from the mouse-down handler through `0x004EEE24`. Native implementation should therefore separate interactive rectangle editing from the final `IG_IP_crop`-equivalent pixel operation. Do not assume the Win32 import's exact calling convention or inclusive/exclusive edge semantics without confirming the deployed GEAR32PD ABI.
