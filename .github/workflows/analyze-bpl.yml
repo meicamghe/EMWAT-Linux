@@ -72,6 +72,8 @@ jobs:
       - run: python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004F0174 bpl-analysis/EmwatMethods-callers-4F0174.md
       - run: python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004F0160 bpl-analysis/EmwatMethods-callers-4F0160.md
       - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004F0174 bpl-analysis/EmwatMethods-gearp-show-editor-extended.md 50 ret
+      - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004F2600 bpl-analysis/EmwatMethods-scancommand-get-next-page.md 100 ret
+      - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004F2A90 bpl-analysis/EmwatMethods-scancommand-has-error.md 60 ret
       - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004F0084 bpl-analysis/EmwatMethods-gearp-set-force-single-page-extended.md 50 ret
       - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004012F8 bpl-analysis/EmwatMethods-helper-4012F8.md 40 ret
       - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x00401428 bpl-analysis/EmwatMethods-helper-401428.md 40 ret
@@ -159,6 +161,8 @@ jobs:
             bpl-analysis/EmwatMethods-callers-4F0174.md
             bpl-analysis/EmwatMethods-callers-4F0160.md
             bpl-analysis/EmwatMethods-gearp-show-editor-extended.md
+            bpl-analysis/EmwatMethods-scancommand-get-next-page.md
+            bpl-analysis/EmwatMethods-scancommand-has-error.md
             bpl-analysis/EmwatMethods-gearp-set-force-single-page-extended.md
             bpl-analysis/EmwatMethods-helper-4012F8.md
             bpl-analysis/EmwatMethods-helper-401428.md
