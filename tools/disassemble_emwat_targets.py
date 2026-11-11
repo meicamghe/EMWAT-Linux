@@ -15,7 +15,11 @@ PATTERNS = [
 "TfrmSimpleImageEditor@btnRegisterClick","TfrmSimpleImageEditor@doCommand",
 "TfrmSimpleImageEditor@pbImgViewerMouseDown","TfrmSimpleImageEditor@pbImgViewerMouseMove",
 "TfrmSimpleImageEditor@pbImgViewerMouseUp","TfrmSimpleImageEditor@ShowCropRectangle",
-"TfrmGScanPreview@doCommand","TfrmGScanPreview@btnCropClick",
+"TfrmGScanPreview@doCommand","TfrmGScanPreview@FormCreate",
+"TfrmGScanPreview@FormDestroy","TfrmGScanPreview@FormShow",
+"TfrmGScanPreview@GetImagePageNumber","TfrmGScanPreview@GetImgSize",
+"TfrmGScanPreview@LoadImageToGearHandle","TfrmGScanPreview@SelectScanner",
+"TfrmGScanPreview@btnCropClick",
 "TfrmGScanPreview@btnHFlipClick","TfrmGScanPreview@btnLRotateClick",
 "TfrmGScanPreview@btnRRotateClick","TfrmGScanPreview@btnVFlipClick",
 "TfrmGScanPreview@uibtnRegisterClick","TfrmGScanPreview@Save_Tiff_MultyPages",
@@ -24,7 +28,8 @@ PATTERNS = [
 "TGearImgProc@FlipVertical","TGearImgProc@SaveToFile","TGearImgProc@ScanToFile",
 "TGearImgProc@$bctr","TGearImgProc@$bdtr","TGearImgProc@Crop","TGearImgProc@Flip",
 "TGearImgProc@SetEditorForm","TGearImgProc@ShowEditor",
-"TGearImgProc@NotifyEditor","TGearImgProc@LoadPage",
+"TGearImgProc@NotifyEditor","TGearImgProc@SavePage","TGearImgProc@ReloadPage",
+"TGearImgProc@SelectScanner","TGearImgProc@LoadPage",
 "TGearImgProc@PaintCanvas","TGearImgProc@CheckErrors",
 "TGearImgProc@CheckOutputParameter"]
 COMMON=set("mov push pop call ret retn jmp je jne jz jnz ja jae jb jbe jg jge jl jle cmp test lea add sub xor and or inc dec imul idiv shl shr sar movzx movsx setne sete nop leave cdq neg not xchg".split())
