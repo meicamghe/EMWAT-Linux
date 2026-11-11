@@ -218,3 +218,33 @@ A new inconsistency was found: TGearImgProc.SetEditorForm calls interface VTable
 4. Trace editor registration/close paths to establish interface AddRef/Release and lifetime.
 
 **Confidence:** VMT slot targets, the HasError field access and return-value flow, the IIPEditor method body reaching TWinControl.GetHandle, and the Initial field writes are high-confidence static findings. The +0x24 object's class/interface, the fifth IIPEditor method, and GEAR argument semantics remain unresolved.
+
+
+## Run 69 — correction: IIPEditor is not the object at TGearImgProc+0x28
+
+A fresh cross-check of the complete ShowEditor and SetEditorForm bodies supersedes the earlier field attribution in Run 62/63/68.
+
+- SetEditorForm has the TD32 signature accepting DelphiInterface<IIPEditor>. Its incoming EDX value is copied to ESI and stored at [self+0x34] (instruction 0x004EFFE3). It then loads [self+0x28] and calls that object's VTable +0x20. Therefore this +0x20 dispatch is not a call through the IIPEditor vtable.
+- ShowEditor stores its EDX argument at [self+0x28] (0x004F018D), invokes that object's VTable +0x04 (0x004F0197), and then clears [self+0x34] (0x004F01AC).
+- SelectScanner clears [self+0x34] at 0x004EF9FC, then loads [self+0x28] and invokes VTable +0x0C and +0x04 at several points. The calls previously attributed to IIPEditor were therefore made on the separate +0x28 object.
+- The IIPEditor RTTI identification itself remains valid: IID 7834c511-9078-411c-ab08-8b15ef1fd700, implemented by TfrmSimpleImageEditor at interface offset 0x430. What is withdrawn is the claim that this interface is stored at +0x28 or that SelectScanner's +0x0C call reaches GetModalRresult.
+- The direct store to +0x34 is strong evidence that SetEditorForm writes the IIPEditor parameter there. However, other code (including SavePage) also reads +0x34 in a numeric comparison, and SelectScanner zeroes it. Do not finalize the field's semantic type/lifetime until the complete +0x34 cross-reference report resolves this apparent state/typing conflict.
+
+### Revised object map
+
+| TGearImgProc offset | Current evidence | Status |
+|---|---|---|
+| +0x24 | Read by HasError/GetErrorCode/SaveAsType; virtual dispatch through referenced object's +0x0C/+0x10/+0x18 | Unidentified error/result interface candidate |
+| +0x28 | Assigned by ShowEditor; methods +0x00/+0x04/+0x0C/+0x20 used by Gear methods including SelectScanner | Separate processor/context object; exact class unresolved |
+| +0x34 | SetEditorForm stores its IIPEditor argument here; ShowEditor/SelectScanner clear it; SavePage also reads it as numeric state | Conflicting use; investigate before naming field |
+
+The new CI workflow scans displacements +0x28 and +0x34 across all TD32-bounded procedures and adds TImageProcessor to VMT discovery. The class name TImageProcessor appears in the editor interface signatures, but the actual runtime class for the +0x28 object is not yet confirmed.
+
+### Next probes
+
+1. Inspect the full +0x28 and +0x34 reference reports, class VMT candidates and the caller of ShowEditor.
+2. Resolve the object passed to ShowEditor and its VTable slots +0x00, +0x04, +0x0C and +0x20.
+3. Reconcile why SetEditorForm stores an IIPEditor pointer at +0x34 while SavePage treats +0x34 as numeric state and SelectScanner clears it.
+4. Keep the +0x24 error/result interface, +0x28 processor/context object and IIPEditor parameter separate until a complete field/lifetime proof exists.
+
+**Confidence:** The stores/loads at +0x28/+0x34 and the fact that SelectScanner's calls are through +0x28 are high-confidence static findings. The runtime class of +0x28 and semantic meaning/lifetime of +0x34 remain unresolved.
