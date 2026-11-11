@@ -271,3 +271,36 @@ This supersedes the earlier wording that the two IG_scan_source_select attributi
 2. Trace helper 0x004F0258 and the object/method used to produce the HasError result passed to IG_scan_source_select.
 3. Trace helper 0x0045574C and determine what ShowCropRectangle prepares between its two GetHandle calls.
 4. Recover the exact GEAR32PD prototype before naming the IG_scan_source_select argument types or behavior beyond the observed handle/result dataflow.
+
+
+## Run 71 — field +0x34 is page state; symbol/ABI mismatch at 0x004EFF94
+
+The complete displacement scan from artifact 13848168639 (run 43006657606) resolves the apparent +0x34 conflict from Run 69. The earlier interpretation that SetEditorForm stores an IIPEditor pointer at +0x34 is withdrawn.
+
+- At 0x004EFF94, the TD32 name/signature is SetEditorForm(DelphiInterface<IIPEditor>), but the machine code treats EDX/ESI as a small integer: it compares it with 1, compares it with [self+0x30], and stores it into [self+0x34]. This is consistent with a page-index setter, not an interface assignment. The symbol/signature association is therefore not trusted for this routine until callers and metadata are reconciled.
+- The write at 0x004EFFE3 is the current-page value. SavePage reads [self+0x34] and compares it against the page number being saved. ReNewPageCount and SaveCPinMultiPageFile also read +0x34. SelectScanner and ShowEditor clear +0x34. These accesses support +0x34 = current-page state.
+- The range check at 0x004EFFB2–0x004EFFBA compares the input against 1 and [self+0x30]. This supports +0x30 = page-count/upper-bound state.
+- ShowEditor writes its EDX argument to [self+0x28], calls that object's VTable +0x04, and clears +0x34. SelectScanner subsequently calls methods at +0x0C and +0x04 through the same +0x28 object. The exact runtime class of +0x28 remains unresolved. Adding TImageProcessor to the VMT scan found no VMT candidate in this BPL; the type name appears in method signatures, but that does not prove the runtime object class is defined in this package.
+- The code at 0x004EF048, despite its TD32 name GetEditorModalResult, is a compact DL-to-constant mapper: DL=0 returns 0; DL=1 returns 0x80028; DL=2 returns 0x15; DL=3 returns 2; other values return 0. It does not query IIPEditor or a form's ModalResult. ShowEditor passes the value returned by helper 0x004ECF30 into this mapper and stores the mapped result at [self+0x14].
+
+### Revised field map (current best evidence)
+
+| Offset | Best-supported interpretation | Evidence/status |
+|---|---|---|
+| +0x14 | mapped result/status value | ShowEditor stores result of 0x004EF048 |
+| +0x24 | error/result polymorphic reference | HasError/GetErrorCode/SaveAsType dispatch through it; concrete type unknown |
+| +0x28 | processor/context object | assigned by ShowEditor; VTable slots +0,+4,+0x0C,+0x20 used; runtime class unresolved |
+| +0x30 | page-count / maximum-page state | range check in 0x004EFF94; further full cross-reference requested |
+| +0x34 | current-page state | written by integer-like setter body, cleared by SelectScanner/ShowEditor, read by SavePage and ReNewPageCount |
+| +0x38 | string/object state returned by +0x04/+0x20 calls | helper 0x004012F8 assigns local result here; exact type to be checked with expanded scan |
+
+This section supersedes Run 69's statement that +0x34 stores the IIPEditor parameter. The IIPEditor RTTI record and its implementation table on TfrmSimpleImageEditor remain valid, but its association with TGearImgProc fields is not established by the present code.
+
+### Next probes
+
+1. Inspect the new +0x30 and +0x38 reports and full ReNewPageCount/SaveCPinMultiPageFile bodies.
+2. Find all callers of 0x004EFF94 and reconcile the TD32 signature mismatch with actual caller argument setup.
+3. Identify the runtime type passed to ShowEditor and recover the VTable layout for its +0,+4,+0x0C,+0x20 methods.
+4. Trace 0x004ECF30 and 0x004F0258 to understand the processor/context object's values and its use in IG_scan_pages / IG_scan_source_select.
+
+**Confidence:** The integer comparisons and +0x34 page-state dataflow are high-confidence machine-code findings. The method's correct source-level name, the exact +0x28 class, and +0x38 type remain unresolved.
