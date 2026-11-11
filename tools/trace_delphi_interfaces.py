@@ -108,13 +108,13 @@ def main():
         if ir is None:
             lines += ["- Interface table pointer is null or unmapped.",""]
             continue
-        count=struct.unpack_from("<H",blob,ir)[0]
+        count=struct.unpack_from("<I",blob,ir)[0]
         lines.append(f"- Interface entry count: {count}")
         if count>64:
             lines += ["- Count exceeds sanity limit; no entries decoded.",""]
             continue
         for i in range(count):
-            e=ir+2+i*ENTRY_SIZE
+            e=ir+4+i*ENTRY_SIZE
             if e+ENTRY_SIZE>len(blob):
                 lines.append(f"- Entry {i}: truncated")
                 break
