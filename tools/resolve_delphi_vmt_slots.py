@@ -84,7 +84,7 @@ def main():
                 stop = start + sec.SizeOfRawData
                 p = blob.find(ptr_raw, start, stop)
                 while p >= 0:
-                    vmt_va = raw_to_va(pe, p) - VMT_CLASSNAME
+                    vmt_va = raw_to_va(pe, p) + VMT_CLASSNAME
                     vmt_raw = va_to_raw(pe, vmt_va)
                     if vmt_raw is not None and vmt_raw + 4 <= len(blob):
                         self_raw = va_to_raw(pe, vmt_va + VMT_SELF)
