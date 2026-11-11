@@ -15,6 +15,7 @@ on:
       - 'tools/trace_rotate90_dispatch.py'
       - 'tools/trace_pe_target.py'
       - 'tools/trace_delphi_interfaces.py'
+      - 'tools/trace_imaging_import_callers.py'
       - '.github/workflows/analyze-bpl.yml'
 permissions:
   contents: read
@@ -39,6 +40,7 @@ jobs:
       - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004AFF38
       - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x00401058 bpl-analysis/EmwatMethods-crop-coordinate-helper.md
       - run: python tools/trace_delphi_interfaces.py analysis-input/EmwatMethods.bpl1
+      - run: python tools/trace_imaging_import_callers.py analysis-input/EmwatMethods.bpl1
       - uses: actions/upload-artifact@v4
         with:
           name: emwat-bpl-static-analysis
@@ -55,4 +57,5 @@ jobs:
             bpl-analysis/EmwatMethods-interface-tables.md
             bpl-analysis/EmwatMethods-target-address-trace.md
             bpl-analysis/EmwatMethods-crop-coordinate-helper.md
+            bpl-analysis/EmwatMethods-imaging-import-callers.md
           if-no-files-found: error
