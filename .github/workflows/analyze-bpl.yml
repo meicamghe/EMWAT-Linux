@@ -48,6 +48,12 @@ jobs:
       - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004F116C bpl-analysis/EmwatMethods-editor-initial.md
       - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004F17B4 bpl-analysis/EmwatMethods-editor-register-click.md
       - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004EFF94 bpl-analysis/EmwatMethods-set-editor-form.md
+      - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004EF1C4 bpl-analysis/EmwatMethods-gearp-has-error.md
+      - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004EEC7C bpl-analysis/EmwatMethods-gearp-constructor.md
+      - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004EE1B4 bpl-analysis/EmwatMethods-gearp-parent-handle.md
+      - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004F0174 bpl-analysis/EmwatMethods-gearp-show-editor.md
+      - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004EFF6C bpl-analysis/EmwatMethods-gearp-set-current-page.md
+      - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x0061D3C8 bpl-analysis/EmwatMethods-gscan-show-crop-rectangle.md
       - run: python tools/trace_delphi_interfaces.py analysis-input/EmwatMethods.bpl1
       - run: python tools/trace_imaging_import_callers.py analysis-input/EmwatMethods.bpl1
       - uses: actions/upload-artifact@v4
@@ -76,4 +82,10 @@ jobs:
             bpl-analysis/EmwatMethods-editor-initial.md
             bpl-analysis/EmwatMethods-editor-register-click.md
             bpl-analysis/EmwatMethods-set-editor-form.md
+            bpl-analysis/EmwatMethods-gearp-has-error.md
+            bpl-analysis/EmwatMethods-gearp-constructor.md
+            bpl-analysis/EmwatMethods-gearp-parent-handle.md
+            bpl-analysis/EmwatMethods-gearp-show-editor.md
+            bpl-analysis/EmwatMethods-gearp-set-current-page.md
+            bpl-analysis/EmwatMethods-gscan-show-crop-rectangle.md
           if-no-files-found: error
