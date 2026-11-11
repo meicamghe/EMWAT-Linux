@@ -8,6 +8,8 @@ from analyze_emwat_td32 import find_td32, parse_td32
 TARGET_CLASSES = (
     "TfrmSimpleImageEditor", "TfrmGScanPreview", "TfrmImageTools",
     "TGearImgProc", "TfrmScanError", "TImageProcessor",
+    "TResultImage", "TMultiPageImage", "TSetOfMultiPageImages",
+    "TSetOfSinglePageImages", "TProcessResult",
 )
 SLOTS = tuple(range(0x00, 0x64, 4)) + (0x64, 0x88, 0xA8, 0x108)
 VMT_SELF = -88
