@@ -61,3 +61,22 @@ Do not translate these values into Linux operations based on names alone. The ex
 2. Trace `TGearImgProc.Rotate90`'s virtual call through the object at `[self+0x28]`.
 3. Resolve the remaining virtual dispatches in the image editor by tracing the actual object VMTs at each call site (rather than assuming the form VMT).
 4. Implement the verified transformation sequence in the native Linux image layer and test it against the Windows app's output.
+
+## TGearImgProc.Rotate90 dispatch trace (run 38)
+
+The call at `0x004EF165` is **not** one of the form VMT slots listed above. The method does this:
+
+1. Checks the object pointer stored at `[TGearImgProc+0x28]`.
+2. Calls `IG_display_image` with the image handle at `[self+0x38]` and a local output value.
+3. Stores the returned value at `[self+0x4C]`.
+4. Loads the object pointer from `[self+0x28]`, reads its VMT pointer from `[object]`, then invokes the **first VMT entry** via `call dword ptr [vmt]`. Two stack arguments are prepared immediately before this dispatch (the output value and zero).
+5. Treats the virtual method's EAX result as a signed 64-bit value (via `cdq`) and passes that pair to internal routine `0x004035D8`; stores that routine's EAX result at `[self+0x30]`.
+
+The virtual target belongs to the object held in the field at offset `+0x28`, not to `TGearImgProc` itself and not to the three form classes. Its class/VMT and the semantics of `0x004035D8` are still unresolved. Do not substitute `TWinControl.Invalidate` or another inherited form slot here.
+
+### Revised next steps
+
+1. Resolve the runtime/static type and VMT of the object held at `[TGearImgProc+0x28]`; trace its constructor/assignment sites and first VMT entry.
+2. Disassemble and identify internal routine `0x004035D8`, including its callers and return-value contract.
+3. Only then decide whether `Rotate90`'s virtual call is display/rendering, geometry, or another operation.
+4. Obtain the exact deployed `GEAR32PD.DLL` before implementing enum/ABI-dependent operations.
