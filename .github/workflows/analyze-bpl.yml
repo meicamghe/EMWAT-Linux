@@ -37,6 +37,7 @@ jobs:
       - run: python tools/trace_rotate90_object.py analysis-input/EmwatMethods.bpl1
       - run: python tools/trace_rotate90_dispatch.py analysis-input/EmwatMethods.bpl1
       - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004AFF38
+      - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x00401058 bpl-analysis/EmwatMethods-crop-coordinate-helper.md
       - run: python tools/trace_delphi_interfaces.py analysis-input/EmwatMethods.bpl1
       - uses: actions/upload-artifact@v4
         with:
@@ -53,4 +54,5 @@ jobs:
             bpl-analysis/EmwatMethods-rotate90-deep-trace.md
             bpl-analysis/EmwatMethods-interface-tables.md
             bpl-analysis/EmwatMethods-target-address-trace.md
+            bpl-analysis/EmwatMethods-crop-coordinate-helper.md
           if-no-files-found: error
