@@ -372,3 +372,51 @@ The VMT-parent inspection at 0x004EDE18 did not validate the standard Delphi hea
 | +0x38 | output path/string-like state | passed into file/FD save paths and assigned from +0x28 virtual +0x20 result |
 
 **Confidence:** NotifyEditor identity, its calls to IG_save_FD, and the +0x34/+0x38 dataflow are high-confidence static findings. Exact GEAR FD semantics, path encoding and the runtime class of +0x28 remain unresolved.
+
+
+## Run 74 — correct FD API identities and image-format field
+
+A final import-thunk cross-check corrects the Run 73 interpretation. Thunk 0x004AFE98 is GEAR32PD.DLL!IG_load_FD (IAT 0x00630D2C), not IG_save_FD. Thunk 0x004AFEA0 is GEAR32PD.DLL!IG_save_FD (IAT 0x00630D28).
+
+### Verified argument order
+
+The SavePage call at 0x004EF60B pushes five arguments in reverse order matching the documented IG_load_FD prototype:
+
+- fd = ESI (opened descriptor for the file/path in [self+0x38])
+- lOffset = 0
+- nPage = current loop page [ebp-0x10]
+- nTile = 0
+- lphIGear = address of local HIGEAR handle [ebp-0x14]
+
+The subsequent call at 0x004EF64E matches IG_save_FD:
+
+- hIGear = local handle [ebp-0x14]
+- fd = ESI
+- nPage = current loop page
+- nReserved = 0
+- lFormatType = [self+0x14]
+
+NotifyEditor calls IG_load_FD twice, at 0x004EF2D3 and 0x004EF2F9. Both write to [self+0x10]; the first uses EDX as nPage and the second uses nPage=1. In both calls lOffset=0 and nTile=1. Therefore NotifyEditor reloads image data from an already-open file descriptor into the active HIGEAR handle; it does not call IG_save_FD. This supersedes Run 73's statement that NotifyEditor saves through IG_save_FD.
+
+### Revised +0x14 and +0x38 meanings
+
+The fifth argument to IG_save_FD is lFormatType, and SavePage passes [self+0x14] there. Thus +0x14 is the ImageGear save-format/compression constant, not a generic status value. The routine at 0x004EF048 maps the byte selector DL to the constants 0, 0x80028, 0x15 and 2 (other values map to 0); ShowEditor stores that result at +0x14. This is best described as a format-code mapper, not GetEditorModalResult.
+
+The +0x38 value is used to obtain/open the file descriptor consumed by IG_load_FD and IG_save_FD. It is therefore a path/stream backing value, likely a string path, but its exact Delphi string type and file-open mode remain to be proven from the helper and the caller.
+
+The observed call stacks match the public ImageGear prototypes documented by Accusoft:
+
+- IG_load_FD(fd, lOffset, nPage, nTile, lphIGear): https://help.accusoft.com/ImageGear/v18.7/Linux/IGDLL-19-566.html
+- IG_save_FD(hIGear, fd, nPage, nReserved, lFormatType): https://help.accusoft.com/ImageGear/v21.0/Linux/IGDLL-19-684.html
+
+These documents are corroborating references for the argument layout only. They are not proof that EMWAT's deployed GEAR32PD.DLL is v18.7 or v21; the exact 32-bit Windows DLL build and matching headers remain unidentified.
+
+### Revised page/image workflow
+
+1. The processor stores page count at +0x30, current page at +0x34, format code at +0x14, and a file/path backing value at +0x38.
+2. SavePage opens the backing file, loads a requested page from its descriptor into a temporary HIGEAR handle with IG_load_FD, then writes the edited handle back into the same descriptor/page position with IG_save_FD and the selected format code.
+3. NotifyEditor reopens/uses the descriptor and loads the requested page into the active HIGEAR handle at +0x10, then performs editor/page refresh and clears the dirty flag.
+
+This is strong evidence that EMWAT's page editor uses a descriptor-backed multipage file as an intermediate page store. A Linux implementation should model that with an explicit page store and file/stream API, not reproduce Windows file descriptors or HIGEAR handles.
+
+**Confidence:** Import identities and stack argument order are high-confidence. Prototype correspondence is strong but version-qualified. The exact +0x38 string type, file open flags, and semantics of the four format constants remain unresolved.
