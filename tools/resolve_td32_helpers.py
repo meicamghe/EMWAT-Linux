@@ -43,6 +43,7 @@ def main():
     _,names,modules,procedures=parse_td32(blob,base,end,directory)
     pe=pefile.PE(data=blob,fast_load=False)
     md=Cs(CS_ARCH_X86,CS_MODE_32)
+    md.detail=True
     selected=[p for p in procedures if any(t.lower() in p["name"].lower() for t in TARGETS)]
     lines=["# EMWAT image/scanning call graph","",f"- Input: {src}",f"- TD32 procedure records: {len(procedures):,}",f"- Target methods analyzed: {len(selected)}","- Direct call targets are resolved against TD32 procedure ranges using the validated PE section-relative mapping.","- Virtual/indirect calls are retained as unresolved dispatches.",""]
     unique_targets=set()
