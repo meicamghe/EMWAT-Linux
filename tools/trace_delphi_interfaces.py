@@ -170,8 +170,8 @@ def main():
             lines.append(f"- Implementing class: {name}; VMT: 0x{vmt:08X}; interface VTable: 0x{vt:08X}; IOffset: 0x{ioffset:X}")
             vr=va_raw(vt)
             if vr is None: continue
-            lines.append("- Interface vtable slots (7 entries observed: slots 0-2 are IUnknown; slots 3-6 are interface-specific):")
-            for slot in range(7):
+            lines.append("- Interface vtable slots (12 entries sampled: slots 0-2 are IUnknown; later slots are implementation-specific):")
+            for slot in range(12):
                 target=u32(blob,vr+slot*4)
                 tr=va_raw(target)
                 if tr is None:
