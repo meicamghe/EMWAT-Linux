@@ -80,8 +80,6 @@ def main():
         while True:
             pos=blob.find(needle,pos)
             if pos<0: break
-            if section_for_raw(pos) not in (".rdata",".data"): 
-                pos+=1; continue
             field_va=raw_va(pos)
             vmt=field_va-VMT_CLASSNAME
             vr=va_raw(vmt)
@@ -97,6 +95,7 @@ def main():
            f"- Candidate interface entries use {ENTRY_SIZE}-byte records (GUID + VTable + IOffset + ImplGetter); raw bytes are retained for independent validation.",""]
     md=Cs(CS_ARCH_X86,CS_MODE_32)
     found=0
+    lines.append(f"- Candidate VMTs passing self-pointer and instance-size checks: {len(candidates)}")
     for vmt,(name,vr,size,parent) in sorted(candidates.items()):
         intf=ptr(vmt+VMT_INTF)
         ti=ptr(vmt+VMT_TYPEINFO)
