@@ -10,9 +10,9 @@ TARGET_CLASSES = (
 )
 SLOTS = (0x64, 0x88, 0xA8, 0x108)
 VMT_SELF = -88
-VMT_CLASSNAME = -44
-VMT_INSTANCESIZE = -40
-VMT_PARENT = -36
+VMT_CLASSNAME = -56
+VMT_INSTANCESIZE = -52
+VMT_PARENT = -48
 
 def u32(data, off):
     return struct.unpack_from("<I", data, off)[0]
@@ -62,7 +62,7 @@ def main():
 
     lines = ["# Delphi VMT slot resolution", "",
              "- PE32 Delphi package; VMT slots are 32-bit method pointers.",
-             "- Candidate discovery: class-name shortstring pointer at VMT-0x2C, cross-checked against VMT self pointer at VMT-0x58, instance size, and parent pointer.",
+             "- Candidate discovery: Delphi 2009+ Win32 layout: class name at VMT-0x38, instance size at VMT-0x34, parent at VMT-0x30; self pointer at VMT-0x58.",
              "- Requested slot offsets are byte offsets from the VMT base.", ""]
     for cls in TARGET_CLASSES:
         needle = bytes([len(cls)]) + cls.encode("ascii")
@@ -94,7 +94,8 @@ def main():
                             selfptr = u32(blob, self_raw)
                             instsize = u32(blob, inst_raw)
                             parent = u32(blob, parent_raw)
-                            candidates.append((vmt_va, vmt_raw, selfptr == vmt_va, instsize, parent))
+                            if selfptr == vmt_va and 0x20 <= instsize <= 0x10000 and (parent == 0 or va_to_raw(pe, parent) is not None):
+                                candidates.append((vmt_va, vmt_raw, True, instsize, parent))
                     p = blob.find(ptr_raw, p + 1, stop)
         uniq = {}
         for c in candidates: uniq[c[0]] = c
