@@ -10,7 +10,7 @@ VMT_TYPEINFO=-72
 VMT_CLASSNAME=-56
 VMT_INSTANCESIZE=-52
 VMT_PARENT=-48
-ENTRY_SIZE=32
+ENTRY_SIZE=28
 
 def u32(b,o): return struct.unpack_from("<I",b,o)[0]
 
@@ -68,7 +68,7 @@ def main():
     # Discover class-name shortstrings likely related to image editing, scanning or Gear.
     candidates={}
     needles=[]
-    for m in __import__("re").finditer(rb"[\\x01-\\x78][A-Za-z_][A-Za-z0-9_@$]{2,100}",blob):
+    for m in __import__("re").finditer(rb"[\x01-\x78][A-Za-z_][A-Za-z0-9_@$]{2,100}",blob):
         raw=m.start()
         name=shortstr(raw)
         if not name or not any(k in name.lower() for k in ("editor","image","gear","scan","crop")):
@@ -94,7 +94,7 @@ def main():
     lines=["# Delphi interface table trace","",
            f"- Input: {src}; PE32 ImageBase 0x{image:08X}",
            "- VMT header offsets used: self=-0x58, interface table=-0x54, typeinfo=-0x48, class name=-0x38.",
-           "- Candidate interface entries are decoded as 32-byte records (GUID + VTable + ImplGetter + ImplOwner + Flags); raw bytes are retained for independent validation.",""]
+           "- Candidate interface entries are decoded as 32-byte records (GUID + VTable + IOffset + ImplGetter); raw bytes are retained for independent validation.",""]
     md=Cs(CS_ARCH_X86,CS_MODE_32)
     found=0
     for vmt,(name,vr,size,parent) in sorted(candidates.items()):
@@ -109,23 +109,23 @@ def main():
         if ir is None:
             lines += ["- Interface table pointer is null or unmapped.",""]
             continue
-        count=u32(blob,ir)
+        count=struct.unpack_from("<H",blob,ir)[0]
         lines.append(f"- Interface entry count: {count}")
         if count>64:
             lines += ["- Count exceeds sanity limit; no entries decoded.",""]
             continue
         for i in range(count):
-            e=ir+4+i*ENTRY_SIZE
+            e=ir+2+i*ENTRY_SIZE
             if e+ENTRY_SIZE>len(blob):
                 lines.append(f"- Entry {i}: truncated")
                 break
             rawguid=blob[e:e+16]
             iid=str(uuid.UUID(bytes_le=rawguid))
-            vt, getter, owner, flags=struct.unpack_from("<IIII",blob,e+16)
+            vt, ioffset, getter=struct.unpack_from("<IiI",blob,e+16)
             found+=1
             lines += [f"### Interface entry {i}",
                       f"- IID: {iid}",
-                      f"- VTable: 0x{vt:08X}; ImplGetter: 0x{getter:08X}; ImplOwner: 0x{owner:08X}; Flags: 0x{flags:08X}",
+                      f"- VTable: 0x{vt:08X}; IOffset: {ioffset}; ImplGetter: 0x{getter:08X}",
                       f"- Raw entry: {blob[e:e+ENTRY_SIZE].hex(' ')}"]
             if vt and va_raw(vt) is not None:
                 lines.append("- VTable slots:")
