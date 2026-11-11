@@ -173,6 +173,10 @@ jobs:
             bpl-analysis/EmwatMethods-scancommand-has-error.md
             bpl-analysis/EmwatMethods-scancommand-get-next-page-extended.md
             bpl-analysis/EmwatMethods-scancommand-has-error-extended.md
+            bpl-analysis/EmwatMethods-scancommand-constructor-context.md
+            bpl-analysis/EmwatMethods-scancommand-dorequest-context.md
+            bpl-analysis/EmwatMethods-scancommand-get-next-page-context.md
+            bpl-analysis/EmwatMethods-scancommand-has-error-context.md
             bpl-analysis/EmwatMethods-helper-4EC8B4.md
             bpl-analysis/EmwatMethods-helper-4ECFC8.md
             bpl-analysis/EmwatMethods-gearp-set-force-single-page-extended.md
