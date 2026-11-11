@@ -65,9 +65,7 @@ def candidate(blob,pe,p,segno,segbase,segend):
         return None
     data=blob[raw:raw+p["size"]]
     value,ins=score(data,pe.OPTIONAL_HEADER.ImageBase+rva)
-    if value is None:
-        return None
-    return {"mode":"segment-relative","raw":raw,"rva":rva,"section":sec,"score":value,"insns":ins}
+    return {"mode":"segment-relative","raw":raw,"rva":rva,"section":sec,"score":value,"insns":ins,"data":data}
 
 def main():
     src=pathlib.Path(sys.argv[1])
@@ -86,7 +84,8 @@ def main():
         if not seg:
             lines += ["- Mapping unavailable: matching TD32 segment descriptor not found.",""]; continue
         _,flags,sbase,ssize=seg; send=sbase+ssize
-        cs=[c for c in [candidate(blob,pe,p,p["segment"],sbase,send)] if c is not None]
+        raw_candidate=candidate(blob,pe,p,p["segment"],sbase,send)
+        cs=[c for c in [raw_candidate] if c is not None and c["score"] is not None]
         if not cs:
             lines += [f"- Module/segment: {p['module']}/{p['segment']} (flags 0x{flags:04X})",f"- Segment RVA range: 0x{sbase:08X}..0x{send:08X}",f"- Procedure offset/size: 0x{p['offset']:08X}/0x{p['size']:X}","- **Unresolved:** neither address interpretation starts with sufficiently plausible x86 code within the executable segment.",""]; continue
         cs.sort(key=lambda c:c["score"],reverse=True); c=cs[0]; mapped+=1
