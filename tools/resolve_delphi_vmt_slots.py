@@ -2,6 +2,7 @@
 """Locate Delphi Win32 VMTs by their class-name RTTI and resolve selected slots."""
 import pathlib, struct, sys
 import pefile
+from capstone import Cs, CS_ARCH_X86, CS_MODE_32
 from analyze_emwat_td32 import find_td32, parse_td32
 
 TARGET_CLASSES = (
@@ -62,6 +63,15 @@ def main():
             by_va.setdefault(va, []).append(p["name"])
             proc_ranges.append((va, va + p["size"], p["name"]))
 
+    md = Cs(CS_ARCH_X86, CS_MODE_32)
+    def shortstring_at_va(va):
+        raw = va_to_raw(pe, va)
+        if raw is None or raw >= len(blob): return None
+        size = blob[raw]
+        if size == 0 or size > 100 or raw + 1 + size > len(blob): return None
+        try: return blob[raw + 1:raw + 1 + size].decode("ascii")
+        except UnicodeDecodeError: return None
+
     lines = ["# Delphi VMT slot resolution", "",
              "- PE32 Delphi package; VMT slots are 32-bit method pointers.",
              "- Candidate discovery: Delphi 2009+ Win32 layout: class name at VMT-0x38, instance size at VMT-0x34, parent at VMT-0x30; self pointer at VMT-0x58.",
@@ -105,11 +115,12 @@ def main():
             lines += ["", "No VMT candidate found through the class-name RTTI pointer.", ""]
             continue
         for vmt_va, vmt_raw, self_ok, instsize, parent in sorted(uniq.values()):
+            parent_name = shortstring_at_va(u32(blob, va_to_raw(pe, parent + VMT_CLASSNAME))) if parent and va_to_raw(pe, parent + VMT_CLASSNAME) is not None else None
             lines += ["", f"### Candidate VMT 0x{vmt_va:08X}",
                       f"- Raw offset: 0x{vmt_raw:X}",
                       f"- Self pointer matches VMT: {'yes' if self_ok else 'no'}",
                       f"- Instance size: 0x{instsize:X}",
-                      f"- Parent VMT: 0x{parent:08X}"]
+                      f"- Parent VMT: 0x{parent:08X}" + (f" ({parent_name})" if parent_name else "")]
             for slot in SLOTS:
                 slot_raw = va_to_raw(pe, vmt_va + slot)
                 if slot_raw is None or slot_raw + 4 > len(blob):
@@ -123,6 +134,11 @@ def main():
                 if target_raw is not None:
                     lines.append(f"- Slot +0x{slot:X}: 0x{target:08X}" +
                                  (f" — inside TD32 procedure: {', '.join(target_names)}" if target_names else " — executable/data section address; no TD32 procedure range match"))
+                    code = blob[target_raw:target_raw + 48]
+                    insns = list(md.disasm(code, target))
+                    lines.append("  - Entry disassembly:")
+                    for ins in insns[:10]:
+                        lines.append(f"    - 0x{ins.address:08X}: {ins.mnemonic} {ins.op_str}")
                 else:
                     lines.append(f"- Slot +0x{slot:X}: 0x{target:08X} — not mapped to PE section")
         lines.append("")
