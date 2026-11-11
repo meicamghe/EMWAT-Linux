@@ -27,10 +27,10 @@ PATTERNS = [
 "TGearImgProc@RotateRight","TGearImgProc@FlipHorizontal",
 "TGearImgProc@FlipVertical","TGearImgProc@SaveToFile","TGearImgProc@ScanToFile",
 "TGearImgProc@$bctr","TGearImgProc@$bdtr","TGearImgProc@Crop","TGearImgProc@Flip",
-"TGearImgProc@SetEditorForm","TGearImgProc@GetEditorModalResult",
+"TGearImgProc@SetEditorForm","TGearImgProc@GetEditorModalResult","TGearImgProc@SetResultImage",
 "TGearImgProc@GetParentHandle","TGearImgProc@HasError","TGearImgProc@GetErrorCode",
 "TGearImgProc@SaveAsType","TGearImgProc@SetForceSinglePage","TGearImgProc@ShowEditor",
-"TGearImgProc@NotifyEditor","TGearImgProc@SavePage","TGearImgProc@ReloadPage",
+"TGearImgProc@NotifyEditor","TGearImgProc@SavePage","TGearImgProc@ReloadPage","TImageProcessor@ScanToFile",
 "TGearImgProc@SelectScanner","TGearImgProc@SetCurrentPage","TGearImgProc@LoadPage",
 "TGearImgProc@PaintCanvas","TGearImgProc@CheckErrors",
 "TGearImgProc@CheckOutputParameter"]
