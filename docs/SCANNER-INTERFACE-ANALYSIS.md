@@ -346,3 +346,29 @@ This supersedes the Run 71 provisional statement that +0x28 was merely an uniden
 2. Expand disassembly for 0x004F0258, 0x004ECF38 and 0x0045574C; correlate their object fields and return values.
 3. Trace the VTable slot +0x20 on the +0x28 processor object and identify the value stored at +0x38.
 4. Trace the IIPEditor interface's actual registration/lifetime separately from the TGearImgProc page-state methods.
+
+
+## Run 73 — NotifyEditor and the +0x38 output path
+
+The full TD32-bounded disassembly in artifact 13849710458 identifies 0x004EF240 as TGearImgProc.NotifyEditor (size 0x190), not an anonymous helper. ReNewPageCount calls it with [self+0x34], and the 0x004EFF94 page-index routine calls it after updating the current page.
+
+NotifyEditor uses the notification value in EDX, validates the active ImageGear handle at [self+0x10], and obtains a file/path value from [self+0x38]. It then calls the IG_save_FD thunk 0x004AFE98 twice with the active image handle and notification/page arguments. After successful delivery it checks the processor's virtual CheckOutputParameter slot (+0x04), performs further editor notification/control work, clears the dirty flag [self+0x54], and finally calls ReloadPage and GetImageResolution. This is a concrete image-to-editor update path, not scanner acquisition itself.
+
+The +0x38 field is therefore best interpreted as a path/string-like value used by SavePage, SaveToFile, ScanToFile, SaveCPinMultiPageFile and NotifyEditor. In the page-index routine it is assigned from the return value of the +0x20 method on the +0x28 processor object via helper 0x004012F8. The exact string type and whether the path is per-page or a temporary descriptor path still require the helper/prototype analysis.
+
+Helper 0x004ECF38 copies the value at [object+0x08] through helper 0x00401240 into an output local; it is called from the TGearImgProc constructor and SaveCPinMultiPageFile. Together with 0x004ECF30 (byte getter at [object+0x04]), this establishes that the +0x28 processor object exposes at least byte state at +4 and a value at +8, in addition to the virtual methods previously traced.
+
+The VMT-parent inspection at 0x004EDE18 did not validate the standard Delphi header offsets (self pointer/class-name/instance-size fields are not plausible). Do not label this parent as TImageProcessor yet. The next run traces the actual method targets found in its leading slots; only those code bodies, not the malformed header interpretation, should be used to identify it.
+
+### Updated object/page map
+
+| Offset | Current interpretation | Evidence |
+|---|---|---|
+| +0x10 | active ImageGear image handle | NotifyEditor validates and saves this handle |
+| +0x24 | separate error/result interface-like reference | HasError/GetErrorCode/SaveAsType dispatch |
+| +0x28 | processor/editor-context object | byte getter +4, value getter +8, virtual methods +0/+4/+0x0C/+0x14/+0x1C/+0x20; exact type unknown |
+| +0x30 | page count | Rotate90 computes and writes it; page-index range check reads it |
+| +0x34 | current page index | page setter writes; SavePage/ReNewPageCount/NotifyEditor read it |
+| +0x38 | output path/string-like state | passed into file/FD save paths and assigned from +0x28 virtual +0x20 result |
+
+**Confidence:** NotifyEditor identity, its calls to IG_save_FD, and the +0x34/+0x38 dataflow are high-confidence static findings. Exact GEAR FD semantics, path encoding and the runtime class of +0x28 remain unresolved.
