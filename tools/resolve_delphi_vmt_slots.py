@@ -72,6 +72,33 @@ def main():
         try: return blob[raw + 1:raw + 1 + size].decode("ascii")
         except UnicodeDecodeError: return None
 
+    def read_u32_va(va):
+        raw = va_to_raw(pe, va)
+        if raw is None or raw + 4 > len(blob): return None
+        return u32(blob, raw)
+
+    def describe_indirect_thunk(target):
+        raw = va_to_raw(pe, target)
+        if raw is None:
+            return None
+        ins = next(iter(md.disasm(blob[raw:raw + 16], target)), None)
+        if not ins or ins.mnemonic != "jmp" or not ins.op_str.startswith("dword ptr ["):
+            return None
+        try:
+            mem_va = int(ins.op_str.split("[", 1)[1].split("]", 1)[0], 16)
+        except ValueError:
+            return None
+        destination = read_u32_va(mem_va)
+        if destination is None:
+            return f"indirect through [0x{mem_va:08X}] (unmapped)"
+        names = by_va.get(destination, [])
+        if not names:
+            names = [name for start, end, name in proc_ranges if start <= destination < end]
+        label = f"0x{destination:08X}"
+        if names:
+            label += " (" + ", ".join(names) + ")"
+        return f"indirect through [0x{mem_va:08X}] -> {label}"
+
     lines = ["# Delphi VMT slot resolution", "",
              "- PE32 Delphi package; VMT slots are 32-bit method pointers.",
              "- Candidate discovery: Delphi 2009+ Win32 layout: class name at VMT-0x38, instance size at VMT-0x34, parent at VMT-0x30; self pointer at VMT-0x58.",
@@ -115,12 +142,16 @@ def main():
             lines += ["", "No VMT candidate found through the class-name RTTI pointer.", ""]
             continue
         for vmt_va, vmt_raw, self_ok, instsize, parent in sorted(uniq.values()):
-            parent_name = shortstring_at_va(u32(blob, va_to_raw(pe, parent + VMT_CLASSNAME))) if parent and va_to_raw(pe, parent + VMT_CLASSNAME) is not None else None
+            parent_name_field = read_u32_va(parent + VMT_CLASSNAME) if parent else None
+            parent_name = shortstring_at_va(parent_name_field) if parent_name_field else None
+            parent_note = f" ({parent_name})" if parent_name else (
+                f" (class-name pointer=0x{parent_name_field:08X})" if parent_name_field else ""
+            )
             lines += ["", f"### Candidate VMT 0x{vmt_va:08X}",
                       f"- Raw offset: 0x{vmt_raw:X}",
                       f"- Self pointer matches VMT: {'yes' if self_ok else 'no'}",
                       f"- Instance size: 0x{instsize:X}",
-                      f"- Parent VMT: 0x{parent:08X}" + (f" ({parent_name})" if parent_name else "")]
+                      f"- Parent VMT: 0x{parent:08X}" + parent_note]
             for slot in SLOTS:
                 slot_raw = va_to_raw(pe, vmt_va + slot)
                 if slot_raw is None or slot_raw + 4 > len(blob):
@@ -139,6 +170,9 @@ def main():
                     lines.append("  - Entry disassembly:")
                     for ins in insns[:10]:
                         lines.append(f"    - 0x{ins.address:08X}: {ins.mnemonic} {ins.op_str}")
+                    indirect = describe_indirect_thunk(target)
+                    if indirect:
+                        lines.append(f"  - Thunk resolution: {indirect}")
                 else:
                     lines.append(f"- Slot +0x{slot:X}: 0x{target:08X} — not mapped to PE section")
         lines.append("")
