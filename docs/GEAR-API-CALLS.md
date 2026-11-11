@@ -96,3 +96,26 @@ The two `IG_scan_source_select` caller attributions in the static import-caller 
 ### Linux implementation consequence
 
 Model scanner selection, acquisition, preview, and multi-page export as distinct operations. Use a native SANE device layer for acquisition, but keep the image/page model independent of SANE. Preserve the active-page handle separately from temporary page handles, and make export failures explicit per page. Do not emulate the undocumented GEAR file-descriptor ABI.
+
+
+## Run 70/74 — scanner-source and file-descriptor corrections
+
+The earlier Run 61 note that the IG_scan_source_select callsites were suspicious is superseded. Raw CALL instructions and thunk/IAT resolution confirm:
+
+- TfrmGScanPreview.ShowCropRectangle at VA 0x0061E3C8 calls IG_scan_source_select at 0x0061E3DF after obtaining a native window handle through vcl230.bpl!TWinControl.GetHandle.
+- TGearImgProc.SetCurrentPage at VA 0x004EFF6C calls IG_scan_source_select at 0x004EFF83 after obtaining the argument from TGearImgProc VMT slot +0x00 (HasError).
+- Both calls use thunk 0x004AFF28 and IAT 0x00630CE8. The arguments are distinct and their semantic types beyond the observed HWND/result dataflow remain unverified.
+
+### Confirmed FD import identities and argument order
+
+The import table resolves 0x004AFE98 to IG_load_FD (IAT 0x00630D2C) and 0x004AFEA0 to IG_save_FD (IAT 0x00630D28). This corrects any older note that reverses these two thunks.
+
+SavePage call 0x004EF60B matches IG_load_FD(fd, lOffset, nPage, nTile, lphIGear): descriptor, zero offset, loop page number, zero tile, pointer to temporary HIGEAR handle. SavePage call 0x004EF64E matches IG_save_FD(hIGear, fd, nPage, nReserved, lFormatType): temporary/current HIGEAR, descriptor, loop page, zero reserved, and [self+0x14] format code.
+
+NotifyEditor calls IG_load_FD at 0x004EF2D3 and 0x004EF2F9, writing into [self+0x10]. It does not call IG_save_FD. The first call uses EDX as page number; the second uses page 1; both use offset 0 and tile 1.
+
+The public prototypes corroborate the observed argument layouts:
+- IG_load_FD: https://help.accusoft.com/ImageGear/v18.7/Linux/IGDLL-19-566.html
+- IG_save_FD: https://help.accusoft.com/ImageGear/v21.0/Linux/IGDLL-19-684.html
+
+These are reference signatures from other ImageGear releases, not proof of the exact GEAR32PD version bundled with EMWAT. The four format constants selected through 0x004EF048 are still unnamed pending the matching header/constants.
