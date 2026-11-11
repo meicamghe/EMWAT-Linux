@@ -116,3 +116,28 @@ Therefore `[TGearImgProc+0x28]` is the `IIPEditor` Delphi interface reference, n
 2. Decode `TfrmSimpleImageEditor.GetModalRresult`, `Hello`, `Initial`, and `btnRegisterClick` in context to understand the editor handshake.
 3. Revisit `TGearImgProc.SelectScanner` with this corrected type: identify the actual object passed to `IG_scan_pages` from the VMT call at `[self]`, plus the output stored at `[self+0x4C]`.
 4. Search the full BPL and DFM resources for the true scanner-device selection/control path; do not assume the `IIPEditor` field represents a scanner interface.
+
+
+
+## Run 63 — VMT slot zero resolves to HasError (2026-11-11)
+
+The expanded VMT scan now includes the leading virtual slots of `TGearImgProc`. It resolves the class VMT at `0x004EE074` and establishes these first three entries:
+
+| VMT slot | Target | TD32 identity |
+|---|---:|---|
+| `+0x00` | `0x004EF1C4` | `TGearImgProc.HasError` |
+| `+0x04` | `0x004EEB60` | `TGearImgProc.CheckOutputParameter` |
+| `+0x08` | `0x004EF9CC` | `TGearImgProc.SelectScanner` |
+
+This corrects the earlier uncertainty about slot `+0`: it is not an unknown scanner callback. In `TGearImgProc.SelectScanner`, the call sequence at `0x004EFA91–0x004EFA98` loads the object's VMT, calls slot `+0`, pushes its return value, and then calls `IG_scan_pages` through thunk `0x004AFF30`. The method body at `0x004EF1C4` checks field `[self+0x24]`; if non-null, it invokes that object's interface VTable slot `+0x0C` and returns the result. The exact interface type and semantic meaning of the returned value remain unproven.
+
+The neighboring slot `+4` is independently named `CheckOutputParameter`; its implementation examines the editor interface at `[self+0x28]`, compares an image/result-related object and performs cleanup/notification work. It should not be conflated with the `HasError` result.
+
+### Consequences and next probes
+
+1. Resolve the object stored at `[TGearImgProc+0x24]`: find all writes, constructor initialization, interface RTTI and lifetime operations. This is now a separate field from the confirmed `IIPEditor` reference at `+0x28`.
+2. Inspect the full argument construction around `IG_scan_pages` at `0x004EFA53–0x004EFA98`, keeping each stack argument distinct. Do not assign meanings to the values until the deployed GEAR32PD version/prototype is established.
+3. Trace `TGearImgProc` constructor, `GetParentHandle`, `ShowEditor`, and `SetCurrentPage`, plus `TfrmGScanPreview.ShowCropRectangle`, to resolve field population and revalidate scanner-source selection callsites.
+4. Keep `IIPEditor` at `[self+0x28]` and the still-unidentified object at `[self+0x24]` separate in all future notes.
+
+**Confidence:** VMT slot identities and the dataflow from slot `+0` to the `IG_scan_pages` call are high-confidence static findings. The runtime type at `+0x24`, the meaning of the return value, and the GEAR API argument semantics are unresolved.
