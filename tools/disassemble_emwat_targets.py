@@ -47,15 +47,27 @@ def score(data,va):
     value=covered*40+(common/max(1,len(first)))*40-bad*30-printable*60
     return (value if plausible else None),ins
 
-def candidate(blob,pe,p,mode,segbase,segend):
-    if mode=="RVA": rva=p["offset"]; sec,raw=section_rva(pe,rva,p["size"])
-    else: raw=p["offset"]; sec,rva=section_raw(pe,raw,p["size"])
-    if sec is None or not (sec.Characteristics & 0x20000000): return None
-    if not (segbase<=rva and rva+p["size"]<=segend): return None
+def candidate(blob,pe,p,segno,segbase,segend):
+    # TD32 Segment is a 1-based logical segment index. In this PE it maps
+    # to the corresponding PE section; procedure Offset is relative to it.
+    if not (1 <= segno <= len(pe.sections)):
+        return None
+    sec=pe.sections[segno-1]
+    if not (sec.Characteristics & 0x20000000):
+        return None
+    if not (segbase <= p["offset"] and p["offset"]+p["size"] <= segend):
+        return None
+    if p["offset"]+p["size"] > sec.SizeOfRawData:
+        return None
+    raw=sec.PointerToRawData+p["offset"]
+    rva=sec.VirtualAddress+p["offset"]
+    if raw+p["size"] > len(blob):
+        return None
     data=blob[raw:raw+p["size"]]
     value,ins=score(data,pe.OPTIONAL_HEADER.ImageBase+rva)
-    if value is None: return None
-    return {"mode":mode,"raw":raw,"rva":rva,"section":sec,"score":value,"insns":ins}
+    if value is None:
+        return None
+    return {"mode":"segment-relative","raw":raw,"rva":rva,"section":sec,"score":value,"insns":ins}
 
 def main():
     src=pathlib.Path(sys.argv[1])
@@ -66,7 +78,7 @@ def main():
     _,_,modules,procedures=parse_td32(blob,base,end,directory)
     pe=pefile.PE(data=blob,fast_load=False)
     selected=[p for p in procedures if any(k.lower() in p["name"].lower() for k in PATTERNS)]
-    lines=["# EMWAT target method disassembly","",f"- Input: {src}",f"- TD32 procedure records: {len(procedures):,}",f"- Matched methods: {len(selected)}","- Architecture: x86 / 32-bit","- Address mapping: strict per-method validation against executable PE sections, TD32 segment RVA bounds, and instruction plausibility.","- A method is left unresolved if its bytes do not decode plausibly from the symbol address.",""]
+    lines=["# EMWAT target method disassembly","",f"- Input: {src}",f"- TD32 procedure records: {len(procedures):,}",f"- Matched methods: {len(selected)}","- Architecture: x86 / 32-bit","- Address mapping: TD32 segment-index to PE-section mapping, segment-relative procedure offsets, and instruction plausibility.","- A method is left unresolved if its bytes do not decode plausibly from the symbol address.",""]
     mapped=0
     for p in selected:
         mod=modules.get(p["module"]); seg=next((s for s in mod[1] if s[0]==p["segment"]),None) if mod else None
@@ -74,7 +86,7 @@ def main():
         if not seg:
             lines += ["- Mapping unavailable: matching TD32 segment descriptor not found.",""]; continue
         _,flags,sbase,ssize=seg; send=sbase+ssize
-        cs=[c for mode in ("RVA","RAW") if (c:=candidate(blob,pe,p,mode,sbase,send)) is not None]
+        cs=[c for c in [candidate(blob,pe,p,p["segment"],sbase,send)] if c is not None]
         if not cs:
             lines += [f"- Module/segment: {p['module']}/{p['segment']} (flags 0x{flags:04X})",f"- Segment RVA range: 0x{sbase:08X}..0x{send:08X}",f"- Procedure offset/size: 0x{p['offset']:08X}/0x{p['size']:X}","- **Unresolved:** neither address interpretation starts with sufficiently plausible x86 code within the executable segment.",""]; continue
         cs.sort(key=lambda c:c["score"],reverse=True); c=cs[0]; mapped+=1
