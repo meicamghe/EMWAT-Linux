@@ -165,3 +165,15 @@ Address correction: the TD32 procedure TGearImgProc.GetParentHandle is at 0x004E
 4. Revalidate the two reported IG_scan_source_select callsites against raw instructions and the IAT.
 
 Confidence: VMT slot identity, the HasError branch and the returned-value flow into IG_scan_pages are high confidence. The interface stored at +0x24, the semantics of its method result, and GEAR argument meanings remain unresolved.
+
+## Run 64 — تعیین مسیر ثبت interface در فیلد +0x24
+
+- گزارش Run 64 اسلات صفر VMT را به `TGearImgProc.HasError` متصل می‌کند. این متد فیلد `[self+0x24]` را بررسی می‌کند و در صورت وجود، slot `+0x0C` رابط ذخیره‌شده را فراخوانی می‌کند.
+- مقدار برگشتی HasError در `SelectScanner` به یکی از آرگومان‌های `IG_scan_pages` تبدیل می‌شود؛ بنابراین هنوز باید نوع رابط و قرارداد متد `+0x0C` آن مشخص شود.
+- فیلد `+0x24` مستقل از `IIPEditor` در `+0x28` است. در constructor بررسی‌شده، مقداردهی مستقیمی برای `+0x24` دیده نشده؛ این فقط نبود write در بدنه محدودشده constructor را ثابت می‌کند، نه نبود setter یا مقداردهی بیرونی.
+
+### کار بعدی
+1. استخراج تمام write/readهای offset `+0x24` در کل BPL، نه فقط متدهای شناخته‌شده کلاس.
+2. ردیابی `GetParentHandle` و callerهایش برای یافتن منبع handle/context اسکن.
+3. تحلیل آرگومان‌های stack در `IG_scan_pages` با تطبیق دقیق نسخه GEAR32PD؛ هیچ enum یا معنی عددی بدون prototype قطعی نام‌گذاری نشود.
+4. بازبینی callsiteهای `IG_scan_source_select` با تطبیق آدرس thunk و IAT.
