@@ -240,3 +240,15 @@
 - بررسی header آدرس parent VMT در 0x004EDE18 با offsetهای استاندارد Delphi سازگار نبود؛ تا تحلیل بدنه slotها، آن را TImageProcessor نام‌گذاری نمی‌کنیم.
 
 گام بعد: تحلیل بدنه slotهای parent در 0x004EDE18، شناسایی +0x28 و تعیین قرارداد IG_save_FD و path.
+
+
+## Run 74 — اصلاح توابع FD و تشخیص فرمت خروجی
+
+- thunk 0x004AFE98 تابع IG_load_FD است (IAT 0x00630D2C)؛ thunk 0x004AFEA0 تابع IG_save_FD است (IAT 0x00630D28). برداشت قبلی Run 73 درباره IG_save_FD در NotifyEditor اصلاح شد.
+- SavePage در 0x004EF60B با ترتیب آرگومان‌های IG_load_FD، صفحه را از file descriptor به HIGEAR موقت می‌خواند؛ سپس در 0x004EF64E همان صفحه را با IG_save_FD و format code ذخیره می‌کند.
+- NotifyEditor دو بار IG_load_FD صدا می‌زند و خروجی را در [self+0x10] قرار می‌دهد؛ صفحه اول با EDX و بار دوم صفحه 1 خوانده می‌شود.
+- فیلد +0x14 آرگومان پنجم IG_save_FD یعنی lFormatType است. تابع 0x004EF048 byte انتخاب‌شده را به format constant نگاشت می‌کند؛ نام TD32 آن GetEditorModalResult گمراه‌کننده است.
+- +0x38 مقدار backing path/stream است که برای بازکردن file descriptor استفاده می‌شود. معماری EMWAT برای ویرایش چندصفحه‌ای از یک page store مبتنی بر descriptor استفاده می‌کند.
+- امضای عمومی توابع با مستندات Accusoft برای ImageGear v18.7/v21 تطبیق دارد، اما نسخه دقیق GEAR32PD.DLL هنوز مشخص نیست.
+
+گام بعد: تعیین file-open flags و نوع رشته +0x38، معنی format constantها و تحلیل parent slotها.
