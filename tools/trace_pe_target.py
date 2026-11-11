@@ -37,6 +37,8 @@ def main():
     seen = set()
     md_lines = []
     md_lines.append("## Disassembly")
+    decoder = Cs(CS_ARCH_X86, CS_MODE_32)
+    decoder.detail = True
     md_lines.append("")
     for depth in range(8):
         if current in seen:
@@ -53,7 +55,7 @@ def main():
             md.append(f"  - IAT import: **{imports[current]}**")
             break
         code = blob[raw:raw+48]
-        insns = list(Cs(CS_ARCH_X86, CS_MODE_32).disasm(code, current))
+        insns = list(decoder.disasm(code, current))
         if not insns:
             md.append("  - No instruction decoded.")
             break
