@@ -192,3 +192,29 @@ Confidence: VMT slot identity, the HasError branch and the returned-value flow i
 این سه dispatch نشان می‌دهند فیلد `+0x24` یک مرجع polymorphic/interface است که در چند مسیر خطا و خروجی استفاده می‌شود؛ اما نام interface یا کلاس پیاده‌ساز هنوز از RTTI متصل نشده است. گزارش field scan، referenceهای offset `0x24` در این سه متد را نشان می‌دهد ولی چون base register در همه توابع الزاماً Self نیست، صرف تطبیق displacement به‌تنهایی اثبات write/lifetime نیست.
 
 در گزارش Run 64، constructor `TGearImgProc` در محدوده بررسی‌شده write مستقیمی به `+0x24` نداشت. بنابراین گام بعدی، استخراج کامل بدنه `SetForceSinglePage` و callsiteهای `GetErrorCode/SaveAsType`، سپس ردیابی setter یا مقداردهی interface است. تا آن زمان نام‌هایی مثل `IScanner` یا `IScanProvider` برای این interface استفاده نمی‌شود.
+
+
+## Run 68 — editor return path and Gear VMT dispatch (2026-11-11)
+
+Run 68 (43005618825; artifact 13847708592) completed successfully. The artifact confirms the first three TGearImgProc VMT entries at VMT 0x004EE074:
+
+| Slot | Target | Symbol |
+|---|---:|---|
+| +0x00 | 0x004EF1C4 | HasError |
+| +0x04 | 0x004EEB60 | CheckOutputParameter |
+| +0x08 | 0x004EF9CC | SelectScanner |
+
+The HasError body reads [self+0x24]; nil returns zero, otherwise it calls the referenced object's VTable +0x0C and returns EAX. Its return is pushed as one of the stack arguments immediately before the IG_scan_pages thunk call. This proves the dataflow but not the runtime type or meaning of the referenced object/result. It is distinct from the IIPEditor interface at [self+0x28].
+
+The IIPEditor implementation body at 0x004F1158 (GetModalRresult) calls 0x004049CC, which is independently resolved as vcl230.bpl!TWinControl.GetHandle. Consequently, the symbol name alone is not enough to describe the return as a modal result; the actual code path reaches the VCL window-handle getter. Hello at 0x004F1164 returns [self+0x42C]. Initial stores its TImageProcessor argument at [editor+0x408], copies [editor+0x3C4] into [processor+0x1C], and then invokes additional editor/control helpers. btnRegisterClick uses the stored processor and branches on its action parameter; its full workflow still needs to be correlated with the form state and callbacks.
+
+A new inconsistency was found: TGearImgProc.SetEditorForm calls interface VTable offset +0x20 on [self+0x28], while the previous special IIPEditor report stopped after +0x18. The next CI run expands the interface dump to 12 slots to resolve this missing method rather than assuming the four previously listed methods are the whole contract.
+
+### Next probes
+
+1. Decode IIPEditor VTable slots +0x1C and +0x20, especially the method invoked by SetEditorForm.
+2. Inspect TfrmScanError VMT and its slot +0x0C as a candidate for the object stored at TGearImgProc+0x24; this is a candidate only, not an identification.
+3. Resolve the complete stack argument construction to IG_scan_pages and match it to the exact deployed GEAR32PD ABI before assigning names or constants.
+4. Trace editor registration/close paths to establish interface AddRef/Release and lifetime.
+
+**Confidence:** VMT slot targets, the HasError field access and return-value flow, the IIPEditor method body reaching TWinControl.GetHandle, and the Initial field writes are high-confidence static findings. The +0x24 object's class/interface, the fifth IIPEditor method, and GEAR argument semantics remain unresolved.
