@@ -56,6 +56,12 @@ jobs:
       - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x0045574C bpl-analysis/EmwatMethods-helper-45574C-extended.md 40 ret
       - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004EF240 bpl-analysis/EmwatMethods-helper-4EF240-extended.md 40 ret
       - run: python tools/inspect_delphi_vmt_address.py analysis-input/EmwatMethods.bpl1 0x004EDE18 bpl-analysis/EmwatMethods-vmt-parent-4EDE18.md
+      - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004EDE70 bpl-analysis/EmwatMethods-parent-slot-00.md 30 ret
+      - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004EDE7C bpl-analysis/EmwatMethods-parent-slot-0C.md 30 ret
+      - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004EDF68 bpl-analysis/EmwatMethods-parent-slot-10.md 30 ret
+      - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004EDE8E bpl-analysis/EmwatMethods-parent-slot-14.md 30 ret
+      - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004EDEAC bpl-analysis/EmwatMethods-parent-slot-18.md 30 ret
+      - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004EDEC2 bpl-analysis/EmwatMethods-parent-slot-20.md 30 ret
       - run: python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004ECF38 bpl-analysis/EmwatMethods-callers-4ECF38.md
       - run: python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004EF240 bpl-analysis/EmwatMethods-callers-4EF240.md
       - run: python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004EFF94 bpl-analysis/EmwatMethods-callers-4EFF94.md
@@ -113,6 +119,12 @@ jobs:
             bpl-analysis/EmwatMethods-helper-45574C-extended.md
             bpl-analysis/EmwatMethods-helper-4EF240-extended.md
             bpl-analysis/EmwatMethods-vmt-parent-4EDE18.md
+            bpl-analysis/EmwatMethods-parent-slot-00.md
+            bpl-analysis/EmwatMethods-parent-slot-0C.md
+            bpl-analysis/EmwatMethods-parent-slot-10.md
+            bpl-analysis/EmwatMethods-parent-slot-14.md
+            bpl-analysis/EmwatMethods-parent-slot-18.md
+            bpl-analysis/EmwatMethods-parent-slot-20.md
             bpl-analysis/EmwatMethods-callers-4ECF38.md
             bpl-analysis/EmwatMethods-callers-4EF240.md
             bpl-analysis/EmwatMethods-callers-4EFF94.md
