@@ -451,3 +451,46 @@ TfrmGScanPreview.ShowCropRectangle passes the HWND returned by TWinControl.GetHa
 4. Keep Linux acquisition based on SANE; recovered Windows values are behavioral clues, not a Linux ABI or SANE option map.
 
 Confidence: callsites, import thunk identity, and argument value provenance are high-confidence. Semantic argument types, exact prototypes, option meanings, and the parent runtime class remain unresolved.
+
+
+## Run 76 — identify the +0x24 interface as IIPEditor and resolve HWND flow (2026-11-11)
+
+Workflow run 43027580174 completed successfully (artifact 13857623235). This run adds the missing assignment/caller evidence for the interface stored at [TGearImgProc+0x24].
+
+### Why +0x24 is IIPEditor
+
+- The setter-like routine at 0x004F0084 receives an interface pointer in EDX, takes an interface reference, compares it with [self+0x24], assigns it to that field through Delphi's interface-assignment helper, and—when non-null—calls interface VTable slot +0x14 with the TGearImgProc instance.
+- A direct caller in TScanCommand.$bdtr (call at 0x004F2233) takes an object pointer in EDX and adds 0x430 before passing it to 0x004F0084. The IIPEditor interface table for TfrmSimpleImageEditor has IOffset 0x430 (1072), so this pointer adjustment matches the actual interface subobject exactly.
+- A second direct caller at 0x004F1151 passes nil to the same setter, consistent with clearing/releasing the interface during editor teardown.
+- The interface RTTI identifies IID 7834c511-9078-411c-ab08-8b15ef1fd700, implemented by TfrmSimpleImageEditor at VMT 0x004F046C with interface VTable 0x004F03D4 and offset 0x430.
+
+Therefore [TGearImgProc+0x24] is the IIPEditor interface reference. This supersedes earlier Run 63–75 descriptions of +0x24 as an unidentified error/result interface. The TD32 names on wrappers such as HasError, GetErrorCode, SaveAsType and SetForceSinglePage are not reliable semantic labels for these dispatches.
+
+### HWND dataflow now reconciled
+
+- TGearImgProc.HasError at 0x004EF1C4 calls [IIPEditor VTable+0x0C].
+- The corresponding TfrmSimpleImageEditor interface entry targets 0x004F1158. Its body calls vcl230.bpl!TWinControl.GetHandle (thunk 0x004049CC) and returns that EAX value.
+- Consequently the value returned by the Gear slot +0 dispatch is an HWND, despite the misleading TD32 name HasError.
+- This resolves the earlier apparent mismatch: TfrmGScanPreview.SelectScanner passes HWND directly; TGearImgProc.SelectScanner and TGearImgProc.SetCurrentPage obtain the same kind of value indirectly through the IIPEditor interface.
+- The two confirmed IG_scan_source_select callsites therefore both pass an HWND-like value; the Gear call obtains it through IIPEditor rather than directly through GetHandle.
+
+### Revised TGearImgProc field map
+
+| Offset | Revised interpretation | Evidence |
+|---|---|---|
+| +0x24 | IIPEditor interface reference | interface assignment at 0x004F0084; TScanCommand caller adjusts object by +0x430; IID/VTable match |
+| +0x28 | separate processor/context object | ShowEditor stores EDX here; virtual slots and +4/+8 fields are used; runtime class still unresolved |
+| +0x30 | page count | existing Run 71/72 evidence |
+| +0x34 | current page index | existing caller/range-check evidence |
+| +0x38 | path/string-like backing state | existing Run 74 descriptor-backed page-store evidence |
+
+The generic RTTI scan also found IImageProcessor type information with a zero IID and no implementing class in the current BPL. It is not evidence that +0x24 stores IImageProcessor; the +0x430 pointer adjustment and concrete IIPEditor interface table provide the stronger match for +0x24.
+
+### Remaining work
+
+1. Identify the runtime class and virtual contract of the distinct object at +0x28; do not conflate it with IIPEditor at +0x24.
+2. Map IIPEditor slots +0x10, +0x14, +0x18 to their concrete editor methods and actual argument/return behavior; wrapper TD32 names are unreliable.
+3. Resolve the exact GEAR32PD.DLL prototypes for IG_scan_pages and IG_scan_source_select. HWND provenance is now established, but the remaining arguments and scanner option constants are not.
+4. Continue the native SANE design independently of the Win32 interface layout.
+
+**Confidence:** +0x24 = IIPEditor and the HWND provenance through slot +0x0C are high-confidence cross-checks from the interface RTTI, interface offset, direct callers, and method body. The runtime class at +0x28 and the exact GEAR scanner ABI remain unresolved.
