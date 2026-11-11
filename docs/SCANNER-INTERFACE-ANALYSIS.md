@@ -141,3 +141,27 @@ The neighboring slot `+4` is independently named `CheckOutputParameter`; its imp
 4. Keep `IIPEditor` at `[self+0x28]` and the still-unidentified object at `[self+0x24]` separate in all future notes.
 
 **Confidence:** VMT slot identities and the dataflow from slot `+0` to the `IG_scan_pages` call are high-confidence static findings. The runtime type at `+0x24`, the meaning of the return value, and the GEAR API argument semantics are unresolved.
+
+
+## Run 64 — resolving the value passed through TGearImgProc VMT slot zero
+
+Run 63's expanded VMT report and target disassembly establish the exact dispatch:
+
+- TGearImgProc VMT is at 0x004EE074.
+- Slot +0x00 points to TGearImgProc.HasError at 0x004EF1C4; slot +0x04 points to CheckOutputParameter; slot +0x08 points to SelectScanner.
+- In SelectScanner, instructions 0x004EFA91–0x004EFA98 load the instance VMT, call slot zero, push the returned EAX value, then call the IG_scan_pages thunk at 0x004AFF30. This is a confirmed dataflow, not an inferred callback name.
+- HasError checks [self+0x24]. If null it returns zero. If non-null it loads that object's VTable and invokes slot +0x0C, returning that method's EAX result unchanged.
+- The object at [self+0x24] is separate from the confirmed IIPEditor interface at [self+0x28]. Its type, construction/assignment sites, reference-count lifetime and the meaning of its +0x0C result remain unknown.
+
+The constructor TGearImgProc.$bctr at 0x004EEC7C was inspected. Its body obtains and compares image/processor-related objects through fields +0x28 and temporary interfaces; it does not visibly initialize [self+0x24] in the bounded constructor body. This is not proof that the field is never initialized: it may be populated later through a setter or inherited initialization.
+
+Address correction: the TD32 procedure TGearImgProc.GetParentHandle is at 0x004EF1B4, not 0x004EE1B4. The latter address is not its entry point. The CI target has been corrected accordingly.
+
+### Immediate next work
+
+1. Find all code references that write to or clear [TGearImgProc+0x24], then identify the source interface and its implementation via RTTI.
+2. Trace the corrected GetParentHandle method and its callers to determine which window handle/object is supplied to the scanner path.
+3. Recover the exact IG_scan_pages prototype from the matching deployed GEAR32PD binary/SDK; keep its argument values unnamed until then.
+4. Revalidate the two reported IG_scan_source_select callsites against raw instructions and the IAT.
+
+Confidence: VMT slot identity, the HasError branch and the returned-value flow into IG_scan_pages are high confidence. The interface stored at +0x24, the semantics of its method result, and GEAR argument meanings remain unresolved.
