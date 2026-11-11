@@ -119,3 +119,18 @@ The public prototypes corroborate the observed argument layouts:
 - IG_save_FD: https://help.accusoft.com/ImageGear/v21.0/Linux/IGDLL-19-684.html
 
 These are reference signatures from other ImageGear releases, not proof of the exact GEAR32PD version bundled with EMWAT. The four format constants selected through 0x004EF048 are still unnamed pending the matching header/constants.
+
+
+## Run 75 — scanner API callsite argument provenance
+
+Workflow run 43008058751 confirms two distinct caller patterns for IG_scan_pages (thunk 0x004AFF30, IAT 0x00630CE4):
+
+- TfrmGScanPreview.SelectScanner pushes a native HWND from TWinControl.GetHandle, a converted path/string from [self+0x458], scalar 0x28 or 2, and scalar 1.
+- TGearImgProc.SelectScanner pushes the result of VMT slot +0 (HasError, dispatching through [self+0x24] slot +0x0C), a converted value obtained through [self+0x28] slot +0x0C, the mapper result from 0x004EF048, and the caller's byte argument.
+- The Gear caller stores the IG_scan_pages return in [self+0x4C]. The preview caller does not consume the return in the immediately following path.
+
+The TD32 decorated symbol is @Gear@IG_scan_pages$qqsp6HWND__pxcuio. This is insufficient to assign semantic names to all stack arguments. The first Gear-path value is not statically shown to come from TWinControl.GetHandle, unlike the preview path. Preserve this mismatch rather than forcing both paths into an assumed HWND contract.
+
+IG_scan_source_select (thunk 0x004AFF28, IAT 0x00630CE8) also has two confirmed callers with different value provenance: ShowCropRectangle passes TWinControl.GetHandle; TGearImgProc.SetCurrentPage passes the result of VMT slot +0. Its decorated symbol @Gear@IG_scan_source_select$qqsp6HWND__ and the second caller's dataflow are not fully reconciled.
+
+Public Accusoft references to IG_TWAIN_scan_pages describe a related TWAIN acquisition family, but do not establish ABI identity with IG_scan_pages in EMWAT's GEAR32PD.DLL. The extended parent-slot traces did not identify the class behind 0x004EDE18; no TImageProcessor attribution is made.
