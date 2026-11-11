@@ -46,7 +46,7 @@ def main():
     def section_for_raw(raw):
         for s in pe.sections:
             if s.PointerToRawData<=raw<s.PointerToRawData+s.SizeOfRawData:
-                return s.Name.rstrip(b"\\0").decode("ascii","replace")
+                return s.Name.rstrip(b"\x00").decode("ascii","replace")
         return "?"
     def disasm_vtable(vtable, count=12):
         r=va_raw(vtable)
@@ -94,7 +94,7 @@ def main():
     lines=["# Delphi interface table trace","",
            f"- Input: {src}; PE32 ImageBase 0x{image:08X}",
            "- VMT header offsets used: self=-0x58, interface table=-0x54, typeinfo=-0x48, class name=-0x38.",
-           "- Candidate interface entries are decoded as 32-byte records (GUID + VTable + IOffset + ImplGetter); raw bytes are retained for independent validation.",""]
+           f"- Candidate interface entries use {ENTRY_SIZE}-byte records (GUID + VTable + IOffset + ImplGetter); raw bytes are retained for independent validation.",""]
     md=Cs(CS_ARCH_X86,CS_MODE_32)
     found=0
     for vmt,(name,vr,size,parent) in sorted(candidates.items()):
