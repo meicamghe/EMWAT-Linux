@@ -55,7 +55,10 @@ def score(data,va):
     bad=sum(x.mnemonic in BAD for x in first)
     covered=sum(x.size for x in entry_ins)/max(1,len(head))
     entry_core=any(x.mnemonic in {"mov","push","call","cmp","test","lea","sub","xor"} for x in first[:4])
-    plausible=(common>=min(3,len(first)) and entry_core and first[0].mnemonic not in {"popal","add","or","inc","dec"} and bad==0 and covered>0.55)
+    # Delphi event hooks can be intentionally empty; a one-byte RET is valid
+    # code when TD32 reports a one-byte procedure, not a decode failure.
+    trivial_return=(len(data)<=3 and len(entry_ins)==1 and entry_ins[0].mnemonic in {"ret","retn"})
+    plausible=(trivial_return or (common>=min(3,len(first)) and entry_core and first[0].mnemonic not in {"popal","add","or","inc","dec"} and bad==0 and covered>0.55))
     value=covered*40+(common/max(1,len(first)))*50-bad*30
     # Return a full-length decode for the report; the score uses only the entry.
     full_ins=list(Cs(CS_ARCH_X86,CS_MODE_32).disasm(data,va))
