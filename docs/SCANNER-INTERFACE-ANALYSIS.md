@@ -420,3 +420,34 @@ These documents are corroborating references for the argument layout only. They 
 This is strong evidence that EMWAT's page editor uses a descriptor-backed multipage file as an intermediate page store. A Linux implementation should model that with an explicit page store and file/stream API, not reproduce Windows file descriptors or HIGEAR handles.
 
 **Confidence:** Import identities and stack argument order are high-confidence. Prototype correspondence is strong but version-qualified. The exact +0x38 string type, file open flags, and semantics of the four format constants remain unresolved.
+
+
+## Run 75 — IG_scan_pages argument provenance and parent-VMT limitation (2026-11-11)
+
+Workflow run 43008058751 completed successfully (artifact 13850020148). The extended traces did not identify the runtime class behind parent pointer 0x004EDE18: the six sampled targets (0x004EDE70, 0x004EDE7C, 0x004EDF68, 0x004EDE8E, 0x004EDEAC, 0x004EDEC2) do not resolve to TD32 procedure ranges, and the standard Delphi header interpretation remains implausible. Do not label this parent as TImageProcessor or infer virtual method names from these traces.
+
+### Full IG_scan_pages caller argument flow
+
+The bounded procedure bodies expose two distinct four-argument call patterns to thunk 0x004AFF30 (GEAR32PD.DLL!IG_scan_pages):
+
+| Caller | Arg 1 | Arg 2 | Arg 3 | Arg 4 | Return |
+|---|---|---|---|---|---|
+| TfrmGScanPreview.SelectScanner (0x0061DEF4) | HWND from TWinControl.GetHandle | converted path/string from [self+0x458] | 0x28 or 2 | 1 | not consumed immediately |
+| TGearImgProc.SelectScanner (0x004EF9CC) | return from VMT slot +0 (HasError) | converted value from [self+0x28] virtual +0x0C | mapper 0x004EF048 (0, 0x80028, 0x15, or 2) | byte [ebp+8] | stored in [self+0x4C] |
+
+The Gear path's first argument is returned by TGearImgProc.HasError (0x004EF1C4), which dispatches through slot +0x0C of the still-unidentified object at [self+0x24]. This is value provenance only; it does not establish that the value is a window handle. The preview path demonstrably passes an HWND. Preserve this discrepancy rather than normalizing both callers to a guessed parameter type.
+
+The decorated TD32 symbol is @Gear@IG_scan_pages$qqsp6HWND__pxcuio. It is useful signature evidence but does not resolve all four stack values. Public Accusoft material describes the related IG_TWAIN_scan_pages family, but does not prove that IG_scan_pages in this deployed GEAR32PD.DLL is ABI-identical. Do not equate the APIs or name numeric options without the matching binary/header set.
+
+### IG_scan_source_select discrepancy retained
+
+TfrmGScanPreview.ShowCropRectangle passes the HWND returned by TWinControl.GetHandle. TGearImgProc.SetCurrentPage passes the result of VMT slot +0 (HasError). The decorated symbol @Gear@IG_scan_source_select$qqsp6HWND__ names an HWND-like parameter, but the second caller's value provenance is different. This remains an unresolved static type/dataflow discrepancy.
+
+### Next probes
+
+1. Find every write, clear, and reference to [TGearImgProc+0x24] and identify its runtime interface.
+2. Resolve the [self+0x28] object's class/VMT using constructor/setter callsites and a validated VMT header; do not rely on parent pointer 0x004EDE18.
+3. Obtain the exact GEAR32PD.DLL build or matching import library/header to settle both scanner prototypes.
+4. Keep Linux acquisition based on SANE; recovered Windows values are behavioral clues, not a Linux ABI or SANE option map.
+
+Confidence: callsites, import thunk identity, and argument value provenance are high-confidence. Semantic argument types, exact prototypes, option meanings, and the parent runtime class remain unresolved.
