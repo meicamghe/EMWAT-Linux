@@ -26,9 +26,11 @@ The adjustment thunks subtract `0x430` from the interface pointer to recover the
 The fourth custom thunk does **not** target `Update`. It lands exactly at the TD32 entry for `btnRegisterClick` (procedure size `0xAA`). The disassembly at `0x004F17B4` immediately branches on `DL`:
 
 - `DL=0`: main registration/confirmation path; checks image state, updates control state, and invokes helper `0x00404B9C`.
-- `DL=2`: calls `chkForceSinglePageClick`.
-- `DL=5`: calls `CropImage`, rotates the image through `TGearImgProc.Rotate90`, then updates crop rectangle.
+- `DL=1`: calls `chkForceSinglePageClick`.
+- `DL=4`: calls the editor's `CropImage` method, then `TGearImgProc.Rotate90` and `ShowCropRectangle`.
 - Other values branch to the common epilogue.
+
+These values follow directly from the instruction sequence `sub dl,1; jb; je; sub dl,3; je`; the earlier values 2 and 5 were incorrect and are superseded by this instruction-level reading.
 
 This strongly indicates the fourth interface slot is a command/notification entry accepting a small enum-like value in `DL`, even though the TD32 symbol labels the target as a VCL event handler with a `TObject` parameter. The thunk adjusts EAX (Self) but leaves EDX untouched, and the target immediately branches on DL. The binary behavior is authoritative; the high-level signature needs further validation.
 
@@ -42,6 +44,15 @@ This strongly indicates the fourth interface slot is a command/notification entr
 
 - `GetHandle` at `0x004F1140`: separate class method; reads `[self+0x408]` and calls helper `0x004F0084` when non-null.
 - `Update` at `0x004F1730`: separate method accepting `TEditorNotificationType`; not the destination of the fourth custom thunk.
+
+## Crop-path distinction established by Run 51
+
+The binary contains two distinct methods with similar names:
+
+- `TGearImgProc.Crop` at `0x004EEDB4`, size `0x70`: constructor-like initialization routine. It allocates/initializes the object field at `[self+0x20]` through helper calls; it is not the editor's crop operation.
+- `TfrmSimpleImageEditor.CropImage` at `0x004F11E8`: editor-side orchestration method. The `DL=4` command path calls this method before rotating the processor and refreshing the crop rectangle.
+
+Do not equate these two methods or implement either as the crop pixel algorithm without tracing their downstream calls. The actual image crop operation remains to be located in the GEAR/ImageEn call chain.
 
 ## Native-port guidance
 
