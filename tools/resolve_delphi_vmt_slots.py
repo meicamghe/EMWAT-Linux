@@ -77,6 +77,17 @@ def main():
         if raw is None or raw + 4 > len(blob): return None
         return u32(blob, raw)
 
+    def normalize_image_pointer(value):
+        # Delphi package tables may store an image-relative RVA instead of an absolute VA.
+        if value is None:
+            return None
+        if va_to_raw(pe, value) is not None:
+            return value
+        candidate = pe.OPTIONAL_HEADER.ImageBase + value
+        if va_to_raw(pe, candidate) is not None:
+            return candidate
+        return None
+
     def describe_indirect_thunk(target):
         raw = va_to_raw(pe, target)
         if raw is None:
@@ -88,9 +99,10 @@ def main():
             mem_va = int(ins.op_str.split("[", 1)[1].split("]", 1)[0], 16)
         except ValueError:
             return None
-        destination = read_u32_va(mem_va)
+        stored_value = read_u32_va(mem_va)
+        destination = normalize_image_pointer(stored_value)
         if destination is None:
-            return f"indirect through [0x{mem_va:08X}] (unmapped)"
+            return f"indirect through [0x{mem_va:08X}] -> stored 0x{(stored_value or 0):08X} (unmapped)"
         names = by_va.get(destination, [])
         if not names:
             names = [name for start, end, name in proc_ranges if start <= destination < end]
@@ -142,10 +154,11 @@ def main():
             lines += ["", "No VMT candidate found through the class-name RTTI pointer.", ""]
             continue
         for vmt_va, vmt_raw, self_ok, instsize, parent in sorted(uniq.values()):
-            parent_name_field = read_u32_va(parent + VMT_CLASSNAME) if parent else None
+            parent_name_value = read_u32_va(parent + VMT_CLASSNAME) if parent else None
+            parent_name_field = normalize_image_pointer(parent_name_value)
             parent_name = shortstring_at_va(parent_name_field) if parent_name_field else None
             parent_note = f" ({parent_name})" if parent_name else (
-                f" (class-name pointer=0x{parent_name_field:08X})" if parent_name_field else ""
+                f" (class-name stored=0x{(parent_name_value or 0):08X})" if parent_name_value else ""
             )
             lines += ["", f"### Candidate VMT 0x{vmt_va:08X}",
                       f"- Raw offset: 0x{vmt_raw:X}",
