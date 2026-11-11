@@ -48,6 +48,13 @@ jobs:
       - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004F116C bpl-analysis/EmwatMethods-editor-initial.md
       - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004F17B4 bpl-analysis/EmwatMethods-editor-register-click.md
       - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004EFF94 bpl-analysis/EmwatMethods-set-editor-form.md
+      - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004ECF30 bpl-analysis/EmwatMethods-helper-4ECF30.md
+      - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004F0258 bpl-analysis/EmwatMethods-helper-4F0258.md
+      - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x0045574C bpl-analysis/EmwatMethods-helper-45574C.md
+      - run: python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004EFF94 bpl-analysis/EmwatMethods-callers-4EFF94.md
+      - run: python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004ECF30 bpl-analysis/EmwatMethods-callers-4ECF30.md
+      - run: python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004F0258 bpl-analysis/EmwatMethods-callers-4F0258.md
+      - run: python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x0045574C bpl-analysis/EmwatMethods-callers-45574C.md
       - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004EF070 bpl-analysis/EmwatMethods-gearp-get-error-code.md
       - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004EF3D0 bpl-analysis/EmwatMethods-gearp-save-as-type.md
       - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004F0084 bpl-analysis/EmwatMethods-gearp-set-force-single-page.md
@@ -91,6 +98,13 @@ jobs:
             bpl-analysis/EmwatMethods-editor-initial.md
             bpl-analysis/EmwatMethods-editor-register-click.md
             bpl-analysis/EmwatMethods-set-editor-form.md
+            bpl-analysis/EmwatMethods-helper-4ECF30.md
+            bpl-analysis/EmwatMethods-helper-4F0258.md
+            bpl-analysis/EmwatMethods-helper-45574C.md
+            bpl-analysis/EmwatMethods-callers-4EFF94.md
+            bpl-analysis/EmwatMethods-callers-4ECF30.md
+            bpl-analysis/EmwatMethods-callers-4F0258.md
+            bpl-analysis/EmwatMethods-callers-45574C.md
             bpl-analysis/EmwatMethods-gearp-get-error-code.md
             bpl-analysis/EmwatMethods-gearp-save-as-type.md
             bpl-analysis/EmwatMethods-gearp-set-force-single-page.md
