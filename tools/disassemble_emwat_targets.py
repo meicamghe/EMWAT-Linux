@@ -19,7 +19,7 @@ PATTERNS = [
 "TfrmGScanPreview@FormDestroy","TfrmGScanPreview@FormShow",
 "TfrmGScanPreview@GetImagePageNumber","TfrmGScanPreview@GetImgSize",
 "TfrmGScanPreview@LoadImageToGearHandle","TfrmGScanPreview@SelectScanner",
-"TfrmGScanPreview@btnCropClick",
+"TfrmGScanPreview@ShowCropRectangle","TfrmGScanPreview@btnCropClick",
 "TfrmGScanPreview@btnHFlipClick","TfrmGScanPreview@btnLRotateClick",
 "TfrmGScanPreview@btnRRotateClick","TfrmGScanPreview@btnVFlipClick",
 "TfrmGScanPreview@uibtnRegisterClick","TfrmGScanPreview@Save_Tiff_MultyPages",
@@ -31,7 +31,7 @@ PATTERNS = [
 "TGearImgProc@GetParentHandle","TGearImgProc@HasError","TGearImgProc@GetErrorCode",
 "TGearImgProc@SaveAsType","TGearImgProc@SetForceSinglePage","TGearImgProc@ShowEditor",
 "TGearImgProc@NotifyEditor","TGearImgProc@SavePage","TGearImgProc@ReloadPage",
-"TGearImgProc@SelectScanner","TGearImgProc@LoadPage",
+"TGearImgProc@SelectScanner","TGearImgProc@SetCurrentPage","TGearImgProc@LoadPage",
 "TGearImgProc@PaintCanvas","TGearImgProc@CheckErrors",
 "TGearImgProc@CheckOutputParameter"]
 COMMON=set("mov push pop call ret retn jmp je jne jz jnz ja jae jb jbe jg jge jl jle cmp test lea add sub xor and or inc dec imul idiv shl shr sar movzx movsx setne sete nop leave cdq neg not xchg".split())
