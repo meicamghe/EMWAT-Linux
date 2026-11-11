@@ -77,6 +77,20 @@ jobs:
       - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x00401428 bpl-analysis/EmwatMethods-helper-401428.md 40 ret
       - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x00401438 bpl-analysis/EmwatMethods-helper-401438.md 40 ret
       - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x00401420 bpl-analysis/EmwatMethods-helper-401420.md 40 ret
+      - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x00402920 bpl-analysis/EmwatMethods-helper-402920.md 60 ret
+      - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x00402918 bpl-analysis/EmwatMethods-helper-402918.md 40 ret
+      - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x00401258 bpl-analysis/EmwatMethods-helper-401258.md 40 ret
+      - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x00401348 bpl-analysis/EmwatMethods-helper-401348.md 40 ret
+      - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004012E0 bpl-analysis/EmwatMethods-helper-4012E0.md 40 ret
+      - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x00401320 bpl-analysis/EmwatMethods-helper-401320.md 40 ret
+      - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004012F0 bpl-analysis/EmwatMethods-helper-4012F0.md 40 ret
+      - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x00401260 bpl-analysis/EmwatMethods-helper-401260.md 40 ret
+      - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x00401270 bpl-analysis/EmwatMethods-helper-401270.md 40 ret
+      - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x00401350 bpl-analysis/EmwatMethods-helper-401350.md 40 ret
+      - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x00401370 bpl-analysis/EmwatMethods-helper-401370.md 40 ret
+      - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x00401380 bpl-analysis/EmwatMethods-helper-401380.md 40 ret
+      - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004012C0 bpl-analysis/EmwatMethods-helper-4012C0.md 40 ret
+      - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x00401230 bpl-analysis/EmwatMethods-helper-401230.md 40 ret
       - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004EF070 bpl-analysis/EmwatMethods-gearp-get-error-code.md
       - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004EF3D0 bpl-analysis/EmwatMethods-gearp-save-as-type.md
       - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004F0084 bpl-analysis/EmwatMethods-gearp-set-force-single-page.md
