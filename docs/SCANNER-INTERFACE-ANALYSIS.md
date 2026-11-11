@@ -486,11 +486,24 @@ Therefore [TGearImgProc+0x24] is the IIPEditor interface reference. This superse
 
 The generic RTTI scan also found IImageProcessor type information with a zero IID and no implementing class in the current BPL. It is not evidence that +0x24 stores IImageProcessor; the +0x430 pointer adjustment and concrete IIPEditor interface table provide the stronger match for +0x24.
 
+### Run 77 — IG_scan_pages call-site argument order
+
+The full `TGearImgProc.SelectScanner` body at `0x004EF9CC` confirms the four stack arguments pushed immediately before the call to `IG_scan_pages` at `0x004EFA96`:
+
+1. First argument: HWND, returned by the IIPEditor-backed `TGearImgProc.HasError` virtual slot (+0x0C).
+2. Second argument: the scanner/output path obtained from the separate context object at `[TGearImgProc+0x28]` through its virtual slot +0x0C, then passed through RTL helper `0x004012E0`.
+3. Third argument: the format code returned by `TGearImgProc.GetEditorModalResult` at `0x004EF048` (this routine is a byte-selector-to-constant mapper, not a modal-result getter).
+4. Fourth argument: the byte parameter read from `[EBP+8]` and zero-extended before pushing; likely a Boolean UI/control flag, but its exact caller-level meaning is not yet established.
+
+The return value from `IG_scan_pages` is stored in `[TGearImgProc+0x4C]`, then checked through the processor's virtual `CheckOutputParameter` slot (+0x04). This recovers argument order and HWND provenance, but not the exact C prototype, string encoding, or format-code names.
+
+The context object at +0x28 remains distinct from IIPEditor at +0x24. The six attempted parent-VMT slot traces from Run 76 produced non-code-looking disassembly and are not valid evidence for identifying the parent class; keep that parent relationship unresolved.
+
 ### Remaining work
 
 1. Identify the runtime class and virtual contract of the distinct object at +0x28; do not conflate it with IIPEditor at +0x24.
 2. Map IIPEditor slots +0x10, +0x14, +0x18 to their concrete editor methods and actual argument/return behavior; wrapper TD32 names are unreliable.
-3. Resolve the exact GEAR32PD.DLL prototypes for IG_scan_pages and IG_scan_source_select. HWND provenance is now established, but the remaining arguments and scanner option constants are not.
+3. Resolve the exact GEAR32PD.DLL prototypes for IG_scan_pages and IG_scan_source_select. IG_scan_pages argument order is now recovered from the callsite (HWND, path-like value, format code, byte flag), but exact parameter types, encoding, and constants remain unresolved.
 4. Continue the native SANE design independently of the Win32 interface layout.
 
 **Confidence:** +0x24 = IIPEditor and the HWND provenance through slot +0x0C are high-confidence cross-checks from the interface RTTI, interface offset, direct callers, and method body. The runtime class at +0x28 and the exact GEAR scanner ABI remain unresolved.
