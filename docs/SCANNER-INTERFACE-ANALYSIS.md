@@ -177,3 +177,18 @@ Confidence: VMT slot identity, the HasError branch and the returned-value flow i
 2. ردیابی `GetParentHandle` و callerهایش برای یافتن منبع handle/context اسکن.
 3. تحلیل آرگومان‌های stack در `IG_scan_pages` با تطبیق دقیق نسخه GEAR32PD؛ هیچ enum یا معنی عددی بدون prototype قطعی نام‌گذاری نشود.
 4. بازبینی callsiteهای `IG_scan_source_select` با تطبیق آدرس thunk و IAT.
+
+
+## Run 64 — قرارداد رفتاری interface ذخیره‌شده در فیلد +0x24
+
+بازخوانی همه referenceهای offset `0x24` در محدوده متدهای TD32 کلاس `TGearImgProc` سه مسیر مستقل را نشان می‌دهد:
+
+| متد TGearImgProc | آدرس | فراخوانی روی interface در `[self+0x24]` | نتیجه قابل اثبات |
+|---|---:|---|---|
+| `HasError` | `0x004EF1C4` | VTable `+0x0C` | مقدار برگشتی interface را بدون تغییر برمی‌گرداند؛ در حالت nil مقدار صفر |
+| `GetErrorCode` | `0x004EF070` | VTable `+0x10` | مقدار برگشتی را به‌عنوان error-code candidate عبور می‌دهد؛ معنای دقیق هنوز نیازمند callsite است |
+| `SaveAsType` | `0x004EF3D0` | VTable `+0x18` | dispatch مربوط به ذخیره/تعیین نوع خروجی؛ جزئیات آرگومان‌ها هنوز باید استخراج شود |
+
+این سه dispatch نشان می‌دهند فیلد `+0x24` یک مرجع polymorphic/interface است که در چند مسیر خطا و خروجی استفاده می‌شود؛ اما نام interface یا کلاس پیاده‌ساز هنوز از RTTI متصل نشده است. گزارش field scan، referenceهای offset `0x24` در این سه متد را نشان می‌دهد ولی چون base register در همه توابع الزاماً Self نیست، صرف تطبیق displacement به‌تنهایی اثبات write/lifetime نیست.
+
+در گزارش Run 64، constructor `TGearImgProc` در محدوده بررسی‌شده write مستقیمی به `+0x24` نداشت. بنابراین گام بعدی، استخراج کامل بدنه `SetForceSinglePage` و callsiteهای `GetErrorCode/SaveAsType`، سپس ردیابی setter یا مقداردهی interface است. تا آن زمان نام‌هایی مثل `IScanner` یا `IScanProvider` برای این interface استفاده نمی‌شود.
