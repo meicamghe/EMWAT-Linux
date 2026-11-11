@@ -74,6 +74,10 @@ jobs:
       - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004F0174 bpl-analysis/EmwatMethods-gearp-show-editor-extended.md 50 ret
       - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004F2600 bpl-analysis/EmwatMethods-scancommand-get-next-page.md 100 ret
       - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004F2A90 bpl-analysis/EmwatMethods-scancommand-has-error.md 60 ret
+      - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004F25E0 bpl-analysis/EmwatMethods-scancommand-get-next-page-extended.md 120 ret
+      - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004F2A94 bpl-analysis/EmwatMethods-scancommand-has-error-extended.md 60 ret
+      - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004EC8B4 bpl-analysis/EmwatMethods-helper-4EC8B4.md 100 ret
+      - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004ECFC8 bpl-analysis/EmwatMethods-helper-4ECFC8.md 60 ret
       - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004F0084 bpl-analysis/EmwatMethods-gearp-set-force-single-page-extended.md 50 ret
       - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004012F8 bpl-analysis/EmwatMethods-helper-4012F8.md 40 ret
       - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x00401428 bpl-analysis/EmwatMethods-helper-401428.md 40 ret
@@ -163,6 +167,10 @@ jobs:
             bpl-analysis/EmwatMethods-gearp-show-editor-extended.md
             bpl-analysis/EmwatMethods-scancommand-get-next-page.md
             bpl-analysis/EmwatMethods-scancommand-has-error.md
+            bpl-analysis/EmwatMethods-scancommand-get-next-page-extended.md
+            bpl-analysis/EmwatMethods-scancommand-has-error-extended.md
+            bpl-analysis/EmwatMethods-helper-4EC8B4.md
+            bpl-analysis/EmwatMethods-helper-4ECFC8.md
             bpl-analysis/EmwatMethods-gearp-set-force-single-page-extended.md
             bpl-analysis/EmwatMethods-helper-4012F8.md
             bpl-analysis/EmwatMethods-helper-401428.md
