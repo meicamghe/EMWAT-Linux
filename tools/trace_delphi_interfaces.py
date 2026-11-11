@@ -135,22 +135,26 @@ def main():
     # Win32 tkInterface TTypeData: IntfParent (4), IntfFlags (1), GUID (16), UnitName (ShortString).
     lines += ["## IIPEditor interface RTTI decode", ""]
     ii_hits=[]
-    for m in __import__("re").finditer(rb"IIPEditor", blob):
-        name_raw=m.start()
-        type_raw=name_raw-2
-        if type_raw < 0 or blob[type_raw] != 15 or blob[type_raw+1] != 9:
-            continue
-        data_raw=name_raw+9
-        if data_raw+22 > len(blob):
-            continue
-        parent_ref=u32(blob,data_raw)
-        flags=blob[data_raw+4]
-        iid_raw=blob[data_raw+5:data_raw+21]
-        unit=shortstr(data_raw+21)
-        iid=str(uuid.UUID(bytes_le=iid_raw))
-        type_va=raw_va(type_raw)
-        ii_hits.append((type_va,parent_ref,flags,iid,unit))
-    for type_va,parent_ref,flags,iid,unit in ii_hits:
+    interface_names=("IIPEditor","IImageProcessor","IResultImage","IResultImageUnit","IProcessResult")
+    for interface_name in interface_names:
+        encoded=interface_name.encode("ascii")
+        for m in __import__("re").finditer(__import__("re").escape(encoded), blob):
+            name_raw=m.start()
+            type_raw=name_raw-2
+            if type_raw < 0 or blob[type_raw] != 15 or blob[type_raw+1] != len(encoded):
+                continue
+            data_raw=name_raw+len(encoded)
+            if data_raw+22 > len(blob):
+                continue
+            parent_ref=u32(blob,data_raw)
+            flags=blob[data_raw+4]
+            iid_raw=blob[data_raw+5:data_raw+21]
+            unit=shortstr(data_raw+21)
+            iid=str(uuid.UUID(bytes_le=iid_raw))
+            type_va=raw_va(type_raw)
+            ii_hits.append((interface_name,type_va,parent_ref,flags,iid,unit))
+    for interface_name,type_va,parent_ref,flags,iid,unit in ii_hits:
+        lines.append(f"### {interface_name}")
         lines.append(f"- TypeInfo: 0x{(type_va or 0):08X}; parent reference: 0x{parent_ref:08X}; flags: 0x{flags:02X}")
         lines.append(f"- IID: {iid}; unit: {unit or 'unknown'}")
         matches=[]
@@ -181,13 +185,13 @@ def main():
                 desc="; ".join(f"{x.mnemonic} {x.op_str}" for x in insns) or "no decode"
                 lines.append(f"  - +0x{slot*4:02X}: 0x{target:08X} — {desc}")
     if not ii_hits:
-        lines.append("- No structurally valid IIPEditor tkInterface RTTI record found.")
+        lines.append("- No structurally valid requested tkInterface RTTI records found.")
     lines.append("")
 
     # Find IIPEditor shortstring/typeinfo occurrences and nearby references.
     lines += ["## IIPEditor RTTI/string candidates",""]
     hits=[]
-    for term in (b"IIPEditor",b"Imageprocessing",b"TEditorNotificationType"):
+    for term in (b"IIPEditor",b"IImageProcessor",b"IResultImage",b"IResultImageUnit",b"IProcessResult",b"Imageprocessing",b"TEditorNotificationType"):
         start=0
         while True:
             p=blob.find(term,start)
