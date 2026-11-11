@@ -23,6 +23,8 @@ def main():
     path = pathlib.Path(sys.argv[1])
     va = int(sys.argv[2], 0)
     out = pathlib.Path(sys.argv[3] if len(sys.argv) > 3 else "bpl-analysis/EmwatMethods-target-address-trace.md")
+    max_insns = int(sys.argv[4]) if len(sys.argv) > 4 else 10
+    stop_on_ret = len(sys.argv) > 5 and sys.argv[5].lower() == "ret"
     pe = pefile.PE(str(path), fast_load=False)
     blob = path.read_bytes()
     imports = {}
@@ -54,13 +56,15 @@ def main():
         if current in imports:
             md.append(f"  - IAT import: **{imports[current]}**")
             break
-        code = blob[raw:raw+48]
+        code = blob[raw:raw+256]
         insns = list(decoder.disasm(code, current))
         if not insns:
             md.append("  - No instruction decoded.")
             break
-        for ins in insns[:10]:
+        for ins in insns[:max_insns]:
             md_lines.append(f"`{ins.address:08X}`  {ins.mnemonic:<8} {ins.op_str}")
+            if stop_on_ret and ins.mnemonic == "ret":
+                break
         first = insns[0]
         if first.mnemonic == "jmp":
             operand = first.op_str.strip()
