@@ -87,7 +87,25 @@ def main():
         raw_candidate=candidate(blob,pe,p,p["segment"],sbase,send)
         cs=[c for c in [raw_candidate] if c is not None and c["score"] is not None]
         if not cs:
-            lines += [f"- Module/segment: {p['module']}/{p['segment']} (flags 0x{flags:04X})",f"- Segment RVA range: 0x{sbase:08X}..0x{send:08X}",f"- Procedure offset/size: 0x{p['offset']:08X}/0x{p['size']:X}","- **Unresolved:** neither address interpretation starts with sufficiently plausible x86 code within the executable segment.",""]; continue
+            lines += [
+                f"- Module/segment: {p['module']}/{p['segment']} (flags 0x{flags:04X})",
+                f"- Segment RVA range: 0x{sbase:08X}..0x{send:08X}",
+                f"- Procedure offset/size: 0x{p['offset']:08X}/0x{p['size']:X}",
+                "- **Unresolved by instruction-quality filter.**"
+            ]
+            if raw_candidate:
+                secname=raw_candidate["section"].Name.rstrip(bytes([0])).decode("ascii","replace")
+                lines += [
+                    f"- Segment-relative candidate: RVA 0x{raw_candidate['rva']:08X}, raw 0x{raw_candidate['raw']:08X}, section {secname}",
+                    f"- First 32 bytes: {raw_candidate['data'][:32].hex(' ')}",
+                    "", chr(96)*3+"asm"
+                ]
+                for ins in raw_candidate["insns"][:16]:
+                    lines.append(f"{ins.address:08X}  {ins.mnemonic:<8} {ins.op_str}")
+                lines += [chr(96)*3,""]
+            else:
+                lines += ["- No in-bounds segment-relative PE candidate.",""]
+            continue
         cs.sort(key=lambda c:c["score"],reverse=True); c=cs[0]; mapped+=1
         confidence="high" if len(cs)==1 or c["score"]-cs[1]["score"]>=8 else "tentative"
         secname=c["section"].Name.rstrip(bytes([0])).decode("ascii","replace")
