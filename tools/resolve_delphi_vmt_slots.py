@@ -47,6 +47,7 @@ def main():
     base, end, directory, _ = hit
     _, names, modules, procedures = parse_td32(blob, base, end, directory)
     by_va = {}
+    proc_ranges = []
     for p in procedures:
         if not (1 <= p["segment"] <= len(pe.sections)):
             continue
@@ -59,6 +60,7 @@ def main():
         if segbase <= p["offset"] < segbase + segsize and p["offset"] < sec.SizeOfRawData:
             va = pe.OPTIONAL_HEADER.ImageBase + sec.VirtualAddress + p["offset"]
             by_va.setdefault(va, []).append(p["name"])
+            proc_ranges.append((va, va + p["size"], p["name"]))
 
     lines = ["# Delphi VMT slot resolution", "",
              "- PE32 Delphi package; VMT slots are 32-bit method pointers.",
@@ -116,9 +118,11 @@ def main():
                 target = u32(blob, slot_raw)
                 target_raw = va_to_raw(pe, target)
                 target_names = by_va.get(target, [])
+                if not target_names:
+                    target_names = [name for start, end, name in proc_ranges if start <= target < end]
                 if target_raw is not None:
                     lines.append(f"- Slot +0x{slot:X}: 0x{target:08X}" +
-                                 (f" — {', '.join(target_names)}" if target_names else " — executable/data section address"))
+                                 (f" — inside TD32 procedure: {', '.join(target_names)}" if target_names else " — executable/data section address; no TD32 procedure range match"))
                 else:
                     lines.append(f"- Slot +0x{slot:X}: 0x{target:08X} — not mapped to PE section")
         lines.append("")
