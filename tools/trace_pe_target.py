@@ -4,7 +4,7 @@ import pathlib
 import sys
 import pefile
 from capstone import Cs, CS_ARCH_X86, CS_MODE_32
-from capstone.x86 import X86_OP_MEM, X86_OP_IMM
+import re
 
 def va_to_raw(pe, va):
     rva = va - pe.OPTIONAL_HEADER.ImageBase
@@ -62,13 +62,16 @@ def main():
         for ins in insns[:10]:
             md_lines.append(f"`{ins.address:08X}`  {ins.mnemonic:<8} {ins.op_str}")
         first = insns[0]
-        if first.mnemonic == "jmp" and first.operands:
-            op = first.operands[0]
-            if op.type == X86_OP_IMM:
-                current = op.imm & 0xFFFFFFFF
+        if first.mnemonic == "jmp":
+            operand = first.op_str.strip()
+            # Parse textual operands to avoid Capstone detail API incompatibilities.
+            direct = re.fullmatch(r"(?:0x)?([0-9a-fA-F]{6,8})", operand)
+            if direct:
+                current = int(direct.group(1), 16) & 0xFFFFFFFF
                 continue
-            if op.type == X86_OP_MEM and op.mem.base == 0 and op.mem.index == 0:
-                slot = op.mem.disp & 0xFFFFFFFF
+            absolute = re.fullmatch(r"(?:dword ptr )?\[?(0x[0-9a-fA-F]+)\]?", operand)
+            if absolute:
+                slot = int(absolute.group(1), 16) & 0xFFFFFFFF
                 if slot in imports:
                     md.append(f"  - Indirect jump through IAT `0x{slot:08X}`: **{imports[slot]}**")
                     break
