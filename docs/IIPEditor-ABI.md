@@ -25,12 +25,13 @@ The adjustment thunks subtract `0x430` from the interface pointer to recover the
 
 The fourth custom thunk does **not** target `Update`. It lands exactly at the TD32 entry for `btnRegisterClick` (procedure size `0xAA`). The disassembly at `0x004F17B4` immediately branches on `DL`:
 
-- `DL=1`: image-registration path; checks image BPP/format, updates control state, and invokes helper `0x00404B9C`.
+- `DL=0`: main registration/confirmation path; checks image state, updates control state, and invokes helper `0x00404B9C`.
 - `DL=2`: calls `chkForceSinglePageClick`.
 - `DL=5`: calls `CropImage`, rotates the image through `TGearImgProc.Rotate90`, then updates crop rectangle.
+- Other values: return without entering one of these three command paths.
 - Other values branch to the common epilogue.
 
-This strongly indicates the fourth interface slot is a command/notification entry accepting a small enum-like value in `DL`, even though the TD32 symbol labels the target as a VCL event handler with a `TObject` parameter. The binary behavior is authoritative; the high-level signature needs further validation.
+This strongly indicates the fourth interface slot is a command/notification entry accepting a small enum-like value in `DL`, even though the TD32 symbol labels the target as a VCL event handler with a `TObject` parameter. The thunk adjusts EAX (Self) but leaves EDX untouched, and the target immediately branches on DL. The binary behavior is authoritative; the high-level signature needs further validation.
 
 ## IUnknown wrappers
 
