@@ -1,6 +1,6 @@
 # EMWAT imaging dependency map
 
-Source: the PE import table extracted from `analysis-input/EmwatMethods.bpl1` (Run 57 artifact, commit `1ee94d5`). This is a static import inventory, not proof that every import is called on every workflow.
+Source: the PE import table extracted from `analysis-input/EmwatMethods.bpl1` (Run 57 onward). The import inventory is static evidence, not proof that every import runs in every workflow.
 
 ## Accusoft ImageGear — `GEAR32PD.DLL`
 
@@ -28,6 +28,43 @@ The BPL imports the following native image/scan functions:
 
 There are two import descriptors with casing variants `GEAR32PD.Dll` and `GEAR32PD.DLL`; preserve this observation in compatibility work, but Windows DLL lookup is case-insensitive. The exact deployed DLL version and matching headers are not yet present in the repository.
 
+### Run 59: import thunk and call-site analysis
+
+The revised raw-x86 scanner found **101 import thunks for 110 ImageGear/ImageEn import slots** across two executable sections. It searches canonical x86 forms (`FF 25` indirect jump thunks, `E8` relative calls, and `FF 15` direct IAT calls). The generated full table is `EmwatMethods-imaging-import-callers.md` in the CI artifact.
+
+Selected ImageGear references:
+
+| API | Thunk VA | Call-site VA(s) | Interpretation / validation |
+|---|---:|---|---|
+| `IG_IP_crop` | `0x004AFF38` | `0x004EEE44` | Validated in `TGearImgProc@$bdtr`; passes a local 16-byte `TRect`, then reloads page and reads resolution |
+| `IG_IP_rotate_multiple_90` | `0x004AFEC8` | `0x004EF187`, `0x0061E5FC`, `0x0061E62C` | The first is inside `TGearImgProc.RotateLeft`; `RotateRight` dispatches to that method with direction value 3 |
+| `IG_IP_flip` | `0x004AFED0` | `0x004F021F`, `0x0061E5CC`, `0x0061E65C` | First is inside `TGearImgProc.FlipHorizontal`; `FlipVertical` dispatches to it |
+| `IG_load_file` | `0x004AFE88` | `0x004C43C7` | Static reference; containing method needs a focused disassembly pass |
+| `IG_load_FD` | `0x004AFE98` | `0x004EF2D3`, `0x004EF2F9`, `0x004EF60B`, `0x0061D411`, `0x0061DD94` | File-descriptor load path; some references lie in the Gear image-processing region |
+| `IG_save_FD` | `0x004AFEA0` | `0x004EF64E`, `0x0061DDE1`, `0x0061DDF8` | File-descriptor save path |
+| `IG_save_file` | `0x004AFE90` | `0x004EEA8A`, `0x004EF7E6`, `0x004EF94F`, `0x0061D977`, `0x0061DA40`, `0x0061DA5C` | File save/load-related branches; inspect argument setup before implementing |
+| `IG_scan_pages` | `0x004AFF30` | `0x004EFA96`, `0x0061E036`, `0x0061E059` | Scanner acquisition path |
+| `IG_scan_source_select` | `0x004AFF28` | `0x004EFF83`, `0x0061E3DF` | Scanner source selection path |
+
+Selected ImageEn references:
+
+| Imported method | Thunk VA | Call-site VA(s) |
+|---|---:|---|
+| `TImageEnMIO.Acquire` | `0x004B012C` | `0x0050A364` |
+| `TImageEnMIO.LoadFromFileAuto` | `0x004B014C` | `0x00508B88`, `0x0050A4D3` |
+| `TImageEnMIO.SaveToFile` | `0x004B011C` | `0x0050AFC4` |
+| `TImageEnMIO.SaveToFileTIFF` | `0x004B0114` | `0x0050B6A0` |
+| `TImageEnProc.CropSel` | `0x004B0244` | `0x0050B770` |
+| `TImageEnProc.RotateAndCrop` | `0x004B0264` | `0x0050ADAE` |
+| `TImageEnProc.Rotate` | `0x004B024C` | `0x0050AB7D` |
+| `TImageEnProc.Flip` | `0x004B023C` | `0x0050ACEE` |
+| `TImageEnMView.AppendImage` | `0x004B01B4` | `0x0050A496` |
+| `TImageEnView.SetZoom` | `0x004B0274` | `0x00509E11`, `0x00509E67`, `0x00509E8D` |
+
+Important symbol-resolution caveat: some older TD32 helper-symbol labels disagree with the PE import-descriptor-to-IAT mapping for individual thunk addresses. For external DLL function identity, the import descriptor + IAT slot + decoded `FF 25` target is the stronger evidence. Do not infer an imported API name solely from a helper-symbol label when the two conflict.
+
+The scanner is a byte-pattern discovery pass. Candidate call-site addresses can occur accidentally in data or misaligned bytes; validate the surrounding instruction stream before treating every row as a real call. The Crop, RotateLeft, FlipHorizontal, and selected Gear call sites above were checked against the emitted disassembly.
+
 ## ImageEn — `PKIECtrl23.bpl`
 
 The BPL also imports a substantial ImageEn API surface. Notable methods include:
@@ -48,7 +85,7 @@ The import table also contains ImageEn WIA/TWAIN units:
 - TWAIN unit initialization/finalization symbols
 - `TImageEnMIO.Acquire`
 
-The PE import inventory confirms integration points but does not identify the exact scanner transport implementation or platform-specific device enumeration behavior.
+ImageGear scanner calls (`IG_scan_source_select`, `IG_scan_pages`) are also present in the executable call-site map. The static references confirm integration points but do not identify the exact scanner transport implementation or platform-specific device enumeration behavior.
 
 ## Native Linux implementation strategy
 
@@ -56,12 +93,13 @@ The PE import inventory confirms integration points but does not identify the ex
 2. Implement the confirmed Gear operations behind a small adapter first: load, save, crop, rotate, flip, dimensions/resolution, and page count.
 3. Keep acquisition separate from file I/O. Linux scanner integration should use a native scanning interface; do not emulate Windows WIA/TWAIN DLLs.
 4. Treat ImageEn viewer/UI operations as application-level behavior to reimplement, not as a requirement to reproduce VCL controls.
-5. Prioritize tracing actual call sites before implementing each imported API. Imports can be linked but unused on a particular execution path.
+5. Trace and validate argument setup at call sites before implementing each imported API. Imports and raw byte-pattern hits alone do not prove runtime use.
 6. Obtain the exact `GEAR32PD.DLL` and ImageEn package versions (or vendor headers) before locking down version-sensitive behavior and error codes.
 
 ## Current confidence
 
 - High: imported API names and module association, from PE import descriptors.
 - High: `IG_IP_crop` is called by the traced crop path, and the UI coordinates are converted using Delphi `System.Round`.
-- Medium: functional role inferred from API names for imports without traced call sites.
+- High: the identified RotateLeft/FlipHorizontal API calls and the listed ImageEn call targets are supported by thunk resolution and static call references; runtime execution remains unverified.
+- Medium: the remaining call-site candidates pending contextual disassembly.
 - Unverified: deployed library versions, all argument types/calling conventions, exact pixel-format semantics, and scanner driver behavior.
