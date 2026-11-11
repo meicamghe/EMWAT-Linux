@@ -6,7 +6,12 @@ from capstone import Cs, CS_ARCH_X86, CS_MODE_32
 from analyze_emwat_td32 import find_td32, parse_td32
 
 PATTERNS = [
-"TfrmSimpleImageEditor@CropImage","TfrmSimpleImageEditor@ToggleCropMode",
+"TfrmSimpleImageEditor@FormActivate","TfrmSimpleImageEditor@FormClose",
+"TfrmSimpleImageEditor@FormCloseQuery","TfrmSimpleImageEditor@FormCreate",
+"TfrmSimpleImageEditor@FormDestroy","TfrmSimpleImageEditor@GetModalRresult",
+"TfrmSimpleImageEditor@Hello","TfrmSimpleImageEditor@Initial",
+"TfrmSimpleImageEditor@Update","TfrmSimpleImageEditor@CropImage",
+"TfrmSimpleImageEditor@ToggleCropMode",
 "TfrmSimpleImageEditor@btnRegisterClick","TfrmSimpleImageEditor@doCommand",
 "TfrmSimpleImageEditor@pbImgViewerMouseDown","TfrmSimpleImageEditor@pbImgViewerMouseMove",
 "TfrmSimpleImageEditor@pbImgViewerMouseUp","TfrmSimpleImageEditor@ShowCropRectangle",
