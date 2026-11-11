@@ -302,3 +302,16 @@
 2. تعیین رفتار واقعی slotهای IIPEditor در +0x10، +0x14 و +0x18؛ نام‌های TD32 برای wrapperهای Gear قابل اتکا نیستند.
 3. بازیابی prototype کامل IG_scan_pages و IG_scan_source_select؛ HWND اکنون مشخص است اما آرگومان‌های دیگر و ثابت‌ها هنوز نه.
 4. ادامه طراحی backend لینوکس با SANE، بدون تقلید layout و ABI ویندوز.
+
+
+## Run 77 — منشأ context پردازش صفحه
+
+در artifact اجرای موفق 43029566665 مشخص شد:
+
+- فیلد TScanCommand+0x20 در DoRequest خوانده و به TGearImgProc.ShowEditor داده می‌شود.
+- همین فیلد در GetNextPage در سه مسیر (0x004F2637، 0x004F268B و 0x004F26A9) نوشته می‌شود؛ هر سه مقدار از helper/factory در 0x004EC8B4 می‌آیند.
+- ShowEditor همان pointer را در TGearImgProc+0x28 ذخیره می‌کند و از virtual slot +4 آن یک رشته می‌گیرد که به +0x38 منتقل می‌شود.
+- TScanCommand.HasError از virtual slot +0x10 همین آبجکت استفاده و سپس helper 0x004ECFC8 را صدا می‌زند؛ بر اساس نتیجه، status byte در TScanCommand+0x28 را به 2 یا 4 تغییر می‌دهد.
+- پس TGearImgProc+0x28 یک processing context واقعی و تولیدشده برای request/page است؛ هنوز نباید آن را با IIPEditor در +0x24 یا با interface اسمی IImageProcessor یکی دانست.
+
+اجرای بعدی 43030170561 برای بررسی کامل GetNextPage و بدنه helperهای 0x004EC8B4 و 0x004ECFC8 اضافه شده است.
