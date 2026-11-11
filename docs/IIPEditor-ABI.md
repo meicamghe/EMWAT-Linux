@@ -84,6 +84,28 @@ The TD32 symbol `TGearImgProc.Crop(TRect)` maps to `0x004EEDB4` (size `0x70`). I
 The editor command `DL=4` still invokes `TfrmSimpleImageEditor.CropImage` (`0x004F11E8`), then `TGearImgProc.Rotate90` and `ShowCropRectangle`. This command path is orchestration/UI refresh, not proof that the pixel crop occurs inside `CropImage`. The actual crop operation must be traced through the object initialized by `TGearImgProc.Crop` and its downstream calls.
 
 
+
+## Run 53: the image-space crop operation
+
+Run 53 provides a stronger link between the editor's crop rectangle and the image-processing layer.
+
+### `TGearImgProc@$bdtr` — VA `0x004EEE24`
+
+TD32 labels this procedure as a destructor (`$bdtr`), but its observed call sites and machine-level behavior show that it is also used as a rectangle-processing entry point in the crop interaction path:
+
+- `pbImgViewerMouseDown` at `0x004F1274` passes the Gear processor in EAX and a pointer to a four-integer `TRect` in EDX.
+- The method copies all four rectangle coordinates to local storage.
+- It reads the image handle from `[self+0x10]`; if the handle is positive, it calls `0x004AFF38` with the handle and the rectangle pointer.
+- It then calls `ReloadPage` (`0x004EF0E4`) and `GetImageResolution` (`0x004EEEC4`), and sets `[self+0x54]=1` (modified/dirty state).
+
+The `0x004AFF38` target is not yet symbolically resolved in the current helper-symbol report. Its argument pattern and placement in this path make it a strong candidate for the underlying Gear image-processing rectangle operation, but do not assign it an API name until the import/thunk target is verified.
+
+The TD32 destructor label and the observed rectangle call convention are not fully reconciled. Treat the observed behavior as confirmed, but retain uncertainty about the source-level symbol/overload identity. Do not rename this method as a confirmed crop API yet.
+
+### Consequence for native implementation
+
+The editor's image-space rectangle is passed to the Gear layer as four integer coordinates. After that call, the processor reloads the active page, refreshes image resolution, and marks the image modified. A native implementation should preserve this sequencing, while the exact coordinate convention (inclusive/exclusive right and bottom edges) and the underlying crop API contract remain to be established.
+
 ## Native-port guidance
 
 1. Implement a native editor interface adapter with IUnknown-equivalent lifetime semantics and four custom operations.
