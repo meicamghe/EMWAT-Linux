@@ -148,3 +148,15 @@ The interface stored at [TGearImgProc+0x24] is now identified as IIPEditor, supe
 Thus the Gear-path value previously described only as a HasError result is actually an HWND obtained through IIPEditor. Both confirmed IG_scan_source_select callsites pass an HWND-like value, and the first argument of TGearImgProc.SelectScanner's IG_scan_pages call is likewise an HWND. This resolves the Run 75 value-provenance discrepancy, but does not recover the complete GEAR32PD prototypes or the meanings of the remaining arguments/constants.
 
 Do not treat the TD32 wrapper labels HasError, GetErrorCode, SaveAsType or SetForceSinglePage as semantic proof for the interface methods. The distinct object at [TGearImgProc+0x28] remains unresolved.
+
+
+## Run 77 — IG_scan_pages call-site ABI evidence
+
+The complete `TGearImgProc.SelectScanner` body at `0x004EF9CC` pushes four arguments before calling the imported `IG_scan_pages` thunk at `0x004EFA96`. The recovered order is:
+
+1. HWND from the IIPEditor interface at `[TGearImgProc+0x24]` via virtual slot +0x0C.
+2. Path-like value returned by virtual slot +0x0C on the separate object at `[TGearImgProc+0x28]`, passed through RTL helper `0x004012E0`.
+3. Format code from the selector mapper at `0x004EF048`.
+4. Zero-extended byte from `[EBP+8]`; probably a UI/control flag, but caller semantics remain unresolved.
+
+The return value is stored at `[TGearImgProc+0x4C]` and then checked via VMT slot +0x04. This proves the call-site argument order and HWND provenance, not the exact exported C declaration or the path encoding. The selector mapper's numeric constants still lack verified format names. The attempted traces of six slots at the supposed parent VMT address did not produce valid code and are explicitly not used to identify the parent class.
