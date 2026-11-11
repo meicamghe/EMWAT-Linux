@@ -31,7 +31,7 @@ PATTERNS = [
 "TGearImgProc@GetParentHandle","TGearImgProc@HasError","TGearImgProc@GetErrorCode",
 "TGearImgProc@SaveAsType","TGearImgProc@SetForceSinglePage","TGearImgProc@ShowEditor",
 "TGearImgProc@NotifyEditor","TGearImgProc@SavePage","TGearImgProc@ReloadPage","TImageProcessor@ScanToFile",
-"TGearImgProc@SelectScanner","TGearImgProc@SetCurrentPage","TGearImgProc@LoadPage",
+"TGearImgProc@SelectScanner","TGearImgProc@SetCurrentPage","TGearImgProc@ReNewPageCount","TGearImgProc@SaveCPinMultiPageFile","TGearImgProc@LoadPage",
 "TGearImgProc@PaintCanvas","TGearImgProc@CheckErrors",
 "TGearImgProc@CheckOutputParameter"]
 COMMON=set("mov push pop call ret retn jmp je jne jz jnz ja jae jb jbe jg jge jl jle cmp test lea add sub xor and or inc dec imul idiv shl shr sar movzx movsx setne sete nop leave cdq neg not xchg".split())
