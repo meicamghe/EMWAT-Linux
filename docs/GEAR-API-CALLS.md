@@ -66,3 +66,33 @@ Do not infer the visible action from handler names or direction integers alone. 
 - Unverified: deployed ImageGear DLL version, exact enum constants, full API prototypes/calling convention, pixel-format behavior, and scanner transport details.
 
 The exact GEAR32PD version shipped with EMWAT is not yet available. Do not hard-code enum values or ABI details based only on newer SDK documentation.
+
+
+## Run 61 — scanner selection and page lifecycle (2026-11-11)
+
+Run 61: workflow `43001855137`, commit `8597fc9`, artifact `13846033438`. The newly added TD32-bounded targets all mapped to executable code with high confidence.
+
+### Scanner selection: important correction
+
+The bounded body of `TfrmGScanPreview.SelectScanner` (VA `0x0061DEF4`) does **not** call `IG_scan_source_select`. It:
+- resets the form's scanner-selection/result flag at `[self+0x456]`;
+- checks a previously selected device/interface object at `[self+0x458]`;
+- configures JPEG quality through `IG_save_JPEG_quality_set` (`0x004AFF20`);
+- calls `IG_scan_pages` (`0x004AFF30`) in two branches with different literal mode arguments;
+- reloads/validates the current image handle at `[self+0x428]`.
+
+The two `IG_scan_source_select` caller attributions in the static import-caller report point to `TfrmGScanPreview.ShowCropRectangle` and `TGearImgProc.SetCurrentPage`, which are semantically suspicious. Treat those as unresolved attribution until their exact callsites and import thunk targets are revalidated. Do not use them to define the scanner-source-selection workflow.
+
+`TGearImgProc.SelectScanner` (`0x004EF9CC`) is a separate, longer path. It interrogates an interface-like object at `[self+0x28]`, tests capability/status values, invokes callbacks through its VMT, stores a returned object at `[self+0x4C]`, and may call `IG_scan_pages` at `0x004EFA96`. It also checks device/status values through `LoadPage`. This is not interchangeable with the GScan Preview method.
+
+### Page and handle lifecycle
+
+- `TfrmGScanPreview.LoadImageToGearHandle` (`0x0061D36C`) checks the current handle `[self+0x428]` with `IG_image_is_valid`; if valid, it writes width/height/depth-like outputs to `[self+0x42C]`, `[self+0x430]`, `[self+0x434]` using `IG_image_dimensions_get`; otherwise it zeros those fields.
+- `TGearImgProc.ReloadPage` (`0x004EF0E4`) validates `[self+0x10]` and updates its dimensions/resolution fields; invalid handles zero the cached dimensions.
+- `TGearImgProc.SavePage` (`0x004EF510`) iterates page numbers from 1 through `[self+0x30]`. For the current page index `[self+0x34]`, it reuses `[self+0x10]`; for other pages it calls `IG_load_FD` (`0x004AFE98`) and releases temporary image handles with `IG_image_delete` (`0x004AFEB8`). It creates/opens an output stream/file handle, calls `IG_save_FD` (`0x004AFEA0`) for each page, and closes the stream. A failure flag is set when load/open/save fails.
+- `TfrmGScanPreview.Scan` (`0x0061DC80`) follows a closely related per-page loop, using the page collection at `[self+0x3FC]`, current image handle `[self+0x428]`, output path `[self+0x458]`, and output-format flag `[self+0x434]`. It calls `IG_load_FD` for non-current pages and `IG_save_FD` for each output page; the save flags differ between the two output-format branches (`0x40028` vs `0x80028`). Temporary handles are deleted; the current handle is retained.
+- These observations establish page iteration and ownership behavior, but the exact file-descriptor ABI, flags, and format enum meanings still require the matching GEAR32PD SDK/version or controlled runtime tests.
+
+### Linux implementation consequence
+
+Model scanner selection, acquisition, preview, and multi-page export as distinct operations. Use a native SANE device layer for acquisition, but keep the image/page model independent of SANE. Preserve the active-page handle separately from temporary page handles, and make export failures explicit per page. Do not emulate the undocumented GEAR file-descriptor ABI.
