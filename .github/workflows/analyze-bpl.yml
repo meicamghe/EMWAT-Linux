@@ -10,7 +10,8 @@ on:
       - 'tools/diagnose_emwat_code_offsets.py'
       - 'tools/inspect_td32_module_map.py'
       - 'tools/resolve_td32_helpers.py'
-      - 'tools/resolve_delphi_vmt_slots.py'\n      - 'tools/trace_rotate90_object.py'
+      - 'tools/resolve_delphi_vmt_slots.py'
+      - 'tools/trace_rotate90_object.py'
       - '.github/workflows/analyze-bpl.yml'
 permissions:
   contents: read
@@ -29,7 +30,8 @@ jobs:
       - run: python tools/diagnose_emwat_code_offsets.py analysis-input/EmwatMethods.bpl1
       - run: python tools/inspect_td32_module_map.py analysis-input/EmwatMethods.bpl1
       - run: python tools/resolve_td32_helpers.py analysis-input/EmwatMethods.bpl1
-      - run: python tools/resolve_delphi_vmt_slots.py analysis-input/EmwatMethods.bpl1\n      - run: python tools/trace_rotate90_object.py analysis-input/EmwatMethods.bpl1
+      - run: python tools/resolve_delphi_vmt_slots.py analysis-input/EmwatMethods.bpl1
+      - run: python tools/trace_rotate90_object.py analysis-input/EmwatMethods.bpl1
       - uses: actions/upload-artifact@v4
         with:
           name: emwat-bpl-static-analysis
@@ -40,5 +42,6 @@ jobs:
             bpl-analysis/EmwatMethods-address-diagnostics.md
             bpl-analysis/EmwatMethods-module-map.md
             bpl-analysis/EmwatMethods-helper-symbols.md
-            bpl-analysis/EmwatMethods-vmt-slots.md\n            bpl-analysis/EmwatMethods-rotate90-trace.md
+            bpl-analysis/EmwatMethods-vmt-slots.md
+            bpl-analysis/EmwatMethods-rotate90-trace.md
           if-no-files-found: error
