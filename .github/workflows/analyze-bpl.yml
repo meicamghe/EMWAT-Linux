@@ -89,6 +89,8 @@ jobs:
       - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004F28C0 bpl-analysis/EmwatMethods-scancommand-dispatch-continuation.md 220 ret
       - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004F22E4 bpl-analysis/EmwatMethods-scancommand-helper-22E4.md 100 ret
       - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004F2B18 bpl-analysis/EmwatMethods-scancommand-helper-2B18.md 100 ret
+      - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004F28C0 bpl-analysis/EmwatMethods-scancommand-dispatch-tail.md 240 ret
+      - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004F293F bpl-analysis/EmwatMethods-scancommand-finally-tail.md 120 ret
       - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004EC8B4 bpl-analysis/EmwatMethods-helper-4EC8B4.md 100 ret
       - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004ECFC8 bpl-analysis/EmwatMethods-helper-4ECFC8.md 60 ret
       - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004F0084 bpl-analysis/EmwatMethods-gearp-set-force-single-page-extended.md 50 ret
@@ -191,6 +193,12 @@ jobs:
             bpl-analysis/EmwatMethods-scancommand-next-page-continuation.md
             bpl-analysis/EmwatMethods-scancommand-next-page-dispatch.md
             bpl-analysis/EmwatMethods-scancommand-request-helper.md
+            bpl-analysis/EmwatMethods-scancommand-dorequest-continuation.md
+            bpl-analysis/EmwatMethods-scancommand-dispatch-continuation.md
+            bpl-analysis/EmwatMethods-scancommand-helper-22E4.md
+            bpl-analysis/EmwatMethods-scancommand-helper-2B18.md
+            bpl-analysis/EmwatMethods-scancommand-dispatch-tail.md
+            bpl-analysis/EmwatMethods-scancommand-finally-tail.md
             bpl-analysis/EmwatMethods-helper-4EC8B4.md
             bpl-analysis/EmwatMethods-helper-4ECFC8.md
             bpl-analysis/EmwatMethods-gearp-set-force-single-page-extended.md
