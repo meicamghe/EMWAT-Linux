@@ -217,3 +217,15 @@
 - اسکن‌های جدید +0x30 و +0x38 و disassembly کامل ReNewPageCount و SaveCPinMultiPageFile به CI اضافه شدند.
 
 گام بعد: پیدا کردن callerهای 0x004EFF94، تعیین نوع واقعی شیء +0x28 و تحلیل helperهای 0x004ECF30 و 0x004F0258.
+
+
+## Run 72 — callerها، شیء پردازشگر و page setter
+
+- اجرای 43007155812 موفق شد و گزارش callerها نشان داد 0x004EFF94 در چهار مسیر با عدد صفحه فراخوانی می‌شود: SaveCPinMultiPageFile، Flip، TfrmSimpleImageEditor.doCommand و Finalization. بنابراین امضای TD32 که آن را DelphiInterface<IIPEditor> نشان می‌دهد با ABI واقعی سازگار نیست؛ رفتار کد یک setter/update صفحه است.
+- بدنه 0x004EFF94 ورودی را بین 1 و [self+0x30] محدود می‌کند، در +0x34 ذخیره می‌کند و سپس متد +0x20 شیء +0x28 را صدا می‌زند.
+- شیء +0x28 یک object دارای VMT و lifecycle است؛ در SaveCPinMultiPageFile متد +0x1C آن اجرا و سپس reference آزاد/جایگزین می‌شود. TImageProcessor یک سرنخ از signatureهاست، ولی VMT محلی آن در این BPL پیدا نشد.
+- helper 0x004ECF30 فقط byte فیلد +4 شیء را برمی‌گرداند. تابع 0x004EF048 نیز DL را به ثابت‌های status نگاشت می‌کند و ModalResult را نمی‌خواند.
+- +0x30 تعداد صفحات و +0x34 صفحه جاری هستند؛ +0x38 مقدار string/object-like دریافت‌شده از متدهای +0x28 است.
+- ابزار جدید trace_td32_callers.py اضافه شد و callsiteهای مستقیم 0x004EFF94 و helperهای مهم را در CI استخراج می‌کند.
+
+گام بعد: تعیین parent VMT در 0x004EDE18، گسترش disassembly helperهای 0x004F0258 و 0x004ECF38، و شناسایی slot +0x20 و داده +0x38.
