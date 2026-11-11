@@ -103,3 +103,42 @@ ImageGear scanner calls (`IG_scan_source_select`, `IG_scan_pages`) are also pres
 - High: the identified RotateLeft/FlipHorizontal API calls and the listed ImageEn call targets are supported by thunk resolution and static call references; runtime execution remains unverified.
 - Medium: the remaining call-site candidates pending contextual disassembly.
 - Unverified: deployed library versions, all argument types/calling conventions, exact pixel-format semantics, and scanner driver behavior.
+
+
+### Run 60: TD32-bounded caller attribution
+
+Run 60 replaced the broad raw-byte CALL scan with a second pass over bounded TD32 procedure ranges. It mapped **8,411 procedures** to executable code and decoded **46,620 CALL instructions**. The report `EmwatMethods-imaging-import-callers.md` now includes the Delphi caller symbol for each decoded call. This is materially stronger than Run 59's byte-pattern-only candidates, but remains static evidence: it does not prove a particular UI path was executed at runtime.
+
+Selected caller relationships from Run 60:
+
+| Imported API | Delphi caller | Call-site VA | Evidence / interpretation |
+|---|---|---:|---|
+| `IG_IP_crop` | `TGearImgProc@$bdtr` | `0x004EEE44` | Strong: bounded method disassembly shows a 16-byte local rectangle copied from the argument, then the image handle and rectangle are pushed to the ImageGear thunk |
+| `IG_IP_rotate_multiple_90` | `TGearImgProc.RotateLeft` | `0x004EF187` | Strong: method checks image handle, passes direction argument, calls ImageGear, reloads page, refreshes resolution, marks image modified |
+| `IG_IP_rotate_multiple_90` | `TGearImgProc.RotateRight` | `0x004EF1AC` | Strong: wrapper sets direction value 3 and dispatches to `RotateLeft` |
+| `IG_IP_flip` | `TGearImgProc.FlipHorizontal` | `0x004F021F` | Strong: direct call from named processing method |
+| `IG_save_file` | `TGearImgProc.SaveToFile` | `0x004EF7E6` | Strong: argument setup is visible in the bounded method; image handle, output path and format/compression-related values are prepared before call |
+| `IG_save_file` | `TGearImgProc.ScanToFile` | `0x004EF94F` | Strong: separate scan-to-file save path |
+| `IG_save_FD` | `TGearImgProc.SavePage` | `0x004EF64E` | Static caller attribution; inspect the full method and file-descriptor lifecycle before porting |
+| `IG_load_FD` | `TGearImgProc.NotifyEditor` | `0x004EF2D3`, `0x004EF2F9` | Static caller attribution; likely editor notification/page handoff path, argument semantics still need tracing |
+| `IG_load_FD` | `TGearImgProc.SavePage` | `0x004EF60B` | Static caller attribution; likely part of page/file-descriptor handling, not enough evidence to label the exact semantics |
+| `IG_load_file` | `TWordViwer.EmbedTextToImage` | `0x004C43C7` | Strong caller name, but this is an embedded-text/image workflow, not evidence of the main document-open path |
+| `IG_scan_pages` | `TGearImgProc.SelectScanner` | `0x004EFA96` | Static caller attribution; scanner workflow entry point candidate |
+| `IG_scan_pages` | `TfrmGScanPreview.SelectScanner` | `0x0061E036`, `0x0061E059` | Static caller attribution; preview-form scanner path |
+| `TImageEnMIO.Acquire` | `TfrmImageTools.InsertPicture` | `0x0050A364` | Strong symbol-level link to ImageTools picture insertion/acquisition |
+| `TImageEnMIO.LoadFromFileAuto` | `TfrmImageTools.FreeRotate`, `TfrmImageTools.DeletePicture` | `0x00508B88`, `0x0050A4D3` | Static caller attribution; inspect method context before interpreting why the image is loaded |
+| `TImageEnProc.CropSel` | `TfrmImageTools.iePageHolderImageChange` | `0x0050B770` | Static caller attribution; image-selection/change handler invokes selection crop |
+| `TImageEnProc.RotateAndCrop` | `TfrmImageTools.ActiveMe` | `0x0050ADAE` | Static caller attribution; ImageTools active-image path |
+| `TImageEnProc.Flip` | `TfrmImageTools.AutoOrient` | `0x0050ACEE` | Static caller attribution; automatic-orientation path |
+
+Some Run 60 rows have caller names that look semantically surprising (for example, scanner or flip APIs attributed to unrelated-looking event names). Treat those as candidates until the complete containing method, call argument setup, and control-flow path have been inspected. The table above labels those rows as static attribution rather than confirmed user-visible behavior. The Crop, RotateLeft/Right, FlipHorizontal, SaveToFile, and ScanToFile relationships have direct supporting disassembly in the artifact.
+
+### Updated implementation priority
+
+1. **ImageGear core editor adapter:** handle ownership/lifetime, dimensions, resolution, crop, rotate, flip, load/save and error handling. Crop/rotate/flip/save now have named callers and useful argument setup evidence.
+2. **Multi-page and file-descriptor semantics:** inspect `LoadPage`, `SavePage`, `NotifyEditor`, `ReloadPage`, and page-count call paths. Do not assume `IG_load_FD`/ `IG_save_FD` are interchangeable with pathname I/O.
+3. **Scanner acquisition:** inspect both `TGearImgProc.SelectScanner` and `TfrmGScanPreview.SelectScanner`, then map the actual scanner API parameters. Linux should use a native SANE backend rather than reproducing WIA/TWAIN.
+4. **ImageEn ImageTools:** port its separate insert-picture, auto-orient, crop-selection, zoom/viewer and multi-image workflows. This is a second imaging subsystem, not just a UI wrapper around the Gear adapter.
+5. **Wordviewer embedded-image workflow:** trace `TWordViwer.EmbedTextToImage` independently; its `IG_load_file` call must not be mistaken for the main EMWAT document loader.
+
+Run 60 is analysis-only. No native ImageGear/ImageEn replacement has been implemented yet, and no claim of feature parity is made.
