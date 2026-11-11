@@ -48,6 +48,10 @@ jobs:
       - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004F116C bpl-analysis/EmwatMethods-editor-initial.md
       - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004F17B4 bpl-analysis/EmwatMethods-editor-register-click.md
       - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004EFF94 bpl-analysis/EmwatMethods-set-editor-form.md
+      - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004EF070 bpl-analysis/EmwatMethods-gearp-get-error-code.md
+      - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004EF3D0 bpl-analysis/EmwatMethods-gearp-save-as-type.md
+      - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004F0084 bpl-analysis/EmwatMethods-gearp-set-force-single-page.md
+      - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004EF9CC bpl-analysis/EmwatMethods-gearp-select-scanner.md
       - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004EF1C4 bpl-analysis/EmwatMethods-gearp-has-error.md
       - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004EEC7C bpl-analysis/EmwatMethods-gearp-constructor.md
       - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004EF1B4 bpl-analysis/EmwatMethods-gearp-parent-handle.md
@@ -83,6 +87,10 @@ jobs:
             bpl-analysis/EmwatMethods-editor-initial.md
             bpl-analysis/EmwatMethods-editor-register-click.md
             bpl-analysis/EmwatMethods-set-editor-form.md
+            bpl-analysis/EmwatMethods-gearp-get-error-code.md
+            bpl-analysis/EmwatMethods-gearp-save-as-type.md
+            bpl-analysis/EmwatMethods-gearp-set-force-single-page.md
+            bpl-analysis/EmwatMethods-gearp-select-scanner.md
             bpl-analysis/EmwatMethods-gearp-has-error.md
             bpl-analysis/EmwatMethods-gearp-constructor.md
             bpl-analysis/EmwatMethods-gearp-parent-handle.md
