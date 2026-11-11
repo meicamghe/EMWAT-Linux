@@ -42,7 +42,8 @@ def score(data,va):
     bad=sum(x.mnemonic in BAD for x in first)
     covered=sum(x.size for x in ins)/max(1,len(data))
     printable=sum(32<=b<127 for b in data)/max(1,len(data))
-    plausible=(common>=min(2,len(first)) and bad<=1 and printable<0.30 and covered>0.45)
+    entry_core=any(x.mnemonic in {"mov","push","call","cmp","test","lea","sub","xor"} for x in first[:4])
+    plausible=(common>=min(2,len(first)) and entry_core and first[0].mnemonic not in {"popal","add","or","inc","dec"} and bad<=1 and printable<0.30 and covered>0.45)
     value=covered*40+(common/max(1,len(first)))*40-bad*30-printable*60
     return (value if plausible else None),ins
 
