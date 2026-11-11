@@ -509,3 +509,19 @@ The context object at +0x28 remains distinct from IIPEditor at +0x24. The six at
 4. Continue the native SANE design independently of the Win32 interface layout.
 
 **Confidence:** +0x24 = IIPEditor and the HWND provenance through slot +0x0C are high-confidence cross-checks from the interface RTTI, interface offset, direct callers, and method body. The runtime class at +0x28 and the exact GEAR scanner ABI remain unresolved.
+
+
+## Run 77 — trace the processor context source (+0x28) (2026-11-11)
+
+Workflow run 43029566665 completed successfully (artifact 13861172120). The field scan for TScanCommand+0x20 shows:
+- DoRequest reads [self+0x20] and passes it in EDX to TGearImgProc.ShowEditor (call 0x004F237E).
+- GetNextPage writes [self+0x20] in three branches at 0x004F2637, 0x004F268B and 0x004F26A9.
+- TScanCommand.HasError reads the same field at 0x004F2AD3/0x004F2ADB; Finalization also reads it.
+
+In GetNextPage, the three writes store the return value of helper 0x004EC8B4. The arguments are assembled from the request's mode/format bytes and a string/value produced by helper 0x0044A998. Thus +0x20 is a generated per-request/per-page processing context, not a fixed HWND or the IIPEditor interface.
+
+TGearImgProc.ShowEditor stores the exact pointer received from TScanCommand+0x20 into [TGearImgProc+0x28], then calls that object's virtual slot +4 with an out-string destination; the returned string is copied into [TGearImgProc+0x38]. This confirms that +0x28 is the same context object created by TScanCommand.GetNextPage.
+
+TScanCommand.HasError calls the context object's virtual slot +0x10 and then helper 0x004ECFC8, using the result to update TScanCommand status byte +0x28 (values 2 or 4). The concrete class name and exact virtual method contract remain unresolved; do not assume this is the IImageProcessor interface merely because that interface RTTI exists in the module.
+
+The next probes are the full bodies of 0x004EC8B4 and 0x004ECFC8 plus the complete GetNextPage procedure. Workflow 43030170561 adds those traces.
