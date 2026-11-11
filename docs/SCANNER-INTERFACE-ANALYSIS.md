@@ -545,3 +545,18 @@ Workflow run 43032078996 succeeded. The aligned constructor trace at 0x004F21F0 
 The useful GetNextPage block begins around 0x004F25CC, not at the earlier requested trace boundary. It uses two state bytes at [self+0x1D] and [self+0x1E]. Helper 0x004EC8B4 creates the per-page processing context stored at [self+0x20], using the mode/selector byte pair. In one branch, a mode value of 2 is remapped to factory mode 3; otherwise the current mode is passed through. A helper call through 0x00401398 with constant argument 1 checks request/page data; a positive result changes [self+0x1E] to 2, after which HasError is invoked. A later block rebuilds [self+0x20] from the updated state-byte pair. Thus +0x20 is a state-dependent processing context, not a single immutable object for the entire command lifetime.
 
 The broader context probes at 0x004F2250 and 0x004F25C0 begin mid-instruction, and the 0x004F2A80 probe is not aligned to code. They are not used to infer complete method boundaries. Run 80 adds aligned probes at 0x004F2274, 0x004F25CC, 0x004F26F2, 0x004F27C4, and 0x004F29E0.
+
+
+### Run 80 — ScanCommand status dispatch and context hand-off
+
+Workflow run 43033266952 succeeded; artifact 13861452924 was inspected.
+
+- The aligned GetNextPage trace beginning at 0x004F25CC first loops over four candidate values and stores the matching index in [self+0x1D]. This field therefore participates in a four-way selection step and should not be described as a static mode alone.
+- A helper invoked through 0x00401398 with constant argument 1 returns a numeric result; a positive result sets [self+0x1E] to 2. The method then creates a fresh context through 0x004EC8B4 using both state bytes, stores it at +0x20, and invokes HasError.
+- The continuation passes the context pointer at +0x20 to 0x004F0174. It copies the packed state-byte pair into words at offsets +0x55 and +0x57 of the base object at [self+0x04], then calls 0x004F22E4 and 0x004F2B18.
+- The subsequent dispatcher branches on status byte [self+0x28], distinguishing values 1 through 4. In the status=2 branch it reads the current +0x20 context through 0x004ECE2C and passes the resulting value to 0x004735C4. Status 3 and 4 take separate preparation paths.
+- The dispatcher then invokes virtual slots +0xB8 and +0xB4 on the dependency stored at +0x34, and slot +0x08 plus additional helpers on the context at +0x20. Exact class identities and virtual contracts remain unresolved.
+- The requested probes at 0x004F2274 and 0x004F29E0 did not decode valid instructions. They are not accepted as confirmed DoRequest or standalone request-helper entries. The earlier 0x004F2250 probe also begins inside an instruction/epilogue.
+- The dispatch trace at 0x004F27C4 ends at 0x004F28C0; the remaining branch body and targets 0x004F22E4 and 0x004F2B18 need further inspection.
+
+Next: probe 0x004F2278 and 0x004F28C0, then inspect 0x004F22E4 and 0x004F2B18 and correlate status transitions with DoRequest/HasError. Avoid naming ambiguous code ranges as complete methods until their true entries are recovered.
