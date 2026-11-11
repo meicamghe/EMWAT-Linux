@@ -11,7 +11,7 @@ PATTERNS = [
 "TfrmSimpleImageEditor@FormDestroy","TfrmSimpleImageEditor@GetModalRresult",
 "TfrmSimpleImageEditor@Hello","TfrmSimpleImageEditor@Initial",
 "TfrmSimpleImageEditor@Update","TfrmSimpleImageEditor@CropImage",
-"TfrmSimpleImageEditor@ToggleCropMode",
+"TfrmSimpleImageEditor@ToggleCropMode","TfrmSimpleImageEditor@chkForceSinglePageClick",
 "TfrmSimpleImageEditor@btnRegisterClick","TfrmSimpleImageEditor@doCommand",
 "TfrmSimpleImageEditor@pbImgViewerMouseDown","TfrmSimpleImageEditor@pbImgViewerMouseMove",
 "TfrmSimpleImageEditor@pbImgViewerMouseUp","TfrmSimpleImageEditor@ShowCropRectangle",
