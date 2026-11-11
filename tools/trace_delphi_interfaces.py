@@ -60,8 +60,8 @@ def main():
             if tr is None:
                 result.append((i,target,"not mapped"))
                 continue
-            ins=next(iter(md.disasm(blob[tr:tr+12],target)),None)
-            desc=(f"{ins.mnemonic} {ins.op_str}" if ins else "no decode")
+            insns=list(md.disasm(blob[tr:tr+32],target))[:6]
+            desc=("; ".join(f"{ins.mnemonic} {ins.op_str}" for ins in insns) if insns else "no decode")
             result.append((i,target,desc))
         return result
 
@@ -170,8 +170,8 @@ def main():
             lines.append(f"- Implementing class: {name}; VMT: 0x{vmt:08X}; interface VTable: 0x{vt:08X}; IOffset: 0x{ioffset:X}")
             vr=va_raw(vt)
             if vr is None: continue
-            lines.append("- Interface vtable slots (first 8; slots 0-2 are IUnknown):")
-            for slot in range(8):
+            lines.append("- Interface vtable slots (7 entries observed: slots 0-2 are IUnknown; slots 3-6 are interface-specific):")
+            for slot in range(7):
                 target=u32(blob,vr+slot*4)
                 tr=va_raw(target)
                 if tr is None:
