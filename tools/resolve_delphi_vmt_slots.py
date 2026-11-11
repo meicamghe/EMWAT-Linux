@@ -64,6 +64,14 @@ def main():
             proc_ranges.append((va, va + p["size"], p["name"]))
 
     md = Cs(CS_ARCH_X86, CS_MODE_32)
+    imports_by_iat = {}
+    for descriptor in getattr(pe, "DIRECTORY_ENTRY_IMPORT", []):
+        dll_name = descriptor.dll.decode("ascii", "replace") if descriptor.dll else "?"
+        for imp in descriptor.imports:
+            if imp.address:
+                symbol = (imp.name.decode("ascii", "replace") if imp.name else
+                          f"ordinal_{imp.ordinal}")
+                imports_by_iat[imp.address] = f"{dll_name}!{symbol}"
     def shortstring_at_va(va):
         raw = va_to_raw(pe, va)
         if raw is None or raw >= len(blob): return None
@@ -99,6 +107,9 @@ def main():
             mem_va = int(ins.op_str.split("[", 1)[1].split("]", 1)[0], 16)
         except ValueError:
             return None
+        imported = imports_by_iat.get(mem_va)
+        if imported:
+            return f"IAT [0x{mem_va:08X}] -> {imported}"
         stored_value = read_u32_va(mem_va)
         destination = normalize_image_pointer(stored_value)
         if destination is None:
@@ -174,10 +185,13 @@ def main():
             lines += ["", "No VMT candidate found through the class-name RTTI pointer.", ""]
             continue
         for vmt_va, vmt_raw, self_ok, instsize, parent in sorted(uniq.values()):
+            parent_import = imports_by_iat.get(parent)
             parent_name_value = read_u32_va(parent + VMT_CLASSNAME) if parent else None
             parent_name_field = normalize_image_pointer(parent_name_value)
             parent_name = shortstring_at_va(parent_name_field) if parent_name_field else None
-            parent_note = f" ({parent_name})" if parent_name else ""
+            parent_note = f" ({parent_name})" if parent_name else (
+                f" (imported parent: {parent_import})" if parent_import else ""
+            )
             if parent_name_field and not parent_name:
                 name_raw = va_to_raw(pe, parent_name_field)
                 if name_raw is not None:
@@ -211,6 +225,8 @@ def main():
                     indirect = describe_indirect_thunk(target)
                     if indirect:
                         lines.append(f"  - Thunk resolution: {indirect}")
+                elif target in imports_by_iat:
+                    lines.append(f"- Slot +0x{slot:X}: IAT import {imports_by_iat[target]}")
                 else:
                     lines.append(f"- Slot +0x{slot:X}: 0x{target:08X} — not mapped to PE section")
         lines.append("")
