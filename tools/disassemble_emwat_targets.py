@@ -34,17 +34,19 @@ def section_raw(pe,raw,size):
     return None,None
 
 def score(data,va):
-    # Never skip leading bytes: that can make embedded data look like code.
-    ins=list(Cs(CS_ARCH_X86,CS_MODE_32).disasm(data,va))
-    if not ins: return None,[]
-    first=ins[:min(6,len(ins))]
+    # Judge only the entry bytes: later exception tables or embedded constants
+    # can make a valid Delphi method look noisy when decoded linearly.
+    head=data[:min(32,len(data))]
+    ins=list(Cs(CS_ARCH_X86,CS_MODE_32).disasm(head,va))
+    if not ins:
+        return None,[]
+    first=ins[:min(8,len(ins))]
     common=sum(x.mnemonic in COMMON for x in first)
     bad=sum(x.mnemonic in BAD for x in first)
-    covered=sum(x.size for x in ins)/max(1,len(data))
-    printable=sum(32<=b<127 for b in data)/max(1,len(data))
+    covered=sum(x.size for x in ins)/max(1,len(head))
     entry_core=any(x.mnemonic in {"mov","push","call","cmp","test","lea","sub","xor"} for x in first[:4])
-    plausible=(common>=min(2,len(first)) and entry_core and first[0].mnemonic not in {"popal","add","or","inc","dec"} and bad<=1 and printable<0.30 and covered>0.45)
-    value=covered*40+(common/max(1,len(first)))*40-bad*30-printable*60
+    plausible=(common>=min(3,len(first)) and entry_core and first[0].mnemonic not in {"popal","add","or","inc","dec"} and bad==0 and covered>0.55)
+    value=covered*40+(common/max(1,len(first)))*50-bad*30
     return (value if plausible else None),ins
 
 def candidate(blob,pe,p,segno,segbase,segend):
