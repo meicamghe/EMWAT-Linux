@@ -73,6 +73,85 @@ void require_page(const ImagePage& page) {
         throw CodecError("invalid image resolution metadata");
 }
 
+std::pair<std::optional<double>, std::optional<double>>
+read_png_resolution(const std::filesystem::path& path) {
+    FILE* file = std::fopen(path.string().c_str(), "rb");
+    if (!file) throw CodecError("cannot open PNG metadata");
+    png_structp png = png_create_read_struct(PNG_LIBPNG_VER_STRING, nullptr, nullptr, nullptr);
+    if (!png) {
+        std::fclose(file);
+        throw CodecError("cannot allocate PNG reader");
+    }
+    png_infop info = png_create_info_struct(png);
+    if (!info) {
+        png_destroy_read_struct(&png, nullptr, nullptr);
+        std::fclose(file);
+        throw CodecError("cannot allocate PNG metadata");
+    }
+    if (setjmp(png_jmpbuf(png))) {
+        png_destroy_read_struct(&png, &info, nullptr);
+        std::fclose(file);
+        throw CodecError("PNG metadata read failed");
+    }
+    png_init_io(png, file);
+    png_read_info(png, info);
+    png_uint_32 xppm = 0, yppm = 0;
+    int unit = PNG_RESOLUTION_UNKNOWN;
+    std::optional<double> dpi_x, dpi_y;
+    if (png_get_pHYs(png, info, &xppm, &yppm, &unit) && unit == PNG_RESOLUTION_METER) {
+        if (xppm > 0) dpi_x = static_cast<double>(xppm) * 0.0254;
+        if (yppm > 0) dpi_y = static_cast<double>(yppm) * 0.0254;
+    }
+    png_destroy_read_struct(&png, &info, nullptr);
+    std::fclose(file);
+    return {dpi_x, dpi_y};
+}
+
+void write_png_file(const ImagePage& page, const std::filesystem::path& path) {
+    const auto& pixels = page.pixels;
+    FILE* file = std::fopen(path.string().c_str(), "wb");
+    if (!file) throw CodecError("cannot create PNG file");
+    png_structp png = png_create_write_struct(PNG_LIBPNG_VER_STRING, nullptr, nullptr, nullptr);
+    if (!png) {
+        std::fclose(file);
+        throw CodecError("cannot allocate PNG writer");
+    }
+    png_infop info = png_create_info_struct(png);
+    if (!info) {
+        png_destroy_write_struct(&png, nullptr);
+        std::fclose(file);
+        throw CodecError("cannot allocate PNG metadata");
+    }
+    if (setjmp(png_jmpbuf(png))) {
+        png_destroy_write_struct(&png, &info);
+        std::fclose(file);
+        throw CodecError("PNG write failed");
+    }
+    png_init_io(png, file);
+    const int color_type = pixels.format == PixelFormat::Gray8 ? PNG_COLOR_TYPE_GRAY :
+        (pixels.format == PixelFormat::RGBA8 ? PNG_COLOR_TYPE_RGBA : PNG_COLOR_TYPE_RGB);
+    png_set_IHDR(png, info, pixels.width, pixels.height, 8, color_type,
+                 PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
+    if (page.dpi_x && page.dpi_y) {
+        const auto to_ppm = [](double dpi) -> png_uint_32 {
+            const double ppm = std::round(dpi / 0.0254);
+            if (ppm > static_cast<double>(std::numeric_limits<png_uint_32>::max()))
+                throw CodecError("PNG resolution metadata is out of range");
+            return static_cast<png_uint_32>(ppm);
+        };
+        png_set_pHYs(png, info, to_ppm(*page.dpi_x), to_ppm(*page.dpi_y), PNG_RESOLUTION_METER);
+    }
+    png_write_info(png, info);
+    for (std::uint32_t y = 0; y < pixels.height; ++y) {
+        png_bytep row = const_cast<png_bytep>(
+            pixels.bytes.data() + static_cast<std::size_t>(y) * pixels.stride);
+        png_write_row(png, row);
+    }
+    png_write_end(png, info);
+    png_destroy_write_struct(&png, &info);
+    std::fclose(file);
+}
+
 }
 
 ImageFileFormat image_format_from_extension(const std::filesystem::path& path) {
@@ -112,10 +191,11 @@ std::vector<ImagePage> load_image_file(const std::filesystem::path& path) {
             png_image_free(&image);
             throw CodecError("PNG read failed: " + message);
         }
+        const auto [dpi_x, dpi_y] = read_png_resolution(path);
         ImagePage page{PixelBuffer{image.width, image.height,
             static_cast<std::size_t>(image.width) * channels,
             channels == 1 ? PixelFormat::Gray8 : (channels == 4 ? PixelFormat::RGBA8 : PixelFormat::RGB8),
-            std::move(bytes)}, {}, {}};
+            std::move(bytes)}, dpi_x, dpi_y};
         png_image_free(&image);
         return {std::move(page)};
     }
@@ -240,16 +320,7 @@ void save_image_file(const std::vector<ImagePage>& pages, const std::filesystem:
     switch (image_format_from_extension(path)) {
     case ImageFileFormat::Png: {
         if (pages.size() != 1) throw CodecError("PNG supports one page; export a page or use TIFF");
-        const auto& p = pages.front().pixels;
-        png_image image{};
-        image.version = PNG_IMAGE_VERSION;
-        image.width = p.width;
-        image.height = p.height;
-        image.format = p.format == PixelFormat::Gray8 ? PNG_FORMAT_GRAY :
-                       (p.format == PixelFormat::RGBA8 ? PNG_FORMAT_RGBA : PNG_FORMAT_RGB);
-        if (!png_image_write_to_file(&image, path.string().c_str(), 0, p.bytes.data(),
-                                     static_cast<png_int_32>(p.stride), nullptr))
-            throw CodecError(std::string("PNG write failed: ") + image.message);
+        write_png_file(pages.front(), path);
         return;
     }
     case ImageFileFormat::Jpeg: {
