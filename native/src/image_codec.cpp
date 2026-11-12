@@ -282,7 +282,7 @@ std::vector<ImagePage> load_image_file(const std::filesystem::path& path) {
         TiffHandle tif(TIFFOpen(path.string().c_str(), "r"), &TIFFClose);
         if (!tif) throw CodecError("cannot open TIFF file");
         std::vector<ImagePage> pages;
-        do {
+        for (;;) {
             std::uint32_t width = 0, height = 0;
             if (!TIFFGetField(tif.get(), TIFFTAG_IMAGEWIDTH, &width) ||
                 !TIFFGetField(tif.get(), TIFFTAG_IMAGELENGTH, &height) || width == 0 || height == 0) {
@@ -431,7 +431,13 @@ std::vector<ImagePage> load_image_file(const std::filesystem::path& path) {
                 has_alpha ? PixelFormat::RGBA8 : (is_gray8 ? PixelFormat::Gray8 : PixelFormat::RGB8), std::move(bytes)},
                 (swapped_axes ? has_y : has_x) ? std::optional<double>((swapped_axes ? ry : rx) * factor) : std::nullopt,
                 (swapped_axes ? has_x : has_y) ? std::optional<double>((swapped_axes ? rx : ry) * factor) : std::nullopt});
-        } while (TIFFReadDirectory(tif.get()));
+            // TIFFReadDirectory() returns false for both normal EOF and a
+            // malformed next IFD. Check the directory chain explicitly so a
+            // damaged later page cannot be mistaken for a clean end-of-file.
+            if (TIFFLastDirectory(tif.get())) break;
+            if (!TIFFReadDirectory(tif.get()))
+                throw CodecError("failed to read next TIFF page directory");
+        }
         tif.reset();
         if (pages.empty()) throw CodecError("TIFF contains no pages");
         return pages;
