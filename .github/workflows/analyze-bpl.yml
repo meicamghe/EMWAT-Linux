@@ -7,7 +7,6 @@ on:
       - 'tools/analyze_emwat_bpl.py'
       - 'tools/analyze_emwat_td32.py'
       - 'tools/disassemble_emwat_targets.py'
-      - 'tools/extract_emwat_agent.py'
       - 'tools/diagnose_emwat_code_offsets.py'
       - 'tools/inspect_td32_module_map.py'
       - 'tools/resolve_td32_helpers.py'
@@ -29,13 +28,6 @@ jobs:
         with:
           python-version: '3.12'
       - run: pip install pefile capstone
-      # Analyze the main EXE as well as the Methods BPL; the EXE owns the HTTP dispatch layer.
-      - name: Extract EmwatAgent for targeted static analysis
-        run: python tools/extract_emwat_agent.py EMWAT_Extracted.zip /tmp/emwat-agent/EmwatAgent.exe
-      - name: Analyze EmwatAgent TD32 symbols
-        run: python tools/analyze_emwat_td32.py /tmp/emwat-agent/EmwatAgent.exe --out bpl-analysis/EmwatAgent-TD32-analysis.md
-      - name: Disassemble EmwatAgent document response methods
-        run: python tools/disassemble_emwat_targets.py /tmp/emwat-agent/EmwatAgent.exe bpl-analysis/EmwatAgent-target-disassembly.md
       - run: python tools/analyze_emwat_bpl.py
       - run: python tools/analyze_emwat_td32.py analysis-input/EmwatMethods.bpl1
       - run: python tools/disassemble_emwat_targets.py analysis-input/EmwatMethods.bpl1
@@ -418,6 +410,4 @@ jobs:
             bpl-analysis/EmwatMethods-callers-get-doc-field-name.md
             bpl-analysis/EmwatMethods-callers-get-caption-item-font.md
             bpl-analysis/EmwatMethods-callers-word-helper-4BC980.md
-            bpl-analysis/EmwatAgent-TD32-analysis.md
-            bpl-analysis/EmwatAgent-target-disassembly.md
           if-no-files-found: error
