@@ -460,3 +460,21 @@ Resolve 0x00401068 (ParamsToXML thunk destination), inspect all direct/indirect 
 2. caller scan برای `ParamsToXML` و بررسی اینکه خروجی آن کجا مصرف می‌شود.
 3. یافتن ماژول/بسته‌ای که `TEditWordDocument.PerformMethod` در آن پیاده‌سازی شده؛ نبودن بدنه آن در TD32 این BPL به معنی نبودن آن در کل برنامه نیست.
 4. ادامه ردیابی callbackهای Word تا routineای که محتوای تغییرکرده سند را می‌خواند یا response model را می‌سازد.
+
+
+## Run 104 — بررسی IAT و callerهای مستقیم ParamsToXML (2026-11-12)
+
+Artifact اجرای موفق workflow با run ID برابر `43226336477` بررسی شد؛ هر 148 مرحله CI بدون failure پایان یافت.
+
+### نتایج
+
+- آدرس IAT بررسی‌شده `0x0062EE24` دقیقاً به import با نام `rtl230.bpl!@System@@AbstractError$qqrv` resolve شد. این فقط هویت همان slot را مشخص می‌کند و هیچ ارتباط اثبات‌شده‌ای با serializer نامه یا `ParamsToXML` ندارد.
+- برای entry مربوط به `ParamsToXML` در `0x0046AD10` هیچ direct CALL reference در executable sectionهای همین PE پیدا نشد.
+- برای `TEmwatMethod.Invoke` در `0x0046C82C` نیز direct CALL reference پیدا نشد.
+- یادآوری: نبود direct CALL، فراخوانی از طریق VMT/interface، callback، jump محاسبه‌شده یا caller خارج از این PE را رد نمی‌کند.
+
+### تصمیم و گام بعدی
+
+در Run 103 مشخص شده بود که `ParamsToXML` در `0x0046AD10` فقط یک jump thunk پنج‌بایتی به `0x00401068` است. بنابراین Run 104 به‌تنهایی مقصد اجرایی آن را بررسی نکرده و هنوز درباره serializer نتیجه‌ای نمی‌دهد. Workflow اکنون برای اجرای بعدی، disassembly و thunk trace آدرس `0x00401068` را جداگانه تولید می‌کند و direct caller scan را نیز به این مقصد گسترش می‌دهد. این کار در commit `2b440ed3ebe1e6b3d1a144941cefe43a5cf70ad9` ثبت شده است.
+
+تا قبل از بررسی خروجی جدید، نقش `ParamsToXML` و مسیر serialization/بازگشت سند نامشخص باقی می‌ماند.
