@@ -422,3 +422,26 @@ Caller مستقیم پیدا‌شده برای این متد، `TWordViwer.GetDo
 ### محدودیت و گام بعد
 
 نام interface و getter/setter فقط ساختار نوعی را ثابت می‌کنند. هنوز معلوم نیست کدام تابع این مدل را instantiate می‌کند، چه زمانی Body را مقدار می‌دهد، آیا متن Word به‌صورت plain text یا فایل/stream برمی‌گردد و Returntypes در کدام پاسخ واقعی ظاهر می‌شود. ادامه تحلیل باید ابتدا symbol/procedureهای همین interfaceها و سپس callerهای TEditWordDocument.PerformMethod و ParamsToXML را به هم متصل کند.
+
+
+## Run 103 — XML field lookup and image insertion path (2026-11-12)
+
+CI run 43222525062 completed successfully (147/147 steps; no failed steps). Artifact: emwat-bpl-static-analysis, id 13947156509.
+
+### New confirmed method mappings
+
+- TD32 maps an overload of TWordViwer.GetXmlFieldInfo to VA 0x004BFC18 (size 0x11D; high mapping score). The method initializes an output index to -1 and a Boolean output to false, checks two field collections reachable through object offsets +0x68 and +0x6C, compares requested strings against field metadata through helper calls, and when a match is found returns the field index plus a string value/attribute. This is direct evidence of XML field metadata lookup; it is not a document-body serializer.
+- A second GetXmlFieldInfo overload is mapped at 0x004BCA88 (TD32 procedure size 0x3190). It calls helper 0x004BC980 repeatedly with the constant at 0x004BF9A0 and uses several XML-interface vtable methods to traverse/read collections. The earlier generic label “shared helper 0x4BCA88” should be treated as superseded: TD32 names this address as a GetXmlFieldInfo overload. Its callers from GetCaptionItemFont and WordAppDocumentBeforeClose are therefore consistent with metadata lookup being reused in image/caption and close handling, not proof that this address is a generic save helper.
+- AddImagesToDoc maps to 0x004C0410 (size 0x140). It obtains a field identifier through an XML interface getter, compares it with a constant string, and for the non-matching branch delegates to GetCaptionItemFont at 0x004C19C0 with the Word Fields object, field/index arguments and XML field interface. This confirms a hand-off from image-field processing into the caption/font path. The short method itself does not establish the full image byte-transfer or save/return protocol.
+- TEmwatMethod.Invoke maps to 0x0046C82C (size 0x1B1). It traverses a generic dictionary/enumerator-like structure using virtual interface calls and helper routines. This is consistent with parameter/dictionary processing, but the disassembly does not identify the HTTP response serializer or prove that it serializes the Word document body.
+- ParamsToXML at 0x0046AD10 is only a 5-byte jump thunk to 0x00401068. The actual implementation is therefore not in the emitted procedure body; the next analysis must resolve the jump target and its callers before attributing XML serialization behavior to it.
+
+### What Run 103 does not prove
+
+- No TEditWordDocument.PerformMethod body was selected from this BPL's TD32 target set. The class/method may live in another module or be represented by a thunk/indirect dispatch; this run does not resolve that.
+- GetXmlFieldInfo and AddImagesToDoc operate on field metadata/image-caption paths. They do not establish how edited document text is extracted from Word, whether it is placed in word-document/Body, how returned MIME data is built, or what close/Save actually transmits.
+- The previously observed editable XML sample lacking a <body> element remains a single-sample observation. RTTI still establishes Body in the schema, but no runtime population path has been found.
+
+### Next analysis target
+
+Resolve 0x00401068 (ParamsToXML thunk destination), inspect all direct/indirect callers of ParamsToXML and TEmwatMethod.Invoke, and identify the module containing TEditWordDocument.PerformMethod. In parallel, trace the Word COM close/save callbacks toward any routine that reads document content or constructs the response dictionary/return types.
