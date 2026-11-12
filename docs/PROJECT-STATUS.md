@@ -628,3 +628,12 @@
 - Новый helper `0x004BC980` используется в `GetXmlFieldInfo`, `GetDocFieldIndex` и `FillImgFldsForPrint`; вероятная зона ответственности — работа с XML field metadata/lookup, но точный интерфейс пока не установлен.
 - Для следующего цикла добавлены disassembly targets: `GetXmlFieldInfo`, `GetDocFieldIndex`, `AddImagesToDoc`, `FillImgFldsForPrint`.
 - Протокол текста письма и фактическое сохранение пока не подтверждены; дальнейшая работа направлена на различение text-field и image-field путей.
+
+
+### Run 103 — XML field lookup و مسیر تصاویر Word (2026-11-12)
+
+- اجرای `43220472439` موفق شد: 147/147 مرحله، بدون failure؛ artifact شماره `13946301787` بررسی شد.
+- overload کوچک `GetXmlFieldInfo` در `0x004BFC18` دو collection داخلی را برای resolve کردن نام/metadata فیلد جست‌وجو می‌کند و index/مشخصه‌های رکورد را خروجی می‌دهد.
+- `AddImagesToDoc` در `0x004C0410` از interface مربوط به XML field داده می‌خواند و در مسیر شرطی `GetCaptionItemFont` را فراخوانی می‌کند؛ این مسیر به پردازش تصویر/caption مربوط است، نه اثبات ذخیره متن نامه.
+- در artifact این اجرا بدنه مستقلی برای `GetDocFieldIndex` و `FillImgFldsForPrint` match نشد؛ جزئیات آن‌ها همچنان باز است.
+- هنوز serializer متن Body یا سازوکار قطعی ذخیره نهایی در Almas Gam پیدا نشده است. جزئیات و محدودیت‌ها در `WORD-DOCUMENT-PROTOCOL-ANALYSIS.md` ثبت شده‌اند.
