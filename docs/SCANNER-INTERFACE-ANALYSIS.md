@@ -685,3 +685,14 @@ Workflow run `43157168446` با موفقیت اجرا شد؛ artifact `139165262
 این تابع نباید به‌عنوان حذف فایل یا پاک‌سازی پیاده‌سازی شود. معادل Linux باید یک abstraction برای dialog بسازد: عنوان/متن کنترل‌ها از ورودی، پنجرهٔ modal و always-on-top، و بازگرداندن نتیجهٔ Yes/No/Cancel مطابق modal-result. نگاشت کامل دکمه‌ها و متن‌ها هنوز باید از resource stringها و callsiteها استخراج شود.
 
 **Confidence:** پیمایش componentها، تنظیم متن، `fsStayOnTop` و نمایش modal با اطمینان بالا؛ شناسایی slot `+0x13C` به‌عنوان `ShowModal` با اطمینان بالا بر اساس importهای VCL و الگوی فراخوانی؛ نام کلاس هدف و معنای همهٔ modeها هنوز باز است.
+
+
+## Run 85 — بازبینی callerهای helper محاوره‌ای و مرزهای کلاس (2026-11-12)
+- اجرای `43160920858` با موفقیت کامل شد؛ artifact `13917599363` بررسی شد.
+- trace مستقل helper تأیید کرد `0x00401128` به `System.IsClass` و `0x004010E8` به `TObject.Free` وصل است؛ پیمایش componentها و تشخیص کلاس از طریق RTL انجام می‌شود.
+- مقدار global در `0x0062FE28` برابر pointer زمان اجرا `0x0023D27E` است که خارج از image فایل قرار دارد؛ نام کلاس هدف از روی این BPL به‌تنهایی قابل بازیابی نیست.
+- callerهای جدید شامل `TfrmScanError.FormShow`، `TfrmSimpleImageEditor.ToggleCropMode`، `CreateTiff.SeparteImages` و callerهای Word هستند. چند مسیر نتیجهٔ helper را با 6 مقایسه می‌کنند؛ این الگو با modal result برابر Yes سازگار است، اما فقط callerهای مصرف‌کنندهٔ نتیجه را تغییر state می‌دهند.
+- نقشهٔ import/call-siteها تأیید می‌کند `IG_scan_pages` در دو orchestration مجزا یعنی `TfrmGScanPreview.SelectScanner` و `TGearImgProc.SelectScanner` فراخوانی می‌شود؛ `IG_scan_source_select` در دو caller جداگانهٔ `ShowCropRectangle` و `SetCurrentPage` قرار دارد، نه در بدنهٔ SelectScanner.
+- نتیجهٔ عملی: مسیر اسکن در EMWAT دو orchestrator دارد؛ نباید رفتار Preview و GearImgProc را یکی فرض کرد. مرحلهٔ بعدی باید آرگومان‌ها و stateهای اطراف هر callsite از `IG_scan_pages` و `IG_scan_source_select` را جداگانه استخراج کند.
+
+**Confidence:** مقصد helperهای RTL و محل callerها بالا؛ کلاس runtime هدف و معنای کامل modeها هنوز نامشخص.
