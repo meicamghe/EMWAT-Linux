@@ -347,6 +347,45 @@ int main() {
            std::abs(*separate_rotated_pages[0].dpi_y - 300.0) < 0.1);
     std::filesystem::remove(separate_rotated_tif);
 
+ 
+    // Grayscale TIFFs use the RGBA fallback path. Exercise a rotated,
+    // compressed MINISBLACK page and verify both raster geometry and DPI axes.
+    const auto gray_rotated_tif = root / "emwat-codec-test-gray-rotated.tiff";
+    {
+        TIFF* raw = TIFFOpen(gray_rotated_tif.string().c_str(), "w");
+        assert(raw != nullptr);
+        TIFFSetField(raw, TIFFTAG_IMAGEWIDTH, 3);
+        TIFFSetField(raw, TIFFTAG_IMAGELENGTH, 2);
+        TIFFSetField(raw, TIFFTAG_SAMPLESPERPIXEL, 1);
+        TIFFSetField(raw, TIFFTAG_BITSPERSAMPLE, 8);
+        TIFFSetField(raw, TIFFTAG_SAMPLEFORMAT, SAMPLEFORMAT_UINT);
+        TIFFSetField(raw, TIFFTAG_ORIENTATION, ORIENTATION_LEFTTOP);
+        TIFFSetField(raw, TIFFTAG_PLANARCONFIG, PLANARCONFIG_CONTIG);
+        TIFFSetField(raw, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_MINISBLACK);
+        TIFFSetField(raw, TIFFTAG_COMPRESSION, COMPRESSION_LZW);
+        TIFFSetField(raw, TIFFTAG_XRESOLUTION, 240.0F);
+        TIFFSetField(raw, TIFFTAG_YRESOLUTION, 120.0F);
+        TIFFSetField(raw, TIFFTAG_RESOLUTIONUNIT, RESUNIT_INCH);
+        std::uint8_t gray_first_row[] = {10, 20, 30};
+        std::uint8_t gray_second_row[] = {40, 50, 60};
+        assert(TIFFWriteScanline(raw, gray_first_row, 0, 0) >= 0);
+        assert(TIFFWriteScanline(raw, gray_second_row, 1, 0) >= 0);
+        TIFFClose(raw);
+    }
+    const auto gray_rotated_pages = load_image_file(gray_rotated_tif);
+    assert(gray_rotated_pages.size() == 1);
+    assert(gray_rotated_pages[0].pixels.width == 2);
+    assert(gray_rotated_pages[0].pixels.height == 3);
+    assert(gray_rotated_pages[0].pixels.format == PixelFormat::Gray8);
+    assert(gray_rotated_pages[0].pixels.stride == 2);
+    assert((gray_rotated_pages[0].pixels.bytes ==
+        std::vector<std::uint8_t>{10, 40, 20, 50, 30, 60}));
+    assert(gray_rotated_pages[0].dpi_x.has_value() &&
+           std::abs(*gray_rotated_pages[0].dpi_x - 120.0) < 0.1);
+    assert(gray_rotated_pages[0].dpi_y.has_value() &&
+           std::abs(*gray_rotated_pages[0].dpi_y - 240.0) < 0.1);
+    std::filesystem::remove(gray_rotated_tif);
+
     const auto rgba_tif = root / "emwat-codec-test-alpha.tiff";
     const ImagePage rgba_page{PixelBuffer{2, 2, 8, PixelFormat::RGBA8,
         {0, 0, 0, 0, 0, 255, 0, 64, 0, 0, 255, 128, 12, 34, 56, 255}}, 240.0, 240.0};
