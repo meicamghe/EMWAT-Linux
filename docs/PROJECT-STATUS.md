@@ -656,3 +656,11 @@
 - AddImagesToDoc at 0x004C0410 delegates to GetCaptionItemFont for a field-processing branch. It does not by itself reveal the full image transfer or save protocol.
 - TEmwatMethod.Invoke at 0x0046C82C traverses a dictionary/enumerator-like structure. ParamsToXML at 0x0046AD10 is only a jump thunk to 0x00401068, so its implementation still needs resolving.
 - The analysis still has not found TEditWordDocument.PerformMethod or the document-body extraction/response serializer. Details and caveats are in WORD-DOCUMENT-PROTOCOL-ANALYSIS.md.
+
+
+### بررسی مقصد ParamsToXML (2026-11-12)
+
+- `ParamsToXML` در `0x0046AD10` فقط یک jump thunk به `0x00401068` است؛ آن آدرس نیز به‌صورت غیرمستقیم از IAT slot `0x0062EE24` پرش می‌کند. نام import نهایی هنوز استخراج نشده، بنابراین فعلاً نمی‌توان آن را serializer پاسخ XML دانست.
+- commit افزودن trace به workflow با SHA `d4577ce` وجود دارد، اما اجرای CI متناظر در فهرست Actions مشاهده نشد. در نتیجه این مرحله هنوز artifact تأییدشده جدید ندارد.
+- جزئیات و محدودیت نتیجه در [WORD-DOCUMENT-PROTOCOL-ANALYSIS.md](WORD-DOCUMENT-PROTOCOL-ANALYSIS.md) ثبت شد.
+- **گام بعد:** resolve کردن import در IAT، caller scan برای `ParamsToXML` و `TEmwatMethod.Invoke`، و یافتن ماژول حاوی `TEditWordDocument.PerformMethod`.
