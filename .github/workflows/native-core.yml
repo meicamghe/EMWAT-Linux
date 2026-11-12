@@ -26,3 +26,23 @@ jobs:
         run: cmake --build native/build --parallel 2
       - name: Test
         run: ctest --test-dir native/build --output-on-failure
+
+  sanitizer-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install codec development libraries
+        run: sudo apt-get update && sudo apt-get install -y libpng-dev libjpeg-dev libtiff-dev
+      - name: Configure with AddressSanitizer and UndefinedBehaviorSanitizer
+        run: >-
+          cmake -S native -B native/build-sanitized
+          -DCMAKE_BUILD_TYPE=Debug
+          -DCMAKE_CXX_FLAGS="-fsanitize=address,undefined -fno-omit-frame-pointer"
+          -DCMAKE_EXE_LINKER_FLAGS="-fsanitize=address,undefined"
+      - name: Build
+        run: cmake --build native/build-sanitized --parallel 2
+      - name: Test
+        env:
+          ASAN_OPTIONS: detect_leaks=1:halt_on_error=1
+          UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1
+        run: ctest --test-dir native/build-sanitized --output-on-failure
