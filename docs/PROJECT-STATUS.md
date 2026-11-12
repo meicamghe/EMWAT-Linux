@@ -582,3 +582,17 @@
 - اسکریپت `resolve_td32_helpers.py` نیز برای ساخت direct-call graph از متدهای Wordviewer/connector گسترش یافت؛ dispatchهای virtual/indirect همچنان unresolved می‌مانند و مسیر PrintHandler از مسیر ویرایش تفکیک شده است.
 - اجرای workflow تحلیل BPL با commitهای `2c792c4` و `0eef619` آغاز شده است؛ تا زمان ثبت این Run نتیجهٔ نهایی و artifactها هنوز در دسترس نبودند. بنابراین هنوز هیچ آدرس، call graph یا ترتیب lifecycle جدیدی ادعا نمی‌شود.
 - **گام بعد:** بررسی خروجی TD32 disassembly و helper graph پس از پایان workflow؛ اگر متدهای اصلی نماد/بازهٔ معتبر نداشته باشند، مسیر بعدی باید از RTTI/VMT و callerهای مستقیم `OpenDoc` و `SilentSaveEmwatDoc` ادامه پیدا کند، نه حدس‌زدن آدرس‌ها.
+
+
+## Run 99 — بررسی artifact و تحلیل Wordviewer (2026-11-12)
+
+- هر دو اجرای workflow مربوط به commitهای `2c792c4` و `0eef619` با نتیجه `success` تمام شدند؛ اجرای دارای آخرین تغییرات اسکریپت‌ها 145 مرحله را بدون failure گذراند.
+- artifact با نام `emwat-bpl-static-analysis` دریافت شد؛ گزارش disassembly شامل 77 متد match‌شده است.
+- mapping segment-relative برای متدهای Wordviewer در PE section `.text` با امتیاز plausibility حدود 85 تا 90 به دست آمد. entryهای `OpenDoc`، `LoadDocument`، `OnTmrAutoSave`، `PrepareDocument`، `BeforeClose`، `BeforeSave` و `SilentSaveEmwatDoc` اکنون قابل بررسی هستند.
+- `OnTmrAutoSave` pointer یک handler را به آدرس دقیق `WordAppDocumentBeforeSave` ثبت می‌کند؛ این وجود اتصال timer/event به BeforeSave را نشان می‌دهد، نه اینکه به‌تنهایی ذخیره یا ارسال خودکار هر tick را ثابت کند.
+- `WordAppDocumentBeforeSave` وضعیت سند را بررسی می‌کند و در branchهایی مقدار cancel را تنظیم می‌کند؛ رفتار Ctrl+S و ارسال به سامانه هنوز از این کد اثبات نشده است.
+- `WordAppDocumentBeforeClose` به helper داخلی `0x004BCA88` می‌رسد، اما فراخوانی مستقیم قابل‌تشخیص به `SilentSaveEmwatDoc` در بدنه آن نیست.
+- `SilentSaveEmwatDoc` بدنه اجرایی دارد: چند collection/property داخلی را می‌خواند، helper `0x004AEBBC` را اجرا می‌کند، flag داخلی را تنظیم می‌کند و virtual dispatch دارد. مقصد ذخیره و رابطه مستقیم آن با پاسخ HTTP هنوز نامعلوم است.
+- مسیر `StoreFieldValuesForPrint` از طریق `Base64Decode` و helperهای focus/window به مسیر چاپ مربوط می‌ماند و به‌عنوان serializer عمومی نامه تفسیر نمی‌شود.
+- جزئیات پاک‌سازی‌شده در [WORD-DOCUMENT-PROTOCOL-ANALYSIS.md](WORD-DOCUMENT-PROTOCOL-ANALYSIS.md) ثبت شد.
+- **گام بعد:** disassemble کردن callbackهای ثبت‌شده در timer، helper مربوط به BeforeClose، و حل caller/VMT dispatchهای OpenDoc و SilentSaveEmwatDoc؛ سپس اتصال شواهد استاتیک به request/response runtime.
