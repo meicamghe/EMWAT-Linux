@@ -313,10 +313,16 @@ std::vector<ImagePage> load_image_file(const std::filesystem::path& path) {
             const std::size_t channels = has_alpha ? 4 : 3;
             std::vector<std::uint8_t> bytes(checked_image_bytes(width, height, channels, "TIFF"));
             for (std::size_t i = 0; i < raster.size(); ++i) {
-                bytes[i * channels] = TIFFGetR(raster[i]);
-                bytes[i * channels + 1] = TIFFGetG(raster[i]);
-                bytes[i * channels + 2] = TIFFGetB(raster[i]);
-                if (has_alpha) bytes[i * channels + 3] = TIFFGetA(raster[i]);
+                const auto alpha = TIFFGetA(raster[i]);
+                const auto unassociate = [alpha](std::uint8_t component) -> std::uint8_t {
+                    if (alpha == 0) return 0;
+                    const auto value = (static_cast<unsigned int>(component) * 255U + alpha / 2U) / alpha;
+                    return static_cast<std::uint8_t>(std::min(value, 255U));
+                };
+                bytes[i * channels] = has_alpha ? unassociate(TIFFGetR(raster[i])) : TIFFGetR(raster[i]);
+                bytes[i * channels + 1] = has_alpha ? unassociate(TIFFGetG(raster[i])) : TIFFGetG(raster[i]);
+                bytes[i * channels + 2] = has_alpha ? unassociate(TIFFGetB(raster[i])) : TIFFGetB(raster[i]);
+                if (has_alpha) bytes[i * channels + 3] = alpha;
             }
             float rx = 0, ry = 0;
             const bool has_x = TIFFGetField(tif.get(), TIFFTAG_XRESOLUTION, &rx) != 0;
