@@ -1,5 +1,8 @@
 #include "emwat/image_codec.hpp"
 
+#ifdef NDEBUG
+#undef NDEBUG
+#endif
 #include <cassert>
 #include <filesystem>
 #include <vector>
