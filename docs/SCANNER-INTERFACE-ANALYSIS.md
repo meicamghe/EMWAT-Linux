@@ -595,3 +595,33 @@ The control-flow relationship is high-confidence, but the semantic identity of t
 Trace callback targets `0x004F2454`, `0x004F2474`, `0x004F2490`, the helper `0x0044ABE4`, and the exception/finalization target around `0x004F2440`. Then correlate their callers with the state transition at `[self+0x28]`.
 
 **Confidence:** the branch structure, callback-record construction, comparison with 6, context VMT dispatch, recursive continuation, and status=3 fallback are directly visible in aligned disassembly. Callback semantics and helper contracts remain unresolved.
+
+
+## Run 82 — بازبینی داخلی RemoveTempFiles و رد برداشت callback (2026-11-12)
+
+Workflow run `43157168446` با موفقیت اجرا شد؛ artifact `13916526235` بررسی شد.
+
+### آنچه از بدنه تابع قابل اثبات است
+
+- TD32 آدرس `0x0044ABE4` را `@Emwat@Sys@RemoveTempFiles$qqrv` نام‌گذاری می‌کند؛ با این حال، در بدنه قابل مشاهده، عملیات مستقیم فایل‌سیستمی یا فراخوانی API حذف فایل دیده نمی‌شود.
+- تابع یک آرایه/مجموعه از pointerها را از آرگومان‌های stack بازسازی می‌کند، سپس روی یک object تعداد componentها را از طریق thunk `0x004042B4` می‌گیرد و componentها را با `0x004042AC` واکشی می‌کند.
+- این دو thunk به‌ترتیب `TComponent.GetComponentCount` و `TComponent.GetComponent` در `rtl230.bpl` resolve می‌شوند.
+- در حلقه، تابع componentها را از طریق VCL/RTL دستکاری می‌کند: `0x00404894` به `TControl.SetText` و `0x00404E34` به `TCustomForm.SetFormStyle` resolve می‌شوند. همچنین virtual slotهای `+0x94` و `+0x13C` فراخوانی می‌شوند.
+- thunk `0x00404F64` به آدرس `0x0023F672` منتقل می‌شود که خارج از محدوده image فعلی است؛ هویت مقصد هنوز معلوم نیست.
+- helper `0x00401128` روی مقادیری که از componentها به دست می‌آیند شرطی را ارزیابی می‌کند و در صورت برقرار بودن، componentهای اضافی از آرایه ورودی به مسیر `SetText` داده می‌شوند. معنای شرط و رشته/متن مورد استفاده هنوز تعیین نشده است.
+- تابع در پایان مقدار خروجی را در local ذخیره می‌کند و مسیر exception/finally را اجرا می‌کند؛ trace بعدی انتهای دقیق بدنه و helperهای مدیریت آرایه/رشته را بررسی می‌کند.
+
+### نتیجه و محدودیت
+
+نام نماد به‌تنهایی کافی نیست تا نتیجه بگیریم این routine واقعاً فایل‌های موقت را حذف می‌کند. شواهد فعلی بیشتر با پیمایش و تغییر componentهای VCL سازگارند، اما هنوز ممکن است پاک‌سازی از طریق virtual call یا helper خارج از image انجام شود. بنابراین نه «حذف فایل» و نه «تغییر UI» را به‌عنوان معنای نهایی تابع ثبت نمی‌کنیم.
+
+در caller مربوط به `TScanCommand`، نتیجه `EAX` با عدد 6 مقایسه می‌شود؛ caller دوم در `TfrmSimpleImageEditor.ToggleCropMode` نیز همین مقایسه را انجام می‌دهد. معنای 6 تا زمان شناسایی قرارداد خروجی تابع نامشخص می‌ماند.
+
+### گام بعد
+
+1. ادامه disassembly از `0x0044ACDF` برای بازیابی epilogue و مقدار خروجی.
+2. شناسایی helperهای `0x00401128`، `0x004010E8`، `0x004013C8` و `0x00401230`.
+3. استخراج تمام callerهای `RemoveTempFiles` و مقایسه آرگومان‌های آن‌ها.
+4. شناسایی مقصد خارج از image در `0x0023F672` یا تعیین اینکه این آدرس به package/module بارگذاری‌شده دیگری تعلق دارد.
+
+**Confidence:** هویت دو متد TComponent و دو متد VCL فوق بالا است؛ تفسیر کلی routine و معنای return value 6 هنوز باز است.
