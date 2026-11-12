@@ -114,10 +114,6 @@ const ImagePage& ImageDocument::page(std::size_t index) const {
     if (index >= pages_.size()) throw std::out_of_range("page index out of range");
     return pages_[index];
 }
-ImagePage& ImageDocument::page(std::size_t index) {
-    if (index >= pages_.size()) throw std::out_of_range("page index out of range");
-    return pages_[index];
-}
 void ImageDocument::append_page(ImagePage value) {
     if (!value.pixels.valid()) throw std::invalid_argument("cannot append invalid image page");
     pages_.push_back(std::move(value));
