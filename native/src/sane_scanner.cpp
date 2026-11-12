@@ -113,7 +113,8 @@ std::optional<double> read_numeric_option(SANE_Handle handle, const char* name) 
             (descriptor->type != SANE_TYPE_INT && descriptor->type != SANE_TYPE_FIXED))
             return std::nullopt;
         SANE_Word value = 0;
-        const auto status = sane_control_option(handle, index, SANE_ACTION_GET_VALUE, &value, nullptr);
+        SANE_Int info = 0;
+        const auto status = sane_control_option(handle, index, SANE_ACTION_GET_VALUE, &value, &info);
         if (status != SANE_STATUS_GOOD) return std::nullopt;
         const double dpi = sane_numeric_value(value, descriptor->type);
         if (!std::isfinite(dpi) || dpi <= 0.0 || dpi > 100000.0) return std::nullopt;
