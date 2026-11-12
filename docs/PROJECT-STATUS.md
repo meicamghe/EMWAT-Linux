@@ -596,3 +596,16 @@
 - مسیر `StoreFieldValuesForPrint` از طریق `Base64Decode` و helperهای focus/window به مسیر چاپ مربوط می‌ماند و به‌عنوان serializer عمومی نامه تفسیر نمی‌شود.
 - جزئیات پاک‌سازی‌شده در [WORD-DOCUMENT-PROTOCOL-ANALYSIS.md](WORD-DOCUMENT-PROTOCOL-ANALYSIS.md) ثبت شد.
 - **گام بعد:** disassemble کردن callbackهای ثبت‌شده در timer، helper مربوط به BeforeClose، و حل caller/VMT dispatchهای OpenDoc و SilentSaveEmwatDoc؛ سپس اتصال شواهد استاتیک به request/response runtime.
+
+
+## Run 100 — caller scan و اصلاح برداشت از SilentSave (2026-11-12)
+
+- workflow جدید با SHA `44718f0` با موفقیت تمام شد: 147/147 مرحله، بدون failure.
+- artifact جدید بررسی شد؛ چهار callback ثبت‌شده در مسیر timer، helper مورد استفاده BeforeClose و direct callerهای چند متد Word استخراج شدند.
+- **اصلاح Run 99:** متد `SilentSaveEmwatDoc` با وجود نامش، از روی بدنه فعلی به‌عنوان serializer/ذخیره‌کننده نامه قابل تأیید نیست. بدنه آن به `SetRegistryValue`، `TfrmWordPrintOption.SetLetterReceivers`، `TfrmWordPrintOption.FreePrinters` و `TWrapRecord.LineCount` متصل است. caller مستقیم دیده‌شده `TWordViwer.GetDocFieldName` است، نه BeforeClose/BeforeSave. نقش دقیق آن تا حل virtual dispatchها نامشخص می‌ماند.
+- **اصلاح Run 99:** آدرس `0x004BCA88` صرفاً helper مخصوص BeforeClose نیست؛ از دو محل `GetCaptionItemFont` نیز فراخوانی می‌شود. نقش آن نامشخص است.
+- برای `OpenDoc` direct CALL xref در procedureهای TD32 دیده نشد؛ callback/VMT و callerهای خارج از محدوده همچنان ممکن‌اند.
+- برای `LoadDocument` یک caller مستقیم در `TScanDocument.PerformMethod` دیده شد؛ بنابراین نباید آن را فقط به مسیر بازشدن نامه متنی نسبت داد.
+- callbackهای timer هنوز به‌علت virtual/interface dispatch مقصد نهایی روشنی ندارند.
+- جزئیات و اصلاحات در [WORD-DOCUMENT-PROTOCOL-ANALYSIS.md](WORD-DOCUMENT-PROTOCOL-ANALYSIS.md) ثبت شد.
+- **گام بعد:** disassembly متد `TWordViwer.GetDocFieldName` و callerهای آن، حل interface/VMT callbackها، و یافتن مسیر غیرمستقیم فراخوانی `OpenDoc`. هیچ پیاده‌سازی save-letter بر مبنای نام `SilentSaveEmwatDoc` انجام نشود.
