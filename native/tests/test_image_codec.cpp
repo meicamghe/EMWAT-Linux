@@ -489,6 +489,34 @@ int main() {
            std::abs(*miniswhite_rotated_pages[0].dpi_y - 254.0) < 0.1);
     std::filesystem::remove(miniswhite_rotated_tif);
 
+    // RESUNIT_NONE means the stored resolution values are arbitrary units,
+    // so they must not be exposed as DPI.
+    const auto unitless_resolution_tif = root / "emwat-codec-test-unitless-resolution.tiff";
+    {
+        TIFF* raw = TIFFOpen(unitless_resolution_tif.string().c_str(), "w");
+        assert(raw != nullptr);
+        TIFFSetField(raw, TIFFTAG_IMAGEWIDTH, 2);
+        TIFFSetField(raw, TIFFTAG_IMAGELENGTH, 2);
+        TIFFSetField(raw, TIFFTAG_SAMPLESPERPIXEL, 1);
+        TIFFSetField(raw, TIFFTAG_BITSPERSAMPLE, 8);
+        TIFFSetField(raw, TIFFTAG_PLANARCONFIG, PLANARCONFIG_CONTIG);
+        TIFFSetField(raw, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_MINISBLACK);
+        TIFFSetField(raw, TIFFTAG_COMPRESSION, COMPRESSION_NONE);
+        TIFFSetField(raw, TIFFTAG_XRESOLUTION, 100.0F);
+        TIFFSetField(raw, TIFFTAG_YRESOLUTION, 50.0F);
+        TIFFSetField(raw, TIFFTAG_RESOLUTIONUNIT, RESUNIT_NONE);
+        std::uint8_t row0[] = {10, 20};
+        std::uint8_t row1[] = {30, 40};
+        assert(TIFFWriteScanline(raw, row0, 0, 0) >= 0);
+        assert(TIFFWriteScanline(raw, row1, 1, 0) >= 0);
+        TIFFClose(raw);
+    }
+    const auto unitless_pages = load_image_file(unitless_resolution_tif);
+    assert(unitless_pages.size() == 1);
+    assert(!unitless_pages[0].dpi_x.has_value());
+    assert(!unitless_pages[0].dpi_y.has_value());
+    std::filesystem::remove(unitless_resolution_tif);
+
     const auto rgba_tif = root / "emwat-codec-test-alpha.tiff";
     const ImagePage rgba_page{PixelBuffer{2, 2, 8, PixelFormat::RGBA8,
         {0, 0, 0, 0, 0, 255, 0, 64, 0, 0, 255, 128, 12, 34, 56, 255}}, 240.0, 240.0};
