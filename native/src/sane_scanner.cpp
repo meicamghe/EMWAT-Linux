@@ -95,6 +95,63 @@ void set_resolution_option(SANE_Handle handle, double dpi) {
         throw ScannerError(std::string("Cannot set scanner resolution: ") + sane_strstatus(status));
 }
 
+
+double sane_numeric_value(SANE_Word value, SANE_Value_Type type) {
+    return type == SANE_TYPE_FIXED ? SANE_UNFIX(value) : static_cast<double>(value);
+}
+
+void collect_string_values(SANE_Handle handle, const char* option_name,
+                           std::vector<std::string>& values) {
+    for (SANE_Int index = 1; ; ++index) {
+        const auto* descriptor = sane_get_option_descriptor(handle, index);
+        if (!descriptor) break;
+        if (!descriptor->name ||
+            std::strcmp(reinterpret_cast<const char*>(descriptor->name), option_name) != 0)
+            continue;
+        if ((descriptor->cap & SANE_CAP_INACTIVE) ||
+            !(descriptor->cap & SANE_CAP_SOFT_DETECT) ||
+            descriptor->type != SANE_TYPE_STRING ||
+            descriptor->constraint_type != SANE_CONSTRAINT_STRING_LIST ||
+            !descriptor->constraint.string_list)
+            return;
+        for (const SANE_Char** item = descriptor->constraint.string_list; *item; ++item)
+            values.emplace_back(reinterpret_cast<const char*>(*item));
+        return;
+    }
+}
+
+void collect_resolution_values(SANE_Handle handle, ScannerCapabilities& result) {
+    for (SANE_Int index = 1; ; ++index) {
+        const auto* descriptor = sane_get_option_descriptor(handle, index);
+        if (!descriptor) break;
+        if (!descriptor->name ||
+            std::strcmp(reinterpret_cast<const char*>(descriptor->name), "resolution") != 0)
+            continue;
+        if ((descriptor->cap & SANE_CAP_INACTIVE) ||
+            !(descriptor->cap & SANE_CAP_SOFT_DETECT) ||
+            (descriptor->type != SANE_TYPE_INT && descriptor->type != SANE_TYPE_FIXED))
+            return;
+        if (descriptor->constraint_type == SANE_CONSTRAINT_RANGE && descriptor->constraint.range) {
+            const auto* range = descriptor->constraint.range;
+            const double minimum = sane_numeric_value(range->min, descriptor->type);
+            const double maximum = sane_numeric_value(range->max, descriptor->type);
+            if (std::isfinite(minimum) && std::isfinite(maximum) && minimum > 0.0 && maximum >= minimum) {
+                result.min_resolution_dpi = minimum;
+                result.max_resolution_dpi = maximum;
+            }
+        } else if (descriptor->constraint_type == SANE_CONSTRAINT_WORD_LIST &&
+                   descriptor->constraint.word_list && descriptor->constraint.word_list[0] > 0) {
+            const auto count = descriptor->constraint.word_list[0];
+            for (SANE_Word i = 1; i <= count; ++i) {
+                const double value = sane_numeric_value(descriptor->constraint.word_list[i], descriptor->type);
+                if (std::isfinite(value) && value > 0.0)
+                    result.discrete_resolutions_dpi.push_back(value);
+            }
+        }
+        return;
+    }
+}
+
 std::string safe_string(const SANE_Char* value) {
     return value ? reinterpret_cast<const char*>(value) : std::string{};
 }
@@ -116,6 +173,18 @@ std::vector<ScannerDevice> SaneScannerBackend::list_devices() {
             safe_string((*current)->model), safe_string((*current)->type)
         });
     }
+    return result;
+}
+
+ScannerCapabilities SaneScannerBackend::get_capabilities(const std::string& device_id) {
+    if (device_id.empty()) throw ScannerError("scanner device id cannot be empty");
+    std::lock_guard<std::mutex> lock(sane_mutex());
+    SaneSession session;
+    SaneHandle device(device_id);
+    ScannerCapabilities result;
+    collect_string_values(device.get(), "mode", result.modes);
+    collect_string_values(device.get(), "source", result.sources);
+    collect_resolution_values(device.get(), result);
     return result;
 }
 
