@@ -711,3 +711,30 @@ Workflow run `43157168446` با موفقیت اجرا شد؛ artifact `139165262
 - این run فقط call graph را قطعی می‌کند؛ ABI کامل، معنای آرگومان‌ها و semantics بازگشتی GEAR هنوز نیازمند trace کامل بدنهٔ چهار متد است.
 
 **Confidence:** نام API، owner و محل callsiteها بالا؛ پارامترهای ABI و رفتار عملی هنوز باز.
+
+
+## Run 87 — جریان دادهٔ TGearImgProc و عملیات تصویر (2026-11-12)
+- اجرای `43163883733` موفق شد؛ artifact `13919785201` دریافت و traceهای کامل بررسی شدند.
+
+### یافته‌های قطعی در مسیر Editor و صفحه‌ها
+- `TGearImgProc.ShowEditor` در `0x004F0174` شیء context ورودی را در `[self+0x28]` ذخیره می‌کند، مقدار رشته/مسیر context را از virtual slot `+4` می‌گیرد و در `[self+0x38]` نگه می‌دارد؛ صفحهٔ جاری را صفر و dirty flag در `+0x54` را پاک می‌کند. سپس format را از helper `0x004EF048` محاسبه و `Rotate90` را فراخوانی می‌کند.
+- متد `0x004EFF94` صفحهٔ درخواستی را فقط در بازهٔ 1 تا `[self+0x30]` قبول می‌کند. اگر تصویر dirty باشد، ابتدا dialog modal را نمایش می‌دهد؛ در نتیجهٔ 6 (Yes) فایل را ذخیره می‌کند. سپس current page در `+0x34` به‌روز، context virtual slot `+0x20` برای صفحهٔ جدید فراخوانی و مسیر `+0x38` refresh می‌شود؛ در پایان `NotifyEditor` اجرا می‌شود.
+- `LoadPage` در `0x004EF1DC` یک page index را به helper `0x00401398` می‌دهد و فقط وقتی نتیجه مثبت باشد، Boolean موفقیت را برمی‌گرداند.
+- `NotifyEditor` در `0x004EF240` ابتدا HIGEAR فعال را اعتبارسنجی می‌کند؛ اگر page index نامعتبر/غیرمثبت باشد، handle را آزاد/صفر می‌کند. در مسیر مثبت، descriptor مربوط به مسیر را باز می‌کند، با `IG_load_FD` صفحه را در `[self+0x10]` بارگذاری می‌کند، اعتبار خروجی را می‌سنجد و در صورت موفقیت یک مرحلهٔ load/refresh دیگر انجام می‌دهد. سپس dirty flag را پاک می‌کند.
+
+### ذخیره و اسکن مستقیم به فایل
+- `SavePage` در `0x004EF510` روی تمام صفحات descriptor loop می‌زند. برای صفحهٔ جاری از HIGEAR فعال `[self+0x10]` استفاده می‌کند؛ برای صفحات دیگر با `IG_load_FD` یک HIGEAR موقت می‌سازد و سپس `IG_save_FD` را روی descriptor مقصد اجرا می‌کند. صفحه‌ها از 1 تا `[self+0x30]` پیمایش می‌شوند.
+- `SaveToFile` در `0x004EF714` فقط وقتی dirty flag روشن و HIGEAR معتبر باشد وارد ذخیره می‌شود. مسیر/descriptor را از `+0x38` باز می‌کند، format را از `+0x14` می‌خواند، در یک حالت format برابر `0x15` و مقدار `+0x44 < 8` helper جداگانه‌ای را با آرگومان 2 اجرا می‌کند، سپس بر اساس وضعیت فایل، `IG_save_FD` یا `SavePage` را انتخاب می‌کند و در پایان dirty flag را صفر می‌کند.
+- `ScanToFile` در `0x004EF8C0` مسیر مقصد را با آرگومان‌های ورودی مقایسه و در صورت تفاوت `+0x38` را به‌روزرسانی می‌کند. پس از اعتبارسنجی HIGEAR، format را از selector mapper می‌گیرد و `IG_save_FD` را مستقیماً صدا می‌زند؛ در صورت خطا، از VMT slot +4 برای تولید/گزارش خطا استفاده می‌کند.
+
+### چرخش و مرزهای اطمینان
+- `Rotate90` در `0x004EF138` اگر context در `+0x28` موجود باشد، ابتدا یک helper روی descriptor/path اجرا می‌کند، سپس context virtual slot صفر را با page index و آرگومان صفر صدا می‌زند و مقدار بازگشتی را در `+0x30` ذخیره می‌کند. این بدنه به‌تنهایی ثابت نمی‌کند که pixel buffer در همین تابع rotate شده است.
+- `RotateLeft` در `0x004EF178` روی HIGEAR فعال، helperهای `0x004AFEC8`، `0x004EF0E4` و `0x004EEEC4` را اجرا و dirty flag را روشن می‌کند؛ `RotateRight` در `0x004EF1A4` wrapper همین تابع با مقدار `EDX=3` است.
+- آدرس `0x004EEDB4` که در trace قبلی به‌عنوان Crop نام‌گذاری شده بود، از نظر بدنه یک constructor برای objectی است که در `[self+0x20]` ذخیره می‌شود؛ عنوان «Crop» برای آن قابل اتکا نیست و باید با caller/VMT تکمیل شود.
+
+### پیامد برای پیاده‌سازی بومی
+- قرارداد backing document چندصفحه‌ای، current page، dirty state و reload/save اکنون روشن‌تر است.
+- هنوز نباید API نهایی image backend را بر اساس نام‌های Delphi حدس زد: semantics دقیق helperهای rotation، context virtual slotها، فرمت `0x15` و آرگومان‌های GEAR باید resolve شوند.
+- طراحی Linux باید مدل مستقل `Document` چندصفحه‌ای + `Page` + `PixelBuffer` + dirty tracking داشته باشد؛ ذخیره باید تمام صفحات و صفحهٔ فعال را پوشش دهد.
+
+**Confidence:** state/page/dirty و ترتیب IG_load_FD/IG_save_FD با اطمینان بالا؛ جزئیات الگوریتم pixel rotation، قرارداد context virtualها و برخی format helperها هنوز باز.
