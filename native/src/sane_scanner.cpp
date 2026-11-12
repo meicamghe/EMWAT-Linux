@@ -7,6 +7,7 @@
 #include <limits>
 #include <mutex>
 #include <string>
+#include <utility>
 
 namespace emwat {
 namespace {
