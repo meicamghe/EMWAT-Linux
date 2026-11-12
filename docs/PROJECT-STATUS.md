@@ -501,3 +501,12 @@
 - connectorهای TEditExcelWorkBook، TCompareWordDocument، TFaxDocument، TImageEdition و TScanDocument نیز در RTTI دیده شدند؛ این موضوع حفظ معماری چندماژوله Word/Excel/scan/image/fax را تقویت می‌کند.
 - سند [WORD-DOCUMENT-PROTOCOL-ANALYSIS.md](WORD-DOCUMENT-PROTOCOL-ANALYSIS.md) ایجاد و به README و تحلیل گردش‌کار اضافه شد.
 - **گام بعد:** اتصال این نمادها به handlerهای واقعی و استخراج schema XML/dispatch از بدنه کد/نمونه runtime؛ سپس ثبت trace پاک‌سازی‌شده از یک نامه آزمایشی.
+
+
+## Run 92 — تکمیل ساختار collectionهای Word XML (2026-11-12)
+
+- RTTI تکمیلی Wordrequestxml وجود collectionهای Fields و Settings را نشان می‌دهد؛ Word Body نیز metadata مربوط به Encryption دارد.
+- ParamsToXML به‌عنوان تبدیل dictionary پارامترها به XML در unit Emwatmethod ثبت شد.
+- مدل‌های Field و Return Type هر دو metadataهای MIME type و Encryption دارند؛ این یافته احتمال وجود payloadهای غیرمتنی/رمزشده را برای برخی فیلدها مطرح می‌کند، اما encoding و الگوریتم هنوز ناشناخته است.
+- سند [WORD-DOCUMENT-PROTOCOL-ANALYSIS.md](WORD-DOCUMENT-PROTOCOL-ANALYSIS.md) با این جزئیات تکمیل شد.
+- **گام بعد:** استخراج بدنه/نمونه‌های واقعی XML و mapping متدهای connector؛ سپس runtime trace کنترل‌شده. تا آن زمان هیچ schema یا رمزنگاری فرضی در کد production پیاده‌سازی نمی‌شود.
