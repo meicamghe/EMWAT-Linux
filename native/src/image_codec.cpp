@@ -194,7 +194,7 @@ std::vector<ImagePage> load_image_file(const std::filesystem::path& path) {
         do {
             std::uint32_t width = 0, height = 0;
             if (!TIFFGetField(tif.get(), TIFFTAG_IMAGEWIDTH, &width) ||
-                !TIFFGetField(tif, TIFFTAG_IMAGELENGTH, &height) || width == 0 || height == 0) {
+                !TIFFGetField(tif.get(), TIFFTAG_IMAGELENGTH, &height) || width == 0 || height == 0) {
                 throw CodecError("invalid TIFF page dimensions");
             }
             if (pages.size() >= kMaxTiffPages) {
@@ -215,8 +215,8 @@ std::vector<ImagePage> load_image_file(const std::filesystem::path& path) {
                 bytes[i * 3 + 2] = TIFFGetB(raster[i]);
             }
             float rx = 0, ry = 0;
-            const bool has_x = TIFFGetField(tif, TIFFTAG_XRESOLUTION, &rx) != 0;
-            const bool has_y = TIFFGetField(tif, TIFFTAG_YRESOLUTION, &ry) != 0;
+            const bool has_x = TIFFGetField(tif.get(), TIFFTAG_XRESOLUTION, &rx) != 0;
+            const bool has_y = TIFFGetField(tif.get(), TIFFTAG_YRESOLUTION, &ry) != 0;
             std::uint16_t unit = RESUNIT_INCH;
             TIFFGetFieldDefaulted(tif.get(), TIFFTAG_RESOLUTIONUNIT, &unit);
             const double factor = unit == RESUNIT_CENTIMETER ? 2.54 : 1.0;
@@ -309,21 +309,21 @@ void save_image_file(const std::vector<ImagePage>& pages, const std::filesystem:
             const auto& p = page.pixels;
             const auto samples = static_cast<std::uint16_t>(p.channels());
             TIFFSetField(tif.get(), TIFFTAG_IMAGEWIDTH, p.width);
-            TIFFSetField(tif, TIFFTAG_IMAGELENGTH, p.height);
-            TIFFSetField(tif, TIFFTAG_SAMPLESPERPIXEL, samples);
-            TIFFSetField(tif, TIFFTAG_BITSPERSAMPLE, 8);
-            TIFFSetField(tif, TIFFTAG_ORIENTATION, ORIENTATION_TOPLEFT);
-            TIFFSetField(tif, TIFFTAG_PLANARCONFIG, PLANARCONFIG_CONTIG);
-            TIFFSetField(tif, TIFFTAG_PHOTOMETRIC, p.format == PixelFormat::Gray8 ? PHOTOMETRIC_MINISBLACK : PHOTOMETRIC_RGB);
-            TIFFSetField(tif, TIFFTAG_COMPRESSION, COMPRESSION_LZW);
-            TIFFSetField(tif, TIFFTAG_ROWSPERSTRIP, TIFFDefaultStripSize(tif.get(), 0));
+            TIFFSetField(tif.get(), TIFFTAG_IMAGELENGTH, p.height);
+            TIFFSetField(tif.get(), TIFFTAG_SAMPLESPERPIXEL, samples);
+            TIFFSetField(tif.get(), TIFFTAG_BITSPERSAMPLE, 8);
+            TIFFSetField(tif.get(), TIFFTAG_ORIENTATION, ORIENTATION_TOPLEFT);
+            TIFFSetField(tif.get(), TIFFTAG_PLANARCONFIG, PLANARCONFIG_CONTIG);
+            TIFFSetField(tif.get(), TIFFTAG_PHOTOMETRIC, p.format == PixelFormat::Gray8 ? PHOTOMETRIC_MINISBLACK : PHOTOMETRIC_RGB);
+            TIFFSetField(tif.get(), TIFFTAG_COMPRESSION, COMPRESSION_LZW);
+            TIFFSetField(tif.get(), TIFFTAG_ROWSPERSTRIP, TIFFDefaultStripSize(tif.get(), 0));
             if (p.format == PixelFormat::RGBA8) {
                 std::uint16_t extra = EXTRASAMPLE_UNASSALPHA;
-                TIFFSetField(tif, TIFFTAG_EXTRASAMPLES, 1, &extra);
+                TIFFSetField(tif.get(), TIFFTAG_EXTRASAMPLES, 1, &extra);
             }
-            if (page.dpi_x) TIFFSetField(tif, TIFFTAG_XRESOLUTION, static_cast<float>(*page.dpi_x));
-            if (page.dpi_y) TIFFSetField(tif, TIFFTAG_YRESOLUTION, static_cast<float>(*page.dpi_y));
-            if (page.dpi_x || page.dpi_y) TIFFSetField(tif, TIFFTAG_RESOLUTIONUNIT, RESUNIT_INCH);
+            if (page.dpi_x) TIFFSetField(tif.get(), TIFFTAG_XRESOLUTION, static_cast<float>(*page.dpi_x));
+            if (page.dpi_y) TIFFSetField(tif.get(), TIFFTAG_YRESOLUTION, static_cast<float>(*page.dpi_y));
+            if (page.dpi_x || page.dpi_y) TIFFSetField(tif.get(), TIFFTAG_RESOLUTIONUNIT, RESUNIT_INCH);
             for (std::uint32_t y = 0; y < p.height; ++y) {
                 auto* row = const_cast<std::uint8_t*>(p.bytes.data() + static_cast<std::size_t>(y) * p.stride);
                 if (TIFFWriteScanline(tif.get(), row, y, 0) < 0) {
