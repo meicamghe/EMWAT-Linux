@@ -81,6 +81,58 @@ int main() {
     assert(truncated_tiff_rejected);
     std::filesystem::remove(truncated_tif);
 
+    // Corrupt the next-IFD pointer after the first valid page. The loader
+    // must not silently return page one as though the document ended cleanly.
+    const auto broken_chain_tif = root / "emwat-codec-test-broken-ifd-chain.tiff";
+    {
+        std::ifstream input(tif, std::ios::binary | std::ios::ate);
+        assert(input.good());
+        const auto length = input.tellg();
+        assert(length > 16);
+        std::vector<std::uint8_t> data(static_cast<std::size_t>(length));
+        input.seekg(0);
+        input.read(reinterpret_cast<char*>(data.data()), length);
+        assert(input.good());
+        const bool little_endian = data[0] == 'I' && data[1] == 'I';
+        assert(little_endian || (data[0] == 'M' && data[1] == 'M'));
+        const auto read16 = [&](std::size_t offset) -> std::uint16_t {
+            assert(offset + 2 <= data.size());
+            if (little_endian)
+                return static_cast<std::uint16_t>(data[offset] | (data[offset + 1] << 8));
+            return static_cast<std::uint16_t>((data[offset] << 8) | data[offset + 1]);
+        };
+        const auto read32 = [&](std::size_t offset) -> std::uint32_t {
+            assert(offset + 4 <= data.size());
+            if (little_endian)
+                return static_cast<std::uint32_t>(data[offset]) |
+                    (static_cast<std::uint32_t>(data[offset + 1]) << 8) |
+                    (static_cast<std::uint32_t>(data[offset + 2]) << 16) |
+                    (static_cast<std::uint32_t>(data[offset + 3]) << 24);
+            return (static_cast<std::uint32_t>(data[offset]) << 24) |
+                (static_cast<std::uint32_t>(data[offset + 1]) << 16) |
+                (static_cast<std::uint32_t>(data[offset + 2]) << 8) |
+                static_cast<std::uint32_t>(data[offset + 3]);
+        };
+        const auto first_ifd = static_cast<std::size_t>(read32(4));
+        const auto entry_count = static_cast<std::size_t>(read16(first_ifd));
+        const auto next_ifd_offset = first_ifd + 2 + entry_count * 12;
+        assert(next_ifd_offset + 4 <= data.size());
+        constexpr std::uint32_t invalid_ifd = 0xFFFFFFF0U;
+        for (unsigned i = 0; i < 4; ++i) {
+            const auto shift = little_endian ? i * 8 : (3 - i) * 8;
+            data[next_ifd_offset + i] = static_cast<std::uint8_t>(invalid_ifd >> shift);
+        }
+        std::ofstream output(broken_chain_tif, std::ios::binary);
+        output.write(reinterpret_cast<const char*>(data.data()),
+                     static_cast<std::streamsize>(data.size()));
+        assert(output.good());
+    }
+    bool broken_chain_rejected = false;
+    try { (void)load_image_file(broken_chain_tif); }
+    catch (const CodecError&) { broken_chain_rejected = true; }
+    assert(broken_chain_rejected);
+    std::filesystem::remove(broken_chain_tif);
+
     const auto gray_tif = root / "emwat-codec-test-gray.tiff";
     const ImagePage gray_page{PixelBuffer{3, 2, 3, PixelFormat::Gray8,
         {0, 32, 64, 128, 192, 255}}, 200.0, 180.0};
