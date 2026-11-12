@@ -1,6 +1,5 @@
 #include "emwat/scanner.hpp"
 
-#include <cassert>
 #include <stdexcept>
 #include <utility>
 
