@@ -547,3 +547,18 @@
 - مشاهده‌نشدن درخواست جدید هنگام ویرایش یا Ctrl+S فقط به همین نشست محدود است؛ timer/autosave یا مسیرهای دیگر هنوز بررسی نشده‌اند.
 - جزئیات و محدودیت استنباط در [HTTP-LOCAL-API-ANALYSIS.md](HTTP-LOCAL-API-ANALYSIS.md) ثبت شد.
 - **گام بعد:** مقایسه ساختاری Request و Response کامل `EditWordDocument` پس از حذف کامل اطلاعات نامه، تصاویر/امضاها، Cookie، Authorization و tokenها؛ سپس اتصال پاسخ runtime به مدل Wordresponsexml شامل Status، ErrorCode و Returntypes.
+
+
+## Run 96 — decode ساختار XML سند قابل ویرایش (2026-11-12)
+
+- کاربر مقدار کدشده `wordConfig` در Response مربوط به `EditWordDocument` را به‌صورت محلی decode کرد و XML داخلی را بررسی کرد.
+- ریشه سند `word-document status="edit"` بود؛ permissionهای نمونه: چاپ غیرفعال، کپی فعال و ذخیره فعال.
+- ساختار سطح بالا شامل `settings`، `fields`، `optional-attributes` و `requested-types` بود.
+- `requested-types` مقدار `application/msword` داشت؛ این فقط MIME type اعلام‌شده است و قالب باینری واقعی خروجی را اثبات نمی‌کند.
+- encodingهای مستقیم مشاهده‌شده در metadata فیلدها: CDATA ساده، `urlencoded` برای برخی فیلدهای متنی، و `base64` همراه `image/*` برای فیلدهای تصویری.
+- خانواده‌های فیلد شامل metadata تولیدکننده/فرستنده، گیرندگان، امضاکنندگان با indexهای 0 تا 19، امضاها، QR و barcode است. وجود 20 slot به معنی پر بودن همه آن‌ها نیست.
+- `optional-attributes` شامل `tokenizedReceivers` با type برابر `compInfo` مشاهده شد.
+- نکته کلیدی: در همین XML decodeشده عنصر `<body>` وجود نداشت، در حالی که RTTI مدل request یک property به نام Body دارد. محل بدنه نامه و علت نبودن آن در این نمونه همچنان نامشخص است.
+- XML ارسالی شامل مقادیر واقعی مکاتبه بود؛ فقط ساختار و نام فیلدها ثبت شدند و هیچ متن، نام، شناسه، تصویر، Base64 یا token در مخزن اضافه نشد.
+- اسناد [WORD-DOCUMENT-PROTOCOL-ANALYSIS.md](WORD-DOCUMENT-PROTOCOL-ANALYSIS.md) و [HTTP-LOCAL-API-ANALYSIS.md](HTTP-LOCAL-API-ANALYSIS.md) با جزئیات پاک‌سازی‌شده به‌روزرسانی شدند.
+- **گام بعد:** ردیابی در باینری برای مشخص‌کردن منبع Body در `LoadDocument/PrepareDocument` و ترتیب واقعی lifecycle بین autosave، BeforeClose و serialization پاسخ. تا پیش از اثبات، schema پاسخ و قالب فایل خروجی hard-code نمی‌شود.
