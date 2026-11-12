@@ -132,7 +132,7 @@ int main() {
     {
         TIFF* raw = TIFFOpen(unassociated_tif.string().c_str(), "w");
         assert(raw != nullptr);
-        TIFFSetField(raw, TIFFTAG_IMAGEWIDTH, 2);
+        TIFFSetField(raw, TIFFTAG_IMAGEWIDTH, 3);
         TIFFSetField(raw, TIFFTAG_IMAGELENGTH, 1);
         TIFFSetField(raw, TIFFTAG_SAMPLESPERPIXEL, 4);
         TIFFSetField(raw, TIFFTAG_BITSPERSAMPLE, 8);
@@ -142,7 +142,8 @@ int main() {
         TIFFSetField(raw, TIFFTAG_COMPRESSION, COMPRESSION_NONE);
         std::uint16_t unassociated_extra = EXTRASAMPLE_UNASSALPHA;
         TIFFSetField(raw, TIFFTAG_EXTRASAMPLES, static_cast<std::uint16_t>(1), &unassociated_extra);
-        std::uint8_t unassociated_row[] = {128, 64, 32, 128, 20, 40, 60, 255};
+        // Unassociated alpha must preserve source RGB exactly, even at alpha=1.
+        std::uint8_t unassociated_row[] = {7, 113, 241, 1, 128, 64, 32, 128, 20, 40, 60, 255};
         assert(TIFFWriteScanline(raw, unassociated_row, 0, 0) >= 0);
         TIFFClose(raw);
     }
@@ -150,7 +151,7 @@ int main() {
     assert(unassociated_pages.size() == 1);
     assert(unassociated_pages[0].pixels.format == PixelFormat::RGBA8);
     assert((unassociated_pages[0].pixels.bytes ==
-        std::vector<std::uint8_t>{128, 64, 32, 128, 20, 40, 60, 255}));
+        std::vector<std::uint8_t>{7, 113, 241, 1, 128, 64, 32, 128, 20, 40, 60, 255}));
     std::filesystem::remove(unassociated_tif);
 
 
