@@ -5,6 +5,7 @@
 #endif
 #include <cassert>
 #include <filesystem>
+#include <fstream>
 #include <vector>
 
 using namespace emwat;
@@ -19,6 +20,7 @@ int main() {
     const auto png = root / "emwat-codec-test.png";
     const auto jpg = root / "emwat-codec-test.jpg";
     const auto tif = root / "emwat-codec-test.tiff";
+    const auto bad_jpg = root / "emwat-codec-test-corrupt.jpg";
 
     save_image_file({page(1)}, png);
     auto png_pages = load_image_file(png);
@@ -31,6 +33,15 @@ int main() {
     auto jpg_pages = load_image_file(jpg);
     assert(jpg_pages.size() == 1);
     assert(jpg_pages[0].pixels.width == 2 && jpg_pages[0].pixels.height == 2);
+
+    {
+        std::ofstream out(bad_jpg, std::ios::binary);
+        out << "this is not a JPEG stream";
+    }
+    bool corrupt_rejected = false;
+    try { (void)load_image_file(bad_jpg); }
+    catch (const CodecError&) { corrupt_rejected = true; }
+    assert(corrupt_rejected);
 
     save_image_file({page(1), page(20)}, tif);
     auto tif_pages = load_image_file(tif);
@@ -48,5 +59,6 @@ int main() {
     std::filesystem::remove(png);
     std::filesystem::remove(jpg);
     std::filesystem::remove(tif);
+    std::filesystem::remove(bad_jpg);
     return 0;
 }
