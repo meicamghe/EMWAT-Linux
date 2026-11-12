@@ -190,6 +190,24 @@ jobs:
           python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004F0174 bpl-analysis/EmwatMethods-callers-show-editor.md
           python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004EF138 bpl-analysis/EmwatMethods-callers-rotate90.md
           python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004EF240 bpl-analysis/EmwatMethods-callers-notify-editor.md
+      - name: Trace image-context and GEAR operation helpers
+        run: |
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004AFE78 bpl-analysis/EmwatMethods-gear-helper-4AFE78.md 100 ret
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x00404614 bpl-analysis/EmwatMethods-gear-helper-404614.md 100 ret
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004AFEC8 bpl-analysis/EmwatMethods-gear-helper-4AFEC8.md 100 ret
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004EF0E4 bpl-analysis/EmwatMethods-gear-helper-4EF0E4.md 120 ret
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004EEEC4 bpl-analysis/EmwatMethods-gear-helper-4EEEC4.md 120 ret
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004AFE90 bpl-analysis/EmwatMethods-gear-helper-4AFE90.md 100 ret
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004AFEC0 bpl-analysis/EmwatMethods-gear-helper-4AFEC0.md 80 ret
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004AFEB8 bpl-analysis/EmwatMethods-gear-helper-4AFEB8.md 80 ret
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004AFF18 bpl-analysis/EmwatMethods-gear-helper-4AFF18.md 100 ret
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004035D8 bpl-analysis/EmwatMethods-gear-helper-4035D8.md 100 ret
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x00401398 bpl-analysis/EmwatMethods-gear-helper-401398.md 80 ret
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x00404F6C bpl-analysis/EmwatMethods-gear-helper-404F6C.md 80 ret
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004EF0E4 bpl-analysis/EmwatMethods-callers-4EF0E4.md
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004EEEC4 bpl-analysis/EmwatMethods-callers-4EEEC4.md
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004AFE90 bpl-analysis/EmwatMethods-callers-4AFE90.md
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004AFF18 bpl-analysis/EmwatMethods-callers-4AFF18.md
       - uses: actions/upload-artifact@v4
         with:
           name: emwat-bpl-static-analysis
@@ -337,5 +355,21 @@ jobs:
             bpl-analysis/EmwatMethods-callers-show-editor.md
             bpl-analysis/EmwatMethods-callers-rotate90.md
             bpl-analysis/EmwatMethods-callers-notify-editor.md
+            bpl-analysis/EmwatMethods-gear-helper-4AFE78.md
+            bpl-analysis/EmwatMethods-gear-helper-404614.md
+            bpl-analysis/EmwatMethods-gear-helper-4AFEC8.md
+            bpl-analysis/EmwatMethods-gear-helper-4EF0E4.md
+            bpl-analysis/EmwatMethods-gear-helper-4EEEC4.md
+            bpl-analysis/EmwatMethods-gear-helper-4AFE90.md
+            bpl-analysis/EmwatMethods-gear-helper-4AFEC0.md
+            bpl-analysis/EmwatMethods-gear-helper-4AFEB8.md
+            bpl-analysis/EmwatMethods-gear-helper-4AFF18.md
+            bpl-analysis/EmwatMethods-gear-helper-4035D8.md
+            bpl-analysis/EmwatMethods-gear-helper-401398.md
+            bpl-analysis/EmwatMethods-gear-helper-404F6C.md
+            bpl-analysis/EmwatMethods-callers-4EF0E4.md
+            bpl-analysis/EmwatMethods-callers-4EEEC4.md
+            bpl-analysis/EmwatMethods-callers-4AFE90.md
+            bpl-analysis/EmwatMethods-callers-4AFF18.md
             bpl-analysis/EmwatMethods-gscan-show-crop-rectangle.md
           if-no-files-found: error
