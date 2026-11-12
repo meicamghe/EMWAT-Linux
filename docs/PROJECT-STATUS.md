@@ -489,3 +489,15 @@
 - سند تفصیلی [PRODUCT-WORKFLOW-ANALYSIS.md](PRODUCT-WORKFLOW-ANALYSIS.md) ایجاد شد و README با هدف واقعی پروژه و اولویت‌های جدید هم‌راستا شد.
 - **وضعیت پیاده‌سازی:** این مرحله مستندسازی و بازتنظیم اولویت‌هاست؛ هنوز سرویس Linux سازگار با پروتکل واقعی الماس گام یا چرخه بازگشت سند پیاده‌سازی نشده است.
 - **گام بعد:** تحلیل دقیق متدهای قابل فراخوانی در EmwatMethods.bpl1 و اتصال نام/آرگومان/نوع خروجی آن‌ها به bridge؛ سپس طراحی آزمایش runtime امن با یک نامه ساختگی.
+
+
+## Run 91 — شناسایی connector و مدل XML گردش‌کار Word (2026-11-12)
+
+- تحلیل RTTI/symbolهای EmwatMethods.bpl1 کلاس Emwatconnector.TEditWordDocument.PerformMethod، dispatcher عمومی Emwatmethod.TEmwatMethod.Invoke/PerformMethod و Wordviewer.OpenDoc را نشان داد.
+- مدل request در Wordrequestxml دارای Worddocument با Body، Fields، Optionalattributes، Permission، Requestedtypes، Settings، Status و ViewMode است؛ Field دارای Id، Concator، Mimetype، Separator و Encryption؛ Style دارای Align، FontName، FontSize، FontStyle و Valign است.
+- مدل response در Wordresponsexml دارای Status، ErrorCode و Returntypes است؛ نوع return نیز Encryption و Mimetype دارد.
+- در Wordviewer متدهای LoadDocument، PrepareDocument، FillField، FillImageField، AddImagesToDoc، SetFieldValue، GetFieldValue و دیگر helperهای سند دیده شدند.
+- وجود SilentSaveEmwatDoc، OnTmrAutoSave، WordAppDocumentBeforeClose و WordAppDocumentBeforeSave نشان می‌دهد lifecycle ذخیره‌سازی/بسته‌شدن در EMWAT مدیریت می‌شود؛ اما ارسال قطعی تغییرات ذخیره‌نشده یا زمان دقیق بازگشت به الماس گام هنوز runtime-validated نیست.
+- connectorهای TEditExcelWorkBook، TCompareWordDocument، TFaxDocument، TImageEdition و TScanDocument نیز در RTTI دیده شدند؛ این موضوع حفظ معماری چندماژوله Word/Excel/scan/image/fax را تقویت می‌کند.
+- سند [WORD-DOCUMENT-PROTOCOL-ANALYSIS.md](WORD-DOCUMENT-PROTOCOL-ANALYSIS.md) ایجاد و به README و تحلیل گردش‌کار اضافه شد.
+- **گام بعد:** اتصال این نمادها به handlerهای واقعی و استخراج schema XML/dispatch از بدنه کد/نمونه runtime؛ سپس ثبت trace پاک‌سازی‌شده از یک نامه آزمایشی.
