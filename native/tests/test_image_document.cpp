@@ -1,9 +1,14 @@
 #include "emwat/image_document.hpp"
 
-#include <cassert>
 #include <cstdint>
 #include <stdexcept>
 #include <vector>
+
+// Keep assertions active in Release builds so the test executable really tests.
+#ifdef NDEBUG
+#undef NDEBUG
+#endif
+#include <cassert>
 
 using namespace emwat;
 
