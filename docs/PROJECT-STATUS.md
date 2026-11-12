@@ -534,3 +534,16 @@
 - این شاهد dispatch متد EditWordDocument و قالب لایه بیرونی/درونی را تقویت می‌کند، اما نمونه موجود حالت view/protected است و چرخه ویرایش/ذخیره را اثبات نمی‌کند.
 - جزئیات ساختاری بدون محتوای نامه، تصاویر، کوکی‌ها یا tokenها در HTTP-LOCAL-API-ANALYSIS.md ثبت شد. فایل خام HAR به مخزن اضافه نشد.
 - **گام بعد:** capture کامل و پاک‌سازی‌شده از یک نامه قابل ویرایش، سپس تغییر متن، بستن سند و مقایسه request/responseها برای کشف lifecycle ذخیره و بازگشت داده.
+
+
+## Run 95 — مشاهده runtime پاسخ EditWordDocument هنگام بستن Word (2026-11-12)
+
+- در Firefox، کاربر هنگام باز بودن نامه قابل ویرایش، یک POST به `127.0.0.1:1984` با `Content-Type: text/plain;charset=UTF-8` و query برابر `invoke=5208` مشاهده کرد.
+- تغییر متن و فشردن `Ctrl+S` درخواست تازه‌ای به پورت 1984 ایجاد نکرد.
+- هنگام بستن Word، POST به همان endpoint و با همان مقدار گزارش‌شده `invoke=5208` مشاهده شد؛ status برابر HTTP 200 بود و Response دارای XML بود.
+- ابتدای Response شامل XML declaration، ریشه `<emwat version="1.0">`، متد `EditWordDocument` و پارامتر `wordConfig` بود.
+- کاربر در ادامه XML، تگ‌های status/ErrorCode/Returntypes/Error را پیدا نکرد؛ محتوای کامل و ساختار پاسخ هنوز استخراج نشده است.
+- **نتیجه محتاطانه:** چرخه بستن سند با یک پاسخ HTTP 200 از نوع XML همراه است. هنوز ثابت نشده که پاسخ حاوی متن ویرایش‌شده یا تأیید ذخیره نهایی در الماس گام است. HTTP 200 به‌تنهایی موفقیت ذخیره را اثبات نمی‌کند.
+- مشاهده‌نشدن درخواست جدید هنگام ویرایش یا Ctrl+S فقط به همین نشست محدود است؛ timer/autosave یا مسیرهای دیگر هنوز بررسی نشده‌اند.
+- جزئیات و محدودیت استنباط در [HTTP-LOCAL-API-ANALYSIS.md](HTTP-LOCAL-API-ANALYSIS.md) ثبت شد.
+- **گام بعد:** مقایسه ساختاری Request و Response کامل `EditWordDocument` پس از حذف کامل اطلاعات نامه، تصاویر/امضاها، Cookie، Authorization و tokenها؛ سپس اتصال پاسخ runtime به مدل Wordresponsexml شامل Status، ErrorCode و Returntypes.
