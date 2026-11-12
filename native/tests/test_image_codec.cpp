@@ -66,6 +66,18 @@ int main() {
     assert(tif_pages[1].pixels.bytes == page(20).pixels.bytes);
     assert(tif_pages[0].dpi_x.has_value());
 
+    const auto gray_tif = root / "emwat-codec-test-gray.tiff";
+    const ImagePage gray_page{PixelBuffer{3, 2, 3, PixelFormat::Gray8,
+        {0, 32, 64, 128, 192, 255}}, 200.0, 180.0};
+    save_image_file({gray_page}, gray_tif);
+    const auto gray_pages = load_image_file(gray_tif);
+    assert(gray_pages.size() == 1);
+    assert(gray_pages[0].pixels.format == PixelFormat::Gray8);
+    assert(gray_pages[0].pixels.bytes == gray_page.pixels.bytes);
+    assert(gray_pages[0].dpi_x.has_value() && std::abs(*gray_pages[0].dpi_x - 200.0) < 0.1);
+    assert(gray_pages[0].dpi_y.has_value() && std::abs(*gray_pages[0].dpi_y - 180.0) < 0.1);
+    std::filesystem::remove(gray_tif);
+
     const auto rgba_tif = root / "emwat-codec-test-alpha.tiff";
     const ImagePage rgba_page{PixelBuffer{2, 2, 8, PixelFormat::RGBA8,
         {0, 0, 0, 0, 0, 255, 0, 64, 0, 0, 255, 128, 12, 34, 56, 255}}, 240.0, 240.0};
@@ -83,6 +95,7 @@ int main() {
     std::filesystem::remove(png);
     std::filesystem::remove(jpg);
     std::filesystem::remove(tif);
+    std::filesystem::remove(gray_tif);
     std::filesystem::remove(bad_jpg);
     std::filesystem::remove(bad_tif);
     return 0;
