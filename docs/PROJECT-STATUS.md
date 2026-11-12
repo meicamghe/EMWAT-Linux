@@ -637,3 +637,12 @@
 - `AddImagesToDoc` در `0x004C0410` از interface مربوط به XML field داده می‌خواند و در مسیر شرطی `GetCaptionItemFont` را فراخوانی می‌کند؛ این مسیر به پردازش تصویر/caption مربوط است، نه اثبات ذخیره متن نامه.
 - در artifact این اجرا بدنه مستقلی برای `GetDocFieldIndex` و `FillImgFldsForPrint` match نشد؛ جزئیات آن‌ها همچنان باز است.
 - هنوز serializer متن Body یا سازوکار قطعی ذخیره نهایی در Almas Gam پیدا نشده است. جزئیات و محدودیت‌ها در `WORD-DOCUMENT-PROTOCOL-ANALYSIS.md` ثبت شده‌اند.
+
+
+### تکمیل schema پاسخ Word از RTTI (2026-11-12)
+
+- گزارش نمادهای پروژه interface IXMLResponseWordType را با propertyهای Status، ErrorCode و Returntypes نشان می‌دهد.
+- IXMLReturntypesType دارای Type و IXMLBodyType دارای Encryption است.
+- IXMLWorddocumentType getter مربوط به Body و propertyهای Fields، Status، Settings، Permission، Requestedtypes و Optionalattributes دارد.
+- این شواهد وجود Body و مدل response را در schema تأیید می‌کند، اما مقداردهی Body، قالب واقعی Returntypes و نقطه serializer هنوز مشخص نیست. نبودن body در نمونه decodeشده کاربر فقط به همان نمونه محدود است.
+- جزئیات در WORD-DOCUMENT-PROTOCOL-ANALYSIS.md ثبت شد؛ مرحله بعد اتصال این interfaceها به بدنه اجرایی TEditWordDocument.PerformMethod و ParamsToXML است.
