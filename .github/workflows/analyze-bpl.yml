@@ -223,6 +223,11 @@ jobs:
           python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004D23D8 bpl-analysis/EmwatMethods-callers-silent-save.md
           python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004B7430 bpl-analysis/EmwatMethods-callers-word-opendoc.md
           python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004B7724 bpl-analysis/EmwatMethods-callers-word-load-document.md
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004BC980 bpl-analysis/EmwatMethods-word-helper-4BC980.md 240 ret
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004BCA88 bpl-analysis/EmwatMethods-word-helper-4BCA88-extended.md 360 ret
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004BB81C bpl-analysis/EmwatMethods-callers-get-doc-field-name.md
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004C19C0 bpl-analysis/EmwatMethods-callers-get-caption-item-font.md
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004BC980 bpl-analysis/EmwatMethods-callers-word-helper-4BC980.md
       - uses: actions/upload-artifact@v4
         with:
           name: emwat-bpl-static-analysis
@@ -400,4 +405,9 @@ jobs:
             bpl-analysis/EmwatMethods-callers-silent-save.md
             bpl-analysis/EmwatMethods-callers-word-opendoc.md
             bpl-analysis/EmwatMethods-callers-word-load-document.md
+            bpl-analysis/EmwatMethods-word-helper-4BC980.md
+            bpl-analysis/EmwatMethods-word-helper-4BCA88-extended.md
+            bpl-analysis/EmwatMethods-callers-get-doc-field-name.md
+            bpl-analysis/EmwatMethods-callers-get-caption-item-font.md
+            bpl-analysis/EmwatMethods-callers-word-helper-4BC980.md
           if-no-files-found: error
