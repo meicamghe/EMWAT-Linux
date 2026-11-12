@@ -106,6 +106,14 @@ jobs:
       - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004042AC bpl-analysis/EmwatMethods-remove-temp-files-helper-4042AC.md 60 ret
       - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x00404E34 bpl-analysis/EmwatMethods-remove-temp-files-helper-404E34.md 60 ret
       - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x0044ACDF bpl-analysis/EmwatMethods-remove-temp-files-tail.md 100 ret
+      - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x0044ABE4 bpl-analysis/EmwatMethods-modal-helper-entry.md 180 ret
+      - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004F23C0 bpl-analysis/EmwatMethods-scancommand-dialog-caller.md 100 ret
+      - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004EDAF0 bpl-analysis/EmwatMethods-scanerror-dialog-caller.md 80 ret
+      - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004F18A0 bpl-analysis/EmwatMethods-togglecrop-dialog-caller.md 100 ret
+      - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004A0240 bpl-analysis/EmwatMethods-tiff-dialog-caller.md 120 ret
+      - run: python tools/inspect_pe_va.py analysis-input/EmwatMethods.bpl1 0x004F1924 --before 0x10 --after 0x70 > bpl-analysis/EmwatMethods-modal-togglecrop-arguments.md
+      - run: python tools/inspect_pe_va.py analysis-input/EmwatMethods.bpl1 0x004EDB80 --before 0x10 --after 0x70 > bpl-analysis/EmwatMethods-modal-scanerror-arguments.md
+      - run: python tools/inspect_pe_va.py analysis-input/EmwatMethods.bpl1 0x004A08E4 --before 0x10 --after 0x70 > bpl-analysis/EmwatMethods-modal-tiff-arguments.md
       - run: python tools/inspect_pe_va.py analysis-input/EmwatMethods.bpl1 0x0062FE28 --before 0x50 --after 0x90 > bpl-analysis/EmwatMethods-remove-temp-files-class-global.md
       - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x0044AC60 bpl-analysis/EmwatMethods-remove-temp-files-component-dispatch.md 80 ret
       - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x0044ACB7 bpl-analysis/EmwatMethods-remove-temp-files-result-tail.md 80 ret
@@ -245,6 +253,14 @@ jobs:
             bpl-analysis/EmwatMethods-remove-temp-files-helper-401230.md
             bpl-analysis/EmwatMethods-callers-remove-temp-files.md
             bpl-analysis/EmwatMethods-remove-temp-files-class-global.md
+            bpl-analysis/EmwatMethods-modal-helper-entry.md
+            bpl-analysis/EmwatMethods-scancommand-dialog-caller.md
+            bpl-analysis/EmwatMethods-scanerror-dialog-caller.md
+            bpl-analysis/EmwatMethods-togglecrop-dialog-caller.md
+            bpl-analysis/EmwatMethods-tiff-dialog-caller.md
+            bpl-analysis/EmwatMethods-modal-togglecrop-arguments.md
+            bpl-analysis/EmwatMethods-modal-scanerror-arguments.md
+            bpl-analysis/EmwatMethods-modal-tiff-arguments.md
             bpl-analysis/EmwatMethods-remove-temp-files-component-dispatch.md
             bpl-analysis/EmwatMethods-remove-temp-files-result-tail.md
             bpl-analysis/EmwatMethods-remove-temp-files-scanerror-caller.md
