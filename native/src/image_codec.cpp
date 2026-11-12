@@ -7,6 +7,8 @@
 #include <algorithm>
 #include <cctype>
 #include <cstdio>
+#include <cmath>
+#include <limits>
 #include <cstdlib>
 #include <cstring>
 #include <memory>
