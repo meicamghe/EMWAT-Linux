@@ -169,12 +169,27 @@ jobs:
           python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004EFA96 bpl-analysis/EmwatMethods-scanpages-gearp-callsite.md 160 ret
           python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x0061E3DF bpl-analysis/EmwatMethods-scansource-showcrop-callsite.md 120 ret
           python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004EFF83 bpl-analysis/EmwatMethods-scansource-setcurrentpage-callsite.md 120 ret
-      - name: Trace full scanner orchestration methods
+      - name: Trace scanner and editor orchestration methods
         run: |
           python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x0061CEF4 bpl-analysis/EmwatMethods-preview-selectscanner-full.md 420 ret
           python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004EF9CC bpl-analysis/EmwatMethods-gearp-selectscanner-full.md 480 ret
           python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x0061D3C8 bpl-analysis/EmwatMethods-preview-showcrop-full.md 80 ret
           python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004EFF6C bpl-analysis/EmwatMethods-gearp-setcurrentpage-full.md 80 ret
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004EEC7C bpl-analysis/EmwatMethods-gearp-constructor-full.md 260 ret
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004F0174 bpl-analysis/EmwatMethods-gearp-show-editor-full.md 140 ret
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004EFF94 bpl-analysis/EmwatMethods-gearp-set-editor-form-full.md 220 ret
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004EF138 bpl-analysis/EmwatMethods-gearp-rotate90-full.md 100 ret
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004EF178 bpl-analysis/EmwatMethods-gearp-rotate-left-full.md 100 ret
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004EF1A4 bpl-analysis/EmwatMethods-gearp-rotate-right-full.md 80 ret
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004EEDB4 bpl-analysis/EmwatMethods-gearp-crop-full.md 120 ret
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004EF1DC bpl-analysis/EmwatMethods-gearp-load-page-full.md 140 ret
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004EF240 bpl-analysis/EmwatMethods-gearp-notify-editor-full.md 300 ret
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004EF510 bpl-analysis/EmwatMethods-gearp-save-page-full.md 360 ret
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004EF714 bpl-analysis/EmwatMethods-gearp-save-to-file-full.md 360 ret
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004EF8C0 bpl-analysis/EmwatMethods-gearp-scan-to-file-full.md 260 ret
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004F0174 bpl-analysis/EmwatMethods-callers-show-editor.md
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004EF138 bpl-analysis/EmwatMethods-callers-rotate90.md
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004EF240 bpl-analysis/EmwatMethods-callers-notify-editor.md
       - uses: actions/upload-artifact@v4
         with:
           name: emwat-bpl-static-analysis
@@ -303,5 +318,24 @@ jobs:
             bpl-analysis/EmwatMethods-scanpages-gearp-callsite.md
             bpl-analysis/EmwatMethods-scansource-showcrop-callsite.md
             bpl-analysis/EmwatMethods-scansource-setcurrentpage-callsite.md
+            bpl-analysis/EmwatMethods-preview-selectscanner-full.md
+            bpl-analysis/EmwatMethods-gearp-selectscanner-full.md
+            bpl-analysis/EmwatMethods-preview-showcrop-full.md
+            bpl-analysis/EmwatMethods-gearp-setcurrentpage-full.md
+            bpl-analysis/EmwatMethods-gearp-constructor-full.md
+            bpl-analysis/EmwatMethods-gearp-show-editor-full.md
+            bpl-analysis/EmwatMethods-gearp-set-editor-form-full.md
+            bpl-analysis/EmwatMethods-gearp-rotate90-full.md
+            bpl-analysis/EmwatMethods-gearp-rotate-left-full.md
+            bpl-analysis/EmwatMethods-gearp-rotate-right-full.md
+            bpl-analysis/EmwatMethods-gearp-crop-full.md
+            bpl-analysis/EmwatMethods-gearp-load-page-full.md
+            bpl-analysis/EmwatMethods-gearp-notify-editor-full.md
+            bpl-analysis/EmwatMethods-gearp-save-page-full.md
+            bpl-analysis/EmwatMethods-gearp-save-to-file-full.md
+            bpl-analysis/EmwatMethods-gearp-scan-to-file-full.md
+            bpl-analysis/EmwatMethods-callers-show-editor.md
+            bpl-analysis/EmwatMethods-callers-rotate90.md
+            bpl-analysis/EmwatMethods-callers-notify-editor.md
             bpl-analysis/EmwatMethods-gscan-show-crop-rectangle.md
           if-no-files-found: error
