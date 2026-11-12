@@ -311,31 +311,95 @@ std::vector<ImagePage> load_image_file(const std::filesystem::path& path) {
             const bool is_gray8 = !has_alpha && samples_per_pixel == 1 &&
                 bits_per_sample == 8 &&
                 (photometric == PHOTOMETRIC_MINISBLACK || photometric == PHOTOMETRIC_MINISWHITE);
-            const auto pixel_count = checked_image_bytes(width, height, 1, "TIFF");
-            if (pixel_count > kMaxDecodedBytes / 7) {
-                throw CodecError("TIFF page exceeds the 1 GiB decode working-set limit");
-            }
-            std::vector<std::uint32_t> raster(pixel_count);
-            if (!TIFFReadRGBAImageOriented(tif.get(), width, height, raster.data(), ORIENTATION_TOPLEFT, 0)) {
-                throw CodecError("TIFF page decode failed");
-            }
+            std::uint16_t planar = PLANARCONFIG_CONTIG;
+            std::uint16_t orientation = ORIENTATION_TOPLEFT;
+            std::uint16_t sample_format = SAMPLEFORMAT_UINT;
+            TIFFGetFieldDefaulted(tif.get(), TIFFTAG_PLANARCONFIG, &planar);
+            TIFFGetFieldDefaulted(tif.get(), TIFFTAG_ORIENTATION, &orientation);
+            TIFFGetFieldDefaulted(tif.get(), TIFFTAG_SAMPLEFORMAT, &sample_format);
+            const bool simple_alpha = has_alpha && extra_count == 1 && extra_types &&
+                (extra_types[0] == EXTRASAMPLE_ASSOCALPHA || extra_types[0] == EXTRASAMPLE_UNASSALPHA);
+            const bool direct_rgb = !is_gray8 && photometric == PHOTOMETRIC_RGB &&
+                bits_per_sample == 8 && sample_format == SAMPLEFORMAT_UINT &&
+                planar == PLANARCONFIG_CONTIG &&
+                ((!has_alpha && samples_per_pixel == 3) ||
+                 (simple_alpha && samples_per_pixel == 4));
             const std::size_t channels = has_alpha ? 4 : (is_gray8 ? 1 : 3);
-            std::vector<std::uint8_t> bytes(checked_image_bytes(width, height, channels, "TIFF"));
-            for (std::size_t i = 0; i < raster.size(); ++i) {
-                if (is_gray8) {
-                    bytes[i] = TIFFGetR(raster[i]);
-                    continue;
+            std::uint32_t output_width = width;
+            std::uint32_t output_height = height;
+            if (orientation >= ORIENTATION_LEFTTOP && orientation <= ORIENTATION_LEFTBOT) {
+                output_width = height;
+                output_height = width;
+            }
+            std::vector<std::uint8_t> bytes(checked_image_bytes(output_width, output_height, channels, "TIFF"));
+            if (direct_rgb) {
+                const auto source_row_bytes = static_cast<std::size_t>(width) * samples_per_pixel;
+                if (TIFFScanlineSize(tif.get()) < static_cast<tmsize_t>(source_row_bytes))
+                    throw CodecError("invalid TIFF scanline size");
+                std::vector<std::uint8_t> row(static_cast<std::size_t>(TIFFScanlineSize(tif.get())));
+                for (std::uint32_t y = 0; y < height; ++y) {
+                    if (TIFFReadScanline(tif.get(), row.data(), y, 0) < 0)
+                        throw CodecError("TIFF scanline decode failed");
+                    for (std::uint32_t x = 0; x < width; ++x) {
+                        std::uint32_t dx = x, dy = y;
+                        switch (orientation) {
+                        case ORIENTATION_TOPLEFT: break;
+                        case ORIENTATION_TOPRIGHT: dx = width - 1 - x; break;
+                        case ORIENTATION_BOTRIGHT: dx = width - 1 - x; dy = height - 1 - y; break;
+                        case ORIENTATION_BOTLEFT: dy = height - 1 - y; break;
+                        case ORIENTATION_LEFTTOP: dx = y; dy = x; break;
+                        case ORIENTATION_RIGHTTOP: dx = height - 1 - y; dy = x; break;
+                        case ORIENTATION_RIGHTBOT: dx = height - 1 - y; dy = width - 1 - x; break;
+                        case ORIENTATION_LEFTBOT: dx = y; dy = width - 1 - x; break;
+                        default: throw CodecError("unsupported TIFF orientation");
+                        }
+                        const auto src = static_cast<std::size_t>(x) * samples_per_pixel;
+                        const auto dst = (static_cast<std::size_t>(dy) * output_width + dx) * channels;
+                        auto red = row[src];
+                        auto green = row[src + 1];
+                        auto blue = row[src + 2];
+                        if (has_alpha && extra_types[0] == EXTRASAMPLE_ASSOCALPHA) {
+                            const auto alpha = row[src + 3];
+                            const auto unassociate = [alpha](std::uint8_t component) -> std::uint8_t {
+                                if (alpha == 0) return 0;
+                                const auto value = (static_cast<unsigned int>(component) * 255U + alpha / 2U) / alpha;
+                                return static_cast<std::uint8_t>(std::min(value, 255U));
+                            };
+                            red = unassociate(red);
+                            green = unassociate(green);
+                            blue = unassociate(blue);
+                        }
+                        bytes[dst] = red;
+                        bytes[dst + 1] = green;
+                        bytes[dst + 2] = blue;
+                        if (has_alpha) bytes[dst + 3] = row[src + 3];
+                    }
                 }
-                const auto alpha = TIFFGetA(raster[i]);
-                const auto unassociate = [alpha](std::uint8_t component) -> std::uint8_t {
-                    if (alpha == 0) return 0;
-                    const auto value = (static_cast<unsigned int>(component) * 255U + alpha / 2U) / alpha;
-                    return static_cast<std::uint8_t>(std::min(value, 255U));
-                };
-                bytes[i * channels] = has_alpha ? unassociate(TIFFGetR(raster[i])) : TIFFGetR(raster[i]);
-                bytes[i * channels + 1] = has_alpha ? unassociate(TIFFGetG(raster[i])) : TIFFGetG(raster[i]);
-                bytes[i * channels + 2] = has_alpha ? unassociate(TIFFGetB(raster[i])) : TIFFGetB(raster[i]);
-                if (has_alpha) bytes[i * channels + 3] = alpha;
+            } else {
+                const auto pixel_count = checked_image_bytes(width, height, 1, "TIFF");
+                if (pixel_count > kMaxDecodedBytes / 7) {
+                    throw CodecError("TIFF page exceeds the 1 GiB decode working-set limit");
+                }
+                std::vector<std::uint32_t> raster(pixel_count);
+                if (!TIFFReadRGBAImageOriented(tif.get(), width, height, raster.data(), ORIENTATION_TOPLEFT, 0)) {
+                    throw CodecError("TIFF page decode failed");
+                }
+                for (std::size_t i = 0; i < raster.size(); ++i) {
+                    if (is_gray8) {
+                        bytes[i] = TIFFGetR(raster[i]);
+                        continue;
+                    }
+                    const auto alpha = TIFFGetA(raster[i]);
+                    const auto unassociate = [alpha](std::uint8_t component) -> std::uint8_t {
+                        if (alpha == 0) return 0;
+                        const auto value = (static_cast<unsigned int>(component) * 255U + alpha / 2U) / alpha;
+                        return static_cast<std::uint8_t>(std::min(value, 255U));
+                    };
+                    bytes[i * channels] = has_alpha ? unassociate(TIFFGetR(raster[i])) : TIFFGetR(raster[i]);
+                    bytes[i * channels + 1] = has_alpha ? unassociate(TIFFGetG(raster[i])) : TIFFGetG(raster[i]);
+                    bytes[i * channels + 2] = has_alpha ? unassociate(TIFFGetB(raster[i])) : TIFFGetB(raster[i]);
+                    if (has_alpha) bytes[i * channels + 3] = alpha;
+                }
             }
             float rx = 0, ry = 0;
             const bool has_x = TIFFGetField(tif.get(), TIFFTAG_XRESOLUTION, &rx) != 0;
@@ -343,10 +407,12 @@ std::vector<ImagePage> load_image_file(const std::filesystem::path& path) {
             std::uint16_t unit = RESUNIT_INCH;
             TIFFGetFieldDefaulted(tif.get(), TIFFTAG_RESOLUTIONUNIT, &unit);
             const double factor = unit == RESUNIT_CENTIMETER ? 2.54 : 1.0;
-            pages.push_back(ImagePage{PixelBuffer{width, height, static_cast<std::size_t>(width) * channels,
+            const bool swapped_axes = orientation >= ORIENTATION_LEFTTOP && orientation <= ORIENTATION_LEFTBOT;
+            pages.push_back(ImagePage{PixelBuffer{output_width, output_height,
+                static_cast<std::size_t>(output_width) * channels,
                 has_alpha ? PixelFormat::RGBA8 : (is_gray8 ? PixelFormat::Gray8 : PixelFormat::RGB8), std::move(bytes)},
-                has_x && rx > 0 ? std::optional<double>(rx * factor) : std::nullopt,
-                has_y && ry > 0 ? std::optional<double>(ry * factor) : std::nullopt});
+                (swapped_axes ? has_y : has_x) ? std::optional<double>((swapped_axes ? ry : rx) * factor) : std::nullopt,
+                (swapped_axes ? has_x : has_y) ? std::optional<double>((swapped_axes ? rx : ry) * factor) : std::nullopt});
         } while (TIFFReadDirectory(tif.get()));
         tif.reset();
         if (pages.empty()) throw CodecError("TIFF contains no pages");
