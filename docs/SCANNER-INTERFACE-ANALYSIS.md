@@ -738,3 +738,31 @@ Workflow run `43157168446` با موفقیت اجرا شد؛ artifact `139165262
 - طراحی Linux باید مدل مستقل `Document` چندصفحه‌ای + `Page` + `PixelBuffer` + dirty tracking داشته باشد؛ ذخیره باید تمام صفحات و صفحهٔ فعال را پوشش دهد.
 
 **Confidence:** state/page/dirty و ترتیب IG_load_FD/IG_save_FD با اطمینان بالا؛ جزئیات الگوریتم pixel rotation، قرارداد context virtualها و برخی format helperها هنوز باز.
+
+
+## Run 88 — تفکیک عملیات واقعی تصویر از نام Rotate90 (2026-11-12)
+
+- اجرای workflow شماره `43164659373` با conclusion برابر `success` تمام شد؛ artifact `13919407916` بررسی شد.
+- نگاشت thunkها از روی IAT و caller table تأیید شد:
+  - `0x004AFEB8` → `IG_image_delete` (IAT `0x00630D1C`).
+  - `0x004AFEC0` → `IG_image_is_valid` (IAT `0x00630D18`).
+  - `0x004AFEC8` → `IG_IP_rotate_multiple_90` (IAT `0x00630D14`).
+  - `0x004AFF00` → `IG_image_dimensions_get` (IAT `0x00630CF8`).
+  - `0x004AFEA8` → `IG_page_count_get` (IAT `0x00630D24`).
+
+### اصلاح مهم: Rotate90 با چرخش pixel یکی نیست
+
+- بدنهٔ `TGearImgProc.Rotate90` در `0x004EF138`، در صورت وجود context در `+0x28`، ابتدا `IG_page_count_get` را با backing value در `+0x38` فراخوانی می‌کند؛ سپس context virtual slot صفر را با مقدار خروجی و آرگومان صفر صدا می‌زند و نتیجه را در `+0x30` می‌نویسد.
+- در این بدنه هیچ call مستقیمی به `IG_IP_rotate_multiple_90` وجود ندارد. بنابراین اسم TD32 این متد نباید به‌عنوان اثبات چرخاندن پیکسل‌ها تفسیر شود؛ رفتار قابل مشاهده بیشتر به refresh/بازسازی تعداد صفحات و state context شباهت دارد.
+- عملیات واقعی چرخش در `TGearImgProc.RotateLeft` دیده می‌شود: `IG_IP_rotate_multiple_90` روی HIGEAR فعال اجرا می‌شود، سپس `ReloadPage` و `GetImageResolution` اجرا و dirty flag در `+0x54` روشن می‌شود. `RotateRight` wrapper همین مسیر با مقدار `EDX=3` است.
+- `ReloadPage` ابتدا HIGEAR را با `IG_image_is_valid` اعتبارسنجی می‌کند؛ در صورت معتبر بودن، `IG_image_dimensions_get` را با خروجی‌های محلی مرتبط با فیلدهای `+0x40`، `+0x3C` و `+0x44` اجرا می‌کند.
+- `GetImageResolution` نیز HIGEAR را اعتبارسنجی می‌کند و از مسیرهای interface/editor برای به‌روزرسانی اطلاعات resolution استفاده می‌کند؛ تفسیر دقیق هر offset خروجی هنوز باید با field scan و UI caller تکمیل شود.
+
+### اثر بر طراحی Linux
+
+1. عملیات document/page-count و pixel transform باید APIهای جدا داشته باشند؛ نام‌های Delphi را به عملیات واقعی ترجمه نکنیم.
+2. برای rotation بومی، یک transform صریح روی pixel buffer لازم است و پس از آن dimensions/DPI و dirty state باید refresh شوند.
+3. حذف HIGEAR باید lifecycle مشخص داشته باشد؛ import `IG_image_delete` callerهای متعددی در Preview، NotifyEditor، PaintCanvas و SavePage دارد و باید در مدل مالکیت/آزادسازی صفحه لحاظ شود.
+4. گام بعدی: trace دقیق `IG_image_dimensions_get`، `IG_page_count_get`، `IG_image_delete` و context virtual slot صفر/+0x20؛ سپس ثبت قرارداد نهایی `Document/Page/PixelBuffer` و شروع پیاده‌سازی مستقل از GEAR.
+
+**Confidence:** هویت importها و مسیر call در RotateLeft/Rotate90 با اطمینان بالا؛ معنای context virtual slotها و جزئیات خروجی dimensions هنوز باز است.
