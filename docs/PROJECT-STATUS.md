@@ -572,3 +572,13 @@
 - RTTI پراکنده برای `IXMLWorddocumentType.Get_Body`، `Get_Fields`، `Get_Status`، `Get_Permission`، `Get_Requestedtypes` و `Get_Optionalattributes` نیز در گزارش دیده می‌شود؛ این metadata ساختار مدل XML را تأیید می‌کند، نه اینکه Body در هر پیام runtime حاضر باشد.
 - در این مرحله بدنه اجرایی متدهای `LoadDocument`، `PrepareDocument`، `SilentSaveEmwatDoc` یا eventهای BeforeClose استخراج نشد؛ بنابراین هیچ call graph یا ترتیب lifecycle جدیدی ادعا نمی‌شود.
 - **گام بعد:** تهیه disassembly قابل اتکا از PE/BPL با mapping صحیح RVA/section و TD32 segment، سپس دنبال‌کردن entry pointهای Wordviewer و connector. تا آن زمان طراحی adapter بر اساس تفکیک مسئولیت‌های اثبات‌شده انجام می‌شود و FillField چاپ از مسیر ویرایش جدا می‌ماند.
+
+
+## Run 98 — گسترش تحلیل ایستای چرخهٔ Word (2026-11-12)
+
+- بررسی مجدد فایل تجمیعی `EMWAT-Analysis-Results.txt` نشان داد نام‌های قابل مشاهدهٔ Wordviewer در گزارش موجود محدودند؛ از جمله `Wordviewer.OpenDoc`، `TWordViwer.SilentSaveEmwatDoc`، `StoreFieldValuesForPrint`، `OnControlerNotify`، `TEDPController.Notify` و `TEditWordDocument.PerformMethod`.
+- فایل گزارش تجمیعی، نام‌های صریحی برای `LoadDocument`، `PrepareDocument`، `OnTmrAutoSave` و eventهای BeforeClose/BeforeSave در بخش نمادهای قابل مشاهده نشان نداد. این به معنی نبودن متدها در باینری نیست؛ ممکن است RTTI-only، بدون نماد procedure یا خارج از این گزارش باشند.
+- اسکریپت `disassemble_emwat_targets.py` برای probe کردن همین نام‌های تأییدشده و نام‌های موردنظر lifecycle گسترش یافت. خروجی همچنان فقط وقتی روش را disassemble می‌کند که TD32 procedure record و نگاشت PE معتبر وجود داشته باشد.
+- اسکریپت `resolve_td32_helpers.py` نیز برای ساخت direct-call graph از متدهای Wordviewer/connector گسترش یافت؛ dispatchهای virtual/indirect همچنان unresolved می‌مانند و مسیر PrintHandler از مسیر ویرایش تفکیک شده است.
+- اجرای workflow تحلیل BPL با commitهای `2c792c4` و `0eef619` آغاز شده است؛ تا زمان ثبت این Run نتیجهٔ نهایی و artifactها هنوز در دسترس نبودند. بنابراین هنوز هیچ آدرس، call graph یا ترتیب lifecycle جدیدی ادعا نمی‌شود.
+- **گام بعد:** بررسی خروجی TD32 disassembly و helper graph پس از پایان workflow؛ اگر متدهای اصلی نماد/بازهٔ معتبر نداشته باشند، مسیر بعدی باید از RTTI/VMT و callerهای مستقیم `OpenDoc` و `SilentSaveEmwatDoc` ادامه پیدا کند، نه حدس‌زدن آدرس‌ها.
