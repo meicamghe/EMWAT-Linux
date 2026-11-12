@@ -136,7 +136,7 @@ ImagePage SaneScannerBackend::scan_one(const std::string& device_id) {
             throw ScannerError("Scanner returned an invalid read length");
         }
         if (received > 0) {
-            if (pixels.bytes.size() > stride * height - static_cast<std::size_t>(received)) {
+            if (static_cast<std::size_t>(received) > stride * height - pixels.bytes.size()) {
                 sane_cancel(device.get());
                 throw ScannerError("Scanner returned more image data than declared");
             }
