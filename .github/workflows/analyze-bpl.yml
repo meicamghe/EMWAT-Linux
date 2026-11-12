@@ -200,6 +200,10 @@ jobs:
           python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004AFE90 bpl-analysis/EmwatMethods-gear-helper-4AFE90.md 100 ret
           python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004AFEC0 bpl-analysis/EmwatMethods-gear-helper-4AFEC0.md 80 ret
           python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004AFEB8 bpl-analysis/EmwatMethods-gear-helper-4AFEB8.md 80 ret
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004AFEA8 bpl-analysis/EmwatMethods-gear-helper-4AFEA8.md 100 ret
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004AFF00 bpl-analysis/EmwatMethods-gear-helper-4AFF00.md 120 ret
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004AFEA8 bpl-analysis/EmwatMethods-callers-4AFEA8.md
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004AFF00 bpl-analysis/EmwatMethods-callers-4AFF00.md
           python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004AFF18 bpl-analysis/EmwatMethods-gear-helper-4AFF18.md 100 ret
           python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004035D8 bpl-analysis/EmwatMethods-gear-helper-4035D8.md 100 ret
           python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x00401398 bpl-analysis/EmwatMethods-gear-helper-401398.md 80 ret
@@ -363,6 +367,10 @@ jobs:
             bpl-analysis/EmwatMethods-gear-helper-4AFE90.md
             bpl-analysis/EmwatMethods-gear-helper-4AFEC0.md
             bpl-analysis/EmwatMethods-gear-helper-4AFEB8.md
+            bpl-analysis/EmwatMethods-gear-helper-4AFEA8.md
+            bpl-analysis/EmwatMethods-gear-helper-4AFF00.md
+            bpl-analysis/EmwatMethods-callers-4AFEA8.md
+            bpl-analysis/EmwatMethods-callers-4AFF00.md
             bpl-analysis/EmwatMethods-gear-helper-4AFF18.md
             bpl-analysis/EmwatMethods-gear-helper-4035D8.md
             bpl-analysis/EmwatMethods-gear-helper-401398.md
