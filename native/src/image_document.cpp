@@ -1,6 +1,7 @@
 #include "emwat/image_document.hpp"
 
 #include <algorithm>
+#include <cmath>
 #include <limits>
 #include <utility>
 
@@ -116,6 +117,9 @@ const ImagePage& ImageDocument::page(std::size_t index) const {
 }
 void ImageDocument::append_page(ImagePage value) {
     if (!value.pixels.valid()) throw std::invalid_argument("cannot append invalid image page");
+    if ((value.dpi_x && (!std::isfinite(*value.dpi_x) || *value.dpi_x <= 0.0)) ||
+        (value.dpi_y && (!std::isfinite(*value.dpi_y) || *value.dpi_y <= 0.0)))
+        throw std::invalid_argument("cannot append image page with invalid resolution metadata");
     pages_.push_back(std::move(value));
     if (pages_.size() == 1) active_page_ = 0;
     dirty_ = true;
