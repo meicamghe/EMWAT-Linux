@@ -37,6 +37,17 @@ int main() {
     }
     {
         auto image = sample();
+        image.flip(FlipAxis::Vertical);
+        assert((image.bytes == std::vector<std::uint8_t>{5, 6, 3, 4, 1, 2}));
+    }
+    {
+        auto image = sample();
+        image.rotate(QuarterTurn::HalfTurn);
+        assert((image.bytes == std::vector<std::uint8_t>{6, 5, 4, 3, 2, 1}));
+        assert(image.width == 2 && image.height == 3);
+    }
+    {
+        auto image = sample();
         image.crop(CropRect{1, 1, 1, 2});
         assert(image.width == 1 && image.height == 2 && image.stride == 1);
         assert((image.bytes == std::vector<std::uint8_t>{4, 6}));
