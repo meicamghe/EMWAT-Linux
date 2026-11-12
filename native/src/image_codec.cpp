@@ -33,10 +33,6 @@ void require_page(const ImagePage& page) {
         throw CodecError("invalid image resolution metadata");
 }
 
-std::uint16_t dpi_to_tiff(const std::optional<double>& dpi) {
-    if (!dpi) return 0;
-    return static_cast<std::uint16_t>(std::clamp(*dpi, 1.0, 65535.0));
-}
 }
 
 ImageFileFormat image_format_from_extension(const std::filesystem::path& path) {
