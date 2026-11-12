@@ -664,3 +664,10 @@
 - commit افزودن trace به workflow با SHA `d4577ce` وجود دارد، اما اجرای CI متناظر در فهرست Actions مشاهده نشد. در نتیجه این مرحله هنوز artifact تأییدشده جدید ندارد.
 - جزئیات و محدودیت نتیجه در [WORD-DOCUMENT-PROTOCOL-ANALYSIS.md](WORD-DOCUMENT-PROTOCOL-ANALYSIS.md) ثبت شد.
 - **گام بعد:** resolve کردن import در IAT، caller scan برای `ParamsToXML` و `TEmwatMethod.Invoke`، و یافتن ماژول حاوی `TEditWordDocument.PerformMethod`.
+
+
+### Run 104 — نتیجه تحلیل import و callerهای مستقیم (2026-11-12)
+
+Workflow run `43226336477` با موفقیت کامل (148/148 مرحله) پایان یافت. در artifact، slot آدرس `0x0062EE24` به `rtl230.bpl!@System@@AbstractError$qqrv` resolve شد؛ این نتیجه هیچ پیوندی با serializer نامه ثابت نمی‌کند. برای `ParamsToXML` در `0x0046AD10` و `TEmwatMethod.Invoke` در `0x0046C82C` نیز direct CALL reference پیدا نشد. این اسکن فقط فراخوانی مستقیم داخل executable sectionهای همین PE را پوشش می‌دهد و dispatch غیرمستقیم یا callerهای خارج از ماژول را نمی‌بیند.
+
+از آنجا که `ParamsToXML` یک thunk پنج‌بایتی به `0x00401068` است، workflow در commit `2b440ed3ebe1e6b3d1a144941cefe43a5cf70ad9` برای disassemble کردن مقصد thunk و جست‌وجوی callerهای مستقیم آن گسترش یافت. تا دریافت artifact بعدی، مسیر serialization هنوز حل نشده است.
