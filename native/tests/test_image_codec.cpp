@@ -67,6 +67,20 @@ int main() {
     assert(tif_pages[1].pixels.bytes == page(20).pixels.bytes);
     assert(tif_pages[0].dpi_x.has_value());
 
+    // A TIFF whose payload/IFD data is cut off must fail instead of
+    // returning a partially decoded document.
+    const auto truncated_tif = root / "emwat-codec-test-truncated.tiff";
+    std::filesystem::copy_file(tif, truncated_tif,
+        std::filesystem::copy_options::overwrite_existing);
+    const auto truncated_size = std::filesystem::file_size(truncated_tif);
+    assert(truncated_size > 16);
+    std::filesystem::resize_file(truncated_tif, truncated_size / 2);
+    bool truncated_tiff_rejected = false;
+    try { (void)load_image_file(truncated_tif); }
+    catch (const CodecError&) { truncated_tiff_rejected = true; }
+    assert(truncated_tiff_rejected);
+    std::filesystem::remove(truncated_tif);
+
     const auto gray_tif = root / "emwat-codec-test-gray.tiff";
     const ImagePage gray_page{PixelBuffer{3, 2, 3, PixelFormat::Gray8,
         {0, 32, 64, 128, 192, 255}}, 200.0, 180.0};
