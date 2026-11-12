@@ -68,7 +68,7 @@ int main() {
 
     const auto rgba_tif = root / "emwat-codec-test-alpha.tiff";
     const ImagePage rgba_page{PixelBuffer{2, 2, 8, PixelFormat::RGBA8,
-        {255, 0, 0, 0, 0, 255, 0, 64, 0, 0, 255, 128, 12, 34, 56, 255}}, 240.0, 240.0};
+        {0, 0, 0, 0, 0, 255, 0, 64, 0, 0, 255, 128, 12, 34, 56, 255}}, 240.0, 240.0};
     save_image_file({rgba_page}, rgba_tif);
     const auto rgba_pages = load_image_file(rgba_tif);
     assert(rgba_pages.size() == 1);
