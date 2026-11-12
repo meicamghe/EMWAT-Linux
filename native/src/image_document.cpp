@@ -1,5 +1,6 @@
 #include "emwat/image_document.hpp"
 
+#include <algorithm>
 #include <limits>
 #include <utility>
 
