@@ -26,6 +26,19 @@ extern "C" void jpeg_fail(j_common_ptr info) {
     longjmp(error->jump, 1);
 }
 
+constexpr std::uint64_t kMaxDecodedBytes = 1024ULL * 1024ULL * 1024ULL;
+constexpr std::size_t kMaxTiffPages = 10000;
+
+std::size_t checked_image_bytes(std::uint32_t width, std::uint32_t height,
+                                std::size_t channels, const char* format) {
+    if (width == 0 || height == 0 || channels == 0)
+        throw CodecError(std::string(format) + " has invalid dimensions");
+    const auto pixels = static_cast<std::uint64_t>(width) * height;
+    if (pixels > kMaxDecodedBytes / channels)
+        throw CodecError(std::string(format) + " exceeds the 1 GiB decoded-image limit");
+    return static_cast<std::size_t>(pixels * channels);
+}
+
 void require_page(const ImagePage& page) {
     if (!page.pixels.valid()) throw CodecError("invalid image page");
     if ((page.dpi_x && (!std::isfinite(*page.dpi_x) || *page.dpi_x <= 0)) ||
@@ -60,13 +73,18 @@ std::vector<ImagePage> load_image_file(const std::filesystem::path& path) {
         if ((image.format & PNG_FORMAT_FLAG_COLOR) != 0)
             image.format = (image.format & PNG_FORMAT_FLAG_ALPHA) ? PNG_FORMAT_RGBA : PNG_FORMAT_RGB;
         else image.format = PNG_FORMAT_GRAY;
-        std::vector<std::uint8_t> bytes(PNG_IMAGE_SIZE(image));
+        const auto channels = PNG_IMAGE_SAMPLE_CHANNELS(image.format);
+        const auto expected_bytes = checked_image_bytes(image.width, image.height, channels, "PNG");
+        if (PNG_IMAGE_SIZE(image) != expected_bytes) {
+            png_image_free(&image);
+            throw CodecError("PNG decoded size is inconsistent");
+        }
+        std::vector<std::uint8_t> bytes(expected_bytes);
         if (!png_image_finish_read(&image, nullptr, bytes.data(), 0, nullptr)) {
             const std::string message = image.message;
             png_image_free(&image);
             throw CodecError("PNG read failed: " + message);
         }
-        const auto channels = PNG_IMAGE_SAMPLE_CHANNELS(image.format);
         ImagePage page{PixelBuffer{image.width, image.height,
             static_cast<std::size_t>(image.width) * channels,
             channels == 1 ? PixelFormat::Gray8 : (channels == 4 ? PixelFormat::RGBA8 : PixelFormat::RGB8),
@@ -88,13 +106,22 @@ std::vector<ImagePage> load_image_file(const std::filesystem::path& path) {
         }
         jpeg_create_decompress(&decoder);
         jpeg_stdio_src(&decoder, file);
-        jpeg_read_header(&decoder, TRUE);
+        if (jpeg_read_header(&decoder, TRUE) != JPEG_HEADER_OK) {
+            jpeg_destroy_decompress(&decoder);
+            std::fclose(file);
+            throw CodecError("invalid JPEG header");
+        }
         decoder.out_color_space = decoder.jpeg_color_space == JCS_GRAYSCALE ? JCS_GRAYSCALE : JCS_RGB;
         jpeg_start_decompress(&decoder);
         const auto width = decoder.output_width;
         const auto height = decoder.output_height;
         const auto channels = decoder.output_components;
-        const auto total = static_cast<std::size_t>(width) * height * channels;
+        if (channels != 1 && channels != 3) {
+            jpeg_destroy_decompress(&decoder);
+            std::fclose(file);
+            throw CodecError("unsupported JPEG output channel count");
+        }
+        const auto total = checked_image_bytes(width, height, channels, "JPEG");
         auto* raw = static_cast<std::uint8_t*>(std::malloc(total));
         if (!raw) {
             jpeg_destroy_decompress(&decoder);
@@ -125,16 +152,21 @@ std::vector<ImagePage> load_image_file(const std::filesystem::path& path) {
                 TIFFClose(tif);
                 throw CodecError("invalid TIFF page dimensions");
             }
-            if (static_cast<std::uint64_t>(width) * height > std::numeric_limits<std::size_t>::max() / 4) {
+            if (pages.size() >= kMaxTiffPages) {
                 TIFFClose(tif);
-                throw CodecError("TIFF page is too large");
+                throw CodecError("TIFF exceeds the 10000-page limit");
             }
-            std::vector<std::uint32_t> raster(static_cast<std::size_t>(width) * height);
+            const auto pixel_count = checked_image_bytes(width, height, 1, "TIFF");
+            if (pixel_count > kMaxDecodedBytes / 7) {
+                TIFFClose(tif);
+                throw CodecError("TIFF page exceeds the 1 GiB decode working-set limit");
+            }
+            std::vector<std::uint32_t> raster(pixel_count);
             if (!TIFFReadRGBAImageOriented(tif, width, height, raster.data(), ORIENTATION_TOPLEFT, 0)) {
                 TIFFClose(tif);
                 throw CodecError("TIFF page decode failed");
             }
-            std::vector<std::uint8_t> bytes(static_cast<std::size_t>(width) * height * 3);
+            std::vector<std::uint8_t> bytes(checked_image_bytes(width, height, 3, "TIFF"));
             for (std::size_t i = 0; i < raster.size(); ++i) {
                 bytes[i * 3] = TIFFGetR(raster[i]);
                 bytes[i * 3 + 1] = TIFFGetG(raster[i]);
