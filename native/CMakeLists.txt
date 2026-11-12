@@ -8,8 +8,8 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 find_package(PNG REQUIRED)
 find_package(JPEG REQUIRED)
 find_package(TIFF REQUIRED)
-find_package(PkgConfig REQUIRED)
-pkg_check_modules(SANE REQUIRED IMPORTED_TARGET sane)
+find_path(SANE_INCLUDE_DIR NAMES sane/sane.h REQUIRED)
+find_library(SANE_LIBRARY NAMES sane REQUIRED)
 
 enable_testing()
 add_library(emwat_image_core
@@ -18,8 +18,8 @@ add_library(emwat_image_core
     src/image_document_io.cpp
     src/sane_scanner.cpp
 )
-target_include_directories(emwat_image_core PUBLIC include)
-target_link_libraries(emwat_image_core PRIVATE PNG::PNG JPEG::JPEG TIFF::TIFF PkgConfig::SANE)
+target_include_directories(emwat_image_core PUBLIC include PRIVATE ${SANE_INCLUDE_DIR})
+target_link_libraries(emwat_image_core PRIVATE PNG::PNG JPEG::JPEG TIFF::TIFF ${SANE_LIBRARY})
 target_compile_options(emwat_image_core PRIVATE -Wall -Wextra -Wpedantic -Werror)
 
 add_executable(emwat_image_document_tests tests/test_image_document.cpp)
