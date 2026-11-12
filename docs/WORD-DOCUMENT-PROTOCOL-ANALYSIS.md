@@ -291,3 +291,38 @@ Artifact اجرای موفق GitHub Actions با SHA برابر `0eef619164c64f3
 - گام بعدی تحلیل، استخراج callbackهای `0x4D00AC`، `0x4CE030`، `0x4CD54C` و `0x4CD9C0`، helper `0x4BCA88` و callerهای `OpenDoc` / `SilentSaveEmwatDoc` است؛ سپس باید dispatch virtual از طریق VMT/RTTI حل شود.
 
 جزئیات assembly کامل در artifact CI نگهداری می‌شود؛ این سند فقط یافته‌های لازم را بدون داده محرمانهٔ نامه ثبت می‌کند.
+
+
+## Run 100 — بررسی callerها و اصلاح تفسیر lifecycle (2026-11-12)
+
+اجرای workflow با commit `44718f0` با موفقیت کامل شد: 147 مرحله از 147، بدون failure. Artifact جدید دریافت و فایل‌های callback/caller بررسی شدند.
+
+### اصلاح مهم درباره SilentSaveEmwatDoc
+
+تفسیر اولیه Run 99 بیش از حد به نام متد متکی بود. بدنه `TWordViwer.SilentSaveEmwatDoc` در `0x004D23D8` اکنون نشان می‌دهد که:
+
+- به `Emwatutils.SetRegistryValue` مراجعه می‌کند.
+- `TfrmWordPrintOption.SetLetterReceivers` را فراخوانی می‌کند.
+- `TfrmWordPrintOption.FreePrinters` را فراخوانی می‌کند.
+- `TWrapRecord.LineCount` را می‌خواند.
+- چند property/collection را از object می‌خواند و از طریق virtual dispatch با آن‌ها کار می‌کند.
+
+Caller مستقیم پیدا‌شده برای این متد، `TWordViwer.GetDocFieldName` در call site آدرس `0x004BBA86` است. در این caller، متد پس از یک شرط روی نتیجه قبلی فراخوانی می‌شود. هیچ caller مستقیم از `WordAppDocumentBeforeClose` یا `WordAppDocumentBeforeSave` در TD32 scan فعلی پیدا نشد.
+
+**نتیجه اصلاح‌شده:** با وجود نام `SilentSaveEmwatDoc`، شواهد فعلی برای معرفی آن به‌عنوان serializer یا ذخیره‌کننده سند نامه کافی نیست؛ وابستگی‌های مستقیم قابل‌مشاهده‌اش بیشتر به تنظیمات چاپ/گیرندگان و رجیستری مربوط‌اند. تا زمان حل virtual dispatchها و بررسی داده‌های object، نقش دقیق آن باز می‌ماند. بنابراین آن را نباید به‌عنوان مسیر ذخیره نامه در پیاده‌سازی Linux بازسازی کرد.
+
+### اصلاح مهم درباره helper آدرس 0x004BCA88
+
+اسکن callerها نشان داد `0x004BCA88` فقط از `WordAppDocumentBeforeClose` فراخوانی نمی‌شود؛ دو call site دیگر نیز داخل `TWordViwer.GetCaptionItemFont` قرار دارند. بنابراین عنوان قبلی «helper مربوط به BeforeClose» دقیق نبود. این آدرس فعلاً یک helper مشترک با نقش نامشخص است و نباید به‌عنوان save/close routine تفسیر شود.
+
+### یافته‌های دیگر caller scan
+
+- برای `Wordviewer.OpenDoc` در محدوده procedureهای TD32 هیچ direct CALL xref پیدا نشد. این موضوع direct call از طریق کد خارج از محدوده، callback، یا VMT را رد نمی‌کند.
+- برای `TWordViwer.LoadDocument` یک direct caller با نام `TScanDocument.PerformMethod` در `0x005EE961` پیدا شد. بنابراین این متد ممکن است در مسیر scan/document نیز استفاده شود و فعلاً نباید آن را منحصراً به بازشدن نامه متنی در Word نسبت داد.
+- callbackهای ثبت‌شده در `OnTmrAutoSave` بدنه اجرایی دارند، اما در disassembly محدودشده فعلی هنوز نام/نقش معنایی قطعی آن‌ها مشخص نیست. در چند مورد کد از interface/virtual dispatch استفاده می‌کند؛ مقصد نهایی آن‌ها هنوز حل نشده است.
+
+### تصمیم مهندسی به‌روزشده
+
+1. نام `SilentSaveEmwatDoc` به‌تنهایی برای استنتاج ذخیره سند کافی نیست؛ این متد از مسیر بازسازی save-letter فعلاً کنار گذاشته می‌شود.
+2. مسیرهای `BeforeSave` و `BeforeClose` جدا نگه داشته می‌شوند و از این disassembly نمی‌توان نتیجه گرفت که کدام‌یک باعث POST پاسخ‌دار مشاهده‌شده در Firefox شده است.
+3. گام بعدی: disassemble کردن `TWordViwer.GetDocFieldName` و بررسی call chain آن، حل VMT/interface slotهای callbackهای timer، و پیدا کردن callerهای غیرمستقیم `OpenDoc`. سپس باید رفتار واقعی را با trace قابل‌اعتماد از یک نامه قابل ویرایش تطبیق داد.
