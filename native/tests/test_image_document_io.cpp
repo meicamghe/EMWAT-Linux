@@ -10,10 +10,13 @@
 using namespace emwat;
 
 static ImagePage sample_page(std::uint8_t seed) {
-    return ImagePage{PixelBuffer{2, 2, 2, PixelFormat::Gray8,
-        {seed, static_cast<std::uint8_t>(seed + 1),
-         static_cast<std::uint8_t>(seed + 2), static_cast<std::uint8_t>(seed + 3)}},
-        300.0, 300.0};
+    return ImagePage{PixelBuffer{2, 2, 6, PixelFormat::RGB8,
+        {seed, static_cast<std::uint8_t>(seed + 1), static_cast<std::uint8_t>(seed + 2),
+         static_cast<std::uint8_t>(seed + 3), static_cast<std::uint8_t>(seed + 4),
+         static_cast<std::uint8_t>(seed + 5), static_cast<std::uint8_t>(seed + 6),
+         static_cast<std::uint8_t>(seed + 7), static_cast<std::uint8_t>(seed + 8),
+         static_cast<std::uint8_t>(seed + 9), static_cast<std::uint8_t>(seed + 10),
+         static_cast<std::uint8_t>(seed + 11)}}, 300.0, 300.0};
 }
 
 int main() {
