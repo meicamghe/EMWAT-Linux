@@ -318,7 +318,7 @@ int main() {
         TIFFSetField(raw, TIFFTAG_ORIENTATION, ORIENTATION_LEFTTOP);
         TIFFSetField(raw, TIFFTAG_PLANARCONFIG, PLANARCONFIG_SEPARATE);
         TIFFSetField(raw, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_RGB);
-        TIFFSetField(raw, TIFFTAG_COMPRESSION, COMPRESSION_NONE);
+        TIFFSetField(raw, TIFFTAG_COMPRESSION, COMPRESSION_LZW);
         TIFFSetField(raw, TIFFTAG_XRESOLUTION, 300.0F);
         TIFFSetField(raw, TIFFTAG_YRESOLUTION, 150.0F);
         TIFFSetField(raw, TIFFTAG_RESOLUTIONUNIT, RESUNIT_INCH);
@@ -385,6 +385,43 @@ int main() {
     assert(gray_rotated_pages[0].dpi_y.has_value() &&
            std::abs(*gray_rotated_pages[0].dpi_y - 240.0) < 0.1);
     std::filesystem::remove(gray_rotated_tif);
+
+    // MINISWHITE polarity must survive the RGBA fallback's orientation transform.
+    // Centimeter resolution is converted to DPI and its axes are swapped on rotation.
+    const auto miniswhite_rotated_tif = root / "emwat-codec-test-miniswhite-rotated.tiff";
+    {
+        TIFF* raw = TIFFOpen(miniswhite_rotated_tif.string().c_str(), "w");
+        assert(raw != nullptr);
+        TIFFSetField(raw, TIFFTAG_IMAGEWIDTH, 3);
+        TIFFSetField(raw, TIFFTAG_IMAGELENGTH, 2);
+        TIFFSetField(raw, TIFFTAG_SAMPLESPERPIXEL, 1);
+        TIFFSetField(raw, TIFFTAG_BITSPERSAMPLE, 8);
+        TIFFSetField(raw, TIFFTAG_SAMPLEFORMAT, SAMPLEFORMAT_UINT);
+        TIFFSetField(raw, TIFFTAG_ORIENTATION, ORIENTATION_LEFTTOP);
+        TIFFSetField(raw, TIFFTAG_PLANARCONFIG, PLANARCONFIG_CONTIG);
+        TIFFSetField(raw, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_MINISWHITE);
+        TIFFSetField(raw, TIFFTAG_COMPRESSION, COMPRESSION_LZW);
+        TIFFSetField(raw, TIFFTAG_XRESOLUTION, 100.0F);
+        TIFFSetField(raw, TIFFTAG_YRESOLUTION, 50.0F);
+        TIFFSetField(raw, TIFFTAG_RESOLUTIONUNIT, RESUNIT_CENTIMETER);
+        std::uint8_t first_row[] = {0, 64, 128};
+        std::uint8_t second_row[] = {192, 224, 255};
+        assert(TIFFWriteScanline(raw, first_row, 0, 0) >= 0);
+        assert(TIFFWriteScanline(raw, second_row, 1, 0) >= 0);
+        TIFFClose(raw);
+    }
+    const auto miniswhite_rotated_pages = load_image_file(miniswhite_rotated_tif);
+    assert(miniswhite_rotated_pages.size() == 1);
+    assert(miniswhite_rotated_pages[0].pixels.width == 2);
+    assert(miniswhite_rotated_pages[0].pixels.height == 3);
+    assert(miniswhite_rotated_pages[0].pixels.format == PixelFormat::Gray8);
+    assert((miniswhite_rotated_pages[0].pixels.bytes ==
+        std::vector<std::uint8_t>{255, 63, 191, 31, 127, 0}));
+    assert(miniswhite_rotated_pages[0].dpi_x.has_value() &&
+           std::abs(*miniswhite_rotated_pages[0].dpi_x - 127.0) < 0.1);
+    assert(miniswhite_rotated_pages[0].dpi_y.has_value() &&
+           std::abs(*miniswhite_rotated_pages[0].dpi_y - 254.0) < 0.1);
+    std::filesystem::remove(miniswhite_rotated_tif);
 
     const auto rgba_tif = root / "emwat-codec-test-alpha.tiff";
     const ImagePage rgba_page{PixelBuffer{2, 2, 8, PixelFormat::RGBA8,
