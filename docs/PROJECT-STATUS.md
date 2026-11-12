@@ -646,3 +646,13 @@
 - IXMLWorddocumentType getter مربوط به Body و propertyهای Fields، Status، Settings، Permission، Requestedtypes و Optionalattributes دارد.
 - این شواهد وجود Body و مدل response را در schema تأیید می‌کند، اما مقداردهی Body، قالب واقعی Returntypes و نقطه serializer هنوز مشخص نیست. نبودن body در نمونه decodeشده کاربر فقط به همان نمونه محدود است.
 - جزئیات در WORD-DOCUMENT-PROTOCOL-ANALYSIS.md ثبت شد؛ مرحله بعد اتصال این interfaceها به بدنه اجرایی TEditWordDocument.PerformMethod و ParamsToXML است.
+
+
+### Run 103 — XML field lookup and image-field path
+
+- CI run 43222525062 completed successfully (147/147 steps).
+- GetXmlFieldInfo overload at 0x004BFC18 performs lookups against XML field collections at object offsets +0x68 and +0x6C, returning a matching index and associated string metadata. This is field metadata lookup, not body serialization.
+- Another GetXmlFieldInfo overload is named at 0x004BCA88. This supersedes the earlier tentative generic-helper label for that address; callers from caption/image and close paths are consistent with shared XML-field lookup.
+- AddImagesToDoc at 0x004C0410 delegates to GetCaptionItemFont for a field-processing branch. It does not by itself reveal the full image transfer or save protocol.
+- TEmwatMethod.Invoke at 0x0046C82C traverses a dictionary/enumerator-like structure. ParamsToXML at 0x0046AD10 is only a jump thunk to 0x00401068, so its implementation still needs resolving.
+- The analysis still has not found TEditWordDocument.PerformMethod or the document-body extraction/response serializer. Details and caveats are in WORD-DOCUMENT-PROTOCOL-ANALYSIS.md.
