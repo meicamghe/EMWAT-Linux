@@ -3,6 +3,8 @@
 #include <sane/sane.h>
 
 #include <algorithm>
+#include <cmath>
+#include <cstring>
 #include <array>
 #include <limits>
 #include <mutex>
@@ -50,6 +52,51 @@ private:
     bool active_{};
 };
 
+void set_string_option(SANE_Handle handle, const char* name, const std::string& value) {
+    SANE_Int index = 0;
+    auto status = sane_control_option(handle, 0, SANE_ACTION_GET_VALUE, nullptr, nullptr);
+    (void)status;
+    const SANE_Option_Descriptor* descriptor = nullptr;
+    for (index = 1; (descriptor = sane_get_option_descriptor(handle, index)) != nullptr; ++index) {
+        if (descriptor->name && std::strcmp(reinterpret_cast<const char*>(descriptor->name), name) == 0)
+            break;
+    }
+    if (!descriptor) throw ScannerError(std::string("Scanner does not support option: ") + name);
+    if (!(descriptor->cap & SANE_CAP_SOFT_SELECT) || !(descriptor->cap & SANE_CAP_SOFT_DETECT) ||
+        (descriptor->cap & SANE_CAP_INACTIVE) || descriptor->type != SANE_TYPE_STRING ||
+        descriptor->size <= 0 || value.size() >= static_cast<std::size_t>(descriptor->size))
+        throw ScannerError(std::string("Scanner option is unavailable or incompatible: ") + name);
+    std::vector<SANE_Char> buffer(static_cast<std::size_t>(descriptor->size), 0);
+    std::memcpy(buffer.data(), value.c_str(), value.size() + 1);
+    SANE_Int info = 0;
+    status = sane_control_option(handle, index, SANE_ACTION_SET_VALUE, buffer.data(), &info);
+    if (status != SANE_STATUS_GOOD)
+        throw ScannerError(std::string("Cannot set scanner option ") + name + ": " + sane_strstatus(status));
+}
+
+void set_resolution_option(SANE_Handle handle, double dpi) {
+    if (!std::isfinite(dpi) || dpi <= 0.0 || dpi > 100000.0)
+        throw ScannerError("Scan resolution must be finite and between 0 and 100000 DPI");
+    SANE_Int index = 0;
+    const SANE_Option_Descriptor* descriptor = nullptr;
+    for (index = 1; (descriptor = sane_get_option_descriptor(handle, index)) != nullptr; ++index) {
+        if (descriptor->name &&
+            std::strcmp(reinterpret_cast<const char*>(descriptor->name), "resolution") == 0)
+            break;
+    }
+    if (!descriptor) throw ScannerError("Scanner does not support resolution option");
+    if (!(descriptor->cap & SANE_CAP_SOFT_SELECT) || !(descriptor->cap & SANE_CAP_SOFT_DETECT) ||
+        (descriptor->cap & SANE_CAP_INACTIVE) || descriptor->size != static_cast<SANE_Int>(sizeof(SANE_Word)) ||
+        (descriptor->type != SANE_TYPE_INT && descriptor->type != SANE_TYPE_FIXED))
+        throw ScannerError("Scanner resolution option is unavailable or incompatible");
+    SANE_Word value = descriptor->type == SANE_TYPE_FIXED
+        ? SANE_FIX(dpi) : static_cast<SANE_Word>(std::lround(dpi));
+    SANE_Int info = 0;
+    const auto status = sane_control_option(handle, index, SANE_ACTION_SET_VALUE, &value, &info);
+    if (status != SANE_STATUS_GOOD)
+        throw ScannerError(std::string("Cannot set scanner resolution: ") + sane_strstatus(status));
+}
+
 std::string safe_string(const SANE_Char* value) {
     return value ? reinterpret_cast<const char*>(value) : std::string{};
 }
@@ -74,11 +121,15 @@ std::vector<ScannerDevice> SaneScannerBackend::list_devices() {
     return result;
 }
 
-ImagePage SaneScannerBackend::scan_one(const std::string& device_id) {
+ImagePage SaneScannerBackend::scan_one(const std::string& device_id, const ScanOptions& options) {
     if (device_id.empty()) throw ScannerError("scanner device id cannot be empty");
     std::lock_guard<std::mutex> lock(sane_mutex());
     SaneSession session;
     SaneHandle device(device_id);
+
+    if (options.resolution_dpi) set_resolution_option(device.get(), *options.resolution_dpi);
+    if (options.mode) set_string_option(device.get(), "mode", *options.mode);
+    if (options.source) set_string_option(device.get(), "source", *options.source);
 
     auto status = sane_start(device.get());
     if (status != SANE_STATUS_GOOD)
