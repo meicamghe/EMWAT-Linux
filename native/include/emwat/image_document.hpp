@@ -46,7 +46,6 @@ public:
     [[nodiscard]] bool dirty() const noexcept { return dirty_; }
     [[nodiscard]] std::uint64_t generation() const noexcept { return generation_; }
     [[nodiscard]] const ImagePage& page(std::size_t index) const;
-    [[nodiscard]] ImagePage& page(std::size_t index);
 
     void append_page(ImagePage page);
     void select_page(std::size_t index);
