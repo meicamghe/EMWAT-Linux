@@ -609,3 +609,13 @@
 - callbackهای timer هنوز به‌علت virtual/interface dispatch مقصد نهایی روشنی ندارند.
 - جزئیات و اصلاحات در [WORD-DOCUMENT-PROTOCOL-ANALYSIS.md](WORD-DOCUMENT-PROTOCOL-ANALYSIS.md) ثبت شد.
 - **گام بعد:** disassembly متد `TWordViwer.GetDocFieldName` و callerهای آن، حل interface/VMT callbackها، و یافتن مسیر غیرمستقیم فراخوانی `OpenDoc`. هیچ پیاده‌سازی save-letter بر مبنای نام `SilentSaveEmwatDoc` انجام نشود.
+
+
+### Run 101 — Word lifecycle уточнения (2026-11-12)
+
+- GitHub Actions run `43217998439` завершился успешно; artifact скачан и проверен.
+- Добавлены disassembly для `TWordViwer.GetDocFieldName` (`0x004BB81C`) и `TWordViwer.GetCaptionItemFont` (`0x004C19C0`).
+- `GetDocFieldName` вызывает `SilentSaveEmwatDoc` по адресу `0x004BBA86`, но это не подтверждает, что тот сериализует или отправляет тело письма. Контекст вызова — процедура получения/обработки имени поля.
+- `GetCaptionItemFont` связан с caption/font и ImageGear (`IG_ext_load/unload`); он тоже вызывает общий helper `0x004BCA88`. Поэтому этот helper не является специфичным только для BeforeClose.
+- Прямое назначение `SilentSaveEmwatDoc` и helper `0x004BCA88` остаётся открытым. Схема HTTP/XML и runtime trace пока не дают подтверждённого полного цикла сохранения текста письма.
+- Подробности и ограничения интерпретации внесены в `docs/WORD-DOCUMENT-PROTOCOL-ANALYSIS.md`.
