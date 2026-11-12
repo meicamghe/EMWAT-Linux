@@ -445,3 +445,18 @@ CI run 43222525062 completed successfully (147/147 steps; no failed steps). Arti
 ### Next analysis target
 
 Resolve 0x00401068 (ParamsToXML thunk destination), inspect all direct/indirect callers of ParamsToXML and TEmwatMethod.Invoke, and identify the module containing TEditWordDocument.PerformMethod. In parallel, trace the Word COM close/save callbacks toward any routine that reads document content or constructs the response dictionary/return types.
+
+
+## بررسی مقصد thunk مربوط به ParamsToXML — 2026-11-12
+
+- بدنه `ParamsToXML` در `0x0046AD10` یک jump پنج‌بایتی به `0x00401068` است؛ بنابراین آن آدرس بدنه اختصاصی serializer نیست، بلکه یک thunk/واسط پرش به Import Address Table است.
+- disassembly موجود از ناحیه `.text` نشان می‌دهد `0x00401068` دستور `jmp dword ptr [0x0062EE24]` دارد. این فقط ثابت می‌کند مقصد نهایی از slot مربوط به IAT resolve می‌شود؛ تا زمانی که import متناظر با slot `0x0062EE24` از PE استخراج نشود، نام تابع و معنای آن معلوم نیست.
+- بنابراین نام `ParamsToXML` به‌تنهایی برای نتیجه‌گیری اینکه این متد XML پاسخ نامه را serialize می‌کند کافی نیست. حتی اگر مقصد یک تابع عمومی RTL باشد، باید callerها و داده‌های ورودی/خروجی بررسی شوند تا نقش واقعی روشن شود.
+- Commit مربوط به افزودن trace هدف به workflow در `d4577ce` ثبت شده، اما در زمان این بررسی Actions هنوز اجرای جدیدی برای آن commit نشان نمی‌داد؛ پس هیچ نتیجه CI تازه‌ای برای این trace ادعا نمی‌شود.
+
+### گام بعدی
+
+1. استخراج دقیق import متناظر با IAT slot `0x0062EE24` و ثبت نام DLL/symbol.
+2. caller scan برای `ParamsToXML` و بررسی اینکه خروجی آن کجا مصرف می‌شود.
+3. یافتن ماژول/بسته‌ای که `TEditWordDocument.PerformMethod` در آن پیاده‌سازی شده؛ نبودن بدنه آن در TD32 این BPL به معنی نبودن آن در کل برنامه نیست.
+4. ادامه ردیابی callbackهای Word تا routineای که محتوای تغییرکرده سند را می‌خواند یا response model را می‌سازد.
