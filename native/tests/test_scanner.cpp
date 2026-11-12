@@ -15,6 +15,17 @@ public:
     std::vector<ScannerDevice> devices;
     bool fail{};
 
+    ScannerCapabilities get_capabilities(const std::string&) override {
+        if (fail) throw ScannerError("simulated capability failure");
+        ScannerCapabilities result;
+        result.modes = {"Color", "Gray"};
+        result.sources = {"Flatbed"};
+        result.min_resolution_dpi = 75.0;
+        result.max_resolution_dpi = 600.0;
+        result.discrete_resolutions_dpi = {75.0, 150.0, 300.0, 600.0};
+        return result;
+    }
+
     ImagePage scan_one(const std::string&, const ScanOptions& = {}) override {
         if (fail) throw ScannerError("simulated scan failure");
         PixelBuffer pixels{1, 1, 1, PixelFormat::Gray8, {42}};
@@ -40,6 +51,14 @@ int main() {
     backend.devices.clear();
     assert(backend.list_devices().empty());
 
+    const auto capabilities = backend.get_capabilities("test:scanner0");
+    assert(capabilities.modes.size() == 2);
+    assert(capabilities.modes[0] == "Color");
+    assert(capabilities.sources.size() == 1);
+    assert(capabilities.min_resolution_dpi == 75.0);
+    assert(capabilities.max_resolution_dpi == 600.0);
+    assert(capabilities.discrete_resolutions_dpi.size() == 4);
+
     const auto scanned = backend.scan_one("test:scanner0");
     assert(scanned.pixels.valid());
     assert(scanned.pixels.bytes[0] == 42);
@@ -47,6 +66,10 @@ int main() {
     backend.fail = true;
     bool threw = false;
     try { (void)backend.list_devices(); }
+    catch (const ScannerError&) { threw = true; }
+    assert(threw);
+    threw = false;
+    try { (void)backend.get_capabilities("test:scanner0"); }
     catch (const ScannerError&) { threw = true; }
     assert(threw);
     threw = false;
