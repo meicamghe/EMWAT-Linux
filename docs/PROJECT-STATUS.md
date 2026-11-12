@@ -413,3 +413,13 @@
 - دو orchestrator مستقل برای `IG_scan_pages` شناسایی شد: Preview (دو call) و GearImgProc (یک call).
 - دو callsite مستقل `IG_scan_source_select` در Preview.ShowCropRectangle و GearImgProc.SetCurrentPage تأیید شد.
 - گام بعدی: trace کامل بدنهٔ متدهای `SelectScanner` و ثبت stack/arguments هر call، به‌خصوص دو فراخوانی Preview.
+
+
+## Run 87 — استخراج state و چرخهٔ ذخیره/بارگذاری تصویر
+- اجرای `43163883733` موفق شد؛ trace کامل متدهای GearImgProc بررسی شد.
+- ShowEditor context را در +0x28 و backing path/descriptor را در +0x38 تنظیم می‌کند؛ +0x34 صفحهٔ فعال، +0x30 تعداد صفحات و +0x54 وضعیت dirty است.
+- SetCurrentPage بازهٔ صفحه را اعتبارسنجی می‌کند، در صورت dirty بودن امکان SaveToFile را از طریق modal Yes می‌دهد، سپس context virtual +0x20 را برای صفحهٔ جدید فراخوانی و NotifyEditor را اجرا می‌کند.
+- NotifyEditor با IG_load_FD صفحه را از backing descriptor به HIGEAR فعال reload می‌کند؛ SavePage روی همهٔ صفحات loop می‌زند و برای صفحات غیرفعال HIGEAR موقت می‌سازد؛ SaveToFile و ScanToFile دو مسیر جدا هستند.
+- RotateLeft/Right dirty state را تغییر می‌دهند، اما عملیات pixel-level در helperهای خارجی/virtual انجام می‌شود و هنوز ABI آن‌ها مشخص نیست. نام قبلی Crop برای تابع 0x004EEDB4 تأیید نشد؛ بدنه بیشتر شبیه constructor یک context object است.
+- تحلیل تفصیلی و مرزهای اطمینان در [SCANNER-INTERFACE-ANALYSIS.md](SCANNER-INTERFACE-ANALYSIS.md) ثبت شد.
+- گام بعد: resolve کردن helperهای rotation و context، callerهای آن‌ها، و تابع‌های GEAR مربوط به save/load/scan؛ سپس تبدیل این یافته‌ها به قرارداد ماژول مستقل image document در Linux.
