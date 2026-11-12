@@ -326,3 +326,27 @@ Caller مستقیم پیدا‌شده برای این متد، `TWordViwer.GetDo
 1. نام `SilentSaveEmwatDoc` به‌تنهایی برای استنتاج ذخیره سند کافی نیست؛ این متد از مسیر بازسازی save-letter فعلاً کنار گذاشته می‌شود.
 2. مسیرهای `BeforeSave` و `BeforeClose` جدا نگه داشته می‌شوند و از این disassembly نمی‌توان نتیجه گرفت که کدام‌یک باعث POST پاسخ‌دار مشاهده‌شده در Firefox شده است.
 3. گام بعدی: disassemble کردن `TWordViwer.GetDocFieldName` و بررسی call chain آن، حل VMT/interface slotهای callbackهای timer، و پیدا کردن callerهای غیرمستقیم `OpenDoc`. سپس باید رفتار واقعی را با trace قابل‌اعتماد از یک نامه قابل ویرایش تطبیق داد.
+
+
+## Run 101 — уточнение Word callbacks и вспомогательных методов (2026-11-12)
+
+Источник: Artifact `emwat-bpl-static-analysis`, workflow run `43217998439`, commit `2e10d632508afcf6fd3792e49da7c08fc5f1c0fb`. CI завершился успешно; disassembly включает `TWordViwer.GetDocFieldName` и `TWordViwer.GetCaptionItemFont`.
+
+### `GetDocFieldName` и `SilentSaveEmwatDoc`
+
+- `TWordViwer.GetDocFieldName` сопоставлен с VA `0x004BB81C` (segment-relative mapping, score 87.5; PE section `.text`).
+- Внутри метода видны обращения к коллекции/массиву по смещению объекта `+0xA4`, перебор элементов и вызовы вспомогательных методов/виртуальных интерфейсов. В частности, есть вызовы `0x004C0550`, `0x004D3F24`, `0x004D4528`, `0x004D45CC`, а также `0x004D281C`.
+- Внутри этого метода действительно есть вызов `0x004D23D8` (`SilentSaveEmwatDoc`) по адресу `0x004BBA86`. Это подтверждает caller, но само по себе не меняет смысл метода: он находится внутри процедуры получения/обработки имени поля, а не в обработчиках BeforeClose/BeforeSave.
+- Следовательно, имя `SilentSaveEmwatDoc` нельзя трактовать как доказательство сериализации тела письма или отправки его в Almas Gam. Его назначение по-прежнему не установлено; прежнее описание о взаимодействии с настройками печати/получателями/registry остаётся предварительным наблюдением по прямым вызовам.
+
+### `GetCaptionItemFont` и общий helper `0x004BCA88`
+
+- `TWordViwer.GetCaptionItemFont` сопоставлен с VA `0x004C19C0` (segment-relative mapping, score 87.5; PE section `.text`).
+- Метод принимает `TCaptionItem`, `TDirection` и дополнительный параметр; его тело содержит работу с caption/font-параметрами и вызовы интерфейсных методов.
+- Внутри него есть вызовы `0x004BCA88` (в частности, `0x004C2329`). Также этот адрес встречается в пути BeforeClose, поэтому helper общий и не может считаться специализированным обработчиком закрытия Word.
+- Внутри `GetCaptionItemFont` видны вызовы `IG_ext_load` и `IG_ext_unload` из `GEAR32PD.DLL`; это связывает метод с ImageGear/обработкой caption-элементов, а не с сериализацией текста письма.
+- Роль `0x004BCA88` остаётся неразрешённой до анализа его параметров, возвращаемого значения и всех callers.
+
+### Вывод и следующий анализ
+
+Новый артефакт уточняет два ложных направления: `GetCaptionItemFont` — часть caption/ImageGear-пути; `0x004BCA88` — общий helper. `SilentSaveEmwatDoc` вызывается из `GetDocFieldName`, но это не доказывает передачу отредактированного документа в браузер. Для доказательства жизненного цикла текста письма нужно продолжить трассировку вызовов `GetDocFieldName`, `0x004BCA88`, Word callbacks и фактической сериализации/ответного XML, не выводя назначение из имён.
