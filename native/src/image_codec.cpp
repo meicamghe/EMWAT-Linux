@@ -137,6 +137,15 @@ std::vector<ImagePage> load_image_file(const std::filesystem::path& path) {
             state->file = nullptr;
             throw CodecError("invalid JPEG header");
         }
+        std::optional<double> dpi_x;
+        std::optional<double> dpi_y;
+        if (state->decoder.density_unit == 1) {
+            if (state->decoder.X_density > 0) dpi_x = state->decoder.X_density;
+            if (state->decoder.Y_density > 0) dpi_y = state->decoder.Y_density;
+        } else if (state->decoder.density_unit == 2) {
+            if (state->decoder.X_density > 0) dpi_x = state->decoder.X_density * 2.54;
+            if (state->decoder.Y_density > 0) dpi_y = state->decoder.Y_density * 2.54;
+        }
         state->decoder.out_color_space =
             state->decoder.jpeg_color_space == JCS_GRAYSCALE ? JCS_GRAYSCALE : JCS_RGB;
         jpeg_start_decompress(&state->decoder);
@@ -173,7 +182,7 @@ std::vector<ImagePage> load_image_file(const std::filesystem::path& path) {
         std::free(state->raw);
         state->raw = nullptr;
         ImagePage page{PixelBuffer{width, height, static_cast<std::size_t>(width) * channels,
-            channels == 1 ? PixelFormat::Gray8 : PixelFormat::RGB8, std::move(bytes)}, {}, {}};
+            channels == 1 ? PixelFormat::Gray8 : PixelFormat::RGB8, std::move(bytes)}, dpi_x, dpi_y};
         return {std::move(page)};
     }
     case ImageFileFormat::Tiff: {
@@ -268,6 +277,18 @@ void save_image_file(const std::vector<ImagePage>& pages, const std::filesystem:
         state->encoder.input_components = static_cast<int>(p.channels());
         state->encoder.in_color_space = p.format == PixelFormat::Gray8 ? JCS_GRAYSCALE : JCS_RGB;
         jpeg_set_defaults(&state->encoder);
+        const auto& metadata = pages.front();
+        if (metadata.dpi_x || metadata.dpi_y) {
+            const auto to_density = [](const std::optional<double>& dpi) -> std::uint16_t {
+                if (!dpi) return 0;
+                if (*dpi > 65535.0)
+                    throw CodecError("JPEG resolution metadata exceeds 65535 DPI");
+                return static_cast<std::uint16_t>(std::lround(*dpi));
+            };
+            state->encoder.density_unit = 1;
+            state->encoder.X_density = to_density(metadata.dpi_x);
+            state->encoder.Y_density = to_density(metadata.dpi_y);
+        }
         jpeg_set_quality(&state->encoder, options.jpeg_quality, TRUE);
         jpeg_start_compress(&state->encoder, TRUE);
         while (state->encoder.next_scanline < state->encoder.image_height) {
