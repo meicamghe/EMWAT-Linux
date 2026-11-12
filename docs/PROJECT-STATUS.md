@@ -442,3 +442,11 @@
 - `IG_image_is_valid` پیش از چند عملیات reload، metadata، paint و save بررسی می‌شود.
 - سند معماری اولیهٔ مستقل از ImageGear در [NATIVE-IMAGE-DOCUMENT-DESIGN.md](NATIVE-IMAGE-DOCUMENT-DESIGN.md) ایجاد شد؛ شامل Document/Page/PixelBuffer، مرز API، ownership، تست‌های parity و سؤال‌های باز.
 - گام بعد: resolve کردن قرارداد سه خروجی dimensions و context virtualها؛ سپس ساخت اسکلت ماژول native و تست‌های واحد برای transformهای pixel بدون وابستگی به GEAR.
+
+## پیاده‌سازی اولیه کشف اسکنر در Linux (2026-11-12)
+
+- رابط مستقل ScannerBackend و ساختار ScannerDevice در `native/include/emwat/scanner.hpp` اضافه شد؛ لایه UI و مدل سند تصویر به API اختصاصی SANE وابسته نیستند.
+- پیاده‌سازی SaneScannerBackend در `native/src/sane_scanner.cpp` از `sane_init`، `sane_get_devices` و `sane_exit` استفاده می‌کند و شناسه، سازنده، مدل و نوع دستگاه را برمی‌گرداند.
+- چرخه عمر SANE در هر درخواست کشف دستگاه محدود و با mutex سریال شده است؛ خطاهای init و discovery به ScannerError تبدیل می‌شوند.
+- تست قرارداد backend با fake backend اضافه شد. CI اکنون `libsane-dev` و `pkg-config` را نصب و کتابخانه SANE را در build لینک می‌کند.
+- **محدودیت فعلی:** این milestone فقط کشف و فهرست‌کردن دستگاه‌هاست؛ هنوز تنظیم گزینه‌ها، شروع اسکن، خواندن فریم‌ها، لغو اسکن و تحویل صفحه به ImageDocument پیاده‌سازی نشده‌اند. این‌ها باید در گام بعد و با fake acquisition tests و تست سخت‌افزار واقعی اضافه شوند.
