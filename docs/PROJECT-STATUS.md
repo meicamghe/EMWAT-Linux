@@ -389,3 +389,12 @@
 - بنابراین نام TD32 یعنی `RemoveTempFiles` رفتار واقعی تابع را به‌تنهایی توصیف نمی‌کند؛ حذف فایل از بدنه قابل مشاهده اثبات نشده است.
 - در ScanCommand، مقدار 6 با نتیجه virtual slot مقایسه می‌شود؛ معنای این status و کلاس هدف هنوز نامشخص است.
 - جزئیات در [SCANNER-INTERFACE-ANALYSIS.md](SCANNER-INTERFACE-ANALYSIS.md) ثبت شد.
+
+
+## Run 84 — شناسایی helper پنجرهٔ محاوره‌ای (2026-11-12)
+- اجرای `43159971265` موفق شد؛ artifact `13917817103` بررسی شد.
+- تفسیر قبلی TD32 برای `0x0044ABE4` اصلاح شد: این تابع فایل موقت حذف نمی‌کند؛ componentهای فرم را می‌گردد، متن برخی کنترل‌ها را تنظیم می‌کند، `TCustomForm.SetFormStyle(3)` را اجرا می‌کند و از virtual slot `+0x13C` نتیجهٔ modal می‌گیرد.
+- importهای VCL وجود `TCustomForm.ShowModal` را تأیید می‌کنند؛ slot مذکور با اطمینان بالا همان ShowModal است. `3=fsStayOnTop` و `6=mrYes`.
+- callerهای Scan Error، ToggleCropMode و ScanCommand از انتخاب Yes برای تغییر state/ادامهٔ مسیر استفاده می‌کنند.
+- در پورت Linux این بخش باید به dialog abstraction تبدیل شود، نه فایل‌پاک‌کن.
+- جزئیات و شواهد در [SCANNER-INTERFACE-ANALYSIS.md](SCANNER-INTERFACE-ANALYSIS.md) ثبت شد.
