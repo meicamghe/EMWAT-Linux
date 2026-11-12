@@ -655,3 +655,33 @@ Workflow run `43157168446` با موفقیت اجرا شد؛ artifact `139165262
 3. بازگشت به قرارداد context slot `+0x1C` در ScanCommand و معنای retry پس از return=6.
 
 **Confidence:** پیمایش TComponent، type test، SetText، SetFormStyle، virtual slot `+0x13C` و TObject.Free از روی thunkها/دستورها با اطمینان بالا تأیید شده‌اند؛ نوع کلاس، prototype سطح منبع و معنای return=6 هنوز باز هستند.
+
+
+## Run 84 — اصلاح تفسیر RemoveTempFiles: پنجرهٔ محاوره‌ای modal (2026-11-12)
+
+اجرای `43159971265` موفق شد؛ artifact `13917817103` بررسی شد. یافتهٔ کلیدی این اجرا با کنار هم گذاشتن بدنهٔ تابع، importهای VCL و callerهای مستقل به دست آمد:
+
+### تفسیر اصلاح‌شده
+
+تابع `0x0044ABE4` یک helper ساخت/نمایش پنجرهٔ محاوره‌ای VCL است، نه routine حذف فایل:
+
+1. یک فرم/کانتینر را می‌گیرد و componentهای آن را با `TComponent.GetComponentCount` و `GetComponent` پیمایش می‌کند.
+2. برای هر component، با `System.IsClass` آن را با کلاس مرجع global در `[0x62FE28]` مقایسه می‌کند؛ pointer کلاس در زمان تحلیل استاتیک به آدرس بیرون از image یعنی `0x0023D27E` resolve می‌شود، پس نام دقیق کلاس هنوز مشخص نیست.
+3. برای componentهای منطبق، مقدارهای UnicodeString از open-array به `TControl.SetText` داده می‌شود؛ این رفتار با تنظیم متن کنترل‌های داخل فرم سازگار است.
+4. `TCustomForm.SetFormStyle(3)` اجرا می‌شود؛ مقدار 3 در VCL برابر `fsStayOnTop` است.
+5. سپس virtual slot `+0x13C` فرم اجرا و مقدار بازگشتی آن ذخیره می‌شود. فهرست importهای همان BPL شامل `TCustomForm.ShowModal` است؛ بنابراین این virtual call با اطمینان بالا همان `ShowModal` است.
+6. در Delphi مقدار modal result برابر 6 معادل `mrYes` است. این نگاشت، رفتار callerها را توضیح می‌دهد: Scan Error و ToggleCropMode در صورت انتخاب Yes مسیر ویژه را اجرا می‌کنند؛ در حالی که callerهای دیگر ممکن است نتیجه را نادیده بگیرند.
+
+### شواهد callerها
+
+- `TfrmScanError.FormShow` در `0x004EDB18`: اگر نتیجه 6 باشد، فیلد وضعیت `[EBX+0x2DC]` برابر 2 می‌شود.
+- `TfrmSimpleImageEditor.ToggleCropMode` در `0x004F18C4`: اگر نتیجه 6 باشد، `[EBX+0x42C]` برابر 2 می‌شود؛ در غیر این صورت `[EBX+0x2DC]` صفر می‌شود.
+- `TScanCommand.DoRequest` در `0x004F23FC`: نتیجه 6 مسیر context slot `+0x1C) را فعال می‌کند.
+- `CreateTiff.SeparteImages` و چند caller Word نیز همین helper را صدا می‌زنند؛ برخی نتیجه را مصرف نمی‌کنند.
+- در یک caller دیگر، آرگومان byte برابر 0 یا 1 است و در چند caller دیگر 3؛ نقش دقیق این mode و رشته‌های open-array به تحلیل بیشتر نیاز دارد.
+
+### نتیجهٔ مهندسی برای پورت Linux
+
+این تابع نباید به‌عنوان حذف فایل یا پاک‌سازی پیاده‌سازی شود. معادل Linux باید یک abstraction برای dialog بسازد: عنوان/متن کنترل‌ها از ورودی، پنجرهٔ modal و always-on-top، و بازگرداندن نتیجهٔ Yes/No/Cancel مطابق modal-result. نگاشت کامل دکمه‌ها و متن‌ها هنوز باید از resource stringها و callsiteها استخراج شود.
+
+**Confidence:** پیمایش componentها، تنظیم متن، `fsStayOnTop` و نمایش modal با اطمینان بالا؛ شناسایی slot `+0x13C` به‌عنوان `ShowModal` با اطمینان بالا بر اساس importهای VCL و الگوی فراخوانی؛ نام کلاس هدف و معنای همهٔ modeها هنوز باز است.
