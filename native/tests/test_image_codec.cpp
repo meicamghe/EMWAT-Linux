@@ -240,6 +240,71 @@ int main() {
         0, 0, 255, 255, 255, 255, 255, 0, 0, 0, 255, 0}));
     std::filesystem::remove(bot_left_tif);
 
+
+    // The four rotated/mirrored TIFF orientations transpose the raster and
+    // must also exchange the horizontal and vertical resolution metadata.
+    const auto write_rotated_fixture = [&](const std::filesystem::path& file,
+                                           std::uint16_t orientation) {
+        TIFF* raw = TIFFOpen(file.string().c_str(), "w");
+        assert(raw != nullptr);
+        TIFFSetField(raw, TIFFTAG_IMAGEWIDTH, 3);
+        TIFFSetField(raw, TIFFTAG_IMAGELENGTH, 2);
+        TIFFSetField(raw, TIFFTAG_SAMPLESPERPIXEL, 3);
+        TIFFSetField(raw, TIFFTAG_BITSPERSAMPLE, 8);
+        TIFFSetField(raw, TIFFTAG_ORIENTATION, orientation);
+        TIFFSetField(raw, TIFFTAG_PLANARCONFIG, PLANARCONFIG_CONTIG);
+        TIFFSetField(raw, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_RGB);
+        TIFFSetField(raw, TIFFTAG_COMPRESSION, COMPRESSION_NONE);
+        TIFFSetField(raw, TIFFTAG_XRESOLUTION, 300.0F);
+        TIFFSetField(raw, TIFFTAG_YRESOLUTION, 150.0F);
+        TIFFSetField(raw, TIFFTAG_RESOLUTIONUNIT, RESUNIT_INCH);
+        std::uint8_t first_row[] = {
+            10, 0, 0, 20, 0, 0, 30, 0, 0
+        };
+        std::uint8_t second_row[] = {
+            40, 0, 0, 50, 0, 0, 60, 0, 0
+        };
+        assert(TIFFWriteScanline(raw, first_row, 0, 0) >= 0);
+        assert(TIFFWriteScanline(raw, second_row, 1, 0) >= 0);
+        TIFFClose(raw);
+    };
+    const auto check_rotated_orientation = [&](std::uint16_t orientation,
+                                                const std::vector<std::uint8_t>& expected) {
+        const auto file = root / ("emwat-codec-test-orientation-" +
+                                  std::to_string(orientation) + ".tiff");
+        write_rotated_fixture(file, orientation);
+        const auto decoded = load_image_file(file);
+        assert(decoded.size() == 1);
+        assert(decoded[0].pixels.width == 2 && decoded[0].pixels.height == 3);
+        assert(decoded[0].pixels.format == PixelFormat::RGB8);
+        assert(decoded[0].pixels.stride == 6);
+        assert(decoded[0].pixels.bytes == expected);
+        assert(decoded[0].dpi_x.has_value() && std::abs(*decoded[0].dpi_x - 150.0) < 0.1);
+        assert(decoded[0].dpi_y.has_value() && std::abs(*decoded[0].dpi_y - 300.0) < 0.1);
+        std::filesystem::remove(file);
+    };
+    // Source rows are A B C / D E F, with unique red-channel values.
+    check_rotated_orientation(ORIENTATION_LEFTTOP, {
+        10, 0, 0, 40, 0, 0,
+        20, 0, 0, 50, 0, 0,
+        30, 0, 0, 60, 0, 0
+    });
+    check_rotated_orientation(ORIENTATION_RIGHTTOP, {
+        40, 0, 0, 10, 0, 0,
+        50, 0, 0, 20, 0, 0,
+        60, 0, 0, 30, 0, 0
+    });
+    check_rotated_orientation(ORIENTATION_RIGHTBOT, {
+        60, 0, 0, 30, 0, 0,
+        50, 0, 0, 20, 0, 0,
+        40, 0, 0, 10, 0, 0
+    });
+    check_rotated_orientation(ORIENTATION_LEFTBOT, {
+        30, 0, 0, 60, 0, 0,
+        20, 0, 0, 50, 0, 0,
+        10, 0, 0, 40, 0, 0
+    });
+
     const auto rgba_tif = root / "emwat-codec-test-alpha.tiff";
     const ImagePage rgba_page{PixelBuffer{2, 2, 8, PixelFormat::RGBA8,
         {0, 0, 0, 0, 0, 255, 0, 64, 0, 0, 255, 128, 12, 34, 56, 255}}, 240.0, 240.0};
