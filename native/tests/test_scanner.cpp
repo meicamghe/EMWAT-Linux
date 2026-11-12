@@ -15,7 +15,7 @@ public:
     std::vector<ScannerDevice> devices;
     bool fail{};
 
-    ImagePage scan_one(const std::string&) override {
+    ImagePage scan_one(const std::string&, const ScanOptions& = {}) override {
         if (fail) throw ScannerError("simulated scan failure");
         PixelBuffer pixels{1, 1, 1, PixelFormat::Gray8, {42}};
         return ImagePage{std::move(pixels), std::nullopt, std::nullopt};
