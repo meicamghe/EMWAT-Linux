@@ -305,6 +305,48 @@ int main() {
         10, 0, 0, 40, 0, 0
     });
 
+    // PLANARCONFIG_SEPARATE forces the TIFF RGBA fallback. Verify that
+    // rotated orientations retain the same geometry, pixel order and DPI axes.
+    const auto separate_rotated_tif = root / "emwat-codec-test-separate-rotated.tiff";
+    {
+        TIFF* raw = TIFFOpen(separate_rotated_tif.string().c_str(), "w");
+        assert(raw != nullptr);
+        TIFFSetField(raw, TIFFTAG_IMAGEWIDTH, 3);
+        TIFFSetField(raw, TIFFTAG_IMAGELENGTH, 2);
+        TIFFSetField(raw, TIFFTAG_SAMPLESPERPIXEL, 3);
+        TIFFSetField(raw, TIFFTAG_BITSPERSAMPLE, 8);
+        TIFFSetField(raw, TIFFTAG_ORIENTATION, ORIENTATION_LEFTTOP);
+        TIFFSetField(raw, TIFFTAG_PLANARCONFIG, PLANARCONFIG_SEPARATE);
+        TIFFSetField(raw, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_RGB);
+        TIFFSetField(raw, TIFFTAG_COMPRESSION, COMPRESSION_NONE);
+        TIFFSetField(raw, TIFFTAG_XRESOLUTION, 300.0F);
+        TIFFSetField(raw, TIFFTAG_YRESOLUTION, 150.0F);
+        TIFFSetField(raw, TIFFTAG_RESOLUTIONUNIT, RESUNIT_INCH);
+        std::uint8_t red0[] = {10, 20, 30}, red1[] = {40, 50, 60};
+        std::uint8_t green0[] = {0, 0, 0}, green1[] = {0, 0, 0};
+        std::uint8_t blue0[] = {0, 0, 0}, blue1[] = {0, 0, 0};
+        std::uint8_t* planes[] = {red0, green0, blue0, red1, green1, blue1};
+        for (std::uint16_t sample = 0; sample < 3; ++sample) {
+            assert(TIFFWriteScanline(raw, planes[sample], 0, sample) >= 0);
+            assert(TIFFWriteScanline(raw, planes[3 + sample], 1, sample) >= 0);
+        }
+        TIFFClose(raw);
+    }
+    const auto separate_rotated_pages = load_image_file(separate_rotated_tif);
+    assert(separate_rotated_pages.size() == 1);
+    assert(separate_rotated_pages[0].pixels.width == 2);
+    assert(separate_rotated_pages[0].pixels.height == 3);
+    assert(separate_rotated_pages[0].pixels.format == PixelFormat::RGB8);
+    assert((separate_rotated_pages[0].pixels.bytes == std::vector<std::uint8_t>{
+        10, 0, 0, 40, 0, 0,
+        20, 0, 0, 50, 0, 0,
+        30, 0, 0, 60, 0, 0}));
+    assert(separate_rotated_pages[0].dpi_x.has_value() &&
+           std::abs(*separate_rotated_pages[0].dpi_x - 150.0) < 0.1);
+    assert(separate_rotated_pages[0].dpi_y.has_value() &&
+           std::abs(*separate_rotated_pages[0].dpi_y - 300.0) < 0.1);
+    std::filesystem::remove(separate_rotated_tif);
+
     const auto rgba_tif = root / "emwat-codec-test-alpha.tiff";
     const ImagePage rgba_page{PixelBuffer{2, 2, 8, PixelFormat::RGBA8,
         {0, 0, 0, 0, 0, 255, 0, 64, 0, 0, 255, 128, 12, 34, 56, 255}}, 240.0, 240.0};
