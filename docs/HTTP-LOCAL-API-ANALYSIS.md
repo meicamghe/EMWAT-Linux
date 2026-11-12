@@ -154,3 +154,34 @@ HAR مقدار Content-Length برابر 1,391,942 را گزارش می‌کند
 ### آزمایش امن بعدی
 
 بدون ارسال خود payload، فقط در Firefox مشخص شود آیا مقدار داخل `wordConfig` با `<` شروع می‌شود یا با رشته‌ای شبیه Base64 (حروف/اعداد و احتمالاً `+`, `/`, `=`). اگر Base64 است، در صورت مجازبودن، می‌توان آن را فقط به‌صورت محلی decode کرد و **صرفاً نام تگ ریشه و نام تگ‌های سطح اول** را گزارش داد؛ هیچ متن یا مقدار field نباید کپی یا منتشر شود. سپس باید ساختار درخواست و پاسخ مقایسه شود تا معلوم شود پاسخ واقعاً داده ویرایش‌شده را حمل می‌کند یا صرفاً metadata/configuration است.
+
+
+## Decode محلی wordConfig در نمونه قابل ویرایش — schema سند (2026-11-12)
+
+پس از مشاهده Response مربوط به POST با `invoke=5208` و HTTP 200، کاربر مقدار کدشده داخل `wordConfig` را به‌صورت محلی decode کرد و ساختار XML داخلی را بررسی کرد. تنها schema و نام فیلدها برای مستندسازی استفاده می‌شود؛ مقادیر واقعی مکاتبه در مخزن ثبت نشده‌اند.
+
+یافته‌های مستقیم از نمونه decodeشده:
+
+- ریشه `word-document` دارای `status="edit"` بود.
+- permission برابر `allowPrint=false`، `allowCopy=true` و `allowSave=true` بود.
+- بخش‌های سطح بالا شامل `settings`، `fields`، `optional-attributes` و `requested-types` بودند.
+- setting مشاهده‌شده `gam-print-dialog=false` بود.
+- `optional-attributes` شامل `tokenizedReceivers` با نوع `compInfo` بود؛ content آن URL-encoded بود.
+- `requested-types` مقدار MIME برابر `application/msword` داشت.
+- فیلدهای متنی هم به‌صورت CDATA ساده و هم با `encryption="urlencoded"` دیده شدند.
+- فیلدهای تصویری با `encryption="base64"` و `mimetype="image/*"` تعریف شده بودند؛ از جمله خانواده‌های فیلد امضا، QR و barcode.
+- خانواده فیلدهای امضاکننده تا index 19 در schema وجود داشت.
+- در همین نمونه decodeشده، عنصر `<body>` دیده نشد؛ این مشاهده نباید به تمام پیام‌ها تعمیم داده شود.
+
+### نتیجه و محدودیت
+
+این داده تأیید می‌کند که payload decodeشده یک مدل سند قابل ویرایش با metadata فیلدها و permissionهاست. بااین‌حال، نبودن `<body>` در همین نمونه، محل بدنه واقعی نامه را روشن نمی‌کند. همچنین `application/msword` فقط MIME type اعلام‌شده در `requested-types` است و به‌تنهایی قالب باینری فایل نهایی را تعیین نمی‌کند.
+
+### گام فنی بعدی
+
+1. ساختار `wordConfig` در request اولیه و response زمان close را بدون مقادیر مقایسه کن.
+2. در مسیرهای `LoadDocument` و `PrepareDocument` مشخص کن Body از کجا مقداردهی می‌شود و آیا optional است.
+3. callerها و side effectهای `SilentSaveEmwatDoc`، `OnTmrAutoSave` و `WordAppDocumentBeforeClose` را به ترتیب فراخوانی متصل کن.
+4. نوع فایل/return payload را از `Wordresponsexml.Returntypes` یا مسیر فایل موقت اثبات کن؛ از روی `requested-types` حدس نزن.
+
+هیچ مقدار شخصی، متن نامه، شناسه مکاتبه، محتوای Base64 تصویر یا داده احراز هویت در این مستند ذخیره نشده است.
