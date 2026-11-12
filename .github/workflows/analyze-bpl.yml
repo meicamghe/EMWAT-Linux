@@ -94,6 +94,11 @@ jobs:
       - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004F23E0 bpl-analysis/EmwatMethods-scancommand-helper-22E4-continuation.md 220 ret
       - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004F241B bpl-analysis/EmwatMethods-scancommand-helper-22E4-tail.md 120 ret
       - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004F298B bpl-analysis/EmwatMethods-scancommand-finally-cleanup.md 100 ret
+      - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004F2454 bpl-analysis/EmwatMethods-scancommand-callback-2454.md 120 ret
+      - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004F2474 bpl-analysis/EmwatMethods-scancommand-callback-2474.md 120 ret
+      - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004F2490 bpl-analysis/EmwatMethods-scancommand-callback-record-2490.md 120 ret
+      - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x0044ABE4 bpl-analysis/EmwatMethods-scancommand-callback-dispatch-44ABE4.md 140 ret
+      - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004F2440 bpl-analysis/EmwatMethods-scancommand-exception-finally-2440.md 100 ret
       - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004EC8B4 bpl-analysis/EmwatMethods-helper-4EC8B4.md 100 ret
       - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004ECFC8 bpl-analysis/EmwatMethods-helper-4ECFC8.md 60 ret
       - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004F0084 bpl-analysis/EmwatMethods-gearp-set-force-single-page-extended.md 50 ret
@@ -205,6 +210,11 @@ jobs:
             bpl-analysis/EmwatMethods-scancommand-helper-22E4-continuation.md
             bpl-analysis/EmwatMethods-scancommand-helper-22E4-tail.md
             bpl-analysis/EmwatMethods-scancommand-finally-cleanup.md
+            bpl-analysis/EmwatMethods-scancommand-callback-2454.md
+            bpl-analysis/EmwatMethods-scancommand-callback-2474.md
+            bpl-analysis/EmwatMethods-scancommand-callback-record-2490.md
+            bpl-analysis/EmwatMethods-scancommand-callback-dispatch-44ABE4.md
+            bpl-analysis/EmwatMethods-scancommand-exception-finally-2440.md
             bpl-analysis/EmwatMethods-helper-4EC8B4.md
             bpl-analysis/EmwatMethods-helper-4ECFC8.md
             bpl-analysis/EmwatMethods-gearp-set-force-single-page-extended.md
