@@ -566,6 +566,16 @@ Next: probe 0x004F2278 and 0x004F28C0, then inspect 0x004F22E4 and 0x004F2B18 an
 
 Workflow run `43036386819` completed successfully (artifact `13863571297`). The added traces extend the helper beginning at `0x004F22E4` through its callback-dispatch branch and cleanup.
 
+### Correction — helper identity and callback interpretation
+
+The TD32 symbol map in the same Run 81 artifact identifies `0x0044ABE4` as `@Emwat@Sys@RemoveTempFiles$qqrv`. Its direct callsite at `0x004F23FC` is also reached from `TfrmSimpleImageEditor.ToggleCropMode` at `0x004F18C4`, which independently confirms that this is a shared temporary-file cleanup routine, not a scan callback dispatcher.
+
+The probes at `0x004F2454`, `0x004F2474`, and `0x004F2490` decode as invalid x86 instruction streams and are inside/adjacent to the Delphi method's exception/finalization data region. They must not be treated as executable callback targets or as proof of a callback-record ABI. The previous subsection's wording about callback-record construction and callback targets was therefore too strong and is superseded by this correction.
+
+What is directly established at the ScanCommand callsite is narrower: it prepares a local managed value through `0x00401370`, loads a 16-bit constant from `0x004F2554`, sets a byte argument to 3, calls `RemoveTempFiles`, and compares the returned EAX with 6. If equal, it invokes context VMT slot `+0x1C` and re-enters `0x004F22E4`; otherwise it stores internal status 3. The meaning of return value 6 and the exact argument contract of `RemoveTempFiles` remain unresolved pending the new helper traces.
+
+The same cleanup routine is called by `TfrmSimpleImageEditor.ToggleCropMode`; therefore it is a shared system utility and not scanner-specific. Its internal loop appears to enumerate a supplied collection and perform object/file-related operations, but the exact deletion/filter semantics are not assigned until its helper calls and string arguments are resolved.
+
 ### Newly confirmed control flow
 
 - The helper first checks the global/context condition through `0x004F2B18`; a true result exits through the exception-safe cleanup path.
