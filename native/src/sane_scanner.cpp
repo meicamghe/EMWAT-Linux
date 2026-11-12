@@ -114,7 +114,7 @@ void collect_string_values(SANE_Handle handle, const char* option_name,
             descriptor->constraint_type != SANE_CONSTRAINT_STRING_LIST ||
             !descriptor->constraint.string_list)
             return;
-        for (const SANE_Char** item = descriptor->constraint.string_list; *item; ++item)
+        for (const SANE_Char* const* item = descriptor->constraint.string_list; *item; ++item)
             values.emplace_back(reinterpret_cast<const char*>(*item));
         return;
     }
