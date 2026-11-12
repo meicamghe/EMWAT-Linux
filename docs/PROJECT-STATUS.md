@@ -1,5 +1,5 @@
 # وضعیت پروژه EMWAT-Linux
-آخرین به‌روزرسانی: 2026-11-11
+آخرین به‌روزرسانی: 2026-11-12
 
 ## هدف قطعی
 بازسازی بومی EMWAT برای Linux با حفظ رفتار و گردش‌کارهای واقعی نسخه Windows. اجرای نسخه Windows با Wine راهکار محصول نهایی نیست. LibreOffice به‌عنوان جایگزین/پل تعامل با اسناد و صفحه‌گسترده‌ها در نظر گرفته شده، اما روش اتصال تا روشن‌شدن رفتار واقعی برنامه تعیین نمی‌شود.
@@ -562,3 +562,13 @@
 - XML ارسالی شامل مقادیر واقعی مکاتبه بود؛ فقط ساختار و نام فیلدها ثبت شدند و هیچ متن، نام، شناسه، تصویر، Base64 یا token در مخزن اضافه نشد.
 - اسناد [WORD-DOCUMENT-PROTOCOL-ANALYSIS.md](WORD-DOCUMENT-PROTOCOL-ANALYSIS.md) و [HTTP-LOCAL-API-ANALYSIS.md](HTTP-LOCAL-API-ANALYSIS.md) با جزئیات پاک‌سازی‌شده به‌روزرسانی شدند.
 - **گام بعد:** ردیابی در باینری برای مشخص‌کردن منبع Body در `LoadDocument/PrepareDocument` و ترتیب واقعی lifecycle بین autosave، BeforeClose و serialization پاسخ. تا پیش از اثبات، schema پاسخ و قالب فایل خروجی hard-code نمی‌شود.
+
+
+## Run 97 — بازبینی انتساب نمادهای Word و تفکیک مسیر چاپ (2026-11-12)
+
+- گزارش تجمیعی `EMWAT-Analysis-Results.txt` دوباره از روی مخزن بررسی شد؛ فایل مستقل `EmwatMethods.bpl1-strings.txt` در مسیر ریشه در پاسخ GitHub محتوای متنی برنگرداند، بنابراین تحلیل این مرحله بر خطوط تجمیع‌شده همان گزارش تکیه دارد.
+- نماد `Emwatdocprinthandlerunit.TEmwatDocPrintHandler.FillField` و متدهای هم‌خانواده `PrepareDoc`، `Execute`، `CollectCustomField`، `GetDocFieldName` و تنظیم گیرندگان در کلاس PrintHandler قرار دارند. بنابراین `FillField` را نباید بدون شواهد بیشتر به مسیر اصلی بازکردن/ویرایش نامه نسبت داد.
+- نمادهای مستقل `Wordviewer.OpenDoc`، `Wordviewer.TWordViwer.SilentSaveEmwatDoc`، `StoreFieldValuesForPrint` و `OnControlerNotify` وجود دارند. این‌ها وجود مرزهای جداگانه Word viewer و PrintHandler را تقویت می‌کنند، اما ترتیب اجرا یا caller/callee را اثبات نمی‌کنند.
+- RTTI پراکنده برای `IXMLWorddocumentType.Get_Body`، `Get_Fields`، `Get_Status`، `Get_Permission`، `Get_Requestedtypes` و `Get_Optionalattributes` نیز در گزارش دیده می‌شود؛ این metadata ساختار مدل XML را تأیید می‌کند، نه اینکه Body در هر پیام runtime حاضر باشد.
+- در این مرحله بدنه اجرایی متدهای `LoadDocument`، `PrepareDocument`، `SilentSaveEmwatDoc` یا eventهای BeforeClose استخراج نشد؛ بنابراین هیچ call graph یا ترتیب lifecycle جدیدی ادعا نمی‌شود.
+- **گام بعد:** تهیه disassembly قابل اتکا از PE/BPL با mapping صحیح RVA/section و TD32 segment، سپس دنبال‌کردن entry pointهای Wordviewer و connector. تا آن زمان طراحی adapter بر اساس تفکیک مسئولیت‌های اثبات‌شده انجام می‌شود و FillField چاپ از مسیر ویرایش جدا می‌ماند.
