@@ -153,6 +153,57 @@ int main() {
         std::vector<std::uint8_t>{128, 64, 32, 128, 20, 40, 60, 255}));
     std::filesystem::remove(unassociated_tif);
 
+
+    const auto mixed_pages_tif = root / "emwat-codec-test-mixed-pages.tiff";
+    const ImagePage mixed_gray{PixelBuffer{3, 1, 3, PixelFormat::Gray8,
+        {17, 83, 201}}, 150.0, 160.0};
+    const ImagePage mixed_rgb{PixelBuffer{1, 2, 3, PixelFormat::RGB8,
+        {9, 80, 170, 240, 30, 60}}, 300.0, 200.0};
+    const ImagePage mixed_rgba{PixelBuffer{2, 1, 8, PixelFormat::RGBA8,
+        {10, 20, 30, 40, 200, 150, 100, 255}}, 72.0, 96.0};
+    save_image_file({mixed_gray, mixed_rgb, mixed_rgba}, mixed_pages_tif);
+    const auto mixed_pages = load_image_file(mixed_pages_tif);
+    assert(mixed_pages.size() == 3);
+    assert(mixed_pages[0].pixels.width == 3 && mixed_pages[0].pixels.height == 1);
+    assert(mixed_pages[0].pixels.format == PixelFormat::Gray8);
+    assert(mixed_pages[0].pixels.bytes == mixed_gray.pixels.bytes);
+    assert(mixed_pages[1].pixels.width == 1 && mixed_pages[1].pixels.height == 2);
+    assert(mixed_pages[1].pixels.format == PixelFormat::RGB8);
+    assert(mixed_pages[1].pixels.bytes == mixed_rgb.pixels.bytes);
+    assert(mixed_pages[2].pixels.width == 2 && mixed_pages[2].pixels.height == 1);
+    assert(mixed_pages[2].pixels.format == PixelFormat::RGBA8);
+    assert(mixed_pages[2].pixels.bytes == mixed_rgba.pixels.bytes);
+    assert(mixed_pages[0].dpi_x.has_value() && std::abs(*mixed_pages[0].dpi_x - 150.0) < 0.1);
+    assert(mixed_pages[1].dpi_y.has_value() && std::abs(*mixed_pages[1].dpi_y - 200.0) < 0.1);
+    assert(mixed_pages[2].dpi_x.has_value() && std::abs(*mixed_pages[2].dpi_x - 72.0) < 0.1);
+    std::filesystem::remove(mixed_pages_tif);
+
+    const auto oriented_tif = root / "emwat-codec-test-orientation.tiff";
+    {
+        TIFF* raw = TIFFOpen(oriented_tif.string().c_str(), "w");
+        assert(raw != nullptr);
+        TIFFSetField(raw, TIFFTAG_IMAGEWIDTH, 2);
+        TIFFSetField(raw, TIFFTAG_IMAGELENGTH, 2);
+        TIFFSetField(raw, TIFFTAG_SAMPLESPERPIXEL, 3);
+        TIFFSetField(raw, TIFFTAG_BITSPERSAMPLE, 8);
+        TIFFSetField(raw, TIFFTAG_ORIENTATION, ORIENTATION_BOTRIGHT);
+        TIFFSetField(raw, TIFFTAG_PLANARCONFIG, PLANARCONFIG_CONTIG);
+        TIFFSetField(raw, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_RGB);
+        TIFFSetField(raw, TIFFTAG_COMPRESSION, COMPRESSION_NONE);
+        std::uint8_t first_row[] = {255, 0, 0, 0, 255, 0};
+        std::uint8_t second_row[] = {0, 0, 255, 255, 255, 255};
+        assert(TIFFWriteScanline(raw, first_row, 0, 0) >= 0);
+        assert(TIFFWriteScanline(raw, second_row, 1, 0) >= 0);
+        TIFFClose(raw);
+    }
+    const auto oriented_pages = load_image_file(oriented_tif);
+    assert(oriented_pages.size() == 1);
+    assert(oriented_pages[0].pixels.width == 2 && oriented_pages[0].pixels.height == 2);
+    assert(oriented_pages[0].pixels.format == PixelFormat::RGB8);
+    assert((oriented_pages[0].pixels.bytes == std::vector<std::uint8_t>{
+        255, 255, 255, 0, 0, 255, 0, 255, 0, 255, 0, 0}));
+    std::filesystem::remove(oriented_tif);
+
     const auto rgba_tif = root / "emwat-codec-test-alpha.tiff";
     const ImagePage rgba_page{PixelBuffer{2, 2, 8, PixelFormat::RGBA8,
         {0, 0, 0, 0, 0, 255, 0, 64, 0, 0, 255, 128, 12, 34, 56, 255}}, 240.0, 240.0};
