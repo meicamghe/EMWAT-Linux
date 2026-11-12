@@ -163,6 +163,12 @@ jobs:
       - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x0061E3C8 bpl-analysis/EmwatMethods-gscan-show-crop-rectangle.md
       - run: python tools/trace_delphi_interfaces.py analysis-input/EmwatMethods.bpl1
       - run: python tools/trace_imaging_import_callers.py analysis-input/EmwatMethods.bpl1
+      - name: Trace separate scanner orchestration call sites
+        run: |
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x0061E036 bpl-analysis/EmwatMethods-scanpages-preview-callsite.md 180 ret
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004EFA96 bpl-analysis/EmwatMethods-scanpages-gearp-callsite.md 160 ret
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x0061E3DF bpl-analysis/EmwatMethods-scansource-showcrop-callsite.md 120 ret
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004EFF83 bpl-analysis/EmwatMethods-scansource-setcurrentpage-callsite.md 120 ret
       - uses: actions/upload-artifact@v4
         with:
           name: emwat-bpl-static-analysis
@@ -292,10 +298,4 @@ jobs:
             bpl-analysis/EmwatMethods-scansource-showcrop-callsite.md
             bpl-analysis/EmwatMethods-scansource-setcurrentpage-callsite.md
             bpl-analysis/EmwatMethods-gscan-show-crop-rectangle.md
-          - name: Trace separate scanner orchestration call sites
-            run: |
-              python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x0061E036 bpl-analysis/EmwatMethods-scanpages-preview-callsite.md 180 ret
-              python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004EFA96 bpl-analysis/EmwatMethods-scanpages-gearp-callsite.md 160 ret
-              python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x0061E3DF bpl-analysis/EmwatMethods-scansource-showcrop-callsite.md 120 ret
-              python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004EFF83 bpl-analysis/EmwatMethods-scansource-setcurrentpage-callsite.md 120 ret
           if-no-files-found: error
