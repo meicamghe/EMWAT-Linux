@@ -43,7 +43,9 @@ PATTERNS = [
 "TWordViwer@WordAppDocumentBeforeSave","TWordViwer@GetDocFieldName",
 "TWordViwer@GetCaptionItemFont","TWordViwer@GetXmlFieldInfo",
 "TWordViwer@GetDocFieldIndex","TWordViwer@AddImagesToDoc",
-"TWordViwer@FillImgFldsForPrint"]
+"TWordViwer@FillImgFldsForPrint",
+"TEditWordDocument@PerformMethod","TEmwatMethod@Invoke","TEmwatMethod@PerformMethod",
+"TEmwatMethod@ParamsToXML","ParamsToXML"]
 COMMON=set("mov push pop call ret retn jmp je jne jz jnz ja jae jb jbe jg jge jl jle cmp test lea add sub xor and or inc dec imul idiv shl shr sar movzx movsx setne sete nop leave cdq neg not xchg".split())
 BAD=set("int int1 int3 hlt arpl bound insb insd outsb outsd in out icebp ud2".split())
 
