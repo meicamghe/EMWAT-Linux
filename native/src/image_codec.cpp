@@ -32,6 +32,12 @@ struct JpegDecodeState {
     FILE* file{};
     std::uint8_t* raw{};
     bool created{false};
+
+    ~JpegDecodeState() {
+        if (created) jpeg_destroy_decompress(&decoder);
+        std::free(raw);
+        if (file) std::fclose(file);
+    }
 };
 
 struct JpegEncodeState {
@@ -39,6 +45,11 @@ struct JpegEncodeState {
     JpegError error{};
     FILE* file{};
     bool created{false};
+
+    ~JpegEncodeState() {
+        if (created) jpeg_destroy_compress(&encoder);
+        if (file) std::fclose(file);
+    }
 };
 
 constexpr std::uint64_t kMaxDecodedBytes = 1024ULL * 1024ULL * 1024ULL;
@@ -114,9 +125,6 @@ std::vector<ImagePage> load_image_file(const std::filesystem::path& path) {
         state->decoder.err = jpeg_std_error(&state->error.base);
         state->error.base.error_exit = jpeg_fail;
         if (setjmp(state->error.jump)) {
-            if (state->created) jpeg_destroy_decompress(&state->decoder);
-            std::free(state->raw);
-            if (state->file) std::fclose(state->file);
             throw CodecError("JPEG decode failed");
         }
         jpeg_create_decompress(&state->decoder);
@@ -250,8 +258,6 @@ void save_image_file(const std::vector<ImagePage>& pages, const std::filesystem:
         state->encoder.err = jpeg_std_error(&state->error.base);
         state->error.base.error_exit = jpeg_fail;
         if (setjmp(state->error.jump)) {
-            if (state->created) jpeg_destroy_compress(&state->encoder);
-            if (state->file) std::fclose(state->file);
             throw CodecError("JPEG encode failed");
         }
         jpeg_create_compress(&state->encoder);
