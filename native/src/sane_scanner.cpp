@@ -100,6 +100,35 @@ double sane_numeric_value(SANE_Word value, SANE_Value_Type type) {
     return type == SANE_TYPE_FIXED ? SANE_UNFIX(value) : static_cast<double>(value);
 }
 
+std::optional<double> read_numeric_option(SANE_Handle handle, const char* name) {
+    for (SANE_Int index = 1; ; ++index) {
+        const auto* descriptor = sane_get_option_descriptor(handle, index);
+        if (!descriptor) return std::nullopt;
+        if (!descriptor->name ||
+            std::strcmp(reinterpret_cast<const char*>(descriptor->name), name) != 0)
+            continue;
+        if ((descriptor->cap & SANE_CAP_INACTIVE) ||
+            !(descriptor->cap & SANE_CAP_SOFT_DETECT) ||
+            descriptor->size != static_cast<SANE_Int>(sizeof(SANE_Word)) ||
+            (descriptor->type != SANE_TYPE_INT && descriptor->type != SANE_TYPE_FIXED))
+            return std::nullopt;
+        SANE_Word value = 0;
+        const auto status = sane_control_option(handle, index, SANE_ACTION_GET_VALUE, &value, nullptr);
+        if (status != SANE_STATUS_GOOD) return std::nullopt;
+        const double dpi = sane_numeric_value(value, descriptor->type);
+        if (!std::isfinite(dpi) || dpi <= 0.0 || dpi > 100000.0) return std::nullopt;
+        return dpi;
+    }
+}
+
+std::pair<std::optional<double>, std::optional<double>> read_scan_dpi(SANE_Handle handle) {
+    const auto x = read_numeric_option(handle, "x-resolution");
+    const auto y = read_numeric_option(handle, "y-resolution");
+    if (x || y) return {x ? x : y, y ? y : x};
+    const auto resolution = read_numeric_option(handle, "resolution");
+    return {resolution, resolution};
+}
+
 void collect_string_values(SANE_Handle handle, const char* option_name,
                            std::vector<std::string>& values) {
     for (SANE_Int index = 1; ; ++index) {
@@ -198,6 +227,9 @@ ImagePage SaneScannerBackend::scan_one(const std::string& device_id, const ScanO
     if (options.mode) set_string_option(device.get(), "mode", *options.mode);
     if (options.source) set_string_option(device.get(), "source", *options.source);
 
+    // Read the device-selected DPI after applying options; never infer it from a request.
+    const auto [dpi_x, dpi_y] = read_scan_dpi(device.get());
+
     auto status = sane_start(device.get());
     if (status != SANE_STATUS_GOOD)
         throw ScannerError(std::string("Cannot start scan: ") + sane_strstatus(status));
@@ -275,7 +307,7 @@ ImagePage SaneScannerBackend::scan_one(const std::string& device_id, const ScanO
         throw ScannerError("Scanner returned an incomplete image frame");
     }
     if (!pixels.valid()) throw ScannerError("Scanner produced an invalid pixel buffer");
-    return ImagePage{std::move(pixels), std::nullopt, std::nullopt};
+    return ImagePage{std::move(pixels), dpi_x, dpi_y};
 }
 
 } // namespace emwat
