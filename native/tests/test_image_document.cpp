@@ -1,6 +1,7 @@
 #include "emwat/image_document.hpp"
 
 #include <cstdint>
+#include <limits>
 #include <stdexcept>
 #include <vector>
 
@@ -80,6 +81,18 @@ int main() {
         doc.crop_active(CropRect{0, 0, 2, 1});
         assert(doc.dirty() && doc.generation() == 3);
         assert(doc.page(0).pixels.width == 2 && doc.page(0).pixels.height == 1);
+    }
+    {
+        const double invalid_values[] = {0.0, -1.0,
+            std::numeric_limits<double>::quiet_NaN(),
+            std::numeric_limits<double>::infinity()};
+        for (const auto dpi : invalid_values) {
+            ImageDocument doc;
+            bool threw = false;
+            try { doc.append_page(ImagePage{sample(), dpi, 300.0}); }
+            catch (const std::invalid_argument&) { threw = true; }
+            assert(threw && doc.page_count() == 0 && !doc.dirty());
+        }
     }
     {
         bool threw = false;
