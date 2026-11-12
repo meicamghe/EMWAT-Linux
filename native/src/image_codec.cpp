@@ -424,13 +424,18 @@ std::vector<ImagePage> load_image_file(const std::filesystem::path& path) {
             const bool has_y = TIFFGetField(tif.get(), TIFFTAG_YRESOLUTION, &ry) != 0;
             std::uint16_t unit = RESUNIT_INCH;
             TIFFGetFieldDefaulted(tif.get(), TIFFTAG_RESOLUTIONUNIT, &unit);
+            // RESUNIT_NONE describes arbitrary units, not pixels per inch.
+            // Preserve resolution metadata only when TIFF defines its physical unit.
+            const bool physical_resolution = unit == RESUNIT_INCH || unit == RESUNIT_CENTIMETER;
             const double factor = unit == RESUNIT_CENTIMETER ? 2.54 : 1.0;
             const bool swapped_axes = orientation >= ORIENTATION_LEFTTOP && orientation <= ORIENTATION_LEFTBOT;
+            const bool output_has_x = physical_resolution && (swapped_axes ? has_y : has_x);
+            const bool output_has_y = physical_resolution && (swapped_axes ? has_x : has_y);
             pages.push_back(ImagePage{PixelBuffer{output_width, output_height,
                 static_cast<std::size_t>(output_width) * channels,
                 has_alpha ? PixelFormat::RGBA8 : (is_gray8 ? PixelFormat::Gray8 : PixelFormat::RGB8), std::move(bytes)},
-                (swapped_axes ? has_y : has_x) ? std::optional<double>((swapped_axes ? ry : rx) * factor) : std::nullopt,
-                (swapped_axes ? has_x : has_y) ? std::optional<double>((swapped_axes ? rx : ry) * factor) : std::nullopt});
+                output_has_x ? std::optional<double>((swapped_axes ? ry : rx) * factor) : std::nullopt,
+                output_has_y ? std::optional<double>((swapped_axes ? rx : ry) * factor) : std::nullopt});
             // TIFFReadDirectory() returns false for both normal EOF and a
             // malformed next IFD. Check the directory chain explicitly so a
             // damaged later page cannot be mistaken for a clean end-of-file.
