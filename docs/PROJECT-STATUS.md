@@ -619,3 +619,12 @@
 - `GetCaptionItemFont` связан с caption/font и ImageGear (`IG_ext_load/unload`); он тоже вызывает общий helper `0x004BCA88`. Поэтому этот helper не является специфичным только для BeforeClose.
 - Прямое назначение `SilentSaveEmwatDoc` и helper `0x004BCA88` остаётся открытым. Схема HTTP/XML и runtime trace пока не дают подтверждённого полного цикла сохранения текста письма.
 - Подробности и ограничения интерпретации внесены в `docs/WORD-DOCUMENT-PROTOCOL-ANALYSIS.md`.
+
+
+### Run 102 — Word XML field helpers (2026-11-12)
+
+- Workflow `43219502021` завершился успешно: 147/147 шагов, без ошибок.
+- Caller scan уточнил: `GetCaptionItemFont` вызывается из `AddImagesToDoc`; helper `0x004BCA88` имеет три прямых caller: два в `GetCaptionItemFont`, один в `WordAppDocumentBeforeClose`.
+- Новый helper `0x004BC980` используется в `GetXmlFieldInfo`, `GetDocFieldIndex` и `FillImgFldsForPrint`; вероятная зона ответственности — работа с XML field metadata/lookup, но точный интерфейс пока не установлен.
+- Для следующего цикла добавлены disassembly targets: `GetXmlFieldInfo`, `GetDocFieldIndex`, `AddImagesToDoc`, `FillImgFldsForPrint`.
+- Протокол текста письма и фактическое сохранение пока не подтверждены; дальнейшая работа направлена на различение text-field и image-field путей.
