@@ -14,7 +14,6 @@
 #include <memory>
 #include <setjmp.h>
 #include <string>
-#include <memory>
 
 namespace emwat {
 namespace {
@@ -73,6 +72,19 @@ void require_page(const ImagePage& page) {
         throw CodecError("invalid image resolution metadata");
 }
 
+struct PngImageState {
+    png_image image{};
+    PngImageState() { image.version = PNG_IMAGE_VERSION; }
+    ~PngImageState() { png_image_free(&image); }
+};
+
+png_uint_32 png_pixels_per_meter(double dpi) {
+    const double ppm = std::round(dpi / 0.0254);
+    if (!std::isfinite(ppm) || ppm > static_cast<double>(std::numeric_limits<png_uint_32>::max()))
+        throw CodecError("PNG resolution metadata is out of range");
+    return static_cast<png_uint_32>(std::max(1.0, ppm));
+}
+
 std::pair<std::optional<double>, std::optional<double>>
 read_png_resolution(const std::filesystem::path& path) {
     FILE* file = std::fopen(path.string().c_str(), "rb");
@@ -109,6 +121,9 @@ read_png_resolution(const std::filesystem::path& path) {
 
 void write_png_file(const ImagePage& page, const std::filesystem::path& path) {
     const auto& pixels = page.pixels;
+    const bool has_resolution = page.dpi_x && page.dpi_y;
+    const png_uint_32 xppm = has_resolution ? png_pixels_per_meter(*page.dpi_x) : 0;
+    const png_uint_32 yppm = has_resolution ? png_pixels_per_meter(*page.dpi_y) : 0;
     FILE* file = std::fopen(path.string().c_str(), "wb");
     if (!file) throw CodecError("cannot create PNG file");
     png_structp png = png_create_write_struct(PNG_LIBPNG_VER_STRING, nullptr, nullptr, nullptr);
@@ -128,22 +143,11 @@ void write_png_file(const ImagePage& page, const std::filesystem::path& path) {
         throw CodecError("PNG write failed");
     }
     png_init_io(png, file);
-    png_uint_32 xppm = 0, yppm = 0;
-    if (page.dpi_x && page.dpi_y) {
-        const auto to_ppm = [](double dpi) -> png_uint_32 {
-            const double ppm = std::round(dpi / 0.0254);
-            if (ppm > static_cast<double>(std::numeric_limits<png_uint_32>::max()))
-                throw CodecError("PNG resolution metadata is out of range");
-            return static_cast<png_uint_32>(ppm);
-        };
-        xppm = to_ppm(*page.dpi_x);
-        yppm = to_ppm(*page.dpi_y);
-    }
     const int color_type = pixels.format == PixelFormat::Gray8 ? PNG_COLOR_TYPE_GRAY :
         (pixels.format == PixelFormat::RGBA8 ? PNG_COLOR_TYPE_RGBA : PNG_COLOR_TYPE_RGB);
     png_set_IHDR(png, info, pixels.width, pixels.height, 8, color_type,
                  PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
-    if (page.dpi_x && page.dpi_y)
+    if (has_resolution)
         png_set_pHYs(png, info, xppm, yppm, PNG_RESOLUTION_METER);
     png_write_info(png, info);
     for (std::uint32_t y = 0; y < pixels.height; ++y) {
@@ -171,13 +175,12 @@ ImageFileFormat image_format_from_extension(const std::filesystem::path& path) {
 std::vector<ImagePage> load_image_file(const std::filesystem::path& path) {
     switch (image_format_from_extension(path)) {
     case ImageFileFormat::Png: {
-        png_image image{};
-        image.version = PNG_IMAGE_VERSION;
+        PngImageState image_state;
+        auto& image = image_state.image;
         const auto name = path.string();
         if (!png_image_begin_read_from_file(&image, name.c_str()))
             throw CodecError(std::string("PNG read failed: ") + image.message);
         if (image.width == 0 || image.height == 0) {
-            png_image_free(&image);
             throw CodecError("PNG has zero dimensions");
         }
         if ((image.format & PNG_FORMAT_FLAG_COLOR) != 0)
@@ -186,13 +189,11 @@ std::vector<ImagePage> load_image_file(const std::filesystem::path& path) {
         const auto channels = PNG_IMAGE_SAMPLE_CHANNELS(image.format);
         const auto expected_bytes = checked_image_bytes(image.width, image.height, channels, "PNG");
         if (PNG_IMAGE_SIZE(image) != expected_bytes) {
-            png_image_free(&image);
             throw CodecError("PNG decoded size is inconsistent");
         }
         std::vector<std::uint8_t> bytes(expected_bytes);
         if (!png_image_finish_read(&image, nullptr, bytes.data(), 0, nullptr)) {
             const std::string message = image.message;
-            png_image_free(&image);
             throw CodecError("PNG read failed: " + message);
         }
         const auto [dpi_x, dpi_y] = read_png_resolution(path);
@@ -200,7 +201,6 @@ std::vector<ImagePage> load_image_file(const std::filesystem::path& path) {
             static_cast<std::size_t>(image.width) * channels,
             channels == 1 ? PixelFormat::Gray8 : (channels == 4 ? PixelFormat::RGBA8 : PixelFormat::RGB8),
             std::move(bytes)}, dpi_x, dpi_y};
-        png_image_free(&image);
         return {std::move(page)};
     }
     case ImageFileFormat::Jpeg: {
