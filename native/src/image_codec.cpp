@@ -26,6 +26,21 @@ extern "C" void jpeg_fail(j_common_ptr info) {
     longjmp(error->jump, 1);
 }
 
+struct JpegDecodeState {
+    jpeg_decompress_struct decoder{};
+    JpegError error{};
+    FILE* file{};
+    std::uint8_t* raw{};
+    bool created{false};
+};
+
+struct JpegEncodeState {
+    jpeg_compress_struct encoder{};
+    JpegError error{};
+    FILE* file{};
+    bool created{false};
+};
+
 constexpr std::uint64_t kMaxDecodedBytes = 1024ULL * 1024ULL * 1024ULL;
 constexpr std::size_t kMaxTiffPages = 10000;
 
@@ -93,50 +108,62 @@ std::vector<ImagePage> load_image_file(const std::filesystem::path& path) {
         return {std::move(page)};
     }
     case ImageFileFormat::Jpeg: {
-        FILE* file = std::fopen(path.string().c_str(), "rb");
-        if (!file) throw CodecError("cannot open JPEG file");
-        jpeg_decompress_struct decoder{};
-        JpegError error{};
-        decoder.err = jpeg_std_error(&error.base);
-        error.base.error_exit = jpeg_fail;
-        if (setjmp(error.jump)) {
-            jpeg_destroy_decompress(&decoder);
-            std::fclose(file);
+        auto state = std::make_unique<JpegDecodeState>();
+        state->file = std::fopen(path.string().c_str(), "rb");
+        if (!state->file) throw CodecError("cannot open JPEG file");
+        state->decoder.err = jpeg_std_error(&state->error.base);
+        state->error.base.error_exit = jpeg_fail;
+        if (setjmp(state->error.jump)) {
+            if (state->created) jpeg_destroy_decompress(&state->decoder);
+            std::free(state->raw);
+            if (state->file) std::fclose(state->file);
             throw CodecError("JPEG decode failed");
         }
-        jpeg_create_decompress(&decoder);
-        jpeg_stdio_src(&decoder, file);
-        if (jpeg_read_header(&decoder, TRUE) != JPEG_HEADER_OK) {
-            jpeg_destroy_decompress(&decoder);
-            std::fclose(file);
+        jpeg_create_decompress(&state->decoder);
+        state->created = true;
+        jpeg_stdio_src(&state->decoder, state->file);
+        if (jpeg_read_header(&state->decoder, TRUE) != JPEG_HEADER_OK) {
+            jpeg_destroy_decompress(&state->decoder);
+            state->created = false;
+            std::fclose(state->file);
+            state->file = nullptr;
             throw CodecError("invalid JPEG header");
         }
-        decoder.out_color_space = decoder.jpeg_color_space == JCS_GRAYSCALE ? JCS_GRAYSCALE : JCS_RGB;
-        jpeg_start_decompress(&decoder);
-        const auto width = decoder.output_width;
-        const auto height = decoder.output_height;
-        const auto channels = decoder.output_components;
+        state->decoder.out_color_space =
+            state->decoder.jpeg_color_space == JCS_GRAYSCALE ? JCS_GRAYSCALE : JCS_RGB;
+        jpeg_start_decompress(&state->decoder);
+        const auto width = state->decoder.output_width;
+        const auto height = state->decoder.output_height;
+        const auto channels = state->decoder.output_components;
         if (channels != 1 && channels != 3) {
-            jpeg_destroy_decompress(&decoder);
-            std::fclose(file);
+            jpeg_destroy_decompress(&state->decoder);
+            state->created = false;
+            std::fclose(state->file);
+            state->file = nullptr;
             throw CodecError("unsupported JPEG output channel count");
         }
         const auto total = checked_image_bytes(width, height, channels, "JPEG");
-        auto* raw = static_cast<std::uint8_t*>(std::malloc(total));
-        if (!raw) {
-            jpeg_destroy_decompress(&decoder);
-            std::fclose(file);
+        state->raw = static_cast<std::uint8_t*>(std::malloc(total));
+        if (!state->raw) {
+            jpeg_destroy_decompress(&state->decoder);
+            state->created = false;
+            std::fclose(state->file);
+            state->file = nullptr;
             throw CodecError("out of memory decoding JPEG");
         }
-        while (decoder.output_scanline < decoder.output_height) {
-            JSAMPROW row = raw + static_cast<std::size_t>(decoder.output_scanline) * width * channels;
-            jpeg_read_scanlines(&decoder, &row, 1);
+        while (state->decoder.output_scanline < state->decoder.output_height) {
+            JSAMPROW row = state->raw +
+                static_cast<std::size_t>(state->decoder.output_scanline) * width * channels;
+            jpeg_read_scanlines(&state->decoder, &row, 1);
         }
-        jpeg_finish_decompress(&decoder);
-        jpeg_destroy_decompress(&decoder);
-        std::fclose(file);
-        std::vector<std::uint8_t> bytes(raw, raw + total);
-        std::free(raw);
+        jpeg_finish_decompress(&state->decoder);
+        jpeg_destroy_decompress(&state->decoder);
+        state->created = false;
+        std::fclose(state->file);
+        state->file = nullptr;
+        std::vector<std::uint8_t> bytes(state->raw, state->raw + total);
+        std::free(state->raw);
+        state->raw = nullptr;
         ImagePage page{PixelBuffer{width, height, static_cast<std::size_t>(width) * channels,
             channels == 1 ? PixelFormat::Gray8 : PixelFormat::RGB8, std::move(bytes)}, {}, {}};
         return {std::move(page)};
@@ -217,34 +244,36 @@ void save_image_file(const std::vector<ImagePage>& pages, const std::filesystem:
         const auto& p = pages.front().pixels;
         if (p.format == PixelFormat::RGBA8)
             throw CodecError("JPEG does not support alpha; convert the page to RGB first");
-        FILE* file = std::fopen(path.string().c_str(), "wb");
-        if (!file) throw CodecError("cannot create JPEG file");
-        jpeg_compress_struct encoder{};
-        JpegError error{};
-        encoder.err = jpeg_std_error(&error.base);
-        error.base.error_exit = jpeg_fail;
-        if (setjmp(error.jump)) {
-            jpeg_destroy_compress(&encoder);
-            std::fclose(file);
+        auto state = std::make_unique<JpegEncodeState>();
+        state->file = std::fopen(path.string().c_str(), "wb");
+        if (!state->file) throw CodecError("cannot create JPEG file");
+        state->encoder.err = jpeg_std_error(&state->error.base);
+        state->error.base.error_exit = jpeg_fail;
+        if (setjmp(state->error.jump)) {
+            if (state->created) jpeg_destroy_compress(&state->encoder);
+            if (state->file) std::fclose(state->file);
             throw CodecError("JPEG encode failed");
         }
-        jpeg_create_compress(&encoder);
-        jpeg_stdio_dest(&encoder, file);
-        encoder.image_width = p.width;
-        encoder.image_height = p.height;
-        encoder.input_components = static_cast<int>(p.channels());
-        encoder.in_color_space = p.format == PixelFormat::Gray8 ? JCS_GRAYSCALE : JCS_RGB;
-        jpeg_set_defaults(&encoder);
-        jpeg_set_quality(&encoder, options.jpeg_quality, TRUE);
-        jpeg_start_compress(&encoder, TRUE);
-        while (encoder.next_scanline < encoder.image_height) {
+        jpeg_create_compress(&state->encoder);
+        state->created = true;
+        jpeg_stdio_dest(&state->encoder, state->file);
+        state->encoder.image_width = p.width;
+        state->encoder.image_height = p.height;
+        state->encoder.input_components = static_cast<int>(p.channels());
+        state->encoder.in_color_space = p.format == PixelFormat::Gray8 ? JCS_GRAYSCALE : JCS_RGB;
+        jpeg_set_defaults(&state->encoder);
+        jpeg_set_quality(&state->encoder, options.jpeg_quality, TRUE);
+        jpeg_start_compress(&state->encoder, TRUE);
+        while (state->encoder.next_scanline < state->encoder.image_height) {
             JSAMPROW row = const_cast<JSAMPROW>(p.bytes.data() +
-                static_cast<std::size_t>(encoder.next_scanline) * p.stride);
-            jpeg_write_scanlines(&encoder, &row, 1);
+                static_cast<std::size_t>(state->encoder.next_scanline) * p.stride);
+            jpeg_write_scanlines(&state->encoder, &row, 1);
         }
-        jpeg_finish_compress(&encoder);
-        jpeg_destroy_compress(&encoder);
-        std::fclose(file);
+        jpeg_finish_compress(&state->encoder);
+        jpeg_destroy_compress(&state->encoder);
+        state->created = false;
+        std::fclose(state->file);
+        state->file = nullptr;
         return;
     }
     case ImageFileFormat::Tiff: {
