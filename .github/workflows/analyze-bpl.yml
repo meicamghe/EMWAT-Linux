@@ -29,6 +29,7 @@ jobs:
         with:
           python-version: '3.12'
       - run: pip install pefile capstone
+      # Analyze the main EXE as well as the Methods BPL; the EXE owns the HTTP dispatch layer.
       - name: Extract EmwatAgent for targeted static analysis
         run: python tools/extract_emwat_agent.py EMWAT_Extracted.zip /tmp/emwat-agent/EmwatAgent.exe
       - name: Analyze EmwatAgent TD32 symbols
