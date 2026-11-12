@@ -229,7 +229,10 @@ jobs:
           python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004BB81C bpl-analysis/EmwatMethods-callers-get-doc-field-name.md
           python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004C19C0 bpl-analysis/EmwatMethods-callers-get-caption-item-font.md
           python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004BC980 bpl-analysis/EmwatMethods-callers-word-helper-4BC980.md
-      - run: python tools/trace_import_and_callers.py analysis-input/EmwatMethods.bpl1 0x0062EE24 0x0046AD10 0x0046C82C
+      - name: Resolve ParamsToXML thunk and callers
+        run: |
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x00401068 bpl-analysis/EmwatMethods-params-to-xml-target.md 180 ret
+          python tools/trace_import_and_callers.py analysis-input/EmwatMethods.bpl1 0x0062EE24 0x0046AD10 0x0046C82C 0x00401068
       - uses: actions/upload-artifact@v4
         with:
           name: emwat-bpl-static-analysis
@@ -413,4 +416,5 @@ jobs:
             bpl-analysis/EmwatMethods-callers-get-caption-item-font.md
             bpl-analysis/EmwatMethods-callers-word-helper-4BC980.md
             bpl-analysis/EmwatMethods-import-and-caller-trace.md
+            bpl-analysis/EmwatMethods-params-to-xml-target.md
           if-no-files-found: error
