@@ -361,3 +361,11 @@
 - تحلیل با جزئیات و مرزبندی اطمینان در [SCANNER-INTERFACE-ANALYSIS.md](SCANNER-INTERFACE-ANALYSIS.md) ثبت شد.
 - هنوز معنای callbackها، layout رکورد و قرارداد `0x0044ABE4` مشخص نیست؛ بنابراین این بخش را نباید به‌عنوان ABI قطعی اسکنر تفسیر کرد.
 - گام بعد: trace کردن callbackهای `0x004F2454` و `0x004F2474`، رکورد `0x004F2490`، dispatcher `0x0044ABE4` و مسیر exception/finally.
+
+
+## اصلاح تحلیل Run 81 — شناسایی RemoveTempFiles (2026-11-12)
+- نماد TD32 مشخص کرد آدرس `0x0044ABE4` تابع `Emwat.Sys.RemoveTempFiles` است، نه dispatcher مربوط به callback اسکن.
+- همین تابع از `TfrmSimpleImageEditor.ToggleCropMode` نیز فراخوانی می‌شود؛ بنابراین utility مشترک پاک‌سازی فایل‌های موقت است.
+- آدرس‌های `0x004F2454`، `0x004F2474` و `0x004F2490` disassembly معتبر x86 ندارند و نباید callback یا ABI اجرایی تلقی شوند.
+- در مسیر ScanCommand فقط می‌توان گفت نتیجه تابع با عدد 6 مقایسه می‌شود؛ در صورت برابری، context از VMT slot `+0x1C` ادامه می‌یابد و helper `0x004F22E4` دوباره اجرا می‌شود. معنای عدد 6 هنوز نامشخص است.
+- Traceهای بعدی برای شناسایی قرارداد آرگومان‌ها و helperهای داخلی RemoveTempFiles به workflow افزوده شدند.
