@@ -204,6 +204,41 @@ int main() {
         255, 255, 255, 0, 0, 255, 0, 255, 0, 255, 0, 0}));
     std::filesystem::remove(oriented_tif);
 
+    // Horizontal and vertical mirror orientations must also normalize to top-left.
+    const auto write_oriented_fixture = [&](const std::filesystem::path& file,
+                                            std::uint16_t orientation) {
+        TIFF* raw = TIFFOpen(file.string().c_str(), "w");
+        assert(raw != nullptr);
+        TIFFSetField(raw, TIFFTAG_IMAGEWIDTH, 2);
+        TIFFSetField(raw, TIFFTAG_IMAGELENGTH, 2);
+        TIFFSetField(raw, TIFFTAG_SAMPLESPERPIXEL, 3);
+        TIFFSetField(raw, TIFFTAG_BITSPERSAMPLE, 8);
+        TIFFSetField(raw, TIFFTAG_ORIENTATION, orientation);
+        TIFFSetField(raw, TIFFTAG_PLANARCONFIG, PLANARCONFIG_CONTIG);
+        TIFFSetField(raw, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_RGB);
+        TIFFSetField(raw, TIFFTAG_COMPRESSION, COMPRESSION_NONE);
+        std::uint8_t top_row[] = {255, 0, 0, 0, 255, 0};
+        std::uint8_t bottom_row[] = {0, 0, 255, 255, 255, 255};
+        assert(TIFFWriteScanline(raw, top_row, 0, 0) >= 0);
+        assert(TIFFWriteScanline(raw, bottom_row, 1, 0) >= 0);
+        TIFFClose(raw);
+    };
+    const auto top_right_tif = root / "emwat-codec-test-orientation-topright.tiff";
+    write_oriented_fixture(top_right_tif, ORIENTATION_TOPRIGHT);
+    const auto top_right_pages = load_image_file(top_right_tif);
+    assert(top_right_pages.size() == 1);
+    assert((top_right_pages[0].pixels.bytes == std::vector<std::uint8_t>{
+        0, 255, 0, 255, 0, 0, 255, 255, 255, 0, 0, 255}));
+    std::filesystem::remove(top_right_tif);
+
+    const auto bot_left_tif = root / "emwat-codec-test-orientation-botleft.tiff";
+    write_oriented_fixture(bot_left_tif, ORIENTATION_BOTLEFT);
+    const auto bot_left_pages = load_image_file(bot_left_tif);
+    assert(bot_left_pages.size() == 1);
+    assert((bot_left_pages[0].pixels.bytes == std::vector<std::uint8_t>{
+        0, 0, 255, 255, 255, 255, 255, 0, 0, 0, 255, 0}));
+    std::filesystem::remove(bot_left_tif);
+
     const auto rgba_tif = root / "emwat-codec-test-alpha.tiff";
     const ImagePage rgba_page{PixelBuffer{2, 2, 8, PixelFormat::RGBA8,
         {0, 0, 0, 0, 0, 255, 0, 64, 0, 0, 255, 128, 12, 34, 56, 255}}, 240.0, 240.0};
