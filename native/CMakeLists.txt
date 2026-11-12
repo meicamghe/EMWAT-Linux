@@ -8,15 +8,18 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 find_package(PNG REQUIRED)
 find_package(JPEG REQUIRED)
 find_package(TIFF REQUIRED)
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(SANE REQUIRED IMPORTED_TARGET sane)
 
 enable_testing()
 add_library(emwat_image_core
     src/image_document.cpp
     src/image_codec.cpp
     src/image_document_io.cpp
+    src/sane_scanner.cpp
 )
 target_include_directories(emwat_image_core PUBLIC include)
-target_link_libraries(emwat_image_core PRIVATE PNG::PNG JPEG::JPEG TIFF::TIFF)
+target_link_libraries(emwat_image_core PRIVATE PNG::PNG JPEG::JPEG TIFF::TIFF PkgConfig::SANE)
 target_compile_options(emwat_image_core PRIVATE -Wall -Wextra -Wpedantic -Werror)
 
 add_executable(emwat_image_document_tests tests/test_image_document.cpp)
@@ -28,6 +31,11 @@ add_executable(emwat_image_codec_tests tests/test_image_codec.cpp)
 target_link_libraries(emwat_image_codec_tests PRIVATE emwat_image_core)
 target_compile_options(emwat_image_codec_tests PRIVATE -Wall -Wextra -Wpedantic -Werror)
 add_test(NAME image_codec COMMAND emwat_image_codec_tests)
+
+add_executable(emwat_scanner_tests tests/test_scanner.cpp)
+target_link_libraries(emwat_scanner_tests PRIVATE emwat_image_core)
+target_compile_options(emwat_scanner_tests PRIVATE -Wall -Wextra -Wpedantic -Werror)
+add_test(NAME scanner_backend_contract COMMAND emwat_scanner_tests)
 
 add_executable(emwat_image_document_io_tests tests/test_image_document_io.cpp)
 target_link_libraries(emwat_image_document_io_tests PRIVATE emwat_image_core)
