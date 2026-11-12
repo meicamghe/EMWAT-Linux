@@ -287,5 +287,15 @@ jobs:
             bpl-analysis/EmwatMethods-field-offset-38.md
             bpl-analysis/EmwatMethods-gearp-show-editor.md
             bpl-analysis/EmwatMethods-gearp-set-current-page.md
+            bpl-analysis/EmwatMethods-scanpages-preview-callsite.md
+            bpl-analysis/EmwatMethods-scanpages-gearp-callsite.md
+            bpl-analysis/EmwatMethods-scansource-showcrop-callsite.md
+            bpl-analysis/EmwatMethods-scansource-setcurrentpage-callsite.md
             bpl-analysis/EmwatMethods-gscan-show-crop-rectangle.md
+          - name: Trace separate scanner orchestration call sites
+            run: |
+              python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x0061E036 bpl-analysis/EmwatMethods-scanpages-preview-callsite.md 180 ret
+              python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004EFA96 bpl-analysis/EmwatMethods-scanpages-gearp-callsite.md 160 ret
+              python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x0061E3DF bpl-analysis/EmwatMethods-scansource-showcrop-callsite.md 120 ret
+              python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004EFF83 bpl-analysis/EmwatMethods-scansource-setcurrentpage-callsite.md 120 ret
           if-no-files-found: error
