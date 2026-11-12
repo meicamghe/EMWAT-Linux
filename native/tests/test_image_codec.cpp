@@ -66,6 +66,15 @@ int main() {
     assert(tif_pages[1].pixels.bytes == page(20).pixels.bytes);
     assert(tif_pages[0].dpi_x.has_value());
 
+    const auto rgba_tif = root / "emwat-codec-test-alpha.tiff";
+    const ImagePage rgba_page{PixelBuffer{2, 2, 8, PixelFormat::RGBA8,
+        {255, 0, 0, 0, 0, 255, 0, 64, 0, 0, 255, 128, 12, 34, 56, 255}}, 240.0, 240.0};
+    save_image_file({rgba_page}, rgba_tif);
+    const auto rgba_pages = load_image_file(rgba_tif);
+    assert(rgba_pages.size() == 1);
+    assert(rgba_pages[0].pixels.format == PixelFormat::RGBA8);
+    assert(rgba_pages[0].pixels.bytes == rgba_page.pixels.bytes);
+    std::filesystem::remove(rgba_tif);
     bool rejected = false;
     try { save_image_file({page(1), page(2)}, png); }
     catch (const CodecError&) { rejected = true; }
