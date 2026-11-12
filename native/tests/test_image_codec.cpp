@@ -8,6 +8,7 @@
 #include <filesystem>
 #include <fstream>
 #include <vector>
+#include <tiffio.h>
 
 using namespace emwat;
 
@@ -77,6 +78,29 @@ int main() {
     assert(gray_pages[0].dpi_x.has_value() && std::abs(*gray_pages[0].dpi_x - 200.0) < 0.1);
     assert(gray_pages[0].dpi_y.has_value() && std::abs(*gray_pages[0].dpi_y - 180.0) < 0.1);
     std::filesystem::remove(gray_tif);
+
+
+    const auto miniswhite_tif = root / "emwat-codec-test-miniswhite.tiff";
+    {
+        TIFF* raw = TIFFOpen(miniswhite_tif.string().c_str(), "w");
+        assert(raw != nullptr);
+        TIFFSetField(raw, TIFFTAG_IMAGEWIDTH, 4);
+        TIFFSetField(raw, TIFFTAG_IMAGELENGTH, 1);
+        TIFFSetField(raw, TIFFTAG_SAMPLESPERPIXEL, 1);
+        TIFFSetField(raw, TIFFTAG_BITSPERSAMPLE, 8);
+        TIFFSetField(raw, TIFFTAG_ORIENTATION, ORIENTATION_TOPLEFT);
+        TIFFSetField(raw, TIFFTAG_PLANARCONFIG, PLANARCONFIG_CONTIG);
+        TIFFSetField(raw, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_MINISWHITE);
+        TIFFSetField(raw, TIFFTAG_COMPRESSION, COMPRESSION_NONE);
+        std::uint8_t miniswhite_row[] = {0, 64, 128, 255};
+        assert(TIFFWriteScanline(raw, miniswhite_row, 0, 0) >= 0);
+        TIFFClose(raw);
+    }
+    const auto miniswhite_pages = load_image_file(miniswhite_tif);
+    assert(miniswhite_pages.size() == 1);
+    assert(miniswhite_pages[0].pixels.format == PixelFormat::Gray8);
+    assert((miniswhite_pages[0].pixels.bytes == std::vector<std::uint8_t>{255, 191, 127, 0}));
+    std::filesystem::remove(miniswhite_tif);
 
     const auto rgba_tif = root / "emwat-codec-test-alpha.tiff";
     const ImagePage rgba_page{PixelBuffer{2, 2, 8, PixelFormat::RGBA8,
