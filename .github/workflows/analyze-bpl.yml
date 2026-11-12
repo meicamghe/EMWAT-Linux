@@ -169,6 +169,12 @@ jobs:
           python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004EFA96 bpl-analysis/EmwatMethods-scanpages-gearp-callsite.md 160 ret
           python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x0061E3DF bpl-analysis/EmwatMethods-scansource-showcrop-callsite.md 120 ret
           python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004EFF83 bpl-analysis/EmwatMethods-scansource-setcurrentpage-callsite.md 120 ret
+      - name: Trace full scanner orchestration methods
+        run: |
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x0061CEF4 bpl-analysis/EmwatMethods-preview-selectscanner-full.md 420 ret
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004EF9CC bpl-analysis/EmwatMethods-gearp-selectscanner-full.md 480 ret
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x0061D3C8 bpl-analysis/EmwatMethods-preview-showcrop-full.md 80 ret
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004EFF6C bpl-analysis/EmwatMethods-gearp-setcurrentpage-full.md 80 ret
       - uses: actions/upload-artifact@v4
         with:
           name: emwat-bpl-static-analysis
