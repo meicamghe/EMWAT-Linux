@@ -302,6 +302,15 @@ std::vector<ImagePage> load_image_file(const std::filesystem::path& path) {
                     }
                 }
             }
+            std::uint16_t samples_per_pixel = 1;
+            std::uint16_t bits_per_sample = 1;
+            std::uint16_t photometric = PHOTOMETRIC_MINISWHITE;
+            TIFFGetFieldDefaulted(tif.get(), TIFFTAG_SAMPLESPERPIXEL, &samples_per_pixel);
+            TIFFGetFieldDefaulted(tif.get(), TIFFTAG_BITSPERSAMPLE, &bits_per_sample);
+            TIFFGetFieldDefaulted(tif.get(), TIFFTAG_PHOTOMETRIC, &photometric);
+            const bool is_gray8 = !has_alpha && samples_per_pixel == 1 &&
+                bits_per_sample == 8 &&
+                (photometric == PHOTOMETRIC_MINISBLACK || photometric == PHOTOMETRIC_MINISWHITE);
             const auto pixel_count = checked_image_bytes(width, height, 1, "TIFF");
             if (pixel_count > kMaxDecodedBytes / 7) {
                 throw CodecError("TIFF page exceeds the 1 GiB decode working-set limit");
@@ -310,9 +319,13 @@ std::vector<ImagePage> load_image_file(const std::filesystem::path& path) {
             if (!TIFFReadRGBAImageOriented(tif.get(), width, height, raster.data(), ORIENTATION_TOPLEFT, 0)) {
                 throw CodecError("TIFF page decode failed");
             }
-            const std::size_t channels = has_alpha ? 4 : 3;
+            const std::size_t channels = has_alpha ? 4 : (is_gray8 ? 1 : 3);
             std::vector<std::uint8_t> bytes(checked_image_bytes(width, height, channels, "TIFF"));
             for (std::size_t i = 0; i < raster.size(); ++i) {
+                if (is_gray8) {
+                    bytes[i] = TIFFGetR(raster[i]);
+                    continue;
+                }
                 const auto alpha = TIFFGetA(raster[i]);
                 const auto unassociate = [alpha](std::uint8_t component) -> std::uint8_t {
                     if (alpha == 0) return 0;
@@ -331,7 +344,7 @@ std::vector<ImagePage> load_image_file(const std::filesystem::path& path) {
             TIFFGetFieldDefaulted(tif.get(), TIFFTAG_RESOLUTIONUNIT, &unit);
             const double factor = unit == RESUNIT_CENTIMETER ? 2.54 : 1.0;
             pages.push_back(ImagePage{PixelBuffer{width, height, static_cast<std::size_t>(width) * channels,
-                has_alpha ? PixelFormat::RGBA8 : PixelFormat::RGB8, std::move(bytes)},
+                has_alpha ? PixelFormat::RGBA8 : (is_gray8 ? PixelFormat::Gray8 : PixelFormat::RGB8), std::move(bytes)},
                 has_x && rx > 0 ? std::optional<double>(rx * factor) : std::nullopt,
                 has_y && ry > 0 ? std::optional<double>(ry * factor) : std::nullopt});
         } while (TIFFReadDirectory(tif.get()));
