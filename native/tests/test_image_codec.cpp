@@ -337,8 +337,6 @@ int main() {
     assert(separate_rotated_pages[0].pixels.width == 2);
     assert(separate_rotated_pages[0].pixels.height == 3);
     assert(separate_rotated_pages[0].pixels.format == PixelFormat::RGB8);
-    for (const auto value : separate_rotated_pages[0].pixels.bytes) std::fprintf(stderr, "%u,", static_cast<unsigned>(value));
-    std::fprintf(stderr, "\\n");
     assert((separate_rotated_pages[0].pixels.bytes == std::vector<std::uint8_t>{
         10, 0, 0, 40, 0, 0,
         20, 0, 0, 50, 0, 0,
