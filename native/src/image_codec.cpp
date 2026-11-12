@@ -109,17 +109,6 @@ read_png_resolution(const std::filesystem::path& path) {
 
 void write_png_file(const ImagePage& page, const std::filesystem::path& path) {
     const auto& pixels = page.pixels;
-    png_uint_32 xppm = 0, yppm = 0;
-    if (page.dpi_x && page.dpi_y) {
-        const auto to_ppm = [](double dpi) -> png_uint_32 {
-            const double ppm = std::round(dpi / 0.0254);
-            if (ppm > static_cast<double>(std::numeric_limits<png_uint_32>::max()))
-                throw CodecError("PNG resolution metadata is out of range");
-            return static_cast<png_uint_32>(ppm);
-        };
-        xppm = to_ppm(*page.dpi_x);
-        yppm = to_ppm(*page.dpi_y);
-    }
     FILE* file = std::fopen(path.string().c_str(), "wb");
     if (!file) throw CodecError("cannot create PNG file");
     png_structp png = png_create_write_struct(PNG_LIBPNG_VER_STRING, nullptr, nullptr, nullptr);
@@ -139,6 +128,17 @@ void write_png_file(const ImagePage& page, const std::filesystem::path& path) {
         throw CodecError("PNG write failed");
     }
     png_init_io(png, file);
+    png_uint_32 xppm = 0, yppm = 0;
+    if (page.dpi_x && page.dpi_y) {
+        const auto to_ppm = [](double dpi) -> png_uint_32 {
+            const double ppm = std::round(dpi / 0.0254);
+            if (ppm > static_cast<double>(std::numeric_limits<png_uint_32>::max()))
+                throw CodecError("PNG resolution metadata is out of range");
+            return static_cast<png_uint_32>(ppm);
+        };
+        xppm = to_ppm(*page.dpi_x);
+        yppm = to_ppm(*page.dpi_y);
+    }
     const int color_type = pixels.format == PixelFormat::Gray8 ? PNG_COLOR_TYPE_GRAY :
         (pixels.format == PixelFormat::RGBA8 ? PNG_COLOR_TYPE_RGBA : PNG_COLOR_TYPE_RGB);
     png_set_IHDR(png, info, pixels.width, pixels.height, 8, color_type,
