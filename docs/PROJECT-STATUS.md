@@ -522,3 +522,15 @@
 - هنوز Request Body، Content-Type، پاسخ و معنای عملیات استخراج نشده‌اند؛ بنابراین هیچ wire schema یا dispatch mapping بر اساس این مقدار حدس زده نمی‌شود.
 - سند [HTTP-LOCAL-API-ANALYSIS.md](HTTP-LOCAL-API-ANALYSIS.md) با این مشاهده runtime تکمیل شد.
 - **گام بعد:** دریافت Request Body و Content-Type و Response از همان درخواست، با حذف کامل Cookie/Authorization/token و محتوای محرمانه؛ سپس اتصال payload به متدهای RTTI در EmwatMethods.bpl1.
+
+
+## Run 94 — تحلیل HAR و استخراج نمونه EditWordDocument (2026-11-12)
+
+- HAR خروجی Firefox 158 شامل دو POST به سرویس محلی روی 127.0.0.1:1984 است: invoke=83011 بدون body ثبت‌شده و invoke=92123 با بدنه بزرگ.
+- درخواست دوم دارای Content-Type برابر text/plain;charset=UTF-8 و Content-Length برابر 1391942 است و XML بیرونی آن متد EditWordDocument را dispatch می‌کند.
+- پارامتر wordConfig شامل XML سند Base64 است. بخش قابل decode شده با word-document status="view" viewMode="protected" شروع می‌شود.
+- مجوزهای نمونه view شامل غیرفعال بودن save/copy/print است. fieldهای امضا، شماره/تاریخ ثبت، نام امضاکننده، QR/barcode، گیرندگان و رونوشت‌ها دیده شدند؛ چند field تصویری با Base64 منتقل می‌شوند.
+- HAR فقط 1,048,576 بایت از بدنه را نگه داشته، در حالی که Content-Length برابر 1,391,942 است؛ پس نمونه ناقص است. پاسخ هر دو درخواست محلی در HAR با status 0 ثبت شده و نتیجه واقعی پردازش از این فایل قابل تعیین نیست.
+- این شاهد dispatch متد EditWordDocument و قالب لایه بیرونی/درونی را تقویت می‌کند، اما نمونه موجود حالت view/protected است و چرخه ویرایش/ذخیره را اثبات نمی‌کند.
+- جزئیات ساختاری بدون محتوای نامه، تصاویر، کوکی‌ها یا tokenها در HTTP-LOCAL-API-ANALYSIS.md ثبت شد. فایل خام HAR به مخزن اضافه نشد.
+- **گام بعد:** capture کامل و پاک‌سازی‌شده از یک نامه قابل ویرایش، سپس تغییر متن، بستن سند و مقایسه request/responseها برای کشف lifecycle ذخیره و بازگشت داده.
