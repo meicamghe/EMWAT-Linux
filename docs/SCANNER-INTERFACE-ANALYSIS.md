@@ -560,3 +560,28 @@ Workflow run 43033266952 succeeded; artifact 13861452924 was inspected.
 - The dispatch trace at 0x004F27C4 ends at 0x004F28C0; the remaining branch body and targets 0x004F22E4 and 0x004F2B18 need further inspection.
 
 Next: probe 0x004F2278 and 0x004F28C0, then inspect 0x004F22E4 and 0x004F2B18 and correlate status transitions with DoRequest/HasError. Avoid naming ambiguous code ranges as complete methods until their true entries are recovered.
+
+
+## Run 81 — ScanCommand continuation callback and status transition (2026-11-12)
+
+Workflow run `43036386819` completed successfully (artifact `13863571297`). The added traces extend the helper beginning at `0x004F22E4` through its callback-dispatch branch and cleanup.
+
+### Newly confirmed control flow
+
+- The helper first checks the global/context condition through `0x004F2B18`; a true result exits through the exception-safe cleanup path.
+- It reads the nested context at `[ScanCommand+0x20]`, obtains a byte from `[self+0x18]`, calls the base object's VMT slot `+0x08`, and passes the resulting selector to `0x004F0160` with mode `0x64`.
+- The result switch has three relevant outcomes in this range: result 0 stores status 1; result 1 enters the context/editor hand-off and may store status 2; result 2 stores status 3.
+- In the result-1 branch, the helper calls `0x004EEC7C`. If that check is false, status 1 is stored. If true, `0x004F32F4` is called with an output pointer; a true return stores status 2.
+- If `0x004F32F4` returns false, the code builds a callback/record structure using code pointers `0x004F2454` and `0x004F2474`, a record/descriptor address `0x004F2490`, and constant data at `0x004F2554`. It passes the constructed record through helper `0x00401370`, then calls `0x0044ABE4` with a selector value of 3.
+- The return from `0x0044ABE4` is compared with 6. When equal, the current context's VMT slot `+0x1C` is invoked and `0x004F22E4` is called again, forming a repeat/continuation path. Otherwise the status byte `[self+0x28]` is set to 3.
+- The helper restores the Delphi exception frame and finalizes its local managed values before returning. The cleanup tail at `0x004F298B` is a conventional register/stack epilogue, not a separate processing operation.
+
+### Interpretation boundaries
+
+The control-flow relationship is high-confidence, but the semantic identity of the callback targets, the record layout at `0x004F2490`, the purpose of `0x0044ABE4`, and the meaning of its return value 6 are not yet established. Do not label these as a scanner callback ABI or a particular device event until their target bodies and callers are traced. The status values 1–4 remain internal state codes, not user-facing success/error enums.
+
+### Next probes
+
+Trace callback targets `0x004F2454`, `0x004F2474`, `0x004F2490`, the helper `0x0044ABE4`, and the exception/finalization target around `0x004F2440`. Then correlate their callers with the state transition at `[self+0x28]`.
+
+**Confidence:** the branch structure, callback-record construction, comparison with 6, context VMT dispatch, recursive continuation, and status=3 fallback are directly visible in aligned disassembly. Callback semantics and helper contracts remain unresolved.
