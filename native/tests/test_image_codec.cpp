@@ -4,6 +4,7 @@
 #undef NDEBUG
 #endif
 #include <cassert>
+#include <cmath>
 #include <filesystem>
 #include <fstream>
 #include <vector>
@@ -29,6 +30,8 @@ int main() {
     assert(png_pages[0].pixels.width == 2 && png_pages[0].pixels.height == 2);
     assert(png_pages[0].pixels.format == PixelFormat::RGB8);
     assert(png_pages[0].pixels.bytes == page(1).pixels.bytes);
+    assert(png_pages[0].dpi_x.has_value() && std::abs(*png_pages[0].dpi_x - 300.0) < 0.1);
+    assert(png_pages[0].dpi_y.has_value() && std::abs(*png_pages[0].dpi_y - 300.0) < 0.1);
 
     save_image_file({page(1)}, jpg, CodecOptions{95});
     auto jpg_pages = load_image_file(jpg);
