@@ -105,6 +105,12 @@ jobs:
       - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004042B4 bpl-analysis/EmwatMethods-remove-temp-files-helper-4042B4.md 60 ret
       - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004042AC bpl-analysis/EmwatMethods-remove-temp-files-helper-4042AC.md 60 ret
       - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x00404E34 bpl-analysis/EmwatMethods-remove-temp-files-helper-404E34.md 60 ret
+      - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x0044ACDF bpl-analysis/EmwatMethods-remove-temp-files-tail.md 100 ret
+      - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x00401128 bpl-analysis/EmwatMethods-remove-temp-files-helper-401128.md 60 ret
+      - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004010E8 bpl-analysis/EmwatMethods-remove-temp-files-helper-4010E8.md 60 ret
+      - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004013C8 bpl-analysis/EmwatMethods-remove-temp-files-helper-4013C8.md 60 ret
+      - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x00401230 bpl-analysis/EmwatMethods-remove-temp-files-helper-401230.md 60 ret
+      - run: python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x0044ABE4 bpl-analysis/EmwatMethods-callers-remove-temp-files.md
       - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004EC8B4 bpl-analysis/EmwatMethods-helper-4EC8B4.md 100 ret
       - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004ECFC8 bpl-analysis/EmwatMethods-helper-4ECFC8.md 60 ret
       - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004F0084 bpl-analysis/EmwatMethods-gearp-set-force-single-page-extended.md 50 ret
@@ -227,6 +233,12 @@ jobs:
             bpl-analysis/EmwatMethods-remove-temp-files-helper-4042B4.md
             bpl-analysis/EmwatMethods-remove-temp-files-helper-4042AC.md
             bpl-analysis/EmwatMethods-remove-temp-files-helper-404E34.md
+            bpl-analysis/EmwatMethods-remove-temp-files-tail.md
+            bpl-analysis/EmwatMethods-remove-temp-files-helper-401128.md
+            bpl-analysis/EmwatMethods-remove-temp-files-helper-4010E8.md
+            bpl-analysis/EmwatMethods-remove-temp-files-helper-4013C8.md
+            bpl-analysis/EmwatMethods-remove-temp-files-helper-401230.md
+            bpl-analysis/EmwatMethods-callers-remove-temp-files.md
             bpl-analysis/EmwatMethods-helper-4EC8B4.md
             bpl-analysis/EmwatMethods-helper-4ECFC8.md
             bpl-analysis/EmwatMethods-gearp-set-force-single-page-extended.md
