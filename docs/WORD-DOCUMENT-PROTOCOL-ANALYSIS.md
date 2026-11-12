@@ -401,3 +401,24 @@ Caller مستقیم پیدا‌شده برای این متد، `TWordViwer.GetDo
 ### نتیجه و ادامه
 
 اکنون یک قطعه روشن‌تر از معماری داریم: EMWAT برای resolve کردن نام/metadata فیلدهای XML دو collection داخلی را جست‌وجو می‌کند و مسیر افزودن تصاویر به Word از interface فیلدها به منطق caption می‌رسد. گام بعدی باید به‌جای گسترش تصادفی targetها، روی بدنه و callerهای واقعی `GetXmlFieldInfo`، callbackهای Word و ساخت `Wordresponsexml`/ `Returntypes` متمرکز شود تا محل استخراج مقدارهای تغییرکرده و تولید پاسخ مشخص شود.
+
+
+## تکمیل schema پاسخ Word از RTTI — مسیر response مستقل از payload (2026-11-12)
+
+در گزارش نمادها/RTTI مخزن (EMWAT-Analysis-Results.txt) چند interface مربوط به XML پاسخ Word و سند قابل‌ویرایش دیده می‌شود. این‌ها شواهد schema هستند، نه هنوز شواهدی از نقطه اجرای serializer:
+
+- IXMLResponseWordType دارای propertyهای Status، ErrorCode و Returntypes است.
+- IXMLReturntypesType دارای property Type است؛ نوع MIME/فرمت خروجی احتمالاً در همین سطح مدل می‌شود، اما مقادیر واقعی و نحوه تولید آن هنوز از کد اجرایی استخراج نشده است.
+- IXMLGlobalResponseType نیز Status و ErrorCode دارد؛ نباید این مدل global را بدون بررسی به response اختصاصی Word یکی دانست.
+- IXMLWorddocumentType دارای Body، Fields، Status، Settings، Permission، Requestedtypes و Optionalattributes است.
+- IXMLBodyType حداقل property مربوط به Encryption را در RTTI دارد. محتوای Body و قرارداد دقیق رمزگذاری آن هنوز از این نمادها به‌تنهایی معلوم نیست.
+
+### ارتباط با trace مرورگر
+
+در نمونه قابل ویرایش کاربر، XML داخلی word-document دارای status=edit بود و عنصر body در همان نمونه دیده نشد. وجود getter مربوط به Body در interface نشان می‌دهد Body بخشی از مدل XML/قرارداد نوعی است، اما نبود آن در نمونه خاص می‌تواند به optional بودن، خالی بودن یا مسیر متفاوت payload مربوط باشد؛ هیچ‌یک هنوز اثبات نشده‌اند.
+
+همچنین گزارش کاربر که در Response مشاهده‌شده Status، ErrorCode و Returntypes را پیدا نکرده، لزوماً با RTTI تناقض ندارد: ممکن است این propertyها در مدل response جداگانه باشند و Response فعلی صرفاً envelope حاوی wordConfig باشد. برای تعیین این موضوع باید implementation و callerهای response XML بررسی شوند.
+
+### محدودیت و گام بعد
+
+نام interface و getter/setter فقط ساختار نوعی را ثابت می‌کنند. هنوز معلوم نیست کدام تابع این مدل را instantiate می‌کند، چه زمانی Body را مقدار می‌دهد، آیا متن Word به‌صورت plain text یا فایل/stream برمی‌گردد و Returntypes در کدام پاسخ واقعی ظاهر می‌شود. ادامه تحلیل باید ابتدا symbol/procedureهای همین interfaceها و سپس callerهای TEditWordDocument.PerformMethod و ParamsToXML را به هم متصل کند.
