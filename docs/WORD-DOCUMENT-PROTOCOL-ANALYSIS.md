@@ -207,3 +207,45 @@ Wordresponsexml.TXMLTypeType دارای:
 - نبودن `<body>` در همین نمونه: مستقیماً مشاهده شده است.
 - منبع بدنه نامه، قالب واقعی فایل، و معنای دقیق `requested-types`: هنوز نامشخص.
 - این XML شامل مقادیر واقعی مکاتبه بود؛ فقط schema و نام فیلدها ثبت می‌شود. هیچ مقدار شخصی، متن نامه، شناسه، Base64 تصویر یا token در مخزن نگهداری نمی‌شود.
+
+
+## 9. بازبینی انتساب نمادها: Word viewer در برابر PrintHandler (2026-11-12)
+
+گزارش تجمیعی رشته‌ها/نمادهای موجود در مخزن دوباره بررسی شد. این گزارش شامل نام نمادها و بخشی از RTTI است؛ بدنه اجرایی توابع یا ترتیب فراخوانی آن‌ها را ارائه نمی‌کند.
+
+### نمادهای مستقل Wordviewer
+
+نمادهای زیر در namespace مربوط به `Wordviewer` دیده می‌شوند:
+
+- `Wordviewer.OpenDoc` با پارامتر `TEmwatInvokeParam`.
+- `Wordviewer.TWordViwer.SilentSaveEmwatDoc`.
+- `Wordviewer.TWordViwer.StoreFieldValuesForPrint`.
+- `Wordviewer.TWordViwer.OnControlerNotify`.
+- `Wordviewer.TEDPController.SetPrintThread` و `Notify`.
+
+این موارد وجود یک کلاس/ماژول Word viewer و ارتباطی با controller/print thread را نشان می‌دهند. از روی نام‌ها به‌تنهایی نمی‌توان نتیجه گرفت که `SilentSaveEmwatDoc` حتماً هنگام BeforeClose اجرا می‌شود، چه فایلی را ذخیره می‌کند، یا نتیجه را چگونه به connector برمی‌گرداند.
+
+### انتساب FillField به مسیر چاپ
+
+نماد `FillField` در namespace متفاوتی قرار دارد:
+
+```
+Emwatdocprinthandlerunit.TEmwatDocPrintHandler.FillField
+```
+
+همان کلاس نمادهای دیگری مانند `PrepareDoc`، `Execute`، `CollectCustomField`، `GetDocFieldName` و متدهای تنظیم مقدار گیرندگان/CC را نیز دارد. بنابراین این `FillField` به‌طور مشخص متعلق به PrintHandler است و نباید آن را با helperهای احتمالی Word viewer برای پرکردن فیلدهای نامه یکی دانست. ممکن است هر دو مسیر از مفاهیم مشترک فیلد استفاده کنند، اما این اشتراک هنوز اثبات نشده است.
+
+### RTTI مدل XML
+
+گزارش نمادهایی برای `IXMLWorddocumentType.Get_Body`، `Get_Fields`، `Get_Status`، `Get_Permission`، `Get_Requestedtypes` و `Get_Optionalattributes` دارد. این شواهد وجود propertyهای مدل XML را تقویت می‌کند، ولی حضور عنصر `<body>` در هر پیام runtime را تضمین نمی‌کند؛ نمونه edit قبلی همچنان فقط در همان پیام فاقد آن عنصر بود.
+
+### محدودیت منبع و تصمیم مهندسی
+
+فایل تجمیعی `EMWAT-Analysis-Results.txt` نمادهای فوق را در بر دارد. در fetch فعلی، فایل مستقل `EmwatMethods.bpl1-strings.txt` محتوای قابل استفاده‌ای برنگرداند؛ بنابراین این مرحله بر گزارش تجمیعی تکیه دارد. هیچ disassembly تازه یا call graph معتبر در این مرحله به دست نیامد.
+
+تصمیم فعلی برای پیاده‌سازی Linux:
+
+1. قرارداد Word document و bridge از PrintHandler/print jobs جدا نگه داشته شود.
+2. `FillField` متعلق به PrintHandler فقط در تحلیل/بازسازی مسیر چاپ استفاده شود.
+3. برای lifecycle ویرایش، نقطه‌های شروع قابل پیگیری `OpenDoc` و `SilentSaveEmwatDoc` هستند؛ ترتیب و جزئیات آن‌ها تا بررسی بدنه کد نامشخص می‌ماند.
+4. mapping آدرس‌ها باید ابتدا از PE sectionها و RVA به raw offset و سپس از TD32 segmentها به آدرس درست برسد؛ نام نماد به‌تنهایی مجوز حدس آدرس یا call order نیست.
