@@ -696,3 +696,18 @@ Workflow run `43157168446` با موفقیت اجرا شد؛ artifact `139165262
 - نتیجهٔ عملی: مسیر اسکن در EMWAT دو orchestrator دارد؛ نباید رفتار Preview و GearImgProc را یکی فرض کرد. مرحلهٔ بعدی باید آرگومان‌ها و stateهای اطراف هر callsite از `IG_scan_pages` و `IG_scan_source_select` را جداگانه استخراج کند.
 
 **Confidence:** مقصد helperهای RTL و محل callerها بالا؛ کلاس runtime هدف و معنای کامل modeها هنوز نامشخص.
+
+
+## Run 86 — تأیید قطعی call graph اسکنر (2026-11-12)
+- اجرای `43162207819` موفق شد؛ artifact `13918861612` بررسی شد.
+- جدول import-callers چهار callsite را به‌طور مستقل تأیید می‌کند:
+  - `IG_scan_pages` در `TfrmGScanPreview.SelectScanner`: دو call در `0x0061E036` و `0x0061E059`.
+  - `IG_scan_pages` در `TGearImgProc.SelectScanner`: یک call در `0x004EFA96`.
+  - `IG_scan_source_select` در `TfrmGScanPreview.ShowCropRectangle`: یک call در `0x0061E3DF`.
+  - `IG_scan_source_select` در `TGearImgProc.SetCurrentPage`: یک call در `0x004EFF83`.
+- start/size از TD32: Preview.SelectScanner = `0x0061CEF4`, size `0x4D4`; GearImgProc.SelectScanner = `0x004EF9CC`, size `0x5A0`; Preview.ShowCropRectangle = `0x0061D3C8`, size `0x28`; GearImgProc.SetCurrentPage = `0x004EFF6C`, size `0x28`.
+- Preview مسیر مستقل و چندمرحله‌ای دارد: دو فراخوانی `IG_scan_pages` در یک متد و استفاده از تنظیم JPEG quality پیش از آن. GearImgProc مسیر جداگانه‌ای دارد که نتیجهٔ scan_pages را در فیلد `+0x4C` ذخیره و سپس با VMT slot +4 اعتبارسنجی می‌کند.
+- نکتهٔ مهم: دو call در Preview نباید به یک call واحد تقلیل داده شوند؛ باید branch/args هر دو جدا استخراج شود.
+- این run فقط call graph را قطعی می‌کند؛ ABI کامل، معنای آرگومان‌ها و semantics بازگشتی GEAR هنوز نیازمند trace کامل بدنهٔ چهار متد است.
+
+**Confidence:** نام API، owner و محل callsiteها بالا؛ پارامترهای ABI و رفتار عملی هنوز باز.
