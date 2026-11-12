@@ -22,6 +22,14 @@ public:
 };
 
 // Device discovery is independent of image decoding and editor state.
+struct ScannerCapabilities {
+    std::vector<std::string> modes;
+    std::vector<std::string> sources;
+    std::optional<double> min_resolution_dpi;
+    std::optional<double> max_resolution_dpi;
+    std::vector<double> discrete_resolutions_dpi;
+};
+
 struct ScanOptions {
     std::optional<double> resolution_dpi;
     std::optional<std::string> mode;
@@ -32,6 +40,7 @@ class ScannerBackend {
 public:
     virtual ~ScannerBackend() = default;
     [[nodiscard]] virtual std::vector<ScannerDevice> list_devices() = 0;
+    [[nodiscard]] virtual ScannerCapabilities get_capabilities(const std::string& device_id) = 0;
     // Captures one 8-bit grayscale or RGB frame using the device's current defaults.
     [[nodiscard]] virtual ImagePage scan_one(const std::string& device_id,
                                              const ScanOptions& options = {}) = 0;
@@ -41,6 +50,7 @@ public:
 class SaneScannerBackend final : public ScannerBackend {
 public:
     [[nodiscard]] std::vector<ScannerDevice> list_devices() override;
+    [[nodiscard]] ScannerCapabilities get_capabilities(const std::string& device_id) override;
     [[nodiscard]] ImagePage scan_one(const std::string& device_id,
                                      const ScanOptions& options = {}) override;
 };
