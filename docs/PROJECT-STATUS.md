@@ -398,3 +398,11 @@
 - callerهای Scan Error، ToggleCropMode و ScanCommand از انتخاب Yes برای تغییر state/ادامهٔ مسیر استفاده می‌کنند.
 - در پورت Linux این بخش باید به dialog abstraction تبدیل شود، نه فایل‌پاک‌کن.
 - جزئیات و شواهد در [SCANNER-INTERFACE-ANALYSIS.md](SCANNER-INTERFACE-ANALYSIS.md) ثبت شد.
+
+
+## Run 85 — جداسازی callerهای اسکن و helperهای عمومی (2026-11-12)
+- اجرای `43160920858` موفق شد؛ artifact `13917599363` بررسی شد.
+- helper عمومی با `System.IsClass`، `TComponent.GetComponentCount/GetComponent`، `TControl.SetText` و `TCustomForm.SetFormStyle` کار می‌کند؛ کلاس مرجع runtime در `0x0023D27E` خارج از image است و هنوز نامش معلوم نیست.
+- callerهای جدید modal در Scan Error، ToggleCropMode و TIFF بررسی شدند؛ نتیجهٔ 6 در callerهای مشخص‌شده به‌عنوان شرط ادامه/تغییر state مصرف می‌شود.
+- نقشهٔ importها دو caller مستقل برای `IG_scan_pages` نشان می‌دهد: Preview و GearImgProc. همچنین دو caller مستقل `IG_scan_source_select` در `ShowCropRectangle` و `SetCurrentPage` ثبت شده‌اند.
+- گام بعدی: trace آرگومان‌ها و stateهای هر چهار callsite اسکن، بدون فرض یکسان بودن دو مسیر.
