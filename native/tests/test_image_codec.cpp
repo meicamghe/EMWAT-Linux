@@ -33,6 +33,8 @@ int main() {
     auto jpg_pages = load_image_file(jpg);
     assert(jpg_pages.size() == 1);
     assert(jpg_pages[0].pixels.width == 2 && jpg_pages[0].pixels.height == 2);
+    assert(jpg_pages[0].dpi_x.has_value() && *jpg_pages[0].dpi_x == 300.0);
+    assert(jpg_pages[0].dpi_y.has_value() && *jpg_pages[0].dpi_y == 300.0);
 
     {
         std::ofstream out(bad_jpg, std::ios::binary);
