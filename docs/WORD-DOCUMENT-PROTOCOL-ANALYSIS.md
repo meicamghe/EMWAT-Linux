@@ -350,3 +350,26 @@ Caller مستقیم پیدا‌شده برای این متد، `TWordViwer.GetDo
 ### Вывод и следующий анализ
 
 Новый артефакт уточняет два ложных направления: `GetCaptionItemFont` — часть caption/ImageGear-пути; `0x004BCA88` — общий helper. `SilentSaveEmwatDoc` вызывается из `GetDocFieldName`, но это не доказывает передачу отредактированного документа в браузер. Для доказательства жизненного цикла текста письма нужно продолжить трассировку вызовов `GetDocFieldName`, `0x004BCA88`, Word callbacks и фактической сериализации/ответного XML, не выводя назначение из имён.
+
+
+## Run 102 — تفکیک helperهای Word و مسیر XML field (2026-11-12)
+
+منبع: Artifact اجرای موفق `43219502021` (commit `7f053320c64512c61201737a2bdaa86bcae9bf47`).
+
+### اصلاح callerهای `GetCaptionItemFont` و `0x004BCA88`
+
+- اسکن callerها نشان می‌دهد `GetCaptionItemFont` مستقیماً از `AddImagesToDoc` در `0x004C048C` فراخوانی می‌شود؛ نه اینکه فعلاً بتوان آن را مسیر مستقل ذخیره/ویرایش متن دانست.
+- helper `0x004BCA88` سه callsite مستقیم در محدوده متدهای TD32 دارد: دو بار از `GetCaptionItemFont` و یک بار از `WordAppDocumentBeforeClose`. بنابراین helper بین مسیر caption و رویداد بستن Word مشترک است؛ نقش دقیق و معنای مقدار Boolean بازگشتی هنوز مشخص نیست.
+- `GetCaptionItemFont` در بدنه‌اش مسیرهای بارگذاری/آزادسازی افزونه‌های ImageGear را دارد. در کنار caller آن، این متد به پردازش caption/image در سند مربوط است؛ نه شواهدی برای انتقال متن نامه.
+
+### نقش جدید helper `0x004BC980`
+
+- caller scan، `0x004BC980` را در `GetXmlFieldInfo`، `GetDocFieldIndex` و `FillImgFldsForPrint` نشان می‌دهد.
+- در `GetXmlFieldInfo` چهار بار و در `GetDocFieldIndex` سه بار فراخوانی می‌شود؛ در `FillImgFldsForPrint` دو callsite دارد.
+- بدنه helper با interface/virtual calls در offset `+0xB0` کار می‌کند، مقادیر بازگشتی را بررسی می‌کند و در مسیر نامعتبر به helper استثنا/خطا `0x004BC30C` می‌رسد. در چند caller ثابت `0x004BF9A0` به آن داده می‌شود.
+- این شواهد آن را به مسیر دسترسی/اعتبارسنجی اطلاعات XML field و fieldهای تصویری چاپ مرتبط می‌کند؛ اما نوع دقیق interface و قرارداد ورودی/خروجی هنوز از روی این disassembly به تنهایی اثبات نشده است.
+- caller scan برای `GetDocFieldName` و `GetCaptionItemFont` به ترتیب صفر و یک caller مستقیم نشان می‌دهد. این نتیجه فقط درباره CALL مستقیم در محدوده متدهای TD32 است و dispatch مجازی/غیرمستقیم را پوشش نمی‌دهد.
+
+### گام بعدی
+
+برای جدا کردن مسیر اصلی متن از مسیر تصویر، متدهای `GetXmlFieldInfo`، `GetDocFieldIndex`، `AddImagesToDoc` و `FillImgFldsForPrint` به targetهای disassembly اضافه شدند. تحلیل بعدی باید قرارداد field lookup، تشخیص mimetype/encryption و نقطه‌ای را پیدا کند که مقدار فیلدهای ویرایش‌شده از Word خوانده یا به XML پاسخ تبدیل می‌شود. هنوز هیچ‌کدام از این یافته‌ها به تنهایی اثبات ذخیره نهایی نامه نیست.
