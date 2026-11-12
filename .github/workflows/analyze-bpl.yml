@@ -212,6 +212,17 @@ jobs:
           python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004EEEC4 bpl-analysis/EmwatMethods-callers-4EEEC4.md
           python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004AFE90 bpl-analysis/EmwatMethods-callers-4AFE90.md
           python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004AFF18 bpl-analysis/EmwatMethods-callers-4AFF18.md
+      - name: Trace Word lifecycle callbacks and direct callers
+        run: |
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004D00AC bpl-analysis/EmwatMethods-word-callback-4D00AC.md 120 ret
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004CE030 bpl-analysis/EmwatMethods-word-callback-4CE030.md 120 ret
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004CD54C bpl-analysis/EmwatMethods-word-callback-4CD54C.md 120 ret
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004CD9C0 bpl-analysis/EmwatMethods-word-callback-4CD9C0.md 120 ret
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004BCA88 bpl-analysis/EmwatMethods-word-before-close-helper-4BCA88.md 180 ret
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004BCA88 bpl-analysis/EmwatMethods-callers-word-before-close-helper.md
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004D23D8 bpl-analysis/EmwatMethods-callers-silent-save.md
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004B7430 bpl-analysis/EmwatMethods-callers-word-opendoc.md
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004B7724 bpl-analysis/EmwatMethods-callers-word-load-document.md
       - uses: actions/upload-artifact@v4
         with:
           name: emwat-bpl-static-analysis
@@ -380,4 +391,13 @@ jobs:
             bpl-analysis/EmwatMethods-callers-4AFE90.md
             bpl-analysis/EmwatMethods-callers-4AFF18.md
             bpl-analysis/EmwatMethods-gscan-show-crop-rectangle.md
+            bpl-analysis/EmwatMethods-word-callback-4D00AC.md
+            bpl-analysis/EmwatMethods-word-callback-4CE030.md
+            bpl-analysis/EmwatMethods-word-callback-4CD54C.md
+            bpl-analysis/EmwatMethods-word-callback-4CD9C0.md
+            bpl-analysis/EmwatMethods-word-before-close-helper-4BCA88.md
+            bpl-analysis/EmwatMethods-callers-word-before-close-helper.md
+            bpl-analysis/EmwatMethods-callers-silent-save.md
+            bpl-analysis/EmwatMethods-callers-word-opendoc.md
+            bpl-analysis/EmwatMethods-callers-word-load-document.md
           if-no-files-found: error
