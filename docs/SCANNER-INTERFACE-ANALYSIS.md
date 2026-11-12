@@ -625,3 +625,33 @@ Workflow run `43157168446` با موفقیت اجرا شد؛ artifact `139165262
 4. شناسایی مقصد خارج از image در `0x0023F672` یا تعیین اینکه این آدرس به package/module بارگذاری‌شده دیگری تعلق دارد.
 
 **Confidence:** هویت دو متد TComponent و دو متد VCL فوق بالا است؛ تفسیر کلی routine و معنای return value 6 هنوز باز است.
+
+
+## Run 83 — بازسازی قرارداد واقعی RemoveTempFiles (2026-11-12)
+
+اجرای `43158235892` موفق شد؛ artifact `13917012048` بررسی شد. این اجرا برداشت قبلی درباره «حذف فایل موقت» را بیشتر تضعیف می‌کند.
+
+### قرارداد قابل مشاهده در machine code
+
+- تابع `0x0044ABE4` یک آرایه از pointerها را از stack به local stack frame کپی می‌کند و با `System.AddRefArray` و `System.UStrAddRef` مدیریت عمر آرایه/رشته را انجام می‌دهد.
+- آرگومان‌های قابل مشاهده شامل object/container در `EAX`، byte در `EDX`، مقدار word در `ECX`، یک UnicodeString در `[EBP+0x0C]` و open-array در `[EBP+0x10]/[EBP+0x14]` هستند. prototype سطح منبع هنوز قطعی نیست.
+- تابع با `TComponent.GetComponentCount` و `TComponent.GetComponent` componentها را پیمایش می‌کند.
+- برای هر component، `System.IsClass` را با کلاس مرجع global در `[0x62FE28]` اجرا می‌کند. در صورت match، یکی از مقادیر open-array را به `TControl.SetText` می‌دهد.
+- سپس مقدار 3 را به `TCustomForm.SetFormStyle` می‌دهد و virtual slot `+0x13C` را روی همان component اجرا می‌کند.
+- نتیجه virtual slot در local ذخیره می‌شود و در مسیر خروج، object/local مدیریت‌شده با `TObject.Free` آزاد می‌شود.
+- helperهای `0x00401128`، `0x004010E8`، `0x004013C8` و `0x00401230` به‌ترتیب `System.IsClass`، `TObject.Free`، `System.AddRefArray` و `System.UStrAddRef` هستند.
+- `0x00404F64` به آدرس خارج از image یعنی `0x0023F672` می‌رود؛ نقش آن و هویت کلاس global هنوز نامشخص است.
+
+### اثر روی تحلیل ScanCommand
+
+- این routine یک helper عمومی مبتنی بر componentهای VCL است؛ callerهای آن در Word، Fax، Scan Error، Simple Image Editor و ScanCommand دیده شده‌اند.
+- در callerهای ScanCommand و ToggleCropMode مقدار بازگشتی با 6 مقایسه می‌شود. چون مقدار خروجی در این بدنه از virtual slot `+0x13C` می‌آید، مقدار 6 احتمالاً نتیجه/وضعیت component هدف است؛ معنای دقیق آن هنوز اثبات نشده است.
+- نام TD32 یعنی `RemoveTempFiles` را صرفاً نام نماد نگه می‌داریم و رفتار حذف فایل را بر اساس آن پیاده‌سازی نمی‌کنیم.
+
+### گام بعد
+
+1. تعیین نوع کلاس global در `0x62FE28` و مقصد خارج از image در `0x0023F672`.
+2. تطبیق callerهای ScanCommand، Scan Error و ToggleCropMode برای استخراج نقش byte mode و open-array.
+3. بازگشت به قرارداد context slot `+0x1C` در ScanCommand و معنای retry پس از return=6.
+
+**Confidence:** پیمایش TComponent، type test، SetText، SetFormStyle، virtual slot `+0x13C` و TObject.Free از روی thunkها/دستورها با اطمینان بالا تأیید شده‌اند؛ نوع کلاس، prototype سطح منبع و معنای return=6 هنوز باز هستند.
