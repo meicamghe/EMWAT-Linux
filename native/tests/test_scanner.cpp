@@ -29,7 +29,7 @@ public:
     ImagePage scan_one(const std::string&, const ScanOptions& = {}) override {
         if (fail) throw ScannerError("simulated scan failure");
         PixelBuffer pixels{1, 1, 1, PixelFormat::Gray8, {42}};
-        return ImagePage{std::move(pixels), std::nullopt, std::nullopt};
+        return ImagePage{std::move(pixels), 300.0, 300.0};
     }
 
     std::vector<ScannerDevice> list_devices() override {
@@ -62,6 +62,8 @@ int main() {
     const auto scanned = backend.scan_one("test:scanner0");
     assert(scanned.pixels.valid());
     assert(scanned.pixels.bytes[0] == 42);
+    assert(scanned.dpi_x == 300.0);
+    assert(scanned.dpi_y == 300.0);
 
     backend.fail = true;
     bool threw = false;
