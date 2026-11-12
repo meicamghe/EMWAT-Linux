@@ -373,3 +373,31 @@ Caller مستقیم پیدا‌شده برای این متد، `TWordViwer.GetDo
 ### گام بعدی
 
 برای جدا کردن مسیر اصلی متن از مسیر تصویر، متدهای `GetXmlFieldInfo`، `GetDocFieldIndex`، `AddImagesToDoc` و `FillImgFldsForPrint` به targetهای disassembly اضافه شدند. تحلیل بعدی باید قرارداد field lookup، تشخیص mimetype/encryption و نقطه‌ای را پیدا کند که مقدار فیلدهای ویرایش‌شده از Word خوانده یا به XML پاسخ تبدیل می‌شود. هنوز هیچ‌کدام از این یافته‌ها به تنهایی اثبات ذخیره نهایی نامه نیست.
+
+
+## Run 103 — بررسی lookup فیلدهای XML و مسیر افزودن تصاویر (2026-11-12)
+
+منبع: workflow run `43220472439`، commit `2007fa954217512724830b161cac52772c44ef12`؛ CI با نتیجه موفق، 147/147 مرحله. Artifact شماره `13946301787` دریافت و بررسی شد.
+
+### `GetXmlFieldInfo`
+
+- overload دارای خروجی `TXmlWordConfigField` در VA `0x004BFC18` نگاشت شده است (segment-relative، score حدود 88.8، بخش PE برابر `.text`).
+- این تابع ابتدا index را به مقدار `-1` و flag خروجی را false می‌گذارد؛ سپس دو مجموعه/collection داخلی در offsetهای `+0x68` و `+0x6C` را بررسی می‌کند.
+- در مسیر اول، با نام ورودی lookup انجام می‌دهد و در صورت یافتن، index و یک مقدار متنی/مشخصه از رکورد را برمی‌گرداند. در مسیر دوم نیز lookup جایگزین انجام می‌دهد و در بعضی حالت‌ها دو رشته را با هم مقایسه می‌کند؛ در صورت تطبیق، index و مشخصه‌های رکورد را خروجی می‌دهد و flag را true می‌کند.
+- بنابراین این overload به‌طور مستقیم منطق جست‌وجو و resolve کردن metadata فیلدهای XML را نشان می‌دهد. معنای دقیق دو collection و فیلدهای خروجی هنوز از روی این تابع به‌تنهایی قطعی نیست.
+- overload دیگر `GetXmlFieldInfo` در `0x004BCA88` بسیار بزرگ‌تر است و از helper `0x004BC980` برای دسترسی به interface/XML field استفاده می‌کند؛ این آدرس با helper قبلی Run 102 هم‌پوشانی دارد و باید با احتیاط از overload کوچک‌تر تفکیک شود.
+
+### `AddImagesToDoc` و caption
+
+- `AddImagesToDoc` در VA `0x004C0410` (score حدود 88.8) دریافت‌کننده `Wordxp.Fields` و interface مربوط به XML field است.
+- تابع از interface یک مقدار/رشته می‌خواند، آن را با یک ثابت داخلی مقایسه می‌کند و در صورت عبور از شرط، `GetCaptionItemFont` را در `0x004C048C` صدا می‌زند. این با caller scan قبلی Run 102 سازگار است.
+- این مسیر شواهد مستقیم از پردازش field/caption در زمان افزودن تصاویر به سند Word می‌دهد؛ اما به‌تنهایی نه serializer متن نامه است و نه مسیر ارسال پاسخ به مرورگر.
+
+### مواردی که هنوز از artifact به دست نیامد
+
+- در فایل target-disassembly این اجرا، procedure مستقلی با نام‌های `GetDocFieldIndex` یا `FillImgFldsForPrint` match نشده است؛ بنابراین جزئیات callerهای گزارش‌شده در Run 102 هنوز با disassembly بدنه این دو متد تکمیل نشد.
+- هیچ نقطه‌ای در این اجرا ثابت نمی‌کند که Body نامه از Word خوانده و در پاسخ HTTP/XML قرار داده می‌شود. همچنین درباره اینکه بستن Word باعث ذخیره نهایی در Almas Gam می‌شود، نتیجه جدیدی حاصل نشد.
+
+### نتیجه و ادامه
+
+اکنون یک قطعه روشن‌تر از معماری داریم: EMWAT برای resolve کردن نام/metadata فیلدهای XML دو collection داخلی را جست‌وجو می‌کند و مسیر افزودن تصاویر به Word از interface فیلدها به منطق caption می‌رسد. گام بعدی باید به‌جای گسترش تصادفی targetها، روی بدنه و callerهای واقعی `GetXmlFieldInfo`، callbackهای Word و ساخت `Wordresponsexml`/ `Returntypes` متمرکز شود تا محل استخراج مقدارهای تغییرکرده و تولید پاسخ مشخص شود.
