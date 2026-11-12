@@ -5,7 +5,9 @@
 #endif
 #include <cassert>
 #include <filesystem>
-#include <stdexcept>
+#include <fstream>
+#include <iterator>
+#include <string>
 
 using namespace emwat;
 
@@ -23,6 +25,8 @@ int main() {
     const auto root = std::filesystem::temp_directory_path();
     const auto tiff = root / "emwat-document-io.tiff";
     const auto missing = root / "emwat-document-io-missing.png";
+    const auto corrupt = root / "emwat-document-io-corrupt.png";
+    const auto protected_target = root / "emwat-document-io-protected.jpg";
 
     ImageDocument document;
     document.append_page(sample_page(10));
@@ -53,6 +57,36 @@ int main() {
     assert(loaded.dirty());
     assert(loaded.page(0).pixels.bytes == before);
 
+    {
+        std::ofstream out(corrupt, std::ios::binary);
+        out << "not a PNG image";
+    }
+    failed = false;
+    try { load_into_document(loaded, corrupt); }
+    catch (const CodecError&) { failed = true; }
+    assert(failed);
+    assert(loaded.dirty());
+    assert(loaded.page(0).pixels.bytes == before);
+
+    {
+        std::ofstream out(protected_target, std::ios::binary);
+        out << "original-file-must-survive";
+    }
+    ImageDocument unsupported;
+    unsupported.append_page(ImagePage{PixelBuffer{1, 1, 4, PixelFormat::RGBA8,
+        {1, 2, 3, 4}}, {}, {}});
+    failed = false;
+    try { save_document(unsupported, protected_target); }
+    catch (const CodecError&) { failed = true; }
+    assert(failed);
+    assert(unsupported.dirty());
+    std::ifstream protected_file(protected_target, std::ios::binary);
+    const std::string preserved((std::istreambuf_iterator<char>(protected_file)),
+                                std::istreambuf_iterator<char>());
+    assert(preserved == "original-file-must-survive");
+
     std::filesystem::remove(tiff);
+    std::filesystem::remove(corrupt);
+    std::filesystem::remove(protected_target);
     return 0;
 }
