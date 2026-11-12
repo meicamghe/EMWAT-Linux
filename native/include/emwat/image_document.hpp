@@ -12,6 +12,13 @@ enum class PixelFormat { Gray8, RGB8, RGBA8 };
 enum class QuarterTurn : unsigned { Clockwise90 = 1, HalfTurn = 2, Clockwise270 = 3 };
 enum class FlipAxis { Horizontal, Vertical };
 
+struct CropRect {
+    std::uint32_t x{};
+    std::uint32_t y{};
+    std::uint32_t width{};
+    std::uint32_t height{};
+};
+
 struct PixelBuffer {
     std::uint32_t width{};
     std::uint32_t height{};
@@ -23,6 +30,7 @@ struct PixelBuffer {
     [[nodiscard]] bool valid() const noexcept;
     void rotate(QuarterTurn turn);
     void flip(FlipAxis axis);
+    void crop(CropRect region);
 };
 
 struct ImagePage {
@@ -44,6 +52,7 @@ public:
     void select_page(std::size_t index);
     void rotate_active(QuarterTurn turn);
     void flip_active(FlipAxis axis);
+    void crop_active(CropRect region);
     void mark_saved() noexcept { dirty_ = false; }
 
 private:
