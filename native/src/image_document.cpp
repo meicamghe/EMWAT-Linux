@@ -72,6 +72,8 @@ void PixelBuffer::rotate(QuarterTurn turn) {
 
 void PixelBuffer::flip(FlipAxis axis) {
     if (!valid()) throw std::invalid_argument("invalid pixel buffer");
+    if (axis != FlipAxis::Horizontal && axis != FlipAxis::Vertical)
+        throw std::invalid_argument("invalid flip axis");
     const auto bpp = channels();
     std::vector<std::uint8_t> output(bytes.size());
     for (std::uint32_t y = 0; y < height; ++y)
@@ -82,6 +84,28 @@ void PixelBuffer::flip(FlipAxis axis) {
             const auto dst = static_cast<std::size_t>(ny) * stride + static_cast<std::size_t>(nx) * bpp;
             for (std::size_t c = 0; c < bpp; ++c) output[dst + c] = bytes[src + c];
         }
+    bytes.swap(output);
+}
+
+void PixelBuffer::crop(CropRect region) {
+    if (!valid()) throw std::invalid_argument("invalid pixel buffer");
+    if (region.width == 0 || region.height == 0 || region.x >= width || region.y >= height ||
+        region.width > width - region.x || region.height > height - region.y)
+        throw std::out_of_range("crop rectangle is outside the image");
+    const auto bpp = channels();
+    const auto new_stride = static_cast<std::size_t>(region.width) * bpp;
+    std::vector<std::uint8_t> output(checked_size(region.width, region.height, bpp));
+    for (std::uint32_t y = 0; y < region.height; ++y) {
+        const auto src = static_cast<std::size_t>(region.y + y) * stride +
+                         static_cast<std::size_t>(region.x) * bpp;
+        const auto dst = static_cast<std::size_t>(y) * new_stride;
+        std::copy_n(bytes.begin() + static_cast<std::ptrdiff_t>(src),
+                    static_cast<std::size_t>(region.width) * bpp,
+                    output.begin() + static_cast<std::ptrdiff_t>(dst));
+    }
+    width = region.width;
+    height = region.height;
+    stride = new_stride;
     bytes.swap(output);
 }
 
@@ -116,6 +140,12 @@ void ImageDocument::rotate_active(QuarterTurn turn) {
 void ImageDocument::flip_active(FlipAxis axis) {
     if (pages_.empty()) throw std::logic_error("document has no pages");
     pages_.at(active_page_).pixels.flip(axis);
+    dirty_ = true;
+    ++generation_;
+}
+void ImageDocument::crop_active(CropRect region) {
+    if (pages_.empty()) throw std::logic_error("document has no pages");
+    pages_.at(active_page_).pixels.crop(region);
     dirty_ = true;
     ++generation_;
 }
