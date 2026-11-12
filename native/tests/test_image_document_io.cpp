@@ -18,7 +18,7 @@ static ImagePage sample_page(std::uint8_t seed) {
 
 int main() {
     const auto root = std::filesystem::temp_directory_path();
-    const auto png = root / "emwat-document-io.tiff";
+    const auto tiff = root / "emwat-document-io.tiff";
     const auto missing = root / "emwat-document-io-missing.png";
 
     ImageDocument document;
@@ -27,12 +27,12 @@ int main() {
     document.append_page(sample_page(20));
     assert(document.page_count() == 2 && document.dirty());
 
-    save_document(document, png);
+    save_document(document, tiff);
     assert(!document.dirty());
 
     ImageDocument loaded;
     loaded.append_page(sample_page(99));
-    load_into_document(loaded, png);
+    load_into_document(loaded, tiff);
     assert(loaded.page_count() == 2);
     assert(!loaded.dirty());
     assert(loaded.active_page() == 0);
@@ -49,6 +49,6 @@ int main() {
     assert(loaded.dirty());
     assert(loaded.page(0).pixels.bytes == before);
 
-    std::filesystem::remove(png);
+    std::filesystem::remove(tiff);
     return 0;
 }
