@@ -65,6 +65,13 @@ std::size_t checked_image_bytes(std::uint32_t width, std::uint32_t height,
     return static_cast<std::size_t>(pixels * channels);
 }
 
+template <typename... Args>
+void set_tiff_field(TIFF* tif, ttag_t tag, Args... args) {
+    if (TIFFSetField(tif, tag, args...) != 1) {
+        throw CodecError("failed to set TIFF field " + std::to_string(tag));
+    }
+}
+
 void require_page(const ImagePage& page) {
     if (!page.pixels.valid()) throw CodecError("invalid image page");
     if ((page.dpi_x && (!std::isfinite(*page.dpi_x) || *page.dpi_x <= 0)) ||
@@ -284,6 +291,17 @@ std::vector<ImagePage> load_image_file(const std::filesystem::path& path) {
             if (pages.size() >= kMaxTiffPages) {
                 throw CodecError("TIFF exceeds the 10000-page limit");
             }
+            std::uint16_t extra_count = 0;
+            std::uint16_t* extra_types = nullptr;
+            bool has_alpha = false;
+            if (TIFFGetField(tif.get(), TIFFTAG_EXTRASAMPLES, &extra_count, &extra_types)) {
+                for (std::uint16_t i = 0; i < extra_count; ++i) {
+                    if (extra_types[i] == EXTRASAMPLE_ASSOCALPHA || extra_types[i] == EXTRASAMPLE_UNASSALPHA) {
+                        has_alpha = true;
+                        break;
+                    }
+                }
+            }
             const auto pixel_count = checked_image_bytes(width, height, 1, "TIFF");
             if (pixel_count > kMaxDecodedBytes / 7) {
                 throw CodecError("TIFF page exceeds the 1 GiB decode working-set limit");
@@ -292,11 +310,13 @@ std::vector<ImagePage> load_image_file(const std::filesystem::path& path) {
             if (!TIFFReadRGBAImageOriented(tif.get(), width, height, raster.data(), ORIENTATION_TOPLEFT, 0)) {
                 throw CodecError("TIFF page decode failed");
             }
-            std::vector<std::uint8_t> bytes(checked_image_bytes(width, height, 3, "TIFF"));
+            const std::size_t channels = has_alpha ? 4 : 3;
+            std::vector<std::uint8_t> bytes(checked_image_bytes(width, height, channels, "TIFF"));
             for (std::size_t i = 0; i < raster.size(); ++i) {
-                bytes[i * 3] = TIFFGetR(raster[i]);
-                bytes[i * 3 + 1] = TIFFGetG(raster[i]);
-                bytes[i * 3 + 2] = TIFFGetB(raster[i]);
+                bytes[i * channels] = TIFFGetR(raster[i]);
+                bytes[i * channels + 1] = TIFFGetG(raster[i]);
+                bytes[i * channels + 2] = TIFFGetB(raster[i]);
+                if (has_alpha) bytes[i * channels + 3] = TIFFGetA(raster[i]);
             }
             float rx = 0, ry = 0;
             const bool has_x = TIFFGetField(tif.get(), TIFFTAG_XRESOLUTION, &rx) != 0;
@@ -304,8 +324,8 @@ std::vector<ImagePage> load_image_file(const std::filesystem::path& path) {
             std::uint16_t unit = RESUNIT_INCH;
             TIFFGetFieldDefaulted(tif.get(), TIFFTAG_RESOLUTIONUNIT, &unit);
             const double factor = unit == RESUNIT_CENTIMETER ? 2.54 : 1.0;
-            pages.push_back(ImagePage{PixelBuffer{width, height, static_cast<std::size_t>(width) * 3,
-                PixelFormat::RGB8, std::move(bytes)},
+            pages.push_back(ImagePage{PixelBuffer{width, height, static_cast<std::size_t>(width) * channels,
+                has_alpha ? PixelFormat::RGBA8 : PixelFormat::RGB8, std::move(bytes)},
                 has_x && rx > 0 ? std::optional<double>(rx * factor) : std::nullopt,
                 has_y && ry > 0 ? std::optional<double>(ry * factor) : std::nullopt});
         } while (TIFFReadDirectory(tif.get()));
@@ -383,22 +403,22 @@ void save_image_file(const std::vector<ImagePage>& pages, const std::filesystem:
         for (const auto& page : pages) {
             const auto& p = page.pixels;
             const auto samples = static_cast<std::uint16_t>(p.channels());
-            TIFFSetField(tif.get(), TIFFTAG_IMAGEWIDTH, p.width);
-            TIFFSetField(tif.get(), TIFFTAG_IMAGELENGTH, p.height);
-            TIFFSetField(tif.get(), TIFFTAG_SAMPLESPERPIXEL, samples);
-            TIFFSetField(tif.get(), TIFFTAG_BITSPERSAMPLE, 8);
-            TIFFSetField(tif.get(), TIFFTAG_ORIENTATION, ORIENTATION_TOPLEFT);
-            TIFFSetField(tif.get(), TIFFTAG_PLANARCONFIG, PLANARCONFIG_CONTIG);
-            TIFFSetField(tif.get(), TIFFTAG_PHOTOMETRIC, p.format == PixelFormat::Gray8 ? PHOTOMETRIC_MINISBLACK : PHOTOMETRIC_RGB);
-            TIFFSetField(tif.get(), TIFFTAG_COMPRESSION, COMPRESSION_LZW);
-            TIFFSetField(tif.get(), TIFFTAG_ROWSPERSTRIP, TIFFDefaultStripSize(tif.get(), 0));
+            set_tiff_field(tif.get(), TIFFTAG_IMAGEWIDTH, p.width);
+            set_tiff_field(tif.get(), TIFFTAG_IMAGELENGTH, p.height);
+            set_tiff_field(tif.get(), TIFFTAG_SAMPLESPERPIXEL, samples);
+            set_tiff_field(tif.get(), TIFFTAG_BITSPERSAMPLE, 8);
+            set_tiff_field(tif.get(), TIFFTAG_ORIENTATION, ORIENTATION_TOPLEFT);
+            set_tiff_field(tif.get(), TIFFTAG_PLANARCONFIG, PLANARCONFIG_CONTIG);
+            set_tiff_field(tif.get(), TIFFTAG_PHOTOMETRIC, p.format == PixelFormat::Gray8 ? PHOTOMETRIC_MINISBLACK : PHOTOMETRIC_RGB);
+            set_tiff_field(tif.get(), TIFFTAG_COMPRESSION, COMPRESSION_LZW);
+            set_tiff_field(tif.get(), TIFFTAG_ROWSPERSTRIP, TIFFDefaultStripSize(tif.get(), 0));
             if (p.format == PixelFormat::RGBA8) {
                 std::uint16_t extra = EXTRASAMPLE_UNASSALPHA;
-                TIFFSetField(tif.get(), TIFFTAG_EXTRASAMPLES, 1, &extra);
+                set_tiff_field(tif.get(), TIFFTAG_EXTRASAMPLES, static_cast<std::uint16_t>(1), &extra);
             }
-            if (page.dpi_x) TIFFSetField(tif.get(), TIFFTAG_XRESOLUTION, static_cast<float>(*page.dpi_x));
-            if (page.dpi_y) TIFFSetField(tif.get(), TIFFTAG_YRESOLUTION, static_cast<float>(*page.dpi_y));
-            if (page.dpi_x || page.dpi_y) TIFFSetField(tif.get(), TIFFTAG_RESOLUTIONUNIT, RESUNIT_INCH);
+            if (page.dpi_x) set_tiff_field(tif.get(), TIFFTAG_XRESOLUTION, static_cast<float>(*page.dpi_x));
+            if (page.dpi_y) set_tiff_field(tif.get(), TIFFTAG_YRESOLUTION, static_cast<float>(*page.dpi_y));
+            if (page.dpi_x || page.dpi_y) set_tiff_field(tif.get(), TIFFTAG_RESOLUTIONUNIT, RESUNIT_INCH);
             for (std::uint32_t y = 0; y < p.height; ++y) {
                 auto* row = const_cast<std::uint8_t*>(p.bytes.data() + static_cast<std::size_t>(y) * p.stride);
                 if (TIFFWriteScanline(tif.get(), row, y, 0) < 0) {
