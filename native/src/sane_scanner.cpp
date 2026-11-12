@@ -14,6 +14,8 @@
 namespace emwat {
 namespace {
 constexpr std::size_t max_scan_bytes = 1024ULL * 1024ULL * 1024ULL;
+constexpr SANE_Word max_capability_entries = 4096;
+constexpr std::size_t max_capability_string_length = 256;
 std::mutex& sane_mutex() {
     static std::mutex value;
     return value;
@@ -144,8 +146,14 @@ void collect_string_values(SANE_Handle handle, const char* option_name,
             descriptor->constraint_type != SANE_CONSTRAINT_STRING_LIST ||
             !descriptor->constraint.string_list)
             return;
-        for (const SANE_Char* const* item = descriptor->constraint.string_list; *item; ++item)
-            values.emplace_back(reinterpret_cast<const char*>(*item));
+        for (const SANE_Char* const* item = descriptor->constraint.string_list;
+             *item && values.size() < 256; ++item) {
+            const auto* text = reinterpret_cast<const char*>(*item);
+            std::size_t length = 0;
+            while (length < max_capability_string_length && text[length] != '\0') ++length;
+            if (length > 0 && length < max_capability_string_length)
+                values.emplace_back(text, length);
+        }
         return;
     }
 }
@@ -165,18 +173,22 @@ void collect_resolution_values(SANE_Handle handle, ScannerCapabilities& result) 
             const auto* range = descriptor->constraint.range;
             const double minimum = sane_numeric_value(range->min, descriptor->type);
             const double maximum = sane_numeric_value(range->max, descriptor->type);
-            if (std::isfinite(minimum) && std::isfinite(maximum) && minimum > 0.0 && maximum >= minimum) {
+            if (std::isfinite(minimum) && std::isfinite(maximum) &&
+                minimum > 0.0 && maximum >= minimum && maximum <= 100000.0) {
                 result.min_resolution_dpi = minimum;
                 result.max_resolution_dpi = maximum;
             }
         } else if (descriptor->constraint_type == SANE_CONSTRAINT_WORD_LIST &&
                    descriptor->constraint.word_list && descriptor->constraint.word_list[0] > 0) {
-            const auto count = descriptor->constraint.word_list[0];
+            const auto count = std::min(descriptor->constraint.word_list[0], max_capability_entries);
             for (SANE_Word i = 1; i <= count; ++i) {
                 const double value = sane_numeric_value(descriptor->constraint.word_list[i], descriptor->type);
-                if (std::isfinite(value) && value > 0.0)
+                if (std::isfinite(value) && value > 0.0 && value <= 100000.0)
                     result.discrete_resolutions_dpi.push_back(value);
             }
+            auto& values = result.discrete_resolutions_dpi;
+            std::sort(values.begin(), values.end());
+            values.erase(std::unique(values.begin(), values.end()), values.end());
         }
         return;
     }
