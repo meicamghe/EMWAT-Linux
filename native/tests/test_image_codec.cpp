@@ -160,7 +160,7 @@ int main() {
     const ImagePage mixed_rgb{PixelBuffer{1, 2, 3, PixelFormat::RGB8,
         {9, 80, 170, 240, 30, 60}}, 300.0, 200.0};
     const ImagePage mixed_rgba{PixelBuffer{2, 1, 8, PixelFormat::RGBA8,
-        {10, 20, 30, 40, 200, 150, 100, 255}}, 72.0, 96.0};
+        {10, 20, 30, 128, 200, 150, 100, 255}}, 72.0, 96.0};
     save_image_file({mixed_gray, mixed_rgb, mixed_rgba}, mixed_pages_tif);
     const auto mixed_pages = load_image_file(mixed_pages_tif);
     assert(mixed_pages.size() == 3);
