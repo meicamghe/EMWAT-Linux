@@ -510,3 +510,15 @@
 - مدل‌های Field و Return Type هر دو metadataهای MIME type و Encryption دارند؛ این یافته احتمال وجود payloadهای غیرمتنی/رمزشده را برای برخی فیلدها مطرح می‌کند، اما encoding و الگوریتم هنوز ناشناخته است.
 - سند [WORD-DOCUMENT-PROTOCOL-ANALYSIS.md](WORD-DOCUMENT-PROTOCOL-ANALYSIS.md) با این جزئیات تکمیل شد.
 - **گام بعد:** استخراج بدنه/نمونه‌های واقعی XML و mapping متدهای connector؛ سپس runtime trace کنترل‌شده. تا آن زمان هیچ schema یا رمزنگاری فرضی در کد production پیاده‌سازی نمی‌شود.
+
+
+## Run 93 — مشاهده runtime اولین درخواست invoke از الماس گام (2026-11-12)
+
+- کاربر در Firefox درخواست واقعی با Method برابر POST را مشاهده کرد.
+- URL کپی‌شده: `http://127.0.0.1:1984/?invoke=83011`.
+- صفحه caller / Referer گزارش‌شده: `automation.bsi.ir/secretariat/ClientSingleton.do`.
+- این شاهد runtime تأیید می‌کند که حداقل یک درخواست عملیاتی از صفحه ClientSingleton به endpoint ریشه سرویس محلی روی پورت 1984 ارسال می‌شود.
+- مقدار `83011` فعلاً فقط مقدار مشاهده‌شده پارامتر invoke است؛ نقش آن (شناسه متد، شناسه درخواست یا مقدار دیگر) نامشخص است.
+- هنوز Request Body، Content-Type، پاسخ و معنای عملیات استخراج نشده‌اند؛ بنابراین هیچ wire schema یا dispatch mapping بر اساس این مقدار حدس زده نمی‌شود.
+- سند [HTTP-LOCAL-API-ANALYSIS.md](HTTP-LOCAL-API-ANALYSIS.md) با این مشاهده runtime تکمیل شد.
+- **گام بعد:** دریافت Request Body و Content-Type و Response از همان درخواست، با حذف کامل Cookie/Authorization/token و محتوای محرمانه؛ سپس اتصال payload به متدهای RTTI در EmwatMethods.bpl1.
