@@ -99,6 +99,12 @@ jobs:
       - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004F2490 bpl-analysis/EmwatMethods-scancommand-callback-record-2490.md 120 ret
       - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x0044ABE4 bpl-analysis/EmwatMethods-scancommand-callback-dispatch-44ABE4.md 140 ret
       - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004F2440 bpl-analysis/EmwatMethods-scancommand-exception-finally-2440.md 100 ret
+      - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004F18C4 bpl-analysis/EmwatMethods-remove-temp-files-caller-toggle-crop.md 100 ret
+      - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x00404F64 bpl-analysis/EmwatMethods-remove-temp-files-helper-404F64.md 80 ret
+      - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x00404894 bpl-analysis/EmwatMethods-remove-temp-files-helper-404894.md 60 ret
+      - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004042B4 bpl-analysis/EmwatMethods-remove-temp-files-helper-4042B4.md 60 ret
+      - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004042AC bpl-analysis/EmwatMethods-remove-temp-files-helper-4042AC.md 60 ret
+      - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x00404E34 bpl-analysis/EmwatMethods-remove-temp-files-helper-404E34.md 60 ret
       - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004EC8B4 bpl-analysis/EmwatMethods-helper-4EC8B4.md 100 ret
       - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004ECFC8 bpl-analysis/EmwatMethods-helper-4ECFC8.md 60 ret
       - run: python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004F0084 bpl-analysis/EmwatMethods-gearp-set-force-single-page-extended.md 50 ret
@@ -215,6 +221,12 @@ jobs:
             bpl-analysis/EmwatMethods-scancommand-callback-record-2490.md
             bpl-analysis/EmwatMethods-scancommand-callback-dispatch-44ABE4.md
             bpl-analysis/EmwatMethods-scancommand-exception-finally-2440.md
+            bpl-analysis/EmwatMethods-remove-temp-files-caller-toggle-crop.md
+            bpl-analysis/EmwatMethods-remove-temp-files-helper-404F64.md
+            bpl-analysis/EmwatMethods-remove-temp-files-helper-404894.md
+            bpl-analysis/EmwatMethods-remove-temp-files-helper-4042B4.md
+            bpl-analysis/EmwatMethods-remove-temp-files-helper-4042AC.md
+            bpl-analysis/EmwatMethods-remove-temp-files-helper-404E34.md
             bpl-analysis/EmwatMethods-helper-4EC8B4.md
             bpl-analysis/EmwatMethods-helper-4ECFC8.md
             bpl-analysis/EmwatMethods-gearp-set-force-single-page-extended.md
