@@ -17,7 +17,11 @@ TARGETS=(
 "TfrmGScanPreview@uibtnRegisterClick","TfrmGScanPreview@Save_Tiff_MultyPages",
 "TfrmGScanPreview@Scan","TGearImgProc@Rotate90","TGearImgProc@RotateLeft",
 "TGearImgProc@RotateRight","TGearImgProc@FlipHorizontal",
-"TGearImgProc@FlipVertical","TGearImgProc@SaveToFile","TGearImgProc@ScanToFile")
+"TGearImgProc@FlipVertical","TGearImgProc@SaveToFile","TGearImgProc@ScanToFile",
+# Word lifecycle probes; print-handler symbols remain distinct.
+"Wordviewer@OpenDoc","TWordViwer@SilentSaveEmwatDoc",
+"TWordViwer@StoreFieldValuesForPrint","TWordViwer@OnControlerNotify",
+"TEDPController@Notify","TEditWordDocument@PerformMethod")
 
 def secname(sec):
     return sec.Name.rstrip(bytes([0])).decode("ascii","replace")
