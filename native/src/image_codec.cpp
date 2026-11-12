@@ -384,22 +384,13 @@ std::vector<ImagePage> load_image_file(const std::filesystem::path& path) {
                 if (!TIFFReadRGBAImageOriented(tif.get(), width, height, raster.data(), ORIENTATION_TOPLEFT, 0)) {
                     throw CodecError("TIFF page decode failed");
                 }
-                for (std::uint32_t y = 0; y < height; ++y) {
-                    for (std::uint32_t x = 0; x < width; ++x) {
-                        std::uint32_t dx = x, dy = y;
-                        switch (orientation) {
-                        case ORIENTATION_TOPLEFT: break;
-                        case ORIENTATION_TOPRIGHT: dx = width - 1 - x; break;
-                        case ORIENTATION_BOTRIGHT: dx = width - 1 - x; dy = height - 1 - y; break;
-                        case ORIENTATION_BOTLEFT: dy = height - 1 - y; break;
-                        case ORIENTATION_LEFTTOP: dx = y; dy = x; break;
-                        case ORIENTATION_RIGHTTOP: dx = height - 1 - y; dy = x; break;
-                        case ORIENTATION_RIGHTBOT: dx = height - 1 - y; dy = width - 1 - x; break;
-                        case ORIENTATION_LEFTBOT: dx = y; dy = width - 1 - x; break;
-                        default: throw CodecError("unsupported TIFF orientation");
-                        }
-                        const auto source = static_cast<std::size_t>(y) * width + x;
-                        const auto destination = static_cast<std::size_t>(dy) * output_width + dx;
+                // TIFFReadRGBAImageOriented already normalizes the raster to
+                // the requested top-left orientation, including transposed pages.
+                // Its linear buffer therefore maps directly to the normalized
+                // output dimensions; applying the TIFF orientation again would
+                // rotate or mirror the fallback image twice.
+                for (std::size_t source = 0; source < raster.size(); ++source) {
+                        const auto destination = source;
                         if (is_gray8) {
                             bytes[destination] = TIFFGetR(raster[source]);
                             continue;
@@ -414,7 +405,6 @@ std::vector<ImagePage> load_image_file(const std::filesystem::path& path) {
                         bytes[destination * channels + 1] = has_alpha ? unassociate(TIFFGetG(raster[source])) : TIFFGetG(raster[source]);
                         bytes[destination * channels + 2] = has_alpha ? unassociate(TIFFGetB(raster[source])) : TIFFGetB(raster[source]);
                         if (has_alpha) bytes[destination * channels + 3] = alpha;
-                    }
                 }
             }
             float rx = 0, ry = 0;
