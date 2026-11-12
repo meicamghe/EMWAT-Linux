@@ -21,6 +21,7 @@ int main() {
     const auto jpg = root / "emwat-codec-test.jpg";
     const auto tif = root / "emwat-codec-test.tiff";
     const auto bad_jpg = root / "emwat-codec-test-corrupt.jpg";
+    const auto bad_tif = root / "emwat-codec-test-corrupt.tiff";
 
     save_image_file({page(1)}, png);
     auto png_pages = load_image_file(png);
@@ -45,6 +46,15 @@ int main() {
     catch (const CodecError&) { corrupt_rejected = true; }
     assert(corrupt_rejected);
 
+    {
+        std::ofstream out(bad_tif, std::ios::binary);
+        out << "not a TIFF file";
+    }
+    bool corrupt_tiff_rejected = false;
+    try { (void)load_image_file(bad_tif); }
+    catch (const CodecError&) { corrupt_tiff_rejected = true; }
+    assert(corrupt_tiff_rejected);
+
     save_image_file({page(1), page(20)}, tif);
     auto tif_pages = load_image_file(tif);
     assert(tif_pages.size() == 2);
@@ -62,5 +72,6 @@ int main() {
     std::filesystem::remove(jpg);
     std::filesystem::remove(tif);
     std::filesystem::remove(bad_jpg);
+    std::filesystem::remove(bad_tif);
     return 0;
 }
