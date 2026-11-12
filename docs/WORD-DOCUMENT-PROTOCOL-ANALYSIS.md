@@ -249,3 +249,45 @@ Emwatdocprinthandlerunit.TEmwatDocPrintHandler.FillField
 2. `FillField` متعلق به PrintHandler فقط در تحلیل/بازسازی مسیر چاپ استفاده شود.
 3. برای lifecycle ویرایش، نقطه‌های شروع قابل پیگیری `OpenDoc` و `SilentSaveEmwatDoc` هستند؛ ترتیب و جزئیات آن‌ها تا بررسی بدنه کد نامشخص می‌ماند.
 4. mapping آدرس‌ها باید ابتدا از PE sectionها و RVA به raw offset و سپس از TD32 segmentها به آدرس درست برسد؛ نام نماد به‌تنهایی مجوز حدس آدرس یا call order نیست.
+
+
+## Run 99 — نخستین disassembly معتبر از Wordviewer و lifecycle (2026-11-12)
+
+Artifact اجرای موفق GitHub Actions با SHA برابر `0eef619164c64f35afc2f4e075a82020f1ec7c70` بررسی شد. گزارش `EmwatMethods-target-disassembly.md` شامل 77 متد match‌شده است. متدهای زیر در ماژول 59 / segment 1 به PE section `.text` نگاشت شده‌اند؛ تفسیر segment-relative برای آن‌ها امتیاز plausibility بین 85 تا 90 دارد. این نگاشت نسبت به مراحل قبلی معتبرتر است، اما همچنان باید با داده‌های مستقل و callerها cross-check شود.
+
+### متدهای قابل disassemble
+
+| متد | VA | اندازه |
+|---|---:|---:|
+| `Wordviewer.OpenDoc` | `0x004B7430` | `0x2F4` |
+| `TWordViwer.LoadDocument` | `0x004B7724` | `0x1360` |
+| `TWordViwer.OnTmrAutoSave` | `0x004B8A84` | `0x292C` |
+| `TWordViwer.OnControlerNotify` | `0x004BB3B0` | `0x3C8` |
+| `TWordViwer.PrepareDocument` | `0x004BB77C` | `0xA0` |
+| `TWordViwer.WordAppDocumentBeforeClose` | `0x004CCBBC` | `0x20C` |
+| `TWordViwer.WordAppDocumentBeforeSave` | `0x004CD154` | `0x3F8` |
+| `TWordViwer.SilentSaveEmwatDoc` | `0x004D23D8` | `0x444` |
+| `TEDPController.Notify` | `0x004D2EC8` | `0x64` |
+
+### شواهد جدید و تفسیر محدود
+
+1. **ثبت handlerهای Word در مسیر timer:** در `OnTmrAutoSave`، کد pointerهای handler را روی object وابسته به Word viewer قرار می‌دهد. یکی از pointerها دقیقاً به entry متد `WordAppDocumentBeforeSave` یعنی `0x004CD154` اشاره می‌کند. چند callback دیگر نیز به `0x004D00AC`، `0x004CE030`، `0x004CD54C` و `0x004CD9C0` تنظیم می‌شوند. همچنین فراخوانی‌های virtual روی object مرتبط با Word انجام می‌شود. این شواهد وجود مکانیزم timer/event و اتصال BeforeSave را تأیید می‌کنند؛ اما به‌تنهایی ثابت نمی‌کنند که هر tick واقعاً سند را ذخیره یا به وب‌اپلیکیشن ارسال می‌کند.
+
+2. **BeforeSave یک event handler واقعی است:** `WordAppDocumentBeforeSave` آرگومان سند را با reference داخلی مقایسه می‌کند، وضعیت‌های داخلی را بررسی می‌کند و در چند branch مقدار cancel را تنظیم می‌کند. در مسیرهای دیگر helperهای داخلی و یک فراخوانی virtual روی سند Word اجرا می‌شود. بنابراین برنامه در مسیر Save استاندارد Word مداخله می‌کند؛ اما از این بدنه به‌تنهایی نمی‌توان نتیجه گرفت که Ctrl+S همان payload شبکه‌ای را می‌سازد یا داده را به سامانه ارسال می‌کند.
+
+3. **BeforeClose مسیر مستقل دارد:** `WordAppDocumentBeforeClose` event مربوط به بسته‌شدن را پردازش می‌کند و در نهایت به helper داخلی `0x004BCA88` می‌رسد. در همین بدنه فراخوانی مستقیم قابل‌شناسایی به `SilentSaveEmwatDoc` وجود ندارد. ممکن است helper یا dispatch غیرمستقیم به مسیر ذخیره متصل باشد، اما فعلاً اثبات نشده است.
+
+4. **SilentSaveEmwatDoc بدنه اجرایی دارد:** متد `0x004D23D8` چند مجموعه/فیلد داخلی را از object دریافت می‌کند، برای بعضی مقادیر objectهای موقت می‌سازد، helper `0x004AEBBC` را فراخوانی می‌کند و flag داخلی در offset `+0x44C` را تنظیم می‌کند؛ سپس یک virtual call در offset `+0x13C` انجام می‌دهد. هیچ فراخوانی مستقیم با نام یا نماد Word COM Save در این بدنه دیده نشد. به‌دلیل نامشخص بودن نوع دقیق objectها و dispatchهای virtual، هنوز نمی‌توان گفت این متد فایل را کجا می‌نویسد یا چگونه payload را به bridge برمی‌گرداند.
+
+5. **مسیر چاپ از مسیر ویرایش جدا می‌ماند:** `StoreFieldValuesForPrint` به `Base64Decode` و `SetForegroundWindowEX` می‌رسد و در گزارش helper graph نیز جدا از مسیر Save/Close قرار دارد. این متد را نباید به‌عنوان serializer عمومی سند ویرایش تلقی کرد.
+
+6. **OpenDoc و LoadDocument اکنون بدنه قابل بررسی دارند، اما اتصال caller/callee هنوز کامل نیست:** هر دو متد با mapping قابل قبول disassemble شدند. helper graph هنوز فراخوانی مستقیم قابل‌انتساب بین آن‌ها را نشان نمی‌دهد؛ dispatchهای virtual و callbackها unresolved باقی مانده‌اند. بنابراین ترتیب قطعی اجرای آن‌ها فعلاً ثبت نمی‌شود.
+
+### اثر بر طراحی Linux
+
+- معماری باید eventهای `BeforeSave`، `BeforeClose` و timer/autosave را جداگانه مدل کند؛ ادغام آن‌ها در یک «ذخیره هنگام بستن» فرض تأییدنشده است.
+- عملیات Save در LibreOffice باید با adapter مستقل پیاده شود و رفتار cancel/guardهای نسخه Windows بدون شناخت کامل آن‌ها کپی نشود.
+- پاسخ HTTP 200 مشاهده‌شده در Firefox هنوز فقط شاهد پاسخ bridge هنگام close است؛ این disassembly رابطه قطعی آن پاسخ با `SilentSaveEmwatDoc` را اثبات نمی‌کند.
+- گام بعدی تحلیل، استخراج callbackهای `0x4D00AC`، `0x4CE030`، `0x4CD54C` و `0x4CD9C0`، helper `0x4BCA88` و callerهای `OpenDoc` / `SilentSaveEmwatDoc` است؛ سپس باید dispatch virtual از طریق VMT/RTTI حل شود.
+
+جزئیات assembly کامل در artifact CI نگهداری می‌شود؛ این سند فقط یافته‌های لازم را بدون داده محرمانهٔ نامه ثبت می‌کند.
