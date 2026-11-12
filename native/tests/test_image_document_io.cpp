@@ -37,7 +37,8 @@ int main() {
     assert(!loaded.dirty());
     assert(loaded.active_page() == 0);
     assert(loaded.page(0).pixels.bytes == sample_page(10).pixels.bytes);
-    assert(loaded.page(0).dpi_x == 300.0);\n    assert(loaded.page(1).pixels.bytes == sample_page(20).pixels.bytes);
+    assert(loaded.page(0).dpi_x == 300.0);
+    assert(loaded.page(1).pixels.bytes == sample_page(20).pixels.bytes);
 
     loaded.flip_active(FlipAxis::Horizontal);
     assert(loaded.dirty());
