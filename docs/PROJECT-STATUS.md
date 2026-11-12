@@ -423,3 +423,12 @@
 - RotateLeft/Right dirty state را تغییر می‌دهند، اما عملیات pixel-level در helperهای خارجی/virtual انجام می‌شود و هنوز ABI آن‌ها مشخص نیست. نام قبلی Crop برای تابع 0x004EEDB4 تأیید نشد؛ بدنه بیشتر شبیه constructor یک context object است.
 - تحلیل تفصیلی و مرزهای اطمینان در [SCANNER-INTERFACE-ANALYSIS.md](SCANNER-INTERFACE-ANALYSIS.md) ثبت شد.
 - گام بعد: resolve کردن helperهای rotation و context، callerهای آن‌ها، و تابع‌های GEAR مربوط به save/load/scan؛ سپس تبدیل این یافته‌ها به قرارداد ماژول مستقل image document در Linux.
+
+
+## Run 88 — تفکیک rotation و page refresh
+- اجرای `43164659373` با موفقیت کامل شد؛ artifact `13919407916` بررسی شد.
+- importهای مهم ImageGear به‌صورت قطعی‌تر به thunkها متصل شدند: `IG_image_delete`، `IG_image_is_valid`، `IG_IP_rotate_multiple_90`، `IG_image_dimensions_get` و `IG_page_count_get`.
+- نکتهٔ اصلاحی: متد TD32 با نام `Rotate90` مستقیماً pixelها را rotate نمی‌کند؛ page count را از backing document می‌خواند و context virtual slot صفر را صدا می‌زند. چرخش واقعی در `RotateLeft` از طریق `IG_IP_rotate_multiple_90` انجام می‌شود و سپس ReloadPage/refresh resolution و dirty flag رخ می‌دهد.
+- این تفکیک برای طراحی native مهم است: page/document refresh، pixel transform و lifecycle آزادسازی image handle باید APIهای جدا باشند.
+- جزئیات و disassembly در [SCANNER-INTERFACE-ANALYSIS.md](SCANNER-INTERFACE-ANALYSIS.md) ثبت شد.
+- گام بعد: تکمیل قرارداد dimensions/page-count/delete و context virtualها، سپس تثبیت مدل Document/Page/PixelBuffer و شروع پیاده‌سازی native.
