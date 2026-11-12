@@ -54,8 +54,6 @@ private:
 
 void set_string_option(SANE_Handle handle, const char* name, const std::string& value) {
     SANE_Int index = 0;
-    auto status = sane_control_option(handle, 0, SANE_ACTION_GET_VALUE, nullptr, nullptr);
-    (void)status;
     const SANE_Option_Descriptor* descriptor = nullptr;
     for (index = 1; (descriptor = sane_get_option_descriptor(handle, index)) != nullptr; ++index) {
         if (descriptor->name && std::strcmp(reinterpret_cast<const char*>(descriptor->name), name) == 0)
@@ -69,7 +67,7 @@ void set_string_option(SANE_Handle handle, const char* name, const std::string& 
     std::vector<SANE_Char> buffer(static_cast<std::size_t>(descriptor->size), 0);
     std::memcpy(buffer.data(), value.c_str(), value.size() + 1);
     SANE_Int info = 0;
-    status = sane_control_option(handle, index, SANE_ACTION_SET_VALUE, buffer.data(), &info);
+    const auto status = sane_control_option(handle, index, SANE_ACTION_SET_VALUE, buffer.data(), &info);
     if (status != SANE_STATUS_GOOD)
         throw ScannerError(std::string("Cannot set scanner option ") + name + ": " + sane_strstatus(status));
 }
