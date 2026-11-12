@@ -102,6 +102,57 @@ int main() {
     assert((miniswhite_pages[0].pixels.bytes == std::vector<std::uint8_t>{255, 191, 127, 0}));
     std::filesystem::remove(miniswhite_tif);
 
+
+    const auto associated_tif = root / "emwat-codec-test-associated-alpha.tiff";
+    {
+        TIFF* raw = TIFFOpen(associated_tif.string().c_str(), "w");
+        assert(raw != nullptr);
+        TIFFSetField(raw, TIFFTAG_IMAGEWIDTH, 2);
+        TIFFSetField(raw, TIFFTAG_IMAGELENGTH, 1);
+        TIFFSetField(raw, TIFFTAG_SAMPLESPERPIXEL, 4);
+        TIFFSetField(raw, TIFFTAG_BITSPERSAMPLE, 8);
+        TIFFSetField(raw, TIFFTAG_ORIENTATION, ORIENTATION_TOPLEFT);
+        TIFFSetField(raw, TIFFTAG_PLANARCONFIG, PLANARCONFIG_CONTIG);
+        TIFFSetField(raw, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_RGB);
+        TIFFSetField(raw, TIFFTAG_COMPRESSION, COMPRESSION_NONE);
+        std::uint16_t associated_extra = EXTRASAMPLE_ASSOCALPHA;
+        TIFFSetField(raw, TIFFTAG_EXTRASAMPLES, static_cast<std::uint16_t>(1), &associated_extra);
+        std::uint8_t associated_row[] = {64, 32, 16, 128, 20, 40, 60, 255};
+        assert(TIFFWriteScanline(raw, associated_row, 0, 0) >= 0);
+        TIFFClose(raw);
+    }
+    const auto associated_pages = load_image_file(associated_tif);
+    assert(associated_pages.size() == 1);
+    assert(associated_pages[0].pixels.format == PixelFormat::RGBA8);
+    assert((associated_pages[0].pixels.bytes ==
+        std::vector<std::uint8_t>{128, 64, 32, 128, 20, 40, 60, 255}));
+    std::filesystem::remove(associated_tif);
+
+    const auto unassociated_tif = root / "emwat-codec-test-unassociated-alpha.tiff";
+    {
+        TIFF* raw = TIFFOpen(unassociated_tif.string().c_str(), "w");
+        assert(raw != nullptr);
+        TIFFSetField(raw, TIFFTAG_IMAGEWIDTH, 2);
+        TIFFSetField(raw, TIFFTAG_IMAGELENGTH, 1);
+        TIFFSetField(raw, TIFFTAG_SAMPLESPERPIXEL, 4);
+        TIFFSetField(raw, TIFFTAG_BITSPERSAMPLE, 8);
+        TIFFSetField(raw, TIFFTAG_ORIENTATION, ORIENTATION_TOPLEFT);
+        TIFFSetField(raw, TIFFTAG_PLANARCONFIG, PLANARCONFIG_CONTIG);
+        TIFFSetField(raw, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_RGB);
+        TIFFSetField(raw, TIFFTAG_COMPRESSION, COMPRESSION_NONE);
+        std::uint16_t unassociated_extra = EXTRASAMPLE_UNASSALPHA;
+        TIFFSetField(raw, TIFFTAG_EXTRASAMPLES, static_cast<std::uint16_t>(1), &unassociated_extra);
+        std::uint8_t unassociated_row[] = {128, 64, 32, 128, 20, 40, 60, 255};
+        assert(TIFFWriteScanline(raw, unassociated_row, 0, 0) >= 0);
+        TIFFClose(raw);
+    }
+    const auto unassociated_pages = load_image_file(unassociated_tif);
+    assert(unassociated_pages.size() == 1);
+    assert(unassociated_pages[0].pixels.format == PixelFormat::RGBA8);
+    assert((unassociated_pages[0].pixels.bytes ==
+        std::vector<std::uint8_t>{128, 64, 32, 128, 20, 40, 60, 255}));
+    std::filesystem::remove(unassociated_tif);
+
     const auto rgba_tif = root / "emwat-codec-test-alpha.tiff";
     const ImagePage rgba_page{PixelBuffer{2, 2, 8, PixelFormat::RGBA8,
         {0, 0, 0, 0, 0, 255, 0, 64, 0, 0, 255, 128, 12, 34, 56, 255}}, 240.0, 240.0};
