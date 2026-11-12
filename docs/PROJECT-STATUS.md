@@ -432,3 +432,13 @@
 - این تفکیک برای طراحی native مهم است: page/document refresh، pixel transform و lifecycle آزادسازی image handle باید APIهای جدا باشند.
 - جزئیات و disassembly در [SCANNER-INTERFACE-ANALYSIS.md](SCANNER-INTERFACE-ANALYSIS.md) ثبت شد.
 - گام بعد: تکمیل قرارداد dimensions/page-count/delete و context virtualها، سپس تثبیت مدل Document/Page/PixelBuffer و شروع پیاده‌سازی native.
+
+
+## Run 89 — ImageGear lifecycle و قرارداد اولیهٔ Document/Page
+- اجرای `43165458320` موفق شد؛ artifact `13919863021` بررسی شد.
+- `IG_image_dimensions_get` در `ReloadPage` با HIGEAR و سه output pointer در offsetهای `+0x40`، `+0x3C` و `+0x44` فراخوانی می‌شود؛ معنای دقیق هر خروجی هنوز قطعی نیست.
+- `IG_page_count_get` علاوه بر `Rotate90` در `SaveToFile` و مسیرهای Preview نیز استفاده می‌شود؛ بنابراین page count بخشی از metadata سند است، نه عملیات چرخش پیکسل.
+- `IG_image_delete` در مسیرهای teardown/replacement در Preview و همچنین `NotifyEditor`، `PaintCanvas` و `SavePage` دیده می‌شود؛ این موضوع اهمیت lifecycle/ownership روشن را تأیید می‌کند.
+- `IG_image_is_valid` پیش از چند عملیات reload، metadata، paint و save بررسی می‌شود.
+- سند معماری اولیهٔ مستقل از ImageGear در [NATIVE-IMAGE-DOCUMENT-DESIGN.md](NATIVE-IMAGE-DOCUMENT-DESIGN.md) ایجاد شد؛ شامل Document/Page/PixelBuffer، مرز API، ownership، تست‌های parity و سؤال‌های باز.
+- گام بعد: resolve کردن قرارداد سه خروجی dimensions و context virtualها؛ سپس ساخت اسکلت ماژول native و تست‌های واحد برای transformهای pixel بدون وابستگی به GEAR.
