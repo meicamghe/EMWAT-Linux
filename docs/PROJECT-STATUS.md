@@ -373,9 +373,19 @@
 
 ## Run 82 — بازبینی RemoveTempFiles (2026-11-12)
 - اجرای `43157168446` موفق شد؛ artifact `13916526235` بررسی شد.
-- بدنه `0x0044ABE4` به‌جای API حذف فایلِ قابل مشاهده، componentهای یک object را با `TComponent.GetComponentCount/GetComponent` پیمایش می‌کند.
+- بدنه `0x0044ABE4` به‌جای API حذف فایلِ قابل مشاهده، componentهای یک object را با `TComponent.GetComponentCount/GetComponent` پیمایش می‌کند؛ Run 83 نشان داد که componentهای منطبق با یک کلاس global، متن می‌گیرند و virtual slot `+0x13C` اجرا می‌شود.
 - در همان مسیر، thunkهای `0x00404894` و `0x00404E34` به `TControl.SetText` و `TCustomForm.SetFormStyle` resolve شدند؛ virtual slotهای `+0x94` و `+0x13C` نیز اجرا می‌شوند.
 - بنابراین برداشت «قطعاً پاک‌سازی فایل موقت» فعلاً تأیید نشده است؛ ممکن است نام TD32 قدیمی/گمراه‌کننده باشد یا عملیات نهایی از virtual/helper خارج از image انجام شود.
 - در caller اسکن، return value با 6 مقایسه می‌شود؛ معنای آن همچنان نامشخص است.
 - traceهای تکمیلی انتهای تابع، helperهای string/array/exception و callerهای دیگر به workflow افزوده شدند.
 - جزئیات و محدودیت استنباط در [SCANNER-INTERFACE-ANALYSIS.md](SCANNER-INTERFACE-ANALYSIS.md) ثبت شد.
+
+
+## Run 83 — قرارداد داخلی helper عمومی VCL (2026-11-12)
+- اجرای `43158235892` موفق شد؛ artifact `13917012048` بررسی شد.
+- `0x0044ABE4` componentهای یک container را با `TComponent.GetComponentCount/GetComponent` پیمایش می‌کند؛ برای هر مورد، `System.IsClass` را با کلاس global در `0x62FE28` اجرا می‌کند.
+- در صورت match، مقدار open-array را به `TControl.SetText` می‌دهد؛ سپس `TCustomForm.SetFormStyle(3)` و virtual slot `+0x13C` اجرا می‌شوند. مقدار خروجی از همین virtual slot می‌آید.
+- helperهای RTL به `System.IsClass`، `TObject.Free`، `System.AddRefArray` و `System.UStrAddRef` resolve شدند.
+- بنابراین نام TD32 یعنی `RemoveTempFiles` رفتار واقعی تابع را به‌تنهایی توصیف نمی‌کند؛ حذف فایل از بدنه قابل مشاهده اثبات نشده است.
+- در ScanCommand، مقدار 6 با نتیجه virtual slot مقایسه می‌شود؛ معنای این status و کلاس هدف هنوز نامشخص است.
+- جزئیات در [SCANNER-INTERFACE-ANALYSIS.md](SCANNER-INTERFACE-ANALYSIS.md) ثبت شد.
