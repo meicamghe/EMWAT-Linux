@@ -384,21 +384,37 @@ std::vector<ImagePage> load_image_file(const std::filesystem::path& path) {
                 if (!TIFFReadRGBAImageOriented(tif.get(), width, height, raster.data(), ORIENTATION_TOPLEFT, 0)) {
                     throw CodecError("TIFF page decode failed");
                 }
-                for (std::size_t i = 0; i < raster.size(); ++i) {
-                    if (is_gray8) {
-                        bytes[i] = TIFFGetR(raster[i]);
-                        continue;
+                for (std::uint32_t y = 0; y < height; ++y) {
+                    for (std::uint32_t x = 0; x < width; ++x) {
+                        std::uint32_t dx = x, dy = y;
+                        switch (orientation) {
+                        case ORIENTATION_TOPLEFT: break;
+                        case ORIENTATION_TOPRIGHT: dx = width - 1 - x; break;
+                        case ORIENTATION_BOTRIGHT: dx = width - 1 - x; dy = height - 1 - y; break;
+                        case ORIENTATION_BOTLEFT: dy = height - 1 - y; break;
+                        case ORIENTATION_LEFTTOP: dx = y; dy = x; break;
+                        case ORIENTATION_RIGHTTOP: dx = height - 1 - y; dy = x; break;
+                        case ORIENTATION_RIGHTBOT: dx = height - 1 - y; dy = width - 1 - x; break;
+                        case ORIENTATION_LEFTBOT: dx = y; dy = width - 1 - x; break;
+                        default: throw CodecError("unsupported TIFF orientation");
+                        }
+                        const auto source = static_cast<std::size_t>(y) * width + x;
+                        const auto destination = static_cast<std::size_t>(dy) * output_width + dx;
+                        if (is_gray8) {
+                            bytes[destination] = TIFFGetR(raster[source]);
+                            continue;
+                        }
+                        const auto alpha = TIFFGetA(raster[source]);
+                        const auto unassociate = [alpha](std::uint8_t component) -> std::uint8_t {
+                            if (alpha == 0) return 0;
+                            const auto value = (static_cast<unsigned int>(component) * 255U + alpha / 2U) / alpha;
+                            return static_cast<std::uint8_t>(std::min(value, 255U));
+                        };
+                        bytes[destination * channels] = has_alpha ? unassociate(TIFFGetR(raster[source])) : TIFFGetR(raster[source]);
+                        bytes[destination * channels + 1] = has_alpha ? unassociate(TIFFGetG(raster[source])) : TIFFGetG(raster[source]);
+                        bytes[destination * channels + 2] = has_alpha ? unassociate(TIFFGetB(raster[source])) : TIFFGetB(raster[source]);
+                        if (has_alpha) bytes[destination * channels + 3] = alpha;
                     }
-                    const auto alpha = TIFFGetA(raster[i]);
-                    const auto unassociate = [alpha](std::uint8_t component) -> std::uint8_t {
-                        if (alpha == 0) return 0;
-                        const auto value = (static_cast<unsigned int>(component) * 255U + alpha / 2U) / alpha;
-                        return static_cast<std::uint8_t>(std::min(value, 255U));
-                    };
-                    bytes[i * channels] = has_alpha ? unassociate(TIFFGetR(raster[i])) : TIFFGetR(raster[i]);
-                    bytes[i * channels + 1] = has_alpha ? unassociate(TIFFGetG(raster[i])) : TIFFGetG(raster[i]);
-                    bytes[i * channels + 2] = has_alpha ? unassociate(TIFFGetB(raster[i])) : TIFFGetB(raster[i]);
-                    if (has_alpha) bytes[i * channels + 3] = alpha;
                 }
             }
             float rx = 0, ry = 0;
