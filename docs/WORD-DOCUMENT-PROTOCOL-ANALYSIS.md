@@ -647,3 +647,18 @@ Workflow شماره 11 با run ID برابر `43504757084` و commit برابر
 ### گام بعدی
 
 Resolver باید به‌جای اتکا به یک base فرضی، ساختار Delphi VMT را با توجه به layout دقیق نسخه کامپایلر و RTTI جداگانه بازسازی کند: مرز VMT، method table، dynamic method table، interface table و extended RTTI باید تفکیک شوند. سپس slotهای مجازی با توالی pointerهای اجرایی و cross-referenceهای constructor/class reference اعتبارسنجی شوند. تا قبل از آن، هیچ مقصدی برای `+0x2BC` hard-code نمی‌شود و هیچ نتیجه‌ای درباره ارسال HTTP از این VMT report گرفته نمی‌شود.
+
+## Run 19–21 — شناسایی رابط COM سند Word در dispatch آفست +0x2BC (2026-11-14)
+
+نتیجهٔ جدید، تفسیر قبلی VMT را دقیق‌تر می‌کند: نبودن مقصد معتبر در candidateهای VMT داخلی EMWAT همچنان درست است، اما اکنون شواهد قوی داریم که dispatch موردنظر در مسیر Word از رابط COM نوع `Wordxp._Document` عبور می‌کند، نه از VMT کلاس داخلی `TWordViwer`.
+
+- امضای TD32 برای `TWordViwer.WordAppNewDocument` و `TWordViwer.WordAppDocumentBeforeSave` شامل `DelphiInterface<Wordxp._Document>` است.
+- فیلد `TWordViwer+0x48` با پارامتر ورودی `_Document` مقایسه می‌شود و سپس همان reference در callbackهای Word استفاده می‌شود.
+- `WordAppNewDocument` روی reference سند، فراخوانی indirect از offset `+0x2BC` در `0x004CD6BF` انجام می‌دهد.
+- `OnControlerNotify` نیز از helper در `0x004D281C` استفاده می‌کند که همان فیلد `+0x48` را خوانده و از offset `+0x2BC` dispatch می‌کند.
+- `OnTmrAutoSave` آدرس `0x004CD54C` را در event record در offset `+0x90` ثبت می‌کند؛ TD32 این procedure را `WordAppNewDocument` نام‌گذاری می‌کند. بنابراین نبودن direct CALL-xref برای این callback طبیعی است.
+- اسکن کامل‌تر 28 reference برای displacement `+0x2BC` پیدا کرد؛ این عدد در interfaceهای مختلف Word/Excel و چند بخش دیگر هم دیده می‌شود. بنابراین فقط callsiteهایی که receiver آن‌ها با نوع `_Document` اثبات شده باشد برای تعیین method موردنظر قابل استفاده‌اند.
+
+گزارش کامل شواهد و محدودیت‌ها: [`WORD-COM-INTERFACE-DISPATCH.md`](WORD-COM-INTERFACE-DISPATCH.md).
+
+نام دقیق متد Word در slot شماره 175 (`0x2BC / 4`) هنوز تعیین نشده است. همچنین این یافته به‌تنهایی مسیر HTTP محلی، `invoke=5208` یا XML پاسخ `EditWordDocument` را اثبات نمی‌کند. گام بعدی تطبیق wrapperهای WordXP و بررسی register/dataflow در callsiteهای هم‌offset است.
