@@ -162,3 +162,13 @@ TD32 resolves helper `0x004D281C` as `TWordViwer.CostumizeRecAndCC` (procedure r
 - Sets `TWordViwer+0x5C` while processing and clears it on exit.
 
 Combined with the `TWordDocument.PrintOutOld` wrapper mapping, these three dispatches are also calls to `_Document.PrintOutOld()` with no arguments. The method name `CostumizeRecAndCC` is proven by TD32; the exact business reason for invoking the print method three times in this routine is not yet established. Do not infer that this helper performs the local HTTP request.
+## OnControlerNotify guard around the PrintOutOld calls
+
+The full `TWordViwer.OnControlerNotify` trace (`0x004BB3B0`, BPL run 133) shows that `CostumizeRecAndCC` is not called unconditionally:
+
+1. It obtains an event-related interface from `TWordViwer+0x44` and invokes slot `+0xE0`.
+2. It obtains the event value through another interface call at `+0x1C`, then converts/reads the value and compares it with `0x14`.
+3. Only when the resulting value is greater than `0x14` does it enter `CostumizeRecAndCC`.
+4. After that helper returns, it invokes slot `+0xDC` on the current `_Document` interface at `TWordViwer+0x48`.
+
+The numeric event value's business meaning is still unknown. The trace proves a guarded event-notification path and the ordering of `PrintOutOld()` calls; it does not establish that this is the close event or the local bridge POST.
