@@ -662,3 +662,18 @@ Resolver باید به‌جای اتکا به یک base فرضی، ساختار 
 گزارش کامل شواهد و محدودیت‌ها: [`WORD-COM-INTERFACE-DISPATCH.md`](WORD-COM-INTERFACE-DISPATCH.md).
 
 نام دقیق متد Word در slot شماره 175 (`0x2BC / 4`) هنوز تعیین نشده است. همچنین این یافته به‌تنهایی مسیر HTTP محلی، `invoke=5208` یا XML پاسخ `EditWordDocument` را اثبات نمی‌کند. گام بعدی تطبیق wrapperهای WordXP و بررسی register/dataflow در callsiteهای هم‌offset است.
+
+## Run 132 — نگاشت slot مربوط به Word `_Document` به PrintOutOld (2026-11-14)
+
+تحلیل wrapperهای WordXP نام متد را با اطمینان بالا مشخص کرد:
+
+- procedure با نام `Wordxp.TWordDocument.PrintOutOld` در `0x004309F8`، بدون آرگومان، interface داخلی سند را از helper `0x0042ABA0` دریافت می‌کند و سپس از vtable آن در offset `+0x2BC` فراخوانی انجام می‌دهد (`0x00430A1E`).
+- overload دارای یک آرگومان در `0x00430A4C` از `+0x2C0` استفاده می‌کند و overloadهای بعدی به ترتیب از `+0x2C4` و offsetهای بعدی استفاده می‌کنند.
+- بنابراین slot `+0x2BC` در `Wordxp._Document` با اطمینان بالا متد بدون آرگومان `PrintOutOld()` است.
+- در مقابل، wrapper `Wordxp.TWordApplication.ToggleKeyboard` نیز از عدد `+0x2BC` روی interface نوع `_Application` استفاده می‌کند؛ نام متد به نوع interface وابسته است و نباید offset خام را به‌تنهایی تفسیر کرد.
+
+در نتیجه، فراخوانی `TWordViwer.WordAppNewDocument` در `0x004CD6BF` و dispatch مسیر `OnControlerNotify -> 0x004D281C` روی فیلد `_Document`، به احتمال بسیار بالا `Wordxp._Document.PrintOutOld()` را اجرا می‌کنند؛ نه Save یا Close. دلیل اجرای عملیات چاپ در این callback هنوز روشن نیست و باید شرط‌های قبل و بعد از dispatch بررسی شوند.
+
+جزئیات و شواهد disassembly: [`WORD-COM-INTERFACE-DISPATCH.md`](WORD-COM-INTERFACE-DISPATCH.md).
+
+توجه: فراخوانی‌های هم-offset در `CloseMyDoc` و `UnprotectMyDoc` هنوز به interface مشخصی منتسب نشده‌اند؛ تا زمان اثبات نوع receiver نباید آن‌ها را هم `PrintOutOld` فرض کرد.
