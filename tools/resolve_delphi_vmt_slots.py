@@ -51,6 +51,37 @@ def section_for_va(pe, va):
             return section
     return None
 
+def section_flags(section):
+    if section is None:
+        return "unmapped"
+    flags = []
+    if section.Characteristics & 0x20000000: flags.append("execute")
+    if section.Characteristics & 0x40000000: flags.append("read")
+    if section.Characteristics & 0x80000000: flags.append("write")
+    return ",".join(flags) or "no-flags"
+
+def vmt_prefix_profile(vmt_va, count=32):
+    """Heuristic only: profile initial 32-bit entries; never proves a VMT."""
+    executable = imported = nonexec = unmapped = 0
+    examples = []
+    for index in range(count):
+        value = read_u32_va(vmt_va + index * 4)
+        if value is None:
+            unmapped += 1
+            continue
+        target_section = section_for_va(pe, value)
+        if target_section is not None and target_section.Characteristics & 0x20000000:
+            executable += 1
+            if len(examples) < 6:
+                examples.append(f"+0x{index*4:X}->0x{value:08X}")
+        elif value in imports_by_iat:
+            imported += 1
+        elif target_section is not None:
+            nonexec += 1
+        else:
+            unmapped += 1
+    return executable, imported, nonexec, unmapped, examples
+
 def main():
     src = pathlib.Path(sys.argv[1])
     out = pathlib.Path(sys.argv[2] if len(sys.argv) > 2 else "bpl-analysis/EmwatMethods-vmt-slots.md")
@@ -216,17 +247,15 @@ def main():
             vmt_sec = section_for_va(pe, vmt_va)
             name_field_va = vmt_va + VMT_CLASSNAME
             name_field_sec = section_for_va(pe, name_field_va)
-            section_flags = []
-            if vmt_sec:
-                if vmt_sec.Characteristics & 0x20000000: section_flags.append("execute")
-                if vmt_sec.Characteristics & 0x40000000: section_flags.append("read")
-                if vmt_sec.Characteristics & 0x80000000: section_flags.append("write")
-            context = blob[max(0, vmt_raw - 0x20):min(len(blob), vmt_raw + 0x80)]
-            lines += ["", f"### Candidate VMT 0x{vmt_va:08X}",
+            executable, imported, nonexec, unmapped, examples = vmt_prefix_profile(vmt_va)
+            context = blob[max(0, vmt_raw - 0x60):min(len(blob), vmt_raw + 0x80)]
+            lines += ["", f"### Unverified VMT candidate 0x{vmt_va:08X}",
                       f"- Raw offset: 0x{vmt_raw:X}",
-                      f"- VMT section: {section_name(vmt_sec) if vmt_sec else 'unmapped'} ({', '.join(section_flags) or 'no flags'})",
-                      f"- Class-name pointer field: 0x{name_field_va:08X} in {section_name(name_field_sec) if name_field_sec else 'unmapped'}",
-                      f"- Bytes around candidate (-0x20..+0x7F): {context.hex(' ')}",
+                      f"- Candidate section: {section_name(vmt_sec).rstrip(chr(0)) if vmt_sec else 'unmapped'} ({section_flags(vmt_sec)})",
+                      f"- Class-name pointer field: 0x{name_field_va:08X} in {section_name(name_field_sec).rstrip(chr(0)) if name_field_sec else 'unmapped'} ({section_flags(name_field_sec)})",
+                      f"- First 32 dwords profile: {executable} executable pointers, {imported} IAT-slot values, {nonexec} non-executable mapped values, {unmapped} unmapped/zero values",
+                      f"- Executable pointer examples: {', '.join(examples) if examples else 'none'}",
+                      f"- Bytes around candidate (-0x60..+0x7F): {context.hex(' ')}",
                       f"- Self pointer matches VMT: {'yes' if self_ok else 'no'}",
                       f"- Instance size: 0x{instsize:X}",
                       f"- Parent VMT: 0x{parent:08X}" + parent_note]
