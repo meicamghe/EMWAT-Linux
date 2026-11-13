@@ -41,6 +41,16 @@ def raw_to_va(pe, raw):
 def section_name(s):
     return s.Name.rstrip(b"\\0").decode("ascii", "replace")
 
+def section_for_va(pe, va):
+    if va is None:
+        return None
+    rva = va - pe.OPTIONAL_HEADER.ImageBase
+    for section in pe.sections:
+        span = max(section.Misc_VirtualSize, section.SizeOfRawData)
+        if section.VirtualAddress <= rva < section.VirtualAddress + span:
+            return section
+    return None
+
 def main():
     src = pathlib.Path(sys.argv[1])
     out = pathlib.Path(sys.argv[2] if len(sys.argv) > 2 else "bpl-analysis/EmwatMethods-vmt-slots.md")
@@ -203,8 +213,20 @@ def main():
                     parent_note = f" (class-name target 0x{parent_name_field:08X}, bytes={sample.hex(' ')})"
             elif parent_name_value and not parent_name_field:
                 parent_note = f" (class-name stored=0x{parent_name_value:08X}, unresolved)"
+            vmt_sec = section_for_va(pe, vmt_va)
+            name_field_va = vmt_va + VMT_CLASSNAME
+            name_field_sec = section_for_va(pe, name_field_va)
+            section_flags = []
+            if vmt_sec:
+                if vmt_sec.Characteristics & 0x20000000: section_flags.append("execute")
+                if vmt_sec.Characteristics & 0x40000000: section_flags.append("read")
+                if vmt_sec.Characteristics & 0x80000000: section_flags.append("write")
+            context = blob[max(0, vmt_raw - 0x20):min(len(blob), vmt_raw + 0x80)]
             lines += ["", f"### Candidate VMT 0x{vmt_va:08X}",
                       f"- Raw offset: 0x{vmt_raw:X}",
+                      f"- VMT section: {section_name(vmt_sec) if vmt_sec else 'unmapped'} ({', '.join(section_flags) or 'no flags'})",
+                      f"- Class-name pointer field: 0x{name_field_va:08X} in {section_name(name_field_sec) if name_field_sec else 'unmapped'}",
+                      f"- Bytes around candidate (-0x20..+0x7F): {context.hex(' ')}",
                       f"- Self pointer matches VMT: {'yes' if self_ok else 'no'}",
                       f"- Instance size: 0x{instsize:X}",
                       f"- Parent VMT: 0x{parent:08X}" + parent_note]
