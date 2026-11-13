@@ -20,7 +20,25 @@ jobs:
       - run: pip install pefile capstone
       - name: Resolve Word document VMT dispatch slots
         run: |
+          mkdir -p word-lifecycle-analysis
           python tools/resolve_delphi_vmt_slots.py analysis-input/EmwatMethods.bpl1 word-lifecycle-analysis/Word-VMT-slots.md
+          test -s word-lifecycle-analysis/Word-VMT-slots.md
+          grep -n "Slot +0x2BC:" word-lifecycle-analysis/Word-VMT-slots.md || true
+      - name: Trace candidate controller VMT slot targets
+        run: |
+          python - <<'PY'
+          import pathlib, re, subprocess, sys
+          report = pathlib.Path("word-lifecycle-analysis/Word-VMT-slots.md").read_text(encoding="utf-8")
+          targets = sorted(set(re.findall(r"Slot \\+0x2BC: 0x([0-9A-Fa-f]{8})", report)))
+          summary = ["# Controller VMT slot +0x2BC candidate traces", ""]
+          if not targets:
+              summary.append("No mapped candidate target was emitted by the VMT resolver.")
+          for index, target in enumerate(targets):
+              out = f"word-lifecycle-analysis/VMT-2BC-{target}.md"
+              subprocess.run([sys.executable, "tools/trace_pe_target.py", "analysis-input/EmwatMethods.bpl1", "0x" + target, out, "320", "ret"], check=True)
+              summary.append(f"- Candidate {index + 1}: 0x{target} — {out}")
+          pathlib.Path("word-lifecycle-analysis/VMT-2BC-candidates.md").write_text("\\n".join(summary) + "\\n", encoding="utf-8")
+          PY
       - name: Extend Word lifecycle callback traces
         run: |
           mkdir -p word-lifecycle-analysis
