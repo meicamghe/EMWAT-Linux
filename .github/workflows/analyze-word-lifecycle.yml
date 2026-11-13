@@ -7,6 +7,7 @@ on:
       - 'analysis-input/EmwatMethods.bpl1'
       - 'tools/trace_pe_target.py'
       - 'tools/inspect_pe_va.py'
+      - 'tools/resolve_delphi_vmt_slots.py'
 permissions:
   contents: read
 jobs:
