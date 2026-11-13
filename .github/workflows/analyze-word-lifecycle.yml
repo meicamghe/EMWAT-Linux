@@ -56,7 +56,7 @@ jobs:
           python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004CCBBC word-lifecycle-analysis/BeforeClose-extended.md 240 ret
           python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004CD154 word-lifecycle-analysis/BeforeSave-extended.md 320 ret
           python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004CD54C word-lifecycle-analysis/BeforeSave-callback-4CD54C.md 420 ret
-          python tools.trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004CD54C word-lifecycle-analysis/Callers-4CD54C.md
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004CD54C word-lifecycle-analysis/Callers-4CD54C.md
           python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x0044ABE4 word-lifecycle-analysis/44ABE4-extended.md 240 ret
       - name: Deep trace autosave and controller dispatch
         run: |
