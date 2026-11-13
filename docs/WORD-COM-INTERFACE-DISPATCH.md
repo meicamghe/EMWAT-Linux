@@ -115,3 +115,22 @@ TD32 identifies `0x004CD54C` as `TWordViwer.WordAppNewDocument`. The same regist
 This establishes that `WordAppNewDocument` is installed as an event callback through the registration structure. Therefore, the zero direct-CALL-xref result for `0x004CD54C` is expected and does not indicate dead code. The callback registration and its typed `_Document` parameter now provide a coherent path to the COM `_Document` vtable call at `+0x2BC`.
 
 The workflow artifact name has also been corrected to `WordAppNewDocument-4CD54C.md`; the old temporary label “BeforeSave-callback” was inaccurate.
+
+## Slot collision scan (run 19)
+
+A full TD32 displacement scan found 28 references to +0x2BC across the package. Relevant call instructions include:
+
+| Procedure | Callsite | Current interpretation |
+|---|---:|---|
+| `Wordxp.TWordDocument.PrintOutOld` | `0x00430A1E` | Word document wrapper; receiver still needs register/dataflow validation |
+| `Wordxp.TWordApplication.ToggleKeyboard` | `0x00445A26` | Different Word interface type; same numeric offset must not be conflated |
+| `Wordviewer.TWordViwer.WordAppNewDocument` | `0x004CD6BF` | Typed `Wordxp._Document` event parameter; strong COM document receiver evidence |
+| `Wordviewer.TWordViwer.CostumizeRecAndCC` | `0x004D2844`, `0x004D2895`, `0x004D28D5` | Additional Word viewer paths; receiver type/dataflow still to validate |
+| `CloseMyDoc` | `0x005E9258` | Likely relevant to document lifecycle; body trace pending |
+| `UnprotectMyDoc` | `0x005E9769` | Likely relevant to document protection; body trace pending |
+
+The scan also finds non-call reads of displacement +0x2BC in fax-related UI code, so displacement matching alone cannot identify an interface method. The +0xDC scan likewise finds many unrelated Word/Excel interface calls.
+
+The important distinction is now explicit: +0x2BC is a byte displacement used by multiple COM interface types and possibly ordinary object fields. Only callsites where the receiver is proven to be the current Wordxp._Document interface can be used to map the _Document method at slot index 175.
+
+The next analysis compares the complete bodies of CloseMyDoc, UnprotectMyDoc, TWordDocument.PrintOutOld, TWordApplication.ToggleKeyboard, and TWordViwer.CostumizeRecAndCC, with special attention to how each receiver is loaded.
