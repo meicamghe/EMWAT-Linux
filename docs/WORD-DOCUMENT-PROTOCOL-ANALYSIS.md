@@ -559,3 +559,17 @@ Disassembly تابع `TWordViwer.OnTmrAutoSave` در `0x004B8A84` نشان می�
 تابع `GetXmlFieldInfo` در `0x004BCA88` مجموعه‌ای از interfaceها و propertyها را پیمایش می‌کند و helper `0x004BC170` را برای تطبیق/پردازش مقادیر فراخوانی می‌کند. شواهد فعلی با استخراج metadata فیلدهای XML سازگارند؛ اما trace 320 دستور هنوز کامل نیست.
 
 گام بعدی، trace کامل‌تر این دو تابع و helperهای controller است تا wiring رویدادها به مسیر `EditWordDocument` و پاسخ `wordConfig` متصل شود.
+
+
+## Deep lifecycle trace update (2026-11-13)
+
+The expanded trace artifact from workflow run `43500518664` completed successfully (artifact `14073787351`). It adds the following static evidence:
+
+- `OnTmrAutoSave` at `0x004B8A84` registers a callback record on the object referenced by `[this+0x44]`. The record stores the document context and function pointers: `+0x80 -> 0x004CD154` (BeforeSave), `+0x90 -> 0x004CD54C`, `+0x98 -> 0x004CD9C0`, and `+0x88 -> 0x004D00AC` or `0x004CE030` depending on `[this+0x3C]`. The function later repeats the BeforePrint callback selection and invokes additional interface methods at offsets `+0x100` and `+0x108`. This is event/callback wiring and document-state handling; it is not, by itself, proof of the HTTP request or payload serialization.
+- `OnControlerNotify` reaches `0x004D281C`. That helper sets a re-entrancy/state byte at `[this+0x5C]`, invokes virtual slot `+0x2BC` on the object at `[this+0x48]`, and clears the byte afterward. It repeats the same virtual call in an exception path. This is a stronger lead for resolving the controller/document notification dispatch, but the concrete VMT implementation remains unidentified.
+- The extended `GetXmlFieldInfo` trace (`0x004BCA88`) traverses multiple interfaces/collections and repeatedly invokes interface methods while building field-related values. The 1800-instruction capture ends mid-function; do not treat it as a complete function listing or as evidence of network transfer.
+- The helper at `0x004CDB54` checks a value obtained from `[this+0x44]` against a string constant and returns a Boolean. The helper at `0x004C5D68` reads two properties through interface calls and stores Boolean/state bytes at `[this+0x4C]` and `[this+0x4D]`. Neither helper contains a direct HTTP/serialization call in the captured body.
+
+### Next static-analysis target
+
+The controller notification path calls VMT byte offset `+0x2BC`. The VMT resolver has therefore been extended from `0x180` to `0x300` bytes and the lifecycle workflow now emits `Word-VMT-slots.md` for the relevant Delphi classes, including `TEmwatMethod` and `TEditWordDocument`. The next step is to identify which class owns the object at `[this+0x48]`, resolve slot `+0x2BC`, and trace its concrete target. Runtime-confirmed behavior remains separate: closing the Word document causes the local bridge request `invoke=5208` with an `EditWordDocument` XML payload containing `wordConfig`; the static callback-to-dispatch chain is not yet proven end-to-end.
