@@ -147,3 +147,35 @@ Workflow در commit `7f85037a9f2f31f529128ffd29f3679acb41f840` گسترش یا�
 این انتخاب بر اساس مشاهده runtime قبلی است: هنگام بستن سند، مرورگر POST به `127.0.0.1:1984` با `invoke=5208` می‌فرستد و ابتدای پاسخ XML شامل `EditWordDocument` و پارامتر `wordConfig` است. در disassembly فعلی، `WordAppDocumentBeforeClose (0x004CCBBC)` مستقیماً `GetXmlFieldInfo` را صدا می‌زند؛ اما هنوز caller/dispatcherی که POST را تولید می‌کند و ترتیب ارتباطش با BeforeClose مشخص نشده است.
 
 **هدف این مرحله:** اتصال runtime مشاهده‌شده `EditWordDocument` به مسیرهای `OpenDoc`، `OnControlerNotify`، `OnTmrAutoSave` و event بستن، بدون فرض گرفتن اینکه یکی از آن‌ها به‌تنهایی مسئول ارسال است.
+
+
+### نتیجه Run 107 — اتصال callbackها و controller (2026-11-13)
+
+Artifact شماره `14073059427` از run `43500269235` بررسی شد.
+
+**یافته قطعی درباره ثبت callbackها در `OnTmrAutoSave`:**
+
+در `0x004B8A84`، کد یک شیء وابسته به Word را از فیلد `+0x44` دریافت می‌کند و callback pointerها را در ساختار آن تنظیم می‌کند:
+
+- offset `+0x80` ← `WordAppDocumentBeforeSave` در `0x004CD154`
+- offset `+0x90` ← callback در `0x004CD54C`
+- offset `+0x98` ← callback در `0x004CD9C0`
+- offset `+0x88` ← یکی از دو callback چاپ، `0x004D00AC` یا `0x004CE030`، بر اساس byte در `[this+0x3C]`
+
+این مشاهده ثابت می‌کند `OnTmrAutoSave` حداقل بخشی از wiring رویدادهای Word را انجام می‌دهد. نام متد به‌تنهایی نباید باعث شود تمام بدنه آن را «ذخیره خودکار» فرض کنیم؛ در trace موجود، ثبت callbackها و آماده‌سازی handlerها مستقیماً دیده می‌شود.
+
+**رفتار `OnControlerNotify` در `0x004BB3B0`:**
+
+- ابتدا property/وضعیتی از شیء `+0x7C` خوانده می‌شود.
+- در صورت برقرار بودن شرط روی `[this+0x58]`، داده‌ای از شیء `+0x44` از طریق helper `0x43EB70` گرفته و متد interface با offset `+0xE0` اجرا می‌شود.
+- سپس دو مقدار/وضعیت دیگر از همان interface خوانده می‌شوند و مقدار اول با حد `0x14` مقایسه می‌شود.
+- در مسیر اصلی، byteهای `+0x79` و `+0x5E` موقتاً تغییر می‌کنند، helper `0x004D281C` اجرا می‌شود و سپس متد interface با offset `+0xDC` روی شیء `+0x48` فراخوانی می‌شود.
+- در trace محدود فعلی، HTTP، XML serialization یا ارسال مستقیم به endpoint دیده نمی‌شود.
+
+**رفتار فعلی `GetXmlFieldInfo` در `0x004BCA88`:**
+
+تابع stack frame بزرگی می‌سازد، چند interface را از ورودی دریافت می‌کند، propertyهای متعدد را با dispatchهای interface (offsetهای `+0x70`، `+0x40`، `+0x38`، `+0x30`، `+0x28`، `+0x88`) می‌خواند و وارد پیمایش مجموعه‌ای از فیلدها می‌شود. helper `0x004BC170` و مقایسه رشته/مقدار نیز در این مسیر دیده می‌شوند. این با استخراج و تطبیق اطلاعات فیلدهای XML سازگار است، نه ارسال شبکه‌ای مستقیم. trace فعلی 320 دستور است و هنوز انتهای کامل تابع را پوشش نمی‌دهد.
+
+### Run 108 — گسترش trace کامل
+
+در commit `b17be55941a861a19348ca8fd70cfb8514a9225e`، workflow برای trace عمیق‌تر `OnTmrAutoSave` تا 2600 دستور و `GetXmlFieldInfo` تا 1800 دستور، به‌علاوه helperهای `0x004D281C`، `0x004CDB54`، `0x004C5D68`، `0x00440950`، `0x00440A68` و `0x00441C68` توسعه یافت. هدف مشخص‌کردن ترتیب ثبت callbackها، نقش controller و هرگونه مسیر رسیدن به connector است.
