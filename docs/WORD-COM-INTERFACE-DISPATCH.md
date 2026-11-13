@@ -182,3 +182,14 @@ Useful typed comparison points from the same scan:
 - `TWordViwer.GetXmlFieldInfo` itself calls `+0x38` repeatedly on objects typed as `Wordconfigrequestxml.IXMLFieldType` in its TD32 signature.
 
 Thus `+0x38` is interface-specific just like `+0x2BC`. The BeforeClose receiver still needs to be typed from its dataflow/event-record source. The next BPL analysis adds the `TWordDocument.Get_Tables` wrapper body as a positive control and compares it with the BeforeClose callsite.
+
+## BeforeClose +0x38 receiver dataflow (lifecycle run 22 artifact)
+
+- TD32 names the procedure at 0x004CCBBC as TWordViwer.WordAppDocumentBeforeClose and its formal parameters include DelphiInterface<Wordxp._Document>.
+- At both callsites (0x004CCC2C and 0x004CCCB2), the code loads the receiver from the same local interface temporary at [ebp-0x0C], dereferences its interface vtable, and calls slot +0x38.
+- The local is initialized at the start of the callback and populated through callback/event-context setup before the dispatches. The trace does not show a different typed interface being assigned to this local between the two calls.
+- The positive-control wrapper Wordxp.TWordDocument.Get_Tables calls _Document slot +0x38 at 0x0042AF21. This makes _Document.Get_Tables() the strongest current mapping for the two BeforeClose dispatches, subject to a final exact parameter-to-local assignment cross-check.
+
+This is a materially better receiver hypothesis than the earlier untyped +0x38 interpretation, but it is not yet a complete semantic explanation of the close callback. The two calls appear to be the same _Document slot, but the arguments/return handling and exact reason for invoking Get_Tables twice still need validation against the wrapper body. GetXmlFieldInfo at 0x004BCA88 follows these dispatches and remains a separate, direct call. Neither the Get_Tables mapping nor the GetXmlFieldInfo call proves that this callback sends the observed 127.0.0.1:1984 POST or constructs invoke=5208.
+
+Next: trace the complete TWordDocument.Get_Tables wrapper, then trace helpers at 0x00401420 and 0x00401478 around the BeforeClose interface temporary to prove the exact source and lifetime of [ebp-0x0C]. Keep the runtime POST mapping open until a connector/serializer caller chain is found.
