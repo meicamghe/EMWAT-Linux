@@ -541,3 +541,21 @@ Workflow جدید، بدنه `GetXmlFieldInfo`، `OnTmrAutoSave`، `OnControlerN
 - پاسخ XML با متد `EditWordDocument` و پارامتر `wordConfig`
 
 تا وقتی caller و ترتیب eventها مشخص نشده‌اند، نباید `BeforeClose`، `OnTmrAutoSave` یا `OnControlerNotify` را به‌تنهایی مسئول ارسال پاسخ معرفی کرد.
+
+
+## 11. یافته جدید درباره ثبت callbackهای Word (Run 107)
+
+Disassembly تابع `TWordViwer.OnTmrAutoSave` در `0x004B8A84` نشان می‌دهد این تابع callbackهای رویداد Word را روی شیء/ساختار وابسته به document ثبت می‌کند:
+
+- `+0x80` ← `WordAppDocumentBeforeSave` در `0x004CD154`
+- `+0x90` ← `0x004CD54C`
+- `+0x98` ← `0x004CD9C0`
+- `+0x88` ← یکی از دو callback چاپ `0x004D00AC` یا `0x004CE030`، بسته به وضعیت byte در `[this+0x3C]`
+
+بنابراین نام `OnTmrAutoSave` به‌تنهایی توصیف کامل نقش این تابع نیست؛ شواهد مستقیم نشان می‌دهند که wiring چند event handler را هم انجام می‌دهد. هنوز معلوم نیست کدام callback یا کدام dispatch در نهایت باعث POST مشاهده‌شده هنگام close می‌شود.
+
+تابع `OnControlerNotify` در `0x004BB3B0` وضعیت‌هایی را بررسی می‌کند، flagهای موقتی `+0x79` و `+0x5E` را تغییر می‌دهد، helper `0x004D281C` را فراخوانی می‌کند و سپس یک متد interface با offset `+0xDC` را روی شیء `+0x48` اجرا می‌کند. در trace فعلی ارسال مستقیم HTTP/XML دیده نشده است.
+
+تابع `GetXmlFieldInfo` در `0x004BCA88` مجموعه‌ای از interfaceها و propertyها را پیمایش می‌کند و helper `0x004BC170` را برای تطبیق/پردازش مقادیر فراخوانی می‌کند. شواهد فعلی با استخراج metadata فیلدهای XML سازگارند؛ اما trace 320 دستور هنوز کامل نیست.
+
+گام بعدی، trace کامل‌تر این دو تابع و helperهای controller است تا wiring رویدادها به مسیر `EditWordDocument` و پاسخ `wordConfig` متصل شود.
