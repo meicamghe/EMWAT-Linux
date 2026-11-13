@@ -678,3 +678,10 @@ Workflow run `43226336477` با موفقیت کامل (148/148 مرحله) پا�
 Run `43232846364` با موفقیت کامل (148/148 مرحله) پایان یافت. رکورد TD32 برای `ParamsToXML` در `0x0046AD10` یک candidate پنج‌بایتی unresolved است که فقط به `0x00401068` jump می‌کند. مقصد، import thunk به slot `0x0062EE24` است و این slot به `rtl230.bpl!@System@@AbstractError$qqrv` resolve می‌شود. بنابراین این trace بدنه serializer را نشان نمی‌دهد و انتساب فعلی آدرس به implementation واقعی ParamsToXML قابل اتکا نیست؛ احتمال forwarding به package دیگر یا mapping/alias نامعتبر وجود دارد.
 
 این نتیجه به معنی آن نیست که ParamsToXML واقعاً AbstractError را اجرا می‌کند. در حال حاضر نباید از آن درباره ساخت XML یا ذخیره نامه نتیجه‌گیری کرد. بررسی package/import metadata و BPLهای وابسته گام بعدی است. مسیر serialization/بازگشت سند همچنان حل‌نشده باقی می‌ماند.
+
+
+### Run 105 — مسیر ParamsToXML به احتمال زیاد abstract dispatch است
+
+تحلیل artifact نشان داد نماد TD32 با نام `@Emwatmethod@ParamsToXML...` فقط پنج بایت دارد و به یک import thunk برای `rtl230.bpl!@System@@AbstractError$qqrv` پرش می‌کند. این با stub متد abstract در Delphi سازگار است و احتمال می‌دهد implementation واقعی از طریق override/VMT یا package دیگری ارائه شود؛ اما هنوز override واقعی شناسایی نشده و این فرض باید با VMT تأیید شود. متد `GetXmlFieldInfo` در کلاس `TWordViwer` و آدرس `0x004BFC18` تابع جداگانه‌ای است و نباید با `ParamsToXML` یکی گرفته شود.
+
+برای ادامه، ابزار inventory نمادهای TD32 و گسترش تحلیل VMT به کلاس‌های `TEmwatMethod` و `TEditWordDocument` اضافه شد. اجرای CI جدید در حال تولید گزارش‌های این دو مسیر است. تا تأیید override، پیاده‌سازی serializer و چرخه save/return همچنان نامشخص است.
