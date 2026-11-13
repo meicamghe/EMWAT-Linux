@@ -97,3 +97,21 @@ This makes the identification of the `+0x2BC` receiver as the Word `_Document` i
 A direct TD32 CALL-xref scan for `0x004CD54C` found no direct callers. This is consistent with an event callback being registered and invoked indirectly, but the registration-to-event firing chain still needs explicit proof. Do not interpret the absence of direct CALL xrefs as proof that the method is unused.
 
 The exact method name at `_Document` slot `+0x2BC` remains unresolved. The next scan targets every TD32 procedure that accesses `[reg+0x2BC]` and prioritizes generated `Wordxp.TWordDocument` wrappers, which may expose the method's Pascal wrapper name.
+
+
+## Callback registration cross-check (run 15)
+
+The full `TWordViwer.OnTmrAutoSave` trace at `0x004B8A84` resolves the previously missing indirect registration for `WordAppNewDocument`.
+
+At `0x004B8CB2..0x004B8CB8`, the code writes:
+- callback owner/context: `[event-record+0x94] = Self`
+- callback function: `[event-record+0x90] = 0x004CD54C`
+
+TD32 identifies `0x004CD54C` as `TWordViwer.WordAppNewDocument`. The same registration block assigns:
+- `+0x80 = 0x004CD154` (`WordAppDocumentBeforeSave`), owner at `+0x84)
+- `+0x98 = 0x004CD9C0` (`WordAppWindowActivate`), owner at `+0x9C`)
+- `+0x88 = 0x004D00AC` or `0x004CE030`, selected by `TWordViwer+0x3C`, owner at `+0x8C`)
+
+This establishes that `WordAppNewDocument` is installed as an event callback through the registration structure. Therefore, the zero direct-CALL-xref result for `0x004CD54C` is expected and does not indicate dead code. The callback registration and its typed `_Document` parameter now provide a coherent path to the COM `_Document` vtable call at `+0x2BC`.
+
+The workflow artifact name has also been corrected to `WordAppNewDocument-4CD54C.md`; the old temporary label “BeforeSave-callback” was inaccurate.
