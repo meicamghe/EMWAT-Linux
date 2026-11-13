@@ -15,6 +15,7 @@ on:
       - 'tools/trace_rotate90_dispatch.py'
       - 'tools/trace_pe_target.py'
       - 'tools/trace_import_and_callers.py'
+      - 'tools/search_td32_word_methods.py'
       - 'tools/trace_delphi_interfaces.py'
       - 'tools/trace_imaging_import_callers.py'
       - '.github/workflows/analyze-bpl.yml'
@@ -229,6 +230,8 @@ jobs:
           python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004BB81C bpl-analysis/EmwatMethods-callers-get-doc-field-name.md
           python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004C19C0 bpl-analysis/EmwatMethods-callers-get-caption-item-font.md
           python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004BC980 bpl-analysis/EmwatMethods-callers-word-helper-4BC980.md
+      - name: Inventory word-method overrides and package dependencies
+        run: python tools/search_td32_word_methods.py analysis-input/EmwatMethods.bpl1
       - name: Resolve ParamsToXML thunk and callers
         run: |
           python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x00401068 bpl-analysis/EmwatMethods-params-to-xml-target.md 180 ret
@@ -417,4 +420,5 @@ jobs:
             bpl-analysis/EmwatMethods-callers-word-helper-4BC980.md
             bpl-analysis/EmwatMethods-import-and-caller-trace.md
             bpl-analysis/EmwatMethods-params-to-xml-target.md
+            bpl-analysis/EmwatMethods-word-dispatch-symbols.md
           if-no-files-found: error
