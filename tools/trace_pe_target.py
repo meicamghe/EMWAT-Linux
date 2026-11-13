@@ -56,7 +56,11 @@ def main():
         if current in imports:
             md.append(f"  - IAT import: **{imports[current]}**")
             break
-        code = blob[raw:raw+256]
+        # x86 instructions are at most 15 bytes. Respect the requested
+        # instruction budget instead of silently truncating every trace to 256 bytes.
+        section_end = sec.PointerToRawData + sec.SizeOfRawData
+        available = max(0, min(len(blob), section_end) - raw)
+        code = blob[raw:raw + min(available, max_insns * 15)]
         insns = list(decoder.disasm(code, current))
         if not insns:
             md.append("  - No instruction decoded.")
