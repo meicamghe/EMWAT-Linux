@@ -159,3 +159,12 @@ The full trace of `TWordViwer.WordAppDocumentBeforeClose` at `0x004CCBBC` is dis
 - The receiver type and exact method represented by slot `+0x38` are not yet identified. The next workflow adds a package-wide `+0x38` callsite scan to compare the receiver against generated WordXP wrapper methods.
 
 This makes the current priority clearer: `PrintOutOld()` explains the `+0x2BC` calls in the Word viewer event paths, but the close-time integration path is more likely to continue through the separate `BeforeClose -> +0x38 dispatches -> GetXmlFieldInfo` sequence. That is a tracing priority, not yet proof that this sequence sends the observed local POST.
+## CostumizeRecAndCC confirms the same Word document method (BPL run 133)
+
+TD32 resolves helper `0x004D281C` as `TWordViwer.CostumizeRecAndCC` (procedure range `0x004D281C..0x004D28F6`). Its body:
+
+- Reads the same `TWordViwer+0x48` document interface reference.
+- Calls that interface's `+0x2BC` slot at `0x004D2844`, `0x004D2895`, and `0x004D28D5` (three times).
+- Sets `TWordViwer+0x5C` while processing and clears it on exit.
+
+Combined with the `TWordDocument.PrintOutOld` wrapper mapping, these three dispatches are also calls to `_Document.PrintOutOld()` with no arguments. The method name `CostumizeRecAndCC` is proven by TD32; the exact business reason for invoking the print method three times in this routine is not yet established. Do not infer that this helper performs the local HTTP request.
