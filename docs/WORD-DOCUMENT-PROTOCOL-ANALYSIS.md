@@ -566,13 +566,13 @@ Disassembly تابع `TWordViwer.OnTmrAutoSave` در `0x004B8A84` نشان می�
 The expanded trace artifact from workflow run `43500518664` completed successfully (artifact `14073787351`). It adds the following static evidence:
 
 - `OnTmrAutoSave` at `0x004B8A84` registers a callback record on the object referenced by `[this+0x44]`. The record stores the document context and function pointers: `+0x80 -> 0x004CD154` (BeforeSave), `+0x90 -> 0x004CD54C`, `+0x98 -> 0x004CD9C0`, and `+0x88 -> 0x004D00AC` or `0x004CE030` depending on `[this+0x3C]`. The function later repeats the BeforePrint callback selection and invokes additional interface methods at offsets `+0x100` and `+0x108`. This is event/callback wiring and document-state handling; it is not, by itself, proof of the HTTP request or payload serialization.
-- `OnControlerNotify` reaches `0x004D281C`. That helper sets a re-entrancy/state byte at `[this+0x5C]`, invokes virtual slot `+0x2BC` on the object at `[this+0x48]`, and clears the byte afterward. It repeats the same virtual call in an exception path. This is a stronger lead for resolving the controller/document notification dispatch, but the concrete VMT implementation remains unidentified.
+- `OnControlerNotify` reaches `0x004D281C`, which TD32 identifies as `TWordViwer.CostumizeRecAndCC`. The method uses `TWordViwer+0x48` (the current `Wordxp._Document` interface), toggles the state byte at `+0x5C`, and invokes `_Document.PrintOutOld()` three times through slot `+0x2BC`. This is a COM interface dispatch, not an unresolved internal Delphi VMT slot.
 - The extended `GetXmlFieldInfo` trace (`0x004BCA88`) traverses multiple interfaces/collections and repeatedly invokes interface methods while building field-related values. The 1800-instruction capture ends mid-function; do not treat it as a complete function listing or as evidence of network transfer.
 - The helper at `0x004CDB54` checks a value obtained from `[this+0x44]` against a string constant and returns a Boolean. The helper at `0x004C5D68` reads two properties through interface calls and stores Boolean/state bytes at `[this+0x4C]` and `[this+0x4D]`. Neither helper contains a direct HTTP/serialization call in the captured body.
 
 ### Next static-analysis target
 
-The controller notification path calls VMT byte offset `+0x2BC`. The VMT resolver has therefore been extended from `0x180` to `0x300` bytes and the lifecycle workflow now emits `Word-VMT-slots.md` for the relevant Delphi classes, including `TEmwatMethod` and `TEditWordDocument`. The next step is to identify which class owns the object at `[this+0x48]`, resolve slot `+0x2BC`, and trace its concrete target. Runtime-confirmed behavior remains separate: closing the Word document causes the local bridge request `invoke=5208` with an `EditWordDocument` XML payload containing `wordConfig`; the static callback-to-dispatch chain is not yet proven end-to-end.
+The earlier Delphi VMT resolver remains useful for internal class diagnostics, but it is not the table used by this Word callback path. The current `TWordViwer+0x48` field is a `Wordxp._Document` COM interface, and slot `+0x2BC` maps to `PrintOutOld()`. The remaining close-path investigation now focuses on the separate `WordAppDocumentBeforeClose -> +0x38 interface dispatches -> GetXmlFieldInfo` path. Runtime-confirmed behavior remains separate: closing the Word document causes the local bridge request `invoke=5208` with an `EditWordDocument` XML payload containing `wordConfig`; the static callback-to-HTTP chain is not yet proven end-to-end.
 
 
 ## Run 108 — deep trace رویدادهای Word و dispatch کنترلر (2026-11-14)
@@ -606,7 +606,7 @@ Artifact اجرای موفق run `43500518664` با شناسه `14073787351` ب�
 - trace خطی تابع `OnTmrAutoSave` نیز در ناحیه‌ای شامل داده/بخش‌های exception به انتهای disassembly معتبر نرسیده است؛ بنابراین پایان واقعی تابع و همه branchها هنوز استخراج نشده‌اند.
 - توابع helper `0x00440950`، `0x00440A68` و `0x00441C68` wrapperهای کوتاه برای فراخوانی interface method در offsetهای `+0x174`، `+0x180` و `+0x1E0` هستند؛ معنای دقیق این slotها بدون resolve کردن interface/VMT مشخص نیست.
 
-گام بعدی باید به‌جای افزایش کورکورانه تعداد دستورهای disassembly خطی، مسیرهای شاخه‌ای و جدول VMT/interface را دنبال کند؛ ابتدا مالک شیء `[this+0x48]` و مقصد slot `+0x2BC` تعیین شود، سپس slotهای `+0xDC`، `+0xE0`، `+0x100` و `+0x108` با همان نوع شیء تطبیق داده شوند. مشاهده runtime درخواست `invoke=5208` هنگام بستن سند همچنان جدا از این زنجیره ایستای هنوز حل‌نشده ثبت می‌شود.
+گام بعدی باید مسیر جداگانهٔ BeforeClose را دنبال کند: دو dispatch از slot `+0x38` در `WordAppDocumentBeforeClose` و سپس فراخوانی `GetXmlFieldInfo`. برای این کار scan جدید تمام callsiteهای `+0x38` را با wrapperهای WordXP مقایسه می‌کند. مشاهده runtime درخواست `invoke=5208` هنگام بستن سند همچنان جدا از زنجیرهٔ ایستای هنوز حل‌نشده ثبت می‌شود.
 
 
 ## Run 109 — ارزیابی خروجی VMT و اصلاح فیلتر مقصدها (2026-11-14)
@@ -661,7 +661,7 @@ Resolver باید به‌جای اتکا به یک base فرضی، ساختار 
 
 گزارش کامل شواهد و محدودیت‌ها: [`WORD-COM-INTERFACE-DISPATCH.md`](WORD-COM-INTERFACE-DISPATCH.md).
 
-نام دقیق متد Word در slot شماره 175 (`0x2BC / 4`) هنوز تعیین نشده است. همچنین این یافته به‌تنهایی مسیر HTTP محلی، `invoke=5208` یا XML پاسخ `EditWordDocument` را اثبات نمی‌کند. گام بعدی تطبیق wrapperهای WordXP و بررسی register/dataflow در callsiteهای هم‌offset است.
+نام متد در slot شماره 175 (`0x2BC / 4`) برای interface نوع `_Document` اکنون با اطمینان بالا `PrintOutOld()` است. این یافته به‌تنهایی مسیر HTTP محلی، `invoke=5208` یا XML پاسخ `EditWordDocument` را اثبات نمی‌کند؛ گام بعدی بررسی dispatchهای جداگانهٔ `+0x38` در callback بستن سند است.
 
 ## Run 132 — نگاشت slot مربوط به Word `_Document` به PrintOutOld (2026-11-14)
 
