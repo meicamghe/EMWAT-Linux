@@ -687,3 +687,9 @@ Resolver باید به‌جای اتکا به یک base فرضی، ساختار 
 ### شرط اجرای CostumizeRecAndCC در OnControlerNotify
 
 ردیابی کامل `TWordViwer.OnControlerNotify` نشان می‌دهد فراخوانی `CostumizeRecAndCC` شرطی است: ابتدا از interface ذخیره‌شده در `TWordViwer+0x44` مقدار رویداد خوانده می‌شود؛ مقدار پس از تبدیل با `0x14` مقایسه می‌شود و فقط اگر بزرگ‌تر باشد، helper اجرا می‌شود. پس از آن slot `+0xDC` روی interface جاری `_Document` در `TWordViwer+0x48` فراخوانی می‌شود. معنای تجاری event code هنوز مشخص نیست و نباید این مسیر را با close event یا POST محلی یکی دانست.
+
+### Run 22 — بررسی slot +0x38 در WordAppDocumentBeforeClose
+
+اسکن package-wide تعداد 462 reference برای displacement `+0x38` پیدا کرد. دو callsite مربوط به `WordAppDocumentBeforeClose` (`0x004CCC2C` و `0x004CCCB2`) به‌تنهایی برای تعیین نام متد کافی نیستند؛ همین offset در wrapperهای مختلف WordXP برای interfaceهای متفاوت استفاده می‌شود. نمونه‌ها شامل `TWordDocument.Get_Tables`، `TWordFont.Get_Hidden`، `TWordParagraphFormat.Get_KeepTogether`، `TWordOLEControl.Get_Name` و `TWordApplication.Get_Selection` هستند. خود `GetXmlFieldInfo` نیز `+0x38` را روی interfaceهای `Wordconfigrequestxml.IXMLFieldType` فراخوانی می‌کند.
+
+پس نوع receiver در BeforeClose هنوز باید از dataflow و event-record source تعیین شود. برای مقایسه، بدنهٔ wrapper `TWordDocument.Get_Tables` در تحلیل BPL بعدی اضافه شده است.
