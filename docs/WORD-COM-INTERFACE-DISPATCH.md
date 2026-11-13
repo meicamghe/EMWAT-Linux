@@ -148,3 +148,14 @@ The method name can now be mapped with high confidence for the `Wordxp._Document
 Consequently, the call at `TWordViwer.WordAppNewDocument` `0x004CD6BF`, whose receiver is the typed `_Document` event parameter, is a call to `_Document.PrintOutOld()` with no arguments. The `OnControlerNotify -> 0x004D281C` path also dispatches through `TWordViwer+0x48`, which is the same `_Document` field, so that path likewise invokes `PrintOutOld()`.
 
 This is an important correction to the earlier open question: the `+0x2BC` dispatch in these Word viewer paths is not a save/close method. It maps to the legacy no-argument Word document print method. This does not yet explain why the callback invokes it or how the observed local POST is initiated; continue tracing the surrounding conditions and subsequent calls. Do not conflate other `+0x2BC` callsites (for example `CloseMyDoc` or `UnprotectMyDoc`) until their receiver interface types are established.
+
+## BeforeClose callback is a separate dispatch path
+
+The full trace of `TWordViwer.WordAppDocumentBeforeClose` at `0x004CCBBC` is distinct from the `+0x2BC` `PrintOutOld` path:
+
+- It performs two indirect calls through slot `+0x38` (`0x004CCC2C` and `0x004CCCB2`) on the same temporary interface/object reference.
+- It then calls `TWordViwer.GetXmlFieldInfo` at `0x004BCA88` with values assembled from the callback's local/event context.
+- No direct HTTP, `127.0.0.1:1984`, `invoke=5208`, or `EditWordDocument` call appears in this callback body.
+- The receiver type and exact method represented by slot `+0x38` are not yet identified. The next workflow adds a package-wide `+0x38` callsite scan to compare the receiver against generated WordXP wrapper methods.
+
+This makes the current priority clearer: `PrintOutOld()` explains the `+0x2BC` calls in the Word viewer event paths, but the close-time integration path is more likely to continue through the separate `BeforeClose -> +0x38 dispatches -> GetXmlFieldInfo` sequence. That is a tracing priority, not yet proof that this sequence sends the observed local POST.
