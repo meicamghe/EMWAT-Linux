@@ -115,6 +115,8 @@ jobs:
           python tools/trace_field_accesses.py analysis-input/EmwatMethods.bpl1 0x48 word-lifecycle-analysis/Field-0x48-references.md
           python tools/trace_field_accesses.py analysis-input/EmwatMethods.bpl1 0x40 word-lifecycle-analysis/Field-0x40-references.md
           python tools/trace_field_accesses.py analysis-input/EmwatMethods.bpl1 0x44 word-lifecycle-analysis/Field-0x44-references.md
+          python tools/trace_field_accesses.py analysis-input/EmwatMethods.bpl1 0x2BC word-lifecycle-analysis/Field-0x2BC-vtable-callers.md
+          python tools/trace_field_accesses.py analysis-input/EmwatMethods.bpl1 0xDC word-lifecycle-analysis/Field-0xDC-vtable-callers.md
       - uses: actions/upload-artifact@v4
         with:
           name: emwat-word-lifecycle-analysis
