@@ -183,26 +183,19 @@ Useful typed comparison points from the same scan:
 
 Thus `+0x38` is interface-specific just like `+0x2BC`. The BeforeClose receiver still needs to be typed from its dataflow/event-record source. The next BPL analysis adds the `TWordDocument.Get_Tables` wrapper body as a positive control and compares it with the BeforeClose callsite.
 
-## BeforeClose +0x38 receiver dataflow (lifecycle run 22 artifact)
+## Superseded preliminary BeforeClose receiver hypothesis
 
-- TD32 names the procedure at 0x004CCBBC as TWordViwer.WordAppDocumentBeforeClose and its formal parameters include DelphiInterface<Wordxp._Document>.
-- At both callsites (0x004CCC2C and 0x004CCCB2), the code loads the receiver from the same local interface temporary at [ebp-0x0C], dereferences its interface vtable, and calls slot +0x38.
-- The local is initialized at the start of the callback and populated through callback/event-context setup before the dispatches. The trace does not show a different typed interface being assigned to this local between the two calls.
-- The positive-control wrapper Wordxp.TWordDocument.Get_Tables calls _Document slot +0x38 at 0x0042AF21. This makes _Document.Get_Tables() the strongest current mapping for the two BeforeClose dispatches, subject to a final exact parameter-to-local assignment cross-check.
-
-This is a materially better receiver hypothesis than the earlier untyped +0x38 interpretation, but it is not yet a complete semantic explanation of the close callback. The two calls appear to be the same _Document slot, but the arguments/return handling and exact reason for invoking Get_Tables twice still need validation against the wrapper body. GetXmlFieldInfo at 0x004BCA88 follows these dispatches and remains a separate, direct call. Neither the Get_Tables mapping nor the GetXmlFieldInfo call proves that this callback sends the observed 127.0.0.1:1984 POST or constructs invoke=5208.
-
-Next: trace the complete TWordDocument.Get_Tables wrapper, then trace helpers at 0x00401420 and 0x00401478 around the BeforeClose interface temporary to prove the exact source and lifetime of [ebp-0x0C]. Keep the runtime POST mapping open until a connector/serializer caller chain is found.
+The initial run-22/run-23 reading incorrectly treated `[ebp-0x0C]` as the receiver for the two `+0x38` calls. The full run-24 disassembly shows that the receiver is loaded from `[[ebp+8]-0x0C]`; the stack local `[ebp-0x0C]` is a separate managed temporary passed later to `GetXmlFieldInfo`. See the run-24 correction below. Do not use the earlier _Document.Get_Tables hypothesis for BeforeClose unless the context field's type is independently established.
 
 
 ## BeforeClose slot +0x38 positive-control wrapper (lifecycle run 23)
 
 Lifecycle run 23 completed successfully (run ID `43510769743`, commit `fec8b0f3f9f5c888129e2a56dee0ee169b5ca706`). Its artifact includes a trace at `0x0042AF00`, inside the TD32-bounded `Wordxp.TWordDocument.Get_Tables` wrapper:
 
-- The wrapper obtains an interface pointer through `0x0042ABA0), stores it in a local interface temporary, then calls its vtable slot `+0x38` at `0x0042AF21`.
+- The wrapper obtains an interface pointer through `0x0042ABA0`, stores it in a local interface temporary, then calls its vtable slot `+0x38` at `0x0042AF21`.
 - The package-wide `+0x38` scan independently labels this callsite as `Wordxp.TWordDocument.Get_Tables`.
 - This is a typed positive control for the `_Document` interface slot: `_Document.Get_Tables()` is the supported mapping for slot `+0x38` on this interface.
-- The trace begins at `0x0042AF00), after the method's true prologue, so the current artifact does not contain the complete wrapper entry/exit sequence. The next run expands the trace around the method start and the shared interface accessor at `0x0042ABA0`.
+- The trace begins at `0x0042AF00`, after the method's true prologue, so the current artifact does not contain the complete wrapper entry/exit sequence. The next run expands the trace around the method start and the shared interface accessor at `0x0042ABA0`.
 
 The BeforeClose callback's two `+0x38` calls use a local interface temporary initialized at `[ebp-0x0C]`. The typed wrapper makes `_Document.Get_Tables()` the strongest method mapping, but the local's exact assignment from the callback's formal `_Document` parameter still needs explicit dataflow confirmation. Until that is proven, describe the two BeforeClose calls as *likely* `_Document.Get_Tables()`, not conclusively mapped.
 
