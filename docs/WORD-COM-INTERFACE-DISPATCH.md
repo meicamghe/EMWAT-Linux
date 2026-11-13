@@ -172,3 +172,13 @@ The full `TWordViwer.OnControlerNotify` trace (`0x004BB3B0`, BPL run 133) shows 
 4. After that helper returns, it invokes slot `+0xDC` on the current `_Document` interface at `TWordViwer+0x48`.
 
 The numeric event value's business meaning is still unknown. The trace proves a guarded event-notification path and the ordering of `PrintOutOld()` calls; it does not establish that this is the close event or the local bridge POST.
+## BeforeClose slot +0x38 scan (lifecycle run 22)
+
+The package-wide scan found 462 references to displacement `+0x38`. The two `WordAppDocumentBeforeClose` calls at `0x004CCC2C` and `0x004CCCB2` are therefore not enough by themselves to identify a method.
+
+Useful typed comparison points from the same scan:
+- `Wordxp.TWordDocument.Get_Tables` calls `[vtable+0x38]` at `0x0042AF21` on a Word document wrapper's underlying interface.
+- Other WordXP wrappers use the same numeric offset for different interface types, including `TWordFont.Get_Hidden`, `TWordParagraphFormat.Get_KeepTogether`, `TWordOLEControl.Get_Name`, `TWordLetterContent.Get_PageDesign`, and `TWordApplication.Get_Selection`.
+- `TWordViwer.GetXmlFieldInfo` itself calls `+0x38` repeatedly on objects typed as `Wordconfigrequestxml.IXMLFieldType` in its TD32 signature.
+
+Thus `+0x38` is interface-specific just like `+0x2BC`. The BeforeClose receiver still needs to be typed from its dataflow/event-record source. The next BPL analysis adds the `TWordDocument.Get_Tables` wrapper body as a positive control and compares it with the BeforeClose callsite.
