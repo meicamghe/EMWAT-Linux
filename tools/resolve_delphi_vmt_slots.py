@@ -10,7 +10,8 @@ TARGET_CLASSES = (
     "TGearImgProc", "TfrmScanError", "TImageProcessor",
     "TResultImage", "TMultiPageImage", "TSetOfMultiPageImages",
     "TSetOfSinglePageImages", "TProcessResult", "TScanCommand",
-    "TEmwatMethod", "TEditWordDocument",
+    "TEmwatMethod", "TEditWordDocument", "TWordViwer", "TEDPController",
+    "TEmwatDocPrintHandler",
 )
 SLOTS = tuple(range(0x00, 0x300, 4))
 VMT_SELF = -88
