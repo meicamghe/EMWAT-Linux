@@ -8,6 +8,7 @@ on:
       - 'tools/trace_pe_target.py'
       - 'tools/inspect_pe_va.py'
       - 'tools/resolve_delphi_vmt_slots.py'
+      - 'tools/trace_field_accesses.py'
 permissions:
   contents: read
 jobs:
@@ -107,6 +108,11 @@ jobs:
           python tools/inspect_pe_va.py analysis-input/EmwatMethods.bpl1 0x004D078C --before 0x20 --after 0xA0 > word-lifecycle-analysis/data-4D078C.md
           python tools/inspect_pe_va.py analysis-input/EmwatMethods.bpl1 0x004D07D8 --before 0x20 --after 0xA0 > word-lifecycle-analysis/data-4D07D8.md
           python tools/inspect_pe_va.py analysis-input/EmwatMethods.bpl1 0x004D0814 --before 0x20 --after 0xA0 > word-lifecycle-analysis/data-4D0814.md
+      - name: Trace Word controller object-field assignments
+        run: |
+          python tools/trace_field_accesses.py analysis-input/EmwatMethods.bpl1 0x48 word-lifecycle-analysis/Field-0x48-references.md
+          python tools/trace_field_accesses.py analysis-input/EmwatMethods.bpl1 0x40 word-lifecycle-analysis/Field-0x40-references.md
+          python tools/trace_field_accesses.py analysis-input/EmwatMethods.bpl1 0x44 word-lifecycle-analysis/Field-0x44-references.md
       - uses: actions/upload-artifact@v4
         with:
           name: emwat-word-lifecycle-analysis
