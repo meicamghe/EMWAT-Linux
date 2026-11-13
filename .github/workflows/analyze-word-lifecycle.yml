@@ -27,6 +27,16 @@ jobs:
           python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004CCBBC word-lifecycle-analysis/BeforeClose-extended.md 240 ret
           python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004CD154 word-lifecycle-analysis/BeforeSave-extended.md 320 ret
           python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x0044ABE4 word-lifecycle-analysis/44ABE4-extended.md 240 ret
+      - name: Deep trace autosave and controller dispatch
+        run: |
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004B8A84 word-lifecycle-analysis/OnTmrAutoSave-full.md 2600 ret
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004BCA88 word-lifecycle-analysis/GetXmlFieldInfo-full.md 1800 ret
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004D281C word-lifecycle-analysis/ControllerNotify-4D281C.md 500 ret
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004CDB54 word-lifecycle-analysis/Callback-4CDB54.md 400 ret
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004C5D68 word-lifecycle-analysis/Callback-4C5D68.md 400 ret
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x00440950 word-lifecycle-analysis/Helper-440950.md 400 ret
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x00440A68 word-lifecycle-analysis/Helper-440A68.md 400 ret
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x00441C68 word-lifecycle-analysis/Helper-441C68.md 400 ret
       - name: Trace close lifecycle and Word connector entry points
         run: |
           python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004BCA88 word-lifecycle-analysis/GetXmlFieldInfo.md 320 ret
