@@ -683,3 +683,7 @@ Resolver باید به‌جای اتکا به یک base فرضی، ساختار 
 تحلیل TD32 آدرس `0x004D281C` را به‌طور قطعی به `TWordViwer.CostumizeRecAndCC` نسبت داد. این متد سه بار از فیلد `TWordViwer+0x48` استفاده می‌کند و در هر سه مورد slot `+0x2BC` را صدا می‌زند. با نگاشت wrapper در Run 132، هر سه فراخوانی به `Wordxp._Document.PrintOutOld()` بدون آرگومان مربوط می‌شوند. متد فلگ `TWordViwer+0x5C` را هنگام اجرا فعال و در خروج پاک می‌کند.
 
 بنابراین مسیر `OnControlerNotify -> CostumizeRecAndCC` اکنون از نظر نام متد و نوع عملیات COM روشن شده است: فراخوانی PrintOutOld است، نه Save یا Close. دلیل کاربرد سه‌بارهٔ آن در منطق Rec/CC هنوز نیازمند بررسی است و این مسیر به‌تنهایی درخواست HTTP محلی را ثابت نمی‌کند.
+
+### شرط اجرای CostumizeRecAndCC در OnControlerNotify
+
+ردیابی کامل `TWordViwer.OnControlerNotify` نشان می‌دهد فراخوانی `CostumizeRecAndCC` شرطی است: ابتدا از interface ذخیره‌شده در `TWordViwer+0x44` مقدار رویداد خوانده می‌شود؛ مقدار پس از تبدیل با `0x14` مقایسه می‌شود و فقط اگر بزرگ‌تر باشد، helper اجرا می‌شود. پس از آن slot `+0xDC` روی interface جاری `_Document` در `TWordViwer+0x48` فراخوانی می‌شود. معنای تجاری event code هنوز مشخص نیست و نباید این مسیر را با close event یا POST محلی یکی دانست.
