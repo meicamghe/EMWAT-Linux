@@ -38,6 +38,25 @@ jobs:
           python tools/inspect_pe_va.py analysis-input/EmwatMethods.bpl1 0x004D0550 --before 0x20 --after 0xA0 > word-lifecycle-analysis/data-4D0550.md
           python tools/inspect_pe_va.py analysis-input/EmwatMethods.bpl1 0x004D0590 --before 0x20 --after 0xA0 > word-lifecycle-analysis/data-4D0590.md
           python tools/inspect_pe_va.py analysis-input/EmwatMethods.bpl1 0x004D05A8 --before 0x20 --after 0xA0 > word-lifecycle-analysis/data-4D05A8.md
+      - name: Trace downstream print helpers
+        run: |
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004AEBBC word-lifecycle-analysis/helper-4AEBBC.md 240 ret
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004CF5B4 word-lifecycle-analysis/helper-4CF5B4.md 220 ret
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004CF748 word-lifecycle-analysis/helper-4CF748.md 220 ret
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004CFC74 word-lifecycle-analysis/helper-4CFC74.md 220 ret
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004CF158 word-lifecycle-analysis/helper-4CF158.md 220 ret
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x00441E44 word-lifecycle-analysis/helper-441E44.md 160 ret
+      - name: Inspect BeforePrint callback messages
+        run: |
+          python tools/inspect_pe_va.py analysis-input/EmwatMethods.bpl1 0x004CEB9C --before 0x20 --after 0xA0 > word-lifecycle-analysis/data-4CEB9C.md
+          python tools/inspect_pe_va.py analysis-input/EmwatMethods.bpl1 0x004CEC64 --before 0x20 --after 0xA0 > word-lifecycle-analysis/data-4CEC64.md
+          python tools/inspect_pe_va.py analysis-input/EmwatMethods.bpl1 0x004CEC94 --before 0x20 --after 0xA0 > word-lifecycle-analysis/data-4CEC94.md
+          python tools/inspect_pe_va.py analysis-input/EmwatMethods.bpl1 0x004CECDC --before 0x20 --after 0xA0 > word-lifecycle-analysis/data-4CECDC.md
+          python tools/inspect_pe_va.py analysis-input/EmwatMethods.bpl1 0x004D06E8 --before 0x20 --after 0xA0 > word-lifecycle-analysis/data-4D06E8.md
+          python tools/inspect_pe_va.py analysis-input/EmwatMethods.bpl1 0x004D075C --before 0x20 --after 0xA0 > word-lifecycle-analysis/data-4D075C.md
+          python tools/inspect_pe_va.py analysis-input/EmwatMethods.bpl1 0x004D078C --before 0x20 --after 0xA0 > word-lifecycle-analysis/data-4D078C.md
+          python tools/inspect_pe_va.py analysis-input/EmwatMethods.bpl1 0x004D07D8 --before 0x20 --after 0xA0 > word-lifecycle-analysis/data-4D07D8.md
+          python tools/inspect_pe_va.py analysis-input/EmwatMethods.bpl1 0x004D0814 --before 0x20 --after 0xA0 > word-lifecycle-analysis/data-4D0814.md
       - uses: actions/upload-artifact@v4
         with:
           name: emwat-word-lifecycle-analysis
