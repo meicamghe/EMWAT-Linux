@@ -18,6 +18,9 @@ jobs:
         with:
           python-version: '3.12'
       - run: pip install pefile capstone
+      - name: Resolve Word document VMT dispatch slots
+        run: |
+          python tools/resolve_delphi_vmt_slots.py analysis-input/EmwatMethods.bpl1 word-lifecycle-analysis/Word-VMT-slots.md
       - name: Extend Word lifecycle callback traces
         run: |
           mkdir -p word-lifecycle-analysis
