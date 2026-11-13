@@ -478,3 +478,26 @@ Artifact اجرای موفق workflow با run ID برابر `43226336477` بر�
 در Run 103 مشخص شده بود که `ParamsToXML` در `0x0046AD10` فقط یک jump thunk پنج‌بایتی به `0x00401068` است. بنابراین Run 104 به‌تنهایی مقصد اجرایی آن را بررسی نکرده و هنوز درباره serializer نتیجه‌ای نمی‌دهد. Workflow اکنون برای اجرای بعدی، disassembly و thunk trace آدرس `0x00401068` را جداگانه تولید می‌کند و direct caller scan را نیز به این مقصد گسترش می‌دهد. این کار در commit `2b440ed3ebe1e6b3d1a144941cefe43a5cf70ad9` ثبت شده است.
 
 تا قبل از بررسی خروجی جدید، نقش `ParamsToXML` و مسیر serialization/بازگشت سند نامشخص باقی می‌ماند.
+
+
+## Run 105 — مقصد ظاهری ParamsToXML به import thunk ختم می‌شود (2026-11-13)
+
+Artifact اجرای workflow با run ID برابر `43232846364` با موفقیت کامل بررسی شد (148/148 مرحله).
+
+### یافته قطعی در محدوده فایل بررسی‌شده
+
+- رکورد TD32 برای `ParamsToXML` یک procedure پنج‌بایتی در segment 48/1 با offset برابر `0x69D10` دارد. candidate مبتنی بر segment-relative آن در VA `0x0046AD10` فقط یک دستور است: `jmp 0x00401068`؛ این candidate از فیلتر کیفیت disassembly عبور نکرده است.
+- آدرس مقصد `0x00401068` در PE به‌عنوان یک import thunk disassemble می‌شود: `jmp dword ptr [0x0062EE24]`.
+- جدول import، slot برابر `0x0062EE24` را به `rtl230.bpl!@System@@AbstractError$qqrv` resolve می‌کند.
+- بنابراین trace این candidate به یک thunk وارداتی برای routine خطای RTL ختم می‌شود، نه به بدنه‌ای که بتوان آن را serializer XML دانست. اسکن direct CALL نیز برای `0x0046AD10`، `0x00401068` و `TEmwatMethod.Invoke` در `0x0046C82C` caller مستقیم پیدا نکرد.
+
+### تفسیر اصلاح‌شده
+
+این نتیجه **اثبات نمی‌کند** که پیاده‌سازی واقعی `ParamsToXML` همان `AbstractError` است. برعکس، چون candidate پنج‌بایتی unresolved است و به یک import thunk خطا ختم می‌شود، انتساب آدرس `0x0046AD10` به بدنه واقعی `ParamsToXML` قابل اتکا نیست؛ احتمال دارد رکورد TD32 به stub/alias یا mapping نامعتبر در این BPL اشاره کند و implementation در package/module دیگری باشد. باید محل تعریف/resolve شدن symbol در packageهای Delphi و relocation/import metadata بررسی شود.
+
+### تصمیم و گام بعدی
+
+- `ParamsToXML` فعلاً از فهرست توابعی که بدنه اجرایی‌شان در این BPL پیدا شده خارج می‌شود.
+- نباید از این trace نتیجه گرفت که XML با `AbstractError` ساخته می‌شود یا serialization شکست می‌خورد.
+- گام بعدی، بررسی package/import metadata برای نماد `ParamsToXML`، بررسی BPLهای وابسته و cross-check کردن سایر procedureهای پنج‌بایتی unresolved است تا مشخص شود این یک الگوی package forwarding است یا mapping اشتباه.
+- هیچ تغییری در قرارداد Linux یا طراحی save/return بر اساس این trace انجام نمی‌شود؛ مسیر serialization همچنان حل‌نشده است.
