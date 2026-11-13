@@ -209,3 +209,19 @@ The BeforeClose callback's two `+0x38` calls use a local interface temporary ini
 The run-23 trace of helpers `0x00401420` and `0x00401478` also shows why these addresses should not be mistaken for application business logic: `0x00401420` is an indirect runtime helper thunk whose IAT target is outside the analyzed BPL image, while `0x00401478` resolves to `rtl230.bpl!@System@@CheckAutoResult`. The helper trace alone does not identify the interface value's origin.
 
 The next step now traces the complete `Get_Tables` wrapper entry and its shared accessor, then compares the accessor's calling convention and local-interface setup with BeforeClose. The local POST and `invoke=5208` remain a separate unresolved runtime-to-static mapping.
+
+
+## Correction: BeforeClose receiver is not the local at EBP-0x0C (lifecycle run 24)
+
+The full run-24 disassembly disproves the earlier receiver-local interpretation above. The two slot calls at `0x004CCC2C` and `0x004CCCB2` do **not** load their receiver from `[ebp-0x0C]`:
+
+- At both sites, the code loads `eax = [ebp+8]`, then `eax = [eax-0x0C]`, then dereferences `[eax]` and calls `[eax+0x38]`.
+- The stack-local `[ebp-0x0C]` is separately initialized at callback entry via the runtime helper thunk `0x00401420`; it is later passed as an argument at `0x004CCC34) into `GetXmlFieldInfo` at `0x004BCA88`. It is not the slot-call receiver.
+- The actual receiver is therefore a pointer reached through the callback's stack argument/context pointer at `[ebp+8]), offset `-0x0C`. The precise type and origin of that context field remain unresolved.
+- The run-24 typed positive control confirms that `Wordxp.TWordDocument.Get_Tables` uses `_Document` slot `+0x38`, but it does **not** establish that the BeforeClose receiver has that interface type. The earlier claim that BeforeClose's two calls are likely `_Document.Get_Tables()` must be treated as unproven and withdrawn pending identification of the context field.
+
+The `Get_Tables` wrapper also clarifies its own acquisition pattern: it invokes `0x0042ABA0` with `EDX=&[ebp-4]`; that accessor checks `[self+0x78]), conditionally invokes the object's `+0x50` slot, then passes `[self+0x78]` to runtime helper `0x00401428` to populate the local interface. This is distinct from the BeforeClose receiver load. The wrapper's initial `0x00401420` call is an imported runtime thunk; the artifact resolves its IAT target outside the BPL image, so its semantic name is still unknown.
+
+Run 24 also resolves `0x00401478` to `rtl230.bpl!@System@@CheckAutoResult`. This is compiler/runtime error checking after the interface dispatch, not an application connector call.
+
+**Updated next step:** trace the producer/caller of `WordAppDocumentBeforeClose` and identify the object/context pointer passed at `[ebp+8]), then trace its field at `-0x0C). Only after that type is established should the `+0x38` method be named. Keep the local POST / `invoke=5208` mapping open.
