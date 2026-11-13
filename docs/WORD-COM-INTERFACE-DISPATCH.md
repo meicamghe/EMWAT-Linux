@@ -79,3 +79,21 @@ The index is not a method name. It must be mapped against the exact Word type-li
 3. Trace the interface reference lifecycle: where `TWordViwer+0x48` is assigned, replaced, and released.
 4. Continue the controller callback and connector tracing independently; do not infer HTTP or XML behavior from the COM dispatch alone.
 5. Preserve the user-confirmed behavior: closing the document applies/registers changes even without pressing Save.
+
+
+## Additional callback trace: WordAppNewDocument (run 18)
+
+The expanded trace of `0x004CD54C` confirms the TD32 procedure name `TWordViwer.WordAppNewDocument`. Its signature includes `DelphiInterface<Wordxp._Document>`.
+
+Relevant sequence:
+
+- `[Self+0x48]` is checked against the incoming `_Document` interface pointer.
+- If the document matches and the event/state flags permit processing, the code pushes that interface pointer and calls its vtable entry at `+0x2BC` (`0x004CD6BF`).
+- The callback subsequently calls the same document interface's `+0xDC` entry at `0x004CD6F9`.
+- The method also toggles internal state bytes at `Self+0x5C`, `Self+0x5E`, and `Self+0x5F`, indicating guarded event/state handling around the COM calls.
+
+This makes the identification of the `+0x2BC` receiver as the Word `_Document` interface stronger: the receiver is not merely inferred from a neighboring field access; the method's incoming typed interface parameter is compared to the stored field and then used as the receiver of the virtual call.
+
+A direct TD32 CALL-xref scan for `0x004CD54C` found no direct callers. This is consistent with an event callback being registered and invoked indirectly, but the registration-to-event firing chain still needs explicit proof. Do not interpret the absence of direct CALL xrefs as proof that the method is unused.
+
+The exact method name at `_Document` slot `+0x2BC` remains unresolved. The next scan targets every TD32 procedure that accesses `[reg+0x2BC]` and prioritizes generated `Wordxp.TWordDocument` wrappers, which may expose the method's Pascal wrapper name.
