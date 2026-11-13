@@ -27,6 +27,18 @@ jobs:
           python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004CCBBC word-lifecycle-analysis/BeforeClose-extended.md 240 ret
           python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004CD154 word-lifecycle-analysis/BeforeSave-extended.md 320 ret
           python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x0044ABE4 word-lifecycle-analysis/44ABE4-extended.md 240 ret
+      - name: Trace close lifecycle and Word connector entry points
+        run: |
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004BCA88 word-lifecycle-analysis/GetXmlFieldInfo.md 320 ret
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004B8A84 word-lifecycle-analysis/OnTmrAutoSave.md 320 ret
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004BB3B0 word-lifecycle-analysis/OnControlerNotify.md 320 ret
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004B7430 word-lifecycle-analysis/OpenDoc.md 320 ret
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004B7724 word-lifecycle-analysis/LoadDocument.md 320 ret
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004BCA00 word-lifecycle-analysis/WordFieldDispatch-near-4BCA00.md 180 ret
+      - name: Inspect close callback string data
+        run: |
+          python tools/inspect_pe_va.py analysis-input/EmwatMethods.bpl1 0x004CDAB8 --before 0x20 --after 0x90 > word-lifecycle-analysis/data-close-4CDAB8.md
+          python tools/inspect_pe_va.py analysis-input/EmwatMethods.bpl1 0x004CDAF4 --before 0x20 --after 0x90 > word-lifecycle-analysis/data-close-4CDAF4.md
       - name: Inspect callback constants and nearby data
         run: |
           python tools/inspect_pe_va.py analysis-input/EmwatMethods.bpl1 0x004CDAA0 --before 0x20 --after 0xA0 > word-lifecycle-analysis/data-4CDAA0.md
