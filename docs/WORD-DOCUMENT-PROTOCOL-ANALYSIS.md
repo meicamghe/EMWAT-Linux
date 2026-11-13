@@ -501,3 +501,24 @@ Artifact اجرای workflow با run ID برابر `43232846364` با موفق�
 - نباید از این trace نتیجه گرفت که XML با `AbstractError` ساخته می‌شود یا serialization شکست می‌خورد.
 - گام بعدی، بررسی package/import metadata برای نماد `ParamsToXML`، بررسی BPLهای وابسته و cross-check کردن سایر procedureهای پنج‌بایتی unresolved است تا مشخص شود این یک الگوی package forwarding است یا mapping اشتباه.
 - هیچ تغییری در قرارداد Linux یا طراحی save/return بر اساس این trace انجام نمی‌شود؛ مسیر serialization همچنان حل‌نشده است.
+
+
+## Run 105 — شناسایی stub متد ParamsToXML و بررسی dispatch کلاس‌ها (2026-11-13)
+
+در artifact اجرای موفق run `43232846364` (148/148 مرحله) رکورد کامل TD32 برای نماد زیر دیده شد:
+
+`@Emwatmethod@ParamsToXML$qqrx20System@UnicodeStringxp76System@Generics@Collections@%TDictionary__2$27System@%AnsiStringT$us$i0$%t1%`
+
+این رکورد در module 48 / segment 1 با offset برابر `0x69D10` و اندازه 5 بایت قرار دارد. candidate فعلی آن در `0x0046AD10` دستور `jmp 0x00401068` است؛ مقصد `0x00401068` نیز `jmp dword ptr [0x0062EE24]` بوده و slot وارداتی به `rtl230.bpl!@System@@AbstractError$qqrv` resolve می‌شود.
+
+این الگو با stub متد abstract در Delphi سازگار است؛ بنابراین محتمل است `TEmwatMethod.ParamsToXML` در کلاس پایه abstract باشد و implementation موردنیاز از طریق override/VMT یا package دیگر resolve شود. با این حال، این فقط یک تفسیر قوی از الگوی stub است: رابطه override و مقصد runtime هنوز از روی VMT تأیید نشده است. همچنین آدرس `0x0046AD10` نباید به‌عنوان بدنه واقعی serializer استفاده شود.
+
+در همان artifact، نماد `@Wordviewer@TWordViwer@GetXmlFieldInfo` در `0x004BFC18` یک متد مجزا در module 59 است؛ شباهت موضوعی آن به XML field lookup هیچ دلیلی برای یکسان دانستن آن با `ParamsToXML` نیست.
+
+### ابزارهای پیگیری اضافه‌شده
+
+- `tools/search_td32_word_methods.py` برای فهرست‌کردن نمادهای TD32 مرتبط با `ParamsToXML`، `PerformMethod`، `TEmwatMethod`، `TEditWordDocument` و وابستگی‌های package.
+- `tools/resolve_delphi_vmt_slots.py` اکنون VMT کلاس‌های `TEmwatMethod` و `TEditWordDocument` را نیز بررسی می‌کند و slotهای بیشتری را dump می‌کند.
+- Workflow این گزارش‌ها را در artifact بعدی تولید می‌کند. commitهای ابزار/Workflow: `a3f57c0`, `ab080e8`, `df3f91e`.
+
+گام بعدی: بررسی اینکه VMT کلاس پایه کدام slot را به stub abstract متصل می‌کند، آیا کلاس فرزند override واقعی دارد، و آیا مقصد آن در همین BPL یا package دیگری قرار دارد. تا آن زمان serialization و save/return سند همچنان حل‌نشده است.
