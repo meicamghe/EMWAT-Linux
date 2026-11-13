@@ -621,3 +621,29 @@ Artifact اجرای موفق run `43500518664` با شناسه `14073787351` ب�
 بنابراین هنوز implementation متد virtual فراخوانی‌شده از `[this+0x48]` در `OnControlerNotify` مشخص نشده است. از این پس workflow فقط مقصدهایی را trace می‌کند که resolver آن‌ها را صریحاً داخل محدوده یک TD32 procedure شناخته باشد؛ این اصلاح جلوی تبدیل مقادیر خام VMT به آدرس تابع فرضی را می‌گیرد.
 
 نکته: موفقیت GitHub Actions در این مرحله فقط موفقیت اجرای ابزار تحلیل است، نه اثبات حل‌شدن dispatch یا پروتکل. برای حل slot `+0x2BC` باید ساختار VMT/RTTI و نحوه تشخیص مرز virtual method table در resolver دقیق‌تر شود؛ احتمال دارد VMTهای این کلاس‌ها به‌علت چیدمان metadata یا inheritance به اسکن اختصاصی‌تری نیاز داشته باشند.
+
+
+## Run 110 — بررسی section و بایت‌های اطراف candidateهای VMT (2026-11-14)
+
+Workflow شماره 11 با run ID برابر `43504757084` و commit برابر `a4328e191dcff8f5e8a96660a127b67e21419d04` با موفقیت کامل شد. artifact شماره `14074289309` شامل گزارش تازه `Word-VMT-slots.md` و بایت‌های خام اطراف candidateهاست.
+
+### یافته‌های مستقیم
+
+سه candidate مورد بررسی در PE section با نام `.text` قرار دارند و section دارای مجوز execute/read است؛ فیلد class-name pointer گزارش‌شده برای هر سه نیز در همین section قرار گرفته است:
+
+| کلاس | candidate | class-name pointer | داده قابل توجه |
+|---|---:|---:|---|
+| `TWordViwer` | `0x004B10A4` | `0x004B106C` | self-pointer برابر candidate و instance size برابر `0x11C`؛ در بایت‌های ابتدای candidate مقادیر `0x0E`، `0x00100000` و چند مقدار نامعتبر به‌عنوان pointer دیده می‌شود. |
+| `TEDPController` | `0x004B0DFC` | `0x004B0DC4` | self-pointer برابر candidate و instance size برابر `0x24`؛ ناحیه پس از candidate شامل رشته RTTI مانند `OnNotify`، `PrintThread` و نام کلاس است؛ slot گزارش‌شده `+0x6C` به `TEDPController.Notify` در `0x004D2EC8` می‌رسد. |
+| `TEmwatDocPrintHandler` | `0x004A22F0` | `0x004A22B8` | self-pointer برابر candidate و instance size برابر `0xE4`؛ ابتدای ناحیه چند pointer اجرایی معتبر دارد، اما در ادامه داده‌های غیرقابل‌تفسیر به‌عنوان slot تابع ظاهر می‌شوند؛ slot `+0x2A4` به `GetDocFieldName` در `0x004A8F78` resolve شده است. |
+
+### تفسیر و محدودیت
+
+- قرار گرفتن candidate در `.text` به‌تنهایی دلیل رد آن نیست؛ برخی linkerها/ساختارهای PE می‌توانند داده‌های read-only را در همان section کد قرار دهند. بنابراین نباید صرفاً بر اساس نام یا permission section فیلتر قطعی اعمال شود.
+- در عین حال، تطبیق self-pointer، instance size و parent pointer نیز به‌تنهایی برای اثبات مرز VMT کافی نیست. بایت‌های اطراف candidateها نشان می‌دهند که بخشی از ناحیه شامل RTTI/method metadata و مقادیر غیر pointer است؛ اسکن فعلی ممکن است مرز VMT، جدول متدهای RTTI و slotهای مجازی را با هم اشتباه بگیرد.
+- وجود یک مقصد TD32 معتبر در یک offset (مانند `TEDPController +0x6C` یا `TEmwatDocPrintHandler +0x2A4`) فقط معتبر بودن آن مقصد به‌عنوان procedure را نشان می‌دهد؛ به‌تنهایی ثابت نمی‌کند offset نسبت به base فعلی، slot مجازی همان کلاس است.
+- برای `TWordViwer`، `TEDPController` و `TEmwatDocPrintHandler` هنوز مقصد معتبر و تأییدشده‌ای برای `+0x2BC` به دست نیامده است. بنابراین اتصال dispatch در `0x004D281C` به یک implementation مشخص همچنان حل‌نشده است.
+
+### گام بعدی
+
+Resolver باید به‌جای اتکا به یک base فرضی، ساختار Delphi VMT را با توجه به layout دقیق نسخه کامپایلر و RTTI جداگانه بازسازی کند: مرز VMT، method table، dynamic method table، interface table و extended RTTI باید تفکیک شوند. سپس slotهای مجازی با توالی pointerهای اجرایی و cross-referenceهای constructor/class reference اعتبارسنجی شوند. تا قبل از آن، هیچ مقصدی برای `+0x2BC` hard-code نمی‌شود و هیچ نتیجه‌ای درباره ارسال HTTP از این VMT report گرفته نمی‌شود.
