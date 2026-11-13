@@ -42,6 +42,8 @@ PATTERNS = [
 "TWordViwer@OnTmrAutoSave","TWordViwer@WordAppDocumentBeforeClose",
 "TWordViwer@WordAppDocumentBeforeSave","TWordViwer@WordAppNewDocument",
 "TWordViwer@WordAppWindowActivate","TWordViwer@GetDocFieldName",
+"TWordDocument@PrintOutOld","TWordApplication@ToggleKeyboard",
+"CloseMyDoc","UnprotectMyDoc",
 "TWordViwer@GetCaptionItemFont","TWordViwer@GetXmlFieldInfo",
 "TWordViwer@GetDocFieldIndex","TWordViwer@AddImagesToDoc",
 "TWordViwer@FillImgFldsForPrint",
