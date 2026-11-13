@@ -522,3 +522,22 @@ Artifact اجرای workflow با run ID برابر `43232846364` با موفق�
 - Workflow این گزارش‌ها را در artifact بعدی تولید می‌کند. commitهای ابزار/Workflow: `a3f57c0`, `ab080e8`, `df3f91e`.
 
 گام بعدی: بررسی اینکه VMT کلاس پایه کدام slot را به stub abstract متصل می‌کند، آیا کلاس فرزند override واقعی دارد، و آیا مقصد آن در همین BPL یا package دیگری قرار دارد. تا آن زمان serialization و save/return سند همچنان حل‌نشده است.
+
+
+## 10. تفکیک callbackهای چاپ از lifecycle ثبت هنگام بستن سند (2026-11-13)
+
+Disassembly تکمیلی نشان داد callbackهای `0x004CE030` و `0x004D00AC` به رویداد `Document.OnBeforePrint` مربوط‌اند. helperهای downstream آن‌ها شامل `0x004CF5B4`، `0x004CF748`، `0x004CFC74`، `0x004CF158` و `0x004AEBBC` هستند و عمدتاً context/مقادیر داخلی چاپ را بین interfaceها و اشیای مقصد جابه‌جا می‌کنند. این مسیرها از callback واقعی `WordAppDocumentBeforeClose` در `0x004CCBBC` جدا هستند.
+
+در callback بستن سند، دو فراخوانی مجازی با VMT offset برابر `+0x38` دیده می‌شود و سپس `GetXmlFieldInfo` در `0x004BCA88` فراخوانی می‌شود. این callback به‌تنهایی در trace فعلی POST یا serialization پاسخ `EditWordDocument` را نشان نمی‌دهد.
+
+همچنین تابع `0x004CD9C0` سه رشته محلی را به dispatch مجازی `+0x29C` می‌دهد؛ داده UTF-16 نزدیک آن شامل پیام **«دسترسی به این بخش میسر نیست»** و عبارت **«اموتا - Gam Document»** است. این یک سرنخ برای بررسی مسیر permission/error یا پیام UI است، نه مدرک ارسال سند.
+
+### مسیر بررسی بعدی
+
+Workflow جدید، بدنه `GetXmlFieldInfo`، `OnTmrAutoSave`، `OnControlerNotify`، `OpenDoc` و `LoadDocument` را trace می‌کند. هدف اتصال مشاهده runtime زیر به dispatcher واقعی است:
+
+- POST به `127.0.0.1:1984` هنگام بستن سند
+- `invoke=5208`
+- پاسخ XML با متد `EditWordDocument` و پارامتر `wordConfig`
+
+تا وقتی caller و ترتیب eventها مشخص نشده‌اند، نباید `BeforeClose`، `OnTmrAutoSave` یا `OnControlerNotify` را به‌تنهایی مسئول ارسال پاسخ معرفی کرد.
