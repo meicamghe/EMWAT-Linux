@@ -71,7 +71,9 @@ jobs:
           python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x00440950 word-lifecycle-analysis/Helper-440950.md 400 ret
           python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x00440A68 word-lifecycle-analysis/Helper-440A68.md 400 ret
           python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x00441C68 word-lifecycle-analysis/Helper-441C68.md 400 ret
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x0042AEF0 word-lifecycle-analysis/WordDocument-GetTables-wrapper-start.md 260 ret
           python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x0042AF00 word-lifecycle-analysis/WordDocument-GetTables-wrapper.md 220 ret
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x0042ABA0 word-lifecycle-analysis/WordDocument-interface-accessor-42ABA0.md 260 ret
           python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x00401420 word-lifecycle-analysis/BeforeClose-interface-helper-401420.md 180 ret
           python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x00401478 word-lifecycle-analysis/BeforeClose-interface-helper-401478.md 180 ret
       - name: Trace close lifecycle and Word connector entry points
