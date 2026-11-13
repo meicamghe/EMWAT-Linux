@@ -12,7 +12,7 @@ TARGET_CLASSES = (
     "TSetOfSinglePageImages", "TProcessResult", "TScanCommand",
     "TEmwatMethod", "TEditWordDocument",
 )
-SLOTS = tuple(range(0x00, 0x180, 4))
+SLOTS = tuple(range(0x00, 0x300, 4))
 VMT_SELF = -88
 VMT_CLASSNAME = -56
 VMT_INSTANCESIZE = -52
