@@ -60,7 +60,7 @@ def section_flags(section):
     if section.Characteristics & 0x80000000: flags.append("write")
     return ",".join(flags) or "no-flags"
 
-def vmt_prefix_profile(vmt_va, count=32):
+def vmt_prefix_profile(pe, read_u32_va, imports_by_iat, vmt_va, count=32):
     """Heuristic only: profile initial 32-bit entries; never proves a VMT."""
     executable = imported = nonexec = unmapped = 0
     examples = []
@@ -247,7 +247,7 @@ def main():
             vmt_sec = section_for_va(pe, vmt_va)
             name_field_va = vmt_va + VMT_CLASSNAME
             name_field_sec = section_for_va(pe, name_field_va)
-            executable, imported, nonexec, unmapped, examples = vmt_prefix_profile(vmt_va)
+            executable, imported, nonexec, unmapped, examples = vmt_prefix_profile(pe, read_u32_va, imports_by_iat, vmt_va)
             context = blob[max(0, vmt_raw - 0x60):min(len(blob), vmt_raw + 0x80)]
             lines += ["", f"### Unverified VMT candidate 0x{vmt_va:08X}",
                       f"- Raw offset: 0x{vmt_raw:X}",
