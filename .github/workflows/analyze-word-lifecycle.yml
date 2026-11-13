@@ -63,6 +63,9 @@ jobs:
           python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004B8A84 word-lifecycle-analysis/OnTmrAutoSave-full.md 2600 ret
           python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004BCA88 word-lifecycle-analysis/GetXmlFieldInfo-full.md 1800 ret
           python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004D281C word-lifecycle-analysis/ControllerNotify-4D281C.md 500 ret
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x005E9258 word-lifecycle-analysis/CloseMyDoc-5E9258.md 260 ret
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x005E9769 word-lifecycle-analysis/UnprotectMyDoc-5E9769.md 260 ret
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x00430A1E word-lifecycle-analysis/WordPrintOutOld-callsite-430A1E.md 120 ret
           python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004CDB54 word-lifecycle-analysis/Callback-4CDB54.md 400 ret
           python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004C5D68 word-lifecycle-analysis/Callback-4C5D68.md 400 ret
           python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x00440950 word-lifecycle-analysis/Helper-440950.md 400 ret
