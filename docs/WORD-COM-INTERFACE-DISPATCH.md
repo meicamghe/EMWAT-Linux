@@ -44,7 +44,7 @@ The procedure `TWordViwer.OnControlerNotify` at `0x004BB3B0` accesses `[Self+0x4
 
 Before that call it invokes helper `0x004D281C`. The helper reads the same `TWordViwer+0x48` field and dispatches through slot `+0x2BC`. This matches the independent `WordAppNewDocument` dispatch path.
 
-The controller-notify chain therefore appears to reuse the current Word `_Document` COM interface. The exact semantics of the `+0x2BC` method are still unknown.
+The controller-notify chain therefore reuses the current Word `_Document` COM interface; wrapper analysis maps its `+0x2BC` call to `PrintOutOld()`.
 
 ## What is established vs. unresolved
 
@@ -55,7 +55,7 @@ Established by static symbol/signature and instruction evidence:
 - Both `WordAppNewDocument` and the `OnControlerNotify -> 0x004D281C` path dispatch through byte offset `+0x2BC` on that document reference.
 
 Not yet established:
-- The exact Word type-library method name at vtable byte offset `+0x2BC`.
+- The exact method name is now mapped with high confidence to `Wordxp._Document.PrintOutOld()` through wrapper analysis in BPL run 132.
 - Whether the method performs close, save, refresh, or another document operation.
 - Whether this COM call itself triggers the local POST observed at `127.0.0.1:1984`.
 - The exact connection from the COM call to `EditWordDocument`, `invoke=5208`, and `wordConfig`.
@@ -64,13 +64,7 @@ Not yet established:
 
 The earlier search for an internal EMWAT Delphi class owning slot `+0x2BC` was targeting the wrong table for this call path. Keep the existing VMT resolver as a general diagnostic, but do not use its class-name candidates to explain this Word callback dispatch.
 
-The relevant table is the COM vtable for `Wordxp._Document`. Since COM vtables include the inherited `IUnknown`/`IDispatch` entries, the byte offset corresponds to DWORD index:
-
-```
-0x2BC / 4 = 175
-```
-
-The index is not a method name. It must be mapped against the exact Word type-library version represented by the generated `Wordxp` wrapper.
+The relevant table is the COM vtable for `Wordxp._Document`; byte offset `0x2BC` is DWORD slot index 175. The generated WordXP wrapper maps this `_Document` slot to the zero-argument `PrintOutOld()` method. The same numeric offset maps to different methods on other interfaces, such as `_Application.ToggleKeyboard`.
 
 ## Next steps
 
@@ -96,7 +90,7 @@ This makes the identification of the `+0x2BC` receiver as the Word `_Document` i
 
 A direct TD32 CALL-xref scan for `0x004CD54C` found no direct callers. This is consistent with an event callback being registered and invoked indirectly, but the registration-to-event firing chain still needs explicit proof. Do not interpret the absence of direct CALL xrefs as proof that the method is unused.
 
-The exact method name at `_Document` slot `+0x2BC` remains unresolved. The next scan targets every TD32 procedure that accesses `[reg+0x2BC]` and prioritizes generated `Wordxp.TWordDocument` wrappers, which may expose the method's Pascal wrapper name.
+The `_Document` slot `+0x2BC` is now mapped with high confidence to `PrintOutOld()` from the generated `Wordxp.TWordDocument` wrapper. Remaining work is to explain the business reason for this call in the Word viewer callbacks and distinguish other interface types that reuse the same numeric offset.
 
 
 ## Callback registration cross-check (run 15)
