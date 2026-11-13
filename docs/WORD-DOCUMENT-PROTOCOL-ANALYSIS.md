@@ -573,3 +573,37 @@ The expanded trace artifact from workflow run `43500518664` completed successful
 ### Next static-analysis target
 
 The controller notification path calls VMT byte offset `+0x2BC`. The VMT resolver has therefore been extended from `0x180` to `0x300` bytes and the lifecycle workflow now emits `Word-VMT-slots.md` for the relevant Delphi classes, including `TEmwatMethod` and `TEditWordDocument`. The next step is to identify which class owns the object at `[this+0x48]`, resolve slot `+0x2BC`, and trace its concrete target. Runtime-confirmed behavior remains separate: closing the Word document causes the local bridge request `invoke=5208` with an `EditWordDocument` XML payload containing `wordConfig`; the static callback-to-dispatch chain is not yet proven end-to-end.
+
+
+## Run 108 — deep trace رویدادهای Word و dispatch کنترلر (2026-11-14)
+
+Artifact اجرای موفق run `43500518664` با شناسه `14073787351` بررسی شد.
+
+### جزئیات تکمیلی OnTmrAutoSave
+
+در تابع `TWordViwer.OnTmrAutoSave` در `0x004B8A84`، پس از ثبت callbackهای Word، مسیر زیر نیز دیده می‌شود:
+
+- helper `0x004CDB54` مقداری را که از شیء `[this+0x44]` به دست می‌آورد با ثابت رشته‌ای مقایسه می‌کند و نتیجه Boolean برمی‌گرداند. معنای business رشته هنوز مشخص نیست.
+- در شاخه شرطی دیگر، مسیر نمایش/ثبت پیام و فراخوانی `0x00441C68) و interface method با offsetهای `+0x54`، `+0x100` و `+0x108` دیده می‌شود.
+- helper `0x004C5D68` دو property را از interface شیء `[this+0x44]` می‌خواند: dispatchهای مجازی با offsetهای `+0x15C` و `+0x104`. نتایج در byteهای `[this+0x4C]` و `[this+0x4D]` ذخیره می‌شوند.
+- انتخاب callback چاپ `0x004D00AC` یا `0x004CE030` در مسیر دوم نیز تکرار می‌شود.
+
+این یافته‌ها نقش تابع را به‌عنوان setup و هماهنگ‌کننده event/state تقویت می‌کنند؛ اما در trace هیچ فراخوانی مستقیم HTTP، ساخت XML پاسخ یا ارسال payload دیده نشده است. به‌دلیل dispatchهای interface، پیاده‌سازی واقعی propertyها هنوز باید از VMT/RTTI resolve شود.
+
+### جزئیات تکمیلی OnControlerNotify و helper کنترلر
+
+تابع `OnControlerNotify` در `0x004BB3B0`:
+
+- property/stateای را از `[this+0x7C]` می‌خواند و فقط در صورت غیرصفر بودن `[this+0x58]` وارد شاخه اصلی می‌شود.
+- از interface شیء `[this+0x44]` مقدارهایی را با dispatch `+0xE0` می‌گیرد؛ یکی از مقادیر عددی را با `0x14` مقایسه می‌کند و اگر مقدار از 20 بیشتر نباشد از آن شاخه خارج می‌شود.
+- در شاخه عبوری، byteهای `[this+0x79]` و `[this+0x5E]` را موقتاً تغییر می‌دهد، helper `0x004D281C` را صدا می‌زند و سپس interface method با offset `+0xDC` را روی شیء `[this+0x48]` اجرا می‌کند.
+
+خود helper `0x004D281C` byte وضعیت `[this+0x5C]` را فعال می‌کند، متد مجازی با offset بایتی `+0x2BC` را روی شیء `[this+0x48]` اجرا می‌کند و سپس flag را پاک می‌کند. همین dispatch در مسیر exception نیز تکرار می‌شود. بنابراین `+0x2BC` مهم‌ترین نقطه فعلی برای resolve کردن implementation واقعی controller/document notification است.
+
+### محدودیت trace و تصمیم مرحله بعد
+
+- trace تابع `GetXmlFieldInfo` در `0x004BCA88` با سقف 1800 دستور، در میانه بدنه متوقف شده است؛ این capture بدنه کامل تابع نیست.
+- trace خطی تابع `OnTmrAutoSave` نیز در ناحیه‌ای شامل داده/بخش‌های exception به انتهای disassembly معتبر نرسیده است؛ بنابراین پایان واقعی تابع و همه branchها هنوز استخراج نشده‌اند.
+- توابع helper `0x00440950`، `0x00440A68` و `0x00441C68` wrapperهای کوتاه برای فراخوانی interface method در offsetهای `+0x174`، `+0x180` و `+0x1E0` هستند؛ معنای دقیق این slotها بدون resolve کردن interface/VMT مشخص نیست.
+
+گام بعدی باید به‌جای افزایش کورکورانه تعداد دستورهای disassembly خطی، مسیرهای شاخه‌ای و جدول VMT/interface را دنبال کند؛ ابتدا مالک شیء `[this+0x48]` و مقصد slot `+0x2BC` تعیین شود، سپس slotهای `+0xDC`، `+0xE0`، `+0x100` و `+0x108` با همان نوع شیء تطبیق داده شوند. مشاهده runtime درخواست `invoke=5208` هنگام بستن سند همچنان جدا از این زنجیره ایستای هنوز حل‌نشده ثبت می‌شود.
