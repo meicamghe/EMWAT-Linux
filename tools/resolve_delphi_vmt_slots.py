@@ -39,7 +39,7 @@ def raw_to_va(pe, raw):
     return None
 
 def section_name(s):
-    return s.Name.rstrip(b"\\0").decode("ascii", "replace")
+    return s.Name.rstrip(bytes([0])).decode("ascii", "replace")
 
 def section_for_va(pe, va):
     if va is None:
