@@ -1272,3 +1272,15 @@ Added `python/src/emwat_linux/application.py` with `create_bridge_server(...)`. 
 - In `OnTmrAutoSave`, a Word-related object at `viewer + 0x44` receives callback/context pairs: `(+0x80,+0x84) → WordAppDocumentBeforeSave`, `(+0x90,+0x94) → WordAppNewDocument`, `(+0x98,+0x9C) → WordAppWindowActivate`, and `(+0x88,+0x8C) → LoadOptions or WordAppDocumentBeforePrintBGPrint`.
 - The fourth callback selection tests `[viewer + 0x3C]`; later code can assign the same pair again. Exact event dispatch ABI is not yet resolved.
 - Helpers identified: `0x0043F360` = Get_ScreenUpdating; `0x00440950` = Get_DisplayAutoCompleteTips; `0x00441C68` = WordApplication.Quit. No close-time payload/POST found.
+
+## به‌روزرسانی تحلیل Word — 2026-11-14 (Run 97)
+
+- Run 97 با موفقیت کامل شد و artifact آن بررسی شد.
+- 0x00404FBC اکنون به‌طور قطعی به vcl230.bpl!TOleServer.SetConnectKind resolve شده است؛ این فراخوانی در راه‌اندازی OLE Word انجام می‌شود.
+- 0x004013F8، 0x00401398 و 0x00401368 به‌ترتیب helperهای RTL برای پاک‌سازی آرایه، جست‌وجوی رشته و الحاق رشته هستند؛ آن‌ها dispatcher رویداد نیستند.
+- 0x004C5D68 دو property از OLE را می‌خواند و در فیلدهای viewer ذخیره می‌کند؛ معنای نام‌گذاری‌شدهٔ propertyها هنوز معلوم نیست.
+- 0x004CDB54 یک بررسی مبتنی بر System.Pos انجام می‌دهد؛ معنای رشته/شرط هنوز نیازمند بررسی است.
+- teardown در OnTmrAutoSave شامل شاخه‌ای با TWordApplication.Quit و فراخوانی‌های interface از طریق VMT است. معنای slotهای teardown هنوز resolve نشده است.
+- WordAppDocumentBeforeClose همچنان فقط یک direct caller قطعی در FillImgFldsForPrint دارد؛ اتصال آن به بستن عادی سند ثابت نشده است.
+- هیچ payload یا درخواست HTTP زمان‌بندی‌شده در لحظهٔ close در Run 97 پیدا نشد.
+- Run 98 برای بررسی helper 0x004BCA88 و slotهای teardown اضافه شده است.
