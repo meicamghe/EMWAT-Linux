@@ -518,3 +518,12 @@ The complete `TfrmShowAutoSaveFiles.btnShowFileClick` body is only ten bytes and
 ### Close wrapper reachability audit (lifecycle run 60)
 
 Direct-call scans found **zero** TD32-bounded CALL sites for all four `TWordDocument.Close` wrappers (`0x0042FEB0`, `0x0042FF08`, `0x0042FF7C`, `0x0042FFF4`) and for `ClosePrintPreview` (`0x00433A84`). Each Close wrapper has one exact raw pointer occurrence in `.text` near WordXP class metadata. The three overload pointers at `0x00412AB6`, `0x00412ADB`, and `0x00412B15` are immediately followed by method-name metadata for `Close` and argument-count markers (1, 2, and 3 respectively); these are published method/RTTI entries, not callsites. The no-argument pointer at `0x0041CB94` is likewise a static metadata occurrence. This suggests the wrappers are exposed through class metadata or property dispatch and are not directly called in the analyzed BPL paths. Do not treat these wrappers as the main close-time update path without a VMT/property caller or runtime trace.
+
+
+## EMWAT method dispatcher entry (lifecycle run 62)
+
+The complete TD32 trace for `TEmwatMethod.Invoke` at `0x0046C82C` (433 bytes) confirms that it accepts a `TDictionary<AnsiString, TValue>`, extracts/iterates dictionary data, constructs intermediate invocation state, and performs an indirect dispatch through slot `+0x68` on an interface/object value at `0x0046C921`. This slot is a candidate for the method implementation dispatch because the concrete connector classes expose matching `PerformMethod(TDictionary<AnsiString, TValue>)` procedures; the exact receiver type and slot declaration still need VMT evidence.
+
+The TD32 direct-call scan found only one direct CALL to `TEmwatMethod.Invoke`, from `Finalization` at `0x0046CA67`. Therefore, the normal request path may enter it indirectly through a VMT/interface dispatch or another module. The trace does not itself identify the numeric request ID `5208`, the HTTP query parser, or the `EditWordDocument/wordConfig` response generator.
+
+Representative concrete connector implementations now traced include `TCompareWordDocument.PerformMethod` (`0x005EF8AC`), `TEditExcelWorkBook.PerformMethod` (`0x005EF300`), and `TShowSendLog.PerformMethod` (`0x005EFE4C`). These are useful structural comparisons for the missing/undecoded Word-edit method implementation, but should not be assumed to be the Word method itself.
