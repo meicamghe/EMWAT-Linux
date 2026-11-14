@@ -303,3 +303,25 @@ The full TD32 procedure trace identifies the exact symbol string:
 The TD32 symbol name contains both `System.TObject` and `DelphiInterface<Wordxp._Document>` type encodings. However, the direct callsite in `FillImgFldsForPrint` passes the parent EBP as a static link and register values in EAX/EDX. The name's type encodings should therefore not be naively treated as a complete reconstruction of the nested helper's runtime argument values. The caller-side ECX capture is proven, but its declared type still needs to be recovered from the callers of `FillImgFldsForPrint`.
 
 The target's complete body confirms the existing instruction-level sequence and does not add a direct HTTP or XML connector call: it performs the two context-derived `+0x38` dispatches, prepares arguments, then calls `0x004BCA88` (`GetXmlFieldInfo`). The observed localhost POST remains unmapped.
+
+
+## Parent argument source: GetFieldIndexInList (lifecycle run 29)
+
+The direct-call and immediate-reference scans for `FillImgFldsForPrint` at `0x004CCDC8` found one TD32-bounded direct caller:
+
+- Caller: `TWordViwer.GetFieldIndexInList`
+- Call instruction: `0x004CB361`
+
+The call setup is:
+
+```asm
+004CB355  mov      eax, dword ptr [ebp - 8]
+004CB358  mov      ecx, dword ptr [eax + esi*4]
+004CB35B  mov      edx, dword ptr [ebp - 4]
+004CB35E  mov      eax, dword ptr [ebp - 0x2c]
+004CB361  call     0x4ccdc8
+```
+
+This proves that the `ECX` value captured by `FillImgFldsForPrint` comes from an indexed element of the caller's array/list at `[caller EBP-8 + ESI*4]`. The next step is to inspect the full `GetFieldIndexInList` body to identify the list's element type and how that element is initialized. The scan found only one direct caller in TD32-bounded procedures; indirect calls and computed function pointers are outside its coverage.
+
+This strengthens the classification of `0x004CCBBC` as a nested helper reached from a field-index/list-processing path, but it still does not establish the semantic type of the list element or completely exclude another indirect event-registration path.
