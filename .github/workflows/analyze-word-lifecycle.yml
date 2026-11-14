@@ -97,6 +97,8 @@ jobs:
           python tools/scan_named_pe_resource.py analysis-input/EmwatMethods.bpl1 TFRMSHOWAUTOSAVEFILES word-lifecycle-analysis/TFRMSHOWAUTOSAVEFILES-resource-strings.md
           python tools/scan_named_pe_resource.py analysis-input/EmwatMethods.bpl1 TFRMSENDLOG word-lifecycle-analysis/TFRMSENDLOG-resource-strings.md
           python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x005EBDA8 word-lifecycle-analysis/uSendLog-CloseWordApp.md
+          python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x005EB81C word-lifecycle-analysis/uSendLog-btnShowFileClick.md
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x005EB81C word-lifecycle-analysis/uSendLog-btnShowFileClick-callers.md
           python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x005EBDA8 word-lifecycle-analysis/uSendLog-CloseWordApp-callers.md
           python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x005EBF20 word-lifecycle-analysis/uSendLog-FormClose.md
           python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x005E9174 word-lifecycle-analysis/WordCompareCommandUnit-CloseMyDoc.md
