@@ -752,7 +752,7 @@ The service-side half of the observed close request is no longer an unknown blac
 
 `POST body → TEmwatInvokeParam.BufferIn → XML parser (0x00470B38) → method@class + param nodes → GetClass("T"+className) → TEmwatMethod base dispatch (VMT +0x0C) → subclass PerformMethod (VMT +0x10)`.
 
-For the observed runtime envelope `EditWordDocument`, the class resolution is `TEditWordDocument`, and its concrete VMT slot `+0x10` target is `0x005EE82C`. This method reads the `document` parameter and calls helper `0x004B7724`. The helper is now included in the next lifecycle trace.
+For the observed runtime envelope `EditWordDocument`, the class resolution is `TEditWordDocument`, and its concrete VMT slot `+0x10` target is `0x005EE82C`. This method reads `wordConfig`, `wordBody`, `letterImages`, and `signData`, then calls `TWordViwer.LoadDocument` at `0x004B7724` with the `TEmwatInvokeParam*` and output-string reference.
 
 **Close-event progress:** `TWordViwer.OnTmrAutoSave` registers the actual main-editor Word close callback at event-record `+0x80 → 0x004CD154`. Its export name and body strings identify it as `WordAppDocumentBeforeClose`; it first calls `RollBackOriginalOptions` (`0x004CB108`), checks `Document.Saved` through `_Document` slot `+0xD8` (typed wrapper `Get_Saved` at `0x0042BD94`), prompts in Persian whether to save changed content, handles Yes/No/Cancel, and invokes the three-argument `Wordxp._Document.Close` overload through slot `+0x29C`. The separately named routine at `0x004CCBBC` remains a nested image-field helper, not the registered event callback.
 
