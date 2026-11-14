@@ -1,6 +1,6 @@
 # EMWAT-Linux — Project Handoff
 
-Last reviewed: 2026-11-13
+Last reviewed: 2026-11-14
 
 This is the concise continuity entry point for future sessions. Detailed reverse-engineering evidence remains in the linked analysis documents.
 
@@ -12,7 +12,7 @@ The confirmed real-world workflow is a local desktop bridge for the Almas Gam we
 
 ## Confirmed user observations and constraints
 
-- The user tested the Windows application's close/save behavior and reported that changes are applied when the document is closed, regardless of whether the user explicitly presses Save. Treat this as an observed behavior to reproduce and verify, not as proof of the exact internal event or transport mechanism.
+- **User-observed product requirement:** the user tested that closing the document applies/registers changes whether or not Save was pressed. Reproduce this behavior in Linux. The exact internal event, file extraction method and transport remain to be identified.
 - The user has supplied the original Windows installer/extracted files for analysis. The historical extraction location was `D:\EmwatInstaller`.
 - The user stated that the extracted EMWAT files contain no customer information. Still inspect any future traces, sample letters, cookies, tokens, and logs before publishing them.
 - The original Windows binaries examined are PE32/x86; this is a fact about the analyzed binaries, not a reason to make the Linux implementation 32-bit-only.
@@ -55,16 +55,16 @@ Start with these documents; do not repeat their completed work without new evide
 - `docs/SCAN-PREVIEW-DFM.md`, `docs/IMAGE-TOOLS-DFM.md`, `docs/SIMPLE-IMAGE-EDITOR-DFM.md` — decoded image/scan forms
 - `docs/GEAR-API-CALLS.md`, `docs/IMAGE-CALL-GRAPH.md`, `docs/SCANNER-INTERFACE-ANALYSIS.md` — image/scanner call analysis
 
-## Immediate next steps — in order
+## Immediate next steps — in order (updated 2026-11-14)
 
-1. Continue from the latest `PROJECT-STATUS.md` checkpoint. Do not redo completed Import Table analysis, Office/COM confirmation, or the three DFM decodes.
-2. Validate the questionable `IG_scan_source_select` thunk/callsite at raw PE/IAT level; keep earlier uncertain caller attributions untrusted until proven.
-3. Continue extracting scanner interface/VMT callback contracts and identify the exact GEAR32PD version/prototypes before assigning meaning to ABI arguments or flags.
-4. Trace `doCommand` and the relevant image-editor tags/handlers in `EmwatMethods.bpl1`; connect UI events to actual image operations.
-5. In parallel, prioritize the browser bridge invoke dispatch: map methods to connector classes, payload fields, response envelope and file transfer.
-6. Obtain a safe runtime trace using synthetic letter data in the real Almas Gam workflow. Redact names, letter numbers, text, tokens, cookies and private URLs.
-7. Build a mock end-to-end text-letter flow with a controlled document, LibreOffice Writer and a simulated response. Only connect to the live system after the contract is understood.
-8. Write a testable specification before implementing native Linux scan/image parity.
+1. Continue the Word connector/lifecycle reverse engineering from the latest CI artifact; do not repeat Import Table, Office/COM confirmation or the completed three DFM decodes.
+2. Review lifecycle run 31 outputs: complete `GetFieldIndexInList` builder `0x004CB638`, direct callers of `GetFieldIndexInList`, and helpers `0x004CB5E4`, `0x004BC170`, and `GetDocFieldIndex`.
+3. Identify the actual interface type behind the pointer-sized list elements passed through ECX in `FillImgFldsForPrint`; map its vtable slots `+0x28` and `+0x38` from matching typed wrappers, not from slot coincidence.
+4. Independently trace the true close-time path and callback registration. The routine named `WordAppDocumentBeforeClose` at `0x004CCBBC` is directly called from `FillImgFldsForPrint` through a nested static link; do not assume the TD32 name proves event registration.
+5. Connect the static Word path to the user-observed localhost POST `/?invoke=5208` and XML `EditWordDocument/wordConfig`. Keep the observed close-applies-changes behavior as a confirmed product requirement, while the internal event and transport mapping remain unknown.
+6. Continue resolving the actual invoke dispatcher, response serializer and file-transfer contract; do not implement guessed endpoints or treat `ParamsToXML`'s abstract thunk as a serializer.
+7. In parallel, resume scanner/image handler and ABI analysis only after the Word save/return path has a defensible end-to-end model; preserve all image-only, TIFF, rotate/crop, ImageGear/SANE workflows.
+8. Update the native Linux test specification and then build a mock end-to-end text-letter flow with synthetic data and LibreOffice Writer.
 
 ## Runtime validation questions
 
