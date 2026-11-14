@@ -607,6 +607,6 @@ This makes the XML-object path the current leading explanation for the +0xB0 →
 
 A second, distinct +0x68 dispatch exists in the shared base wrapper at 0x0046CBB7 (TD32 range 0x0046C9E0–0x0046CDF7). It uses a different local receiver [ebp-4], created in the exception/response path. Do not assume the two +0x68 calls share an interface or class type.
 
-Run 83 adds the TXMLEmwatType class VMT window and its implemented-interface VTable window around offsets +0x68, +0xB0, and +0xCC, plus a trace of helper 0x0044B468. These will determine whether the +0xB0 call belongs to the class VMT and help identify the XML child/interface returned into [ebp-8].
+The focused receiver workflow adds the TXMLEmwatType class VMT window and its implemented-interface VTable window around offsets +0x68, +0xB0, and +0xCC, plus a trace of helper 0x0044B468. These will determine whether the +0xB0 call belongs to the class VMT and help identify the XML child/interface returned into [ebp-8].
 
 **Still unresolved:** the exact type of [ebp-0x1C], the exact type and +0x68 method of [ebp-8], and the distinct receiver type at 0x0046CBB7. Continue from the XML class/interface tables and the constructor/helper dataflow; do not infer method names from the numeric displacement alone.
