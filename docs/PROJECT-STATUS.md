@@ -719,3 +719,16 @@ Run `43232846364` با موفقیت کامل (148/148 مرحله) پایان ی�
 - تنها caller مستقیم `GetFieldIndexInList` در procedureهای TD32، تابع `BGPrintWithGamPrintOptions` در `0x004C6F3F` است. بنابراین مسیر بررسی‌شده در یک مسیر print-options/field-processing استفاده می‌شود؛ registration واقعی close-event هنوز اثبات نشده است.
 - اسکن VMT نام‌محور، VMT کلاس‌های `TWordFields` و `TWordField` را در همین BPL پیدا نکرد؛ این نتیجه عدم وجود interfaceها را رد نمی‌کند، چون خود RTTI interfaceها را تأیید کرده است.
 - **گام بعد:** بررسی slotهای `Wordxp.Field` و `Wordxp.Range` در `FillPrintDocFields`، تکمیل inventory wrapper symbols و جست‌وجوی مستقل callback registration و dispatcher واقعی invoke/response.
+
+
+### Run 34 — نمادهای typed برای Word Field و Image Field (2026-11-14)
+
+- Inventory شماره 34 علاوه بر interface RTTI، چند تابع با امضای صریح `Wordxp.Field` و `Wordxp.Fields` را پیدا کرد:
+  - `TWordDocument.Get_Fields` در ماژول `EmwatConsts`، segment 1، section offset برابر `0x2A55C).
+  - `TWordViwer.FillField` با `Wordxp._Document`، نوع XML فیلد و `Wordxp.Field`.
+  - `TWordViwer.FillImageField` با `Wordxp._Document` و `Wordxp.Field` و پارامترهای تصویر.
+  - `TWordViwer.FillMSWFields` و `AddImagesToDoc` با `Wordxp.Fields`.
+  - `TEmwatDocPrintHandler.FillField` با `Wordxp.Field`.
+- VMT inventory کلاس‌هایی با نام `TWordFields`، `TWordField` و `TWordFieldCollection` پیدا نکرد؛ اما RTTI خود interfaceها و IIDهای آن‌ها را تأیید کرده است.
+- Workflow به trace کامل این توابع typed و getter `TWordDocument.Get_Fields` گسترش یافت. در این مسیرها می‌توان slotهای مربوط به `Wordxp.Field` را از استفادهٔ واقعی و نه از حدس نام کلاس شناسایی کرد.
+- **گام بعد:** بررسی artifact اجرای workflow 41/42، استخراج بدنهٔ کامل `Get_Fields)، `FillField`، `FillImageField`، `FillMSWFields` و `AddImagesToDoc)، و تطبیق dispatchها با Code/Result و سایر propertyهای `Wordxp.Field`.
