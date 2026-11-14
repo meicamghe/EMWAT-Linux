@@ -1245,3 +1245,12 @@ Added `python/src/emwat_linux/application.py` with `create_bridge_server(...)`. 
 - مسیر مستقل تصاویر/TIFF شناسایی شد: `CreateImageFile` فایل‌های مجزا را با `PrintWordDoc` و `TFileStream(fmCreate).Write` می‌سازد. `CreateTIFF.SeparteImages` نیز در ماژول چاپ/TIFF موجود است، اما caller مستقیم در محدوده اسکن‌شده پیدا نشد.
 - هنوز هیچ قرارداد close-time POST یا payload نهایی HTTP از این run به دست نیامده است. این مسیرهای چاپ/TIFF را نباید با upload یا پاسخ اصلی EMWAT یکی دانست.
 - بعدی: تحلیل بدنه کامل OnTmrAutoSave، callbackها و timer/VMT؛ سپس registration/callerهای مسیر TIFF/Print و بررسی اینکه آیا این مسیرها به Word editor اصلی متصل‌اند.
+
+
+### Reverse engineering — Run 94
+
+- Run #94 (43598550321) موفق بود؛ artifact 14115756587 بررسی شد.
+- `TWordViwer.OnTmrAutoSave` در 0x004B8A84، تنها از `LoadDocument` در 0x004B7A58 به‌صورت CALL مستقیم فراخوانی شده است. در این مسیر، بدنه علاوه بر تنظیم حالت view/readonly/protected، اتصال OLE Word را برقرار می‌کند و callbackهای 0x004CD154، 0x004CD54C، 0x004CD9C0 و یکی از 0x004D00AC/0x004CE030 را ثبت می‌کند. پس نام تابع را نباید معادل «ذخیره خودکار هنگام بسته‌شدن» تفسیر کرد.
+- 0x004CDB54 در واقع `TWordViwer.QuitWord` و 0x004C5D68 تابع `SetDocCaption` است. دو آدرس 0x004D68D4 و 0x004D531C نیز متدهای Remove دیکشنری Custom Document Properties هستند، نه helperهای AutoSave.
+- پیام فعال‌نبودن Word در بدنه وجود دارد، اما ارتباطی با ارسال پاسخ نهایی ندارد.
+- Run #95 برای trace مستقل handlerهای ثبت‌شده و helperهای اتصال OLE شروع شده است. هنوز close-time POST/payload نهایی کشف نشده است.
