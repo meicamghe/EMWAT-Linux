@@ -83,7 +83,9 @@ def main():
                 found.add((encoding, value))
                 if any(k in value.casefold() for k in (
                     "close", "before", "wordapp", "document", "autosave",
-                    "save", "on", "application", "event", "sendlog"
+                    "save", "onclose", "oncreate", "onshow", "onclick", "onbefore",
+                    "application", "event", "sendlog", "wordconfig", "editworddocument",
+                    "invoke", "localhost", "127.0.0.1", "1984"
                 )):
                     lo = max(0, m.start() - 24)
                     hi = min(len(blob), m.end() + 32)
