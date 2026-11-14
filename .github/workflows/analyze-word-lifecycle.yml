@@ -15,6 +15,9 @@ on:
       - 'tools/scan_pe_pointer_refs.py'
       - 'tools/scan_named_pe_resource.py'
       - 'tools/trace_td32_procedure.py'
+concurrency:
+  group: word-lifecycle-${{ github.ref }}
+  cancel-in-progress: true
 permissions:
   contents: read
 jobs:
