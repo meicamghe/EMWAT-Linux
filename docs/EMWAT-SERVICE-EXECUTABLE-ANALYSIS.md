@@ -241,3 +241,22 @@ The `OnTmrAutoSave` routine at `0x004B8A84` stores the configuration and registe
 This registration list does not include `0x004CCBBC`. That TD32-labelled `WordAppDocumentBeforeClose` routine is already proven to be a nested helper called from the image-field path; it is not the established Word close-event source.
 
 **Remaining:** identify the callback/event or browser-side message that emits the observed close-time POST, determine how the temporary Word file's final contents are committed back to Almas Gam, and compare the serialized HTTP response with the user's captured XML.
+
+
+## Request routing and PostStream source (2026-11-14)
+
+The handler's request-parameter collection exposes three route keys:
+- `invoke`: enters the XML method-dispatch path described above;
+- `init`: returns the embedded JavaScript bridge;
+- `heartbeat`: handles the Agent heartbeat request.
+
+The numeric browser `invoke` value selects the route but is not copied into `TEmwatInvokeParam.SessionId). The server independently creates the six-digit internal `SessionId`.
+
+The `TIdHTTPRequestInfo` object fields used by the handler are now identified with high confidence:
+- `[ARequestInfo+0xD0]` = `Params`
+- `[ARequestInfo+0xD4]` = `PostStream`
+- `[ARequestInfo+0xDC]` = `RemoteIP`
+
+The handler reads a size-like value from `PostStream`, then calls its virtual slot `+0x0C` with a buffer/length pair to populate `TEmwatInvokeParam.BufferIn`. The exact stream virtual method names and signatures remain unresolved; do not name them as `Read`, `ReadBuffer`, or `Size` without matching the correct Indy stream VMT.
+
+The service also contains internal call sites that invoke the shared XML dispatcher with embedded method XML, including `ShowEmwatSetting` and `ShowSendLog`. These are separate service-originated calls and should not be mistaken for browser POST requests.
