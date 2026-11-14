@@ -8,6 +8,7 @@ on:
       - 'tools/trace_pe_target.py'
       - 'tools/trace_pe_range.py'
       - 'tools/inspect_pe_va.py'
+      - 'tools/decode_pe_strings.py'
       - 'tools/resolve_delphi_vmt_slots.py'
       - 'tools/trace_field_accesses.py'
       - 'tools/trace_td32_immediate_refs.py'
@@ -269,6 +270,9 @@ jobs:
           python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x004B8A84 word-lifecycle-analysis/OnTmrAutoSave-full-procedure.md
           python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004B8A84 word-lifecycle-analysis/OnTmrAutoSave-direct-callers.md
           python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x005EE82C 0x005EEB48 word-lifecycle-analysis/TEditWordDocument-vmt-slot-10.md
+          python tools/decode_pe_strings.py analysis-input/EmwatMethods.bpl1 0x005EE9F4 0x005EEA0C 0x005EEA88 0x005EEAA0 0x005EEABC 0x005EEAD4 0x005EEB0C > word-lifecycle-analysis/TEditWordDocument-parameter-strings.md
+          python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 0x005EE82C word-lifecycle-analysis/TEditWordDocument-vmt-slot-10-raw-refs.md
+          python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 0x005EEB48 word-lifecycle-analysis/TScanDocument-vmt-slot-10-raw-refs.md
           python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x005EEB48 0x005EEDFC word-lifecycle-analysis/TScanDocument-vmt-slot-10.md
           python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x005EEDFC 0x005EF110 word-lifecycle-analysis/TFaxDocument-vmt-slot-10.md
           python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x005EF110 0x005EF218 word-lifecycle-analysis/TGetEmwatVersion-vmt-slot-10.md
