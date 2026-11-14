@@ -744,3 +744,21 @@ The actual TD32 procedure named `TWordViwer.WordAppDocumentBeforeClose` begins a
 A second address error: `0x00430070` is `TWordDocument.SaveAs2000`, not a Close wrapper. The actual `TWordDocument.Close` overload procedures are TD32-labeled at `0x0042FEB0`, `0x0042FF08`, `0x0042FF7C`, and `0x0042FFF4`; the latter is the three-argument overload. A three-argument Close invocation in the callback body dispatches through document interface VMT slot `+0x29C`, but the exact runtime target for that interface dispatch must be established by matching the interface VMT and wrapper semantics, not by assigning `0x00430070`.
 
 Run 25 itself completed successfully, but its added trace commands targeted the wrong symbols for a close-event investigation. Treat its other outputs as useful only where the TD32 labels and address semantics are independently verified. Next analysis must trace the actual Close overload(s), find the genuine callback registration (if present), and distinguish the BeforeSave callback from document-close lifecycle. No claim about the page-side POST is changed by this correction.
+
+
+## Run 26 — Word Close overload dispatch (2026-11-14)
+
+Run 26 (43584217243, artifact 14109926135) completed successfully. TD32 symbols and wrapper bodies establish four TWordDocument.Close overloads:
+
+| Overload | Procedure VA | Interface dispatch |
+|---|---:|---:|
+| No arguments | 0x0042FEB0 | VMT slot +0x4D4 |
+| One OleVariant | 0x0042FF08 | VMT slot +0x29C |
+| Two OleVariants | 0x0042FF7C | VMT slot +0x29C |
+| Three OleVariants | 0x0042FFF4 | VMT slot +0x29C |
+
+The three-argument wrapper forwards its three OleVariant arguments through document interface slot +0x29C. The concrete runtime target and effective argument meanings are not identified by this wrapper alone.
+
+Callback identity correction: 0x004CD154 is the registered TWordViwer.WordAppDocumentBeforeSave, not BeforeClose. It checks _Document.Saved through slot +0xD8, calls PreparePrintDocument at 0x004CB108, conditionally prompts when the document is changed and viewer flags allow it, sets the event Cancel word to 0xFFFF on Cancel, and invokes the three-argument Close wrapper for Yes/No. The TD32-named WordAppDocumentBeforeClose at 0x004CCBBC has only one direct bounded caller, FillImgFldsForPrint at 0x004CCF8F; no raw-pointer registration reference was found. This negative scan does not prove that no computed/runtime registration exists.
+
+The no-argument overload's +0x4D4 slot must not be conflated with the optional-argument overloads' +0x29C slot. 0x00430070 is SaveAs2000, not Close. Remaining work: resolve the COM interface implementation behind +0x29C, find any actual close-event registration, and trace the page-side close-time POST. No apply-on-close explanation is established.
