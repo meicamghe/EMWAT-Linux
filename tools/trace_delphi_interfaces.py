@@ -76,7 +76,12 @@ def main():
             continue
         name_va=raw_va(raw)
         if name_va is not None:
+            # Delphi VMT class-name pointers in this BPL can target the
+            # two-byte RTTI prefix immediately before the ShortString
+            # length byte, rather than the length byte itself.
             class_names[name_va]=name
+            if name_va >= 2:
+                class_names[name_va-2]=name
     for pos in range(0, len(blob)-3, 4):
         name=class_names.get(u32(blob,pos))
         if name is None: continue
