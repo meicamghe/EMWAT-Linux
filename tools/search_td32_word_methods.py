@@ -26,7 +26,8 @@ def module_name(mod):
 
 terms = ("paramstoxml", "performmethod", "temwmethod", "temwatmethod",
          "teditworddocument", "temwatinvokeparam", "editworddocument",
-         "xmlwordconfig", "wordconfig")
+         "xmlwordconfig", "wordconfig", "twordfields", "twordfield",
+         "get_fields", "set_fields", "wordxp@fields", "wordxp@field")
 selected = [p for p in procedures if any(t in p["name"].lower() for t in terms)]
 lines = [
     "# EMWAT Delphi word-method and dispatch symbol inventory", "",
