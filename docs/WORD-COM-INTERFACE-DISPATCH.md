@@ -214,14 +214,14 @@ The full run-24 disassembly disproves the earlier receiver-local interpretation 
 
 - At both sites, the code loads `eax = [ebp+8]`, then `eax = [eax-0x0C]`, then dereferences `[eax]` and calls `[eax+0x38]`.
 - The target's stack-local `[ebp-0x0C]` is separately initialized via runtime helper thunk `0x00401420`; it is later passed as an argument at `0x004CCC34` into `GetXmlFieldInfo` at `0x004BCA88`. It is not the slot-call receiver.
-- Run 27 resolves `[ebp+8]` as the parent procedure's EBP passed by `push ebp` at the direct callsite. Therefore `[[ebp+8]-0x0C]` is the parent procedure's local `[ebp-0x0C]`, which stores its incoming ECX value. The interface type of that ECX value remains unresolved pending caller analysis.
+- Run 27 resolves `[ebp+8]` as the parent procedure's EBP passed by `push ebp` at the direct callsite. Therefore `[[ebp+8]-0x0C]` is the parent procedure's local `[ebp-0x0C]`, which stores its incoming ECX value. **Resolved by run 31:** the value is an element of the `DynamicArray<DelphiInterface<Wordxp.Fields>>` output by `TWordViwer.FillPrintDocFields`; see the run-31 section below.
 - The run-24 typed positive control confirms that `Wordxp.TWordDocument.Get_Tables` uses `_Document` slot `+0x38`, but it does **not** establish that the nested helper's receiver has that interface type. The earlier claim that the two target calls are likely `_Document.Get_Tables()` remains withdrawn pending identification of the caller's ECX list element.
 
 The `Get_Tables` wrapper also clarifies its own acquisition pattern: it invokes `0x0042ABA0` with `EDX=&[ebp-4]`; that accessor checks `[self+0x78]), conditionally invokes the object's `+0x50` slot, then passes `[self+0x78]` to runtime helper `0x00401428` to populate the local interface. This is distinct from the BeforeClose receiver load. The wrapper's initial `0x00401420` call is an imported runtime thunk; the artifact resolves its IAT target outside the BPL image, so its semantic name is still unknown.
 
 Run 24 also resolves `0x00401478` to `rtl230.bpl!@System@@CheckAutoResult`. This is compiler/runtime error checking after the interface dispatch, not an application connector call.
 
-**Updated interpretation after run 27:** `[ebp+8]` is a Delphi nested-procedure static link to the caller's EBP, and the receiver is the caller's captured ECX local. Run 29 identifies the direct caller of `FillImgFldsForPrint` as `GetFieldIndexInList`; its ECX argument comes from an indexed list element. The remaining type-identification task is to inspect that list element's source and declaration. Keep the local POST / `invoke=5208` mapping open.
+**Updated interpretation after run 27:** `[ebp+8]` is a Delphi nested-procedure static link to the caller's EBP, and the receiver is the caller's captured ECX local. Run 29 identifies the direct caller of `FillImgFldsForPrint` as `GetFieldIndexInList`; its ECX argument comes from an indexed list element. Run 31 resolves the list element's declared interface type as `Wordxp.Fields`. The interface slot names and independent event-registration question remain open. Keep the local POST / `invoke=5208` mapping open.
 
 
 ## Direct-call cross-reference and caller chain (lifecycle runs 26–29)
@@ -237,7 +237,7 @@ The current proven chain is therefore:
 
 `GetFieldIndexInList list element → ECX → FillImgFldsForPrint local [ebp-0x0C] → nested static link → target receiver for both +0x38 calls`.
 
-This strongly places the target in a field-index/list-processing path. The exact type of the list element and the interface methods at slot `+0x38` remain unresolved until the full `GetFieldIndexInList` procedure is reviewed. The direct-call scans do not exclude computed or indirect references, so independent callback registration is not categorically ruled out; it is simply not established by the current evidence.
+This strongly places the target in a field-index/list-processing path. Run 31 later resolves the list element's declared type as `Wordxp.Fields` through the `FillPrintDocFields` signature. The method names at slot `+0x38` remain unresolved. The direct-call scans do not exclude computed or indirect references, so independent callback registration is not categorically ruled out; it is simply not established by the current evidence.
 
 No direct HTTP, localhost POST, `invoke=5208`, or `EditWordDocument/wordConfig` call has been identified in the target body. Do not describe `0x004CCBBC` as the proven close-time connector path.
 
@@ -314,31 +314,32 @@ The call setup is:
 004CB361  call     0x4ccdc8
 ```
 
-This proves that the `ECX` value captured by `FillImgFldsForPrint` comes from an indexed element of the caller's array/list at `[caller EBP-8 + ESI*4]`. The next step is to inspect the full `GetFieldIndexInList` body to identify the list's element type and how that element is initialized. The scan found only one direct caller in TD32-bounded procedures; indirect calls and computed function pointers are outside its coverage.
+This proves that the `ECX` value captured by `FillImgFldsForPrint` comes from an indexed element of the caller's array/list at `[caller EBP-8 + ESI*4]`. Run 30 inspected the full `GetFieldIndexInList` body; run 31 traced its list builder and established the declared element type. The scan found only one direct caller in TD32-bounded procedures; indirect calls and computed function pointers are outside its coverage.
 
 This strengthens the classification of `0x004CCBBC` as a nested helper reached from a field-index/list-processing path, but it still does not establish the semantic type of the list element or completely exclude another indirect event-registration path.
 
 
-## Field-list construction and interface-pointer evidence (lifecycle run 30)
+## Field-list construction and typed interface identification (lifecycle runs 30–31)
 
-The complete `GetFieldIndexInList` procedure (`0x004CB1B4–0x004CB5E3`) clarifies how the nested helper is reached.
+Run 30 established that `GetFieldIndexInList` calls `0x004CB638) with:
+- EAX = the `TWordViwer` instance;
+- EDX = its incoming document-interface argument;
+- ECX = address of local `[ebp-8]`, used as an output location for a dynamic-array/list reference.
 
-At `0x004CB332–0x004CB338`, it calls `0x004CB638` with:
-- EAX = the `TWordViwer` instance saved from the method entry;
-- EDX = the method's second incoming argument, saved at `[ebp-4]`;
-- ECX = address of local `[ebp-8]`, an output location for the resulting list/array reference.
+Run 31 recovered the full TD32 symbol for `0x004CB638`:
 
-The returned list/array pointer is then queried for its count at `0x004CB340`. The loop reads each 32-bit element from `[list_base + ESI*4]` and passes that value in ECX to `FillImgFldsForPrint` at `0x004CB361`. The callee captures ECX in its local `[ebp-0x0C]`.
+`@Wordviewer@TWordViwer@FillPrintDocFields$qqr43System@%DelphiInterface$16Wordxp@_Document%x40System@%DelphiInterface$13Wordxp@Fields%`
 
-The receiving code in `FillImgFldsForPrint` dereferences this value as an interface-like pointer and dispatches through its vtable:
-- `+0x28` at `0x004CCE15`;
-- `+0x38` at `0x004CCE55`, `0x004CCEE7`, and `0x004CCF35);
-- the nested helper at `0x004CCBBC` uses the same captured value for its own `+0x38` calls.
+The signature identifies the input as `DelphiInterface<Wordxp._Document>` and the output as `DynamicArray<DelphiInterface<Wordxp.Fields>>`. The body obtains the Word document's Fields collection through the document interface (dispatch at `+0x12C`), sizes/populates the dynamic array, and iterates the collection. `GetFieldIndexInList` then walks this array and passes each element in ECX to `FillImgFldsForPrint`.
 
-This proves the list elements are pointer-sized values used as interface/vtable receivers. It does **not** yet identify the declared interface type or the method names at slots `+0x28` and `+0x38`. The positive-control mapping `Wordxp._Document.Get_Tables` at slot `+0x38` remains specific to its typed wrapper and cannot be transferred to these receivers without matching type evidence.
+This resolves the receiver type chain:
 
-The list builder at `0x004CB638` and the caller of `GetFieldIndexInList` are now added to lifecycle run 31 for direct inspection. The current static chain is:
+`Wordxp._Document → TWordViwer.FillPrintDocFields → DynamicArray<Wordxp.Fields> → ECX → FillImgFldsForPrint → nested helper 0x004CCBBC`.
 
-`GetFieldIndexInList → list/array output from 0x004CB638 → interface-like element in ECX → FillImgFldsForPrint → nested helper 0x004CCBBC`.
+**Now proven:** the receiver used by the `+0x28` and `+0x38` dispatches in `FillImgFldsForPrint), and by both `+0x38` dispatches in the nested `0x004CCBBC) helper, is a `Wordxp.Fields` interface element. The previous generic phrase “interface-like pointer” is superseded by this declared type evidence.
 
-**Still unresolved:** the exact interface IID/type, method names at the relevant slots, and whether this helper is separately registered as a close event. The observed localhost POST (`127.0.0.1:1984`, `invoke=5208`) remains unmapped to this static path.
+**Still unresolved:** the method names/signatures corresponding to `Wordxp.Fields` slots `+0x28) and `+0x38`; whether the TD32-named nested helper is separately registered as an actual Word close callback; and the causal link to the observed local POST `127.0.0.1:1984/?invoke=5208` / `EditWordDocument/wordConfig`. Do not map these slots to `_Document.Get_Tables`; the receiver type is now explicitly `Wordxp.Fields`, not `Wordxp._Document`.
+
+Run 31 also found one direct caller of `GetFieldIndexInList`: `TWordViwer.BGPrintWithGamPrintOptions` at `0x004C6F3F`. This places the observed nested helper path under a print-options/field-list routine, further weakening any assumption that its TD32 name alone proves it is the live close-event callback. The direct-call scan still cannot rule out indirect references or a separate event-registration path.
+
+The next analysis extends the VMT inventory to Word wrapper classes (`TWordDocument`, `TWordFields`, `TWordField`) so that the `Wordxp.Fields` interface slots can be mapped to typed wrapper methods. It also continues to search for the independently registered close callback and the actual invoke/response dispatch.
