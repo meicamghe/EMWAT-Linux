@@ -757,3 +757,19 @@ For the observed runtime envelope `EditWordDocument`, the class resolution is `T
 **What remains unproven:** which Word/COM callback or browser-side event handler emits the `postMessage` that causes the close-time POST. The service parser/dispatcher path is established, but this does not by itself prove the upstream event source or the final document commit/save semantics. The user's runtime observation that closing applies the changes remains the behavioral requirement.
 
 Also note the corrected ID distinction: browser query `invoke=<random>` is not the service's `TEmwatInvokeParam.SessionId`; the service generates a separate six-digit internal SessionId.
+
+
+### Run 77 — TEditWordDocument parameters and HTTP response path
+
+The concrete VMT target `TEditWordDocument.PerformMethod` at `0x005EE82C` retrieves four named request parameters:
+
+- `wordConfig`
+- `wordBody`
+- `letterImages`
+- `signData`
+
+It starts a worker thread, logs `CoInitializing thread`, and passes those four values plus the `TEmwatInvokeParam*` request context and an output-string reference to helper `0x004B7724`.
+
+After the helper returns, `TEditWordDocument` copies the returned string into the base dispatcher's output string and sets `bUnloadPkg=true). It leaves `bResultSet=false). The generic service dispatcher therefore takes its default response branch: it assigns the returned string to `AResponseInfo.ContentText`, sends the HTTP response via `0x004610FC`, and sets `bResultSet=true`.
+
+This is a concrete link between the observed runtime `EditWordDocument` response and the service's XML method dispatcher. The output string is produced downstream of `0x004B7724`; that helper is now the key target for identifying Word automation, document update and response XML construction. The method's four parameter names are statically proven, but their runtime values/encoding and the exact commit operation still need tracing.
