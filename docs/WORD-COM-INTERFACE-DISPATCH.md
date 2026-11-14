@@ -508,3 +508,8 @@ No direct CALL xref was found for the no-argument `TWordDocument.Close()` wrappe
 The named RCDATA resource `TFRMSHOWAUTOSAVEFILES` was extracted and scanned (1,149 bytes; SHA256 recorded in the CI artifact). Its printable properties include `OnClose=FormClose`, `OnCreate=FormCreate`, and `OnShow=FormShow`, plus the list/button event handlers. The resource contains no `WordAppDocumentBeforeClose` or Word-application event property string. `TFRMSENDLOG` likewise contains only its form/UI event properties.
 
 This confirms that the second `WordAppDocumentBeforeClose` handler is not wired by a visible DFM event property in `TFRMSHOWAUTOSAVEFILES`. If it is connected to Word, that connection is likely established by runtime code in `FormCreate`, `btnShowFileClick`, or a helper that creates/opens the preview Word instance; that remains to be traced. Do not describe the handler as a statically DFM-bound Word event.
+
+
+### btnShowFileClick confirmation (lifecycle run 59)
+
+The complete `TfrmShowAutoSaveFiles.btnShowFileClick` body is only ten bytes and consists of a direct call to `CloseWordApp` followed by return. The two direct callers of `CloseWordApp` are exactly this button handler and the autosave form's `WordAppDocumentBeforeClose` handler. Thus this callback/button pair is self-contained autosave-preview cleanup; it does not open the main letter, invoke the Word field pipeline, or call the local connector in the traced body.
