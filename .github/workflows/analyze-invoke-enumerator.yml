@@ -113,6 +113,11 @@ jobs:
           python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x0044B7A9 invoke-enumerator-analysis/TXMLEmwatType-interface-slot-54-thunk.md 48 ret
           python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x0044B7A9 0x0044B7B1 invoke-enumerator-analysis/TXMLEmwatType-interface-slot-54-thunk-code.md
           python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x0044C62C invoke-enumerator-analysis/TXMLMethodType-interface-C8-implementation-body.md 160 ret
+      - name: Trace XML serializer getter implementation
+        run: |
+          python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x0044B590 invoke-enumerator-analysis/TXMLEmwatType-serializer-getter-implementation.md
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x0044B590 invoke-enumerator-analysis/TXMLEmwatType-serializer-getter-body.md 160 ret
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x0044B590 invoke-enumerator-analysis/TXMLEmwatType-serializer-getter-callers.md
       - uses: actions/upload-artifact@v4
         with:
           name: emwat-invoke-receiver-analysis
