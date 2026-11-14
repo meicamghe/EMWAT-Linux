@@ -235,9 +235,9 @@ A protocol-neutral transport implementation was added under `python/`:
 - `pyproject.toml`: minimal install metadata.
 - `.github/workflows/python-bridge.yml`: independent CI workflow.
 
-The transport deliberately does not interpret `invoke`, XML method names, parameter tags, Word document payloads, or close-response semantics. It carries the raw request to an injected handler and returns that handler's response. This separation prevents unverified assumptions from becoming the wire protocol.
+The `bridge.py` transport remains protocol-neutral and carries raw bytes to an injected handler. Protocol interpretation is now implemented separately in `protocol.py`, and `dispatcher.py` invokes only explicitly registered method handlers. The application factory in `application.py` wires these layers together.
 
-**Immediate next actions:** verify the Python bridge CI runs; add a protocol parser only after recovering the exact parameter node shape and envelope; implement a typed `EditWordDocument` handler from confirmed fields; then build the LibreOffice adapter and test the close/apply lifecycle end-to-end. Do not claim end-to-end compatibility yet.
+**Immediate next actions:** use the latest Run #89 analysis artifact to refine the `wordBody` stream and temporary document path; recover the exact response/close lifecycle; then implement a real typed `EditWordDocument` handler. Do not register a placeholder as if it were production behavior, and do not claim end-to-end compatibility yet.
 
 
 ## Bridge transport milestone — CI green (2026-11-14)
@@ -258,7 +258,7 @@ Next: validate allowed Origin handling with a safe test page/origin, recover the
 
 در تحلیل ایستای سرویس، مسیرهای query با کلیدهای `invoke`، `init` و `heartbeat` نیز جداگانه دیده شده‌اند؛ اما پاسخ دقیق heartbeat و بایت‌های پاسخ init هنوز معلوم نیست و نباید پاسخ ساختگی تولید شود.
 
-**گام بعد:** نتیجه CI parser را تأیید کن، سپس parser را به bridge متصل کن تا برای درخواست‌های XML معتبر، ساختار method/params قابل‌استفاده به dispatcher برسد؛ dispatch واقعی `EditWordDocument` را تا وقتی schema پاسخ و چرخه‌ی close به‌قدر کافی روشن نشده، پیاده‌سازی نکن.
+**وضعیت این گام تکمیل شده:** parser به dispatcher متصل شده و factory برنامه هر سه لایه را ترکیب می‌کند. گام بعدی، پیاده‌سازی handler واقعی `EditWordDocument` پس از روشن‌شدن payload نهایی و lifecycle بستن Word است؛ هنوز هیچ handler تولیدی برای این متد ثبت نشده است.
 
 
 ## Current implementation checkpoint — 2026-11-14 (CI run #20)
@@ -288,3 +288,10 @@ A separate static-analysis workflow Run #89 is in progress, adding targeted trac
 `application.py` now exposes `create_bridge_server` to wire transport, parser and explicit dispatcher. Integration tests cover a full localhost POST through parser and a registered test handler, plus origin rejection. CI run #24 (`43593185429`) passed all 29 tests on commit `27986ee96b45009283cd96eecde95110e1b9e448`.
 
 No real `EditWordDocument` handler is registered. The test handler is deliberately synthetic and proves only composition of the layers. The Word lifecycle analysis workflow Run #89 remains in progress; its new target traces include the `wordBody` stream ingestion and temporary output path.
+
+
+### Latest verified implementation state — CI run #24
+
+Python bridge transport workflow run #24 (`43593185429`), commit `27986ee96b45009283cd96eecde95110e1b9e448`, passed **29 tests**. The tested composition now includes `application.py` → `BridgeHTTPServer` → `XMLMethodDispatcher` → `parse_method_call` → an explicitly registered test handler → HTTP response. The test handler is synthetic; there is still no production `EditWordDocument` handler.
+
+The separate Word lifecycle workflow Run #89 is still processing its deep trace steps. It now includes targeted analysis of `wordBody` stream ingestion, helper routines and temporary output handling. Do not report its findings until the artifact is available and inspected.
