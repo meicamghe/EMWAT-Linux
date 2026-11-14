@@ -709,3 +709,13 @@ Run `43232846364` با موفقیت کامل (148/148 مرحله) پایان ی�
 - caller مستقیم `GetFieldIndexInList` تابع `TWordViwer.BGPrintWithGamPrintOptions` در `0x004C6F3F` است؛ این موضوع مسیر بررسی‌شده را به پردازش فیلدها در مسیر print-options مرتبط می‌کند، نه اینکه event واقعی Close را اثبات کند.
 - Workflow بعدی برای استخراج VMT/RTTI wrapperهای `TWordFields`، `TWordField` و `TWordDocument` و بررسی امضای interfaceهای Word گسترش یافت.
 - **گام بعد:** نگاشت slotهای `Wordxp.Fields +0x28) و `+0x38) به نام متدهای wrapper، و جست‌وجوی مستقل registration واقعی close event و dispatcher درخواست `invoke=5208`.
+
+
+### Run 33 — تطبیق IID و معنای slotهای Word Fields (2026-11-14)
+
+- Run 33 با موفقیت پایان یافت؛ artifact شامل `Word-interface-tables.md` و disassembly کامل `BGPrintWithGamPrintOptions` بود.
+- RTTI رابط‌های WordXP این GUIDها را تأیید کرد: `Fields=00020930-0000-0000-C000-000000000046`، `Field=0002092F-0000-0000-C000-000000000046`، `_Document=0002096B-0000-0000-C000-000000000046)، `Tables=0002094D-0000-0000-C000-000000000046`. دو IID نخست با مستندات Microsoft Word مطابقت دارند.
+- روی receiver از نوع `Wordxp.Fields)، slot `+0x28) با الگوی getter تعداد و استفاده به‌عنوان loop bound، به‌احتمال بسیار زیاد `Count` است؛ slot `+0x38) با ورودی index و خروجی interface، به‌احتمال بسیار زیاد `Item(index)` است که `Wordxp.Field` می‌دهد. این نام‌گذاری‌ها inference با اطمینان بالا هستند، نه استخراج declaration کامل vtable.
+- تنها caller مستقیم `GetFieldIndexInList` در procedureهای TD32، تابع `BGPrintWithGamPrintOptions` در `0x004C6F3F` است. بنابراین مسیر بررسی‌شده در یک مسیر print-options/field-processing استفاده می‌شود؛ registration واقعی close-event هنوز اثبات نشده است.
+- اسکن VMT نام‌محور، VMT کلاس‌های `TWordFields` و `TWordField` را در همین BPL پیدا نکرد؛ این نتیجه عدم وجود interfaceها را رد نمی‌کند، چون خود RTTI interfaceها را تأیید کرده است.
+- **گام بعد:** بررسی slotهای `Wordxp.Field` و `Wordxp.Range` در `FillPrintDocFields`، تکمیل inventory wrapper symbols و جست‌وجوی مستقل callback registration و dispatcher واقعی invoke/response.
