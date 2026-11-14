@@ -80,6 +80,12 @@ jobs:
         run: |
           python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x0044BDF5 invoke-enumerator-analysis/TXMLParamType-interface-B0-thunk.md 48 ret
           python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x0044BEB5 invoke-enumerator-analysis/TXMLParamType-interface-68-thunk.md 48 ret
+      - name: Trace TXMLParamType setter implementations
+        run: |
+          python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x0044C8E4 invoke-enumerator-analysis/TXMLParamType-interface-B0-implementation.md
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x0044C8E4 invoke-enumerator-analysis/TXMLParamType-interface-B0-implementation-callers.md
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x0044B568 invoke-enumerator-analysis/TXMLParamType-interface-68-implementation.md 48 ret
+          python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x0044B568 0x0044B5A8 invoke-enumerator-analysis/XML-interface-slot-68-shared-body.md
       - name: Trace resolved XML interface method implementations
         run: |
           python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x0044C458 invoke-enumerator-analysis/TXMLEmwatType-interface-B0-implementation.md
