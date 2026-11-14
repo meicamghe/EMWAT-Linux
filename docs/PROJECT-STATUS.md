@@ -1,5 +1,5 @@
 # وضعیت پروژه EMWAT-Linux
-آخرین به‌روزرسانی: 2026-11-12
+آخرین به‌روزرسانی: 2026-11-14
 
 ## هدف قطعی
 بازسازی بومی EMWAT برای Linux با حفظ رفتار و گردش‌کارهای واقعی نسخه Windows. اجرای نسخه Windows با Wine راهکار محصول نهایی نیست. LibreOffice به‌عنوان جایگزین/پل تعامل با اسناد و صفحه‌گسترده‌ها در نظر گرفته شده، اما روش اتصال تا روشن‌شدن رفتار واقعی برنامه تعیین نمی‌شود.
@@ -685,3 +685,16 @@ Run `43232846364` با موفقیت کامل (148/148 مرحله) پایان ی�
 تحلیل artifact نشان داد نماد TD32 با نام `@Emwatmethod@ParamsToXML...` فقط پنج بایت دارد و به یک import thunk برای `rtl230.bpl!@System@@AbstractError$qqrv` پرش می‌کند. این با stub متد abstract در Delphi سازگار است و احتمال می‌دهد implementation واقعی از طریق override/VMT یا package دیگری ارائه شود؛ اما هنوز override واقعی شناسایی نشده و این فرض باید با VMT تأیید شود. متد `GetXmlFieldInfo` در کلاس `TWordViwer` و آدرس `0x004BFC18` تابع جداگانه‌ای است و نباید با `ParamsToXML` یکی گرفته شود.
 
 برای ادامه، ابزار inventory نمادهای TD32 و گسترش تحلیل VMT به کلاس‌های `TEmwatMethod` و `TEditWordDocument` اضافه شد. اجرای CI جدید در حال تولید گزارش‌های این دو مسیر است. تا تأیید override، پیاده‌سازی serializer و چرخه save/return همچنان نامشخص است.
+
+
+## Runهای 27 تا 31 — زنجیرهٔ فیلد و nested helper (2026-11-14)
+
+- Runهای lifecycle شمارهٔ 27، 28، 29 و 30 با موفقیت پایان یافتند؛ artifactهای آن‌ها بررسی شده‌اند. Run 31 برای trace ساختار فهرست/آرایه و callerهای بالادستی در حال اجراست.
+- اصلاح مهم receiver: تابع `0x004CCBBC` با نماد TD32 `WordAppDocumentBeforeClose` در callsite تابع `FillImgFldsForPrint`، از طریق Delphi nested-procedure static link فراخوانی می‌شود. عبارت receiver آن یعنی `[[ebp+8]-0x0C]` به local تابع والد می‌رسد که مقدار ورودی ECX را نگه می‌دارد.
+- اسکن direct CALLها یک caller برای `FillImgFldsForPrint` پیدا کرد: `TWordViwer.GetFieldIndexInList` در `0x004CB361`.
+- بدنهٔ کامل `GetFieldIndexInList` در Run 30 نشان داد تابع ابتدا از `0x004CB638` یک pointer به فهرست/آرایه دریافت می‌کند، تعداد عناصر را می‌خواند و عناصر ۳۲بیتی را با stride چهار بایت پیمایش می‌کند. هر عنصر در ECX به `FillImgFldsForPrint` داده می‌شود.
+- در `FillImgFldsForPrint` این pointer به‌عنوان receiver دارای vtable استفاده می‌شود و dispatchهای `+0x28) و `+0x38` دارد. این شواهد، interface-like بودن عناصر را اثبات می‌کنند، اما IID/type و نام متدهای این slotها هنوز مشخص نیست.
+- تابع `0x004CCBBC` فعلاً به‌عنوان nested helper در مسیر پردازش فیلد فهرست‌بندی می‌شود؛ نام TD32 به‌تنهایی event registration یا close-time execution را اثبات نمی‌کند. هیچ ارتباط مستقیم اثبات‌شده‌ای از این بدنه به POST محلی، `invoke=5208` یا XML `EditWordDocument/wordConfig` پیدا نشده است.
+- رفتار محصول در سطح کاربر قطعی است: بستن سند تغییرات را اعمال می‌کند، حتی اگر Save زده نشده باشد. سازوکار داخلی این رفتار همچنان موضوع تحلیل است.
+- مستندات جزئی در `WORD-COM-INTERFACE-DISPATCH.md` و `PRODUCT-WORKFLOW-ANALYSIS.md` به‌روز شدند.
+- **گام بعد:** Run 31 را بررسی کن؛ تابع سازندهٔ فهرست `0x004CB638)، callerهای `GetFieldIndexInList` و helperهای field lookup را تحلیل کن. سپس نوع interface و مسیر مستقل ثبت رویداد Close را پیدا کن.
