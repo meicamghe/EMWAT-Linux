@@ -1226,3 +1226,12 @@ Added `python/src/emwat_linux/application.py` with `create_bridge_server(...)`. 
 - Run #90 هنوز قرارداد POST هنگام بستن Word و نحوه اعمال پاسخ در Almas Gam را مشخص نکرده است. گام بعدی: ردیابی مسیر مقصد فایل، stream دوم در `0x004B7C39` و ارتباط فایل تولیدشده با XML پاسخ.
 
 - در ادامه همان تابع، یک `TFileStream` دوم در `0x004B7C3E` با همان مسیر مشتق‌شده و mode برابر صفر ساخته می‌شود؛ سپس اندازه stream گرفته شده و virtual slot `+0x0C` با buffer/count فراخوانی می‌شود. این مسیر با بازکردن مجدد و خواندن فایل سازگار است؛ نام دقیق متد تا resolve شدن slot در RTL قطعی اعلام نمی‌شود.
+
+
+## Run 91 — چرخه قطعی ساخت و خواندن فایل
+- Run #91 (43595953793) موفق شد؛ artifact 14114711446.
+- 0x0062F800 به کلاس TFileStream در rtl230.bpl resolve شد و 0x004041BC سازنده TFileStream.Create(UnicodeString, Word) است.
+- مسیر اول با mode 0xFF00 (fmCreate) فایل را ایجاد می‌کند و virtual slot +0x10 را با pointer/count صدا می‌زند؛ این slot در layout استاندارد TStream برابر Write است.
+- مسیر دوم با mode صفر (fmOpenRead) همان stream را باز می‌کند و slot +0x0C را با buffer/count فراخوانی می‌کند؛ این slot برابر Read است. بنابراین چرخه create/write و سپس open-read/read تأیید شد.
+- مسیر فایل و مقصد نهایی داده خوانده‌شده هنوز معلوم نیست. helperهای رشته‌ای 0x401270، 0x4012E0 و 0x401348 به slotهای unresolved می‌روند؛ نام یا encoding آن‌ها حدس زده نمی‌شود.
+- گام بعد: trace ادامه LoadDocument بعد از خواندن فایل، مسیر مقصد و انتقال داده به Word/TIFF و پاسخ HTTP.
