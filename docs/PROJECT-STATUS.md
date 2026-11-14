@@ -833,3 +833,10 @@ Run `43232846364` با موفقیت کامل (148/148 مرحله) پایان ی�
 - در ماژول `EmwatConnector`، `TfrmSendLog.FormCreate` در `0x005ECB88` (اندازه `0x3CC`) و `FormShow` در `0x005ECF54` پیدا شد؛ این فرم ممکن است به connector/log UI مربوط باشد و بدنهٔ FormCreate باید بررسی شود.
 - `TEmwatMethod.Invoke` در `0x0046C82C` (اندازه `0x1B1`) و چند `PerformMethod` از connector classes پیدا شدند: `TCompareWordDocument` در `0x005EF8AC`، `TEditExcelWorkBook` در `0x005EF300` و `TShowSendLog` در `0x005EFE4C`.
 - Workflow به trace بدنهٔ این فرم‌ها و dispatcher گسترش یافت تا مسیر `invoke=5208` و تولید پاسخ XML بهتر شناخته شود.
+
+
+### Run 59 — تأیید cleanup مسیر فرم autosave
+
+- `TfrmShowAutoSaveFiles.btnShowFileClick` فقط ۱۰ بایت است و تنها `CloseWordApp` را فراخوانی می‌کند و برمی‌گردد.
+- دو caller مستقیم `CloseWordApp` دقیقاً همین دکمه و handler `WordAppDocumentBeforeClose` فرم autosave هستند.
+- این pair یک مسیر cleanup برای preview/autosave است؛ در بدنهٔ traceشده سند اصلی، field pipeline یا local connector را فراخوانی نمی‌کند. بنابراین این close handler را از مسیر اصلی نامه جدا نگه می‌داریم.
