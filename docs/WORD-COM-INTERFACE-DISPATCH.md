@@ -423,3 +423,16 @@ The full `OnTmrAutoSave` disassembly confirms these are actual method-pointer as
 This is strong negative evidence against `0x004CCBBC` being the statically registered BeforeClose event handler in this BPL: the known registration routine assigns other callback addresses, and no raw pointer to `0x004CCBBC` exists in the image. It is **not an absolute proof of non-registration**: computed/relative pointers, external packages, runtime-generated method pointers or another registration path could evade this exact scan. Combined with the proven direct call from the print/field path, the current best classification is that `0x004CCBBC` is a nested print/field helper whose TD32 name is not sufficient to identify the actual close event.
 
 The real close-time POST (`127.0.0.1:1984/?invoke=5208`) must now be mapped through another event/connector path; do not continue treating `0x004CCBBC` as its proven source.
+
+
+## Additional WordXP collection RTTI (lifecycle run 45)
+
+The expanded interface scan recovered three more WordXP interfaces:
+
+- `StoryRanges`: IID `0002098C-0000-0000-C000-000000000046`.
+- `FormFields`: IID `00020929-0000-0000-C000-000000000046`.
+- `FormField`: IID `00020928-0000-0000-C000-000000000046`.
+
+The targeted scan did not recover a `Range`/`_Range` interface RTTI record in this BPL, even though typed Word field operations call methods on interface values returned from `Wordxp.Field`. The new `StoryRanges` IID is a plausible lead for the still-unmapped `_Document +0x12C` dispatch in `FillPrintDocFields`, because that routine calls `_Document +0x12C` with a story-like selector and then enumerates returned interface data. However, this is only a candidate: the method has multiple output arguments, and no typed wrapper currently maps it to `StoryRanges`. Do not label `+0x12C` as `StoryRanges` until its output IID or a matching wrapper is proven.
+
+The presence of `FormFields` and `FormField` RTTI also shows that this BPL imports Word's separate form-field collection model in addition to ordinary `Fields`/`Field`. The next symbol inventory now includes `StoryRanges`, `FormFields`, and `FormField` names to locate typed getters/consumers and avoid conflating the two field models.
