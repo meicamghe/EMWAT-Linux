@@ -365,3 +365,26 @@ The separate Word lifecycle workflow Run #89 is still processing its deep trace 
 - 0x004CDB54 = `TWordViwer.QuitWord`; 0x004C5D68 = `TWordViwer.SetDocCaption`. دو تابع 0x004D68D4 و 0x004D531C متدهای Remove دو Dictionary برای Custom Document Properties هستند و ارتباطی با AutoSave ندارند.
 - Run #95: workflow run id 43599550286؛ commit fc4702dbd4c80ed73ac6bc5edac2b2f8d3a98654؛ وضعیت اولیه queued. پس از پایان، artifact را دریافت و handlerهای ثبت‌شده را بررسی کن.
 - پرسش فنی اصلی همچنان: کدام event واقعی Word باعث ذخیره/جمع‌آوری سند و کدام مسیر داده را به HTTP response می‌سپارد؟ تا زمانی که handlerها و callerهایشان بررسی نشده‌اند، ادعای close-time POST نکن.
+
+
+## Handoff — Run 95 completed (2026-11-14)
+
+Run `43599550286` succeeded; artifact `14115498934` was downloaded and inspected.
+
+### New evidence
+- `0x004CD154` = `TWordViwer.WordAppDocumentBeforeSave` (not BeforeClose).
+- `0x004CD54C` = `TWordViwer.WordAppNewDocument`.
+- `0x004CD9C0` = `TWordViwer.WordAppWindowActivate`.
+- `0x004CE030` = `TWordViwer.WordAppDocumentBeforePrintBGPrint`.
+- `0x004D00AC` = `LoadOptions`.
+- `OnTmrAutoSave` writes `0x004CD154` and `0x004CD54C` into callback-like object fields during LoadDocument. Treat this as evidence consistent with callback registration, not a complete proof of the COM event contract.
+- Direct-call scans have zero direct CALL xrefs for these handlers; indirect COM/callback dispatch is not covered by those scans.
+- The distinct `WordAppDocumentBeforeClose` procedure at `0x004CCBBC` has only one direct caller found, `FillImgFldsForPrint`; do not treat it as the main editor's active close handler.
+- No close-time HTTP POST or final result payload was identified.
+
+### Continue next
+1. Trace the callback table/object construction and the indirect event dispatch that reaches `0x004CD154` / `0x004CD54C`.
+2. Resolve interface VMT slot `+0x29C` used by `WordAppWindowActivate` and the document interface calls used by `WordAppNewDocument`.
+3. Separate print/export/image handling from editor close/return behavior.
+4. Keep the XML handler schema and close-result payload opaque until directly proven. Do not implement speculative production handlers.
+5. Continue updating all three analysis documents after each meaningful run.
