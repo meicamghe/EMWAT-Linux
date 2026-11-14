@@ -151,7 +151,7 @@ The same `TMainForm.IdHTTPServerCommandGet` body checks three request parameter 
 
 This confirms the local service has separate bridge-initialization and Agent-heartbeat routes in addition to the browser-to-XML method route. The numeric `invoke` value is not assigned to the record's `SessionId`; the handler's record gets its own random six-digit identifier as described above.
 
-The request body is obtained from an object held at `[ARequestInfo+0xD4]`. The handler queries that object for a size-like value, obtains a buffer, and calls its virtual slot `+0x0C` with a buffer/length pair before assigning the resulting string to `BufferIn`. This is consistent with reading an HTTP request-body stream, but the object's exact runtime type and virtual method names have not yet been proven from its RTTI.
+The callback register/stack usage matches the Indy event signature: EDX is `AContext`, ECX is `ARequestInfo`, and `[EBP+8]` is `AResponseInfo`. The PE RTTI contains `TIdHTTPRequestInfo` and its fields/properties `FParams`/`Params`, `FPostStream`/`PostStream`, and `FRemoteIP`/`RemoteIP`. Combined with the handler's use, the offsets map with high confidence as `[ARequestInfo+0xD0] = Params`, `[ARequestInfo+0xD4] = PostStream`, and `[ARequestInfo+0xDC] = RemoteIP`. The handler queries the PostStream object for a size-like value, obtains a buffer, and calls its virtual slot `+0x0C` with a buffer/length pair before assigning the resulting string to `BufferIn`. The object is therefore identified as the request-body stream; the exact names/signatures of its two virtual methods remain unresolved.
 
 The shared dispatcher at `0x00470D00` has three additional direct callers in the service PE:
 
