@@ -1080,3 +1080,7 @@ The proven structure is therefore a `method` element with `class=` method-name a
 ## Generic Invoke XML serialization — current confirmed state (2026-11-14)
 
 Focused runs 11 and 16 close the previous XML dispatch questions: TXMLMethodType.AfterConstruction initializes a method element; its +0xC8 setter assigns the incoming method name to attribute class; each dictionary pair becomes a parameter child with key in name and value in text; and TXMLEmwatType +0x54 calls xmlrtl230.bpl!TXMLNode.GetXML to serialize the tree. The constructor additional constant 0x0044C4FC remains unresolved. Complete envelope/encoding and runtime HTTP comparison remain open. Detailed evidence: docs/WORD-COM-INTERFACE-DISPATCH.md and docs/WORD-DOCUMENT-PROTOCOL-ANALYSIS.md.
+
+## XML constructor follow-up — run 17
+
+Focused run 17 (`43574768657`, artifact `14106455607`) confirms `0x0044B4D8` is `xmlrtl230.bpl!TXMLNode.GetChildNodes`, called by `TXMLMethodType.AfterConstruction` before the `method` element is inserted. The constructor's second argument constant `0x0044C4FC` is not a valid Delphi string. The call to `0x00401430` is an IAT thunk via slot `0x0062EC40`, but its import identity is not yet resolved. Run 18 now inspects that exact import slot and nearby bytes. Do not infer an extra XML attribute or node from this unresolved call.
