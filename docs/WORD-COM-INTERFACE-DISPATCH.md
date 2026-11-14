@@ -522,7 +522,7 @@ Direct-call scans found **zero** TD32-bounded CALL sites for all four `TWordDocu
 
 ## EMWAT method dispatcher entry (lifecycle run 62)
 
-The complete TD32 trace for `TEmwatMethod.Invoke` at `0x0046C82C` (433 bytes) confirms that it accepts a `TDictionary<AnsiString, TValue>`, extracts/iterates dictionary data, constructs intermediate invocation state, and performs an indirect dispatch through slot `+0x68` on an interface/object value at `0x0046C921`. This slot is a candidate for the method implementation dispatch because the concrete connector classes expose matching `PerformMethod(TDictionary<AnsiString, TValue>)` procedures; the exact receiver type and slot declaration still need VMT evidence.
+The complete TD32 trace for `TEmwatMethod.Invoke` at `0x0046C82C` (433 bytes) confirms that it accepts a `TDictionary<AnsiString, AnsiString>`, iterates dictionary data, constructs intermediate invocation state, and performs an indirect dispatch through slot `+0x68` on an interface/object value at `0x0046C921`. The concrete connector `PerformMethod` signatures use the same string-to-string dictionary. The service-side `TMethodInfo.Params` dictionary is also RTTI-typed as `TDictionary<System.AnsiString, System.AnsiString>`, so the XML parser and BPL connector parameter types align; the exact receiver type and slot `+0x68` declaration remain unresolved.
 
 The TD32 direct-call scan found only one direct CALL to `TEmwatMethod.Invoke`, from `Finalization` at `0x0046CA67`. Therefore, the normal request path may enter it indirectly through a VMT/interface dispatch or another module. The trace does not itself identify the numeric request ID `5208`, the HTTP query parser, or the `EditWordDocument/wordConfig` response generator.
 
