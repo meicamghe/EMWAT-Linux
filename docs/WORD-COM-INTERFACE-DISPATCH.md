@@ -695,3 +695,8 @@ The constructor's remaining side effect is therefore unresolved. Run 18 adds an 
 Focused run 19 (`43575191082`, artifact `14106206890`) performed the exact import-descriptor lookup for `0x0062EC40`. The address is in the `.idata` section, but **no parsed import descriptor entry has this exact IAT address**; the on-disk DWORD is `0x00231274`, which may be unresolved or relocated. Thus the previous description “IAT thunk” is only an observed indirect jump through that slot, not proof that the slot is a normal imported symbol. Its semantic identity remains unknown. The constant at `0x0044C4FC` contains bytes matching the `TXMLMethodType` IID layout, but this alone does not prove the called helper's contract. Do not label it QueryInterface or infer an XML field.
 
 Run 20 adds a direct probe of `TXMLParamType.AfterConstruction` at the class VMT `+0x0C` slot (`0x0044B4F8`) to identify the actual parameter element tag from its constructor behavior.
+ 
+
+## Parameter-constructor probe correction (focused run 20)
+
+Focused run 20 (`43576636790`, artifact `14106479073`) disproved the shortcut of treating the `TXMLParamType` VMT `+0x0C` entry (`0x0044B4F8`) as its `AfterConstruction` body. That address is an import-style jump thunk through slot `0x006302B4`, whose on-disk target is `0x0024060C` outside the BPL image; no TD32 procedure range contains `0x0044B4F8`. The other nearby addresses are part of a thunk table, not constructor code. The run therefore does **not** identify the parameter element tag. The next workflow revision indexes TD32 decorated procedure names for `TXMLParamType` and `TXMLMethodType` and will trace the actual class procedure by its symbol address. 
