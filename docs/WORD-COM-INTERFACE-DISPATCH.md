@@ -343,3 +343,31 @@ This resolves the receiver type chain:
 Run 31 also found one direct caller of `GetFieldIndexInList`: `TWordViwer.BGPrintWithGamPrintOptions` at `0x004C6F3F`. This places the observed nested helper path under a print-options/field-list routine, further weakening any assumption that its TD32 name alone proves it is the live close-event callback. The direct-call scan still cannot rule out indirect references or a separate event-registration path.
 
 The next analysis extends the VMT inventory to Word wrapper classes (`TWordDocument`, `TWordFields`, `TWordField`) so that the `Wordxp.Fields` interface slots can be mapped to typed wrapper methods. It also continues to search for the independently registered close callback and the actual invoke/response dispatch.
+
+
+## Word Fields/Field IID and collection-slot mapping (lifecycle run 33)
+
+The expanded interface RTTI scan recovered the WordXP interface identities directly from the BPL:
+
+| Interface | IID recovered from RTTI | External identity check |
+|---|---|---|
+| `Wordxp.Fields` | `00020930-0000-0000-C000-000000000046` | Microsoft Learn identifies this GUID as Word's `Fields` collection |
+| `Wordxp.Field` | `0002092F-0000-0000-C000-000000000046` | Microsoft Learn identifies this GUID as Word's `Field` interface |
+| `Wordxp._Document` | `0002096B-0000-0000-C000-000000000046` | Matches Word's `_Document` interface |
+| `Wordxp.Tables` | `0002094D-0000-0000-C000-000000000046` | Matches Word's `Tables` collection |
+
+Microsoft's Word object-model documentation describes `Fields` as a collection of `Field` objects, with a `Count` property and indexed `Fields(index)` access returning one `Field` object ([Fields interface](https://learn.microsoft.com/en-us/dotnet/api/microsoft.office.interop.word.fields?view=word-pia), [Field interface](https://learn.microsoft.com/en-us/dotnet/api/microsoft.office.interop.word.field?view=word-pia), [Fields object model](https://learn.microsoft.com/en-us/office/vba/api/word.fields)).
+
+The call shapes in this BPL strongly support the following slot interpretation for the `Wordxp.Fields` receiver:
+- `+0x28` is **very likely `Fields.Count`**: the call supplies an output location for an integer count, and the result is used as a loop bound in `FillPrintDocFields` and `FillImgFldsForPrint`.
+- `+0x38` is **very likely `Fields.Item(index)`**: the call supplies an index and an output interface location; the returned interface is subsequently used as a `Wordxp.Field` receiver.
+
+These are high-confidence semantic mappings from the typed receiver, argument layout and use of the results, corroborated by Microsoft's documented collection behavior. They are not yet a complete reconstruction of the WordXP type-library vtable declaration, because no concrete `TWordFields` wrapper VMT candidate was found in the current BPL scan. Keep the distinction between **statically proven receiver type/IID** and **strongly inferred slot names**.
+
+Run 33 also found the only direct caller of `GetFieldIndexInList` in the scanned TD32 procedures: `TWordViwer.BGPrintWithGamPrintOptions` at `0x004C6F3F`. Thus the current call chain is explicitly under the print-options routine:
+
+`BGPrintWithGamPrintOptions → GetFieldIndexInList → FillPrintDocFields → Fields.Count/Item → FillImgFldsForPrint → nested helper`.
+
+This confirms the investigated `0x004CCBBC` helper is reached in a print/field-list code path. It does not exclude a separate indirect event registration, but it makes the symbol name `WordAppDocumentBeforeClose` insufficient evidence that this is the actual close-event callback.
+
+The next type-directed trace should map methods on the returned `Wordxp.Field` interface and the `Wordxp.Range` interface, then independently locate the callback registration and the invoke=5208 return path.
