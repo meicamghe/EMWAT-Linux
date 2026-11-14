@@ -825,3 +825,11 @@ Run `43232846364` با موفقیت کامل (148/148 مرحله) پایان ی�
 - resource `TFRMSENDLOG` نیز فقط eventهای UI فرم را نشان داد.
 - بنابراین handler دوم `WordAppDocumentBeforeClose` به‌صورت آشکار در DFM فرم autosave ثبت نشده است. اگر به Word متصل می‌شود، احتمالاً اتصال در runtime در `FormCreate`، `btnShowFileClick` یا helper بازکردن preview انجام می‌شود؛ هنوز اثبات نشده.
 - **گام بعد:** trace `FormCreate` و `btnShowFileClick` در `TfrmShowAutoSaveFiles` برای پیدا کردن ساخت Word.Application و اتصال event؛ سپس تعیین اینکه این مسیر صرفاً preview/autosave است یا به close نامهٔ اصلی ارتباط دارد.
+
+
+### Run 58 — symbol inventory برای فرم‌ها و method dispatcher (2026-11-14)
+
+- Inventory نام‌های lifecycle جدید را پیدا کرد: `TfrmShowAutoSaveFiles.FormCreate` در `0x005EC1A8`، `FormShow` در `0x005EC1B4` و `btnShowFileClick` در `0x005EB81C`.
+- در ماژول `EmwatConnector`، `TfrmSendLog.FormCreate` در `0x005ECB88` (اندازه `0x3CC`) و `FormShow` در `0x005ECF54` پیدا شد؛ این فرم ممکن است به connector/log UI مربوط باشد و بدنهٔ FormCreate باید بررسی شود.
+- `TEmwatMethod.Invoke` در `0x0046C82C` (اندازه `0x1B1`) و چند `PerformMethod` از connector classes پیدا شدند: `TCompareWordDocument` در `0x005EF8AC`، `TEditExcelWorkBook` در `0x005EF300` و `TShowSendLog` در `0x005EFE4C`.
+- Workflow به trace بدنهٔ این فرم‌ها و dispatcher گسترش یافت تا مسیر `invoke=5208` و تولید پاسخ XML بهتر شناخته شود.
