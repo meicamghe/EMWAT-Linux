@@ -324,3 +324,5 @@ The separate Word lifecycle workflow Run #89 is still processing its deep trace 
 - `0x00457050` is TD32-labeled `Emwatutils.Finalization` in module `EmailUtil`, and `0x00454B9C` is `Emwatutils.euGetASFileName`; treat these as string cleanup/name transformation helpers, not body parsers.
 - The response write path remains the known `AResponseInfo.ContentText` → `TIdHTTPResponseInfo.WriteContent` path. Run #90 did not reveal the final close-time POST/apply contract.
 - Immediate next work: trace the destination filename construction (`0x00401348`, `0x004012F8`, `0x00401270`, `0x004012E0`), inspect the second file-stream creation in `LoadDocument` around `0x004B7C39`, and correlate the file path/data with the final response XML.
+
+- Additional Run #90 detail: a second object is constructed through the same `TFileStream` VMT/constructor path at `0x004B7C3E`, using the same derived filename and constructor mode argument `0`. Its code obtains stream size and calls virtual slot `+0x0C` with a buffer/count pair, consistent with reopening and reading the file. Treat the exact operation name as provisional until the RTL VMT slot is resolved.
