@@ -42,6 +42,17 @@ jobs:
           python tools/inspect_pe_va.py analysis-input/EmwatMethods.bpl1 0x0046BF50 --before 0 --after 0x90 > invoke-enumerator-analysis/TPairEnumerator-slots-68-through-CC.md
           python tools/inspect_pe_va.py analysis-input/EmwatMethods.bpl1 0x0046C13C --before 0 --after 0x90 > invoke-enumerator-analysis/TDictionary-slots-68-through-CC.md
           python tools/inspect_pe_va.py analysis-input/EmwatMethods.bpl1 0x0046B078 --before 0 --after 0x90 > invoke-enumerator-analysis/TEnumerable-TPair-slots-68-through-CC.md
+      - name: Resolve TXMLEmwatType virtual dispatch targets
+        run: |
+          mkdir -p invoke-enumerator-analysis
+          python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x0044BA5C invoke-enumerator-analysis/TXMLEmwatType-slot-B0.md
+          python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x0044BA74 invoke-enumerator-analysis/TXMLEmwatType-slot-C8.md
+          python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x0044BA78 invoke-enumerator-analysis/TXMLEmwatType-slot-CC.md
+          python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x0044BDF8 invoke-enumerator-analysis/TXMLMethodType-slot-B0.md
+          python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x0044BE10 invoke-enumerator-analysis/TXMLMethodType-slot-C8.md
+          python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x0044BE14 invoke-enumerator-analysis/TXMLMethodType-slot-CC.md
+          python tools/inspect_pe_va.py analysis-input/EmwatMethods.bpl1 0x0044BA5C --before 0 --after 0x70 > invoke-enumerator-analysis/TXMLEmwatType-vmt-B0-through-CC.md
+          python tools/inspect_pe_va.py analysis-input/EmwatMethods.bpl1 0x0044BDF8 --before 0 --after 0x70 > invoke-enumerator-analysis/TXMLMethodType-vmt-B0-through-CC.md
       - uses: actions/upload-artifact@v4
         with:
           name: emwat-invoke-enumerator-analysis
