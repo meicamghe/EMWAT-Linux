@@ -357,6 +357,22 @@ jobs:
           python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x004AEA78 word-lifecycle-analysis/SilentSave-helper-4AEA78.md
           python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004AEBBC word-lifecycle-analysis/SilentSave-helper-4AEBBC-callers.md
           python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004AEA78 word-lifecycle-analysis/SilentSave-helper-4AEA78-callers.md
+      - name: Trace Word body stream ingestion and temporary output handling
+        run: |
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x00457050 word-lifecycle-analysis/LoadDocument-wordBody-helper-457050.md 260 ret
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x00454B9C word-lifecycle-analysis/LoadDocument-wordBody-helper-454B9C.md 260 ret
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004012F8 word-lifecycle-analysis/LoadDocument-wordBody-helper-4012F8.md 180 ret
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x00401270 word-lifecycle-analysis/LoadDocument-wordBody-helper-401270.md 180 ret
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004012E0 word-lifecycle-analysis/LoadDocument-wordBody-helper-4012E0.md 180 ret
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x00401348 word-lifecycle-analysis/LoadDocument-wordBody-helper-401348.md 180 ret
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x00401430 word-lifecycle-analysis/LoadDocument-wordBody-helper-401430.md 180 ret
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x00401250 word-lifecycle-analysis/LoadDocument-wordBody-helper-401250.md 180 ret
+          python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x00457050 word-lifecycle-analysis/LoadDocument-wordBody-helper-457050-procedure.md
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x00457050 word-lifecycle-analysis/LoadDocument-wordBody-helper-457050-callers.md
+          python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x00454B9C word-lifecycle-analysis/LoadDocument-wordBody-helper-454B9C-procedure.md
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x00454B9C word-lifecycle-analysis/LoadDocument-wordBody-helper-454B9C-callers.md
+          python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x004D0D24 word-lifecycle-analysis/LoadDocument-wordviewer-constructor.md
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004D0D24 word-lifecycle-analysis/LoadDocument-wordviewer-constructor-callers.md
       - uses: actions/upload-artifact@v4
         with:
           name: emwat-word-lifecycle-analysis
