@@ -773,3 +773,14 @@ It starts a worker thread, logs `CoInitializing thread`, and passes those four v
 After the helper returns, `TEditWordDocument` copies the returned string into the base dispatcher's output string and sets `bUnloadPkg=true). It leaves `bResultSet=false). The generic service dispatcher therefore takes its default response branch: it assigns the returned string to `AResponseInfo.ContentText`, sends the HTTP response via `0x004610FC`, and sets `bResultSet=true`.
 
 This is a concrete link between the observed runtime `EditWordDocument` response and the service's XML method dispatcher. The output string is produced downstream of `0x004B7724`; that helper is now the key target for identifying Word automation, document update and response XML construction. The method's four parameter names are statically proven, but their runtime values/encoding and the exact commit operation still need tracing.
+
+
+### LoadDocument is the next Word-automation layer (lifecycle run 77)
+
+The helper called by the `TEditWordDocument` VMT target is identified as `TWordViwer.LoadDocument` at `0x004B7724), with range `0x004B7724–0x004B8A83` (4,960 bytes). Its only direct caller in the TD32 scan is at `0x005EE961), inside code address `0x005EE82C).
+
+The caller supplies `wordConfig`, `wordBody`, `letterImages`, an output-string reference, the connector's `TEmwatInvokeParam*`, and `signData`. The helper creates a Word-viewer object, stores `signData` at object offset `+0xF4`, calls helper `0x004D1454`, and invokes `TWordViwer.OnTmrAutoSave` at `0x004B8A84`. It then continues with document-field and image-related processing.
+
+There is a TD32 naming discrepancy: the code at `0x005EE82C` is labeled `TScanDocument.PerformMethod` in the debug symbol/caller report, but the class RTTI VMT for `TEditWordDocument` points to this exact address at slot `+0x10`, and the body reads `wordConfig`, `wordBody`, `letterImages`, and `signData`. Preserve both facts; the VMT target is the actual dispatch address for the `EditWordDocument` class.
+
+The next static targets are `0x004D0D24` (Word-viewer object creation) and `0x004D1454` (viewer/document configuration). Their traces should reveal how the request is applied to Word and how the response string is constructed. The upstream close event that causes the browser POST remains open.
