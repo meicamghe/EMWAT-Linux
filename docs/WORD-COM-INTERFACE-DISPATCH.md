@@ -678,3 +678,13 @@ Focused run 16 (`43573798242`, artifact `14105735885`) resolves the serializer d
 Thus the statically confirmed shape is a `method` XML element with a `class` attribute containing the dispatched method name and child parameter elements carrying `name` plus text values. Calling the root XML node's `GetXML` produces the output string. Do not yet claim the full document envelope, encoding, XML declaration, or any extra method attributes: the constructor's second constant at `0x0044C4FC` remains under investigation, and no runtime capture has been compared.
 
 The older preliminary paragraphs above that say the `+0x54` getter, `class` literal, or parameter key attribute are unresolved are superseded by this section.
+
+## Constructor helper correction (focused run 17)
+
+Focused run 17 (`43574768657`, artifact `14106455607`) adds two useful constraints to the `TXMLMethodType.AfterConstruction` analysis:
+
+- The helper at `0x0044B4D8` is an IAT thunk to `xmlrtl230.bpl!TXMLNode.GetChildNodes`. Its direct caller includes `TXMLMethodType.AfterConstruction` at `0x0044C47C`, where the returned child-node collection is used before adding the `method` element.
+- The argument passed in `ECX` as `0x0044C4FC` is not a Delphi string: decoding it as UTF-16LE produces invalid data and its preceding DWORDs do not form a plausible string header. Do not assign it a textual XML meaning.
+- `0x00401430` is another thunk through IAT slot `0x0062EC40`; the prior target trace only resolved the slot to an address outside the BPL image. Its actual imported symbol is pending a dedicated import-table lookup. It is called with `EAX=ESI`, `EDX=[EBP-4]`, and `ECX=0x0044C4FC`.
+
+The constructor's remaining side effect is therefore unresolved. Run 18 adds an exact import-slot lookup and byte-context dump before any semantic conclusion is made.
