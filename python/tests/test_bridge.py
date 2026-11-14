@@ -86,9 +86,17 @@ class BridgeHTTPServerTests(unittest.TestCase):
         self.thread = threading.Thread(target=self.server.serve_forever, daemon=True)
         self.thread.start()
         self.host, self.port = self.server.address
-        status, body, _ = self.request("POST", "/", b"x")
+        status, body, _ = self.request(
+            "POST", "/", b"x", {"Origin": "https://office.example"}
+        )
         self.assertEqual(status, 500)
         self.assertEqual(body, b"internal_bridge_error")
+
+    def test_missing_origin_is_rejected_by_default(self):
+        status, body, _ = self.request("POST", "/", b"x")
+        self.assertEqual(status, 403)
+        self.assertEqual(body, b"origin_required")
+        self.assertEqual(self.seen, [])
 
     def test_unlisted_origin_is_rejected(self):
         status, body, _ = self.request(
@@ -125,7 +133,9 @@ class BridgeHTTPServerTests(unittest.TestCase):
         self.thread = threading.Thread(target=self.server.serve_forever, daemon=True)
         self.thread.start()
         self.host, self.port = self.server.address
-        status, body, _ = self.request("POST", "/", b"x")
+        status, body, _ = self.request(
+            "POST", "/", b"x", {"Origin": "https://office.example"}
+        )
         self.assertEqual(status, 500)
         self.assertEqual(body, b"internal_bridge_error")
 
