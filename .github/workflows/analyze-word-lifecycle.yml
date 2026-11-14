@@ -433,6 +433,23 @@ jobs:
           python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x004A5F68 word-lifecycle-analysis/Image-print-handler-FillField-run93.md
           python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004A5F68 word-lifecycle-analysis/Image-print-handler-FillField-run93-callers.md
           python tools/decode_pe_strings.py analysis-input/EmwatMethods.bpl1 0x004BA304 0x004BA350 0x004BA368 0x004BA388 0x004BA3A8 0x004BA3C8 0x004BA414 0x004BA438 0x004BA5EC > word-lifecycle-analysis/OnTmrAutoSave-strings-run93.md
+      - name: Trace Word OLE event callbacks registered during LoadDocument
+        run: |
+          python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x004CD154 word-lifecycle-analysis/Word-event-4CD154-run95.md
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004CD154 word-lifecycle-analysis/Word-event-4CD154-callers-run95.md
+          python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x004CD54C word-lifecycle-analysis/Word-event-4CD54C-run95.md
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004CD54C word-lifecycle-analysis/Word-event-4CD54C-callers-run95.md
+          python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x004CD9C0 word-lifecycle-analysis/Word-event-4CD9C0-run95.md
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004CD9C0 word-lifecycle-analysis/Word-event-4CD9C0-callers-run95.md
+          python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x004CE030 word-lifecycle-analysis/Word-event-4CE030-run95.md
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004CE030 word-lifecycle-analysis/Word-event-4CE030-callers-run95.md
+          python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x004D00AC word-lifecycle-analysis/Word-event-4D00AC-run95.md
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004D00AC word-lifecycle-analysis/Word-event-4D00AC-callers-run95.md
+          python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x0043F360 word-lifecycle-analysis/Word-OLE-connection-helper-43F360.md
+          python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x00441C68 word-lifecycle-analysis/Word-OLE-connection-helper-441C68.md
+          python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x00440950 word-lifecycle-analysis/Word-OLE-connection-helper-440950.md
+          python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x00404FBC word-lifecycle-analysis/Word-OLE-connection-helper-404FBC.md
+          python tools/trace_td32_immediate_refs.py analysis-input/EmwatMethods.bpl1 0x004CD154 word-lifecycle-analysis/Word-event-registration-refs-4CD154.md
       - uses: actions/upload-artifact@v4
         with:
           name: emwat-word-lifecycle-analysis
