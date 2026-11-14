@@ -1214,3 +1214,13 @@ Added `python/src/emwat_linux/application.py` with `create_bridge_server(...)`. 
 - در رشته‌های LoadDocument پیام دقیق `DocFileName can not be null.` وجود دارد و مسیر کنترل تابع، رشته محلی تبدیل‌شده را از نظر طول صفر بررسی می‌کند و در صورت خالی بودن به این خطا می‌رود. این شاهد قوی است که آرگومان LoadDocument به‌عنوان نام فایل سند پردازش می‌شود، نه صرفاً بایت‌های بدنه.
 - رشته‌های `word-document`، `ConfigXML data loaded.` و `Word Calling Mode: ` نیز در همان تابع وجود دارند. رشته‌های `.doc` و `.docx` در مسیر helper اعتبارسنجی/نرمال‌سازی نام فایل دیده می‌شوند؛ معنای دقیق شاخه‌ها هنوز بررسی می‌شود.
 - تفسیر فعلی اصلاح شد: کلید بیرونی `wordBody` به LoadDocument داده می‌شود، اما درون LoadDocument مانند یک UnicodeString از نوع DocFileName بررسی و تبدیل می‌شود. اسم کلید به‌تنهایی نوع واقعی مقدار را اثبات نمی‌کند.
+
+
+## Run 90 — شناسایی قطعی File Stream
+- Run #90 (`43595049501`) با موفقیت تمام شد.
+- تابع `0x004041BC` یک thunk به `rtl230.bpl!TFileStream.Create(UnicodeString, Word)` است؛ بنابراین object ساخته‌شده در `LoadDocument` یک `TFileStream` است، نه MemoryStream.
+- `LoadDocument` یک رشته نام فایل را به سازنده می‌دهد و سپس از طریق virtual slot `+0x10`، pointer داده و طولی را که از ورودی `wordBody` گرفته شده به stream می‌نویسد. در نتیجه شواهد فعلی نشان می‌دهد ورودی `wordBody` در این مرحله داده/محتوای فایل است، در حالی که رشته محلی جداگانه نام فایل مقصد را تأمین می‌کند. Encoding، واحد دقیق length و مسیر مقصد هنوز قطعی نیست.
+- مقدار mode برابر `0xFF00` است؛ تا بررسی calling convention و RTL دقیق، آن را به نام ثابت Delphi تبدیل نمی‌کنیم.
+- رشته‌های `Word document file created.`، `word-document`، `ConfigXML data loaded.`، `Word Calling Mode: `، `image/tif`، `base64` و `Result word file content read successfully. try (%d)` وجود دارند و با ایجاد فایل/پردازش محتوای ورودی سازگارند.
+- `0x00457050` تابع `Emwatutils.Finalization` و `0x00454B9C` تابع `Emwatutils.euGetASFileName` است؛ این دو را parser بدنه سند در نظر نمی‌گیریم.
+- Run #90 هنوز قرارداد POST هنگام بستن Word و نحوه اعمال پاسخ در Almas Gam را مشخص نکرده است. گام بعدی: ردیابی مسیر مقصد فایل، stream دوم در `0x004B7C39` و ارتباط فایل تولیدشده با XML پاسخ.
