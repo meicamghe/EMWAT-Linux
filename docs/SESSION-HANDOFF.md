@@ -115,3 +115,9 @@ Run 22 (`43578292246`, artifact `14106852706`) completed successfully. It found 
 Do not claim the parameter element tag is known. Do not copy the WordRequestXML constructor semantics into XmlResponse. The method/parameter field mapping and GetXML serializer remain statically confirmed; the complete envelope and wire bytes remain unknown.
 
 **Resume here:** resolve the external parent VMT/class references or find the actual XmlResponse parameter initialization path; then prioritize tracing the parent-page message that triggers the close-time POST. Avoid repeating the already-completed TD32 symbol index. Keep image/scanner workflows in scope.
+
+## Run 23 handoff — parameter insertion path
+
+Run 23 (`43579138098`, artifact `14107224578`) succeeded. Important new detail: `XmlResponse.TXMLMethodType.Insert` (`0x0044C754`) calls child-node collection virtual slot `+0x20` with index `-1`, then interface-casts the result to `TXMLParamType`. No child tag string is supplied in that procedure. `TXMLParamType.Set_Name` follows the node's name/attribute interface path and does not reveal its element tag. The method constructor does pass literal `method` through child-node collection slot `+0x10`.
+
+Do not guess the parameter element name. External parent VMTs (`0x0063030C`, `0x00630314`) and helper `0x00401430` remain unresolved. Resume by identifying the XML node-list virtual methods and external class metadata; then switch focus to the parent-page close-time POST/response behavior. Generic Invoke field mapping and GetXML serialization remain confirmed. Native Linux implementation is still not established by these analysis runs.
