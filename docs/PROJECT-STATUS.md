@@ -1254,3 +1254,13 @@ Added `python/src/emwat_linux/application.py` with `create_bridge_server(...)`. 
 - 0x004CDB54 در واقع `TWordViwer.QuitWord` و 0x004C5D68 تابع `SetDocCaption` است. دو آدرس 0x004D68D4 و 0x004D531C نیز متدهای Remove دیکشنری Custom Document Properties هستند، نه helperهای AutoSave.
 - پیام فعال‌نبودن Word در بدنه وجود دارد، اما ارتباطی با ارسال پاسخ نهایی ندارد.
 - Run #95 برای trace مستقل handlerهای ثبت‌شده و helperهای اتصال OLE شروع شده است. هنوز close-time POST/payload نهایی کشف نشده است.
+
+
+## Reverse-engineering update — Run 95 (2026-11-14)
+
+- GitHub Actions analysis run `43599550286` succeeded; artifact `14115498934` inspected.
+- TD32 names now identify `0x004CD154` as `TWordViwer.WordAppDocumentBeforeSave`, `0x004CD54C` as `WordAppNewDocument`, `0x004CD9C0` as `WordAppWindowActivate`, `0x004CE030` as `WordAppDocumentBeforePrintBGPrint`, and `0x004D00AC` as `LoadOptions`.
+- `OnTmrAutoSave` stores callback addresses `0x004CD154` and `0x004CD54C` into object fields during the LoadDocument setup path. This supports callback registration, but exact COM event wiring/semantics remain unverified.
+- `WordAppDocumentBeforeClose` at `0x004CCBBC` remains unproven as an active editor close callback; its only direct caller found is `FillImgFldsForPrint`.
+- No close-time HTTP request/response or final document-return payload was established. Do not implement guessed protocol behavior.
+- User-confirmed product requirement: closing Word is sufficient for the edited file to appear in Almas Gam; the native implementation must preserve this behavior using a verified LibreOffice lifecycle path.
