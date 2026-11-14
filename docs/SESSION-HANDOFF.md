@@ -413,3 +413,11 @@ Next: inspect the full tail of `OnTmrAutoSave`, determine the callback-record co
 - WordAppDocumentBeforeClose در 0x004CCBBC هنوز فقط یک direct caller قطعی دارد: FillImgFldsForPrint. آن را handler قطعی close editor فرض نکن.
 - هیچ close-time HTTP payload یا XML response در این run کشف نشد.
 - Run 98 برای trace کردن 0x004BCA88 و slotهای teardown به workflow افزوده شد.
+
+## اصلاح برداشت از Run 98 — 2026-11-14
+
+- `0x004CDB54` نام TD32 آن `TWordViwer.QuitWord` است. propertyای از OLE را به رشته تبدیل می‌کند و literal ناشناختهٔ `0x004CDC14` را در آن جست‌وجو می‌کند. وجود literal نتیجه False و نبود آن True می‌دهد؛ caller در حالت True به شاخه‌ای با `TWordApplication.Quit` و interface calls می‌رود. متن literal هنوز decode نشده است.
+- `0x004C5D68` نام نمادین `TWordViwer.SetDocCaption` دارد. بدنه دو property از OLE می‌خواند و در `viewer+0x4C/+0x4D` ذخیره می‌کند؛ نام و رفتار دقیق propertyها باز است.
+- `0x004BCA88` در واقع `TWordViwer.GetXmlFieldInfo` است (procedure بزرگ 12,688 بایتی)، نه helper اختصاصی close. در `GetCaptionItemFont` و `WordAppDocumentBeforeClose` فراخوانی می‌شود.
+- `WordAppDocumentBeforeClose` مقادیر field را از مجموعه‌های `+0xE8/+0xEC` پردازش می‌کند و سپس `GetXmlFieldInfo` را فراخوانی می‌کند؛ اما ثبت آن به‌عنوان رویداد عادی بستن سند هنوز اثبات نشده است.
+- Run 99 برای decode literal شرط و بررسی interface tableها اضافه شده است.
