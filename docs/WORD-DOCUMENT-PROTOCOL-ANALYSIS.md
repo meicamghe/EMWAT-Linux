@@ -1027,3 +1027,14 @@ Still unproven: whether any of these callbacks causes the edited document to be 
 - مشاهدهٔ کاربر مبنی بر ثبت تغییرات هنگام بستن Word همچنان یک الزام رفتاری قطعی برای بازسازی است؛ اما اتصال آن به یک handler مشخص در باینری هنوز اثبات نشده است.
 
 Run 98 برای trace کردن 0x004BCA88، helperهای وضعیت/گزینهٔ viewer و slotهای teardown اضافه شد.
+
+## اصلاح و تکمیل Run 98 — 2026-11-14
+
+بررسی artifact شمارهٔ 98 چند نام‌گذاری را دقیق کرد و لازم است برداشت موقت Run 97 اصلاح شود:
+
+- آدرس `0x004CDB54` طبق TD32 نام `TWordViwer.QuitWord` دارد. این تابع مقدار یک property از شیء OLE در `viewer+0x44` را می‌خواند، آن را به رشته تبدیل می‌کند و با `System.Pos` در برابر literal واقع در `0x004CDC14` جست‌وجو می‌کند. اگر substring پیدا شود، نتیجهٔ تابع False است؛ اگر پیدا نشود، نتیجه True است. در `OnTmrAutoSave` نتیجه با `test al; jne 0x004B8E39` مصرف می‌شود؛ بنابراین یافتن substring مسیر teardown مستقیم را رد می‌کند و نبودن آن وارد شاخه‌ای می‌شود که پیام/ثبت وضعیت و سپس `TWordApplication.Quit` و چند فراخوانی interface را اجرا می‌کند. متن literal در `0x004CDC14` هنوز decode نشده و شرط معنایی/نام property را نمی‌توان حدس زد.
+- `0x004C5D68` طبق TD32 نام `TWordViwer.SetDocCaption` دارد و تنها direct caller آن `OnTmrAutoSave` در `0x004B8E8B` است. بدنه از interface شیء OLE دو property با VMT slotهای `+0x15C` و `+0x104` می‌خواند و نتیجه را در byteهای `viewer+0x4C` و `viewer+0x4D` ذخیره می‌کند. این نام نمادین با رفتار مشاهده‌شده در بدنه یکسان‌سازی معنایی نشده است؛ بنابراین آن را «options sync» قطعی نمی‌نامیم.
+- `0x004BCA88` نام TD32 آن `TWordViwer.GetXmlFieldInfo` است؛ یک procedure بزرگ با اندازهٔ 12,688 بایت. این helper در دو محل از `GetCaptionItemFont` و یک محل از `WordAppDocumentBeforeClose` فراخوانی می‌شود. پس helper عمومی استخراج اطلاعات XML/field است، نه helper اختصاصی close. حضور آن در BeforeClose فقط نشان می‌دهد handler در آن مسیر برای گرفتن اطلاعات field از آن استفاده می‌کند.
+- بدنهٔ `WordAppDocumentBeforeClose` (`0x004CCBBC`) روی داده‌های دو مجموعه در فیلدهای `+0xE8` و `+0xEC` از شیء جاری، مقادیر index/field را می‌سازد، دو فراخوانی interface در slot `+0x38` انجام می‌دهد و سپس `GetXmlFieldInfo` را فراخوانی می‌کند. این با آماده‌سازی/خواندن اطلاعات field سازگار است، ولی به‌تنهایی اثبات نمی‌کند این event handler در مسیر عادی بستن سند ثبت شده باشد.
+
+Run 99 برای decode کردن literal شرط QuitWord و بررسی interface tableها اجرا شده است. تا دریافت نتیجه، متن شرط و معنای slotهای teardown باز می‌ماند.
