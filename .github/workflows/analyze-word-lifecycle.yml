@@ -79,7 +79,7 @@ jobs:
           python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x004C0690 word-lifecycle-analysis/GetDocFieldIndex-full.md
           python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x004C6F3F word-lifecycle-analysis/BGPrintWithGamPrintOptions-full.md
           python tools/trace_delphi_interfaces.py analysis-input/EmwatMethods.bpl1 word-lifecycle-analysis/Word-interface-tables.md
-          python tools/search_td32_word_methods.py analysis-input/EmwatMethods.bpl1 word-lifecycle-analysis/Word-Fields-wrapper-symbols.md
+          python tools/search_td32_word_methods.py analysis-input/EmwatMethods.bpl1 word-lifecycle-analysis/Word-Field-and-Close-symbols.md
           python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x0042B55C word-lifecycle-analysis/Wordxp-TWordDocument-Get_Fields.md
           python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x0042B55C word-lifecycle-analysis/Wordxp-TWordDocument-Get_Fields-callers.md
           python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x004BC2C4 word-lifecycle-analysis/Wordxp-TWordViwer-FillField.md
