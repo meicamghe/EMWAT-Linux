@@ -347,3 +347,11 @@ The separate Word lifecycle workflow Run #89 is still processing its deep trace 
 - مسیر تصاویر: `CreateImageFile` در `EmwatDocPrintHandlerUnit` مجموعه ورودی‌ها را پردازش می‌کند و `PrintWordDoc` با `TFileStream(fmCreate)` داده را در فایل می‌نویسد. `CreateTIFF.SeparteImages` نیز در همان ماژول وجود دارد؛ caller مستقیم در اسکن فعلی پیدا نشد. این مسیرها هنوز به bridge اصلی یا HTTP response متصل نشده‌اند.
 - هیچ close-time POST یا payload نهایی در Run 92 کشف نشد.
 - گام بعدی بدون سؤال از کاربر: trace کامل `OnTmrAutoSave` و helperها/callerها، سپس event registration و مسیرهای Word COM Save/Close؛ هم‌زمان شناسایی dispatch غیرمستقیم برای TIFF/Print. پس از هر run، یافته‌ها و محدودیت استنتاج در همین handoff و اسناد پروتکل ثبت شوند.
+
+
+## اجرای بعدی — Run 94 در حال اجرا
+
+- Workflow توسعه‌یافته برای trace عمیق‌تر `OnTmrAutoSave` با commit نهایی `ea721080388e7d1903a6fb67af08abcf300c8f7c` ثبت شد.
+- Run #93 به‌دلیل push اصلاحیه workflow لغو شد؛ Run #94 با شناسه 43598550321 روی نسخه اصلاح‌شده در حال اجراست.
+- این run بدنه و ارجاعات `OnTmrAutoSave`، helperهای 0x004CDB54، 0x004C5D68، 0x004D68D4 و 0x004D531C، constructor مربوط به WordViewer و ارجاعات pointer مسیر TIFF/Image را جمع‌آوری می‌کند.
+- پس از پایان Run #94، artifact را با شناسه واقعی از GitHub دریافت و بررسی کن؛ تا آن زمان هیچ نتیجه‌ای درباره Save/Close یا اتصال TIFF به bridge اعلام نشود.
