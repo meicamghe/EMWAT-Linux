@@ -1084,3 +1084,8 @@ Focused runs 11 and 16 close the previous XML dispatch questions: TXMLMethodType
 ## XML constructor follow-up — run 17
 
 Focused run 17 (`43574768657`, artifact `14106455607`) confirms `0x0044B4D8` is `xmlrtl230.bpl!TXMLNode.GetChildNodes`, called by `TXMLMethodType.AfterConstruction` before the `method` element is inserted. The constructor's second argument constant `0x0044C4FC` is not a valid Delphi string. The call to `0x00401430` is an IAT thunk via slot `0x0062EC40`, but its import identity is not yet resolved. Run 18 now inspects that exact import slot and nearby bytes. Do not infer an extra XML attribute or node from this unresolved call.
+
+
+## XML constructor import lookup — run 19
+
+Focused run 19 (`43575191082`, artifact `14106206890`) confirms that `0x0062EC40` is located in `.idata` but does not match any parsed import descriptor entry. Its on-disk DWORD is `0x00231274`; the target is outside the BPL image and may be unresolved/relocated. Therefore the helper at `0x00401430` and the IID-like constant at `0x0044C4FC` remain semantically unresolved. Do not describe the helper as QueryInterface or claim an extra XML field. Run 20 directly traces `TXMLParamType.AfterConstruction` (VMT `+0x0C`, address `0x0044B4F8`) to recover the parameter element tag.
