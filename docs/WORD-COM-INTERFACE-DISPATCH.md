@@ -723,3 +723,14 @@ Focused run 23 (`43579138098`, artifact `14107224578`, success) adds the followi
 - The helper at `0x00401430` is an indirect jump through `0x0062EC40`; it is used at several interface-cast-like call sites with GUID-like constants, but the slot does not match a parsed import descriptor. Do not label it as a specific Delphi RTL routine until its external target is resolved.
 
 **Current boundary:** the method node name `method`, its `class` attribute, parameter `name` attribute, parameter text value, and `GetXML` serialization are supported. The parameter child element name, complete XML envelope, declaration/encoding, and exact HTTP wire bytes remain unknown. Next, inspect the XML node-list virtual method contract and class metadata/imports, then prioritize the page-side close-time POST/response path rather than repeating generic XML getter work.
+
+## XML node-list Add/Get_Param comparison — run 24
+
+Run 24 (`43579618380`, artifact `14106929511`) traces both XmlResponse and `.EmwatMethods` class variants:
+
+- `TXMLMethodType.Add` in both modules gets the wrapped node's child-node collection, then calls collection virtual slot `+0x10` with the provided string and an output interface. This is the explicit named-child creation path used for the `method` element.
+- `TXMLMethodType.Insert` calls collection virtual slot `+0x20` with index `-1`, without an element-name argument. The XML parameter tag is not selected in this wrapper.
+- Both `Get_Param` implementations use the same setter pattern; XmlResponse's literal attribute name is `class`, and the supplied method name is the value.
+- No direct immediate CALL xrefs were found for the traced Add/Get_Param methods, consistent with invocation through interfaces/VMTs.
+
+The collection's virtual method implementation and external class metadata remain the useful next static-analysis targets. The parameter tag is still unknown; do not infer it from `TXMLParamType` or from sibling modules.
