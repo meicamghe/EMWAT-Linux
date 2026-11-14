@@ -197,11 +197,11 @@ Lifecycle run 23 completed successfully (run ID `43510769743`, commit `fec8b0f3f
 - This is a typed positive control for the `_Document` interface slot: `_Document.Get_Tables()` is the supported mapping for slot `+0x38` on this interface.
 - The trace begins at `0x0042AF00`, after the method's true prologue, so the current artifact does not contain the complete wrapper entry/exit sequence. The next run expands the trace around the method start and the shared interface accessor at `0x0042ABA0`.
 
-The BeforeClose callback's two `+0x38` calls use a local interface temporary initialized at `[ebp-0x0C]`. The typed wrapper makes `_Document.Get_Tables()` the strongest method mapping, but the local's exact assignment from the callback's formal `_Document` parameter still needs explicit dataflow confirmation. Until that is proven, describe the two BeforeClose calls as *likely* `_Document.Get_Tables()`, not conclusively mapped.
+**Superseded by lifecycle run 24:** the two BeforeClose-target `+0x38` calls do not use the local interface temporary at `[ebp-0x0C]`. They use the context-derived receiver `[[ebp+8]-0x0C]`. The positive-control wrapper establishes `_Document.Get_Tables()` for slot `+0x38` on a typed `_Document` receiver only; it does not type the context-derived receiver. Do not apply the `Get_Tables` name to the target's two calls without further type evidence.
 
 The run-23 trace of helpers `0x00401420` and `0x00401478` also shows why these addresses should not be mistaken for application business logic: `0x00401420` is an indirect runtime helper thunk whose IAT target is outside the analyzed BPL image, while `0x00401478` resolves to `rtl230.bpl!@System@@CheckAutoResult`. The helper trace alone does not identify the interface value's origin.
 
-The next step now traces the complete `Get_Tables` wrapper entry and its shared accessor, then compares the accessor's calling convention and local-interface setup with BeforeClose. The local POST and `invoke=5208` remain a separate unresolved runtime-to-static mapping.
+The next step is to trace both the complete TD32 procedure containing the direct caller `FillImgFldsForPrint` and the complete target procedure at `0x004CCBBC`, then reconcile these call paths with any independent callback registration. The local POST and `invoke=5208` remain a separate unresolved runtime-to-static mapping.
 
 
 ## Correction: BeforeClose receiver is not the local at EBP-0x0C (lifecycle run 24)
