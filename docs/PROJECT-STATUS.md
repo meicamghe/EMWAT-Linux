@@ -1284,3 +1284,11 @@ Added `python/src/emwat_linux/application.py` with `create_bridge_server(...)`. 
 - WordAppDocumentBeforeClose همچنان فقط یک direct caller قطعی در FillImgFldsForPrint دارد؛ اتصال آن به بستن عادی سند ثابت نشده است.
 - هیچ payload یا درخواست HTTP زمان‌بندی‌شده در لحظهٔ close در Run 97 پیدا نشد.
 - Run 98 برای بررسی helper 0x004BCA88 و slotهای teardown اضافه شده است.
+
+## اصلاح یافته‌های Run 98 — 2026-11-14
+
+- `0x004CDB54` در TD32 با نام `TWordViwer.QuitWord` ثبت شده است. تابع propertyای را از OLE می‌خواند و وجود literal ناشناخته در آن را بررسی می‌کند. اگر literal پیدا شود False و اگر پیدا نشود True برمی‌گرداند. caller بر اساس نتیجه یا از teardown عبور می‌کند یا شاخه‌ای با `TWordApplication.Quit` و interface calls را اجرا می‌کند. literal `0x004CDC14` هنوز decode نشده است.
+- `0x004C5D68` نام نمادین `TWordViwer.SetDocCaption` دارد و از `OnTmrAutoSave` فراخوانی می‌شود. بدنه دو property از OLE می‌خواند و در `viewer+0x4C/+0x4D` ذخیره می‌کند؛ تفسیر قبلی به‌عنوان options sync قطعی نیست.
+- `0x004BCA88` در واقع `TWordViwer.GetXmlFieldInfo` با اندازهٔ 12,688 بایت است؛ در `GetCaptionItemFont` و `WordAppDocumentBeforeClose` استفاده می‌شود، نه یک helper اختصاصی close.
+- `WordAppDocumentBeforeClose` داده‌های field از مجموعه‌های `+0xE8/+0xEC` را پردازش و `GetXmlFieldInfo` را فراخوانی می‌کند. ثبت آن به‌عنوان event عادی close هنوز اثبات نشده است.
+- Run 99 برای decode literal شرط QuitWord و بررسی interface tableها افزوده شد.
