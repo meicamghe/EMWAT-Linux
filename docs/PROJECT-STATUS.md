@@ -816,3 +816,12 @@ Run `43232846364` با موفقیت کامل (148/148 مرحله) پایان ی�
 - wrapperهای WordXP: `TWordDocument.Close()` بدون آرگومان slot `+0x4D4` را صدا می‌زند؛ overloadهای ۱، ۲ و ۳ `OleVariant` به‌ترتیب slot `+0x29C` را؛ `ClosePrintPreview` slot `+0x36C` را. caller مستقیم برای wrapper بدون آرگومان پیدا نشد.
 - `WordCompareCommandUnit.CloseMyDoc` با وجود نامش slot `+0x2BC` را صدا می‌زند که از positive control قبلی به `_Document.PrintOutOld()` نگاشت شده است؛ این مسیر close واقعی نیست.
 - **طبقه‌بندی فعلی:** handler دوم یک close-related event واقعی برای UI فایل‌های autosave است، اما هنوز callback اصلی نامه نیست. `0x004CCBBC` نیز helper داخلی مسیر print/field است. مسیر POST اصلی هنگام بستن نامه همچنان نامشخص است.
+
+
+### Run 57 — resource فرم autosave و event wiring (2026-11-14)
+
+- ابزار جدید `scan_named_pe_resource.py` با موفقیت resourceهای RCDATA را استخراج و رشته‌های آن‌ها را بررسی کرد.
+- resource `TFRMSHOWAUTOSAVEFILES` (۱۱۴۹ بایت) شامل `OnClose=FormClose`، `OnCreate=FormCreate` و `OnShow=FormShow` و eventهای list/button است؛ رشته‌ای برای `WordAppDocumentBeforeClose` یا event component مربوط به Word در آن دیده نشد.
+- resource `TFRMSENDLOG` نیز فقط eventهای UI فرم را نشان داد.
+- بنابراین handler دوم `WordAppDocumentBeforeClose` به‌صورت آشکار در DFM فرم autosave ثبت نشده است. اگر به Word متصل می‌شود، احتمالاً اتصال در runtime در `FormCreate`، `btnShowFileClick` یا helper بازکردن preview انجام می‌شود؛ هنوز اثبات نشده.
+- **گام بعد:** trace `FormCreate` و `btnShowFileClick` در `TfrmShowAutoSaveFiles` برای پیدا کردن ساخت Word.Application و اتصال event؛ سپس تعیین اینکه این مسیر صرفاً preview/autosave است یا به close نامهٔ اصلی ارتباط دارد.
