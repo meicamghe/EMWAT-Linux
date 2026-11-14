@@ -840,3 +840,16 @@ The actual TD32 procedure named `TWordViwer.WordAppDocumentBeforeClose` begins a
 A second address error: `0x00430070` is `TWordDocument.SaveAs2000`, not a Close wrapper. The actual `TWordDocument.Close` overload procedures are TD32-labeled at `0x0042FEB0`, `0x0042FF08`, `0x0042FF7C`, and `0x0042FFF4`; the latter is the three-argument overload. A three-argument Close invocation in the callback body dispatches through document interface VMT slot `+0x29C`, but the exact runtime target for that interface dispatch must be established by matching the interface VMT and wrapper semantics, not by assigning `0x00430070`.
 
 Run 25 itself completed successfully, but its added trace commands targeted the wrong symbols for a close-event investigation. Treat its other outputs as useful only where the TD32 labels and address semantics are independently verified. Next analysis must trace the actual Close overload(s), find the genuine callback registration (if present), and distinguish the BeforeSave callback from document-close lifecycle. No claim about the page-side POST is changed by this correction.
+
+
+## Run 26 correction — registered BeforeSave vs actual Close wrappers (2026-11-14)
+
+Run 26 (43584217243, artifact 14109926135) completed successfully and supersedes the earlier incorrect callback description in the LoadDocument section above:
+
+- Callback 0x004CD154, registered at viewer field +0x80 in 0x004B8C9C–0x004B8CCE, is TWordViwer.WordAppDocumentBeforeSave, not BeforeClose.
+- The actual TD32-named TWordViwer.WordAppDocumentBeforeClose is 0x004CCBBC. Its only direct bounded caller found is FillImgFldsForPrint at 0x004CCF8F; no raw-pointer registration reference was found. Its active event role remains unproven.
+- The registered BeforeSave routine checks _Document.Saved through interface slot +0xD8. If changed and the viewer prompt flag is enabled, it presents the changed-document prompt. Cancel sets COM event Cancel to 0xFFFF; Yes/No lead to the three-argument TWordDocument.Close wrapper at 0x0042FFF4.
+- Close overload dispatch: no-argument 0x0042FEB0 -> slot +0x4D4; one-argument 0x0042FF08, two-argument 0x0042FF7C, and three-argument 0x0042FFF4 -> slot +0x29C.
+- 0x004CB108 is PreparePrintDocument; 0x00430070 is SaveAs2000, not Close.
+
+This correction is explicit because the earlier paragraph above misidentified the registered callback. The relationship between BeforeSave, user-initiated document close, and the web page's close-time POST remains unresolved. The user's observed behavior that changes apply on close even without Save remains a product requirement. Next: resolve the COM target behind +0x29C and trace the parent page's postMessage handler and localhost POST body/response. Do not claim native Linux runtime support from this analysis.
