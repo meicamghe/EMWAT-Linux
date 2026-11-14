@@ -412,6 +412,27 @@ jobs:
           python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x004A0A68 word-lifecycle-analysis/CreateImageFile-write-helper.md
           python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004A0A68 word-lifecycle-analysis/CreateImageFile-write-helper-callers.md
           python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x004B7724 word-lifecycle-analysis/LoadDocument-updated-full.md
+      - name: Trace AutoSave timer callback, Word COM setup, and image dispatch
+        run: |
+          python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x004B8A84 word-lifecycle-analysis/OnTmrAutoSave-run93-full.md
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004B8A84 word-lifecycle-analysis/OnTmrAutoSave-run93-callers.md
+          python tools/trace_td32_immediate_refs.py analysis-input/EmwatMethods.bpl1 0x004B8A84 word-lifecycle-analysis/OnTmrAutoSave-run93-immediate-refs.md
+          python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 0x004B8A84 word-lifecycle-analysis/OnTmrAutoSave-run93-pointer-refs.md
+          python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x004CDB54 word-lifecycle-analysis/OnTmrAutoSave-helper-4CDB54.md
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004CDB54 word-lifecycle-analysis/OnTmrAutoSave-helper-4CDB54-callers.md
+          python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x004C5D68 word-lifecycle-analysis/OnTmrAutoSave-helper-4C5D68.md
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004C5D68 word-lifecycle-analysis/OnTmrAutoSave-helper-4C5D68-callers.md
+          python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x004D68D4 word-lifecycle-analysis/OnTmrAutoSave-helper-4D68D4.md
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004D68D4 word-lifecycle-analysis/OnTmrAutoSave-helper-4D68D4-callers.md
+          python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x004D531C word-lifecycle-analysis/OnTmrAutoSave-helper-4D531C.md
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004D531C word-lifecycle-analysis/OnTmrAutoSave-helper-4D531C-callers.md
+          python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x004D0D24 word-lifecycle-analysis/Wordviewer-constructor-run93.md
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004D0D24 word-lifecycle-analysis/Wordviewer-constructor-run93-callers.md
+          python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 0x004A0148 word-lifecycle-analysis/CreateTIFF-SeparateImages-run93-pointer-refs.md
+          python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 0x004A0BA8 word-lifecycle-analysis/CreateImageFile-run93-pointer-refs.md
+          python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x004A5F68 word-lifecycle-analysis/Image-print-handler-FillField-run93.md
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004A5F68 word-lifecycle-analysis/Image-print-handler-FillField-run93-callers.md
+          python tools.decode_pe_strings.py analysis-input/EmwatMethods.bpl1 0x004BA304 0x004BA350 0x004BA368 0x004BA388 0x004BA3A8 0x004BA3C8 0x004BA414 0x004BA438 0x004BA5EC > word-lifecycle-analysis/OnTmrAutoSave-strings-run93.md
       - uses: actions/upload-artifact@v4
         with:
           name: emwat-word-lifecycle-analysis
