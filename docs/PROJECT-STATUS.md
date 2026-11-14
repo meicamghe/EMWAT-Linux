@@ -1102,3 +1102,9 @@ Run 22 (`43578292246`, artifact `14106852706`) completed successfully. TD32 inde
 **No parameter tag was recovered.** Do not treat the WordRequestXML constructor as the XmlResponse constructor without evidence that the classes share the relevant construction path. The exact child element tag, full XML envelope, encoding and runtime wire representation remain unknown. The generic Invoke tree facts established in runs 11 and 16 remain confirmed: `method` element, `class` method-name attribute, parameter `name` key attribute, value as node text, serialized via `TXMLNode.GetXML`.
 
 Next analysis: resolve external parent VMT/class references and trace how XmlResponse creates/initializes the parameter node returned by `TXMLMethodType.Insert`; then return to the parent-page close-time POST and response protocol. Do not spend another run repeating the TD32 symbol index unless new module inputs arrive.
+
+## XmlResponse parameter insertion trace — run 23
+
+Run 23 (`43579138098`, artifact `14107224578`) completed successfully. The XmlResponse `TXMLMethodType.Insert` implementation calls its child-node collection's virtual slot `+0x20` with index `-1`, then converts the returned node to the `TXMLParamType` interface using a GUID-like constant. It does not pass a literal child-element name. `TXMLParamType.Set_Name` operates on the wrapped node's name-related attribute path; it does not establish the element tag. The method constructor separately passes literal `method` to the child-node collection's `+0x10` method, confirming the method element.
+
+The external parent VMT pointers and helper `0x00401430` remain unresolved; the latter is an indirect jump through a slot not matched to a parsed import descriptor. **Parameter child tag is still unknown.** The next useful target is the external XML node-list virtual method/class contract and then the parent-page close-time POST. No native Linux runtime behavior is claimed by this static-analysis result.
