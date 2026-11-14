@@ -13,6 +13,7 @@ on:
       - 'tools/trace_delphi_interfaces.py'
       - 'tools/search_td32_word_methods.py'
       - 'tools/scan_pe_pointer_refs.py'
+      - 'tools/scan_named_pe_resource.py'
       - 'tools/trace_td32_procedure.py'
 permissions:
   contents: read
@@ -93,6 +94,8 @@ jobs:
           python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x005EC580 word-lifecycle-analysis/uSendLog-WordAppDocumentBeforeClose-callers.md
           python tools/trace_td32_immediate_refs.py analysis-input/EmwatMethods.bpl1 0x005EC580 word-lifecycle-analysis/uSendLog-WordAppDocumentBeforeClose-immediate-refs.md
           python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 0x005EC580 word-lifecycle-analysis/uSendLog-WordAppDocumentBeforeClose-raw-pointer-refs.md
+          python tools/scan_named_pe_resource.py analysis-input/EmwatMethods.bpl1 TFRMSHOWAUTOSAVEFILES word-lifecycle-analysis/TFRMSHOWAUTOSAVEFILES-resource-strings.md
+          python tools/scan_named_pe_resource.py analysis-input/EmwatMethods.bpl1 TFRMSENDLOG word-lifecycle-analysis/TFRMSENDLOG-resource-strings.md
           python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x005EBDA8 word-lifecycle-analysis/uSendLog-CloseWordApp.md
           python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x005EBDA8 word-lifecycle-analysis/uSendLog-CloseWordApp-callers.md
           python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x005EBF20 word-lifecycle-analysis/uSendLog-FormClose.md
