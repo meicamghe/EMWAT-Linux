@@ -164,3 +164,23 @@ Run 26 (43584217243, artifact 14109926135) completed successfully; all 16 workfl
 - 0x00430070 is TWordDocument.SaveAs2000, not Close.
 
 The concrete runtime target behind slot +0x29C, any separate close-event registration, and browser-side close-time POST semantics remain unresolved. Do not overwrite the user's observed behavior that closing applies/registers changes regardless of Save; this static trace has not explained it. Next: resolve the COM interface behind +0x29C and trace the parent-page postMessage/localhost POST and response. Native Linux runtime implementation is not established by this analysis.
+
+
+## Run 26 — Close overload and callback classification (2026-11-14)
+
+Run 26 (`43584217243`, artifact `14109926135`) completed successfully; all 16 workflow steps passed. Confirmed findings:
+
+- `TWordDocument.Close` no-argument overload at `0x0042FEB0` dispatches through the wrapped `_Document` interface slot `+0x4D4`.
+- One-, two-, and three-argument overloads at `0x0042FF08`, `0x0042FF7C`, and `0x0042FFF4` dispatch through slot `+0x29C`.
+- The three-argument wrapper loads its underlying interface via `0x0042ABA0`, then calls `[vtable+0x29C]`; this identifies the wrapper call slot, not the final implementation address.
+- The registered callback at `0x004CD154` is `WordAppDocumentBeforeSave`; its body can invoke the three-argument Close overload after the Save-state prompt. Cancel writes `0xFFFF` to the event Cancel field.
+- The separate TD32-named `WordAppDocumentBeforeClose` at `0x004CCBBC` has only the known direct caller in `FillImgFldsForPrint`; live event-registration status remains unproven.
+- `0x00430070` remains correctly classified as `SaveAs2000`, not Close.
+
+### Run 27 queued — controller close path and wrapper resolution
+
+Workflow extension commit: `334b841dd279773345086e3e8903de068390c139`.
+
+The next run adds a TD32 symbol inventory and traces the `CloseMyDoc` callsite at `0x005E9258`, its raw pointer references, `SilentSaveEmwatDoc` and callers, plus final cross-checks of the BeforeClose helper and BeforeSave callers. Do not treat the `CloseMyDoc` name or its `+0x2BC` dispatch as a proven document-close method until its receiver interface is typed. Do not equate `+0x29C` and `+0x4D4` without identifying the Word `_Document` typelib declarations.
+
+The browser-side close POST remains the decisive missing contract. User runtime evidence shows a localhost POST when the document is closed and no equivalent request on Ctrl+S; static callback traces have not explained its trigger or response semantics. Native Linux runtime implementation is not established by these analysis runs.
