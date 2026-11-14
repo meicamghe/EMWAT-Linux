@@ -15,7 +15,7 @@ class BridgeHTTPServerTests(unittest.TestCase):
 
         self.server = BridgeHTTPServer(
             handler,
-            max_body_bytes=32,
+            max_body_bytes=128,
             allowed_origins=frozenset({"https://office.example"}),
         )
         self.thread = threading.Thread(target=self.server.serve_forever, daemon=True)
@@ -69,7 +69,7 @@ class BridgeHTTPServerTests(unittest.TestCase):
     def test_oversized_body_is_rejected_before_read(self):
         conn = http.client.HTTPConnection(self.host, self.port, timeout=2)
         conn.putrequest("POST", "/")
-        conn.putheader("Content-Length", "33")
+        conn.putheader("Content-Length", "129")
         conn.endheaders()
         response = conn.getresponse()
         self.assertEqual(response.status, 413)
