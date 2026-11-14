@@ -174,3 +174,29 @@ The dispatcher at `0x00470D00` checks `TEmwatInvokeParam.bResultSet` immediately
 The helper `0x004610FC` operates on the Indy response-info object and examines status/response fields before sending; it is the response-send path used by the default branch. Its full imported/virtual call mapping is still being traced.
 
 This means the Word connector can either write the HTTP response itself and set `bResultSet`, or leave the flag false and return a string for the service's default response handling. The observed `wordConfig` XML response may therefore be produced by the connector-specific branch; inspect `TEditWordDocument` for writes to `AResponseInfo` and `bResultSet` before assigning the response serialization to the generic service handler.
+
+
+## TEditWordDocument method parameters and response behavior
+
+The concrete method target `TEditWordDocument` at `0x005EE82C) has now been disassembled through its VMT slot `+0x10`. It retrieves these four named entries from the parsed parameter dictionary:
+
+- `wordConfig`
+- `wordBody`
+- `letterImages`
+- `signData`
+
+It creates/starts a worker thread and logs `CoInitializing thread`. The method passes the four parameter values, the `TEmwatInvokeParam*` stored in the instance's field `+4`, and an output-string reference to helper `0x004B7724`:
+
+`wordConfig, wordBody, letterImages, signData, TEmwatInvokeParam*, outputString → 0x004B7724`.
+
+After the helper returns, the method copies the output string into the result string supplied by the base dispatcher and sets record byte `+0x04` (`bUnloadPkg`) to true. It does **not** set `bResultSet` (record byte `+0x05`) in this body.
+
+This explains the generic service response path:
+1. `TEditWordDocument` returns the helper's output string.
+2. `bResultSet` remains false.
+3. The service dispatcher writes the output string to `AResponseInfo.ContentText`, calls `0x004610FC` to send the HTTP response, then sets `bResultSet=true`.
+4. The separate `bUnloadPkg=true` flag requests package unload/cleanup after the method call.
+
+The helper `0x004B7724` is now the critical next target: it receives the four Word payload values and request context and appears to own the actual document/Word automation and construction of the response string. Its complete TD32 procedure/caller traces are included in lifecycle run 77.
+
+The parameter names and response behavior align with the user's observed `EditWordDocument` response containing `wordConfig`, but the exact XML generation and close-time commit semantics must be confirmed inside `0x004B7724` and its downstream calls.
