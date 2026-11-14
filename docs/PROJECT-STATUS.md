@@ -895,7 +895,7 @@ The resulting evidence should distinguish ordinary CALL xrefs, code immediates, 
 
 ### Current next actions
 
-1. Finish the TXMLParamType setter mapping: the +0xB0 and +0x68 calls on [ebp-8] receive the first and second dictionary-pair strings respectively. Their interface thunks 0x0044BDF5 and 0x0044BEB5 resolve to 0x0044C8E4 and shared method 0x0044B568; inspect those bodies/field writes to confirm exact method names and semantics (likely key/name and value setters, not yet proven).
+1. Finish the TXMLParamType key-attribute mapping: +0x68 is now proven to call xmlrtl230.bpl!TXMLNode.SetText(UnicodeString) via 0x0044B568, writing the second dictionary-pair member as node text. +0xB0 reaches 0x0044C8E4, whose body passes the first member and constant 0x0044C95C through helper 0x0044B4C0; decode that constant and map the helper to confirm the attribute name.
 2. Keep the second +0x68 call at 0x0046CBB7 separate; it uses a different local receiver in the shared base wrapper's exception/response path.
 3. Continue tracing the service parser/registry only where necessary to establish how XML method classes are resolved. The browser's `invoke=5208` value is already proven to be a random per-request nonce, not a method ID; the server-generated `TEmwatInvokeParam.SessionId` is separate.
 4. Link the registered Word BeforeClose callback at 0x004CD154 to the parent-page `postMessage` that initiates the next `EditWordDocument` request, then trace the Save/No-save branches to the final Almas Gam commit. Preserve the user's close-applies-changes observation as a hard requirement.
