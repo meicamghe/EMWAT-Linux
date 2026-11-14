@@ -371,3 +371,19 @@ Run 33 also found the only direct caller of `GetFieldIndexInList` in the scanned
 This confirms the investigated `0x004CCBBC` helper is reached in a print/field-list code path. It does not exclude a separate indirect event registration, but it makes the symbol name `WordAppDocumentBeforeClose` insufficient evidence that this is the actual close-event callback.
 
 The next type-directed trace should map methods on the returned `Wordxp.Field` interface and the `Wordxp.Range` interface, then independently locate the callback registration and the invoke=5208 return path.
+
+
+## Typed Word Field helper inventory (lifecycle run 34)
+
+The TD32 symbol inventory now exposes additional procedures with explicit Word COM interface types:
+
+- `TWordDocument.Get_Fields` in module `EmwatConsts`, segment 1, section offset `0x2A55C`.
+- `TWordViwer.FillField` takes `Wordxp._Document`, an XML field type and `Wordxp.Field`, plus two strings.
+- `TWordViwer.FillImageField` takes `Wordxp._Document` and `Wordxp.Field`, plus image-related parameters and a string list.
+- `TWordViwer.FillMSWFields` takes `Wordxp.Fields`.
+- `TWordViwer.AddImagesToDoc` takes `Wordxp.Fields`, indices, a string and an XML field type.
+- `TEmwatDocPrintHandler.FillField` also takes `Wordxp.Field` and a string.
+
+The VMT inventory did not find Delphi wrapper classes named `TWordFields`, `TWordField`, or `TWordFieldCollection` in this BPL, while the WordXP interface RTTI itself does contain `Fields` and `Field` with the Microsoft Word IIDs recorded above. Therefore, the next useful path is to inspect the typed consumers (`FillField`, `FillImageField`, `FillMSWFields`, `AddImagesToDoc`) rather than assume a missing wrapper class exists.
+
+The lifecycle workflow now traces these typed procedures and the `TWordDocument.Get_Fields` wrapper. Their call shapes should help identify which `Wordxp.Field` properties are read or written and whether the image-field helper at `0x004CCBBC` shares behavior with the real field-fill path.
