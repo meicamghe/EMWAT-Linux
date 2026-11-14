@@ -698,3 +698,14 @@ Run `43232846364` با موفقیت کامل (148/148 مرحله) پایان ی�
 - رفتار محصول در سطح کاربر قطعی است: بستن سند تغییرات را اعمال می‌کند، حتی اگر Save زده نشده باشد. سازوکار داخلی این رفتار همچنان موضوع تحلیل است.
 - مستندات جزئی در `WORD-COM-INTERFACE-DISPATCH.md` و `PRODUCT-WORKFLOW-ANALYSIS.md` به‌روز شدند.
 - **گام بعد:** Run 31 را بررسی کن؛ تابع سازندهٔ فهرست `0x004CB638)، callerهای `GetFieldIndexInList` و helperهای field lookup را تحلیل کن. سپس نوع interface و مسیر مستقل ثبت رویداد Close را پیدا کن.
+
+
+### Run 31 — شناسایی نوع interface فهرست فیلدهای Word (2026-11-14)
+
+- Run 31 با موفقیت پایان یافت و artifact آن بررسی شد.
+- نماد TD32 تابع `0x004CB638` برابر `TWordViwer.FillPrintDocFields` است. امضای تابع ورودی `DelphiInterface<Wordxp._Document>` و خروجی `DynamicArray<DelphiInterface<Wordxp.Fields>>` را مشخص می‌کند.
+- `GetFieldIndexInList` خروجی آرایه را پیمایش می‌کند و هر عنصر `Wordxp.Fields` را در ECX به `FillImgFldsForPrint` می‌دهد. از طریق static link همان receiver در دو dispatch داخلی تابع `0x004CCBBC` استفاده می‌شود.
+- بنابراین نوع receiver برای dispatchهای `+0x28) و `+0x38) در این مسیر اکنون **به‌صورت ایستا و با امضای تایپ‌شده** `Wordxp.Fields` شناسایی شده است؛ دیگر نباید آن را فقط interface-like یا `_Document` توصیف کرد.
+- caller مستقیم `GetFieldIndexInList` تابع `TWordViwer.BGPrintWithGamPrintOptions` در `0x004C6F3F` است؛ این موضوع مسیر بررسی‌شده را به پردازش فیلدها در مسیر print-options مرتبط می‌کند، نه اینکه event واقعی Close را اثبات کند.
+- Workflow بعدی برای استخراج VMT/RTTI wrapperهای `TWordFields`، `TWordField` و `TWordDocument` و بررسی امضای interfaceهای Word گسترش یافت.
+- **گام بعد:** نگاشت slotهای `Wordxp.Fields +0x28) و `+0x38) به نام متدهای wrapper، و جست‌وجوی مستقل registration واقعی close event و dispatcher درخواست `invoke=5208`.
