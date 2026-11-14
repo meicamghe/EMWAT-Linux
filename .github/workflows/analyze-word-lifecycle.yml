@@ -98,6 +98,11 @@ jobs:
           python tools/scan_named_pe_resource.py analysis-input/EmwatMethods.bpl1 TFRMSENDLOG word-lifecycle-analysis/TFRMSENDLOG-resource-strings.md
           python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x005EBDA8 word-lifecycle-analysis/uSendLog-CloseWordApp.md
           python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x005EB81C word-lifecycle-analysis/uSendLog-btnShowFileClick.md
+          python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x005EC1A8 word-lifecycle-analysis/uSendLog-FormCreate.md
+          python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x005EC1B4 word-lifecycle-analysis/uSendLog-FormShow.md
+          python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x005ECB88 word-lifecycle-analysis/TfrmSendLog-FormCreate.md
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x005ECB88 word-lifecycle-analysis/TfrmSendLog-FormCreate-callers.md
+          python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x005ECF54 word-lifecycle-analysis/TfrmSendLog-FormShow.md
           python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x005EB81C word-lifecycle-analysis/uSendLog-btnShowFileClick-callers.md
           python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x005EBDA8 word-lifecycle-analysis/uSendLog-CloseWordApp-callers.md
           python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x005EBF20 word-lifecycle-analysis/uSendLog-FormClose.md
