@@ -33,7 +33,7 @@ def main():
         data = section.get_data()
         if not data:
             continue
-        name = section.Name.rstrip(b"\\0").decode("ascii", "replace")
+        name = section.Name.rstrip(b"\0").decode("ascii", "replace")
         flags = []
         if section.Characteristics & 0x20000000:
             flags.append("execute")
