@@ -1055,3 +1055,12 @@ The initial focused dictionary/enumerator workflow completed successfully (run `
 
 
 Run `43571520321` completed successfully and produced artifact `14104388028` with the TXMLParamType thunk mapping. Run `43571683744` is tracing the two resolved implementation bodies (`0x0044C8E4` and `0x0044B568`) to establish the exact field semantics. 
+
+## Invoke XML parameter serialization — confirmed (2026-11-14)
+
+Focused run 11 (`43571811038`, artifact `14105075475`) closes the key/value setter question. In `TEmwatMethod.Invoke`, each dictionary pair is materialized as a child XML parameter node:
+
+- Pair key → XML attribute `name`: `0x0044C8E4` passes the key and constant `0x0044C95C` to `0x0044B4C0`; the latter is the `xmlrtl230.bpl!TXMLNode.SetAttribute(UnicodeString, OleVariant)` import thunk, and the constant decodes to `name`.
+- Pair value → XML node text: interface thunk `0x0044BEB5` reaches `0x0044B568`, the `xmlrtl230.bpl!TXMLNode.SetText(UnicodeString)` import thunk.
+
+This is statically confirmed parameter-node structure, not yet runtime-confirmed end-to-end request XML. Next: resolve the method object's `+0xC8` attribute literal (likely the method/class discriminator based on service parser schema, but do not assume until decoded), and map `TXMLEmwatType` interface slot `+0x54` to the actual XML serialization getter. Then compare complete request/response XML with runtime captures.
