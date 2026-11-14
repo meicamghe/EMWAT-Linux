@@ -132,7 +132,7 @@ The paired `XmlResponse` and `.EmwatMethods` `Get_Param` bodies are structurally
 
 ## Next checkpoint — registered close callback trace (run 25 queued)
 
-After run 24, the workflow `.github/workflows/analyze-word-lifecycle.yml` was extended to trace the registered `WordAppDocumentBeforeClose` procedure (`0x004CD154`), its callers/raw pointer references, `RollBackOriginalOptions` (`0x004CB108`), and the three-argument `Wordxp._Document.Close` wrapper (`0x00430070`). The aim is to establish the complete COM close sequence and identify helper calls/side effects without assuming that the callback itself performs the HTTP POST. The workflow update is commit `b88451617f3500f8ec64e239902533b21ab82a4d`; inspect the resulting Actions run before using any output.
+Historical note: the workflow extension after run 24 (commit b88451617f3500f8ec64e239902533b21ab82a4d) initially targeted 0x004CD154 as BeforeClose and 0x00430070 as a Close wrapper. Both labels were wrong. Run 25 corrected the symbol identity (0x004CD154 is BeforeSave; 0x00430070 is SaveAs2000), and run 26 traced the actual Close overloads and the separate TD32-named 0x004CCBBC helper. Do not reuse the original run-25 target labels.
 
 Once this trace is read, continue toward the missing page-side sender/response contract. The parent web application's JavaScript is not currently included in the repository, so static BPL tracing can only narrow the Word/service side; runtime evidence from the user's HAR already proves that a POST occurs at close and returns an XML response, but the exact response payload semantics still need controlled comparison. Do not ask the user to repeat known close behavior.
  
