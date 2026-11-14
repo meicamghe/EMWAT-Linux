@@ -274,3 +274,10 @@ Implementation now includes:
 **Not implemented yet:** heartbeat/init response compatibility, a real `EditWordDocument` handler, Word/LibreOffice document editing, close-time response serialization and Almas Gam end-to-end persistence. The user's confirmed behavior—closing Word is enough for the document to appear in Almas Gam without manually pressing Save—remains the core acceptance criterion.
 
 Next action: continue tracing the exact Word close-time response and the source of `wordBody`/final document payload; separately recover `?heartbeat` and `?init` contracts. Do not invent either response.
+
+
+### Latest verified CI update (2026-11-14)
+
+Python bridge workflow run #22, ID `43593083176`, commit `22a803912b0fa92c3bb5537fb1f0c7952fda7615`: **success**, 27 tests passed. New coverage and checks include Host header path/query/fragment rejection, duplicate Content-Length rejection, ASCII-decimal-only Content-Length parsing, and Transfer-Encoding rejection. No request body or response payload is logged.
+
+A separate static-analysis workflow Run #89 is in progress, adding targeted traces for the Word body stream ingestion and temporary output handling path. Its conclusions are not yet available; do not treat that run as complete.
