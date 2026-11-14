@@ -238,3 +238,13 @@ A protocol-neutral transport implementation was added under `python/`:
 The transport deliberately does not interpret `invoke`, XML method names, parameter tags, Word document payloads, or close-response semantics. It carries the raw request to an injected handler and returns that handler's response. This separation prevents unverified assumptions from becoming the wire protocol.
 
 **Immediate next actions:** verify the Python bridge CI runs; add a protocol parser only after recovering the exact parameter node shape and envelope; implement a typed `EditWordDocument` handler from confirmed fields; then build the LibreOffice adapter and test the close/apply lifecycle end-to-end. Do not claim end-to-end compatibility yet.
+
+
+## Bridge transport milestone — CI green (2026-11-14)
+
+- Workflow `Python bridge transport`, run `43592145701`, commit `c705ed34ad9a9e87b42d7e2d85d3aa60aea83815`: **success**.
+- Seven tests cover loopback-only binding, health endpoint, opaque POST body/query preservation, exact Origin rejection and CORS echo, body-size rejection, unsupported route/method, and sanitized handler errors.
+- CI uses `PYTHONPATH=src python -m unittest discover -s tests -v`; it intentionally does not require packaging/build dependencies for this stdlib-only transport.
+- The earlier failing runs were corrected: missing setuptools in the runner was avoided, the test payload cap was aligned, and the module was placed under the actual `src/emwat_linux` package path.
+
+Next: validate allowed Origin handling with a safe test page/origin, recover the exact XML parameter node and response envelope, then implement a typed dispatcher. Do not expose the listener to non-loopback interfaces or accept arbitrary origins.
