@@ -759,28 +759,43 @@ For the observed runtime envelope `EditWordDocument`, the class resolution is `T
 Also note the corrected ID distinction: browser query `invoke=<random>` is not the service's `TEmwatInvokeParam.SessionId`; the service generates a separate six-digit internal SessionId.
 
 
-### Run 77 — TEditWordDocument parameters and HTTP response path
+### Run 77 — concrete EditWordDocument input and response path
 
-The concrete VMT target `TEditWordDocument.PerformMethod` at `0x005EE82C` retrieves four named request parameters:
+The concrete VMT target `TEditWordDocument.PerformMethod` at `0x005EE82C` retrieves four named request parameters from the parsed dictionary:
 
 - `wordConfig`
 - `wordBody`
 - `letterImages`
 - `signData`
 
-It starts a worker thread, logs `CoInitializing thread`, and passes those four values plus the `TEmwatInvokeParam*` request context and an output-string reference to helper `0x004B7724`.
+It starts a worker thread, logs `CoInitializing thread`, and calls `TWordViwer.LoadDocument` at `0x004B7724`. The register/stack arguments prove the mapping:
 
-After the helper returns, `TEditWordDocument` copies the returned string into the base dispatcher's output string and sets `bUnloadPkg=true). It leaves `bResultSet=false). The generic service dispatcher therefore takes its default response branch: it assigns the returned string to `AResponseInfo.ContentText`, sends the HTTP response via `0x004610FC`, and sets `bResultSet=true`.
+| LoadDocument argument | Source |
+|---|---|
+| EAX | `wordConfig` |
+| EDX | `wordBody` |
+| ECX | `letterImages` |
+| `[EBP+8]` | output-string reference |
+| `[EBP+0x0C]` | `TEmwatInvokeParam*` |
+| `[EBP+0x10]` | `signData` |
 
-This is a concrete link between the observed runtime `EditWordDocument` response and the service's XML method dispatcher. The output string is produced downstream of `0x004B7724`; that helper is now the key target for identifying Word automation, document update and response XML construction. The method's four parameter names are statically proven, but their runtime values/encoding and the exact commit operation still need tracing.
+The helper parses `wordConfig` as XML and checks the `word-document` root. It writes the `wordBody` bytes into a stream, stores `signData` in Wordviewer state (field `+0xF4`), and processes the configuration/image path. Its strings and branches include `image/tif`, `Payam-e-Dowlat` handling, and a `view` mode. It also logs `ConfigXML data loaded.`, `Word doc content added to result.`, and `OpenDoc function succeed.`. The document output is read from a temporary file with retry handling (the loop limit is 100 attempts) and the temporary file is subsequently deleted.
 
+During this path, `LoadDocument` calls `TWordViwer.OnTmrAutoSave` at `0x004B8A84` with the viewer instance and configuration string. That routine stores/parses the configuration and registers Word automation callbacks, including:
 
-### LoadDocument is the next Word-automation layer (lifecycle run 77)
+- `+0x80 → 0x004CD154` (`WordAppDocumentBeforeSave`)
+- `+0x90 → 0x004CD54C` (`WordAppNewDocument`)
+- `+0x98 → 0x004CD9C0` (callback body still needs semantic identification)
+- `+0x88 → 0x004D00AC` or `0x004CE030` depending on viewer state (BeforePrint paths)
 
-The helper called by the `TEditWordDocument` VMT target is identified as `TWordViwer.LoadDocument` at `0x004B7724), with range `0x004B7724–0x004B8A83` (4,960 bytes). Its only direct caller in the TD32 scan is at `0x005EE961), inside code address `0x005EE82C).
+This registration list does not register `0x004CCBBC`; that TD32-labelled `WordAppDocumentBeforeClose` routine is already proven to be a nested helper reached from `FillImgFldsForPrint`, not the established close event source.
 
-The caller supplies `wordConfig`, `wordBody`, `letterImages`, an output-string reference, the connector's `TEmwatInvokeParam*`, and `signData`. The helper creates a Word-viewer object, stores `signData` at object offset `+0xF4`, calls helper `0x004D1454`, and invokes `TWordViwer.OnTmrAutoSave` at `0x004B8A84`. It then continues with document-field and image-related processing.
+**Correction to the earlier Run 77 response interpretation:** `TEditWordDocument` itself sets `bUnloadPkg=true` after `LoadDocument`, but `LoadDocument` can set `bResultSet=true` itself. On the non-empty-result path at `0x004B7F9C–0x004B7FBF`, it:
+1. obtains `AResponseInfo` from `TEmwatInvokeParam.AResponseInfo` at record offset `+0x0C);
+2. assigns the output XML string to `AResponseInfo.ContentText` at object offset `+0xBC);
+3. calls imported `IdCustomHTTPServer.TIdHTTPResponseInfo.WriteContent` (thunk `0x0040448C`, IAT slot `0x0062F9C0`);
+4. sets `TEmwatInvokeParam.bResultSet` at record offset `+0x05` to true.
 
-There is a TD32 naming discrepancy: the code at `0x005EE82C` is labeled `TScanDocument.PerformMethod` in the debug symbol/caller report, but the class RTTI VMT for `TEditWordDocument` points to this exact address at slot `+0x10`, and the body reads `wordConfig`, `wordBody`, `letterImages`, and `signData`. Preserve both facts; the VMT target is the actual dispatch address for the `EditWordDocument` class.
+Therefore the generic service dispatcher does **not** take its fallback response branch when this successful non-empty result path has already written the response. The output is an XML response containing the document result metadata/content (the helper references `application/msword` and `success`); the exact serialized element layout and encoding still need a byte-for-byte comparison with a captured runtime response.
 
-The next static targets are `0x004D0D24` (Word-viewer object creation) and `0x004D1454` (viewer/document configuration). Their traces should reveal how the request is applied to Word and how the response string is constructed. The upstream close event that causes the browser POST remains open.
+This proves a concrete response path from `EditWordDocument` through Wordviewer document generation to Indy HTTP `WriteContent`. It does not yet identify the browser/Word event that initiates the close-time POST or prove the final apply-on-close semantics.
