@@ -294,6 +294,19 @@ jobs:
           python tools/inspect_pe_va.py analysis-input/EmwatMethods.bpl1 0x005EDE1C --before 0x30 --after 0x90 > word-lifecycle-analysis/TEditExcelWorkBook-PerformMethod-metadata.md
           python tools/inspect_pe_va.py analysis-input/EmwatMethods.bpl1 0x005EE2A4 --before 0x30 --after 0x90 > word-lifecycle-analysis/TShowSendLog-PerformMethod-metadata.md
           python tools/inspect_pe_va.py analysis-input/EmwatMethods.bpl1 0x0046C9E0 --before 0x30 --after 0xA0 > word-lifecycle-analysis/TEmwatMethod-Invoke-near-metadata.md
+      - name: Trace registered Word close callback and COM close path
+        run: |
+          python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x004CD154 word-lifecycle-analysis/WordAppDocumentBeforeClose-registered-full.md
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004CD154 word-lifecycle-analysis/WordAppDocumentBeforeClose-registered-callers.md
+          python tools/trace_td32_immediate_refs.py analysis-input/EmwatMethods.bpl1 0x004CD154 word-lifecycle-analysis/WordAppDocumentBeforeClose-registered-immediate-refs.md
+          python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 0x004CD154 word-lifecycle-analysis/WordAppDocumentBeforeClose-registered-pointer-refs.md
+          python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x004CB108 word-lifecycle-analysis/RollBackOriginalOptions-full.md
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004CB108 word-lifecycle-analysis/RollBackOriginalOptions-callers.md
+          python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x00430070 word-lifecycle-analysis/WordDocument-Close-three-argument-wrapper.md
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x00430070 word-lifecycle-analysis/WordDocument-Close-three-argument-wrapper-callers.md
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004CD154 word-lifecycle-analysis/WordAppDocumentBeforeClose-disassembly-window.md 420 ret
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004CB108 word-lifecycle-analysis/RollBackOriginalOptions-disassembly-window.md 320 ret
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x00430070 word-lifecycle-analysis/WordDocument-Close-wrapper-window.md 180 ret
       - uses: actions/upload-artifact@v4
         with:
           name: emwat-word-lifecycle-analysis
