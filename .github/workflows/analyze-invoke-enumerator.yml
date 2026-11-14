@@ -125,6 +125,11 @@ jobs:
           python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x00401430 invoke-enumerator-analysis/Delphi-XML-constructor-helper-401430-callers.md
           python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x0044B4D8 invoke-enumerator-analysis/XML-node-create-helper-44B4D8.md 100 ret
           python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x0044B4D8 invoke-enumerator-analysis/XML-node-create-helper-44B4D8-callers.md
+      - name: Resolve XML constructor import and constant dataflow
+        run: |
+          python tools/trace_import_and_callers.py analysis-input/EmwatMethods.bpl1 0x0062EC40 0x00401430 > invoke-enumerator-analysis/Delphi-XML-constructor-helper-import.md
+          python tools/inspect_pe_va.py analysis-input/EmwatMethods.bpl1 0x0044C4FC --before 0x30 --after 0x50 > invoke-enumerator-analysis/TXMLMethodType-constructor-constant-context.md
+          python tools/inspect_pe_va.py analysis-input/EmwatMethods.bpl1 0x0062EC40 --before 0x10 --after 0x10 > invoke-enumerator-analysis/Delphi-XML-constructor-IAT-slot.md
       - uses: actions/upload-artifact@v4
         with:
           name: emwat-invoke-receiver-analysis
