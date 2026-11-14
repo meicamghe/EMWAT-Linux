@@ -253,6 +253,9 @@ jobs:
           python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 0x004B7430 word-lifecycle-analysis/Wordviewer-OpenDoc-raw-pointer-refs.md
           python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x004B7724 word-lifecycle-analysis/Wordviewer-OpenDoc-helper-4B7724.md
           python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004B7724 word-lifecycle-analysis/Wordviewer-OpenDoc-helper-4B7724-callers.md
+          python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x004B7724 0x004B8A83 word-lifecycle-analysis/LoadDocument-complete-range.md
+          python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x004B8A84 word-lifecycle-analysis/OnTmrAutoSave-full-procedure.md
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004B8A84 word-lifecycle-analysis/OnTmrAutoSave-direct-callers.md
           python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x005EE82C 0x005EEB48 word-lifecycle-analysis/TEditWordDocument-vmt-slot-10.md
           python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x005EEB48 0x005EEDFC word-lifecycle-analysis/TScanDocument-vmt-slot-10.md
           python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x005EEDFC 0x005EF110 word-lifecycle-analysis/TFaxDocument-vmt-slot-10.md
