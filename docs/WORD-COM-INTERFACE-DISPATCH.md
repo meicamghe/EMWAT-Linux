@@ -288,3 +288,18 @@ The surrounding caller code also shows the target is called from a loop that ite
 - **Unresolved:** any direct causal connection from this code to the runtime POST at `127.0.0.1:1984`, `invoke=5208`, or `EditWordDocument/wordConfig`.
 
 Lifecycle run 28 adds a complete TD32 trace of the target at `0x004CCBBC` to capture its complete procedure symbol and body alongside this caller-side static-link proof.
+
+
+## Complete target symbol and procedure bounds (lifecycle run 28)
+
+The full TD32 procedure trace identifies the exact symbol string:
+
+`@Wordviewer@TWordViwer@WordAppDocumentBeforeClose$qqrp14System@TObjectx43System@%DelphiInterface$16Wordxp@_Document%rus`
+
+- Module: `ScanRequestXML`
+- Procedure range: `0x004CCBBC–0x004CCDC7`
+- Size: `0x20C` bytes
+
+The TD32 symbol name contains both `System.TObject` and `DelphiInterface<Wordxp._Document>` type encodings. However, the direct callsite in `FillImgFldsForPrint` passes the parent EBP as a static link and register values in EAX/EDX. The name's type encodings should therefore not be naively treated as a complete reconstruction of the nested helper's runtime argument values. The caller-side ECX capture is proven, but its declared type still needs to be recovered from the callers of `FillImgFldsForPrint`.
+
+The target's complete body confirms the existing instruction-level sequence and does not add a direct HTTP or XML connector call: it performs the two context-derived `+0x38` dispatches, prepares arguments, then calls `0x004BCA88` (`GetXmlFieldInfo`). The observed localhost POST remains unmapped.
