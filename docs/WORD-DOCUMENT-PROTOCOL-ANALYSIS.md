@@ -744,3 +744,16 @@ This provides a typed getter positive control, but it also exposes an important 
 اسکن exact pointerهای ۳۲بیتی در تمام sectionهای PE برای routine با آدرس `0x004CCBBC` هیچ referenceای پیدا نکرد. در مقابل، آدرس‌های callbackهای شناخته‌شده در routine `OnTmrAutoSave` در `.text` پیدا شدند و بدنهٔ همان routine انتساب method pointerها به زوج فیلدهای event object را نشان می‌دهد: BeforeSave=`0x004CD154` در زوج `+0x80/+0x84`، NewDocument=`0x004CD54C` در `+0x90/+0x94`، handler دیگر=`0x004CD9C0` در `+0x98/+0x9C` و BeforePrint=`0x004CE030` یا `0x004D00AC` در `+0x88/+0x8C`.
 
 این شواهد، ثبت ایستای `0x004CCBBC` به‌عنوان BeforeClose را در همین BPL بسیار نامحتمل می‌کند؛ اما absence of exact pointer به‌تنهایی ثبت محاسبه‌شده، registration در package دیگر یا مسیر runtime دیگر را رد نمی‌کند. از آنجا که `0x004CCBBC` به‌صورت قطعی از مسیر print/field صدا زده می‌شود، نام TD32 آن نباید به‌عنوان اثبات callback واقعی Close استفاده شود. مسیر POST هنگام بستن سند هنوز باید از event/connector دیگری ردیابی شود.
+
+
+## Service-side dispatch is now statically traced (2026-11-14)
+
+The service-side half of the observed close request is no longer an unknown black box. The extracted `EmwatService.exe` proves:
+
+`POST body → TEmwatInvokeParam.BufferIn → XML parser (0x00470B38) → method@class + param nodes → GetClass("T"+className) → TEmwatMethod base dispatch (VMT +0x0C) → subclass PerformMethod (VMT +0x10)`.
+
+For the observed runtime envelope `EditWordDocument`, the class resolution is `TEditWordDocument`, and its concrete VMT slot `+0x10` target is `0x005EE82C`. This method reads the `document` parameter and calls helper `0x004B7724`. The helper is now included in the next lifecycle trace.
+
+**What remains unproven:** which Word/COM callback or browser-side event handler emits the `postMessage` that causes the close-time POST. The service parser/dispatcher path is established, but this does not by itself prove the upstream event source or the final document commit/save semantics. The user's runtime observation that closing applies the changes remains the behavioral requirement.
+
+Also note the corrected ID distinction: browser query `invoke=<random>` is not the service's `TEmwatInvokeParam.SessionId`; the service generates a separate six-digit internal SessionId.
