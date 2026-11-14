@@ -1207,7 +1207,7 @@ Added `python/src/emwat_linux/application.py` with `create_bridge_server(...)`. 
 - آدرس 0x00454B9C تابع Emwatutils.euGetASFileName(UnicodeString, UnicodeString) است و علاوه بر LoadDocument در توابع TIFF و تصویر نیز استفاده می‌شود. بنابراین مسیر به احتمال قوی filename/path normalization دارد، نه اینکه این تابع parser بایت‌های بدنه Word باشد.
 - پس از این دو مرحله، LoadDocument از thunkهای runtime در 0x004012F8، 0x00401270 و 0x004012E0 استفاده می‌کند، سپس با global 0x0062F800 و constructor helper 0x004041BC یک object می‌سازد و virtual slot +0x10 را با data pointer و length فراخوانی می‌کند. نوع object و ماهیت دقیق عملیات هنوز قطعی نیست.
 - بنابراین wordBody فعلاً باید به‌عنوان ورودی UnicodeString با semantics نامشخص ثبت شود؛ نه «قطعاً بایت خام» و نه «قطعاً مسیر فایل».
-- Run #90 برای decode کردن رشته‌ها، بررسی VMT/global مقصد، و trace سازنده آغاز شده است.
+- Run #90 تکمیل شده است؛ نتیجه شناسایی TFileStream و مسیر نوشتن ورودی در بخش جدید همین سند ثبت شده است.
 
 
 ## تکمیل شواهد نام فایل در LoadDocument
