@@ -105,7 +105,9 @@ class BridgeHTTPServer:
                     expected_host, expected_port = owner._server.server_address[:2]
                     return (parsed_host.hostname == str(expected_host).lower()
                             and parsed_host.port == int(expected_port)
-                            and parsed_host.username is None and parsed_host.password is None)
+                            and parsed_host.username is None and parsed_host.password is None
+                            and not parsed_host.path and not parsed_host.query
+                            and not parsed_host.fragment)
                 except ValueError:
                     return False
 
@@ -127,6 +129,9 @@ class BridgeHTTPServer:
                 if parsed.path != "/":
                     self._send(404, b"", "text/plain; charset=utf-8")
                     return
+                if self.headers.get("Transfer-Encoding"):
+                    self._send(400, b"transfer_encoding_not_supported", "text/plain; charset=utf-8")
+                    return
                 content_lengths = self.headers.get_all("Content-Length", [])
                 if not content_lengths:
                     self._send(411, b"content_length_required", "text/plain; charset=utf-8")
@@ -134,12 +139,12 @@ class BridgeHTTPServer:
                 if len(content_lengths) != 1:
                     self._send(400, b"invalid_content_length", "text/plain; charset=utf-8")
                     return
-                if self.headers.get("Transfer-Encoding"):
-                    self._send(400, b"transfer_encoding_not_supported", "text/plain; charset=utf-8")
-                    return
                 raw_length = self.headers.get("Content-Length")
                 if raw_length is None:
                     self._send(411, b"content_length_required", "text/plain; charset=utf-8")
+                    return
+                if not raw_length.isascii() or not raw_length.isdigit():
+                    self._send(400, b"invalid_content_length", "text/plain; charset=utf-8")
                     return
                 try:
                     length = int(raw_length, 10)
