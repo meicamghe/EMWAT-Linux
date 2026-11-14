@@ -973,7 +973,7 @@ The original service PE was extracted from the Library installer and analyzed di
 - The shared dispatcher parses the XML, reads `method@class`, prefixes the class name with `T`, resolves it with Delphi `GetClass`, creates the class instance, stores the request-record pointer at object offset `+0x04`, then calls virtual slot `+0x0C`.
 - Three additional internal service routines call the same dispatcher with embedded XML (including `ShowEmwatSetting` and `ShowSendLog`).
 
-The exact BPL method represented by service-side virtual slot `+0x0C` remains unresolved. The complete evidence and disassembly offsets are in `docs/EMWAT-SERVICE-EXECUTABLE-ANALYSIS.md`. The chain is now proven through dynamic class-instance dispatch, but not yet through the concrete `EditWordDocument` implementation or close-time commit/response behavior.
+Service-side virtual slot `+0x0C` is now mapped to shared BPL routine `0x0046C9E0`, which calls `TEmwatMethod.Invoke` (`0x0046C82C`) and then the subclass's VMT slot `+0x10`. XML `class="EditWordDocument"` resolves to `TEditWordDocument`; its slot `+0x10` target is `0x005EE82C`, which reads the `document` parameter and calls helper `0x004B7724`. The remaining work is to trace this concrete method/helper through document opening, response serialization/transport, and the upstream close event. Full evidence: `docs/EMWAT-SERVICE-EXECUTABLE-ANALYSIS.md` and `docs/WORD-COM-INTERFACE-DISPATCH.md`.
 
 
 ### Correction to run-62 connector dictionary and call-path interpretation (run 76)
