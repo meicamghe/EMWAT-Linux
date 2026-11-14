@@ -25,9 +25,12 @@ def main():
     out = pathlib.Path(sys.argv[3])
     pe = pefile.PE(str(src), fast_load=False)
     matches = []
-    for type_entry in getattr(pe, "DIRECTORY_ENTRY_RESOURCE", ()).entries:
+    resource_root = getattr(pe, "DIRECTORY_ENTRY_RESOURCE", None)
+    if resource_root is None:
+        raise SystemExit("PE has no resource directory")
+    for type_entry in resource_root.entries:
         type_id = getattr(type_entry, "id", None)
-        if not hasattr(type_entry, "directory"):
+        if type_id != 10 or not hasattr(type_entry, "directory"):
             continue
         for name_entry in type_entry.directory.entries:
             name = entry_name(name_entry)
