@@ -994,23 +994,11 @@ After the helper returns, `TEditWordDocument` copies the output string to the ba
 This statically connects the runtime `EditWordDocument` XML request to the generic HTTP response path. The exact response XML and Word automation/commit behavior are now narrowed to helper `0x004B7724` and its downstream calls. Run 77 captures the helper's complete TD32 procedure and caller references.
 
 
-## Main Word editor BeforeClose callback identified (2026-11-14)
+## Word lifecycle callback classification — superseded correction (2026-11-14)
 
-The actual main-editor Word close event callback is now identified and registered:
+The earlier section that called 0x004CD154 the main-editor BeforeClose callback was incorrect and is superseded by runs 25–26. The confirmed mapping is: 0x004CD154 is the registered TWordViwer.WordAppDocumentBeforeSave callback at event-record +0x80; 0x004CD54C is registered at +0x90; 0x004CD9C0 at +0x98; and the conditional BeforePrint callback at +0x88 is 0x004D00AC or 0x004CE030. The callback at 0x004CD154 calls PreparePrintDocument (0x004CB108), checks _Document.Saved through slot +0xD8, prompts Yes/No/Cancel, sets Cancel to 0xFFFF on Cancel, and directly calls interface slot +0x29C with three OleVariant arguments on Yes/No. This slot is also used by the three-argument TWordDocument.Close wrapper at 0x0042FFF4. The wrapper at 0x00430070 is SaveAs2000, not Close.
 
-- `TWordViwer.OnTmrAutoSave` (`0x004B8A84`) stores `0x004CD154` at event-record offset `+0x80`.
-- BPL export-table mapping and body strings identify `0x004CD154` as `WordAppDocumentBeforeClose`.
-- The body first calls `TWordViwer.RollBackOriginalOptions` (`0x004CB108`), checks `Document.Saved` through `_Document` slot `+0xD8` (typed wrapper `TWordDocument.Get_Saved` at `0x0042BD94`), logs `Document.OnBeforeClose Called.`, displays the Persian prompt `محتويات اين سند تغيير كرده است. آيا مايل به ثبت تغييرات هستيد؟`, and logs `Document.OnBeforeClose succeed.`.
-- Cancel sets the event's Cancel word to `0xFFFF`; Yes initializes the first OleVariant argument to `-1`; No initializes it to `0`.
-- It calls the active `Wordxp._Document` interface slot `+0x29C` with three OleVariant arguments. The exported three-argument `TWordDocument.Close` wrapper at `0x00430070` dispatches this slot.
-- The other registered callbacks are `+0x90 → 0x004CD54C` (`WordAppDocumentBeforeSave`), `+0x98 → 0x004CD9C0` (export name `WordAppNewDocument`; code includes Activation/Quitword handling), and `+0x88 → 0x004D00AC` or `0x004CE030` (BeforePrint).
-
-This corrects the earlier swapped callback labels. It also distinguishes three close-named routines:
-- `0x004CD154`: actual registered main-editor BeforeClose callback.
-- `0x004CCBBC`: TD32-labelled nested image-field/print helper, not registered.
-- `0x005EC589`: separate autosave-preview form handler.
-
-The callback body does not directly issue the localhost HTTP request. The embedded browser bridge is a generic `postMessage → XHR → postMessage` forwarder; it does not contain close-specific logic. The remaining task is to identify the parent-page message sent when the Word close callback completes, and trace the save/No-save branches to the final Almas Gam commit.
+The separate TD32-named TWordViwer.WordAppDocumentBeforeClose at 0x004CCBBC has only one direct bounded caller found (FillImgFldsForPrint at 0x004CCF8F) and no raw-pointer registration reference; its active event role is unproven. The browser bridge remains a generic postMessage → XHR → postMessage forwarder. The parent-page message that initiates the close-time POST and the final apply/commit semantics remain unresolved. The user's observed apply-on-close behavior remains a requirement.
 
 
 ## Run 82 and focused Invoke receiver workflow (2026-11-14)
