@@ -774,3 +774,14 @@ Run `43232846364` با موفقیت کامل (148/148 مرحله) پایان ی�
 - `StoryRanges` یک candidate معقول برای بررسی dispatch تایپ‌نشدهٔ `_Document +0x12C) در `FillPrintDocFields` است، اما هنوز هیچ wrapper یا خروجی IID آن را اثبات نکرده است. این slot را فعلاً StoryRanges ننام.
 - وجود `FormFields/FormField` نشان می‌دهد کد علاوه بر Fields/Field عادی Word، مدل جداگانهٔ فرم‌فیلدها را هم import کرده است.
 - **گام بعد:** بررسی symbol inventory جدید برای getter/consumerهای StoryRanges و FormFields؛ سپس بررسی callerها و signature تابع FillTextField و slotهای Wordxp.Field.
+
+
+### Run 47 — زنجیرهٔ FillTextField و nested FillImageField (2026-11-14)
+
+- Run 47 با موفقیت پایان یافت؛ بدنهٔ کامل `FillTextField` در `0x004BC980) و caller scans استخراج شد.
+- `FillTextField` دو بار nested helper `FillImageField` را صدا می‌زند (`0x004BC9CB)، `0x004BCA10)) و هر دو بار EBP والد را به‌عنوان static link می‌فرستد.
+- `FillTextField` نه caller مستقیم دارد: چهار call از `GetXmlFieldInfo)، سه call از `GetDocFieldIndex)، و دو call از `FillImgFldsForPrint`.
+- `GetDocFieldIndex` یک caller مستقیم دارد: `GetDocFieldName` در `0x004BBB2B).
+- زنجیرهٔ جدید: `GetDocFieldName → GetDocFieldIndex → FillTextField → FillImageField)، با ورودی‌های اضافی از `GetXmlFieldInfo` و `FillImgFldsForPrint`.
+- این ساختار، پردازش محتوای فیلدها و تصاویر را توضیح می‌دهد و به‌خودی‌خود event بستن سند نیست.
+- **گام بعد:** trace کامل `GetDocFieldName) و callerهایش برای مشخص‌کردن اینکه فیلدها از کدام XML/config path انتخاب می‌شوند.
