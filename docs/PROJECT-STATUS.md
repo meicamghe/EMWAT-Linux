@@ -1192,3 +1192,10 @@ Next: recover exact heartbeat/init responses and remaining Word response schema;
 The bridge now additionally rejects Host headers containing path/query/fragment components and validates Content-Length as one ASCII decimal value. Transfer-Encoding is rejected before body framing is considered. Tests were added for Host path injection, duplicate Content-Length and non-decimal Content-Length.
 
 **CI:** `Python bridge transport` run #22 (`43593083176`), commit `22a803912b0fa92c3bb5537fb1f0c7952fda7615`, **success**; 27 tests passed.
+
+
+## Application composition factory — CI green (2026-11-14)
+
+Added `python/src/emwat_linux/application.py` with `create_bridge_server(...)`. It composes the IPv4 loopback HTTP server, conservative XML parser and explicit dispatcher registry. It requires callers to provide an exact Origin allowlist and explicit handler mapping; it does not silently enable any legacy operation. Integration tests verify the complete HTTP POST → XML parse → explicitly registered handler → HTTP response path and reject missing/unlisted origins.
+
+**CI:** Python bridge transport run #24, ID `43593185429`, commit `27986ee96b45009283cd96eecde95110e1b9e448`, **success**; 29 tests passed. The registered handler in the integration test is only a fixture; no real `EditWordDocument` implementation exists yet.
