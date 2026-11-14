@@ -1208,3 +1208,9 @@ Added `python/src/emwat_linux/application.py` with `create_bridge_server(...)`. 
 - پس از این دو مرحله، LoadDocument از thunkهای runtime در 0x004012F8، 0x00401270 و 0x004012E0 استفاده می‌کند، سپس با global 0x0062F800 و constructor helper 0x004041BC یک object می‌سازد و virtual slot +0x10 را با data pointer و length فراخوانی می‌کند. نوع object و ماهیت دقیق عملیات هنوز قطعی نیست.
 - بنابراین wordBody فعلاً باید به‌عنوان ورودی UnicodeString با semantics نامشخص ثبت شود؛ نه «قطعاً بایت خام» و نه «قطعاً مسیر فایل».
 - Run #90 برای decode کردن رشته‌ها، بررسی VMT/global مقصد، و trace سازنده آغاز شده است.
+
+
+## تکمیل شواهد نام فایل در LoadDocument
+- در رشته‌های LoadDocument پیام دقیق `DocFileName can not be null.` وجود دارد و مسیر کنترل تابع، رشته محلی تبدیل‌شده را از نظر طول صفر بررسی می‌کند و در صورت خالی بودن به این خطا می‌رود. این شاهد قوی است که آرگومان LoadDocument به‌عنوان نام فایل سند پردازش می‌شود، نه صرفاً بایت‌های بدنه.
+- رشته‌های `word-document`، `ConfigXML data loaded.` و `Word Calling Mode: ` نیز در همان تابع وجود دارند. رشته‌های `.doc` و `.docx` در مسیر helper اعتبارسنجی/نرمال‌سازی نام فایل دیده می‌شوند؛ معنای دقیق شاخه‌ها هنوز بررسی می‌شود.
+- تفسیر فعلی اصلاح شد: کلید بیرونی `wordBody` به LoadDocument داده می‌شود، اما درون LoadDocument مانند یک UnicodeString از نوع DocFileName بررسی و تبدیل می‌شود. اسم کلید به‌تنهایی نوع واقعی مقدار را اثبات نمی‌کند.
