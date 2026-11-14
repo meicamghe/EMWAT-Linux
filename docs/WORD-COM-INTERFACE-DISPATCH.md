@@ -406,3 +406,20 @@ Direct TD32 call-site scans established these caller relationships:
 - `FillField` (`0x004BC2C4`) and `TWordDocument.Get_Fields` (`0x0042B55C`) have no direct immediate CALL xrefs in TD32-bounded procedures. Indirect/VMT/property access remains outside this scan.
 
 This makes `GetDocFieldIndex` a central field-processing routine: it iterates a Word collection, calls `FillMSWFields` for selected entries and conditionally calls `AddImagesToDoc`; the text-field routine separately dispatches into its nested image-field helper. The exact `Wordxp.Field` property names used by `FillImageField` remain unresolved; its typed body uses slots `+0x40`, `+0x38`, and `+0x20` on interface receivers. Lifecycle run 46 adds a complete trace of the parent `FillTextField` procedure and caller scans for `GetDocFieldIndex`.
+
+
+## Raw PE callback-pointer audit (lifecycle run 44)
+
+A new whole-PE exact 32-bit pointer scan checked the callback candidates in all raw sections, including writable data and debug data.
+
+- Target `0x004CCBBC` (`WordAppDocumentBeforeClose`): **zero exact raw pointer references anywhere in the PE**.
+- `0x004CD154` (`WordAppDocumentBeforeSave`): pointer immediate at `0x004B8CA8` in `.text` plus a debug-section occurrence.
+- `0x004CD54C` (`WordAppNewDocument`): pointer immediate at `0x004B8CBE` in `.text`.
+- `0x004CE030` (one BeforePrint handler): pointer immediates at `0x004B8D0E` and `0x004B8E81`.
+- `0x004D00AC` (alternate BeforePrint handler): pointer immediates at `0x004B8CF6` and `0x004B8E60`.
+
+The full `OnTmrAutoSave` disassembly confirms these are actual method-pointer assignments on the Word event object at `[this+0x44]`: method addresses are stored alongside the controller instance in paired fields `+0x80/+0x84` (BeforeSave), `+0x90/+0x94` (NewDocument), `+0x98/+0x9C` (the `0x004CD9C0` handler), and `+0x88/+0x8C` (the conditional BeforePrint handler, either `0x004D00AC` or `0x004CE030`). The second registration branch later reassigns the BeforePrint pair using the same two known addresses.
+
+This is strong negative evidence against `0x004CCBBC` being the statically registered BeforeClose event handler in this BPL: the known registration routine assigns other callback addresses, and no raw pointer to `0x004CCBBC` exists in the image. It is **not an absolute proof of non-registration**: computed/relative pointers, external packages, runtime-generated method pointers or another registration path could evade this exact scan. Combined with the proven direct call from the print/field path, the current best classification is that `0x004CCBBC` is a nested print/field helper whose TD32 name is not sufficient to identify the actual close event.
+
+The real close-time POST (`127.0.0.1:1984/?invoke=5208`) must now be mapped through another event/connector path; do not continue treating `0x004CCBBC` as its proven source.
