@@ -122,6 +122,7 @@ jobs:
           python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x00404E84 word-lifecycle-analysis/helper-404E84.md 180 ret
           python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x0046C82C word-lifecycle-analysis/TEmwatMethod-Invoke.md
           python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x0046C82C word-lifecycle-analysis/TEmwatMethod-Invoke-callers.md
+          python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 0x0046C82C word-lifecycle-analysis/TEmwatMethod-Invoke-raw-pointer-refs.md
           python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x005EF8AC word-lifecycle-analysis/TCompareWordDocument-PerformMethod.md
           python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x005EF300 word-lifecycle-analysis/TEditExcelWorkBook-PerformMethod.md
           python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x005EFE4C word-lifecycle-analysis/TShowSendLog-PerformMethod.md
