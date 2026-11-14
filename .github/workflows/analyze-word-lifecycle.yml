@@ -373,6 +373,14 @@ jobs:
           python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x00454B9C word-lifecycle-analysis/LoadDocument-wordBody-helper-454B9C-callers.md
           python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x004D0D24 word-lifecycle-analysis/LoadDocument-wordviewer-constructor.md
           python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004D0D24 word-lifecycle-analysis/LoadDocument-wordviewer-constructor-callers.md
+      - name: Resolve LoadDocument string constants and stream destination class
+        run: |
+          python tools/decode_pe_strings.py analysis-input/EmwatMethods.bpl1 0x004B8220 0x004B8238 0x004B8280 0x004B832C 0x004B8348 0x004B8364 0x004B83A0 0x004B83C0 0x004B843C 0x004B848C 0x004B8504 0x004B8590 0x004B85BC 0x004B8614 0x004B862C 0x004D0FF4 0x004D103C 0x004D1074 0x004D10B0 0x004D10E0 > word-lifecycle-analysis/LoadDocument-string-constants.md
+          python tools/inspect_pe_va.py analysis-input/EmwatMethods.bpl1 0x0062F800 --before 0x40 --after 0xA0 > word-lifecycle-analysis/LoadDocument-stream-VMT-global.md
+          python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 0x0062F800 word-lifecycle-analysis/LoadDocument-stream-VMT-pointer-refs.md
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004041BC word-lifecycle-analysis/LoadDocument-stream-object-constructor.md 220 ret
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004041BC word-lifecycle-analysis/LoadDocument-stream-object-constructor-callers.md
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004B7724 word-lifecycle-analysis/LoadDocument-entry-expanded.md 900 ret
       - uses: actions/upload-artifact@v4
         with:
           name: emwat-word-lifecycle-analysis
