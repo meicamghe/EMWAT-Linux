@@ -31,7 +31,7 @@ The embedded HTML/JavaScript bridge is stored in the service executable at file 
 4. POST `event.data` to `http://127.0.0.1:$V{myport}?invoke=` plus that generated number.
 5. When XHR `readyState == 4`, send `responseText` back to the original source using `postMessage(responseText, origin)`.
 
-This confirms that the observed `invoke=5208` is a per-message, client-generated random request value, not a stable operation ID. The operation name is in the XML body (for example, the observed `method class="EditWordDocument"` envelope). The handler later inspects the `invoke` query key, but the numeric query value is not copied into `TEmwatInvokeParam.SessionId`; that field is generated independently by the service. Whether the browser's numeric value is consumed for any additional purpose remains unresolved.
+This confirms that the observed `invoke=5208` is a per-message, client-generated random request value, not a stable operation ID. The operation name is in the XML body (for example, the observed `method class="EditWordDocument"` envelope). The handler later checks the `invoke` query key, but the embedded bridge shows the numeric value is generated only to make each XHR URL unique. It is not a method ID, correlation token, or `TEmwatInvokeParam.SessionId`; that field is generated independently by the service.
 
 ## TEmwatInvokeParam record RTTI
 
@@ -90,7 +90,7 @@ The record is 20 bytes (`0x14`) and its RTTI lists the same six field names. The
 
 The browser's `invoke` query value is **not** copied into `TEmwatInvokeParam.SessionId` by this handler. The handler separately calls the imported `System.Random(900000)`, adds `100000`, and passes the result through imported `SysUtils.IntToStr`. Thus the internal `SessionId` is a separate server-generated six-digit value in the range 100000–999999.
 
-The handler calls two virtual methods on the request parameter collection at `[ARequestInfo+0xD0]` using the literal key `invoke` (calls at `0x0047BFAA` and `0x0047BFBE`). The route-selection logic uses the presence/lookup of this key to reach the XML-dispatch path. The exact semantics of the collection slots and whether the numeric value is consumed elsewhere remain unresolved. Do not describe the query value as the internal session ID.
+The handler calls two virtual methods on the request parameter collection at `[ARequestInfo+0xD0]` using the literal key `invoke` (calls at `0x0047BFAA` and `0x0047BFBE`). The route-selection logic uses the presence/lookup of this key to reach the XML-dispatch path. The exact semantics of the two collection slots are still not named, but the embedded JavaScript confirms that the numeric value is only a per-request URL nonce/cache-buster. Do not describe it as a method ID or internal session ID.
 
 ### XML parser and method metadata object
 
@@ -149,7 +149,7 @@ The same `TMainForm.IdHTTPServerCommandGet` body checks three request parameter 
 | `init` | `0x0047C102` | Returns the embedded JavaScript bridge and logs the script request |
 | `heartbeat` | `0x0047C25F` | Handles the Agent heartbeat path |
 
-This confirms the local service has separate bridge-initialization and Agent-heartbeat routes in addition to the browser-to-XML method route. The numeric `invoke` value is not assigned to the record's `SessionId`; the handler's record gets its own random six-digit identifier as described above.
+This confirms the local service has separate bridge-initialization and Agent-heartbeat routes in addition to the browser-to-XML method route. The browser's numeric `invoke` value is only a URL nonce/cache-buster; the handler's record gets its own random six-digit `SessionId` as described above.
 
 The callback register/stack usage matches the Indy event signature: EDX is `AContext`, ECX is `ARequestInfo`, and `[EBP+8]` is `AResponseInfo`. The PE RTTI contains `TIdHTTPRequestInfo` and its fields/properties `FParams`/`Params`, `FPostStream`/`PostStream`, and `FRemoteIP`/`RemoteIP`. Combined with the handler's use, the offsets map with high confidence as `[ARequestInfo+0xD0] = Params`, `[ARequestInfo+0xD4] = PostStream`, and `[ARequestInfo+0xDC] = RemoteIP`. The handler queries the PostStream object for a size-like value, obtains a buffer, and calls its virtual slot `+0x0C` with a buffer/length pair before assigning the resulting string to `BufferIn`. The object is therefore identified as the request-body stream; the exact names/signatures of its two virtual methods remain unresolved.
 
@@ -231,16 +231,34 @@ The helper references response metadata strings `application/msword` and `succes
 
 ### Word automation callback registration reached from LoadDocument
 
-The `OnTmrAutoSave` routine at `0x004B8A84` stores the configuration and registers callback pointers on the Word automation object:
+The `OnTmrAutoSave` routine at `0x004B8A84` stores the configuration and registers these callback pointers on the Word automation event record:
 
-- `+0x80 → 0x004CD154` (`WordAppDocumentBeforeSave`)
-- `+0x90 → 0x004CD54C` (`WordAppNewDocument`)
-- `+0x98 → 0x004CD9C0` (callback body still needs semantic identification)
-- `+0x88 → 0x004D00AC` or `0x004CE030` depending on viewer state (BeforePrint paths)
+| Event-record field | Function VA | Export name / code evidence |
+|---:|---:|---|
+| `+0x80` | `0x004CD154` | `WordAppDocumentBeforeClose`; body logs `Document.OnBeforeClose Called.` and prompts whether to save changes |
+| `+0x90` | `0x004CD54C` | `WordAppDocumentBeforeSave`; body logs `Document.OnBeforeSave called.` |
+| `+0x98` | `0x004CD9C0` | Export name `WordAppNewDocument`; body includes Activation/Quitword/document-count handling |
+| `+0x88` | `0x004D00AC` or `0x004CE030` | BeforePrint handlers selected by viewer state |
 
-This registration list does not include `0x004CCBBC`. That TD32-labelled `WordAppDocumentBeforeClose` routine is already proven to be a nested helper called from the image-field path; it is not the established Word close-event source.
+The function-name mapping above was checked against the BPL export address/name tables and the strings inside each body. This corrects the earlier callback labels that swapped the three addresses. The TD32 symbol/export naming for the `+0x98` callback should still be treated carefully: its code includes an `Activation` path as well as `Quitword` logic.
 
-**Remaining:** identify the callback/event or browser-side message that emits the observed close-time POST, determine how the temporary Word file's final contents are committed back to Almas Gam, and compare the serialized HTTP response with the user's captured XML.
+#### Actual main Word close callback: 0x004CD154
+
+The registered `0x004CD154` callback is the main `TWordViwer.WordAppDocumentBeforeClose` path. Its body contains these strings:
+
+- `Document.OnBeforeClose Called.`
+- Persian prompt: `محتويات اين سند تغيير كرده است. آيا مايل به ثبت تغييرات هستيد؟`
+- `Save msgBox triggered. result: %d`
+- `Document.OnBeforeClose succeed.`
+
+The prompt presents Yes/No/Cancel choices. The code handles Cancel by setting the callback's `Cancel` word to `0xFFFF` and returning. For Yes it initializes the first OleVariant argument to `-1`; for No it initializes it to `0`. It then calls the active `Wordxp._Document` interface at slot `+0x29C` with three OleVariant arguments. The BPL export table identifies the three-argument wrapper as `TWordDocument.Close` at `0x00430070`, which dispatches the same interface slot `+0x29C`. Thus this is the explicit `Close(SaveChanges, OriginalFormat, RouteDocument)` overload path; the first argument carries the Yes/No save decision.
+
+The no-argument `TWordDocument.Close` wrapper is separately exported at `0x0042FF08` and dispatches slot `+0x4D4`. One- and two-OleVariant `Close` wrappers at `0x0042FF7C` and `0x0042FFF4` also dispatch slot `+0x29C`. Do not conflate these with the old `0x0042FEB0` address, which exports `Set_FormattingShowFilter`.
+
+The similarly named routine at `0x004CCBBC` remains a different nested helper called from `FillImgFldsForPrint`; it is not the registered close callback. A separate `uSendLog.TfrmShowAutoSaveFiles.WordAppDocumentBeforeClose` at `0x005EC589` belongs to the autosave-preview form and is unrelated to the main letter editor's callback.
+
+The close callback currently has no direct HTTP request call in its body. It prompts and invokes Word's Close overload. The next trace must follow its called viewer helpers and the BeforeSave callback to determine how the final content reaches the browser/service.
+
 
 
 ## Request routing and PostStream source (2026-11-14)
@@ -260,3 +278,56 @@ The `TIdHTTPRequestInfo` object fields used by the handler are now identified wi
 The handler reads a size-like value from `PostStream`, then calls its virtual slot `+0x0C` with a buffer/length pair to populate `TEmwatInvokeParam.BufferIn`. The exact stream virtual method names and signatures remain unresolved; do not name them as `Read`, `ReadBuffer`, or `Size` without matching the correct Indy stream VMT.
 
 The service also contains internal call sites that invoke the shared XML dispatcher with embedded method XML, including `ShowEmwatSetting` and `ShowSendLog`. These are separate service-originated calls and should not be mistaken for browser POST requests.
+
+
+## Embedded browser bridge deobfuscated (init route)
+
+The `init` route returns a 508-character embedded JavaScript bridge from service VA `0x0047C59C`. The script is ASCII and deobfuscates to:
+
+```javascript
+var _origin = null;
+var _source = null;
+
+function invoke(event) {
+    _origin = event.origin;
+    _source = event.source;
+
+    var xhr = new XMLHttpRequest();
+    var nonce = Math.floor(Math.random() * 99999);
+
+    xhr.open("POST", "http://127.0.0.1:$V{myport}?invoke=" + nonce);
+    xhr.onreadystatechange = function () {
+        if (xhr.readyState == 4) {
+            _source.postMessage(xhr.responseText, _origin);
+        }
+    };
+    xhr.send(event.data);
+}
+
+try {
+    window.addEventListener("message", function (event) {
+        invoke(event);
+    }, false);
+} catch (err) {
+    window.attachEvent("onmessage", function (event) {
+        invoke(event);
+    }, false);
+}
+
+parent.postMessage("<inited />", "$V{host}");
+```
+
+This establishes the complete browser bridge behavior:
+
+1. The parent web application sends a `window.postMessage` event to the bridge.
+2. The bridge forwards `event.data) unchanged as the HTTP POST body to `127.0.0.1:$V{myport}`.
+3. `Math.floor(Math.random()*99999)` is used only to vary the `?invoke=` URL value; the script does not use it to correlate the response or identify the method.
+4. When the XHR reaches readyState 4, the bridge sends `responseText` back to the original `event.source` using the original `event.origin`.
+5. After initialization, it posts `<inited />` to the parent with the configured host placeholder.
+
+Combined with the service handler, the proven data path is:
+
+`parent postMessage(event.data) → XHR POST (?invoke=random URL nonce) → TIdHTTPRequestInfo.PostStream → TEmwatInvokeParam.BufferIn → XML/class dispatch → TEditWordDocument/LoadDocument → TIdHTTPResponseInfo.WriteContent → XHR responseText → original event.source.postMessage(responseText, origin)`.
+
+The bridge itself is a generic message forwarder; it does not contain document-close-specific logic. Therefore the remaining question is which parent-page code posts the close-time XML message after Word's `BeforeClose` callback and how it obtains the updated document/configuration payload.
+
