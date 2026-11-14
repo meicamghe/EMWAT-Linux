@@ -156,7 +156,7 @@ The target also calls `GetXmlFieldInfo` using values assembled from the parent p
 - **Unresolved:** whether another independent event-registration path also references this routine.
 - **Unresolved:** the interface type/method at slot `+0x38), and any direct relation to the observed POST at `127.0.0.1:1984`, `invoke=5208`, or `EditWordDocument/wordConfig`.
 
-The investigation must now identify the incoming ECX parameter at the callers of `FillImgFldsForPrint` and inspect the complete target procedure. Until then, do not call the `0x004CCBBC` path the proven close-time integration path.
+The complete target and caller are now traced. The remaining type-identification task is to follow the incoming ECX list element from `GetFieldIndexInList`. Until independent event registration is found, do not call the `0x004CCBBC` path the proven close-time integration path.
 ## CostumizeRecAndCC confirms the same Word document method (BPL run 133)
 
 TD32 resolves helper `0x004D281C` as `TWordViwer.CostumizeRecAndCC` (procedure range `0x004D281C..0x004D28F6`). Its body:
@@ -189,7 +189,7 @@ Thus `+0x38` is interface-specific just like `+0x2BC`. The target receiver still
 
 ## Superseded preliminary BeforeClose receiver hypothesis
 
-The initial run-22/run-23 reading incorrectly treated `[ebp-0x0C]` as the receiver for the two `+0x38` calls. The full run-24 disassembly shows that the receiver is loaded from `[[ebp+8]-0x0C]`; the stack local `[ebp-0x0C]` is a separate managed temporary passed later to `GetXmlFieldInfo`. See the run-24 correction below. Do not use the earlier _Document.Get_Tables hypothesis for BeforeClose unless the context field's type is independently established.
+The initial run-22/run-23 reading incorrectly treated the target's `[ebp-0x0C]` local as the receiver for the two `+0x38` calls. Run 24 showed the receiver load `[[ebp+8]-0x0C]`; run 27 later proved `[ebp+8]` is the caller's EBP static link, so this expression resolves to the caller's captured ECX local. The target's own `[ebp-0x0C]` is a separate managed temporary passed later to `GetXmlFieldInfo`. Do not use the earlier `_Document.Get_Tables` hypothesis until the caller's ECX list element is typed.
 
 
 ## BeforeClose slot +0x38 positive-control wrapper (lifecycle run 23)
@@ -215,7 +215,7 @@ The full run-24 disassembly disproves the earlier receiver-local interpretation 
 - At both sites, the code loads `eax = [ebp+8]`, then `eax = [eax-0x0C]`, then dereferences `[eax]` and calls `[eax+0x38]`.
 - The target's stack-local `[ebp-0x0C]` is separately initialized via runtime helper thunk `0x00401420`; it is later passed as an argument at `0x004CCC34` into `GetXmlFieldInfo` at `0x004BCA88`. It is not the slot-call receiver.
 - Run 27 resolves `[ebp+8]` as the parent procedure's EBP passed by `push ebp` at the direct callsite. Therefore `[[ebp+8]-0x0C]` is the parent procedure's local `[ebp-0x0C]`, which stores its incoming ECX value. The interface type of that ECX value remains unresolved pending caller analysis.
-- The run-24 typed positive control confirms that `Wordxp.TWordDocument.Get_Tables` uses `_Document` slot `+0x38`, but it does **not** establish that the BeforeClose receiver has that interface type. The earlier claim that BeforeClose's two calls are likely `_Document.Get_Tables()` must be treated as unproven and withdrawn pending identification of the context field.
+- The run-24 typed positive control confirms that `Wordxp.TWordDocument.Get_Tables` uses `_Document` slot `+0x38`, but it does **not** establish that the nested helper's receiver has that interface type. The earlier claim that the two target calls are likely `_Document.Get_Tables()` remains withdrawn pending identification of the caller's ECX list element.
 
 The `Get_Tables` wrapper also clarifies its own acquisition pattern: it invokes `0x0042ABA0` with `EDX=&[ebp-4]`; that accessor checks `[self+0x78]), conditionally invokes the object's `+0x50` slot, then passes `[self+0x78]` to runtime helper `0x00401428` to populate the local interface. This is distinct from the BeforeClose receiver load. The wrapper's initial `0x00401420` call is an imported runtime thunk; the artifact resolves its IAT target outside the BPL image, so its semantic name is still unknown.
 
