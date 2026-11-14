@@ -326,6 +326,17 @@ jobs:
           python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004B7DE1 word-lifecycle-analysis/LoadDocument-branch-4B7DE1-callers.md
           python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004B7F9C word-lifecycle-analysis/LoadDocument-response-write-callers.md
           python tools/inspect_pe_va.py analysis-input/EmwatMethods.bpl1 0x004B7F9C --before 0x40 --after 0x120 > word-lifecycle-analysis/LoadDocument-response-write-context.md
+      - name: Resolve Close wrapper and controller close lifecycle
+        run: |
+          python tools/search_td32_word_methods.py analysis-input/EmwatMethods.bpl1 word-lifecycle-analysis/Word-close-symbol-inventory.md
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x005E9258 word-lifecycle-analysis/CloseMyDoc-callsite-context.md 240 ret
+          python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 0x005E9258 word-lifecycle-analysis/CloseMyDoc-pointer-refs.md
+          python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x005E9258 word-lifecycle-analysis/CloseMyDoc-procedure.md
+          python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x005EF8AC word-lifecycle-analysis/TCompareWordDocument-PerformMethod-close-control.md
+          python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x004D23D8 word-lifecycle-analysis/SilentSaveEmwatDoc-close-comparison.md
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004D23D8 word-lifecycle-analysis/SilentSaveEmwatDoc-close-callers.md
+          python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x004CCBBC word-lifecycle-analysis/BeforeClose-helper-final-check.md
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004CD154 word-lifecycle-analysis/BeforeSave-final-callers.md
       - uses: actions/upload-artifact@v4
         with:
           name: emwat-word-lifecycle-analysis
