@@ -217,3 +217,10 @@ Run 29 (`43589571290`, artifact `14111108881`) completed successfully. It adds t
 - Although TD32 names the routine `CloseAllWords`, its four direct calls at `0x0044AD7E/0x0044ADA0/0x0044ADC2/0x0044ADF1` target `0x0044B0F8`, which TD32 identifies as `Emwat.Sys.GetFileVersion`. Thus the current static evidence does **not** establish that this routine closes Word processes; the symbol name must not be treated as behavioral proof. Its caller remains the RAW cleanup path, not the main editor connector.
 
 **Run 29 conclusion:** no close-time POST trigger or final apply-on-close mechanism was identified. Preserve the user's close-applies-changes observation as a product requirement. The proven server-side `EditWordDocument → LoadDocument → HTTP WriteContent` path remains the anchor; the missing work is still the page-side message sender and the exact response/application lifecycle. Do not spend more runs on these unrelated print/cleanup symbols unless new caller evidence appears.
+
+
+## User clarification — close is enough; underlying Word save is unresolved (2026-11-14)
+
+The user repeated the real-world test and confirmed: they do not press Word's Save button, yet after closing Word the file is registered/visible in Almas Gam. Treat this as a firm end-to-end product requirement.
+
+Do **not** infer that the document is never saved internally. A likely but unproven sequence is an automatic or EMWAT-triggered Word save during close, followed by EMWAT returning the final artifact/state in the HTTP response to the browser. Keep the following as separate investigation targets: (1) Word/COM save at close, (2) EMWAT artifact collection, (3) HTTP response delivery and Almas Gam persistence. User-facing/product wording: “closing Word is sufficient; the user need not press Save.”
