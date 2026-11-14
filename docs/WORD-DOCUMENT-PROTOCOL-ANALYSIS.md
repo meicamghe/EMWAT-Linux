@@ -921,3 +921,9 @@ Run #90 مشخص کرد که `0x004041BC` thunk مربوط به `rtl230.bpl!TFil
 `0x00457050` با نام TD32 `Emwatutils.Finalization` و `0x00454B9C` با نام `Emwatutils.euGetASFileName` شناسایی شدند؛ هیچ‌کدام parser بدنه Word نیستند. مسیر HTTP response شناخته‌شده است، اما close-time POST و قرارداد payload نهایی همچنان باز است.
 
 در ادامه `LoadDocument`، همان کلاس `TFileStream` بار دیگر در `0x004B7C3E` با همان filename مشتق‌شده و mode صفر ساخته می‌شود. کد اندازه stream را می‌گیرد و سپس virtual slot `+0x0C` را با buffer/count صدا می‌زند؛ این با خواندن مجدد فایل سازگار است. نام دقیق متد و semantics buffer تا بررسی VMT کلاس در RTL باز می‌ماند.
+
+
+## Run 91 — تأیید TFileStream.Write و TFileStream.Read
+Run #91 (43595953793) import/VMT slot 0x0062F800 را به کلاس TFileStream در rtl230.bpl و 0x004041BC را به سازنده TFileStream.Create(UnicodeString, Word) resolve کرد. در نخستین مسیر ساخت فایل، mode برابر 0xFF00 (fmCreate) است و virtual slot +0x10 با pointer/count فراخوانی می‌شود؛ در layout استاندارد TStream این slot متد Write است. در مسیر دوم، همان کلاس با mode صفر (fmOpenRead) باز می‌شود و slot +0x0C با buffer/count فراخوانی می‌شود که متد Read است.
+
+پس در LoadDocument یک چرخه واقعی ایجاد/نوشتن فایل و سپس بازکردن/خواندن آن وجود دارد. هنوز مسیر دقیق فایل، نوع encoding بایت‌ها و مصرف‌کننده نهایی داده خوانده‌شده مشخص نشده است. helperهای 0x00401270، 0x004012E0 و 0x00401348 به slotهای .idata حل‌نشده می‌روند؛ تا زمان resolve دقیق، آن‌ها را به UnicodeString/Base64 helper خاصی نسبت نمی‌دهیم. همچنین این یافته به‌تنهایی سازوکار POST هنگام بستن Word را روشن نمی‌کند.
