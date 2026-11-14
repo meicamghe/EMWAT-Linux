@@ -11,7 +11,8 @@ TARGET_CLASSES = (
     "TResultImage", "TMultiPageImage", "TSetOfMultiPageImages",
     "TSetOfSinglePageImages", "TProcessResult", "TScanCommand",
     "TEmwatMethod", "TEditWordDocument", "TWordViwer", "TEDPController",
-    "TEmwatDocPrintHandler",
+    "TEmwatDocPrintHandler", "TWordDocument", "TWordFields", "TWordField",
+    "TWordFieldCollection",
 )
 SLOTS = tuple(range(0x00, 0x300, 4))
 VMT_SELF = -88
