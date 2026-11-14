@@ -17,10 +17,20 @@ def va_to_raw(pe, va):
     return None, None
 
 
-def read_terminated(blob, offset, limit, terminator):
-    end = blob.find(terminator, offset, min(len(blob), offset + limit))
+def read_ansi(blob, offset, limit):
+    end = blob.find(b"\x00", offset, min(len(blob), offset + limit))
     if end < 0:
         end = min(len(blob), offset + limit)
+    return blob[offset:end]
+
+
+def read_utf16le(blob, offset, limit):
+    end_limit = min(len(blob), offset + limit)
+    end = offset
+    while end + 1 < end_limit:
+        if blob[end:end + 2] == b"\x00\x00":
+            break
+        end += 2
     return blob[offset:end]
 
 
@@ -39,20 +49,18 @@ def main():
         if raw is None:
             print("  not file-backed")
             continue
-        name = section.Name.rstrip(b"\\x00").decode("ascii", "replace")
+        name = section.Name.rstrip(b"\x00").decode("ascii", "replace")
         print(f"  raw=0x{raw:08X} section={name}")
         if raw >= 8:
             refcount = int.from_bytes(blob[raw - 8:raw - 4], "little", signed=True)
             length = int.from_bytes(blob[raw - 4:raw], "little", signed=True)
             print(f"  possible Delphi header: refcount={refcount} length={length}")
-        wide = read_terminated(blob, raw, args.max_bytes, b"\\x00\\x00")
-        if len(wide) % 2:
-            wide = wide[:-1]
+        wide = read_utf16le(blob, raw, args.max_bytes)
         try:
-            decoded_wide = wide.decode("utf-16le").replace("\\r", "\\r").replace("\\n", "\\n")
+            decoded_wide = wide.decode("utf-16le")
         except UnicodeDecodeError:
             decoded_wide = "<invalid UTF-16LE>"
-        ansi = read_terminated(blob, raw, args.max_bytes, b"\\x00")
+        ansi = read_ansi(blob, raw, args.max_bytes)
         decoded_ansi = ansi.decode("cp1252", "replace")
         print(f"  UTF-16LE: {decoded_wide!r}")
         print(f"  ANSI: {decoded_ansi!r}")
