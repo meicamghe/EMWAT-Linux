@@ -895,10 +895,11 @@ The resulting evidence should distinguish ordinary CALL xrefs, code immediates, 
 
 ### Current next actions
 
-1. Review the newest lifecycle artifact after the extended workflow completes; classify every `+0x68` hit by owning procedure and receiver.
-2. Identify the concrete type of `TEmwatMethod.Invoke` local `[ebp-8]` using its constructor/assignment source, RTTI and interface table.
-3. Find the HTTP `invoke` query parser and the registry mapping IDs to method objects; test whether `5208` is a static registration or runtime-generated ID.
-4. Trace the matching Word-edit implementation through XML response generation and document transfer. Keep the user's observed close-triggered apply behavior as a requirement, but do not assume the static `TEmwatMethod.Invoke` body alone proves the close event path.
+1. Complete the XML-object dispatch trace inside `TEmwatMethod.Invoke`: `[ebp-4]` is passed to `TXMLEmwatType.AfterConstruction` (0x0044C238); its class VMT is 0x0044B9AC, and its class slot +0x68 is null. Follow class slot +0xB0, the next receiver's +0xCC, and the final +0x68 interface method. Candidate RTTI classes are `TXMLMethodType` (VMT 0x0044BD48) and `TXMLParamType` (VMT 0x0044C08C); do not assign these types until the returned pointers are traced.
+2. Keep the second +0x68 call at 0x0046CBB7 separate; it uses a different local receiver in the shared base wrapper's exception/response path.
+3. Continue tracing the service parser/registry only where necessary to establish how XML method classes are resolved. The browser's `invoke=5208` value is already proven to be a random per-request nonce, not a method ID; the server-generated `TEmwatInvokeParam.SessionId` is separate.
+4. Link the registered Word BeforeClose callback at 0x004CD154 to the parent-page `postMessage` that initiates the next `EditWordDocument` request, then trace the Save/No-save branches to the final Almas Gam commit. Preserve the user's close-applies-changes observation as a hard requirement.
+
 
 
 
@@ -1011,3 +1012,16 @@ This corrects the earlier swapped callback labels. It also distinguishes three c
 - `0x005EC589`: separate autosave-preview form handler.
 
 The callback body does not directly issue the localhost HTTP request. The embedded browser bridge is a generic `postMessage → XHR → postMessage` forwarder; it does not contain close-specific logic. The remaining task is to identify the parent-page message sent when the Word close callback completes, and trace the save/No-save branches to the final Almas Gam commit.
+
+
+## Run 82 and focused Invoke receiver workflow (2026-11-14)
+
+- Lifecycle run 82 completed successfully. It confirms the decoded static parameter literals used by the concrete Word connector: `wordConfig`, `wordBody`, `letterImages`, and `signData`. The new repeatable tool `tools/decode_pe_strings.py` reads Delphi ANSI/UTF-16LE strings from PE virtual addresses; its output records the Delphi refcount/length header where available.
+- A focused workflow, `.github/workflows/analyze-invoke-enumerator.yml` (workflow display name: **Analyze EMWAT Invoke receiver**), was added so the generic Invoke/XML receiver trace can run independently of the much larger lifecycle analysis.
+- Focused run 1 traced helper 0x0044C238 and proved its TD32 symbol is `Emwatxml.TXMLEmwatType.AfterConstruction`; the only direct caller is `TEmwatMethod.Invoke` at 0x0046C877, passing the address of local `[ebp-4]`.
+- RTTI identifies `TXMLEmwatType` at VMT 0x0044B9AC, instance size 0x5C, with one implemented interface at object offset +0x50 and interface VTable 0x0044B878 (IID e7e941dd-cf1c-4856-9cec-8b6d2370c439).
+- Focused run 3 shows the class VMT's +0x68 slot is null, so the unresolved +0x68 call cannot be made on a plain `TXMLEmwatType` class VMT. Its implemented interface has a valid +0x68 VTable entry (thunk 0x0044B7D1), which is only a candidate until the dataflow proves the local receiver is that interface pointer.
+- The class VMT has executable thunks at +0xB0 (0x0044BA5C) and +0xCC (0x0044BA78). `TXMLMethodType` and `TXMLParamType` are also present in RTTI with interface offsets +0x70 and +0x50 respectively. Focused run 4 is tracing their VMT and interface slots to identify the +0xCC and +0x68 receiver types.
+- The dictionary enumeration helpers `0x0046DE84` and `0x0046E324` are separate from the +0x68 receiver dispatch. The earlier hypothesis that local `[ebp-8]` itself was a `TDictionary.TPairEnumerator` is withdrawn: that class's VMT has only its own leading enumerator slots and +0x68 falls in metadata/data, not an executable class virtual slot.
+
+**Evidence boundary:** this advances the type of the first receiver in the chain and narrows the likely XML class/interface family, but the exact types of `[ebp-0x1C]` and `[ebp-8]`, plus the method name at +0x68, remain unresolved. See [WORD-COM-INTERFACE-DISPATCH.md](WORD-COM-INTERFACE-DISPATCH.md).
