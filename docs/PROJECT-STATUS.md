@@ -1119,3 +1119,7 @@ Run 24 (`43579618380`, artifact `14106929511`) traced the paired `TXMLMethodType
 - The direct-call scan reports no direct immediate CALL xrefs for these interface methods; use is expected through virtual/interface dispatch.
 
 **Boundary unchanged:** no parameter child tag, complete XML envelope, or exact wire serialization was recovered. Next target is the node-list implementation behind child collection virtual slots `+0x10` and `+0x20`; prioritize the page-side close-time `postMessage` sender and corresponding HTTP response path in parallel. Do not treat this static analysis as proof of native Linux runtime behavior.
+
+## Close callback deep trace queued — 2026-11-14
+
+The lifecycle workflow now has a follow-up step for the registered `WordAppDocumentBeforeClose` body and pointer/caller references, `RollBackOriginalOptions`, and the three-argument Word `Close` wrapper. Commit: `b88451617f3500f8ec64e239902533b21ab82a4d`. This is an analysis-only extension; no native runtime behavior is implemented by it. The run output must be reviewed before drawing conclusions.
