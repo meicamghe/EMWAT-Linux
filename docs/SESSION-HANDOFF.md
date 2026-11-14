@@ -281,3 +281,10 @@ Next action: continue tracing the exact Word close-time response and the source 
 Python bridge workflow run #22, ID `43593083176`, commit `22a803912b0fa92c3bb5537fb1f0c7952fda7615`: **success**, 27 tests passed. New coverage and checks include Host header path/query/fragment rejection, duplicate Content-Length rejection, ASCII-decimal-only Content-Length parsing, and Transfer-Encoding rejection. No request body or response payload is logged.
 
 A separate static-analysis workflow Run #89 is in progress, adding targeted traces for the Word body stream ingestion and temporary output handling path. Its conclusions are not yet available; do not treat that run as complete.
+
+
+### Latest application integration checkpoint
+
+`application.py` now exposes `create_bridge_server` to wire transport, parser and explicit dispatcher. Integration tests cover a full localhost POST through parser and a registered test handler, plus origin rejection. CI run #24 (`43593185429`) passed all 29 tests on commit `27986ee96b45009283cd96eecde95110e1b9e448`.
+
+No real `EditWordDocument` handler is registered. The test handler is deliberately synthetic and proves only composition of the layers. The Word lifecycle analysis workflow Run #89 remains in progress; its new target traces include the `wordBody` stream ingestion and temporary output path.
