@@ -785,12 +785,12 @@ The helper parses `wordConfig` as XML and checks the `word-document` root. It wr
 
 During this path, `LoadDocument` calls `TWordViwer.OnTmrAutoSave` at `0x004B8A84` with the viewer instance and configuration string. That routine stores/parses the configuration and registers Word automation callbacks, including:
 
-- `+0x80 → 0x004CD154` (export name `WordAppDocumentBeforeClose`; actual close callback)
-- `+0x90 → 0x004CD54C` (export name `WordAppDocumentBeforeSave`)
-- `+0x98 → 0x004CD9C0` (export name `WordAppNewDocument`; body includes Activation/Quitword handling)
+- `+0x80 → 0x004CD154` (TD32: `WordAppDocumentBeforeSave`; corrected by runs 25–26)
+- `+0x90 → 0x004CD54C`
+- `+0x98 → 0x004CD9C0` (NewDocument export; body includes Activation/Quitword handling)
 - `+0x88 → 0x004D00AC` or `0x004CE030` depending on viewer state (BeforePrint paths)
 
-The names were cross-checked against the BPL export table and body strings; this corrects the earlier swapped callback labels. The routine at `0x004CCBBC` is not registered here: despite its TD32 `WordAppDocumentBeforeClose` label, it is a nested helper reached from `FillImgFldsForPrint`.
+Do not interpret 0x004CD154 as BeforeClose. The separately named TD32 routine at 0x004CCBBC has only a direct bounded caller from FillImgFldsForPrint and no raw-pointer registration reference; its active event role is unproven.
 
 **Correction to the earlier Run 77 response interpretation:** `TEditWordDocument` itself sets `bUnloadPkg=true` after `LoadDocument`, but `LoadDocument` can set `bResultSet=true` itself. On the non-empty-result path at `0x004B7F9C–0x004B7FBF`, it:
 1. obtains `AResponseInfo` from `TEmwatInvokeParam.AResponseInfo` at record offset `+0x0C);
