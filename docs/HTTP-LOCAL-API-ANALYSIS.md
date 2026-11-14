@@ -270,3 +270,10 @@ The XML envelope parser uses runtime-confirmed element names from the close-time
 ## Strict HTTP framing tests — CI run #22
 
 The transport now rejects Host values that include path/query/fragment components, requires exactly one ASCII-decimal Content-Length, and rejects Transfer-Encoding. The corresponding tests pass in Python bridge workflow run #22 (`43593083176`, commit `22a803912b0fa92c3bb5537fb1f0c7952fda7615`): **27 tests passed**.
+
+
+## Application factory and end-to-end local transport test
+
+The new `python/src/emwat_linux/application.py` composes the transport, XML parser and explicit dispatcher through `create_bridge_server`. The factory requires the exact Origin allowlist and an explicit handler mapping. A full localhost integration test sends the confirmed outer XML envelope, passes through parsing and dispatch, and reads the handler's HTTP response. This test uses a fixture handler, not the production `EditWordDocument` method.
+
+Python bridge CI run #24 (`43593185429`, commit `27986ee96b45009283cd96eecde95110e1b9e448`) passed all 29 tests. This verifies composition of the local bridge layers, not Almas Gam compatibility or the document close/apply workflow.
