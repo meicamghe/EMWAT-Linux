@@ -45,6 +45,7 @@ class BridgeHTTPServer:
         allowed_origins: frozenset[str] = frozenset(),
         max_response_bytes: int = 16 * 1024 * 1024,
         socket_timeout_seconds: float = 10.0,
+        require_origin: bool = True,
     ) -> None:
         if not ip_address(host).is_loopback:
             raise ValueError("EMWAT bridge must bind to a loopback address")
@@ -62,6 +63,7 @@ class BridgeHTTPServer:
         self._max_response_bytes = max_response_bytes
         self._socket_timeout_seconds = socket_timeout_seconds
         self._allowed_origins = allowed_origins
+        self._require_origin = require_origin
         owner = self
 
         class Handler(BaseHTTPRequestHandler):
@@ -151,6 +153,9 @@ class BridgeHTTPServer:
                     return
 
                 origin = self.headers.get("Origin")
+                if origin is None and owner._require_origin:
+                    self._send(403, b"origin_required", "text/plain; charset=utf-8")
+                    return
                 if origin is not None and origin not in owner._allowed_origins:
                     self._send(403, b"origin_not_allowed", "text/plain; charset=utf-8")
                     return
