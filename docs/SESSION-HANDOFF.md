@@ -312,3 +312,15 @@ The separate Word lifecycle workflow Run #89 is still processing its deep trace 
 - The LoadDocument string constants include the exact error text `DocFileName can not be null.` at 0x004B8238. In the LoadDocument control flow, the transformed local string is checked for zero length immediately before this error path. This is strong evidence that the LoadDocument argument is being treated as a document filename, not simply as arbitrary document-body bytes.
 - The same routine contains the strings `word-document`, `ConfigXML data loaded.`, and `Word Calling Mode: `, indicating logging/configuration activity around document loading. The strings `.doc` and `.docx` are present in the filename validation/normalization helper path. Their exact branch semantics are not yet established.
 - Update the working interpretation: outer connector key `wordBody` is passed into LoadDocument, but inside LoadDocument it is validated/processed as a DocFileName-like UnicodeString. Do not assume the key name accurately describes its runtime value type.
+
+
+## Run 90 — LoadDocument file-stream identification
+
+- Run #90 (`43595049501`) completed successfully; artifact `14113854620`.
+- The constructor helper at `0x004041BC` is definitively an IAT thunk to `rtl230.bpl!TFileStream.Create(UnicodeString, Word)`. Therefore the object created at `0x004B780B` is a file stream, not an unidentified memory stream.
+- `LoadDocument` passes a filename-like string into that constructor, then invokes the stream object's virtual slot `+0x10` with a data pointer and a length obtained from the original `wordBody` argument. This is strong evidence that `wordBody` is used as file content/data at this point, while a separately derived local string supplies the destination filename. Do not yet claim whether the data is UTF-8, UTF-16, Base64-decoded, or another encoding; the exact length semantics and destination path are still open.
+- The constructor mode argument is pushed as `0xFF00`; do not translate this to a named Delphi file mode until the calling convention and constant are checked against the exact RTL version.
+- Run #90 decoded additional strings: `Word document file created.`, `word-document`, `ConfigXML data loaded.`, `Word Calling Mode: `, `image/tif`, `base64`, `Result word file content read successfully. try (%d)`, and error `DocFileName can not be null.`. These support a staged file-creation/configuration workflow, but do not independently establish the temporary folder or response schema.
+- `0x00457050` is TD32-labeled `Emwatutils.Finalization` in module `EmailUtil`, and `0x00454B9C` is `Emwatutils.euGetASFileName`; treat these as string cleanup/name transformation helpers, not body parsers.
+- The response write path remains the known `AResponseInfo.ContentText` → `TIdHTTPResponseInfo.WriteContent` path. Run #90 did not reveal the final close-time POST/apply contract.
+- Immediate next work: trace the destination filename construction (`0x00401348`, `0x004012F8`, `0x00401270`, `0x004012E0`), inspect the second file-stream creation in `LoadDocument` around `0x004B7C39`, and correlate the file path/data with the final response XML.
