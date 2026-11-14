@@ -463,6 +463,22 @@ jobs:
           python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004B8CA2 word-lifecycle-analysis/OnTmrAutoSave-registration-callers.md
           python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004CD9C0 word-lifecycle-analysis/WindowActivate-callers.md
           python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004CE030 word-lifecycle-analysis/BeforePrintBGPrint-callers.md
+      - name: Trace callback record consumers and Word viewer event tail
+        run: |
+          mkdir -p word-lifecycle-analysis
+          python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x004B8D12 0x004B8F30 word-lifecycle-analysis/OnTmrAutoSave-event-tail-run97.md
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004B8A84 word-lifecycle-analysis/OnTmrAutoSave-full-run97.md 1100 ret
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x00404FBC word-lifecycle-analysis/callback-helper-404FBC-run97.md 220 ret
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004013F8 word-lifecycle-analysis/callback-helper-4013F8-run97.md 180 ret
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x00401398 word-lifecycle-analysis/callback-helper-401398-run97.md 180 ret
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x00401368 word-lifecycle-analysis/callback-helper-401368-run97.md 180 ret
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x00404FBC word-lifecycle-analysis/callback-helper-404FBC-callers-run97.md
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004013F8 word-lifecycle-analysis/callback-helper-4013F8-callers-run97.md
+          python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 0x004CD154 word-lifecycle-analysis/BeforeSave-callback-record-pointer-refs-run97.md
+          python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 0x004CD54C word-lifecycle-analysis/NewDocument-callback-record-pointer-refs-run97.md
+          python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 0x004CD9C0 word-lifecycle-analysis/WindowActivate-callback-record-pointer-refs-run97.md
+          python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 0x004CE030 word-lifecycle-analysis/BeforePrint-callback-record-pointer-refs-run97.md
+          python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 0x004D00AC word-lifecycle-analysis/LoadOptions-callback-record-pointer-refs-run97.md
       - uses: actions/upload-artifact@v4
         with:
           name: emwat-word-lifecycle-analysis
