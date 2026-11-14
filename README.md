@@ -78,3 +78,6 @@ For the current project decisions, implementation boundaries, and next-session c
 The Python package now contains a conservative parser for the runtime-confirmed `emwat version="1.0" → method class → param name` envelope (`python/src/emwat_linux/protocol.py`) and an explicit allowlisted dispatcher (`python/src/emwat_linux/dispatcher.py`). Unknown method classes return HTTP 501; malformed envelopes return HTTP 400. Method class names are never dynamically imported. No `EditWordDocument` handler or fabricated success response is registered yet.
 
 The loopback transport is hardened with IPv4-loopback-only binding, Host-header validation, required exact allowlisted Origin by default, bounded request/response bodies, socket read timeouts, duplicate Content-Length rejection, and sanitized errors. CI run #20 passes all 24 tests. This remains a transport/protocol foundation, not a usable Almas Gam connector.
+
+
+**Latest CI hardening:** Python bridge transport run #22 (`43593083176`) passed all 27 tests on commit `22a803912b0fa92c3bb5537fb1f0c7952fda7615`. Additional tests cover Host header path injection, duplicate Content-Length and non-decimal Content-Length. The listener now rejects malformed Host values and strict-invalid HTTP framing before dispatch.
