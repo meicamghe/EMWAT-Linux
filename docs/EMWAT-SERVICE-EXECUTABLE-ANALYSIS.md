@@ -189,18 +189,15 @@ It creates/starts a worker thread and logs `CoInitializing thread`. The method p
 
 `wordConfig, wordBody, letterImages, signData, TEmwatInvokeParam*, outputString → 0x004B7724`.
 
-After the helper returns, the method copies the output string into the result string supplied by the base dispatcher and sets record byte `+0x04` (`bUnloadPkg`) to true. It does **not** set `bResultSet` (record byte `+0x05`) in this body.
+After the helper returns, the method copies the helper's output string into the base dispatcher's output string and sets record byte `+0x04` (`bUnloadPkg`) to true. It does not set `bResultSet` in the `TEditWordDocument` body itself.
 
-This explains the generic service response path:
-1. `TEditWordDocument` returns the helper's output string.
-2. `bResultSet` remains false.
-3. The service dispatcher writes the output string to `AResponseInfo.ContentText`, calls `0x004610FC` to send the HTTP response, then sets `bResultSet=true`.
-4. The separate `bUnloadPkg=true` flag requests package unload/cleanup after the method call.
+**Correction from the complete LoadDocument range:** helper `0x004B7724` receives the `TEmwatInvokeParam*` as stack argument `[EBP+0x0C]` and uses it directly. On the non-empty-result path at `0x004B7F9C–0x004B7FBF), it:
+1. obtains `AResponseInfo` from record offset `+0x0C`;
+2. assigns the generated XML output string to `AResponseInfo.ContentText` at object offset `+0xBC`;
+3. calls imported `IdCustomHTTPServer.TIdHTTPResponseInfo.WriteContent` (thunk `0x0040448C`, IAT slot `0x0062F9C0`);
+4. sets record byte `+0x05` (`bResultSet`) to true.
 
-The helper `0x004B7724` is now the critical next target: it receives the four Word payload values and request context and appears to own the actual document/Word automation and construction of the response string. Its complete TD32 procedure/caller traces are included in lifecycle run 77.
-
-The parameter names and response behavior align with the user's observed `EditWordDocument` response containing `wordConfig`, but the exact XML generation and close-time commit semantics must be confirmed inside `0x004B7724` and its downstream calls.
-
+Therefore, for a successful non-empty `EditWordDocument` result, the generic service dispatcher sees `bResultSet=true` and skips its fallback response branch. The earlier interpretation that the generic dispatcher always sends this method's output was based on the connector body alone and an incomplete LoadDocument trace; it is superseded.
 
 ## LoadDocument helper reached from the Word-edit VMT target (lifecycle run 77)
 
@@ -211,7 +208,7 @@ The TD32 procedure at `0x004B7724` is:
 - Range: `0x004B7724–0x004B8A83`
 - Size: `0x1360` bytes
 
-The only direct TD32-bounded caller is the code at `0x005EE961), inside the method body at `0x005EE82C`. That caller passes:
+The only direct TD32-bounded caller is the call at `0x005EE961), inside the code at `0x005EE82C`. The caller passes:
 - EAX = `wordConfig`
 - EDX = `wordBody`
 - ECX = `letterImages`
@@ -219,15 +216,28 @@ The only direct TD32-bounded caller is the code at `0x005EE961), inside the meth
 - stack argument 2 = `TEmwatInvokeParam*` (read from the connector instance's field `+4`)
 - stack argument 3 = `signData`
 
-The TD32 caller label for `0x005EE82C` is `TScanDocument.PerformMethod`, but the corrected class RTTI shows that this code address is the `+0x10` target in the `TEditWordDocument` VMT. Its body reads the four Word-edit keys and calls `LoadDocument`. Preserve this naming discrepancy explicitly: the runtime VMT mapping and method-body behavior identify the actual class path; do not silently rewrite the TD32 symbol name.
+The TD32 caller label for `0x005EE82C` is `TScanDocument.PerformMethod`, but corrected class RTTI shows that this code address is the `+0x10` target in the `TEditWordDocument` VMT. Preserve this naming discrepancy explicitly; do not silently rewrite the TD32 symbol.
 
 Within `LoadDocument`, the code:
-- creates a Word-viewer object through the class reference at `0x004B104C` and constructor/helper `0x004D0D24`;
-- assigns the stack `signData` string to an object field at offset `+0xF4`;
-- configures document/viewer state through helper `0x004D1454`;
-- calls `TWordViwer.OnTmrAutoSave` at `0x004B8A84`;
-- continues through document-field and image-related collection processing before returning the output string.
+- parses `wordConfig` as XML and checks the `word-document` root;
+- writes the `wordBody` bytes to a stream;
+- stores `signData` in Wordviewer state at field `+0xF4`;
+- processes configuration and image paths, including `image/tif`, `Payam-e-Dowlat` handling and a `view` branch;
+- creates/configures the Wordviewer object through `0x004D0D24` and `0x004D1454`;
+- calls `TWordViwer.OnTmrAutoSave` at `0x004B8A84` with the viewer and configuration string;
+- reads the generated temporary document file with a retry loop (limit 100), adds its content to the result, and deletes the temporary file.
 
-The helper's second stack argument is the `TEmwatInvokeParam*` supplied by the connector, although no direct `[EBP+0x0C]` read appears in the current body trace. Its exact downstream use remains unresolved; do not assume it is ignored.
+The helper references response metadata strings `application/msword` and `success`, logs `Word doc content added to result.` and `OpenDoc function succeed.`, then writes the serialized result through Indy `WriteContent`. The exact XML element layout and encoding still need byte-for-byte comparison with a captured runtime response.
 
-Next, trace `0x004D0D24` and `0x004D1454` and inspect the Word-viewer object's event registration and response-building path. The observed close-time POST still needs its upstream Word event source mapped.
+### Word automation callback registration reached from LoadDocument
+
+The `OnTmrAutoSave` routine at `0x004B8A84` stores the configuration and registers callback pointers on the Word automation object:
+
+- `+0x80 → 0x004CD154` (`WordAppDocumentBeforeSave`)
+- `+0x90 → 0x004CD54C` (`WordAppNewDocument`)
+- `+0x98 → 0x004CD9C0` (callback body still needs semantic identification)
+- `+0x88 → 0x004D00AC` or `0x004CE030` depending on viewer state (BeforePrint paths)
+
+This registration list does not include `0x004CCBBC`. That TD32-labelled `WordAppDocumentBeforeClose` routine is already proven to be a nested helper called from the image-field path; it is not the established Word close-event source.
+
+**Remaining:** identify the callback/event or browser-side message that emits the observed close-time POST, determine how the temporary Word file's final contents are committed back to Almas Gam, and compare the serialized HTTP response with the user's captured XML.
