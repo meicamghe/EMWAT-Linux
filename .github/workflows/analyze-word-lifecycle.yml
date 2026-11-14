@@ -97,6 +97,12 @@ jobs:
           python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x005EBDA8 word-lifecycle-analysis/uSendLog-CloseWordApp-callers.md
           python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x005EBF20 word-lifecycle-analysis/uSendLog-FormClose.md
           python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x005E9174 word-lifecycle-analysis/WordCompareCommandUnit-CloseMyDoc.md
+          python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x0042FEB0 word-lifecycle-analysis/Wordxp-TWordDocument-Close.md
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x0042FEB0 word-lifecycle-analysis/Wordxp-TWordDocument-Close-callers.md
+          python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x0042FF08 word-lifecycle-analysis/Wordxp-TWordDocument-Close-arg1.md
+          python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x0042FF7C word-lifecycle-analysis/Wordxp-TWordDocument-Close-arg2.md
+          python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x0042FFF4 word-lifecycle-analysis/Wordxp-TWordDocument-Close-arg3.md
+          python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x00433A84 word-lifecycle-analysis/Wordxp-TWordDocument-ClosePrintPreview.md
           python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x004C009C word-lifecycle-analysis/Wordxp-TWordViwer-FillMSWFields.md
           python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x004C0410 word-lifecycle-analysis/Wordxp-TWordViwer-AddImagesToDoc.md
           python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x004A5F68 word-lifecycle-analysis/Wordxp-TEmwatDocPrintHandler-FillField.md
