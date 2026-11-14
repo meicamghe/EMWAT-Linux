@@ -513,3 +513,8 @@ This confirms that the second `WordAppDocumentBeforeClose` handler is not wired 
 ### btnShowFileClick confirmation (lifecycle run 59)
 
 The complete `TfrmShowAutoSaveFiles.btnShowFileClick` body is only ten bytes and consists of a direct call to `CloseWordApp` followed by return. The two direct callers of `CloseWordApp` are exactly this button handler and the autosave form's `WordAppDocumentBeforeClose` handler. Thus this callback/button pair is self-contained autosave-preview cleanup; it does not open the main letter, invoke the Word field pipeline, or call the local connector in the traced body.
+
+
+### Close wrapper reachability audit (lifecycle run 60)
+
+Direct-call scans found **zero** TD32-bounded CALL sites for all four `TWordDocument.Close` wrappers (`0x0042FEB0`, `0x0042FF08`, `0x0042FF7C`, `0x0042FFF4`) and for `ClosePrintPreview` (`0x00433A84`). Each Close wrapper has one exact raw pointer occurrence in `.text` near the WordXP class/VMT metadata, but no direct callsite. This suggests the wrappers are exposed through class metadata or property dispatch and are not directly called in the analyzed BPL paths. Do not treat these wrappers as the main close-time update path without a VMT/property caller or runtime trace.
