@@ -26,7 +26,10 @@ jobs:
       - name: Decode filename validation and construction constants
         run: |
           mkdir -p filename-analysis
-          python tools/decode_pe_strings.py analysis-input/EmwatMethods.bpl1 0x00457148 0x00457160 0x00454C80 0x00627E8C 0x00627E90 0x004B8220 0x004B8238 0x004B832C 0x004B8348 0x004B8364 0x004B83A0 > filename-analysis/string-constants.md
+          python tools/decode_pe_strings.py analysis-input/EmwatMethods.bpl1 0x00457148 0x00457160 0x0045702C 0x00457044 0x00454C80 0x00627E8C 0x00627E90 0x004B8220 0x004B8238 0x004B832C 0x004B8348 0x004B8364 0x004B83A0 > filename-analysis/string-constants.md
+          python tools/inspect_pe_va.py analysis-input/EmwatMethods.bpl1 0x0045702C --before 0x10 --after 0x40 > filename-analysis/constant-45702C.md
+          python tools/inspect_pe_va.py analysis-input/EmwatMethods.bpl1 0x00457044 --before 0x10 --after 0x40 > filename-analysis/constant-457044.md
+          python tools/inspect_pe_va.py analysis-input/EmwatMethods.bpl1 0x00454C80 --before 0x10 --after 0x40 > filename-analysis/constant-454C80.md
           python tools/inspect_pe_va.py analysis-input/EmwatMethods.bpl1 0x00627E8C --before 0x20 --after 0x80 > filename-analysis/global-627E8C.md
           python tools/inspect_pe_va.py analysis-input/EmwatMethods.bpl1 0x00627E90 --before 0x20 --after 0x80 > filename-analysis/global-627E90.md
       - name: Trace filename helper internals
