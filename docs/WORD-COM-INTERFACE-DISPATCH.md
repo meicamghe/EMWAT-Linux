@@ -413,15 +413,15 @@ A new whole-PE exact 32-bit pointer scan checked the callback candidates in all 
 
 - Target `0x004CCBBC` (TD32 label `WordAppDocumentBeforeClose`): **zero exact raw pointer references anywhere in the PE**; its proven direct caller is the nested `FillImgFldsForPrint` helper.
 - `0x004CD154` (export name `WordAppDocumentBeforeClose`): pointer immediate at `0x004B8CA8` in `.text` plus a debug-section occurrence; this is the registered main-editor close callback.
-- `0x004CD54C` (`WordAppNewDocument`): pointer immediate at `0x004B8CBE` in `.text`.
+- `0x004CD54C` (export name `WordAppDocumentBeforeSave`; TD32 label `WordAppNewDocument`): pointer immediate at `0x004B8CBE` in `.text`.
 - `0x004CE030` (one BeforePrint handler): pointer immediates at `0x004B8D0E` and `0x004B8E81`.
 - `0x004D00AC` (alternate BeforePrint handler): pointer immediates at `0x004B8CF6` and `0x004B8E60`.
 
-The full `OnTmrAutoSave` disassembly confirms these are actual method-pointer assignments on the Word event object at `[this+0x44]`: method addresses are stored alongside the controller instance in paired fields `+0x80/+0x84` (BeforeSave), `+0x90/+0x94` (NewDocument), `+0x98/+0x9C` (the `0x004CD9C0` handler), and `+0x88/+0x8C` (the conditional BeforePrint handler, either `0x004D00AC` or `0x004CE030`). The second registration branch later reassigns the BeforePrint pair using the same two known addresses.
+The full `OnTmrAutoSave` disassembly confirms these are actual method-pointer assignments on the Word event object at `[this+0x44]`: method addresses are stored alongside the controller instance in paired fields `+0x80/+0x84` (BeforeClose: `0x004CD154`), `+0x90/+0x94` (BeforeSave: `0x004CD54C`), `+0x98/+0x9C` (NewDocument export/Activation handler: `0x004CD9C0`), and `+0x88/+0x8C` (conditional BeforePrint handler, either `0x004D00AC` or `0x004CE030`). The second registration branch later reassigns the BeforePrint pair using the same two known addresses.
 
 This is strong negative evidence against `0x004CCBBC` being the registered BeforeClose event handler: the known registration routine assigns `0x004CD154`, the export name and body strings identify that address as the main-editor BeforeClose callback, and no raw pointer to `0x004CCBBC` exists in the image. Combined with its proven direct call from the print/field path, classify `0x004CCBBC` as a nested print/field helper despite its misleading TD32 name.
 
-The real close-time POST (`127.0.0.1:1984/?invoke=5208`) must now be mapped through another event/connector path; do not continue treating `0x004CCBBC` as its proven source.
+The registered close callback at `0x004CD154` is now identified, but its body contains no direct HTTP call. The bridge forwards parent-page `postMessage` data to `127.0.0.1:1984/?invoke=<nonce>`; the parent-page code that emits the close-time message and the final commit path remain to be mapped. Do not treat `0x004CCBBC` as the source.
 
 
 ## Additional WordXP collection RTTI (lifecycle run 45)
