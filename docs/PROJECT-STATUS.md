@@ -1158,3 +1158,12 @@ Run 29 با شناسه `43589571290` و artifact `14111108881` با موفقیت
 A first protocol-neutral Python transport layer now exists under `python/`. It binds only to IPv4 loopback, exposes `GET /healthz`, accepts opaque POST bodies at `/`, preserves the query string/body bytes for a future verified dispatcher, applies a configurable body-size limit and exact Origin allowlist, rejects unsupported methods/routes and sanitizes handler exceptions. It intentionally does not parse or synthesize the legacy XML envelope: the parameter child tag and complete close-response contract remain unproven.
 
 Files: `python/src/emwat_linux/bridge.py`, `python/tests/test_bridge.py`, `python/pyproject.toml`; CI: `.github/workflows/python-bridge.yml`. This is a transport foundation only, not yet an end-to-end EMWAT connector. Verify the dedicated CI run before treating the milestone as green.
+
+
+### Bridge transport CI correction and verification (2026-11-14)
+
+The first CI attempts failed before meaningful tests because the workflow tried to install the package with `--no-build-isolation` while setuptools was not installed. CI was simplified to run the stdlib unittest suite with `PYTHONPATH=src`. The next test run exposed a fixture error: the valid XML sample exceeded the test server's 32-byte configured limit. The test limit was raised to 128 bytes and the oversized-body test to 129 bytes.
+
+The transport also now returns `Access-Control-Allow-Origin` and `Vary: Origin` only when the request Origin exactly matches the configured allowlist. No wildcard CORS is used. This is necessary for browser JavaScript to read the localhost XHR response, but the actual Almas Gam origin must be configured and validated during integration.
+
+**Verified:** Python bridge workflow run `43592145701`, commit `c705ed34ad9a9e87b42d7e2d85d3aa60aea83815`, conclusion `success`. Seven unit/integration tests passed. This verifies the transport behavior only; no legacy XML, Word, LibreOffice, or Almas Gam end-to-end compatibility is claimed.
