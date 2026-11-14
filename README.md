@@ -66,12 +66,12 @@ For the current project decisions, implementation boundaries, and next-session c
 
 ## پل بومی HTTP در لینوکس — لایه انتقال اولیه
 
-در شاخه فعلی، یک بسته Python اولیه در مسیر `python/` اضافه شده است. این لایه فقط انتقال HTTP محلی را فراهم می‌کند: bind اجباری روی IPv4 loopback، endpoint سلامت `/healthz`، پذیرش POST روی ریشه، حفظ بدنه به‌صورت bytes و بدون parse/تغییر، محدودیت اندازه بدنه، رد Originهای خارج از allowlist پیکربندی‌شده، و پاسخ خطای sanitize‌شده. قرارداد XML/dispatcher عمداً هنوز در این لایه پیاده نشده است؛ زیرا نام تگ پارامتر و schema کامل response نهایی هنوز اثبات نشده‌اند.
+در شاخه فعلی، یک بسته Python اولیه در مسیر `python/` اضافه شده است. لایه انتقال HTTP بدنه را به‌صورت bytes خام نگه می‌دارد؛ parser و dispatcher در ماژول‌های جداگانه قرار دارند. parser پوسته تأییدشده `emwat → method → param` را می‌خواند و dispatcher فقط handlerهای صریحاً ثبت‌شده را اجرا می‌کند. schema محتوای `EditWordDocument` و پاسخ نهایی هنوز کامل نیست.
 
 تست‌های واحد در `python/tests/test_bridge.py` و workflow مستقل `Python bridge transport` در GitHub Actions قرار دارند. این milestone فقط foundation انتقال است و هنوز با وب‌اپ الماس گام یا Word/LibreOffice یکپارچه نیست.
 
 
-**CI verification:** workflow `Python bridge transport` run `43592145701` completed successfully for commit `c705ed34ad9a9e87b42d7e2d85d3aa60aea83815`. The transport response now echoes `Access-Control-Allow-Origin` only for an exact configured Origin (never `*`), so a browser can read an allowed origin's response. The initial CI failures exposed two setup/fixture issues (unnecessary setuptools install in CI; test fixture larger than its configured cap); both were corrected before the successful run. This does not validate compatibility with the Almas Gam production origin or legacy XML schema.
+**CI verification (latest):** workflow `Python bridge transport` run #20 (`43592721635`) passed all 24 tests on commit `2fa217ae83f33b80a7799ede4c75f2cc58b40d76`. This verifies only the transport, envelope parser and explicit dispatcher—not compatibility with the production Almas Gam origin or the full Word workflow.
 
 ### XML protocol foundation
 
