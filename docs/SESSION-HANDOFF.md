@@ -337,3 +337,13 @@ The separate Word lifecycle workflow Run #89 is still processing its deep trace 
 - این دو مسیر شواهد مستقیم یک چرخه create/write سپس open-read/read را فراهم می‌کنند. مسیر واقعی فایل و مقصد نهایی داده خوانده‌شده هنوز مشخص نیست؛ بنابراین فعلاً نام آن را «فایل میانی» می‌گذاریم، نه الزاماً temp directory خاص.
 - helperهای 0x00401270، 0x004012E0، 0x00401348 به slotهای .idata می‌پرند که در import descriptorهای قابل‌تحلیل پیدا نشدند؛ نام‌گذاری این helperها یا نسبت‌دادن قطعی آن‌ها به تبدیل encoding مجاز نیست.
 - Run #91 هیچ قرارداد close-time POST یا response payload تازه‌ای پیدا نکرد. مرحله بعد: تحلیل ادامه LoadDocument پس از خواندن فایل، مشخص‌کردن مسیر فایل و اینکه بایت‌های خوانده‌شده چگونه به Word/فرمت TIFF و پاسخ HTTP منتقل می‌شوند.
+
+
+## آخرین وضعیت مهندسی معکوس — Run 92
+
+- GitHub Actions workflow run #92 با شناسه 43597403349 موفق شد؛ artifact دقیق 14114738491 بررسی شد.
+- در `LoadDocument`، بعد از بازکردن مجدد فایل واسط و خواندن آن، تابع TD32 با نام `TWordViwer.OnTmrAutoSave` در آدرس 0x004B8A84 فراخوانی می‌شود (callsite: 0x004B7A58). این تابع نقطه شروع مهمی برای trace چرخه پس از بارگذاری Word است، اما هنوز نباید آن را callback بستن سند یا ارسال پاسخ HTTP فرض کرد.
+- تابع `TWordViwer.AddCustomDocPropertiesToDic` در 0x004D1454 نیز در LoadDocument فراخوانی مستقیم دارد و به نظر می‌رسد properties سفارشی سند را به dictionary منتقل می‌کند.
+- مسیر تصاویر: `CreateImageFile` در `EmwatDocPrintHandlerUnit` مجموعه ورودی‌ها را پردازش می‌کند و `PrintWordDoc` با `TFileStream(fmCreate)` داده را در فایل می‌نویسد. `CreateTIFF.SeparteImages` نیز در همان ماژول وجود دارد؛ caller مستقیم در اسکن فعلی پیدا نشد. این مسیرها هنوز به bridge اصلی یا HTTP response متصل نشده‌اند.
+- هیچ close-time POST یا payload نهایی در Run 92 کشف نشد.
+- گام بعدی بدون سؤال از کاربر: trace کامل `OnTmrAutoSave` و helperها/callerها، سپس event registration و مسیرهای Word COM Save/Close؛ هم‌زمان شناسایی dispatch غیرمستقیم برای TIFF/Print. پس از هر run، یافته‌ها و محدودیت استنتاج در همین handoff و اسناد پروتکل ثبت شوند.
