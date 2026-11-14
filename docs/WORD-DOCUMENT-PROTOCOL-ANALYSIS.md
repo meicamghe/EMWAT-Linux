@@ -754,9 +754,11 @@ The service-side half of the observed close request is no longer an unknown blac
 
 For the observed runtime envelope `EditWordDocument`, the class resolution is `TEditWordDocument`, and its concrete VMT slot `+0x10` target is `0x005EE82C`. This method reads the `document` parameter and calls helper `0x004B7724`. The helper is now included in the next lifecycle trace.
 
-**What remains unproven:** which Word/COM callback or browser-side event handler emits the `postMessage` that causes the close-time POST. The service parser/dispatcher path is established, but this does not by itself prove the upstream event source or the final document commit/save semantics. The user's runtime observation that closing applies the changes remains the behavioral requirement.
+**Close-event progress:** `TWordViwer.OnTmrAutoSave` registers the actual main-editor Word close callback at event-record `+0x80 → 0x004CD154`. Its export name and body strings identify it as `WordAppDocumentBeforeClose`; it logs `Document.OnBeforeClose Called.`, prompts in Persian whether to save changed content, handles Yes/No/Cancel, and invokes the three-argument `Wordxp._Document.Close` overload through slot `+0x29C`. The separately named routine at `0x004CCBBC` remains a nested image-field helper, not the registered event callback.
 
-Also note the corrected ID distinction: browser query `invoke=<random>` is not the service's `TEmwatInvokeParam.SessionId`; the service generates a separate six-digit internal SessionId.
+**What remains unproven:** the close callback body has no direct HTTP request call. The embedded browser bridge is now deobfuscated: it forwards parent `postMessage` event data unchanged to the local service via XHR and posts `responseText` back to the original source/origin. The remaining task is to identify which parent-page code sends the close-time message and how the final document content is committed. The user's observed apply-on-close behavior remains the behavioral requirement.
+
+The browser's `invoke=<random>` value is generated only as a per-request URL nonce/cache-buster; it is not a method ID or service SessionId. The service independently generates a six-digit `TEmwatInvokeParam.SessionId`.
 
 
 ### Run 77 — concrete EditWordDocument input and response path
@@ -783,12 +785,12 @@ The helper parses `wordConfig` as XML and checks the `word-document` root. It wr
 
 During this path, `LoadDocument` calls `TWordViwer.OnTmrAutoSave` at `0x004B8A84` with the viewer instance and configuration string. That routine stores/parses the configuration and registers Word automation callbacks, including:
 
-- `+0x80 → 0x004CD154` (`WordAppDocumentBeforeSave`)
-- `+0x90 → 0x004CD54C` (`WordAppNewDocument`)
-- `+0x98 → 0x004CD9C0` (callback body still needs semantic identification)
+- `+0x80 → 0x004CD154` (export name `WordAppDocumentBeforeClose`; actual close callback)
+- `+0x90 → 0x004CD54C` (export name `WordAppDocumentBeforeSave`)
+- `+0x98 → 0x004CD9C0` (export name `WordAppNewDocument`; body includes Activation/Quitword handling)
 - `+0x88 → 0x004D00AC` or `0x004CE030` depending on viewer state (BeforePrint paths)
 
-This registration list does not register `0x004CCBBC`; that TD32-labelled `WordAppDocumentBeforeClose` routine is already proven to be a nested helper reached from `FillImgFldsForPrint`, not the established close event source.
+The names were cross-checked against the BPL export table and body strings; this corrects the earlier swapped callback labels. The routine at `0x004CCBBC` is not registered here: despite its TD32 `WordAppDocumentBeforeClose` label, it is a nested helper reached from `FillImgFldsForPrint`.
 
 **Correction to the earlier Run 77 response interpretation:** `TEditWordDocument` itself sets `bUnloadPkg=true` after `LoadDocument`, but `LoadDocument` can set `bResultSet=true` itself. On the non-empty-result path at `0x004B7F9C–0x004B7FBF`, it:
 1. obtains `AResponseInfo` from `TEmwatInvokeParam.AResponseInfo` at record offset `+0x0C);
