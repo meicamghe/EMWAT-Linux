@@ -337,6 +337,16 @@ jobs:
           python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004D23D8 word-lifecycle-analysis/SilentSaveEmwatDoc-close-callers.md
           python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x004CCBBC word-lifecycle-analysis/BeforeClose-helper-final-check.md
           python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004CD154 word-lifecycle-analysis/BeforeSave-final-callers.md
+      - name: Trace silent-save controller and close-all helper
+        run: |
+          python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x004D2948 word-lifecycle-analysis/SilentSave-helper-4D2948.md
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004D23D8 word-lifecycle-analysis/SilentSaveEmwatDoc-callers.md
+          python tools/trace_td32_immediate_refs.py analysis-input/EmwatMethods.bpl1 0x004D23D8 word-lifecycle-analysis/SilentSaveEmwatDoc-immediate-refs.md
+          python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 0x004D23D8 word-lifecycle-analysis/SilentSaveEmwatDoc-pointer-refs.md
+          python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x0044AD30 word-lifecycle-analysis/CloseAllWords.md
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x0044AD30 word-lifecycle-analysis/CloseAllWords-callers.md
+          python tools/trace_td32_immediate_refs.py analysis-input/EmwatMethods.bpl1 0x0044AD30 word-lifecycle-analysis/CloseAllWords-immediate-refs.md
+          python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 0x0044AD30 word-lifecycle-analysis/CloseAllWords-pointer-refs.md
       - uses: actions/upload-artifact@v4
         with:
           name: emwat-word-lifecycle-analysis
