@@ -895,3 +895,13 @@ Runtime evidence from the close-time response confirms the `param` element name 
 The HTTP server now requires an exact allowed Origin by default, validates Host against its IPv4 loopback listener, enforces request/response limits and socket timeouts, rejects duplicate Content-Length and sanitizes handler failures. CI run #20 (`43592721635`, commit `2fa217ae83f33b80a7799ede4c75f2cc58b40d76`) passed all 24 tests.
 
 The service's static dispatcher has separate `invoke`, `init`, and `heartbeat` branches. Their presence is confirmed; exact heartbeat/init responses are not. Next implementation work should recover these contracts and the final close-time document payload before implementing the real `EditWordDocument` method.
+
+
+## Run 89 — مسیر ورودی wordBody در LoadDocument
+
+Workflow #89 (43592922191) با موفقیت اجرا شد و artifact 14113237316 بررسی شد:
+
+- 0x00457050 در TD32 تابع Emwatutils.Finalization از ماژول EmailUtil است. LoadDocument آن را روی ورودی UnicodeString صدا می‌زند؛ تابع دو مقدار global را با رشته ورودی مقایسه می‌کند. معنی آن مقادیر تا decode شدن رشته‌ها نامعلوم است.
+- 0x00454B9C تابع Emwatutils.euGetASFileName(UnicodeString, UnicodeString) است و در مسیرهای TIFF/image نیز caller دارد. در نتیجه باید آن را یک تبدیل/نرمال‌سازی مرتبط با نام فایل بررسی کرد، نه parser اختصاصی بدنه Word.
+- LoadDocument پس از این مرحله از thunkهای runtime/import برای کار با طول و داده رشته استفاده می‌کند، یک object از طریق global 0x0062F800 و helper سازنده 0x004041BC ایجاد می‌کند و virtual slot +0x10 را با data pointer و length فراخوانی می‌کند.
+- تا زمان شناسایی کلاس مقصد و decode رشته‌های ثابت، نوع فایل/stream و semantics دقیق wordBody قطعی نیست. این شواهد به‌تنهایی قرارداد HTTP یا payload پاسخ هنگام بستن Word را مشخص نمی‌کند.
