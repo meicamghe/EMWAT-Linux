@@ -785,3 +785,14 @@ Run `43232846364` با موفقیت کامل (148/148 مرحله) پایان ی�
 - زنجیرهٔ جدید: `GetDocFieldName → GetDocFieldIndex → FillTextField → FillImageField)، با ورودی‌های اضافی از `GetXmlFieldInfo` و `FillImgFldsForPrint`.
 - این ساختار، پردازش محتوای فیلدها و تصاویر را توضیح می‌دهد و به‌خودی‌خود event بستن سند نیست.
 - **گام بعد:** trace کامل `GetDocFieldName) و callerهایش برای مشخص‌کردن اینکه فیلدها از کدام XML/config path انتخاب می‌شوند.
+
+
+### Run 49 — کشف close callback دوم در uSendLog (2026-11-14)
+
+- Run 49 با موفقیت پایان یافت و symbol inventory نام‌های دارای close را استخراج کرد.
+- یک routine دوم با نام `WordAppDocumentBeforeClose` پیدا شد: `uSendLog.TfrmShowAutoSaveFiles.WordAppDocumentBeforeClose` در `0x005EC580)، اندازه `0x12) بایت، با امضای شامل `TObject` و `Wordxp._Document`.
+- همان فرم شامل `CloseWordApp` در `0x005EBDA8) و `FormClose` در `0x005EBF20) است.
+- wrapperهای `TWordDocument.Close()` در `0x0042FEB0) و overloadها در `0x0042FF08)، `0x0042FF7C)، `0x0042FFF4) نیز در inventory پیدا شدند؛ `ClosePrintPreview` در `0x00433A84) و `CloseMyDoc` در `0x005E9174) هم ثبت شدند.
+- این‌ها هنوز candidate هستند؛ handler مربوط به `TfrmShowAutoSaveFiles` ممکن است فقط برای UI فایل‌های autosave باشد و لزوماً close سند اصلی نیست.
+- Workflow بعدی بدنه، callerها، immediate refs و raw pointer refs این handler و wrapperهای Close را استخراج می‌کند.
+- **گام بعد:** تحلیل run 52 برای تعیین اینکه کدام close path واقعاً به Word document اصلی و POST محلی مرتبط است.
