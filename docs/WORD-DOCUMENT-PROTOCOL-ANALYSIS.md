@@ -919,3 +919,5 @@ Run #90 مشخص کرد که `0x004041BC` thunk مربوط به `rtl230.bpl!TFil
 این یافته تفسیر قبلی را دقیق‌تر می‌کند: مقدار بیرونی `wordBody` صرفاً نام فایل نیست؛ مسیر اولیه `LoadDocument` آن را به‌صورت رشته مدیریت می‌کند، اما سپس محتوای آن را به یک فایل stream می‌نویسد. هنوز مشخص نیست این رشته حامل Base64، متن/بایت‌های سند با encoding خاص یا محتوای دیگری است؛ همچنین مسیر دقیق فایل و واحد طول باید بررسی شود. وجود رشته‌های `base64`، `image/tif` و `Word document file created.` در همین تابع قرینه زمینه‌ای است، نه اثبات قالب دقیق `wordBody`.
 
 `0x00457050` با نام TD32 `Emwatutils.Finalization` و `0x00454B9C` با نام `Emwatutils.euGetASFileName` شناسایی شدند؛ هیچ‌کدام parser بدنه Word نیستند. مسیر HTTP response شناخته‌شده است، اما close-time POST و قرارداد payload نهایی همچنان باز است.
+
+در ادامه `LoadDocument`، همان کلاس `TFileStream` بار دیگر در `0x004B7C3E` با همان filename مشتق‌شده و mode صفر ساخته می‌شود. کد اندازه stream را می‌گیرد و سپس virtual slot `+0x0C` را با buffer/count صدا می‌زند؛ این با خواندن مجدد فایل سازگار است. نام دقیق متد و semantics buffer تا بررسی VMT کلاس در RTL باز می‌ماند.
