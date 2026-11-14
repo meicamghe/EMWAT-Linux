@@ -72,3 +72,9 @@ For the current project decisions, implementation boundaries, and next-session c
 
 
 **CI verification:** workflow `Python bridge transport` run `43592145701` completed successfully for commit `c705ed34ad9a9e87b42d7e2d85d3aa60aea83815`. The transport response now echoes `Access-Control-Allow-Origin` only for an exact configured Origin (never `*`), so a browser can read an allowed origin's response. The initial CI failures exposed two setup/fixture issues (unnecessary setuptools install in CI; test fixture larger than its configured cap); both were corrected before the successful run. This does not validate compatibility with the Almas Gam production origin or legacy XML schema.
+
+### XML protocol foundation
+
+The Python package now contains a conservative parser for the runtime-confirmed `emwat version="1.0" → method class → param name` envelope (`python/src/emwat_linux/protocol.py`) and an explicit allowlisted dispatcher (`python/src/emwat_linux/dispatcher.py`). Unknown method classes return HTTP 501; malformed envelopes return HTTP 400. Method class names are never dynamically imported. No `EditWordDocument` handler or fabricated success response is registered yet.
+
+The loopback transport is hardened with IPv4-loopback-only binding, Host-header validation, required exact allowlisted Origin by default, bounded request/response bodies, socket read timeouts, duplicate Content-Length rejection, and sanitized errors. CI run #20 passes all 24 tests. This remains a transport/protocol foundation, not a usable Almas Gam connector.
