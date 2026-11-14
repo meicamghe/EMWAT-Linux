@@ -473,3 +473,31 @@ These are **candidates, not yet the proven letter-editor close path**. The `uSen
 The complete TD32 trace identifies `TWordViwer.GetDocFieldName` at `0x004BB81C` (size `0x954`). It obtains the current Word document interface from the viewer object, calls `FillPrintDocFields` to populate the typed `DynamicArray<Wordxp.Fields>` at viewer field `+0xA4`, then iterates the configured field-name strings stored in that array and calls `GetDocFieldIndex` for each entry. The Boolean result is used to update viewer state/flags.
 
 This provides the parent context for the `GetDocFieldIndex` calls seen in run 47: it is a field-name-to-Word-field resolution routine operating over the configured field list. The direct CALL scan found no direct callers of `GetDocFieldName` inside TD32-bounded procedures; an indirect/VMT/property caller or an unreferenced legacy path remains possible. Its call graph is therefore proven downward, while its entry path remains unresolved.
+
+
+## uSendLog close handler and Word Close wrappers (lifecycle runs 54–55)
+
+The second `WordAppDocumentBeforeClose` candidate is now fully disassembled:
+
+```asm
+005EC580  push ebp
+005EC581  mov ebp, esp
+005EC583  cmp word ptr [ecx], 0x2e
+005EC587  jne 0x5ec58e
+005EC589  call 0x5ebda8  ; TfrmShowAutoSaveFiles.CloseWordApp
+005EC58E  pop ebp
+005EC58F  ret 4
+```
+
+This is a tiny event handler on `TfrmShowAutoSaveFiles`: it checks a word at the event argument pointer in ECX and, when equal to `0x2E`, calls the form's `CloseWordApp`. It has no direct CALL xrefs and no TD32 immediate references. The raw pointer scan does find the address bytes at `0x005EB524` and `0x005EB607` in `.text`, consistent with static method metadata/table references; the form resource scan is now being added to verify the DFM event binding.
+
+`CloseWordApp` has exactly two direct callers in the scan: the form's `btnShowFileClick` handler at `0x005EB81F` and the `WordAppDocumentBeforeClose` event handler at `0x005EC589`. It iterates the autosave form's document collection at `[this+0x3C0]`, performs per-document operations, then calls a method at interface slot `+0x104` on the application-like object at `[this+0x3C0]`. The exact interface type/method name still needs mapping. This path belongs to the autosave-files form; it is not evidence that the main letter editor's close event is handled here, and no local POST/`invoke=5208` call appears in this 18-byte handler.
+
+The WordXP wrapper traces show:
+- no-argument `TWordDocument.Close()` at `0x0042FEB0` dispatches interface slot `+0x4D4`;
+- one-, two- and three-`OleVariant` overloads at `0x0042FF08`, `0x0042FF7C`, and `0x0042FFF4` dispatch slot `+0x29C`;
+- `ClosePrintPreview` at `0x00433A84` dispatches slot `+0x36C`.
+
+No direct CALL xref was found for the no-argument `TWordDocument.Close()` wrapper. These slot mappings are observed wrapper behavior; the exact underlying COM method names and any actual callers through VMT/property paths remain to be confirmed. Separately, `WordCompareCommandUnit.CloseMyDoc` dispatches slot `+0x2BC`, which the typed positive control maps to `_Document.PrintOutOld()`; despite its name, this routine is not a document-close call.
+
+**Current classification:** the `uSendLog` callback is a real close-related handler for the autosave-files UI, but not yet the main letter-editing close path. The original `0x004CCBBC` remains a nested print/field helper with no exact raw pointer references. The main close-triggered update and localhost POST still need a separate event/connector trace.
