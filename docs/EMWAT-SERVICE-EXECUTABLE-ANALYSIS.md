@@ -200,3 +200,34 @@ This explains the generic service response path:
 The helper `0x004B7724` is now the critical next target: it receives the four Word payload values and request context and appears to own the actual document/Word automation and construction of the response string. Its complete TD32 procedure/caller traces are included in lifecycle run 77.
 
 The parameter names and response behavior align with the user's observed `EditWordDocument` response containing `wordConfig`, but the exact XML generation and close-time commit semantics must be confirmed inside `0x004B7724` and its downstream calls.
+
+
+## LoadDocument helper reached from the Word-edit VMT target (lifecycle run 77)
+
+The TD32 procedure at `0x004B7724` is:
+
+- Symbol: `Wordviewer.TWordViwer.LoadDocument`
+- Module: `ScanRequestXML`
+- Range: `0x004B7724–0x004B8A83`
+- Size: `0x1360` bytes
+
+The only direct TD32-bounded caller is the code at `0x005EE961), inside the method body at `0x005EE82C`. That caller passes:
+- EAX = `wordConfig`
+- EDX = `wordBody`
+- ECX = `letterImages`
+- stack argument 1 = output-string reference
+- stack argument 2 = `TEmwatInvokeParam*` (read from the connector instance's field `+4`)
+- stack argument 3 = `signData`
+
+The TD32 caller label for `0x005EE82C` is `TScanDocument.PerformMethod`, but the corrected class RTTI shows that this code address is the `+0x10` target in the `TEditWordDocument` VMT. Its body reads the four Word-edit keys and calls `LoadDocument`. Preserve this naming discrepancy explicitly: the runtime VMT mapping and method-body behavior identify the actual class path; do not silently rewrite the TD32 symbol name.
+
+Within `LoadDocument`, the code:
+- creates a Word-viewer object through the class reference at `0x004B104C` and constructor/helper `0x004D0D24`;
+- assigns the stack `signData` string to an object field at offset `+0xF4`;
+- configures document/viewer state through helper `0x004D1454`;
+- calls `TWordViwer.OnTmrAutoSave` at `0x004B8A84`;
+- continues through document-field and image-related collection processing before returning the output string.
+
+The helper's second stack argument is the `TEmwatInvokeParam*` supplied by the connector, although no direct `[EBP+0x0C]` read appears in the current body trace. Its exact downstream use remains unresolved; do not assume it is ignored.
+
+Next, trace `0x004D0D24` and `0x004D1454` and inspect the Word-viewer object's event registration and response-building path. The observed close-time POST still needs its upstream Word event source mapped.
