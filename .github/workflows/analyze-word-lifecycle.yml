@@ -10,6 +10,7 @@ on:
       - 'tools/resolve_delphi_vmt_slots.py'
       - 'tools/trace_field_accesses.py'
       - 'tools/trace_td32_immediate_refs.py'
+      - 'tools/trace_td32_procedure.py'
 permissions:
   contents: read
 jobs:
@@ -57,6 +58,7 @@ jobs:
           python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004CCBBC word-lifecycle-analysis/BeforeClose-extended.md 240 ret
           python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004CCBBC word-lifecycle-analysis/BeforeClose-direct-callers.md
           python tools/trace_td32_immediate_refs.py analysis-input/EmwatMethods.bpl1 0x004CCBBC word-lifecycle-analysis/BeforeClose-immediate-references.md
+          python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x004CCF8F word-lifecycle-analysis/FillImgFldsForPrint-full.md
           python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004CD154 word-lifecycle-analysis/BeforeSave-extended.md 320 ret
           python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004CD54C word-lifecycle-analysis/WordAppNewDocument-4CD54C.md 420 ret
           python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004CD54C word-lifecycle-analysis/Callers-4CD54C.md
