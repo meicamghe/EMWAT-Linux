@@ -649,3 +649,18 @@ A second, distinct +0x68 dispatch exists in the shared base wrapper at 0x0046CBB
 The focused receiver workflow adds the TXMLEmwatType class VMT window and its implemented-interface VTable window around offsets +0x68, +0xB0, and +0xCC, plus a trace of helper 0x0044B468. These will determine whether the +0xB0 call belongs to the class VMT and help identify the XML child/interface returned into [ebp-8].
 
 **Still unresolved:** the exact type of [ebp-0x1C], the exact type and +0x68 method of [ebp-8], and the distinct receiver type at 0x0046CBB7. Continue from the XML class/interface tables and the constructor/helper dataflow; do not infer method names from the numeric displacement alone.
+
+
+## XML parameter key/value setter confirmation (focused run 11)
+
+Focused GitHub Actions run `43571811038` completed successfully (artifact `14105075475`). The new traces resolve both sides of the `TXMLParamType` setter pair:
+
+- The `+0xB0` interface thunk `0x0044BDF5` adjusts `Self` by `-0x50` and enters `0x0044C8E4`.
+- At `0x0044C91F`, that implementation calls `0x0044B4C0` with the first pair string and constant pointer `0x0044C95C`.
+- `0x0044B4C0` is an IAT thunk to `xmlrtl230.bpl!TXMLNode.SetAttribute(UnicodeString, OleVariant)`.
+- The Delphi string at `0x0044C95C` decodes to exactly `name`.
+- The `+0x68` interface thunk `0x0044BEB5` enters `0x0044B568`, an IAT thunk to `xmlrtl230.bpl!TXMLNode.SetText(UnicodeString)`.
+
+Therefore, statically confirmed: each `TDictionary<AnsiString,AnsiString>` entry processed by `TEmwatMethod.Invoke` becomes a child XML parameter node whose `name` attribute is the dictionary key and whose text content is the dictionary value. This is the precise parameter serialization shape; it does not yet establish the complete enclosing method/request XML or its wire encoding.
+
+The workflow artifact contains the helper disassembly and string decode. The prior run-9 wording that called the attribute and literal unresolved is superseded by this section.
