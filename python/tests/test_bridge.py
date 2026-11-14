@@ -68,7 +68,6 @@ class BridgeHTTPServerTests(unittest.TestCase):
     def test_missing_content_length_is_rejected(self):
         conn = http.client.HTTPConnection(self.host, self.port, timeout=2)
         conn.putrequest("POST", "/")
-        conn.putheader("Host", f"{self.host}:{self.port}")
         conn.endheaders()
         response = conn.getresponse()
         self.assertEqual(response.status, 411)
