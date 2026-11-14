@@ -27,7 +27,7 @@ def module_name(mod):
 terms = ("paramstoxml", "performmethod", "temwmethod", "temwatmethod",
          "teditworddocument", "temwatinvokeparam", "editworddocument",
          "xmlwordconfig", "wordconfig", "twordfields", "twordfield",
-         "get_fields", "set_fields", "wordxp@fields", "wordxp@field", "getdocfieldindex", "filltextfield", "fillimagefield", "fillmswfields", "addimagestodoc", "fillprintdocfields", "fillimgfldsforprint", "beforeclose", "documentbeforeclose", "onclose", "closemydoc", "close", "storyranges", "formfields", "formfield", "get_storyranges", "get_formfields")
+         "get_fields", "set_fields", "wordxp@fields", "wordxp@field", "getdocfieldindex", "getdocfieldname", "filltextfield", "fillimagefield", "fillmswfields", "addimagestodoc", "fillprintdocfields", "fillimgfldsforprint", "beforeclose", "documentbeforeclose", "onclose", "closemydoc", "close", "storyranges", "formfields", "formfield", "get_storyranges", "get_formfields")
 selected = [p for p in procedures if any(t in p["name"].lower() for t in terms)]
 lines = [
     "# EMWAT Delphi word-method and dispatch symbol inventory", "",
