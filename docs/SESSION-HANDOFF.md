@@ -295,3 +295,13 @@ No real `EditWordDocument` handler is registered. The test handler is deliberate
 Python bridge transport workflow run #24 (`43593185429`), commit `27986ee96b45009283cd96eecde95110e1b9e448`, passed **29 tests**. The tested composition now includes `application.py` → `BridgeHTTPServer` → `XMLMethodDispatcher` → `parse_method_call` → an explicitly registered test handler → HTTP response. The test handler is synthetic; there is still no production `EditWordDocument` handler.
 
 The separate Word lifecycle workflow Run #89 is still processing its deep trace steps. It now includes targeted analysis of `wordBody` stream ingestion, helper routines and temporary output handling. Do not report its findings until the artifact is available and inspected.
+
+
+## Run 89 — LoadDocument input normalization (2026-11-14)
+
+- Workflow run #89 (43592922191) completed successfully; artifact 14113237316 was inspected.
+- Correction to the initial reading: 0x00457050 is TD32-labeled Emwatutils.Finalization in module EmailUtil, not a generic byte-stream helper. Its only direct caller in the scanned TD32 procedures is TWordViwer.LoadDocument at 0x004B778B; it compares the incoming UnicodeString against two global strings and can raise an exception. Exact semantic meaning of the two compared values remains pending string decoding.
+- 0x00454B9C is TD32-labeled Emwatutils.euGetASFileName(UnicodeString, UnicodeString), also in EmailUtil. It is called by LoadDocument at 0x004B7796, but it is also used by TIFF/image routines (CreateTiff.SeparteImages, CreateImageFile, PrintWordDoc, and others). This strongly places it in filename/path normalization rather than a Word-only binary stream parser; exact output semantics remain to be verified.
+- After those two calls, LoadDocument uses Delphi runtime/import thunks at 0x004012F8, 0x00401270, and 0x004012E0; these jump through the import table to external runtime addresses not mapped in the BPL. The code then constructs an object using global 0x0062F800 and constructor helper 0x004041BC, and calls its virtual slot +0x10 with the computed data pointer and length. The destination class and whether this represents a stream/file writer are not yet established.
+- Do not describe wordBody as raw body bytes or a known file path yet. The parameter is handled as a Delphi UnicodeString, transformed by the filename helper, then a length/data pair is passed to an as-yet-unidentified object.
+- Run #90 (43595049501) has been queued to decode LoadDocument string constants, inspect global 0x0062F800, trace constructor 0x004041BC, and expand the entry procedure.
