@@ -185,7 +185,7 @@ Useful typed comparison points from the same scan:
 - Other WordXP wrappers use the same numeric offset for different interface types, including `TWordFont.Get_Hidden`, `TWordParagraphFormat.Get_KeepTogether`, `TWordOLEControl.Get_Name`, `TWordLetterContent.Get_PageDesign`, and `TWordApplication.Get_Selection`.
 - `TWordViwer.GetXmlFieldInfo` itself calls `+0x38` repeatedly on objects typed as `Wordconfigrequestxml.IXMLFieldType` in its TD32 signature.
 
-Thus `+0x38` is interface-specific just like `+0x2BC`. The BeforeClose receiver still needs to be typed from its dataflow/event-record source. The next BPL analysis adds the `TWordDocument.Get_Tables` wrapper body as a positive control and compares it with the BeforeClose callsite.
+Thus `+0x38` is interface-specific just like `+0x2BC`. The target receiver still needs to be typed from its parent-frame dataflow. The `TWordDocument.Get_Tables` wrapper is only a positive control for slot `+0x38` on a typed `_Document` interface; it does not identify the target's receiver.
 
 ## Superseded preliminary BeforeClose receiver hypothesis
 
@@ -205,49 +205,41 @@ Lifecycle run 23 completed successfully (run ID `43510769743`, commit `fec8b0f3f
 
 The run-23 trace of helpers `0x00401420` and `0x00401478` also shows why these addresses should not be mistaken for application business logic: `0x00401420` is an indirect runtime helper thunk whose IAT target is outside the analyzed BPL image, while `0x00401478` resolves to `rtl230.bpl!@System@@CheckAutoResult`. The helper trace alone does not identify the interface value's origin.
 
-The next step is to trace both the complete TD32 procedure containing the direct caller `FillImgFldsForPrint` and the complete target procedure at `0x004CCBBC`, then reconcile these call paths with any independent callback registration. The local POST and `invoke=5208` remain a separate unresolved runtime-to-static mapping.
+The complete caller and target procedures are now traced. The next step is to identify the incoming ECX argument by tracing callers of `FillImgFldsForPrint` and inspecting the parent list element. The local POST and `invoke=5208` remain a separate unresolved runtime-to-static mapping.
 
 
 ## Correction: BeforeClose receiver is not the local at EBP-0x0C (lifecycle run 24)
 
-The full run-24 disassembly disproves the earlier receiver-local interpretation above. The two slot calls at `0x004CCC2C` and `0x004CCCB2` do **not** load their receiver from `[ebp-0x0C]`:
+The full run-24 disassembly disproves the earlier receiver-local interpretation above. The two slot calls at `0x004CCC2C` and `0x004CCCB2` do **not** load their receiver from the target's own `[ebp-0x0C]` local:
 
 - At both sites, the code loads `eax = [ebp+8]`, then `eax = [eax-0x0C]`, then dereferences `[eax]` and calls `[eax+0x38]`.
-- The stack-local `[ebp-0x0C]` is separately initialized at callback entry via the runtime helper thunk `0x00401420`; it is later passed as an argument at `0x004CCC34) into `GetXmlFieldInfo` at `0x004BCA88`. It is not the slot-call receiver.
-- The actual receiver is therefore a pointer reached through the callback's stack argument/context pointer at `[ebp+8]), offset `-0x0C`. The precise type and origin of that context field remain unresolved.
+- The target's stack-local `[ebp-0x0C]` is separately initialized via runtime helper thunk `0x00401420`; it is later passed as an argument at `0x004CCC34` into `GetXmlFieldInfo` at `0x004BCA88`. It is not the slot-call receiver.
+- Run 27 resolves `[ebp+8]` as the parent procedure's EBP passed by `push ebp` at the direct callsite. Therefore `[[ebp+8]-0x0C]` is the parent procedure's local `[ebp-0x0C]`, which stores its incoming ECX value. The interface type of that ECX value remains unresolved pending caller analysis.
 - The run-24 typed positive control confirms that `Wordxp.TWordDocument.Get_Tables` uses `_Document` slot `+0x38`, but it does **not** establish that the BeforeClose receiver has that interface type. The earlier claim that BeforeClose's two calls are likely `_Document.Get_Tables()` must be treated as unproven and withdrawn pending identification of the context field.
 
 The `Get_Tables` wrapper also clarifies its own acquisition pattern: it invokes `0x0042ABA0` with `EDX=&[ebp-4]`; that accessor checks `[self+0x78]), conditionally invokes the object's `+0x50` slot, then passes `[self+0x78]` to runtime helper `0x00401428` to populate the local interface. This is distinct from the BeforeClose receiver load. The wrapper's initial `0x00401420` call is an imported runtime thunk; the artifact resolves its IAT target outside the BPL image, so its semantic name is still unknown.
 
 Run 24 also resolves `0x00401478` to `rtl230.bpl!@System@@CheckAutoResult`. This is compiler/runtime error checking after the interface dispatch, not an application connector call.
 
-**Updated next step:** trace the producer/caller of `WordAppDocumentBeforeClose` and identify the object/context pointer passed at `[ebp+8]), then trace its field at `-0x0C). Only after that type is established should the `+0x38` method be named. Keep the local POST / `invoke=5208` mapping open.
+**Updated interpretation after run 27:** `[ebp+8]` is a Delphi nested-procedure static link to the caller's EBP, and the receiver is the caller's captured ECX local. Run 29 identifies the direct caller of `FillImgFldsForPrint` as `GetFieldIndexInList`; its ECX argument comes from an indexed list element. The remaining type-identification task is to inspect that list element's source and declaration. Keep the local POST / `invoke=5208` mapping open.
 
 
-## Direct-call cross-reference correction: BeforeClose target is also used by image-field printing (run 26)
+## Direct-call cross-reference and caller chain (lifecycle runs 26–29)
 
-The TD32 direct-call scan for target `0x004CCBBC` found one direct call site:
+The TD32 direct-call scan found one direct call to `0x004CCBBC` from `FillImgFldsForPrint` at `0x004CCF8F`. Run 27 disassembled the complete caller (`0x004CCDC8–0x004CD153`) and proved that the call passes the caller's EBP as a nested-procedure static link. This resolves the target's `[[ebp+8]-0x0C]` receiver as the caller's captured incoming ECX value.
 
-- Caller procedure: `FillImgFldsForPrint`
-- Call instruction: `0x004CCF8F`
-- Call setup immediately before the call:
-  - `movzx edx, byte ptr [ebp-0x11]`
-  - `mov eax, ebx`
-  - `call 0x004CCBBC`
+Run 29 then scanned callers of `FillImgFldsForPrint` and found one direct caller in TD32-bounded procedures:
 
-This is important because the target at `0x004CCBBC`, despite its TD32 symbol/name being treated as `WordAppDocumentBeforeClose` in the earlier lifecycle notes, is directly invoked from a procedure named `FillImgFldsForPrint`. The evidence establishes a direct call relationship; it does not yet establish why this helper is called there, whether the caller is preparing image fields for print, or whether the target is also independently registered as a Word close event callback.
+- `TWordViwer.GetFieldIndexInList`, call at `0x004CB361)
+- The caller loads ECX from `[array_or_list_base + ESI*4]` before calling `FillImgFldsForPrint`.
 
-Consequently, do not describe `0x004CCBBC` as exclusively an event callback until its complete caller procedure, TD32 signature, and callback-registration references are reconciled. The existing receiver analysis remains valid at the instruction level: the two `+0x38` dispatches use the context-derived pointer `[[ebp+8]-0x0C]`, while the local `[ebp-0x0C]` is a separate temporary. The actual interface type remains unresolved.
+The current proven chain is therefore:
 
-A new workflow helper, `tools/trace_td32_procedure.py`, was added to disassemble the entire TD32 procedure containing an arbitrary VA. Lifecycle run 27 uses it on `0x004CCF8F` to capture the complete `FillImgFldsForPrint` body. Its result must be reviewed before assigning semantics to the call or changing the broader close/save model.
+`GetFieldIndexInList list element → ECX → FillImgFldsForPrint local [ebp-0x0C] → nested static link → target receiver for both +0x38 calls`.
 
-### Evidence boundary
+This strongly places the target in a field-index/list-processing path. The exact type of the list element and the interface methods at slot `+0x38` remain unresolved until the full `GetFieldIndexInList` procedure is reviewed. The direct-call scans do not exclude computed or indirect references, so independent callback registration is not categorically ruled out; it is simply not established by the current evidence.
 
-- **Proven:** one TD32-bounded direct `CALL 0x004CCBBC` exists inside `FillImgFldsForPrint`.
-- **Proven:** the call site passes a value in `EAX` and a byte-derived value in `EDX`.
-- **Not proven:** the complete purpose of the call, whether the target is also registered as a close event, or whether either interface dispatch triggers the observed localhost POST.
-- **Not proven:** that this helper call is itself the user-visible document-close action.
-
+No direct HTTP, localhost POST, `invoke=5208`, or `EditWordDocument/wordConfig` call has been identified in the target body. Do not describe `0x004CCBBC` as the proven close-time connector path.
 
 ## Nested-procedure static-link proof for the BeforeClose target (lifecycle run 27)
 
