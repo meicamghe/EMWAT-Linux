@@ -142,6 +142,17 @@ jobs:
           python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x0044C458 invoke-enumerator-analysis/XmlResponse-TXMLMethodType-AfterConstruction.md
           python tools/inspect_pe_va.py analysis-input/EmwatMethods.bpl1 0x00614EC8 --before 0x30 --after 0x90 > invoke-enumerator-analysis/WordRequestXML-param-constructor-constant-context.md
           python tools/decode_pe_strings.py analysis-input/EmwatMethods.bpl1 0x00614EC8 0x00614F3C 0x00614F8C > invoke-enumerator-analysis/WordRequestXML-param-constructor-strings.md
+      - name: Resolve XML parameter interface identity and external VMT metadata
+        run: |
+          python tools/inspect_pe_va.py analysis-input/EmwatMethods.bpl1 0x0044C7AC --before 0x10 --after 0x30 > invoke-enumerator-analysis/XmlResponse-TXMLParamType-IID-context.md
+          python tools/inspect_pe_va.py analysis-input/EmwatMethods.bpl1 0x0044C4FC --before 0x10 --after 0x30 > invoke-enumerator-analysis/XmlResponse-TXMLMethodType-IID-context.md
+          python tools/inspect_pe_va.py analysis-input/EmwatMethods.bpl1 0x00614F2C --before 0x10 --after 0x30 > invoke-enumerator-analysis/WordRequestXML-TXMLParamType-IID-context.md
+          python tools/inspect_pe_va.py analysis-input/EmwatMethods.bpl1 0x0063030C --before 0x20 --after 0x40 > invoke-enumerator-analysis/XmlResponse-TXMLMethodType-parent-VMT-context.md
+          python tools/inspect_pe_va.py analysis-input/EmwatMethods.bpl1 0x00630314 --before 0x20 --after 0x40 > invoke-enumerator-analysis/XmlResponse-TXMLParamType-parent-VMT-context.md
+          python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x0044C7BC invoke-enumerator-analysis/XmlResponse-TXMLParamType-Get_Name.md
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x0044C7BC invoke-enumerator-analysis/XmlResponse-TXMLParamType-Get_Name-callers.md
+          python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x0044C830 invoke-enumerator-analysis/XmlResponse-TXMLParamType-Set_Name.md
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x0044C830 invoke-enumerator-analysis/XmlResponse-TXMLParamType-Set_Name-callers.md
       - uses: actions/upload-artifact@v4
         with:
           name: emwat-invoke-receiver-analysis
