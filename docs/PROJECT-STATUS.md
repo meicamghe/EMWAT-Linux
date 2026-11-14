@@ -754,3 +754,13 @@ Run `43232846364` با موفقیت کامل (148/148 مرحله) پایان ی�
 - `FillField` و `TWordDocument.Get_Fields` هیچ CALL مستقیم در procedureهای TD32-bounded ندارند؛ indirect/VMT/property paths همچنان ممکن‌اند.
 - این caller graph، `GetDocFieldIndex` را در مرکز field processing قرار می‌دهد: آن routine روی مجموعهٔ Word حرکت می‌کند، `FillMSWFields` را برای موارد منتخب صدا می‌زند و در یک branch، `AddImagesToDoc` را اجرا می‌کند.
 - **گام بعد:** trace کامل والد `FillTextField` در `0x004BC980)، بررسی callerهای `GetDocFieldIndex)، و تعیین slotهای `Wordxp.Field` در nested `FillImageField`.
+
+
+### Run 44 — audit pointerهای ثبت callback در PE (2026-11-14)
+
+- Run 44 با موفقیت پایان یافت؛ ابزار جدید `tools/scan_pe_pointer_refs.py` تمام raw sectionهای PE را برای آدرس‌های ۳۲بیتی callback جست‌وجو کرد.
+- برای routine `0x004CCBBC` هیچ exact pointer referenceای در کل PE پیدا نشد.
+- در مقابل، آدرس‌های callbackهای شناخته‌شده در کد `OnTmrAutoSave` دیده شدند: `0x004CD154) در `0x004B8CA8)، `0x004CD54C) در `0x004B8CBE)، `0x004CE030) در `0x004B8D0E) و `0x004B8E81)، و `0x004D00AC) در `0x004B8CF6) و `0x004B8E60).
+- بدنهٔ `OnTmrAutoSave` انتساب این callbackها را به زوج فیلدهای event object تأیید می‌کند: BeforeSave در `+0x80/+0x84)، NewDocument در `+0x90/+0x94)، `0x004CD9C0) در `+0x98/+0x9C)، و BeforePrint در `+0x88/+0x8C) (با انتخاب `0x004CE030) یا `0x004D00AC)).
+- این نتیجه، فرض ثبت ایستای `0x004CCBBC) به‌عنوان BeforeClose را در همین BPL بسیار نامحتمل می‌کند؛ اما computed/runtime registration یا package دیگر هنوز کاملاً رد نشده است. چون همین تابع از مسیر print/field فراخوانی مستقیم دارد، فعلاً آن را nested print/field helper طبقه‌بندی کن، نه callback قطعی Close.
+- **گام بعد:** یافتن event/connector دیگری که POST مشاهده‌شده به `127.0.0.1:1984/?invoke=5208` را هنگام بستن سند ایجاد می‌کند؛ هم‌زمان بررسی RTTI برای `Range` و `StoryRanges` و slotهای Wordxp.Field ادامه یابد.
