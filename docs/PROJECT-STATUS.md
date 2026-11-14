@@ -840,3 +840,11 @@ Run `43232846364` با موفقیت کامل (148/148 مرحله) پایان ی�
 - `TfrmShowAutoSaveFiles.btnShowFileClick` فقط ۱۰ بایت است و تنها `CloseWordApp` را فراخوانی می‌کند و برمی‌گردد.
 - دو caller مستقیم `CloseWordApp` دقیقاً همین دکمه و handler `WordAppDocumentBeforeClose` فرم autosave هستند.
 - این pair یک مسیر cleanup برای preview/autosave است؛ در بدنهٔ traceشده سند اصلی، field pipeline یا local connector را فراخوانی نمی‌کند. بنابراین این close handler را از مسیر اصلی نامه جدا نگه می‌داریم.
+
+
+### Run 60 — بررسی reachability wrapperهای Word Close
+
+- Run 60 با موفقیت پایان یافت.
+- برای چهار overload تابع `TWordDocument.Close` در آدرس‌های `0x0042FEB0`، `0x0042FF08`، `0x0042FF7C`، `0x0042FFF4` و نیز `ClosePrintPreview` در `0x00433A84` هیچ direct CALL در procedureهای TD32-bounded پیدا نشد.
+- هر overload Close یک raw pointer occurrence در `.text` نزدیک metadata/VMT کلاس WordXP دارد، اما این occurrenceها callsite نیستند.
+- در نتیجه این wrapperها ممکن است از طریق VMT/property قابل دسترسی باشند، ولی فعلاً مسیر اصلی close-time update محسوب نمی‌شوند.
