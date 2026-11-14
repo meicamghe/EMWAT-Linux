@@ -1174,3 +1174,14 @@ The transport also now returns `Access-Control-Allow-Origin` and `Vary: Origin` 
 Runtime response evidence confirms the observed close response begins with `<emwat version="1.0"><method class="EditWordDocument"><param name="wordConfig">`. This establishes the `param` child tag for that observed path. Added `python/src/emwat_linux/protocol.py` with a conservative UTF-8 parser for the outer `emwat → method → param` envelope. It preserves parameter values as opaque strings and rejects malformed XML, unsupported versions, duplicate names, nested markup, DTD/entity declarations and oversized input. It does not decode or interpret document data and does not implement a fake method response.
 
 Tests: `python/tests/test_protocol.py`. CI verification is pending at the time of this entry. Service analysis also confirms query branches `invoke`, `init`, and `heartbeat`; exact init/heartbeat response contracts are still unknown.
+
+
+## Protocol parser and allowlisted dispatcher — CI green (2026-11-14)
+
+- Runtime evidence confirms the observed envelope: `emwat version="1.0"` → `method class="EditWordDocument"` → `param name="wordConfig"`.
+- `python/src/emwat_linux/protocol.py` parses only this outer UTF-8 envelope and preserves parameter text as opaque strings. It rejects DTD/entities, malformed XML, unsupported versions, duplicate parameters, nested markup and oversized payloads.
+- `python/src/emwat_linux/dispatcher.py` dispatches only explicitly registered method names. It never dynamically imports a class. Unknown methods return 501; malformed envelopes return 400. No real `EditWordDocument` handler has been registered and no success XML is fabricated.
+- Transport security now includes IPv4-loopback-only bind, exact Host-header validation, required exact-allowlisted Origin by default, socket timeout, request/response size bounds, duplicate Content-Length rejection and sanitized exceptions.
+- **CI:** `Python bridge transport` run #20, run ID `43592721635`, commit `2fa217ae83f33b80a7799ede4c75f2cc58b40d76`, conclusion **success**. 24 tests passed across transport, parser and dispatcher.
+
+Next: recover exact heartbeat/init responses and remaining Word response schema; implement a real `EditWordDocument` adapter only after close-time document content and response semantics are understood. Keep the legacy apply-on-close behavior as a mandatory acceptance test.
