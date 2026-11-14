@@ -693,3 +693,18 @@ Resolver باید به‌جای اتکا به یک base فرضی، ساختار 
 اسکن package-wide تعداد 462 reference برای displacement `+0x38` پیدا کرد. دو callsite مربوط به `WordAppDocumentBeforeClose` (`0x004CCC2C` و `0x004CCCB2`) به‌تنهایی برای تعیین نام متد کافی نیستند؛ همین offset در wrapperهای مختلف WordXP برای interfaceهای متفاوت استفاده می‌شود. نمونه‌ها شامل `TWordDocument.Get_Tables`، `TWordFont.Get_Hidden`، `TWordParagraphFormat.Get_KeepTogether`، `TWordOLEControl.Get_Name` و `TWordApplication.Get_Selection` هستند. خود `GetXmlFieldInfo` نیز `+0x38` را روی interfaceهای `Wordconfigrequestxml.IXMLFieldType` فراخوانی می‌کند.
 
 پس نوع receiver در BeforeClose هنوز باید از dataflow و event-record source تعیین شود. برای مقایسه، بدنهٔ wrapper `TWordDocument.Get_Tables` در تحلیل BPL بعدی اضافه شده است.
+
+
+## Static lifecycle trace extension — field-list nested helper (2026-11-14)
+
+Lifecycle runs 27–30 expanded the trace around the TD32 symbol `TWordViwer.WordAppDocumentBeforeClose` at `0x004CCBBC`.
+
+The complete caller trace shows that `0x004CCBBC` is directly called from `FillImgFldsForPrint` at `0x004CCF8F`. The call passes the caller's EBP as a Delphi nested-procedure static link. The target's receiver expression `[[ebp+8]-0x0C]` therefore resolves to the parent `FillImgFldsForPrint` local that captured incoming ECX.
+
+The only direct TD32-bounded caller found for `FillImgFldsForPrint` is `TWordViwer.GetFieldIndexInList` at `0x004CB361`. Its complete body obtains a list/array pointer from helper `0x004CB638`, queries its element count, and iterates pointer-sized 32-bit elements. Each element is passed in ECX to `FillImgFldsForPrint`. That callee dereferences the value and dispatches through vtable slots `+0x28` and `+0x38`; the nested helper uses the same receiver for two more `+0x38` dispatches.
+
+**Interpretation boundary:** this is strong evidence that the target is a nested helper reached during field-list processing and that the list elements are interface-like vtable receivers. It does not establish the interface IID/type, method names, or whether the routine is also independently registered as a Word close event. The TD32 symbol name alone is not proof of event registration. Do not identify its `+0x38` calls as `_Document.Get_Tables()`; that mapping is proven only for the separate typed `Wordxp.TWordDocument.Get_Tables` wrapper.
+
+No direct link has yet been established from this helper body to the observed localhost POST `127.0.0.1:1984/?invoke=5208` or the `EditWordDocument/wordConfig` XML response. The user-observed behavior that closing the document applies changes even without pressing Save remains a confirmed product requirement; this static trace has not yet identified the internal event or transport implementing it.
+
+See [WORD-COM-INTERFACE-DISPATCH.md](WORD-COM-INTERFACE-DISPATCH.md) for instruction-level details and the run-31 follow-up targets.
