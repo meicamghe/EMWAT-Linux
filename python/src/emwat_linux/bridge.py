@@ -47,8 +47,9 @@ class BridgeHTTPServer:
         socket_timeout_seconds: float = 10.0,
         require_origin: bool = True,
     ) -> None:
-        if not ip_address(host).is_loopback:
-            raise ValueError("EMWAT bridge must bind to a loopback address")
+        address = ip_address(host)
+        if address.version != 4 or not address.is_loopback:
+            raise ValueError("EMWAT bridge must bind to an IPv4 loopback address")
         if not 0 <= port <= 65535:
             raise ValueError("invalid TCP port")
         if max_body_bytes <= 0:
