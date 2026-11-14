@@ -848,3 +848,14 @@ Run `43232846364` با موفقیت کامل (148/148 مرحله) پایان ی�
 - برای چهار overload تابع `TWordDocument.Close` در آدرس‌های `0x0042FEB0`، `0x0042FF08`، `0x0042FF7C`، `0x0042FFF4` و نیز `ClosePrintPreview` در `0x00433A84` هیچ direct CALL در procedureهای TD32-bounded پیدا نشد.
 - هر overload Close یک raw pointer occurrence در `.text` نزدیک metadata/VMT کلاس WordXP دارد، اما این occurrenceها callsite نیستند.
 - در نتیجه این wrapperها ممکن است از طریق VMT/property قابل دسترسی باشند، ولی فعلاً مسیر اصلی close-time update محسوب نمی‌شوند.
+
+
+### Run 62 — TEmwatMethod.Invoke و connector PerformMethodها (2026-11-14)
+
+- Run 62 با موفقیت پایان یافت.
+- `TEmwatMethod.Invoke` در `0x0046C82C`، با ورودی `TDictionary<AnsiString, TValue>`، پارامترهای dictionary را استخراج/پیمایش کرده و در `0x0046C921` از یک dispatch غیرمستقیم در slot `+0x68` استفاده می‌کند.
+- این slot candidate فراخوانی پیاده‌سازی method است، چون چند connector class متدهای `PerformMethod(TDictionary<AnsiString, TValue>)` دارند؛ نوع receiver و slot declaration هنوز با VMT اثبات نشده است.
+- تنها CALL مستقیم پیدا شده به `TEmwatMethod.Invoke` از `Finalization` در `0x0046CA67` است؛ بنابراین مسیر درخواست معمول احتمالاً indirect/VMT یا از ماژول دیگری وارد می‌شود.
+- پیاده‌سازی‌های نمونه trace شدند: `TCompareWordDocument.PerformMethod` در `0x005EF8AC`، `TEditExcelWorkBook.PerformMethod` در `0x005EF300` و `TShowSendLog.PerformMethod` در `0x005EFE4C`.
+- هنوز هیچ‌کدام از این شواهد، شناسهٔ `invoke=5208` یا تولید XML `EditWordDocument/wordConfig` را مشخص نمی‌کند.
+- **گام بعد:** یافتن VMT مربوط به `TEmwatMethod`، mapping slot `+0x68`، و tracing parser/registry که request ID را به object متد وصل می‌کند.
