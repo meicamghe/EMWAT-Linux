@@ -732,3 +732,14 @@ Run `43232846364` با موفقیت کامل (148/148 مرحله) پایان ی�
 - VMT inventory کلاس‌هایی با نام `TWordFields`، `TWordField` و `TWordFieldCollection` پیدا نکرد؛ اما RTTI خود interfaceها و IIDهای آن‌ها را تأیید کرده است.
 - Workflow به trace کامل این توابع typed و getter `TWordDocument.Get_Fields` گسترش یافت. در این مسیرها می‌توان slotهای مربوط به `Wordxp.Field` را از استفادهٔ واقعی و نه از حدس نام کلاس شناسایی کرد.
 - **گام بعد:** بررسی artifact اجرای workflow 41/42، استخراج بدنهٔ کامل `Get_Fields)، `FillField`، `FillImageField`، `FillMSWFields` و `AddImagesToDoc)، و تطبیق dispatchها با Code/Result و سایر propertyهای `Wordxp.Field`.
+
+
+### Run 41 — getter تایپ‌شدهٔ Fields و مسیر FillImageField (2026-11-14)
+
+- Run 41 با موفقیت پایان یافت و trace کامل getter و helperهای تایپ‌شده استخراج شد.
+- `Wordxp.TWordDocument.Get_Fields` در `0x0042B55C) پس از گرفتن interface از accessor `0x0042ABA0)، روی interface slot `+0x80) را فراخوانی می‌کند. این یک positive control تایپ‌شده برای getter به نام `Get_Fields` است.
+- اسکن direct CALL برای `0x0042B55C) هیچ caller مستقیمی پیدا نکرد؛ بنابراین ممکن است این getter از VMT/property path استفاده شود یا در مسیرهای بررسی‌شده استفاده نشده باشد.
+- **اصلاح مهم:** این getter با slot `+0x80) است؛ بنابراین dispatch جداگانهٔ `+0x12C) در `FillPrintDocFields` را نباید بدون شناسایی signature آن، `Get_Fields` نامید. آن فراخوانی چند آرگومان خروجی دارد و معنایش هنوز باز است.
+- `TWordViwer.FillImageField` امضای تایپ‌شدهٔ `Wordxp._Document` و `Wordxp.Field` دارد و در بدنه از slotهای `+0x40)، `+0x38)، `+0x20) روی receiverهای interface استفاده می‌کند. نام متدهای این slotها هنوز مشخص نیست.
+- `FillMSWFields` و `AddImagesToDoc` نیز trace شدند؛ اولی روی آرایه/فیلدهای داخلی و دومی از interface `Wordxp.Fields` برای افزودن تصویر به سند استفاده می‌کند.
+- **گام بعد:** شناسایی IIDهای `Wordxp.Range` و `StoryRanges`، تطبیق slotهای `Wordxp.Field` در `FillImageField`، و بررسی نتایج caller scans برای این helperها.
