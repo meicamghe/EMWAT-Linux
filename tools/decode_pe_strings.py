@@ -39,20 +39,20 @@ def main():
         if raw is None:
             print("  not file-backed")
             continue
-        name = section.Name.rstrip(b"\\0").decode("ascii", "replace")
+        name = section.Name.rstrip(b"\\x00").decode("ascii", "replace")
         print(f"  raw=0x{raw:08X} section={name}")
         if raw >= 8:
             refcount = int.from_bytes(blob[raw - 8:raw - 4], "little", signed=True)
             length = int.from_bytes(blob[raw - 4:raw], "little", signed=True)
             print(f"  possible Delphi header: refcount={refcount} length={length}")
-        wide = read_terminated(blob, raw, args.max_bytes, b"\\0\\0")
+        wide = read_terminated(blob, raw, args.max_bytes, b"\\x00\\x00")
         if len(wide) % 2:
             wide = wide[:-1]
         try:
             decoded_wide = wide.decode("utf-16le").replace("\\r", "\\r").replace("\\n", "\\n")
         except UnicodeDecodeError:
             decoded_wide = "<invalid UTF-16LE>"
-        ansi = read_terminated(blob, raw, args.max_bytes, b"\\0")
+        ansi = read_terminated(blob, raw, args.max_bytes, b"\\x00")
         decoded_ansi = ansi.decode("cp1252", "replace")
         print(f"  UTF-16LE: {decoded_wide!r}")
         print(f"  ANSI: {decoded_ansi!r}")
