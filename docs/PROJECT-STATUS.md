@@ -796,3 +796,12 @@ Run `43232846364` با موفقیت کامل (148/148 مرحله) پایان ی�
 - این‌ها هنوز candidate هستند؛ handler مربوط به `TfrmShowAutoSaveFiles` ممکن است فقط برای UI فایل‌های autosave باشد و لزوماً close سند اصلی نیست.
 - Workflow بعدی بدنه، callerها، immediate refs و raw pointer refs این handler و wrapperهای Close را استخراج می‌کند.
 - **گام بعد:** تحلیل run 52 برای تعیین اینکه کدام close path واقعاً به Word document اصلی و POST محلی مرتبط است.
+
+
+### Run 53 — GetDocFieldName و انتخاب فیلدهای Word (2026-11-14)
+
+- Run 53 با موفقیت پایان یافت؛ بدنهٔ کامل `TWordViwer.GetDocFieldName` در `0x004BB81C` استخراج شد.
+- این routine رابط سند فعلی را از viewer می‌گیرد، `FillPrintDocFields` را برای ساخت آرایهٔ `DynamicArray<Wordxp.Fields>` در فیلد داخلی `+0xA4` فراخوانی می‌کند، سپس نام فیلدهای تنظیم‌شده را پیمایش کرده و برای هرکدام `GetDocFieldIndex` را صدا می‌زند.
+- نتیجهٔ Boolean هر lookup در state/flagهای viewer اعمال می‌شود. بنابراین `GetDocFieldName → GetDocFieldIndex` یک مسیر مشخص برای تطبیق نام فیلدهای config با فیلدهای واقعی Word است.
+- اسکن direct CALL برای `GetDocFieldName` هیچ caller مستقیمی در procedureهای TD32-bounded پیدا نکرد؛ ورود از VMT/property/indirect path یا legacy code هنوز ممکن است.
+- **گام بعد:** ادامهٔ بررسی close callback دوم `uSendLog` و wrapperهای `TWordDocument.Close`؛ همچنین تعیین entry path تابع `GetDocFieldName` و اتصال field config به invoke/response.
