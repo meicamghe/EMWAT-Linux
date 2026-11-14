@@ -572,7 +572,7 @@ The expanded trace artifact from workflow run `43500518664` completed successful
 
 ### Next static-analysis target
 
-The earlier Delphi VMT resolver remains useful for internal class diagnostics, but it is not the table used by this Word callback path. The current `TWordViwer+0x48` field is a `Wordxp._Document` COM interface, and slot `+0x2BC` maps to `PrintOutOld()`. The remaining close-path investigation now focuses on the separate `WordAppDocumentBeforeClose -> +0x38 interface dispatches -> GetXmlFieldInfo` path. Runtime-confirmed behavior remains separate: closing the Word document causes the local bridge request `invoke=5208` with an `EditWordDocument` XML payload containing `wordConfig`; the static callback-to-HTTP chain is not yet proven end-to-end.
+The earlier Delphi VMT resolver remains useful for internal class diagnostics, but it is not the table used by this Word callback path. The current `TWordViwer+0x48` field is a `Wordxp._Document` COM interface, and slot `+0x2BC` maps to `PrintOutOld()`. That `0x004CCBBC -> +0x38 -> GetXmlFieldInfo` path is now classified as a nested image-field helper reached from `FillImgFldsForPrint`, despite its TD32 `WordAppDocumentBeforeClose` label. The actual registered main-editor close callback is `0x004CD154`, installed at event-record `+0x80`; it prompts and invokes Word's Close overload. Runtime-confirmed behavior remains separate: closing the Word document causes the local bridge request `invoke=5208` with an `EditWordDocument` XML payload containing `wordConfig`; the parent-page message that initiates this request is not yet traced.
 
 
 ## Run 108 — deep trace رویدادهای Word و dispatch کنترلر (2026-11-14)
@@ -606,7 +606,7 @@ Artifact اجرای موفق run `43500518664` با شناسه `14073787351` ب�
 - trace خطی تابع `OnTmrAutoSave` نیز در ناحیه‌ای شامل داده/بخش‌های exception به انتهای disassembly معتبر نرسیده است؛ بنابراین پایان واقعی تابع و همه branchها هنوز استخراج نشده‌اند.
 - توابع helper `0x00440950`، `0x00440A68` و `0x00441C68` wrapperهای کوتاه برای فراخوانی interface method در offsetهای `+0x174`، `+0x180` و `+0x1E0` هستند؛ معنای دقیق این slotها بدون resolve کردن interface/VMT مشخص نیست.
 
-گام بعدی باید مسیر جداگانهٔ BeforeClose را دنبال کند: دو dispatch از slot `+0x38` در `WordAppDocumentBeforeClose` و سپس فراخوانی `GetXmlFieldInfo`. برای این کار scan جدید تمام callsiteهای `+0x38` را با wrapperهای WordXP مقایسه می‌کند. مشاهده runtime درخواست `invoke=5208` هنگام بستن سند همچنان جدا از زنجیرهٔ ایستای هنوز حل‌نشده ثبت می‌شود.
+این مسیر `+0x38 → GetXmlFieldInfo` در آدرس `0x004CCBBC` اکنون helper داخلی پردازش فیلدهای تصویر/چاپ شناخته می‌شود، نه event واقعی Close. callback ثبت‌شدهٔ Close در آدرس `0x004CD154` است و در event record در offset `+0x80` قرار می‌گیرد. این callback وضعیت `Document.Saved` را از slot `+0xD8` می‌خواند، پیام Yes/No/Cancel نشان می‌دهد و از slot `+0x29C` برای Close استفاده می‌کند. درخواست runtime `invoke=5208` همچنان باید از پیام parent-page به bridge تا POST دنبال شود.
 
 
 ## Run 109 — ارزیابی خروجی VMT و اصلاح فیلتر مقصدها (2026-11-14)
@@ -754,7 +754,7 @@ The service-side half of the observed close request is no longer an unknown blac
 
 For the observed runtime envelope `EditWordDocument`, the class resolution is `TEditWordDocument`, and its concrete VMT slot `+0x10` target is `0x005EE82C`. This method reads the `document` parameter and calls helper `0x004B7724`. The helper is now included in the next lifecycle trace.
 
-**Close-event progress:** `TWordViwer.OnTmrAutoSave` registers the actual main-editor Word close callback at event-record `+0x80 → 0x004CD154`. Its export name and body strings identify it as `WordAppDocumentBeforeClose`; it logs `Document.OnBeforeClose Called.`, prompts in Persian whether to save changed content, handles Yes/No/Cancel, and invokes the three-argument `Wordxp._Document.Close` overload through slot `+0x29C`. The separately named routine at `0x004CCBBC` remains a nested image-field helper, not the registered event callback.
+**Close-event progress:** `TWordViwer.OnTmrAutoSave` registers the actual main-editor Word close callback at event-record `+0x80 → 0x004CD154`. Its export name and body strings identify it as `WordAppDocumentBeforeClose`; it first calls `RollBackOriginalOptions` (`0x004CB108`), checks `Document.Saved` through `_Document` slot `+0xD8` (typed wrapper `Get_Saved` at `0x0042BD94`), prompts in Persian whether to save changed content, handles Yes/No/Cancel, and invokes the three-argument `Wordxp._Document.Close` overload through slot `+0x29C`. The separately named routine at `0x004CCBBC` remains a nested image-field helper, not the registered event callback.
 
 **What remains unproven:** the close callback body has no direct HTTP request call. The embedded browser bridge is now deobfuscated: it forwards parent `postMessage` event data unchanged to the local service via XHR and posts `responseText` back to the original source/origin. The remaining task is to identify which parent-page code sends the close-time message and how the final document content is committed. The user's observed apply-on-close behavior remains the behavioral requirement.
 
