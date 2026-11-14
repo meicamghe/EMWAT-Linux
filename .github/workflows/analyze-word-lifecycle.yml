@@ -347,6 +347,16 @@ jobs:
           python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x0044AD30 word-lifecycle-analysis/CloseAllWords-callers.md
           python tools/trace_td32_immediate_refs.py analysis-input/EmwatMethods.bpl1 0x0044AD30 word-lifecycle-analysis/CloseAllWords-immediate-refs.md
           python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 0x0044AD30 word-lifecycle-analysis/CloseAllWords-pointer-refs.md
+      - name: Trace SilentSave field-lookup context and RAW cleanup commands
+        run: |
+          python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x004BB81C word-lifecycle-analysis/GetDocFieldName-full.md
+          python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x0044B01C word-lifecycle-analysis/DeleteTempRAW.md
+          python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x0044B0F8 word-lifecycle-analysis/CloseAllWords-command-target.md
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x0044B0F8 word-lifecycle-analysis/CloseAllWords-command-target-callers.md
+          python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x004AEBBC word-lifecycle-analysis/SilentSave-helper-4AEBBC.md
+          python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x004AEA78 word-lifecycle-analysis/SilentSave-helper-4AEA78.md
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004AEBBC word-lifecycle-analysis/SilentSave-helper-4AEBBC-callers.md
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004AEA78 word-lifecycle-analysis/SilentSave-helper-4AEA78-callers.md
       - uses: actions/upload-artifact@v4
         with:
           name: emwat-word-lifecycle-analysis
