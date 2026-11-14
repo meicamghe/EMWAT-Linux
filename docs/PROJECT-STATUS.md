@@ -898,7 +898,7 @@ The resulting evidence should distinguish ordinary CALL xrefs, code immediates, 
 1. Decode the TXMLMethodType +0xC8 attribute-name literal at 0x0044C6A4 (implementation 0x0044C62C, reached via thunk 0x0044BA59). The method-name string is passed to TXMLNode.SetAttribute; the service parser expects method@class, so confirm whether the literal is class. Then map TXMLEmwatType +0x54 serializer getter at VTable address 0x0044B8CC (thunk 0x0044B7A9), which returns the serialized XML string at callsite 0x0046C937. TXMLParamType parameter serialization is proven: +0xB0 sets attribute name and +0x68 calls TXMLNode.SetText.
 2. Keep the second +0x68 call at 0x0046CBB7 separate; it uses a different local receiver in the shared base wrapper's exception/response path.
 3. Continue tracing the service parser/registry only where necessary to establish how XML method classes are resolved. The browser's `invoke=5208` value is already proven to be a random per-request nonce, not a method ID; the server-generated `TEmwatInvokeParam.SessionId` is separate.
-4. Link the registered Word BeforeClose callback at 0x004CD154 to the parent-page `postMessage` that initiates the next `EditWordDocument` request, then trace the Save/No-save branches to the final Almas Gam commit. Preserve the user's close-applies-changes observation as a hard requirement.
+4. Trace the registered BeforeSave callback at 0x004CD154 and the parent-page `postMessage` that initiates the close-time `EditWordDocument` request. Do not call 0x004CD154 a BeforeClose handler. The user's close-applies-changes observation remains a hard requirement.
 
 
 
