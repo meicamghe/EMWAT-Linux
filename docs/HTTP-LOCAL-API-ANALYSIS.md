@@ -265,3 +265,8 @@ The Python transport now defaults to requiring a request Origin and accepts it o
 The XML envelope parser uses runtime-confirmed element names from the close-time response prefix: `emwat version="1.0"`, `method class`, and `param name`. It preserves values as opaque text. The explicit dispatcher only invokes registered handlers and never resolves user-supplied class names dynamically. No actual EditWordDocument handler is registered yet.
 
 **CI green:** Python bridge transport run #20 (`43592721635`), commit `2fa217ae83f33b80a7799ede4c75f2cc58b40d76`; 24 tests passed. Exact `?heartbeat` and `?init` response behavior remains unresolved; static analysis proves only that the service has separate branches for those query keys.
+
+
+## Strict HTTP framing tests — CI run #22
+
+The transport now rejects Host values that include path/query/fragment components, requires exactly one ASCII-decimal Content-Length, and rejects Transfer-Encoding. The corresponding tests pass in Python bridge workflow run #22 (`43593083176`, commit `22a803912b0fa92c3bb5537fb1f0c7952fda7615`): **27 tests passed**.
