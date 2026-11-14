@@ -764,3 +764,13 @@ Run `43232846364` با موفقیت کامل (148/148 مرحله) پایان ی�
 - بدنهٔ `OnTmrAutoSave` انتساب این callbackها را به زوج فیلدهای event object تأیید می‌کند: BeforeSave در `+0x80/+0x84)، NewDocument در `+0x90/+0x94)، `0x004CD9C0) در `+0x98/+0x9C)، و BeforePrint در `+0x88/+0x8C) (با انتخاب `0x004CE030) یا `0x004D00AC)).
 - این نتیجه، فرض ثبت ایستای `0x004CCBBC) به‌عنوان BeforeClose را در همین BPL بسیار نامحتمل می‌کند؛ اما computed/runtime registration یا package دیگر هنوز کاملاً رد نشده است. چون همین تابع از مسیر print/field فراخوانی مستقیم دارد، فعلاً آن را nested print/field helper طبقه‌بندی کن، نه callback قطعی Close.
 - **گام بعد:** یافتن event/connector دیگری که POST مشاهده‌شده به `127.0.0.1:1984/?invoke=5208` را هنگام بستن سند ایجاد می‌کند؛ هم‌زمان بررسی RTTI برای `Range` و `StoryRanges` و slotهای Wordxp.Field ادامه یابد.
+
+
+### Run 45 — RTTI مربوط به StoryRanges و FormFields (2026-11-14)
+
+- Run 45 با موفقیت پایان یافت.
+- سه interface جدید WordXP از RTTI استخراج شد: `StoryRanges` با IID `0002098C-0000-0000-C000-000000000046)، `FormFields` با IID `00020929-0000-0000-C000-000000000046)، و `FormField` با IID `00020928-0000-0000-C000-000000000046).
+- اسکن هدفمند، TypeInfo برای `Range` یا `_Range` در همین BPL پیدا نکرد؛ این موضوع وجود object/interfaceهای Range را رد نمی‌کند، اما فعلاً مانع نام‌گذاری slotهای آن است.
+- `StoryRanges` یک candidate معقول برای بررسی dispatch تایپ‌نشدهٔ `_Document +0x12C) در `FillPrintDocFields` است، اما هنوز هیچ wrapper یا خروجی IID آن را اثبات نکرده است. این slot را فعلاً StoryRanges ننام.
+- وجود `FormFields/FormField` نشان می‌دهد کد علاوه بر Fields/Field عادی Word، مدل جداگانهٔ فرم‌فیلدها را هم import کرده است.
+- **گام بعد:** بررسی symbol inventory جدید برای getter/consumerهای StoryRanges و FormFields؛ سپس بررسی callerها و signature تابع FillTextField و slotهای Wordxp.Field.
