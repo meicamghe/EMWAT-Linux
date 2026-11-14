@@ -123,3 +123,17 @@ flowchart LR
 The previous static notes mention WordAppDocumentBeforeClose and WordAppDocumentBeforeSave, but their address mapping has since been corrected. 0x004CD154 is the registered TWordViwer.WordAppDocumentBeforeSave callback; it is not BeforeClose. The TD32-named WordAppDocumentBeforeClose procedure is 0x004CCBBC, with only one direct bounded caller found (FillImgFldsForPrint at 0x004CCF8F) and no raw-pointer registration reference. Therefore the active Word close event has not yet been identified.
 
 The registered BeforeSave callback checks the document's Saved property, conditionally prompts, cancels the event on Cancel, and invokes the three-argument Close interface path for Yes/No. This does not disprove the user's observed behavior: closing the document applies/registers changes even when Save was not pressed. That behavior remains a required product contract; the page-side POST/response path is still the likely place to connect the observed close event to the web application, but the exact mechanism is not yet established.
+
+
+## Clarification from repeat user test — close without pressing Save (2026-11-14)
+
+The user repeated the test and confirmed again that the letter is registered/appears in Almas Gam after closing Word even when the user never presses the Save button. This is now a repeated direct observation and a firm product requirement.
+
+Important distinction: this observation proves the end-to-end result (close Word → the file is present/registered in Almas Gam); it does **not** prove that Word's underlying document was never saved. A plausible sequence is that EMWAT or Word performs a save/silent-save as part of the close sequence, then EMWAT returns the resulting document/configuration to the browser through the existing HTTP response path. Another implementation is possible; the internal sequence remains unverified.
+
+For reverse engineering, explicitly separate these questions:
+1. Does Word save the active document automatically or via an EMWAT-issued COM command during close?
+2. What exact artifact/state does EMWAT collect after that save/close?
+3. How does the local HTTP response deliver it to the browser, and how does Almas Gam persist it?
+
+Do not describe the observed behavior as “upload without saving”. The correct verified wording is: **the user does not press Save, but closing Word is sufficient for the document to be registered in Almas Gam**.
