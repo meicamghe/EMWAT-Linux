@@ -69,3 +69,6 @@ For the current project decisions, implementation boundaries, and next-session c
 در شاخه فعلی، یک بسته Python اولیه در مسیر `python/` اضافه شده است. این لایه فقط انتقال HTTP محلی را فراهم می‌کند: bind اجباری روی IPv4 loopback، endpoint سلامت `/healthz`، پذیرش POST روی ریشه، حفظ بدنه به‌صورت bytes و بدون parse/تغییر، محدودیت اندازه بدنه، رد Originهای خارج از allowlist پیکربندی‌شده، و پاسخ خطای sanitize‌شده. قرارداد XML/dispatcher عمداً هنوز در این لایه پیاده نشده است؛ زیرا نام تگ پارامتر و schema کامل response نهایی هنوز اثبات نشده‌اند.
 
 تست‌های واحد در `python/tests/test_bridge.py` و workflow مستقل `Python bridge transport` در GitHub Actions قرار دارند. این milestone فقط foundation انتقال است و هنوز با وب‌اپ الماس گام یا Word/LibreOffice یکپارچه نیست.
+
+
+**CI verification:** workflow `Python bridge transport` run `43592145701` completed successfully for commit `c705ed34ad9a9e87b42d7e2d85d3aa60aea83815`. The transport response now echoes `Access-Control-Allow-Origin` only for an exact configured Origin (never `*`), so a browser can read an allowed origin's response. The initial CI failures exposed two setup/fixture issues (unnecessary setuptools install in CI; test fixture larger than its configured cap); both were corrected before the successful run. This does not validate compatibility with the Almas Gam production origin or legacy XML schema.
