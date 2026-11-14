@@ -401,3 +401,15 @@ Callback/context pairs assigned in `TWordViwer.OnTmrAutoSave` to the Word object
 - `+0x88/+0x8C`: conditional `0x004D00AC` (LoadOptions) or `0x004CE030` (BeforePrintBGPrint), based on `[viewer+0x3C]`; later assignment sites exist too.
 
 Next: inspect the full tail of `OnTmrAutoSave`, determine the callback-record consumer/indirect dispatch ABI, and identify whether the close event is hooked through another Word event object. Do not implement a guessed close-time POST.
+
+## آخرین پیشرفت مهندسی معکوس — 2026-11-14، Run 97
+
+- GitHub Actions Run 97 موفق شد؛ artifact 14117102104 بررسی شد.
+- 0x00404FBC برابر thunk به TOleServer.SetConnectKind در vcl230.bpl است؛ در راه‌اندازی OLE با آرگومان 1 استفاده می‌شود.
+- 0x004013F8 = DynArrayClear، 0x00401398 = System.Pos، 0x00401368 = UStrCat. این‌ها helperهای RTL هستند و نباید به‌عنوان callback dispatcher تفسیر شوند.
+- 0x004C5D68 دو property ناشناخته از OLE می‌خواند و در viewer+0x4C/+0x4D ذخیره می‌کند.
+- 0x004CDB54 بررسی substring انجام می‌دهد؛ مقدار مورد جست‌وجو هنوز از نظر معنایی شناسایی نشده است.
+- teardown مسیر OnTmrAutoSave در بعضی شاخه‌ها TWordApplication.Quit و چند فراخوانی VMT/interface دارد. معنای دقیق slotها هنوز باز است.
+- WordAppDocumentBeforeClose در 0x004CCBBC هنوز فقط یک direct caller قطعی دارد: FillImgFldsForPrint. آن را handler قطعی close editor فرض نکن.
+- هیچ close-time HTTP payload یا XML response در این run کشف نشد.
+- Run 98 برای trace کردن 0x004BCA88 و slotهای teardown به workflow افزوده شد.
