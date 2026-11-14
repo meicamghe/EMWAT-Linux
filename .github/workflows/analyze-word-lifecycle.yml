@@ -6,6 +6,7 @@ on:
       - '.github/workflows/analyze-word-lifecycle.yml'
       - 'analysis-input/EmwatMethods.bpl1'
       - 'tools/trace_pe_target.py'
+      - 'tools/trace_pe_range.py'
       - 'tools/inspect_pe_va.py'
       - 'tools/resolve_delphi_vmt_slots.py'
       - 'tools/trace_field_accesses.py'
@@ -250,6 +251,20 @@ jobs:
           python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004B7430 word-lifecycle-analysis/Wordviewer-OpenDoc-direct-callers.md
           python tools/trace_td32_immediate_refs.py analysis-input/EmwatMethods.bpl1 0x004B7430 word-lifecycle-analysis/Wordviewer-OpenDoc-immediate-refs.md
           python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 0x004B7430 word-lifecycle-analysis/Wordviewer-OpenDoc-raw-pointer-refs.md
+          python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x004B7724 word-lifecycle-analysis/Wordviewer-OpenDoc-helper-4B7724.md
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004B7724 word-lifecycle-analysis/Wordviewer-OpenDoc-helper-4B7724-callers.md
+          python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x005EE82C 0x005EEB48 word-lifecycle-analysis/TEditWordDocument-vmt-slot-10.md
+          python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x005EEB48 0x005EEDFC word-lifecycle-analysis/TScanDocument-vmt-slot-10.md
+          python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x005EEDFC 0x005EF110 word-lifecycle-analysis/TFaxDocument-vmt-slot-10.md
+          python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x005EF110 0x005EF218 word-lifecycle-analysis/TGetEmwatVersion-vmt-slot-10.md
+          python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x005EF218 0x005EF24C word-lifecycle-analysis/TSetEmwatVersion-vmt-slot-10.md
+          python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x005EF24C 0x005EF300 word-lifecycle-analysis/TUpgradeEmwat-vmt-slot-10.md
+          python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x005EF300 0x005EF8AC word-lifecycle-analysis/TImageEdition-vmt-slot-10.md
+          python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x005EF8AC 0x005EFC54 word-lifecycle-analysis/TEditExcelWorkBook-vmt-slot-10.md
+          python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x005EFC54 0x005EFD4C word-lifecycle-analysis/TCompareWordDocument-vmt-slot-10.md
+          python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x005EFD4C 0x005EFE4C word-lifecycle-analysis/TShowEmwatSetting-vmt-slot-10.md
+          python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x005EFE4C 0x005EFF4C word-lifecycle-analysis/TShowLastEditedDocs-vmt-slot-10.md
+          python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x005EFF4C 0x005F0030 word-lifecycle-analysis/TShowSendLog-vmt-slot-10.md
           python tools/inspect_pe_va.py analysis-input/EmwatMethods.bpl1 0x005EDF34 --before 0x30 --after 0x90 > word-lifecycle-analysis/TCompareWordDocument-PerformMethod-metadata.md
           python tools/inspect_pe_va.py analysis-input/EmwatMethods.bpl1 0x005EDE1C --before 0x30 --after 0x90 > word-lifecycle-analysis/TEditExcelWorkBook-PerformMethod-metadata.md
           python tools/inspect_pe_va.py analysis-input/EmwatMethods.bpl1 0x005EE2A4 --before 0x30 --after 0x90 > word-lifecycle-analysis/TShowSendLog-PerformMethod-metadata.md
