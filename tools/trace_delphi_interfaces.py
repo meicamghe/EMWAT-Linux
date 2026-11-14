@@ -71,7 +71,7 @@ def main():
     for m in __import__("re").finditer(rb"[\x01-\x78][A-Za-z_][A-Za-z0-9_@$]{2,100}",blob):
         raw=m.start()
         name=shortstr(raw)
-        if not name or not any(k in name.lower() for k in ("editor","image","gear","scan","crop")):
+        if not name or not any(k in name.lower() for k in ("editor","image","gear","scan","crop","word","field","document")):
             continue
         name_va=raw_va(raw)
         if name_va is None: continue
@@ -135,7 +135,7 @@ def main():
     # Win32 tkInterface TTypeData: IntfParent (4), IntfFlags (1), GUID (16), UnitName (ShortString).
     lines += ["## IIPEditor interface RTTI decode", ""]
     ii_hits=[]
-    interface_names=("IIPEditor","IImageProcessor","IResultImage","IResultImageUnit","IProcessResult")
+    interface_names=("IIPEditor","IImageProcessor","IResultImage","IResultImageUnit","IProcessResult","Fields","Field","_Document","Document","Range","Selection","Tables")
     for interface_name in interface_names:
         encoded=interface_name.encode("ascii")
         for m in __import__("re").finditer(__import__("re").escape(encoded), blob):
