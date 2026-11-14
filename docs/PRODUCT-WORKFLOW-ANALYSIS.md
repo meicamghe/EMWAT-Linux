@@ -116,3 +116,10 @@ flowchart LR
 - **شواهد ایستا:** HTTP bridge روی loopback، پیام‌رسانی postMessage، POST به مسیر invoke، پاسخ responseText و init marker.
 - **نیازمند runtime validation:** قرارداد کامل invoke، انتقال فایل، رفتار دقیق Save/Close، heartbeat کامل، چندسندی، احراز هویت و تمام workflowهای تصویر.
 - **هنوز پیاده‌سازی نشده:** سرویس سازگار Linux و یکپارچگی واقعی با الماس گام و LibreOffice.
+
+
+## Word close lifecycle correction — run 26 (2026-11-14)
+
+The previous static notes mention WordAppDocumentBeforeClose and WordAppDocumentBeforeSave, but their address mapping has since been corrected. 0x004CD154 is the registered TWordViwer.WordAppDocumentBeforeSave callback; it is not BeforeClose. The TD32-named WordAppDocumentBeforeClose procedure is 0x004CCBBC, with only one direct bounded caller found (FillImgFldsForPrint at 0x004CCF8F) and no raw-pointer registration reference. Therefore the active Word close event has not yet been identified.
+
+The registered BeforeSave callback checks the document's Saved property, conditionally prompts, cancels the event on Cancel, and invokes the three-argument Close interface path for Yes/No. This does not disprove the user's observed behavior: closing the document applies/registers changes even when Save was not pressed. That behavior remains a required product contract; the page-side POST/response path is still the likely place to connect the observed close event to the web application, but the exact mechanism is not yet established.
