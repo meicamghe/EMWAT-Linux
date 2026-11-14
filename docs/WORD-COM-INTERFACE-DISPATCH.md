@@ -143,16 +143,20 @@ Consequently, the call at `TWordViwer.WordAppNewDocument` `0x004CD6BF`, whose re
 
 This is an important correction to the earlier open question: the `+0x2BC` dispatch in these Word viewer paths is not a save/close method. It maps to the legacy no-argument Word document print method. This does not yet explain why the callback invokes it or how the observed local POST is initiated; continue tracing the surrounding conditions and subsequent calls. Do not conflate other `+0x2BC` callsites (for example `CloseMyDoc` or `UnprotectMyDoc`) until their receiver interface types are established.
 
-## BeforeClose callback is a separate dispatch path
+## Routine symbol at 0x004CCBBC: +0x38 dispatch path (classification unresolved)
 
-The full trace of `TWordViwer.WordAppDocumentBeforeClose` at `0x004CCBBC` is distinct from the `+0x2BC` `PrintOutOld` path:
+TD32 labels the routine at `0x004CCBBC` as `TWordViwer.WordAppDocumentBeforeClose`. Its body performs two indirect calls through slot `+0x38` (`0x004CCC2C` and `0x004CCCB2`) and then calls `GetXmlFieldInfo` at `0x004BCA88).
 
-- It performs two indirect calls through slot `+0x38` (`0x004CCC2C` and `0x004CCCB2`) on the same temporary interface/object reference.
-- It then calls `TWordViwer.GetXmlFieldInfo` at `0x004BCA88` with values assembled from the callback's local/event context.
-- No direct HTTP, `127.0.0.1:1984`, `invoke=5208`, or `EditWordDocument` call appears in this callback body.
-- The receiver type and exact method represented by slot `+0x38` are not yet identified. The next workflow adds a package-wide `+0x38` callsite scan to compare the receiver against generated WordXP wrapper methods.
+However, the run-26 direct-call scan and run-27 full caller trace establish that this address is directly called from `FillImgFldsForPrint` in module `ScanRequestXML`. The caller passes its own EBP as a hidden static link. Thus the receiver for both `+0x38` calls is the caller's incoming ECX value, captured in its local `[ebp-0x0C]`; it is not a local interface temporary created by the target, nor has it yet been typed as a Word `_Document` interface.
 
-This makes the current priority clearer: `PrintOutOld()` explains the `+0x2BC` calls in the Word viewer event paths, but the close-time integration path is more likely to continue through the separate `BeforeClose -> +0x38 dispatches -> GetXmlFieldInfo` sequence. That is a tracing priority, not yet proof that this sequence sends the observed local POST.
+The target also calls `GetXmlFieldInfo` using values assembled from the parent procedure's frame. This is consistent with a nested helper used during image-field processing. It does **not** by itself prove that this routine is registered as a Word document-close event callback. The symbol name should be treated as a TD32 procedure label, not as proof of event registration or exclusive close semantics.
+
+- **Proven:** two `+0x38` dispatches and a subsequent `GetXmlFieldInfo` call occur in this routine.
+- **Proven:** `FillImgFldsForPrint` is a direct caller, and the target receives the caller's EBP as a static link.
+- **Unresolved:** whether another independent event-registration path also references this routine.
+- **Unresolved:** the interface type/method at slot `+0x38), and any direct relation to the observed POST at `127.0.0.1:1984`, `invoke=5208`, or `EditWordDocument/wordConfig`.
+
+The investigation must now identify the incoming ECX parameter at the callers of `FillImgFldsForPrint` and inspect the complete target procedure. Until then, do not call the `0x004CCBBC` path the proven close-time integration path.
 ## CostumizeRecAndCC confirms the same Word document method (BPL run 133)
 
 TD32 resolves helper `0x004D281C` as `TWordViwer.CostumizeRecAndCC` (procedure range `0x004D281C..0x004D28F6`). Its body:
