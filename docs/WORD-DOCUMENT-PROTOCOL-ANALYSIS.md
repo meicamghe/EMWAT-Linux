@@ -940,3 +940,17 @@ Workflow #92 (43597403349، commit `9a631d2ebb3958bc97cc89c02a92a5f6e8f21264`) �
 - اسکن caller مستقیم برای `CreateImageFile` و `CreateTIFF.SeparteImages` در محدوده‌های بررسی‌شده نتیجه‌ای نداد. این نتیجه فقط نبودن immediate CALL مستقیم در محدوده TD32 اسکن‌شده را ثابت می‌کند؛ فراخوانی غیرمستقیم، event، callback یا entrypointهای خارج از محدوده را رد نمی‌کند.
 
 **گام بعدی:** trace کامل `OnTmrAutoSave` و فراخوان‌های مستقیم/غیرمستقیم آن؛ شناسایی زمان‌بندی timer و عملیات Word COM داخل آن؛ سپس trace callerها و VMT/registration مسیر TIFF و چاپ. هدف همچنان یافتن event واقعی بستن Word و اتصال Save/Close به بدنه پاسخ HTTP است. از نام تابع‌ها به‌تنهایی نتیجه‌گیری نمی‌کنیم.
+
+
+## Run 94 — تفکیک OnTmrAutoSave از عملیات واقعی ذخیره و ثبت رویدادهای OLE
+
+Workflow #94 (43598550321، commit `ea721080388e7d1903a6fb67af08abcf300c8f7c`) موفق شد؛ artifact شماره 14115756587 بررسی شد.
+
+- TD32 نام تابع `0x004B8A84` را `TWordViwer.OnTmrAutoSave` ثبت می‌کند؛ اما caller مستقیم پیدا‌شده در محدوده TD32 فقط `TWordViwer.LoadDocument` در 0x004B7A58 است. بنابراین در مسیر بررسی‌شده این تابع در زمان LoadDocument فراخوانی می‌شود؛ اسم نماد به‌تنهایی اثبات نمی‌کند که این فراخوانی یک tick زمان‌سنج یا عملیات ذخیره فایل است.
+- بدنه تابع رشته‌های `wv.LoadDocument method called.`، `config.view mode:`، `connecting to Ole Word Engine.`، `connected.` و `Init word engine finished.` را مصرف/ثبت می‌کند. همچنین وضعیت‌های view/readonly/protected را از شیء پیکربندی می‌خواند.
+- تابع، چند callback را روی شیء متصل به Word/OLE ثبت می‌کند: آدرس‌های 0x004CD154، 0x004CD54C و 0x004CD9C0؛ سپس بسته به flag موجود در شیء WordViewer یکی از 0x004D00AC یا 0x004CE030 را در slot مربوطه قرار می‌دهد. این ثبت callback در مسیر LoadDocument شاهد مستقیم است؛ معنای دقیق هر event باید از بدنه handler و قرارداد COM/اتصال event sink تعیین شود.
+- تابع 0x004CDB54 که در همین بدنه فراخوانی می‌شود، در TD32 با نام `TWordViwer.QuitWord` شناسایی شد. بنابراین این helper یک check مرتبط با QuitWord است، نه silent-save helper.
+- تابع 0x004C5D68، `TWordViwer.SetDocCaption` است؛ دو property/مقدار را از شیء Word می‌خواند و flagهای داخلی caption/viewer را تنظیم می‌کند.
+- آدرس‌های 0x004D68D4 و 0x004D531C که ابتدا به‌عنوان helperهای احتمالی OnTmrAutoSave بررسی شدند، در واقع `TDictionary<UnicodeString,TXmlWordConfigTwinField>.Remove` و `TDictionary<UnicodeString,TXmlWordConfigField>.Remove` هستند و caller مستقیم‌شان `AddCustomDocPropertiesToDic` است. آن‌ها بخشی از مسیر AutoSave نیستند.
+- رشته `<Office LISENCE>: Word is not activated. Close Method.` در همین تابع دیده می‌شود؛ این فقط پیام مربوط به وضعیت فعال‌سازی Word است و قرارداد close-time را مشخص نمی‌کند.
+- مسیر AutoSave و event registration هنوز باید تفکیک شوند: handlerهای ثبت‌شده در run بعدی trace می‌شوند تا Save/Close/BeforePrint و ارتباط احتمالی‌شان با پاسخ HTTP معلوم شود. تا این مرحله هیچ close-time POST جدیدی اثبات نشده است.
