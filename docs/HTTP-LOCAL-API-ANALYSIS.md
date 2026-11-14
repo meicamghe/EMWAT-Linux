@@ -222,3 +222,12 @@ The service string dump also contains `TEmwatInvokeParam`, `ParseMethod`, `Calli
 2. Trace the XML `method class` dispatch from `EditWordDocument` to the corresponding `TEmwatMethod`/connector implementation.
 3. Determine how the random query value is used (correlation, request map, logging, or another purpose) from service code or runtime traces.
 4. Connect the close-time request/response to the document extraction and apply/return behavior. Do not infer that `5208` identifies the operation.
+
+
+## Correction — Word callback identity after run 26 (2026-11-14)
+
+Older lifecycle notes in this document mention WordAppDocumentBeforeClose/BeforeSave names based on an incorrect address assignment. The corrected TD32 mapping is: 0x004CD154 is the registered TWordViwer.WordAppDocumentBeforeSave callback at viewer field +0x80; the separately named TWordViwer.WordAppDocumentBeforeClose is 0x004CCBBC, whose only direct bounded caller found is FillImgFldsForPrint at 0x004CCF8F and for which no raw-pointer registration reference was found. Do not describe 0x004CD154 as a close callback or treat the 0x004CCBBC symbol name as proof of active event registration.
+
+Run 26 (43584217243, artifact 14109926135) also confirms TWordDocument.Close wrappers: no-argument 0x0042FEB0 uses interface slot +0x4D4; the 1/2/3-OleVariant overloads at 0x0042FF08, 0x0042FF7C, and 0x0042FFF4 use +0x29C. The registered BeforeSave callback checks _Document.Saved and may prompt; its Cancel branch sets the event Cancel value, while Yes/No invoke the three-argument Close path. This does not yet explain the browser-observed close-time POST or the user's confirmed apply-on-close behavior.
+
+The bridge script evidence remains unchanged: each window message is POSTed with event.data as the body, a client-generated random requestId in the invoke query, and the responseText is postMessaged to the original source/origin. The service-side dispatch and full response contract still require further analysis.
