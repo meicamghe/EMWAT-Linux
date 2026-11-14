@@ -819,3 +819,14 @@ The two parameter methods are now identified:
 Therefore each dictionary pair is serialized as an XML parameter node equivalent in structure to <param name="KEY">VALUE</param>. This is a static BPL-level serialization result. Do not yet assume it is byte-for-byte the same XML envelope observed in the browser's localhost POST/response; the TXMLMethodType +0xC8 dispatch receives the method-name string and resolves through thunk 0x0044BA59 to implementation target 0x0044C62C. Its TD32 label is TXMLMethodType.Get_Param, but its body calls TXMLNode.SetAttribute with the method-name string and a static attribute-name literal at 0x0044C6A4; that literal is being decoded and is expected to match the service parser's method@class field.
 
 After the loop, TEmwatMethod.Invoke calls the TXMLEmwatType interface at slot +0x54 (callsite 0x0046C937) with an output reference, then copies the returned XML string into its caller-provided output string through runtime helper 0x004012F8. This proves that the generic Invoke routine serializes the constructed XML tree to a string. The interface VTable slot is at 0x0044B8CC; its target method name is still to be mapped. The TXMLMethodType +0xC8 method-name setter is also still under investigation.
+
+## Confirmed generic Invoke XML serialization (2026-11-14, focused runs 11 and 16)
+
+The earlier Generic Invoke XML parameter serialization section above contains now-superseded pending statements about the class literal and serializer getter. Focused runs 11 (43571811038) and 16 (43573798242) resolve those points:
+
+- TXMLMethodType.AfterConstruction (0x0044C458) initializes the method node using literal method.
+- TXMLMethodType interface slot +0xC8 resolves to 0x0044C62C; this body calls TXMLNode.SetAttribute with literal class and the supplied method-name string.
+- Each parameter child is a TXMLParamType; the dictionary key is assigned to attribute name, and the dictionary value becomes node text via TXMLNode.SetText.
+- TXMLEmwatType interface slot +0x54 resolves through thunk 0x0044B7A9 to xmlrtl230.bpl!TXMLNode.GetXML (0x0044B590), which produces the serialized XML string returned by Invoke.
+
+The proven tree shape is a method element with class equal to the dispatched method name and parameter child nodes with name attributes and text values. This is static BPL evidence. It does not yet establish exact serialization whitespace, XML declaration, encoding, any additional root attributes, or byte-for-byte equivalence with the browser runtime POST. The constructor second constant at 0x0044C4FC is still under investigation.
