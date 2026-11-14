@@ -388,3 +388,16 @@ Run `43599550286` succeeded; artifact `14115498934` was downloaded and inspected
 3. Separate print/export/image handling from editor close/return behavior.
 4. Keep the XML handler schema and close-result payload opaque until directly proven. Do not implement speculative production handlers.
 5. Continue updating all three analysis documents after each meaningful run.
+
+
+## Run 96 handoff — callback slots (2026-11-14)
+
+Run `43600693760` succeeded; artifact `14116641628` inspected.
+
+Callback/context pairs assigned in `TWordViwer.OnTmrAutoSave` to the Word object at `viewer + 0x44`:
+- `+0x80/+0x84`: `0x004CD154` = `WordAppDocumentBeforeSave`
+- `+0x90/+0x94`: `0x004CD54C` = `WordAppNewDocument`
+- `+0x98/+0x9C`: `0x004CD9C0` = `WordAppWindowActivate`
+- `+0x88/+0x8C`: conditional `0x004D00AC` (LoadOptions) or `0x004CE030` (BeforePrintBGPrint), based on `[viewer+0x3C]`; later assignment sites exist too.
+
+Next: inspect the full tail of `OnTmrAutoSave`, determine the callback-record consumer/indirect dispatch ABI, and identify whether the close event is hooked through another Word event object. Do not implement a guessed close-time POST.
