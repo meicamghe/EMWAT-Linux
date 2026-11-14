@@ -589,7 +589,7 @@ This proves the two-stage dispatch:
 The `TEditWordDocument` method target `0x005EE82C` begins a substantial body that reads the `document` parameter from the parsed dictionary and calls helper `0x004B7724`. The next step is to identify that helper and trace the complete method body through document creation/Word automation and response handling.
 
 
-## TEmwatMethod.Invoke +0x68 receiver: enumerator path under investigation (runs 79–82)
+## TEmwatMethod.Invoke +0x68 receiver: XML-object path under investigation (runs 79–83)
 
 The complete TD32 procedure for TEmwatMethod.Invoke is 0x0046C82C–0x0046C9DC. Its signature explicitly accepts TDictionary<System.AnsiString,System.AnsiString>; on entry EAX is the TEmwatMethod instance, EDX is the parameter dictionary, and ECX is the output-string reference.
 
@@ -599,12 +599,14 @@ The receiver dataflow at the unresolved +0x68 call (0x0046C921) is:
 - The resulting object in [ebp-0x1C] is dispatched through +0xCC at 0x0046C8E6, with output address [ebp-8].
 - The object stored in [ebp-8] is then the receiver for the +0x68 call at 0x0046C921.
 
-Thus the +0x68 receiver is not Self and should not be conflated with the concrete connector's VMT slot +0x10.
+Run 1 of the focused receiver workflow resolves an important part of this chain: the only direct caller of helper 0x0044C238 is TEmwatMethod.Invoke at 0x0046C877, and TD32 identifies 0x0044C238 as Emwatxml.TXMLEmwatType.AfterConstruction. The caller passes the address of local [ebp-4] as EAX. The corresponding class RTTI in the same BPL identifies TXMLEmwatType at VMT 0x0044B9AC, instance size 0x5C, with one implemented interface at IOffset +0x50 and interface VTable 0x0044B878 (IID e7e941dd-cf1c-4856-9cec-8b6d2370c439).
 
-The same procedure calls helper 0x0046E324 twice. TD32 labels it TDictionary<System.AnsiString,System.AnsiString>.TPairEnumerator.DoGetCurrent; it writes two DWORD values from a list-like backing store to the supplied output address. It also calls 0x0046DE84 (TD32 label TEnumerable<System.AnsiString>.ToArrayImpl) and 0x0046E3CC (TD32 label TList<TPair<...>>.GetCapacity). These helper names and instruction behavior point to generic dictionary/enumerator machinery, but do not by themselves type the [ebp-8] receiver.
+This makes the XML-object path the current leading explanation for the +0xB0 → +0xCC → +0x68 chain: [ebp-4] is associated with TXMLEmwatType construction, [ebp-0x1C] is returned by its +0xB0 dispatch, and [ebp-8] is returned by the next object's +0xCC dispatch. The exact class/interface types of those two returned objects are not yet established.
+
+**Correction to the preliminary enumerator hypothesis:** Invoke also calls 0x0046DE84 and 0x0046E324 while processing the parameter dictionary. The latter is TD32-labelled TDictionary<System.AnsiString,System.AnsiString>.TPairEnumerator.DoGetCurrent, and its two direct calls are separate from the +0x68 dispatch at 0x0046C921. The VMT inspection of TDictionary.TPairEnumerator (VMT 0x0046BEE8) shows DoMoveNext at +0x00 and its constructor at +0x04; the area at +0x68 is RTTI/data, not an executable class virtual slot. Therefore the earlier suggestion that [ebp-8] itself was the TPairEnumerator is withdrawn. Dictionary enumeration is present in the routine, but it does not identify the +0x68 receiver.
 
 A second, distinct +0x68 dispatch exists in the shared base wrapper at 0x0046CBB7 (TD32 range 0x0046C9E0–0x0046CDF7). It uses a different local receiver [ebp-4], created in the exception/response path. Do not assume the two +0x68 calls share an interface or class type.
 
-Run 82 adds a complete trace and caller scan for helper 0x0044C238, which initializes/creates the [ebp-4] local in Invoke, plus raw VMT slot windows for generic TEnumerator<TPair>, TDictionary.TPairEnumerator, TDictionary, and TEnumerable<TPair> candidates, covering slots +0x68, +0xB0, and +0xCC.
+Run 83 adds the TXMLEmwatType class VMT window and its implemented-interface VTable window around offsets +0x68, +0xB0, and +0xCC, plus a trace of helper 0x0044B468. These will determine whether the +0xB0 call belongs to the class VMT and help identify the XML child/interface returned into [ebp-8].
 
-**Still unresolved:** the exact class type of [ebp-8], the declaration/name of its +0x68 method, and the distinct receiver type at 0x0046CBB7. The next mapping must use VMT slot targets and constructor/helper dataflow rather than the numeric displacement alone.
+**Still unresolved:** the exact type of [ebp-0x1C], the exact type and +0x68 method of [ebp-8], and the distinct receiver type at 0x0046CBB7. Continue from the XML class/interface tables and the constructor/helper dataflow; do not infer method names from the numeric displacement alone.
