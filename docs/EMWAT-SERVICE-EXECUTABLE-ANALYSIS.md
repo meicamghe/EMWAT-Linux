@@ -123,3 +123,18 @@ The dispatcher then creates an instance of the resolved class, stores the `TEmwa
 
 This is now a statically supported service-to-class dispatch path. It is not yet proof that the specific `EditWordDocument` class's method completes the observed apply-on-close operation; that requires resolving its class VMT slot and response/commit path.
 
+
+
+## Correction: concrete class VMT dispatch now resolved (lifecycle run 76)
+
+The earlier statement that `TEditWordDocument.PerformMethod` might be abstract or external is superseded. The corrected BPL class-RTTI scan finds `TEditWordDocument` VMT `0x005ED764` and proves its slot `+0x10` points to executable code at `0x005EE82C`. The method name is present in TD32 name data, although no TD32 procedure record covers this implementation address.
+
+The service's dynamic call at `0x00470EF6` is to VMT slot `+0x0C`. For all `TEmwatMethod` descendants this slot resolves to `0x0046C9E0`. That shared base routine calls `TEmwatMethod.Invoke` (`0x0046C82C`) and then calls the instance's VMT slot `+0x10` (`0x0046CA88`) to execute the concrete class method. Thus the full dispatch chain is:
+
+`GetClass("T"+XML class) → construct instance → set instance field +4 to TEmwatInvokeParam* → VMT+0x0C (0x46C9E0) → TEmwatMethod.Invoke (0x46C82C) → VMT+0x10 (class-specific method)`.
+
+For `EditWordDocument`, the final method target is `0x005EE82C`. Its code reads the `document` parameter from the parsed dictionary and calls helper `0x004B7724`. That helper and the full `TEditWordDocument` body remain under analysis.
+
+The corrected VMT scan also recovered these other method targets: `TScanDocument=0x005EEB48`, `TFaxDocument=0x005EEDFC`, `TGetEmwatVersion=0x005EF110`, `TSetEmwatVersion=0x005EF218`, `TUpgradeEmwat=0x005EF24C`, `TImageEdition=0x005EF300`, `TEditExcelWorkBook=0x005EF8AC`, `TCompareWordDocument=0x005EFC54`, `TShowEmwatSetting=0x005EFD4C`, `TShowLastEditedDocs=0x005EFE4C`, and `TShowSendLog=0x005EFF4C`.
+
+**Important naming caveat:** some TD32 procedure labels differ from the class whose VMT slot points to the code address. For example, `TEditExcelWorkBook` VMT slot `+0x10` points to `0x005EF8AC`, whose TD32 label is `TCompareWordDocument.PerformMethod`. Keep the VMT target and TD32 label separate until the method body semantics resolve the discrepancy.
