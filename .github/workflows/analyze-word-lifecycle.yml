@@ -450,6 +450,19 @@ jobs:
           python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x00440950 word-lifecycle-analysis/Word-OLE-connection-helper-440950.md
           python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x00404FBC word-lifecycle-analysis/Word-OLE-connection-helper-404FBC.md
           python tools/trace_td32_immediate_refs.py analysis-input/EmwatMethods.bpl1 0x004CD154 word-lifecycle-analysis/Word-event-registration-refs-4CD154.md
+      - name: Resolve Word callback references and indirect event dispatch
+        run: |
+          mkdir -p word-lifecycle-analysis
+          for target in 004CD154 004CD54C 004CD9C0 004CE030 004D00AC; do
+            python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 0x$target word-lifecycle-analysis/callback-$target-pointer-refs.md
+            python tools/trace_td32_immediate_refs.py analysis-input/EmwatMethods.bpl1 0x$target word-lifecycle-analysis/callback-$target-immediate-refs.md
+          done
+          python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x004B8A84 0x004B8D80 word-lifecycle-analysis/OnTmrAutoSave-callback-registration-full.md
+          python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x004CD9C0 0x004CDA50 word-lifecycle-analysis/WindowActivate-vtable-call-context.md
+          python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x004CD54C 0x004CD710 word-lifecycle-analysis/NewDocument-interface-call-context.md
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004B8CA2 word-lifecycle-analysis/OnTmrAutoSave-registration-callers.md
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004CD9C0 word-lifecycle-analysis/WindowActivate-callers.md
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004CE030 word-lifecycle-analysis/BeforePrintBGPrint-callers.md
       - uses: actions/upload-artifact@v4
         with:
           name: emwat-word-lifecycle-analysis
