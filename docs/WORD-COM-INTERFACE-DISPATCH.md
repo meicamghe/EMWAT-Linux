@@ -436,3 +436,19 @@ The expanded interface scan recovered three more WordXP interfaces:
 The targeted scan did not recover a `Range`/`_Range` interface RTTI record in this BPL, even though typed Word field operations call methods on interface values returned from `Wordxp.Field`. The new `StoryRanges` IID is a plausible lead for the still-unmapped `_Document +0x12C` dispatch in `FillPrintDocFields`, because that routine calls `_Document +0x12C` with a story-like selector and then enumerates returned interface data. However, this is only a candidate: the method has multiple output arguments, and no typed wrapper currently maps it to `StoryRanges`. Do not label `+0x12C` as `StoryRanges` until its output IID or a matching wrapper is proven.
 
 The presence of `FormFields` and `FormField` RTTI also shows that this BPL imports Word's separate form-field collection model in addition to ordinary `Fields`/`Field`. The next symbol inventory now includes `StoryRanges`, `FormFields`, and `FormField` names to locate typed getters/consumers and avoid conflating the two field models.
+
+
+## Text-field parent and field-name lookup chain (lifecycle run 47)
+
+The full `FillTextField` procedure at `0x004BC980` is now traced. Its two calls to the nested `FillImageField` helper at `0x004BC9CB` and `0x004BCA10` both pass the parent EBP as a static link. The helper is therefore a nested branch of text-field handling, with the `Wordxp.Field` receiver and document context captured from the parent frame.
+
+The direct-call scan found nine callers of `FillTextField`:
+- four from `GetXmlFieldInfo` (`0x004BCB1E`, `0x004BCB38`, `0x004BE89C`, `0x004BE8B6`);
+- three from `GetDocFieldIndex` (`0x004C0937`, `0x004C0BEF`, `0x004C0DF3`);
+- two from `FillImgFldsForPrint` (`0x004CCF04`, `0x004CCF5B`).
+
+The direct-call scan for `GetDocFieldIndex` found one caller: `GetDocFieldName` at `0x004BBB2B`. This makes the current field-resolution graph:
+
+`GetDocFieldName → GetDocFieldIndex → FillTextField → nested FillImageField`
+
+with additional entry paths from `GetXmlFieldInfo` and `FillImgFldsForPrint`. This is a content/field processing graph, not evidence of a document-close event. The next trace expands `GetDocFieldName` to identify its inputs, callers and relationship to the XML field configuration.
