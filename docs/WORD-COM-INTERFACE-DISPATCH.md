@@ -93,20 +93,11 @@ A direct TD32 CALL-xref scan for `0x004CD54C` found no direct callers. This is c
 The `_Document` slot `+0x2BC` is now mapped with high confidence to `PrintOutOld()` from the generated `Wordxp.TWordDocument` wrapper. Remaining work is to explain the business reason for this call in the Word viewer callbacks and distinguish other interface types that reuse the same numeric offset.
 
 
-## Callback registration cross-check (run 15)
+## Callback registration cross-check — corrected by runs 25–26
 
-The full `TWordViwer.OnTmrAutoSave` trace at `0x004B8A84` resolves the main Word automation event registrations. The callback function pointers are stored in the event record with their owner/context pointers:
+The full TWordViwer.OnTmrAutoSave trace at 0x004B8A84 stores callback pointers in the event record: +0x80 = 0x004CD154 (TD32: WordAppDocumentBeforeSave); +0x90 = 0x004CD54C; +0x98 = 0x004CD9C0; and +0x88 = 0x004D00AC or 0x004CE030 (conditional BeforePrint). The earlier interpretation that +0x80 was WordAppDocumentBeforeClose was incorrect. The registered 0x004CD154 callback checks _Document.Saved via +0xD8, calls PreparePrintDocument at 0x004CB108, conditionally prompts, sets event Cancel to 0xFFFF on Cancel, and directly invokes interface slot +0x29C with three OleVariant arguments on Yes/No. This is the same dispatch slot used by the three-argument TWordDocument.Close wrapper at 0x0042FFF4. 0x00430070 is SaveAs2000, not Close. The no-argument Close wrapper 0x0042FEB0 uses +0x4D4; one/two/three-argument wrappers use +0x29C.
 
-- `+0x80 = 0x004CD154`: export name `WordAppDocumentBeforeClose`; its body logs `Document.OnBeforeClose Called.` and displays the Persian “document changed; save changes?” prompt.
-- `+0x90 = 0x004CD54C`: export name `WordAppDocumentBeforeSave`; its body logs `Document.OnBeforeSave called.`.
-- `+0x98 = 0x004CD9C0`: export name `WordAppNewDocument`; its body includes Activation/Quitword/document-count handling.
-- `+0x88 = 0x004D00AC` or `0x004CE030`, selected by `TWordViwer+0x3C`: BeforePrint paths.
-
-The callback names above were cross-checked against the BPL export address/name tables and body strings. This corrects the earlier swapped labels. The `+0x80` callback is the actual registered main-editor BeforeClose handler; the routine at `0x004CCBBC` with the same TD32 name remains a separate nested print/field helper.
-
-The registered callback at `0x004CD154` is `TWordViwer.WordAppDocumentBeforeSave`, not BeforeClose. It calls `PreparePrintDocument` at `0x004CB108`, queries the active document's `Saved` property through `_Document` slot `+0xD8`, and conditionally displays the changed-document prompt. Cancel sets the event Cancel word to `0xFFFF`. The Yes/No branches directly call the active `Wordxp._Document` interface at slot `+0x29C` with three OleVariant arguments; this is the same interface slot used by the three-argument `TWordDocument.Close` wrapper at `0x0042FFF4`. The wrapper at `0x00430070` is `TWordDocument.SaveAs2000`, not Close. The no-argument `TWordDocument.Close` wrapper at `0x0042FEB0` uses slot `+0x4D4`; the one-, two-, and three-argument wrappers at `0x0042FF08`, `0x0042FF7C`, and `0x0042FFF4` use slot `+0x29C`.
-
-The callback body contains no direct HTTP request call. It prompts and invokes Word's Close overload; the remaining trace must follow its viewer helpers and the BeforeSave path to understand how final content is delivered to the web application.
+The separate TD32-named WordAppDocumentBeforeClose at 0x004CCBBC has only one direct bounded caller, FillImgFldsForPrint at 0x004CCF8F, and no raw-pointer registration reference was found. Its active event role is unproven. The callback body at 0x004CD154 contains no direct HTTP request call. The parent-page message and close-time POST/response path remain to be mapped.
 
 
 ## Slot collision scan (run 19)
