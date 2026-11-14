@@ -34,7 +34,7 @@ Together, the declared parameter type and repeated field use strongly identify `
 
 ### 2. WordAppNewDocument directly dispatches through slot +0x2BC
 
-The trace beginning at `0x004CD54C` is the `TWordViwer.WordAppNewDocument` procedure. It accesses the current document interface in `[Self+0x48]` and performs an indirect virtual/interface call using byte offset `+0x2BC` on the document object.
+The TD32 procedure trace at `0x004CD54C` labels this routine `TWordViwer.WordAppNewDocument`, but the BPL export table names the same address `WordAppDocumentBeforeSave`, and its body logs `Document.OnBeforeSave called.` / `Document.Save`. For event classification, the export name and body strings identify it as the BeforeSave callback; retain the TD32 symbol as a naming discrepancy. It accesses the current document interface in `[Self+0x48]` and performs an indirect virtual/interface call using byte offset `+0x2BC` on the document object.
 
 This is independent evidence that `+0x2BC` is a method slot on the Word document interface. It is not evidence for a method in the Delphi VMT of `TWordViwer`.
 
@@ -48,11 +48,11 @@ The controller-notify chain therefore reuses the current Word `_Document` COM in
 
 ## What is established vs. unresolved
 
-Established by static symbol/signature and instruction evidence:
-- `TWordViwer.WordAppNewDocument` receives a `Wordxp._Document` interface.
-- `TWordViwer.WordAppDocumentBeforeSave` also receives a `Wordxp._Document` interface and compares it with `Self+0x48`.
+Established by static signature, export-table and instruction evidence:
+- The TD32-labelled `TWordViwer.WordAppNewDocument` procedure at `0x004CD54C` has an export-name/body-string discrepancy; the export table and body strings identify it as `WordAppDocumentBeforeSave`.
+- The `0x004CD54C` BeforeSave callback receives a `Wordxp._Document` interface and compares it with `Self+0x48`.
 - `Self+0x48` is used as the current document interface in multiple Word viewer callbacks.
-- Both `WordAppNewDocument` and the `OnControlerNotify -> 0x004D281C` path dispatch through byte offset `+0x2BC` on that document reference.
+- Both the `0x004CD54C` BeforeSave callback (TD32 label `WordAppNewDocument`) and the `OnControlerNotify -> 0x004D281C` path dispatch through byte offset `+0x2BC` on that document reference.
 
 Not yet established:
 - The exact method name is now mapped with high confidence to `Wordxp._Document.PrintOutOld()` through wrapper analysis in BPL run 132.
@@ -75,9 +75,9 @@ The relevant table is the COM vtable for `Wordxp._Document`; byte offset `0x2BC`
 5. Preserve the user-confirmed behavior: closing the document applies/registers changes even without pressing Save.
 
 
-## Additional callback trace: WordAppNewDocument (run 18)
+## Additional callback trace: BeforeSave at 0x004CD54C (TD32 label mismatch, run 18)
 
-The expanded trace of `0x004CD54C` confirms the TD32 procedure name `TWordViwer.WordAppNewDocument`. Its signature includes `DelphiInterface<Wordxp._Document>`.
+The expanded trace of `0x004CD54C` confirms the TD32 procedure label `TWordViwer.WordAppNewDocument` and a `DelphiInterface<Wordxp._Document>` signature. The export table instead names this address `WordAppDocumentBeforeSave`, and the body strings explicitly log `Document.OnBeforeSave called.`; preserve this discrepancy rather than treating the TD32 label as the event's final semantic name.
 
 Relevant sequence:
 
@@ -88,7 +88,7 @@ Relevant sequence:
 
 This makes the identification of the `+0x2BC` receiver as the Word `_Document` interface stronger: the receiver is not merely inferred from a neighboring field access; the method's incoming typed interface parameter is compared to the stored field and then used as the receiver of the virtual call.
 
-A direct TD32 CALL-xref scan for `0x004CD54C` found no direct callers. This is consistent with an event callback being registered and invoked indirectly, but the registration-to-event firing chain still needs explicit proof. Do not interpret the absence of direct CALL xrefs as proof that the method is unused.
+A direct TD32 CALL-xref scan for `0x004CD54C` found no direct callers. This is consistent with the callback being registered and invoked indirectly; `OnTmrAutoSave` stores its address at event-record `+0x90`. Do not interpret the absence of direct CALL xrefs as proof that the method is unused.
 
 The `_Document` slot `+0x2BC` is now mapped with high confidence to `PrintOutOld()` from the generated `Wordxp.TWordDocument` wrapper. Remaining work is to explain the business reason for this call in the Word viewer callbacks and distinguish other interface types that reuse the same numeric offset.
 
