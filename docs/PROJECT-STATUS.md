@@ -1133,3 +1133,12 @@ The actual TD32 procedure named `TWordViwer.WordAppDocumentBeforeClose` begins a
 A second address error: `0x00430070` is `TWordDocument.SaveAs2000`, not a Close wrapper. The actual `TWordDocument.Close` overload procedures are TD32-labeled at `0x0042FEB0`, `0x0042FF08`, `0x0042FF7C`, and `0x0042FFF4`; the latter is the three-argument overload. A three-argument Close invocation in the callback body dispatches through document interface VMT slot `+0x29C`, but the exact runtime target for that interface dispatch must be established by matching the interface VMT and wrapper semantics, not by assigning `0x00430070`.
 
 Run 25 itself completed successfully, but its added trace commands targeted the wrong symbols for a close-event investigation. Treat its other outputs as useful only where the TD32 labels and address semantics are independently verified. Next analysis must trace the actual Close overload(s), find the genuine callback registration (if present), and distinguish the BeforeSave callback from document-close lifecycle. No claim about the page-side POST is changed by this correction.
+
+
+## Word lifecycle — corrected Close overload trace (run 26, 2026-11-14)
+
+Run 26 (43584217243, artifact 14109926135) completed successfully with all 16 workflow steps passing. 0x004CD154 is the registered TWordViwer.WordAppDocumentBeforeSave callback at viewer field +0x80, not BeforeClose. The separate TD32-named WordAppDocumentBeforeClose is 0x004CCBBC; its only direct bounded caller found is FillImgFldsForPrint at 0x004CCF8F, and no raw-pointer registration reference was found. Do not claim it is the live close event without further evidence.
+
+TWordDocument.Close overloads: no-arg 0x0042FEB0 dispatches through interface slot +0x4D4; one-arg 0x0042FF08, two-arg 0x0042FF7C, and three-arg 0x0042FFF4 dispatch through +0x29C. The registered BeforeSave callback calls PreparePrintDocument (0x004CB108), checks the Word Saved property through +0xD8, conditionally displays the changed-document prompt, sets Cancel to 0xFFFF on Cancel, and invokes the three-argument Close wrapper for Yes/No. 0x00430070 is SaveAs2000, not Close.
+
+Still unresolved: concrete runtime target behind +0x29C; any separate close-event registration; page-side postMessage and close-time POST response semantics. The user's observed close behavior (changes apply even without pressing Save) remains authoritative and is not contradicted by this static trace. No native Linux runtime implementation is claimed.
