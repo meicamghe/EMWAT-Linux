@@ -969,7 +969,7 @@ The original service PE was extracted from the Library installer and analyzed di
 - `invoke` enters the XML method-dispatch path; `init` returns the embedded JavaScript bridge; `heartbeat` handles the Agent heartbeat.
 - The record layout is `SessionId +0x00`, `bUnloadPkg +0x04`, `bResultSet +0x05`, `BufferIn +0x08`, `AResponseInfo +0x0C`, and `AContext +0x10`.
 - The service generates `SessionId` with `Random(900000)+100000` followed by `IntToStr`; it is not the browser's `invoke=5208` value.
-- The request body is assigned to `BufferIn`; the exact request-info object/methods used to read it from offset `+0xD4` still need type confirmation.
+- The request-body source at `[ARequestInfo+0xD4]` is identified with high confidence as `TIdHTTPRequestInfo.PostStream`; the handler reads a size-like value and then calls virtual slot `+0x0C` with a buffer/length pair. The exact stream virtual method names/signatures remain unresolved. `[ARequestInfo+0xD0]` maps to `Params`, and `[ARequestInfo+0xDC]` to `RemoteIP`.
 - The shared dispatcher parses the XML, reads `method@class`, prefixes the class name with `T`, resolves it with Delphi `GetClass`, creates the class instance, stores the request-record pointer at object offset `+0x04`, then calls virtual slot `+0x0C`.
 - Three additional internal service routines call the same dispatcher with embedded XML (including `ShowEmwatSetting` and `ShowSendLog`).
 
