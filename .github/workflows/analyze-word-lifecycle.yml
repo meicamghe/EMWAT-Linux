@@ -398,6 +398,20 @@ jobs:
           python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x004B77A0 0x004B7CFA word-lifecycle-analysis/LoadDocument-file-read-write-control-flow.md
           python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x004B7C15 0x004B7DE1 word-lifecycle-analysis/LoadDocument-second-stream-read-path.md
           python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004B7C39 word-lifecycle-analysis/LoadDocument-second-stream-callers.md
+      - name: Trace post-read Word and TIFF processing pipeline
+        run: |
+          python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x004B7CFA 0x004B809D word-lifecycle-analysis/LoadDocument-post-read-processing.md
+          python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x004B8A84 word-lifecycle-analysis/LoadDocument-result-dispatch.md
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004B8A84 word-lifecycle-analysis/LoadDocument-result-dispatch-callers.md
+          python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x004D1454 word-lifecycle-analysis/LoadDocument-viewer-postprocess.md
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004D1454 word-lifecycle-analysis/LoadDocument-viewer-postprocess-callers.md
+          python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x004A01A0 word-lifecycle-analysis/CreateTIFF-SeparateImages.md
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004A01A0 word-lifecycle-analysis/CreateTIFF-SeparateImages-callers.md
+          python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x004A0C20 word-lifecycle-analysis/CreateImageFile.md
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004A0C20 word-lifecycle-analysis/CreateImageFile-callers.md
+          python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x004A0A68 word-lifecycle-analysis/CreateImageFile-write-helper.md
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004A0A68 word-lifecycle-analysis/CreateImageFile-write-helper-callers.md
+          python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x004B7724 word-lifecycle-analysis/LoadDocument-updated-full.md
       - uses: actions/upload-artifact@v4
         with:
           name: emwat-word-lifecycle-analysis
