@@ -330,7 +330,7 @@ Run 31 recovered the full TD32 symbol for `0x004CB638`:
 
 `@Wordviewer@TWordViwer@FillPrintDocFields$qqr43System@%DelphiInterface$16Wordxp@_Document%x40System@%DelphiInterface$13Wordxp@Fields%`
 
-The signature identifies the input as `DelphiInterface<Wordxp._Document>` and the output as `DynamicArray<DelphiInterface<Wordxp.Fields>>`. The body obtains the Word document's Fields collection through the document interface (dispatch at `+0x12C`), sizes/populates the dynamic array, and iterates the collection. `GetFieldIndexInList` then walks this array and passes each element in ECX to `FillImgFldsForPrint`.
+The signature identifies the input as `DelphiInterface<Wordxp._Document>` and the output as `DynamicArray<DelphiInterface<Wordxp.Fields>>`. The body begins with a `_Document` dispatch at `+0x12C` that has multiple output arguments, then uses further interface dispatches to populate the typed dynamic array. The exact meaning of the `+0x12C`, `+0x30`, and `+0x88` calls is not yet mapped. `GetFieldIndexInList` then walks this array and passes each element in ECX to `FillImgFldsForPrint`.
 
 This resolves the receiver type chain:
 
@@ -387,3 +387,10 @@ The TD32 symbol inventory now exposes additional procedures with explicit Word C
 The VMT inventory did not find Delphi wrapper classes named `TWordFields`, `TWordField`, or `TWordFieldCollection` in this BPL, while the WordXP interface RTTI itself does contain `Fields` and `Field` with the Microsoft Word IIDs recorded above. Therefore, the next useful path is to inspect the typed consumers (`FillField`, `FillImageField`, `FillMSWFields`, `AddImagesToDoc`) rather than assume a missing wrapper class exists.
 
 The lifecycle workflow now traces these typed procedures and the `TWordDocument.Get_Fields` wrapper. Their call shapes should help identify which `Wordxp.Field` properties are read or written and whether the image-field helper at `0x004CCBBC` shares behavior with the real field-fill path.
+
+
+## Typed `_Document.Get_Fields` wrapper positive control (lifecycle run 41)
+
+The symbol inventory located `Wordxp.TWordDocument.Get_Fields` in module `EmwatConsts`; the complete procedure is at VA `0x0042B55C`. Its body calls the existing `TWordDocument` interface accessor `0x0042ABA0`, then dispatches slot `+0x80` on the returned interface. This is a typed wrapper positive control for the `Get_Fields` property on the wrapper's underlying Word document interface.
+
+The direct-call scan found no immediate CALL xrefs to `0x0042B55C`; this wrapper may be reached through a VMT/property path or may be unused in the analyzed call paths. Importantly, this wrapper's `+0x80` dispatch does **not** identify the separate `+0x12C` dispatch in `FillPrintDocFields`. The latter has multiple output arguments and its method identity remains unresolved. Do not describe `FillPrintDocFields`'s `+0x12C` call as the proven `Get_Fields` getter until the interface method signature is mapped.
