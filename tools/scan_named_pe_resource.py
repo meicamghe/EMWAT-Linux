@@ -34,7 +34,7 @@ def main():
             continue
         for name_entry in type_entry.directory.entries:
             name = entry_name(name_entry)
-            if name.casefold() != wanted or not hasattr(name_entry, "directory"):
+            if (wanted != "*" and name.casefold() != wanted) or not hasattr(name_entry, "directory"):
                 continue
             for lang_entry in name_entry.directory.entries:
                 if not hasattr(lang_entry, "data"):
