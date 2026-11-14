@@ -65,29 +65,29 @@ def main():
             result.append((i,target,desc))
         return result
 
-    # Discover class-name shortstrings likely related to image editing, scanning or Gear.
+    # Discover Delphi wrapper classes likely related to image editing, scanning or Word.
     candidates={}
-    needles=[]
-    for m in __import__("re").finditer(rb"[\x01-\x78][A-Za-z_][A-Za-z0-9_@$]{2,100}",blob):
+    # Index aligned 32-bit pointer values once. VMT class-name fields are aligned;
+    # this avoids rescanning the complete PE for each candidate shortstring.
+    pointer_refs={}
+    for pos in range(0, len(blob)-3, 4):
+        pointer_refs.setdefault(u32(blob,pos), []).append(pos)
+    for m in __import__("re").finditer(rb"[\\x01-\\x78][A-Za-z_][A-Za-z0-9_@$]{2,100}",blob):
         raw=m.start()
         name=shortstr(raw)
-        if not name or not any(k in name.lower() for k in ("editor","image","gear","scan","crop","word","field","document")):
+        if not name or not name.startswith("T") or not any(k in name.lower() for k in ("editor","image","gear","scan","crop","word","field","document")):
             continue
         name_va=raw_va(raw)
         if name_va is None: continue
-        needle=struct.pack("<I",name_va)
-        pos=0
-        while True:
-            pos=blob.find(needle,pos)
-            if pos<0: break
+        for pos in pointer_refs.get(name_va, ()):
             field_va=raw_va(pos)
+            if field_va is None: continue
             vmt=field_va-VMT_CLASSNAME
             vr=va_raw(vmt)
-            if vr is None: pos+=1; continue
+            if vr is None: continue
             selfp=ptr(vmt+VMT_SELF); size=ptr(vmt+VMT_INSTANCESIZE); parent=ptr(vmt+VMT_PARENT)
             if selfp==vmt and size is not None and 0x20<=size<=0x10000:
                 candidates[vmt]=(name,vr,size,parent)
-            pos+=1
 
     lines=["# Delphi interface table trace","",
            f"- Input: {src}; PE32 ImageBase 0x{image:08X}",
