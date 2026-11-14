@@ -317,3 +317,28 @@ The call setup is:
 This proves that the `ECX` value captured by `FillImgFldsForPrint` comes from an indexed element of the caller's array/list at `[caller EBP-8 + ESI*4]`. The next step is to inspect the full `GetFieldIndexInList` body to identify the list's element type and how that element is initialized. The scan found only one direct caller in TD32-bounded procedures; indirect calls and computed function pointers are outside its coverage.
 
 This strengthens the classification of `0x004CCBBC` as a nested helper reached from a field-index/list-processing path, but it still does not establish the semantic type of the list element or completely exclude another indirect event-registration path.
+
+
+## Field-list construction and interface-pointer evidence (lifecycle run 30)
+
+The complete `GetFieldIndexInList` procedure (`0x004CB1B4–0x004CB5E3`) clarifies how the nested helper is reached.
+
+At `0x004CB332–0x004CB338`, it calls `0x004CB638` with:
+- EAX = the `TWordViwer` instance saved from the method entry;
+- EDX = the method's second incoming argument, saved at `[ebp-4]`;
+- ECX = address of local `[ebp-8]`, an output location for the resulting list/array reference.
+
+The returned list/array pointer is then queried for its count at `0x004CB340`. The loop reads each 32-bit element from `[list_base + ESI*4]` and passes that value in ECX to `FillImgFldsForPrint` at `0x004CB361`. The callee captures ECX in its local `[ebp-0x0C]`.
+
+The receiving code in `FillImgFldsForPrint` dereferences this value as an interface-like pointer and dispatches through its vtable:
+- `+0x28` at `0x004CCE15`;
+- `+0x38` at `0x004CCE55`, `0x004CCEE7`, and `0x004CCF35);
+- the nested helper at `0x004CCBBC` uses the same captured value for its own `+0x38` calls.
+
+This proves the list elements are pointer-sized values used as interface/vtable receivers. It does **not** yet identify the declared interface type or the method names at slots `+0x28` and `+0x38`. The positive-control mapping `Wordxp._Document.Get_Tables` at slot `+0x38` remains specific to its typed wrapper and cannot be transferred to these receivers without matching type evidence.
+
+The list builder at `0x004CB638` and the caller of `GetFieldIndexInList` are now added to lifecycle run 31 for direct inspection. The current static chain is:
+
+`GetFieldIndexInList → list/array output from 0x004CB638 → interface-like element in ECX → FillImgFldsForPrint → nested helper 0x004CCBBC`.
+
+**Still unresolved:** the exact interface IID/type, method names at the relevant slots, and whether this helper is separately registered as a close event. The observed localhost POST (`127.0.0.1:1984`, `invoke=5208`) remains unmapped to this static path.
