@@ -527,3 +527,10 @@ The complete TD32 trace for `TEmwatMethod.Invoke` at `0x0046C82C` (433 bytes) co
 The TD32 direct-call scan found only one direct CALL to `TEmwatMethod.Invoke`, from `Finalization` at `0x0046CA67`. Therefore, the normal request path may enter it indirectly through a VMT/interface dispatch or another module. The trace does not itself identify the numeric request ID `5208`, the HTTP query parser, or the `EditWordDocument/wordConfig` response generator.
 
 Representative concrete connector implementations now traced include `TCompareWordDocument.PerformMethod` (`0x005EF8AC`), `TEditExcelWorkBook.PerformMethod` (`0x005EF300`), and `TShowSendLog.PerformMethod` (`0x005EFE4C`). These are useful structural comparisons for the missing/undecoded Word-edit method implementation, but should not be assumed to be the Word method itself.
+
+
+## Whole-package RCDATA form audit (lifecycle run 64)
+
+The wildcard RCDATA scan found 14 named resources, including `TFRMIMAGETOOLS`, `TFRMSENDLOG`, `TFRMSHOWAUTOSAVEFILES`, `TFRMSIMPLEIMAGEEDITOR`, `TFRMWORDPRINTOPTION`, and `TPROCESSINGFORM`. The only form resources with visible `OnClose` properties are the image-tools, autosave-files, and simple-image-editor forms; their handlers are UI cleanup paths. `TFRMWORDPRINTOPTION` exposes `OnCreate` and other dialog properties but no Word document close event. No resource contains a `WordAppDocumentBeforeClose`, `OnDocumentBeforeClose`, or WordApplication event binding string.
+
+The package metadata also lists the Word-related units `WordViewer`, `WordConfigRequestXML`, `WordRequestXML`, `WordResponseXML`, and `WordProcessing`, alongside `EmwatConnector` and `uSendLog`. There is no named RCDATA form resource for the main Word editor in this package; `TWordViwer` is implemented as a code class in `ScanRequestXML`. This further points away from a DFM-bound close handler and toward a runtime COM connection point or browser-side close/request logic. It does not rule out non-DFM event hookup.
