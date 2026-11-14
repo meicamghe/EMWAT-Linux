@@ -398,21 +398,11 @@ Direct TD32 call-site scans established these caller relationships:
 This makes `GetDocFieldIndex` a central field-processing routine: it iterates a Word collection, calls `FillMSWFields` for selected entries and conditionally calls `AddImagesToDoc`; the text-field routine separately dispatches into its nested image-field helper. The exact `Wordxp.Field` property names used by `FillImageField` remain unresolved; its typed body uses slots `+0x40`, `+0x38`, and `+0x20` on interface receivers. Lifecycle run 46 adds a complete trace of the parent `FillTextField` procedure and caller scans for `GetDocFieldIndex`.
 
 
-## Raw PE callback-pointer audit (lifecycle run 44)
+## Raw PE callback-pointer audit — corrected classification (runs 25–26)
 
-A new whole-PE exact 32-bit pointer scan checked the callback candidates in all raw sections, including writable data and debug data.
+The whole-PE pointer scan found no raw pointer to 0x004CCBBC; its only direct bounded caller is FillImgFldsForPrint at 0x004CCF8F. The callback pointer stored at event-record +0x80 is 0x004CD154, but TD32 identifies that target as TWordViwer.WordAppDocumentBeforeSave, not BeforeClose. The registration assignments at 0x004B8C9C–0x004B8CCE are: +0x80 -> 0x004CD154 (BeforeSave), +0x90 -> 0x004CD54C, +0x98 -> 0x004CD9C0 (NewDocument export), and +0x88 -> 0x004D00AC or 0x004CE030 (conditional BeforePrint). The previous run-44 interpretation of 0x004CD154 as a registered BeforeClose callback was wrong and is superseded.
 
-- Target `0x004CCBBC` (TD32 label `WordAppDocumentBeforeClose`): **zero exact raw pointer references anywhere in the PE**; its proven direct caller is the nested `FillImgFldsForPrint` helper.
-- `0x004CD154` (export name `WordAppDocumentBeforeClose`): pointer immediate at `0x004B8CA8` in `.text` plus a debug-section occurrence; this is the registered main-editor close callback.
-- `0x004CD54C` (export name `WordAppDocumentBeforeSave`; TD32 label `WordAppNewDocument`): pointer immediate at `0x004B8CBE` in `.text`.
-- `0x004CE030` (one BeforePrint handler): pointer immediates at `0x004B8D0E` and `0x004B8E81`.
-- `0x004D00AC` (alternate BeforePrint handler): pointer immediates at `0x004B8CF6` and `0x004B8E60`.
-
-The full `OnTmrAutoSave` disassembly confirms these are actual method-pointer assignments on the Word event object at `[this+0x44]`: method addresses are stored alongside the controller instance in paired fields `+0x80/+0x84` (BeforeClose: `0x004CD154`), `+0x90/+0x94` (BeforeSave: `0x004CD54C`), `+0x98/+0x9C` (NewDocument export/Activation handler: `0x004CD9C0`), and `+0x88/+0x8C` (conditional BeforePrint handler, either `0x004D00AC` or `0x004CE030`). The second registration branch later reassigns the BeforePrint pair using the same two known addresses.
-
-This is strong negative evidence against `0x004CCBBC` being the registered BeforeClose event handler: the known registration routine assigns `0x004CD154`, the export name and body strings identify that address as the main-editor BeforeClose callback, and no raw pointer to `0x004CCBBC` exists in the image. Combined with its proven direct call from the print/field path, classify `0x004CCBBC` as a nested print/field helper despite its misleading TD32 name.
-
-The registered close callback at `0x004CD154` is now identified, but its body contains no direct HTTP call. The bridge forwards parent-page `postMessage` data to `127.0.0.1:1984/?invoke=<nonce>`; the parent-page code that emits the close-time message and the final commit path remain to be mapped. Do not treat `0x004CCBBC` as the source.
+The registered BeforeSave callback at 0x004CD154 has no direct HTTP call. It checks _Document.Saved, conditionally prompts, sets the event Cancel word on Cancel, and directly invokes interface slot +0x29C with three OleVariant arguments on Yes/No. The separate TD32-named WordAppDocumentBeforeClose at 0x004CCBBC has no raw-pointer registration reference and only the FillImgFldsForPrint caller in the bounded call scan; its active event role is unproven. The bridge's parent-page message and final commit path remain to be mapped.
 
 
 ## Additional WordXP collection RTTI (lifecycle run 45)
