@@ -868,3 +868,35 @@ Run `43232846364` با موفقیت کامل (148/148 مرحله) پایان ی�
 - در هیچ resource رشتهٔ `WordAppDocumentBeforeClose`، `OnDocumentBeforeClose` یا event property مربوط به WordApplication پیدا نشد.
 - `PACKAGEINFO` واحدهای Word مانند `WordViewer`، `WordConfigRequestXML`، `WordRequestXML`، `WordResponseXML` و `WordProcessing` را همراه `EmwatConnector` و `uSendLog` فهرست می‌کند. فرم اصلی ویرایش Word به‌صورت RCDATA form مجزا وجود ندارد؛ `TWordViwer` یک code class در `ScanRequestXML` است.
 - این نتیجه DFM binding را رد می‌کند، اما runtime COM connection-point یا browser-side close/request path هنوز ممکن است.
+
+
+## Connector dispatcher investigation — run 62 and follow-up scans (2026-11-14)
+
+### Statically confirmed in run 62
+
+- `TEmwatMethod.Invoke` is a TD32-bounded routine at `0x0046C82C–0x0046C9DC` (433 bytes) in the `Base64` module.
+- Its TD32 signature takes `TDictionary<AnsiString, TValue>`. The body reads and iterates dictionary data, extracts invocation values, and performs an indirect call through slot `+0x68` at `0x0046C921` on the interface/object held in local `[ebp-8]`.
+- Concrete methods named `PerformMethod(TDictionary<AnsiString, TValue>)` are present:
+  - `TCompareWordDocument.PerformMethod` at `0x005EF8AC`
+  - `TEditExcelWorkBook.PerformMethod` at `0x005EF300`
+  - `TShowSendLog.PerformMethod` at `0x005EFE4C`
+- These are structural matches for a connector-method dispatch design, but **the slot +0x68 receiver type, VMT/interface mapping and association between any concrete implementation and invoke ID 5208 remain unproven**.
+- The only direct TD32-bounded CALL to `TEmwatMethod.Invoke` found in run 62 is from `Finalization` at `0x0046CA67`. This does not reveal the ordinary request entry path; an indirect dispatch or another module may call it.
+- The run-62 VMT scan did not recover a validated VMT candidate for `TEmwatMethod` or `TEditWordDocument`. This is a limitation of the current candidate scan, not proof that no such VMT or implementation exists.
+
+### Workflow extension committed
+
+The lifecycle workflow now additionally:
+- scans object/interface field references at displacement `+0x68`;
+- scans TD32 direct callers and immediate references for the three known concrete `PerformMethod` routines;
+- scans exact raw PE pointer occurrences for `TEmwatMethod.Invoke` and those concrete methods.
+
+The resulting evidence should distinguish ordinary CALL xrefs, code immediates, metadata pointers and actual candidate VMT entries. A raw pointer match alone is not proof of registration.
+
+### Current next actions
+
+1. Review the newest lifecycle artifact after the extended workflow completes; classify every `+0x68` hit by owning procedure and receiver.
+2. Identify the concrete type of `TEmwatMethod.Invoke` local `[ebp-8]` using its constructor/assignment source, RTTI and interface table.
+3. Find the HTTP `invoke` query parser and the registry mapping IDs to method objects; test whether `5208` is a static registration or runtime-generated ID.
+4. Trace the matching Word-edit implementation through XML response generation and document transfer. Keep the user's observed close-triggered apply behavior as a requirement, but do not assume the static `TEmwatMethod.Invoke` body alone proves the close event path.
+
