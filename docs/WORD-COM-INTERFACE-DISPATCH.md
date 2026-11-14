@@ -473,13 +473,13 @@ This is a tiny event handler on `TfrmShowAutoSaveFiles`: it checks a word at the
 
 `CloseWordApp` has exactly two direct callers in the scan: the form's `btnShowFileClick` handler at `0x005EB81F` and the `WordAppDocumentBeforeClose` event handler at `0x005EC589`. It iterates the autosave form's document collection at `[this+0x3C0]`, performs per-document operations, then calls a method at interface slot `+0x104` on the application-like object at `[this+0x3C0]`. The exact interface type/method name still needs mapping. This path belongs to the autosave-files form; it is not evidence that the main letter editor's close event is handled here, and no local POST/`invoke=5208` call appears in this 18-byte handler.
 
-The WordXP export/wrapper traces show:
-- no-argument `TWordDocument.Close()` at `0x0042FF08` dispatches interface slot `+0x4D4`;
-- one-, two- and three-`OleVariant` `Close` overloads at `0x0042FF7C`, `0x0042FFF4`, and `0x00430070` dispatch slot `+0x29C`;
-- `ClosePrintPreview` at `0x00433ADC` dispatches slot `+0x36C`;
-- `0x0042FEB0` is `Set_FormattingShowFilter`, not Close.
+The corrected WordXP wrapper traces show:
+- no-argument TWordDocument.Close at 0x0042FEB0 dispatches interface slot +0x4D4;
+- one-, two-, and three-OleVariant Close overloads at 0x0042FF08, 0x0042FF7C, and 0x0042FFF4 dispatch slot +0x29C;
+- ClosePrintPreview at 0x00433A84 dispatches slot +0x36C;
+- 0x00430070 is SaveAs2000, not Close.
 
-The registered `WordAppDocumentBeforeClose` callback at `0x004CD154` calls the three-argument Close overload through slot `+0x29C`. These are observed wrapper/dispatch mappings; the underlying Word COM type-library method metadata is still not independently resolved. Separately, `WordCompareCommandUnit.CloseMyDoc` dispatches slot `+0x2BC`, which the typed positive control maps to `_Document.PrintOutOld()`; despite its name, this routine is not a document-close call.
+The registered BeforeSave callback at 0x004CD154 directly calls interface slot +0x29C with three OleVariant arguments on Yes/No. This is the same dispatch slot used by the three-argument Close wrapper at 0x0042FFF4. The underlying Word COM type-library metadata is not independently resolved. Separately, WordCompareCommandUnit.CloseMyDoc dispatches slot +0x2BC, which the typed positive control maps to _Document.PrintOutOld(); despite its name, this is not a document-close call.
 
 **Current classification:** the `uSendLog` callback is a real close-related handler for the autosave-files UI, but not yet the main letter-editing close path. The original `0x004CCBBC` remains a nested print/field helper with no exact raw pointer references. The main close-triggered update and localhost POST still need a separate event/connector trace.
 
