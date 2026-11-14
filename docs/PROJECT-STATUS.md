@@ -998,9 +998,9 @@ This statically connects the runtime `EditWordDocument` XML request to the gener
 
 The actual main-editor Word close event callback is now identified and registered:
 
-- `TWordViwer.OnTmrAutoSave` (`0x004B8A84)) stores `0x004CD154` at event-record offset `+0x80`.
+- `TWordViwer.OnTmrAutoSave` (`0x004B8A84`) stores `0x004CD154` at event-record offset `+0x80`.
 - BPL export-table mapping and body strings identify `0x004CD154` as `WordAppDocumentBeforeClose`.
-- The body logs `Document.OnBeforeClose Called.`, displays the Persian prompt `محتويات اين سند تغيير كرده است. آيا مايل به ثبت تغييرات هستيد؟`, and logs `Document.OnBeforeClose succeed.`.
+- The body first calls `TWordViwer.RollBackOriginalOptions` (`0x004CB108`), checks `Document.Saved` through `_Document` slot `+0xD8` (typed wrapper `TWordDocument.Get_Saved` at `0x0042BD94`), logs `Document.OnBeforeClose Called.`, displays the Persian prompt `محتويات اين سند تغيير كرده است. آيا مايل به ثبت تغييرات هستيد؟`, and logs `Document.OnBeforeClose succeed.`.
 - Cancel sets the event's Cancel word to `0xFFFF`; Yes initializes the first OleVariant argument to `-1`; No initializes it to `0`.
 - It calls the active `Wordxp._Document` interface slot `+0x29C` with three OleVariant arguments. The exported three-argument `TWordDocument.Close` wrapper at `0x00430070` dispatches this slot.
 - The other registered callbacks are `+0x90 → 0x004CD54C` (`WordAppDocumentBeforeSave`), `+0x98 → 0x004CD9C0` (export name `WordAppNewDocument`; code includes Activation/Quitword handling), and `+0x88 → 0x004D00AC` or `0x004CE030` (BeforePrint).
