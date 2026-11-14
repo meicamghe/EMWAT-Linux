@@ -247,3 +247,12 @@ Workflow مستقل `Python bridge transport` با شناسه `43592145701` رو
 در پاسخ به درخواست‌های دارای Origin مجاز، مقدار `Access-Control-Allow-Origin` دقیقاً همان Origin پیکربندی‌شده است و wildcard استفاده نمی‌شود؛ این برای خواندن پاسخ XHR از صفحه مرورگر لازم است. Origin واقعی سامانه الماس هنوز باید هنگام integration به‌صورت صریح پیکربندی و آزمایش شود. دو شکست اولیه CI ناشی از وابستگی غیرضروری setuptools در workflow و کوچک‌بودن سقف fixture تست بود که اصلاح شدند.
 
 این نتیجه فقط صحت لایه انتقال را تأیید می‌کند؛ هنوز سازگاری XML، گردش‌کار Word/LibreOffice یا ثبت انتها‌به‌انتهای نامه در الماس گام تأیید نشده است.
+
+
+## XML envelope parser milestone (2026-11-14)
+
+The close-time runtime response previously recorded in this document explicitly begins with `<emwat version="1.0"><method class="EditWordDocument"><param name="wordConfig">`. This directly confirms `param` as the child element name in that observed response, resolving the earlier open question for this response path. The broader generic XML constructor analysis remains useful for the dispatch mechanism but no longer justifies claiming the runtime parameter tag is unknown.
+
+A conservative UTF-8 envelope parser now lives at `python/src/emwat_linux/protocol.py`. It parses the confirmed `emwat/method/param` structure, preserves parameter text unchanged, rejects duplicate names and unsafe/malformed XML constructs, and leaves values such as `wordConfig`, `wordBody`, `letterImages` and `signData` uninterpreted. The parser does not dispatch methods or synthesize responses. Unit tests are in `python/tests/test_protocol.py`; check GitHub Actions before marking them green.
+
+Static service analysis independently confirms separate query branches for `invoke`, `init` and `heartbeat`. Only the existence of those branches is known; heartbeat response status/body and init script response bytes remain unresolved.
