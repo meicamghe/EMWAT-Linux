@@ -38,6 +38,8 @@ class BridgeHTTPServerTests(unittest.TestCase):
     def test_only_loopback_bind_is_allowed(self):
         with self.assertRaises(ValueError):
             BridgeHTTPServer(lambda _request: BridgeResponse(b""), host="0.0.0.0")
+        with self.assertRaises(ValueError):
+            BridgeHTTPServer(lambda _request: BridgeResponse(b""), host="::1")
 
     def test_health_endpoint(self):
         status, body, headers = self.request("GET", "/healthz")
