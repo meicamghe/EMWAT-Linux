@@ -873,3 +873,16 @@ The user confirmed by repeating the test that the document appears/is registered
 A plausible, not-yet-proven lifecycle is: close begins → Word/EMWAT performs a normal or silent save → EMWAT obtains the resulting document/artifact → the local HTTP response returns the final state to the browser → Almas Gam registers it. Do not present this sequence as established fact until the COM call and payload/response are traced.
 
 Next analysis should correlate the exact close event with Word COM Save/SaveAs/Close calls and the HTTP response body. Distinguish the user not pressing Save from the application not saving at all.
+
+
+## Runtime confirmation of the parameter element name and Linux parser (2026-11-14)
+
+The previously unresolved parameter child element name is now confirmed by the user's captured close-time HTTP response prefix:
+
+`<?xml version="1.0" encoding="utf-8" ?><emwat version="1.0"><method class="EditWordDocument"><param name="wordConfig">`
+
+This is direct runtime evidence for the outer structure `emwat version="1.0"` → `method class="..."` → `param name="..."`. It supersedes the earlier statement that the parameter element tag was unknown for this observed response. It does not prove that every historical method uses only this element or reveal all XML formatting/encoding details.
+
+A conservative parser was added at `python/src/emwat_linux/protocol.py`. It validates UTF-8, the versioned root, one method, the `class` attribute, `param` children and unique `name` attributes. It preserves parameter text as opaque strings and deliberately does not decode Base64, interpret document fields, or assign meaning to `invoke`. It rejects DTD/entity declarations, nested parameter markup, duplicate parameter names and malformed envelopes. Tests: `python/tests/test_protocol.py`.
+
+The service-side source also confirms distinct query branches for `invoke`, `init` and `heartbeat`; however, exact heartbeat response semantics and init response bytes are still not recovered. Do not synthesize either response yet.
