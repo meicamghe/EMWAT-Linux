@@ -452,3 +452,17 @@ The direct-call scan for `GetDocFieldIndex` found one caller: `GetDocFieldName` 
 `GetDocFieldName → GetDocFieldIndex → FillTextField → nested FillImageField`
 
 with additional entry paths from `GetXmlFieldInfo` and `FillImgFldsForPrint`. This is a content/field processing graph, not evidence of a document-close event. The next trace expands `GetDocFieldName` to identify its inputs, callers and relationship to the XML field configuration.
+
+
+## Second close-callback symbol candidate from uSendLog (lifecycle run 49)
+
+The expanded TD32 name inventory found a second routine named `WordAppDocumentBeforeClose`, distinct from the nested print helper at `0x004CCBBC`:
+
+- Unit/form: `uSendLog.TfrmShowAutoSaveFiles.WordAppDocumentBeforeClose`
+- VA: `0x005EC580`
+- TD32 signature includes `System.TObject` and `DelphiInterface<Wordxp._Document>`.
+- Procedure size: `0x12` bytes.
+
+The same unit contains `TfrmShowAutoSaveFiles.CloseWordApp` at `0x005EBDA8` and `TfrmShowAutoSaveFiles.FormClose` at `0x005EBF20`. The inventory also finds Word wrapper methods `TWordDocument.Close()` at `0x0042FEB0` and three overloads at `0x0042FF08`, `0x0042FF7C`, and `0x0042FFF4`, plus `TWordDocument.ClosePrintPreview` at `0x00433A84`. `WordCompareCommandUnit.CloseMyDoc` is at `0x005E9174`.
+
+These are **candidates, not yet the proven letter-editor close path**. The `uSendLog` handler belongs to the autosave-files form and may be limited to that UI. Lifecycle run 52 now traces its full body, direct/indirect references and raw PE pointer references, together with `CloseWordApp`, `FormClose`, `CloseMyDoc`, and the `TWordDocument.Close` wrappers. The next classification depends on those bodies and caller chains, not the TD32 names alone.
