@@ -864,3 +864,12 @@ Run 29 (`43589571290`, artifact `14111108881`) completed successfully and narrow
 3. `DeleteTempRAW` (`0x0044AE98–0x0044B053`) calls `Emwat.Sys.CloseAllWords` at `0x0044B01C` after its temporary-file/process checks. The `CloseAllWords` body composes four strings and calls `0x0044B0F8`; TD32 identifies that target as `Emwat.Sys.GetFileVersion`. The evidence therefore does not prove that `CloseAllWords` actually closes Word processes. Its only direct caller found is the RAW cleanup path, not the main letter connector.
 
 No close-time POST trigger, response correlation, or final document-application behavior was recovered in this run. Keep the user's tested apply-on-close behavior as a product requirement, not a claim explained by this static trace. The server-side `EditWordDocument → LoadDocument → AResponseInfo.ContentText → WriteContent` path remains confirmed; the page-side `postMessage` sender and close-time response consumer remain the decisive unresolved targets.
+
+
+## User repeat-test clarification — Save button is not required (2026-11-14)
+
+The user confirmed by repeating the test that the document appears/is registered in Almas Gam after Word is closed even though the user never presses Save. This confirms the product-level close-to-registration behavior, but it does not establish whether Word saves internally during the close sequence.
+
+A plausible, not-yet-proven lifecycle is: close begins → Word/EMWAT performs a normal or silent save → EMWAT obtains the resulting document/artifact → the local HTTP response returns the final state to the browser → Almas Gam registers it. Do not present this sequence as established fact until the COM call and payload/response are traced.
+
+Next analysis should correlate the exact close event with Word COM Save/SaveAs/Close calls and the HTTP response body. Distinguish the user not pressing Save from the application not saving at all.
