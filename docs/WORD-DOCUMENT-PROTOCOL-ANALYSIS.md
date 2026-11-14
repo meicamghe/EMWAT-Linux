@@ -737,3 +737,10 @@ Run 33 همچنین تنها caller مستقیم TD32-bounded برای `GetField
 The complete TD32 body for `Wordxp.TWordDocument.Get_Fields` at `0x0042B55C` calls the common `TWordDocument` interface accessor `0x0042ABA0`, then dispatches `+0x80` on the returned interface. The direct-call scan found no immediate CALL xrefs to this wrapper.
 
 This provides a typed getter positive control, but it also exposes an important distinction: `TWordViwer.FillPrintDocFields` calls `+0x12C` on its typed `Wordxp._Document` input with multiple output arguments. That call must **not** be labelled `Get_Fields` based only on the fact that the procedure eventually produces `DynamicArray<Wordxp.Fields>`. Its method identity and intermediate interface types remain unresolved. The next scan adds `Range`, `_Range`, and `StoryRanges` RTTI candidates to help type the intermediate COM interfaces.
+
+
+### Run 44 — بررسی pointerهای ثبت callback در کل PE
+
+اسکن exact pointerهای ۳۲بیتی در تمام sectionهای PE برای routine با آدرس `0x004CCBBC` هیچ referenceای پیدا نکرد. در مقابل، آدرس‌های callbackهای شناخته‌شده در routine `OnTmrAutoSave` در `.text` پیدا شدند و بدنهٔ همان routine انتساب method pointerها به زوج فیلدهای event object را نشان می‌دهد: BeforeSave=`0x004CD154` در زوج `+0x80/+0x84`، NewDocument=`0x004CD54C` در `+0x90/+0x94`، handler دیگر=`0x004CD9C0` در `+0x98/+0x9C` و BeforePrint=`0x004CE030` یا `0x004D00AC` در `+0x88/+0x8C`.
+
+این شواهد، ثبت ایستای `0x004CCBBC` به‌عنوان BeforeClose را در همین BPL بسیار نامحتمل می‌کند؛ اما absence of exact pointer به‌تنهایی ثبت محاسبه‌شده، registration در package دیگر یا مسیر runtime دیگر را رد نمی‌کند. از آنجا که `0x004CCBBC` به‌صورت قطعی از مسیر print/field صدا زده می‌شود، نام TD32 آن نباید به‌عنوان اثبات callback واقعی Close استفاده شود. مسیر POST هنگام بستن سند هنوز باید از event/connector دیگری ردیابی شود.
