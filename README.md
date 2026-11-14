@@ -62,3 +62,10 @@ EMWAT واسط محلی بین اتوماسیون تحت وب الماس گام 
 ## Session continuity
 
 For the current project decisions, implementation boundaries, and next-session checklist, see [docs/SESSION-HANDOFF.md](docs/SESSION-HANDOFF.md).
+
+
+## پل بومی HTTP در لینوکس — لایه انتقال اولیه
+
+در شاخه فعلی، یک بسته Python اولیه در مسیر `python/` اضافه شده است. این لایه فقط انتقال HTTP محلی را فراهم می‌کند: bind اجباری روی IPv4 loopback، endpoint سلامت `/healthz`، پذیرش POST روی ریشه، حفظ بدنه به‌صورت bytes و بدون parse/تغییر، محدودیت اندازه بدنه، رد Originهای خارج از allowlist پیکربندی‌شده، و پاسخ خطای sanitize‌شده. قرارداد XML/dispatcher عمداً هنوز در این لایه پیاده نشده است؛ زیرا نام تگ پارامتر و schema کامل response نهایی هنوز اثبات نشده‌اند.
+
+تست‌های واحد در `python/tests/test_bridge.py` و workflow مستقل `Python bridge transport` در GitHub Actions قرار دارند. این milestone فقط foundation انتقال است و هنوز با وب‌اپ الماس گام یا Word/LibreOffice یکپارچه نیست.
