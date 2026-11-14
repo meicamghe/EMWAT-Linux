@@ -983,3 +983,25 @@ The separate TD32 procedure `TWordViwer.WordAppDocumentBeforeClose` at `0x004CCB
 Run 95 still does not establish the close-time request/response contract, whether the Word document is serialized on close, or which callback triggers the Almas Gam registration. The user's observed behavior remains important operational evidence: closing Word is sufficient for the file to appear in Almas Gam, without manually pressing Save. The native Linux implementation must reproduce that observable behavior, but must not invent the hidden Windows callback or payload semantics.
 
 Next reverse-engineering target: follow the callback-table construction and indirect dispatch path from `OnTmrAutoSave`, resolve the Word interface VMT slots used by `WordAppNewDocument` and `WordAppWindowActivate`, and trace the full BeforePrint handler's data outputs separately from the editor's close/return path.
+
+
+## Run 96 — callback record layout and conditional Word event wiring (2026-11-14)
+
+Workflow run `43600693760` succeeded; artifact `14116641628` was inspected.
+
+The full instruction sequence in `TWordViwer.OnTmrAutoSave` (`0x004B8A84`) gives stronger evidence than the earlier isolated immediate-reference scan. It obtains a Word-related object at `viewer + 0x44` and writes callback/context pairs into that object's fields:
+
+| Callback field | Context field | Callback VA | TD32 identity |
+|---|---|---|---|
+| `+0x80` | `+0x84` | `0x004CD154` | `WordAppDocumentBeforeSave` |
+| `+0x90` | `+0x94` | `0x004CD54C` | `WordAppNewDocument` |
+| `+0x98` | `+0x9C` | `0x004CD9C0` | `WordAppWindowActivate` |
+| `+0x88` | `+0x8C` | conditional | `LoadOptions` (`0x004D00AC`) or `WordAppDocumentBeforePrintBGPrint` (`0x004CE030`) |
+
+The fourth callback is selected by testing byte `[viewer + 0x3C]`: nonzero selects `LoadOptions`; zero selects `WordAppDocumentBeforePrintBGPrint`. A later branch in the same routine also assigns `0x004D00AC` or `0x004CE030` to the same callback field, so the final effective value depends on the complete runtime branch path. This is evidence of an explicit callback/context record layout, but the exact external event source and dispatch ABI remain unresolved.
+
+Raw pointer scans found the handler addresses in executable code at the expected assignments, not in unrelated static data. The TD32 immediate-reference scans likewise identify the assignments inside `OnTmrAutoSave`. Direct CALL scans still show no direct calls to the callback handlers, consistent with indirect callback invocation.
+
+The helper at `0x0043F360` is `TWordApplication.Get_ScreenUpdating`; `0x00440950` is `Get_DisplayAutoCompleteTips`; and `0x00441C68` is `TWordApplication.Quit`. These are Word automation property/method wrappers and should not be mistaken for save/close transport. `0x00404FBC` has no TD32 procedure boundary in the current symbol data.
+
+Still unproven: whether any of these callbacks causes the edited document to be serialized or POSTed after the user closes Word; the result envelope and exact payload remain unknown. The confirmed user-observed close-to-Almas behavior remains a product requirement, not a license to infer the implementation.
