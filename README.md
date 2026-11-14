@@ -81,3 +81,8 @@ The loopback transport is hardened with IPv4-loopback-only binding, Host-header 
 
 
 **Latest CI hardening:** Python bridge transport run #22 (`43593083176`) passed all 27 tests on commit `22a803912b0fa92c3bb5537fb1f0c7952fda7615`. Additional tests cover Host header path injection, duplicate Content-Length and non-decimal Content-Length. The listener now rejects malformed Host values and strict-invalid HTTP framing before dispatch.
+
+
+### Application composition factory
+
+`python/src/emwat_linux/application.py` now provides `create_bridge_server(...)`, wiring the loopback transport, XML envelope parser and explicit method registry. The caller must provide the exact allowed Origin list and explicit method handlers; nothing is implicitly enabled. An integration test exercises the complete local HTTP → XML parser → registered handler → HTTP response path. Python bridge workflow run #24 (`43593185429`) passed all 29 tests on commit `27986ee96b45009283cd96eecde95110e1b9e448`. The only registered method in the integration test is a test fixture, not the real EMWAT document handler.
