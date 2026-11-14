@@ -231,3 +231,10 @@ Older lifecycle notes in this document mention WordAppDocumentBeforeClose/Before
 Run 26 (43584217243, artifact 14109926135) also confirms TWordDocument.Close wrappers: no-argument 0x0042FEB0 uses interface slot +0x4D4; the 1/2/3-OleVariant overloads at 0x0042FF08, 0x0042FF7C, and 0x0042FFF4 use +0x29C. The registered BeforeSave callback checks _Document.Saved and may prompt; its Cancel branch sets the event Cancel value, while Yes/No invoke the three-argument Close path. This does not yet explain the browser-observed close-time POST or the user's confirmed apply-on-close behavior.
 
 The bridge script evidence remains unchanged: each window message is POSTed with event.data as the body, a client-generated random requestId in the invoke query, and the responseText is postMessaged to the original source/origin. The service-side dispatch and full response contract still require further analysis.
+
+
+## پیاده‌سازی لایه انتقال بومی — 2026-11-14
+
+بسته اولیه `python/src/emwat_linux/bridge.py` یک HTTP server محدود به loopback فراهم می‌کند. بدنه POST را opaque نگه می‌دارد، query string را بدون تفسیر به handler می‌دهد، سقف اندازه دارد، Origin را در صورت وجود فقط از allowlist دقیق می‌پذیرد و خطای داخلی را بدون جزئیات به کلاینت برمی‌گرداند. `/healthz` برای سلامت سرویس است. تست‌های `python/tests/test_bridge.py` و workflow مستقل `Python bridge transport` اضافه شده‌اند.
+
+این لایه هنوز پروتکل XML را parse نمی‌کند و endpoint واقعی سازگار با الماس گام محسوب نمی‌شود. علت: تگ فرزند پارامتر XML و قرارداد کامل پاسخ close هنوز اثبات نشده‌اند. بدنه درخواست و response باید تا زمان کشف schema به‌صورت bytes خام حفظ شوند. قبل از اعلام این milestone به‌عنوان موفق، نتیجه CI بررسی شود.
