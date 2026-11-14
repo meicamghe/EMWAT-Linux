@@ -91,7 +91,28 @@ def main():
         vr=va_raw(vmt)
         if vr is None: continue
         selfp=ptr(vmt+VMT_SELF); size=ptr(vmt+VMT_INSTANCESIZE); parent=ptr(vmt+VMT_PARENT)
-        if selfp==vmt and size is not None and 0x20<=size<=0x10000:
+        if selfp==vmt and size is not None and 0x08<=size<=0x10000:
+            candidates[vmt]=(name,vr,size,parent)
+
+    # Class RTTI (tkClass=7) contains a direct ClassType/VMT pointer after
+    # the ShortString class name. This also finds small classes whose VMT
+    # instance size is below the old 0x20-byte heuristic.
+    for m in __import__("re").finditer(rb"\x07[\x01-\x78][A-Za-z_][A-Za-z0-9_@$]{2,100}",blob):
+        raw=m.start()
+        name_len=blob[raw+1]
+        name=blob[raw+2:raw+2+name_len].decode("ascii","ignore")
+        typeinfo_va=raw_va(raw)
+        vmt_off=raw+2+name_len
+        if typeinfo_va is None or vmt_off+4>len(blob):
+            continue
+        vmt=u32(blob,vmt_off)
+        if vmt is None:
+            continue
+        vr=va_raw(vmt)
+        if vr is None:
+            continue
+        selfp=ptr(vmt+VMT_SELF); size=ptr(vmt+VMT_INSTANCESIZE); parent=ptr(vmt+VMT_PARENT)
+        if selfp==vmt and size is not None and 0x08<=size<=0x10000:
             candidates[vmt]=(name,vr,size,parent)
 
     lines=["# Delphi interface table trace","",
