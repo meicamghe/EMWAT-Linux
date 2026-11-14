@@ -226,6 +226,17 @@ jobs:
           python tools/trace_field_accesses.py analysis-input/EmwatMethods.bpl1 0x2BC word-lifecycle-analysis/Field-0x2BC-vtable-callers.md
           python tools/trace_field_accesses.py analysis-input/EmwatMethods.bpl1 0xDC word-lifecycle-analysis/Field-0xDC-vtable-callers.md
           python tools/trace_field_accesses.py analysis-input/EmwatMethods.bpl1 0x38 word-lifecycle-analysis/Field-0x38-interface-callers.md
+          python tools/trace_field_accesses.py analysis-input/EmwatMethods.bpl1 0x68 word-lifecycle-analysis/Field-0x68-interface-dispatches.md
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x005EF8AC word-lifecycle-analysis/TCompareWordDocument-PerformMethod-callers.md
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x005EF300 word-lifecycle-analysis/TEditExcelWorkBook-PerformMethod-callers.md
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x005EFE4C word-lifecycle-analysis/TShowSendLog-PerformMethod-callers.md
+          python tools/trace_td32_immediate_refs.py analysis-input/EmwatMethods.bpl1 0x005EF8AC word-lifecycle-analysis/TCompareWordDocument-PerformMethod-immediate-refs.md
+          python tools/trace_td32_immediate_refs.py analysis-input/EmwatMethods.bpl1 0x005EF300 word-lifecycle-analysis/TEditExcelWorkBook-PerformMethod-immediate-refs.md
+          python tools/trace_td32_immediate_refs.py analysis-input/EmwatMethods.bpl1 0x005EFE4C word-lifecycle-analysis/TShowSendLog-PerformMethod-immediate-refs.md
+          python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 0x0046C82C word-lifecycle-analysis/TEmwatMethod-Invoke-raw-pointer-refs.md
+          python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 0x005EF8AC word-lifecycle-analysis/TCompareWordDocument-PerformMethod-raw-pointer-refs.md
+          python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 0x005EF300 word-lifecycle-analysis/TEditExcelWorkBook-PerformMethod-raw-pointer-refs.md
+          python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 0x005EFE4C word-lifecycle-analysis/TShowSendLog-PerformMethod-raw-pointer-refs.md
       - uses: actions/upload-artifact@v4
         with:
           name: emwat-word-lifecycle-analysis
