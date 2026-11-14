@@ -67,6 +67,34 @@ class BridgeHTTPServerTests(unittest.TestCase):
         self.assertEqual(status, 400)
         self.assertEqual(body, b"invalid_host_header")
 
+    def test_host_header_cannot_contain_a_path(self):
+        status, body, _ = self.request(
+            "GET", "/healthz", headers={"Host": f"{self.host}:{self.port}/evil"}
+        )
+        self.assertEqual(status, 400)
+        self.assertEqual(body, b"invalid_host_header")
+
+    def test_duplicate_content_length_is_rejected(self):
+        conn = http.client.HTTPConnection(self.host, self.port, timeout=2)
+        conn.putrequest("POST", "/")
+        conn.putheader("Content-Length", "1")
+        conn.putheader("Content-Length", "1")
+        conn.endheaders()
+        response = conn.getresponse()
+        self.assertEqual(response.status, 400)
+        self.assertEqual(response.read(), b"invalid_content_length")
+        conn.close()
+
+    def test_non_decimal_content_length_is_rejected(self):
+        conn = http.client.HTTPConnection(self.host, self.port, timeout=2)
+        conn.putrequest("POST", "/")
+        conn.putheader("Content-Length", "+1")
+        conn.endheaders()
+        response = conn.getresponse()
+        self.assertEqual(response.status, 400)
+        self.assertEqual(response.read(), b"invalid_content_length")
+        conn.close()
+
     def test_missing_content_length_is_rejected(self):
         conn = http.client.HTTPConnection(self.host, self.port, timeout=2)
         conn.putrequest("POST", "/")
