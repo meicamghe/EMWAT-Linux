@@ -185,3 +185,40 @@ HAR مقدار Content-Length برابر 1,391,942 را گزارش می‌کند
 4. نوع فایل/return payload را از `Wordresponsexml.Returntypes` یا مسیر فایل موقت اثبات کن؛ از روی `requested-types` حدس نزن.
 
 هیچ مقدار شخصی، متن نامه، شناسه مکاتبه، محتوای Base64 تصویر یا داده احراز هویت در این مستند ذخیره نشده است.
+
+
+## Static bridge script in EmwatService.exe — invoke value is client-generated (2026-11-14)
+
+The embedded JavaScript bridge string was recovered from the `EmwatService.exe` string dump. After deobfuscating its string array, the relevant behavior is:
+
+```javascript
+function invoke(event) {
+  const origin = event.origin;
+  const source = event.source;
+  const xhr = new XMLHttpRequest();
+  const requestId = Math.floor(Math.random() * 99999);
+  xhr.open("POST", "http://127.0.0.1:$V{myport}?invoke=" + requestId);
+  xhr.onreadystatechange = function () {
+    if (xhr.readyState == 4) source.postMessage(xhr.responseText, origin);
+  };
+  xhr.send(event.data);
+}
+window.addEventListener("message", function (event) { invoke(event); }, false);
+```
+
+This changes the interpretation of the observed query value:
+
+- **Statically confirmed:** the browser bridge generates a pseudo-random integer for each message invocation using `Math.floor(Math.random()*99999)`, then appends it to the `invoke` query parameter.
+- **Statically confirmed:** the request body is the original `message` event's `data`; the response text is sent back to the originating frame/window using `postMessage(responseText, origin)`.
+- **Runtime-confirmed:** user HAR/DevTools observations show XML envelopes such as `<method class="EditWordDocument">`; a close-time request was observed with `invoke=5208`.
+- **Corrected interpretation:** `5208` is not a stable operation ID or a hard-coded EditWordDocument method number. It is a client-generated request identifier for that POST. The method identity is carried in the XML body (for example, `method class="EditWordDocument"`).
+- **Unknown:** whether the service uses the random value only for correlation/logging or also as an internal request key; uniqueness, collision handling and server-side storage semantics have not yet been recovered.
+
+The service string dump also contains `TEmwatInvokeParam`, `ParseMethod`, `Calling ParseMethod exception:`, `Emwat method called from`, and `Unable to call "invoke" method:`. These strings support a service-side parse/invoke path, but without the service executable's disassembly they do not establish the parser's exact implementation or error handling.
+
+### Revised next steps
+
+1. Trace the service-side request parser and `ParseMethod` path; treat `invoke` as a per-request random value, not a static method registry key unless server code proves otherwise.
+2. Trace the XML `method class` dispatch from `EditWordDocument` to the corresponding `TEmwatMethod`/connector implementation.
+3. Determine how the random query value is used (correlation, request map, logging, or another purpose) from service code or runtime traces.
+4. Connect the close-time request/response to the document extraction and apply/return behavior. Do not infer that `5208` identifies the operation.
