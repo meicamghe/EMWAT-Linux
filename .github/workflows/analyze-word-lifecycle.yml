@@ -381,6 +381,23 @@ jobs:
           python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004041BC word-lifecycle-analysis/LoadDocument-stream-object-constructor.md 220 ret
           python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004041BC word-lifecycle-analysis/LoadDocument-stream-object-constructor-callers.md
           python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004B7724 word-lifecycle-analysis/LoadDocument-entry-expanded.md 900 ret
+      - name: Resolve TFileStream imports and file read/write lifecycle
+        run: |
+          python tools/trace_import_and_callers.py analysis-input/EmwatMethods.bpl1 0x0062F800 0x004B780B 0x004B7C3E
+          cp bpl-analysis/EmwatMethods-import-and-caller-trace.md word-lifecycle-analysis/LoadDocument-TFileStream-VMT-import.md
+          python tools/trace_import_and_callers.py analysis-input/EmwatMethods.bpl1 0x0062F670 0x004041BC
+          cp bpl-analysis/EmwatMethods-import-and-caller-trace.md word-lifecycle-analysis/LoadDocument-TFileStream-constructor-import.md
+          python tools/trace_import_and_callers.py analysis-input/EmwatMethods.bpl1 0x0062ECB4 0x00401348
+          cp bpl-analysis/EmwatMethods-import-and-caller-trace.md word-lifecycle-analysis/LoadDocument-UnicodeString-helper-401348-import.md
+          python tools/trace_import_and_callers.py analysis-input/EmwatMethods.bpl1 0x0062ED20 0x00401270
+          cp bpl-analysis/EmwatMethods-import-and-caller-trace.md word-lifecycle-analysis/LoadDocument-UnicodeString-helper-401270-import.md
+          python tools/trace_import_and_callers.py analysis-input/EmwatMethods.bpl1 0x0062ECE8 0x004012E0
+          cp bpl-analysis/EmwatMethods-import-and-caller-trace.md word-lifecycle-analysis/LoadDocument-UnicodeString-helper-4012E0-import.md
+          python tools/trace_import_and_callers.py analysis-input/EmwatMethods.bpl1 0x0062ECDC 0x004012F8
+          cp bpl-analysis/EmwatMethods-import-and-caller-trace.md word-lifecycle-analysis/LoadDocument-UnicodeString-helper-4012F8-import.md
+          python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x004B77A0 0x004B7CFA word-lifecycle-analysis/LoadDocument-file-read-write-control-flow.md
+          python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x004B7C15 0x004B7DE1 word-lifecycle-analysis/LoadDocument-second-stream-read-path.md
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004B7C39 word-lifecycle-analysis/LoadDocument-second-stream-callers.md
       - uses: actions/upload-artifact@v4
         with:
           name: emwat-word-lifecycle-analysis
