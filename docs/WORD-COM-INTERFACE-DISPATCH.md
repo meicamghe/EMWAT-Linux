@@ -243,3 +243,44 @@ A new workflow helper, `tools/trace_td32_procedure.py`, was added to disassemble
 - **Proven:** the call site passes a value in `EAX` and a byte-derived value in `EDX`.
 - **Not proven:** the complete purpose of the call, whether the target is also registered as a close event, or whether either interface dispatch triggers the observed localhost POST.
 - **Not proven:** that this helper call is itself the user-visible document-close action.
+
+
+## Nested-procedure static-link proof for the BeforeClose target (lifecycle run 27)
+
+The complete TD32 procedure trace for `FillImgFldsForPrint` (module `ScanRequestXML`, VA range `0x004CCDC8–0x004CD153`) resolves the previously ambiguous `[ebp+8]` value in the target at `0x004CCBBC`.
+
+At the direct callsite:
+
+```asm
+004CCF88  push     ebp
+004CCF89  movzx    edx, byte ptr [ebp - 0x11]
+004CCF8D  mov      eax, ebx
+004CCF8F  call     0x4ccbbc
+```
+
+The target is entered with the caller's EBP as its first stack argument (the Delphi nested-procedure static link). In `FillImgFldsForPrint`, the prologue stores the incoming ECX in its local `[ebp-0x0C]`:
+
+```asm
+004CCDDD  push     edi
+004CCDDE  mov      dword ptr [ebp - 0xc], ecx
+004CCDE1  mov      dword ptr [ebp - 8], edx
+004CCDE4  mov      dword ptr [ebp - 4], eax
+```
+
+Therefore, in the target procedure, the receiver expression `[[ebp+8]-0x0C]` resolves exactly to the caller's local `[ebp-0x0C]`, which contains the caller's incoming ECX value. This establishes the dataflow chain:
+
+`FillImgFldsForPrint incoming ECX → caller local [ebp-0x0C] → hidden static-link pointer passed with push ebp → target [ebp+8]-0x0C → receiver for both +0x38 dispatches`.
+
+This corrects the earlier generic description of the value as an unidentified event-record/context field. It is a captured parent-frame local supplied through the nested-procedure static link. The exact type and semantic role of the caller's incoming ECX value are still unresolved; do not yet name the two `+0x38` methods.
+
+The surrounding caller code also shows the target is called from a loop that iterates image-field entries: `EBX` is passed in EAX, and the byte counter/flag at caller local `[ebp-0x11]` is passed in EDX. The return value is copied to EBX and tested as a Boolean. This is consistent with the target participating in image-field processing, but the exact business meaning of its return value is not established.
+
+**Evidence status:**
+- **Proven:** the target is directly called by `FillImgFldsForPrint`.
+- **Proven:** the call passes the caller's EBP as a hidden static link.
+- **Proven:** both target `+0x38` dispatches use the caller's incoming ECX value through local `[ebp-0x0C]`.
+- **Proven:** EAX carries the loop index and EDX carries a byte-derived argument at this callsite.
+- **Unresolved:** the declared type/meaning of incoming ECX, the interface methods at `+0x38`, and whether the target is separately registered as a Word close event.
+- **Unresolved:** any direct causal connection from this code to the runtime POST at `127.0.0.1:1984`, `invoke=5208`, or `EditWordDocument/wordConfig`.
+
+Lifecycle run 28 adds a complete TD32 trace of the target at `0x004CCBBC` to capture its complete procedure symbol and body alongside this caller-side static-link proof.
