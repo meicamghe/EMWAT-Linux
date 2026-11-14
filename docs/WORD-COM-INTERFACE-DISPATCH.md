@@ -587,3 +587,24 @@ This proves the two-stage dispatch:
 **Symbol-label caveat:** several TD32 `PerformMethod` labels do not align with the class whose VMT slot points at that address (for example, `TEditExcelWorkBook` VMT slot `+0x10` points at `0x005EF8AC`, while the TD32 procedure label at that address says `TCompareWordDocument.PerformMethod`). Treat the class VMT slot target as the authoritative dynamic-dispatch address; reconcile the name mismatch by inspecting each body and its actual behavior. Do not silently relabel the TD32 procedure.
 
 The `TEditWordDocument` method target `0x005EE82C` begins a substantial body that reads the `document` parameter from the parsed dictionary and calls helper `0x004B7724`. The next step is to identify that helper and trace the complete method body through document creation/Word automation and response handling.
+
+
+## TEmwatMethod.Invoke +0x68 receiver: enumerator path under investigation (runs 79–82)
+
+The complete TD32 procedure for TEmwatMethod.Invoke is 0x0046C82C–0x0046C9DC. Its signature explicitly accepts TDictionary<System.AnsiString,System.AnsiString>; on entry EAX is the TEmwatMethod instance, EDX is the parameter dictionary, and ECX is the output-string reference.
+
+The receiver dataflow at the unresolved +0x68 call (0x0046C921) is:
+
+- Local [ebp-4] is dispatched through +0xB0 at 0x0046C8D8.
+- The resulting object in [ebp-0x1C] is dispatched through +0xCC at 0x0046C8E6, with output address [ebp-8].
+- The object stored in [ebp-8] is then the receiver for the +0x68 call at 0x0046C921.
+
+Thus the +0x68 receiver is not Self and should not be conflated with the concrete connector's VMT slot +0x10.
+
+The same procedure calls helper 0x0046E324 twice. TD32 labels it TDictionary<System.AnsiString,System.AnsiString>.TPairEnumerator.DoGetCurrent; it writes two DWORD values from a list-like backing store to the supplied output address. It also calls 0x0046DE84 (TD32 label TEnumerable<System.AnsiString>.ToArrayImpl) and 0x0046E3CC (TD32 label TList<TPair<...>>.GetCapacity). These helper names and instruction behavior point to generic dictionary/enumerator machinery, but do not by themselves type the [ebp-8] receiver.
+
+A second, distinct +0x68 dispatch exists in the shared base wrapper at 0x0046CBB7 (TD32 range 0x0046C9E0–0x0046CDF7). It uses a different local receiver [ebp-4], created in the exception/response path. Do not assume the two +0x68 calls share an interface or class type.
+
+Run 82 adds a complete trace and caller scan for helper 0x0044C238, which initializes/creates the [ebp-4] local in Invoke, plus raw VMT slot windows for generic TEnumerator<TPair>, TDictionary.TPairEnumerator, TDictionary, and TEnumerable<TPair> candidates, covering slots +0x68, +0xB0, and +0xCC.
+
+**Still unresolved:** the exact class type of [ebp-8], the declaration/name of its +0x68 method, and the distinct receiver type at 0x0046CBB7. The next mapping must use VMT slot targets and constructor/helper dataflow rather than the numeric displacement alone.
