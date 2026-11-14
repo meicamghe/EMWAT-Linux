@@ -194,3 +194,14 @@ The browser-side close POST remains the decisive missing contract. User runtime 
 - `uSendLog.TfrmShowAutoSaveFiles.WordAppDocumentBeforeClose` at `0x005EC580` belongs to the autosave-files UI and calls `CloseWordApp`; it is not evidence that the main editor registers this callback.
 - Run27 did not establish the active Word close event or the close-time POST contract. User-observed close behavior remains the product requirement; static symbol names must not override it.
 - Next focused trace: `0x004D2948` and callers/refs of `SilentSaveEmwatDoc`, plus `Emwat.Sys.CloseAllWords` only if its callers connect it to the main editor. Keep the main `TEditWordDocument → LoadDocument → HTTP response` path as the integration anchor.
+
+
+## Run28 — reclassification of save/close candidates (2026-11-14)
+
+- Run `43587704007` completed successfully; artifact `14110909233`.
+- Critical correction: `0x004D2948` is TD32-labeled `TWrapRecord.LineCount` in module `ScanRequestXML`, procedure range `0x004D2948–0x004D2E77`. It is **not** a helper owned by `SilentSaveEmwatDoc`.
+- `TWordViwer.SilentSaveEmwatDoc` at `0x004D23D8` has exact range `0x004D23D8–0x004D281B`. Its only direct bounded caller found is `TWordViwer.GetDocFieldName` at `0x004BBA86`. This places it on a field-name lookup/fallback path in the static call graph, not on a proven document-close callback. Its side effects and purpose remain to be determined.
+- `Emwat.Sys.CloseAllWords` at `0x0044AD30` has one direct caller: `Emwat.Sys.DeleteTempRAW` at `0x0044B01C`. The routine builds four command strings and passes each to `0x0044B0F8`; current evidence associates it with temporary RAW cleanup, not the editor's user-close action.
+- These three items are downgraded as candidates for the main letter-close path. Do not infer lifecycle from names alone.
+- Main confirmed anchor remains `TEditWordDocument` slot `+0x10` → `0x005EE82C` → `TWordViwer.LoadDocument` `0x004B7724` → HTTP response writer. The user's observed close behavior remains a product requirement; the static path explaining it is unresolved.
+- Next: trace the exact `GetDocFieldName → SilentSaveEmwatDoc` call context and the command targets under `DeleteTempRAW/CloseAllWords`; continue searching for the parent-page close POST and concrete response application path.
