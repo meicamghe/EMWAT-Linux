@@ -743,3 +743,19 @@ The three-argument wrapper forwards its three OleVariant arguments through docum
 Callback identity correction: 0x004CD154 is the registered TWordViwer.WordAppDocumentBeforeSave, not BeforeClose. It checks _Document.Saved through slot +0xD8, calls PreparePrintDocument at 0x004CB108, conditionally prompts when the document is changed and viewer flags allow it, sets the event Cancel word to 0xFFFF on Cancel, and directly invokes interface slot +0x29C with three OleVariant arguments (the same dispatch slot used by the three-argument wrapper at 0x0042FFF4) for Yes/No. The TD32-named WordAppDocumentBeforeClose at 0x004CCBBC has only one direct bounded caller, FillImgFldsForPrint at 0x004CCF8F; no raw-pointer registration reference was found. This negative scan does not prove that no computed/runtime registration exists.
 
 The no-argument overload's +0x4D4 slot must not be conflated with the optional-argument overloads' +0x29C slot. 0x00430070 is SaveAs2000, not Close. Remaining work: resolve the COM interface implementation behind +0x29C, find any actual close-event registration, and trace the page-side close-time POST. No apply-on-close explanation is established.
+
+
+## Close overload cross-check — lifecycle run 26
+
+Run 26 (`43584217243`, artifact `14109926135`) independently traced the generated `Wordxp.TWordDocument.Close` wrappers:
+
+| Wrapper | TD32 address | Interface dispatch |
+|---|---:|---:|
+| `Close()` | `0x0042FEB0` | `+0x4D4` |
+| `Close(OleVariant)` | `0x0042FF08` | `+0x29C` |
+| `Close(OleVariant, OleVariant)` | `0x0042FF7C` | `+0x29C` |
+| `Close(OleVariant, OleVariant, OleVariant)` | `0x0042FFF4` | `+0x29C` |
+
+The wrappers obtain the underlying interface through `0x0042ABA0` and invoke the corresponding vtable slot. The three-argument overload is called from the registered BeforeSave callback at `0x004CD154` in the Yes/No prompt branches. The no-argument overload uses a different slot. Until the `_Document` type-library declarations or a matching wrapper map both slots, do not assign method names to raw offsets beyond the TD32 wrapper names.
+
+The separate `WordAppDocumentBeforeClose` symbol at `0x004CCBBC` is still not proven to be registered as a live event handler. Its known direct caller is `FillImgFldsForPrint`. The user's observed close-time HTTP POST is not yet tied to either wrapper path.
