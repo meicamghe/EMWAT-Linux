@@ -466,3 +466,10 @@ The expanded TD32 name inventory found a second routine named `WordAppDocumentBe
 The same unit contains `TfrmShowAutoSaveFiles.CloseWordApp` at `0x005EBDA8` and `TfrmShowAutoSaveFiles.FormClose` at `0x005EBF20`. The inventory also finds Word wrapper methods `TWordDocument.Close()` at `0x0042FEB0` and three overloads at `0x0042FF08`, `0x0042FF7C`, and `0x0042FFF4`, plus `TWordDocument.ClosePrintPreview` at `0x00433A84`. `WordCompareCommandUnit.CloseMyDoc` is at `0x005E9174`.
 
 These are **candidates, not yet the proven letter-editor close path**. The `uSendLog` handler belongs to the autosave-files form and may be limited to that UI. Lifecycle run 52 now traces its full body, direct/indirect references and raw PE pointer references, together with `CloseWordApp`, `FormClose`, `CloseMyDoc`, and the `TWordDocument.Close` wrappers. The next classification depends on those bodies and caller chains, not the TD32 names alone.
+
+
+## GetDocFieldName field-resolution routine (lifecycle run 53)
+
+The complete TD32 trace identifies `TWordViwer.GetDocFieldName` at `0x004BB81C` (size `0x954`). It obtains the current Word document interface from the viewer object, calls `FillPrintDocFields` to populate the typed `DynamicArray<Wordxp.Fields>` at viewer field `+0xA4`, then iterates the configured field-name strings stored in that array and calls `GetDocFieldIndex` for each entry. The Boolean result is used to update viewer state/flags.
+
+This provides the parent context for the `GetDocFieldIndex` calls seen in run 47: it is a field-name-to-Word-field resolution routine operating over the configured field list. The direct CALL scan found no direct callers of `GetDocFieldName` inside TD32-bounded procedures; an indirect/VMT/property caller or an unreferenced legacy path remains possible. Its call graph is therefore proven downward, while its entry path remains unresolved.
