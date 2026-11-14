@@ -224,3 +224,17 @@ Run 29 (`43589571290`, artifact `14111108881`) completed successfully. It adds t
 The user repeated the real-world test and confirmed: they do not press Word's Save button, yet after closing Word the file is registered/visible in Almas Gam. Treat this as a firm end-to-end product requirement.
 
 Do **not** infer that the document is never saved internally. A likely but unproven sequence is an automatic or EMWAT-triggered Word save during close, followed by EMWAT returning the final artifact/state in the HTTP response to the browser. Keep the following as separate investigation targets: (1) Word/COM save at close, (2) EMWAT artifact collection, (3) HTTP response delivery and Almas Gam persistence. User-facing/product wording: “closing Word is sufficient; the user need not press Save.”
+
+
+## Next implementation milestone — Python loopback transport (2026-11-14)
+
+A protocol-neutral transport implementation was added under `python/`:
+
+- `src/emwat_linux/bridge.py`: loopback-only HTTP server, health endpoint, bounded opaque POST transport, exact configured Origin allowlist, no request-body logging, sanitized internal errors.
+- `tests/test_bridge.py`: unit/integration tests using an ephemeral localhost port.
+- `pyproject.toml`: minimal install metadata.
+- `.github/workflows/python-bridge.yml`: independent CI workflow.
+
+The transport deliberately does not interpret `invoke`, XML method names, parameter tags, Word document payloads, or close-response semantics. It carries the raw request to an injected handler and returns that handler's response. This separation prevents unverified assumptions from becoming the wire protocol.
+
+**Immediate next actions:** verify the Python bridge CI runs; add a protocol parser only after recovering the exact parameter node shape and envelope; implement a typed `EditWordDocument` handler from confirmed fields; then build the LibreOffice adapter and test the close/apply lifecycle end-to-end. Do not claim end-to-end compatibility yet.
