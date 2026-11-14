@@ -801,3 +801,19 @@ The names were cross-checked against the BPL export table and body strings; this
 Therefore the generic service dispatcher does **not** take its fallback response branch when this successful non-empty result path has already written the response. The output is an XML response containing the document result metadata/content (the helper references `application/msword` and `success`); the exact serialized element layout and encoding still need a byte-for-byte comparison with a captured runtime response.
 
 This proves a concrete response path from `EditWordDocument` through Wordviewer document generation to Indy HTTP `WriteContent`. It does not yet identify the browser/Word event that initiates the close-time POST or prove the final apply-on-close semantics.
+
+
+## Generic Invoke XML parameter serialization (BPL evidence, 2026-11-14)
+
+The generic TEmwatMethod.Invoke path accepts a TDictionary<System.AnsiString,System.AnsiString> and constructs an XML object hierarchy through three interfaces:
+
+1. A TXMLEmwatType interface is initialized in local [ebp-4].
+2. Its interface slot +0xB0 creates a TXMLMethodType interface in [ebp-1C].
+3. The TXMLMethodType interface slot +0xCC inserts a child TXMLParamType interface in [ebp-8].
+4. For each dictionary pair, the TXMLParamType interface receives the first string through slot +0xB0 and the second string through slot +0x68.
+
+The two parameter methods are now identified:
+- TXMLParamType +0xB0 resolves through thunk 0x0044BDF5 to 0x0044C8E4. Its body calls xmlrtl230.bpl!TXMLNode.SetAttribute(UnicodeString, OleVariant) using the literal attribute name name and the first dictionary-pair member as the value.
+- TXMLParamType +0x68 resolves through thunk 0x0044BEB5 to 0x0044B568, an IAT jump to xmlrtl230.bpl!TXMLNode.SetText(UnicodeString). The second dictionary-pair member becomes the parameter node's text.
+
+Therefore each dictionary pair is serialized as an XML parameter node equivalent in structure to <param name="KEY">VALUE</param>. This is a static BPL-level serialization result. Do not yet assume it is byte-for-byte the same XML envelope observed in the browser's localhost POST/response; the remaining TXMLMethodType +0xC8 dispatch is being traced to establish how the method name is set and how this internal XML object is consumed.
