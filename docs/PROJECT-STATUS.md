@@ -1076,3 +1076,7 @@ Focused run 16 (`43573798242`, artifact `14105735885`) maps the XML serializatio
 - `TXMLMethodType.Insert` appends each parameter child. Every child node receives `name=` dictionary key and text equal to dictionary value, as confirmed in focused run 11.
 
 The proven structure is therefore a `method` element with `class=` method-name and parameter children with `name` attributes and text values; `TXMLNode.GetXML` returns the serialized XML string. This remains static-analysis evidence; complete document envelope/encoding and runtime request capture comparison are still open.
+
+## Generic Invoke XML serialization — current confirmed state (2026-11-14)
+
+Focused runs 11 and 16 close the previous XML dispatch questions: TXMLMethodType.AfterConstruction initializes a method element; its +0xC8 setter assigns the incoming method name to attribute class; each dictionary pair becomes a parameter child with key in name and value in text; and TXMLEmwatType +0x54 calls xmlrtl230.bpl!TXMLNode.GetXML to serialize the tree. The constructor additional constant 0x0044C4FC remains unresolved. Complete envelope/encoding and runtime HTTP comparison remain open. Detailed evidence: docs/WORD-COM-INTERFACE-DISPATCH.md and docs/WORD-DOCUMENT-PROTOCOL-ANALYSIS.md.
