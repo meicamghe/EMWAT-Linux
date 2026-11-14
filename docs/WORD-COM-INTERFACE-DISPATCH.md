@@ -552,3 +552,38 @@ This makes the source of the nested helper receiver precise: it is an element in
 **Caution:** the routine's TD32 signature labels the explicit parameter as `System.UnicodeString`; the array provider and element representation must be inspected before assigning semantic names to the local collection or its elements. A 32-bit pointer-sized element alone does not prove a particular COM interface.
 
 Run 31 extends the workflow to capture the array provider `0x004CB638`, its direct callers, the typed `FillImageField` control at `0x004BC5D8`, and the field-index helper at `0x004CB5E4`.
+
+
+## Service-driven TEmwatMethod virtual dispatch (lifecycle run 76)
+
+The corrected class-RTTI scanner now finds the small connector classes (instance size `0x0C`) that the earlier `0x20` size threshold excluded. It validates each class typeinfo's direct `ClassType` pointer against the VMT self-pointer. The following classes derive from `TEmwatMethod` and share the same VMT slot `+0x0C = 0x0046C9E0`:
+
+| Class | VMT | Slot `+0x0C` | Slot `+0x10` |
+|---|---:|---:|---:|
+| `TEditWordDocument` | `0x005ED764` | `0x0046C9E0` | `0x005EE82C` |
+| `TScanDocument` | `0x005ED884` | `0x0046C9E0` | `0x005EEB48` |
+| `TFaxDocument` | `0x005ED99C` | `0x0046C9E0` | `0x005EEDFC` |
+| `TGetEmwatVersion` | `0x005EDAB4` | `0x0046C9E0` | `0x005EF110` |
+| `TSetEmwatVersion` | `0x005EDBD4` | `0x0046C9E0` | `0x005EF218` |
+| `TUpgradeEmwat` | `0x005EDCF4` | `0x0046C9E0` | `0x005EF24C` |
+| `TImageEdition` | `0x005EDE0C` | `0x0046C9E0` | `0x005EF300` |
+| `TEditExcelWorkBook` | `0x005EDF24` | `0x0046C9E0` | `0x005EF8AC` |
+| `TCompareWordDocument` | `0x005EE04C` | `0x0046C9E0` | `0x005EFC54` |
+| `TShowEmwatSetting` | `0x005EE174` | `0x0046C9E0` | `0x005EFD4C` |
+| `TShowLastEditedDocs` | `0x005EE294` | `0x0046C9E0` | `0x005EFE4C` |
+| `TShowSendLog` | `0x005EE3BC` | `0x0046C9E0` | `0x005EFF4C` |
+
+The base `TEmwatMethod` VMT at `0x0046ABFC` has slot `+0x0C = 0x0046C9E0` and slot `+0x10 = 0x00401068` (the RTL abstract-error thunk). Subclasses override slot `+0x10` with their own method target.
+
+The body at `0x0046C9E0` (TD32 symbol label: `Emwatmethod.Finalization`) is not merely an unrelated cleanup routine in this call path. The service dispatcher calls class VMT slot `+0x0C`; this body then:
+1. calls `TEmwatMethod.Invoke` at `0x0046C82C` with the parameter dictionary;
+2. calls the same object's virtual slot `+0x10` at `0x0046CA88`, passing the parameter dictionary and output string.
+
+This proves the two-stage dispatch:
+`service GetClass("T"+className) → instance VMT+0x0C (0x46C9E0) → TEmwatMethod.Invoke (0x46C82C) → instance VMT+0x10 (concrete method)`.
+
+**Most important result:** the XML request class `EditWordDocument` resolves to `TEditWordDocument`, whose VMT slot `+0x10` points to `0x005EE82C`. This provides the previously missing concrete entry address for the Word-edit method, even though the current TD32 procedure inventory has no procedure record at that address. Its machine code is present and can be traced as a raw PE range.
+
+**Symbol-label caveat:** several TD32 `PerformMethod` labels do not align with the class whose VMT slot points at that address (for example, `TEditExcelWorkBook` VMT slot `+0x10` points at `0x005EF8AC`, while the TD32 procedure label at that address says `TCompareWordDocument.PerformMethod`). Treat the class VMT slot target as the authoritative dynamic-dispatch address; reconcile the name mismatch by inspecting each body and its actual behavior. Do not silently relabel the TD32 procedure.
+
+The `TEditWordDocument` method target `0x005EE82C` begins a substantial body that reads the `document` parameter from the parsed dictionary and calls helper `0x004B7724`. The next step is to identify that helper and trace the complete method body through document creation/Word automation and response handling.
