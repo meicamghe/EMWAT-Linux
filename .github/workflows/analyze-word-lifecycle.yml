@@ -317,6 +317,15 @@ jobs:
           python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x0042FEB0 word-lifecycle-analysis/WordDocument-Close-no-args-callers.md
           python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x0042FF08 word-lifecycle-analysis/WordDocument-Close-one-arg-callers.md
           python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x0042FF7C word-lifecycle-analysis/WordDocument-Close-two-arg-callers.md
+      - name: Trace LoadDocument branch and HTTP response completion
+        run: |
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004B7DE1 word-lifecycle-analysis/LoadDocument-branch-4B7DE1.md 700 ret
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004B7ECE word-lifecycle-analysis/LoadDocument-branch-4B7ECE.md 500 ret
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004B7F9C word-lifecycle-analysis/LoadDocument-response-write-4B7F9C.md 260 ret
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004B7FC0 word-lifecycle-analysis/LoadDocument-response-after-write-4B7FC0.md 260 ret
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004B7DE1 word-lifecycle-analysis/LoadDocument-branch-4B7DE1-callers.md
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004B7F9C word-lifecycle-analysis/LoadDocument-response-write-callers.md
+          python tools/inspect_pe_va.py analysis-input/EmwatMethods.bpl1 0x004B7F9C --before 0x40 --after 0x120 > word-lifecycle-analysis/LoadDocument-response-write-context.md
       - uses: actions/upload-artifact@v4
         with:
           name: emwat-word-lifecycle-analysis
