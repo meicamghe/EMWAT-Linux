@@ -1,0 +1,48 @@
+name: Analyze EMWAT filename normalization
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/analyze-filename-normalization.yml'
+      - 'analysis-input/EmwatMethods.bpl1'
+      - 'tools/decode_pe_strings.py'
+      - 'tools/trace_pe_target.py'
+      - 'tools/trace_td32_procedure.py'
+      - 'tools/trace_td32_callers.py'
+concurrency:
+  group: filename-normalization-${{ github.ref }}
+  cancel-in-progress: true
+permissions:
+  contents: read
+jobs:
+  filename-normalization:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install pefile capstone
+      - name: Decode filename validation and construction constants
+        run: |
+          mkdir -p filename-analysis
+          python tools/decode_pe_strings.py analysis-input/EmwatMethods.bpl1 0x00457148 0x00457160 0x00454C80 0x00627E8C 0x00627E90 0x004B8220 0x004B8238 0x004B832C 0x004B8348 0x004B8364 0x004B83A0 > filename-analysis/string-constants.md
+          python tools/inspect_pe_va.py analysis-input/EmwatMethods.bpl1 0x00627E8C --before 0x20 --after 0x80 > filename-analysis/global-627E8C.md
+          python tools/inspect_pe_va.py analysis-input/EmwatMethods.bpl1 0x00627E90 --before 0x20 --after 0x80 > filename-analysis/global-627E90.md
+      - name: Trace filename helper internals
+        run: |
+          python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x00457050 filename-analysis/Emwatutils-Finalization.md
+          python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x00454B9C filename-analysis/Emwatutils-euGetASFileName.md
+          python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x0044A998 filename-analysis/helper-44A998.md
+          python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x00403278 filename-analysis/helper-403278.md
+          python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x00401378 filename-analysis/helper-401378.md
+          python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x00401370 filename-analysis/helper-401370.md
+          python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x00403270 filename-analysis/helper-403270.md
+          python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x004032C0 filename-analysis/helper-4032C0.md
+          python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x004028A0 filename-analysis/helper-4028A0.md
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x00454B9C filename-analysis/euGetASFileName-callers.md
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x00457050 filename-analysis/Finalization-callers.md
+      - uses: actions/upload-artifact@v4
+        with:
+          name: emwat-filename-normalization-analysis
+          path: filename-analysis/
