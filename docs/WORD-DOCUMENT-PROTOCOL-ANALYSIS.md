@@ -954,3 +954,32 @@ Workflow #94 (43598550321، commit `ea721080388e7d1903a6fb67af08abcf300c8f7c`) �
 - آدرس‌های 0x004D68D4 و 0x004D531C که ابتدا به‌عنوان helperهای احتمالی OnTmrAutoSave بررسی شدند، در واقع `TDictionary<UnicodeString,TXmlWordConfigTwinField>.Remove` و `TDictionary<UnicodeString,TXmlWordConfigField>.Remove` هستند و caller مستقیم‌شان `AddCustomDocPropertiesToDic` است. آن‌ها بخشی از مسیر AutoSave نیستند.
 - رشته `<Office LISENCE>: Word is not activated. Close Method.` در همین تابع دیده می‌شود؛ این فقط پیام مربوط به وضعیت فعال‌سازی Word است و قرارداد close-time را مشخص نمی‌کند.
 - مسیر AutoSave و event registration هنوز باید تفکیک شوند: handlerهای ثبت‌شده در run بعدی trace می‌شوند تا Save/Close/BeforePrint و ارتباط احتمالی‌شان با پاسخ HTTP معلوم شود. تا این مرحله هیچ close-time POST جدیدی اثبات نشده است.
+
+
+## Run 95 — Word event callback handlers (2026-11-14)
+
+Workflow run `43599550286` completed successfully; artifact `14115498934` was inspected. This pass traced the five callback addresses assigned/referenced by the Word setup path.
+
+### Handler identities established by TD32
+
+| VA | TD32 procedure | What is established |
+|---|---|---|
+| `0x004CD154` | `TWordViwer.WordAppDocumentBeforeSave` | BeforeSave handler, not BeforeClose. It checks document state, prompts for registration/confirmation, and can cancel or call the 3-argument document Close interface slot. |
+| `0x004CD54C` | `TWordViwer.WordAppNewDocument` | New-document event handler. It checks viewer/document state and conditionally changes document flags and invokes document interface methods. No HTTP POST/response behavior identified in this trace. |
+| `0x004CD9C0` | `TWordViwer.WordAppWindowActivate` | WindowActivate handler. It invokes a document interface VMT slot `+0x29C`; the semantic meaning of that slot remains unresolved. |
+| `0x004CE030` | `TWordViwer.WordAppDocumentBeforePrintBGPrint` | BeforePrint/BGPrint handler. Long handler includes document/print configuration and printer-related calls; no evidence in this pass that it returns the edited document to Almas Gam. |
+| `0x004D00AC` | `LoadOptions` | Options-loading routine, not a Word lifecycle event by its TD32 name. |
+
+### Registration and limits
+
+The immediate-reference scan finds `0x004CD154` and `0x004CD54C` being stored into callback-like object fields by `TWordViwer.OnTmrAutoSave` at `0x004B8CA2` and `0x004B8CB8`. This is consistent with callback registration during `LoadDocument`, but the exact external COM event/interface contract is not yet proven. The same setup routine also writes a further callback pointer at object offset `+0x9C`; the relevant complete assignment sequence must be interpreted with its surrounding code before assigning event semantics to every field.
+
+The direct-call scans report no direct immediate CALL xrefs for the five handler entry points. This does **not** mean the handlers are unused: COM event sinks and callback tables commonly invoke them indirectly. Conversely, a TD32 procedure name alone is not proof that an event is actively wired at runtime.
+
+The separate TD32 procedure `TWordViwer.WordAppDocumentBeforeClose` at `0x004CCBBC` remains distinct. Its only direct caller found is `FillImgFldsForPrint` at `0x004CCF8F`; no active registration for it was established. Do not conflate it with `WordAppDocumentBeforeSave`.
+
+### Consequence for the Linux bridge
+
+Run 95 still does not establish the close-time request/response contract, whether the Word document is serialized on close, or which callback triggers the Almas Gam registration. The user's observed behavior remains important operational evidence: closing Word is sufficient for the file to appear in Almas Gam, without manually pressing Save. The native Linux implementation must reproduce that observable behavior, but must not invent the hidden Windows callback or payload semantics.
+
+Next reverse-engineering target: follow the callback-table construction and indirect dispatch path from `OnTmrAutoSave`, resolve the Word interface VMT slots used by `WordAppNewDocument` and `WordAppWindowActivate`, and trace the full BeforePrint handler's data outputs separately from the editor's close/return path.
