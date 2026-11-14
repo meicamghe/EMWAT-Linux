@@ -104,6 +104,22 @@ jobs:
           python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x005ECB88 word-lifecycle-analysis/TfrmSendLog-FormCreate.md
           python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x005ECB88 word-lifecycle-analysis/TfrmSendLog-FormCreate-callers.md
           python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x005ECF54 word-lifecycle-analysis/TfrmSendLog-FormShow.md
+          python tools/inspect_pe_va.py analysis-input/EmwatMethods.bpl1 0x005EC1F8 --before 0x20 --after 0xA0 > word-lifecycle-analysis/data-5EC1F8.md
+          python tools/inspect_pe_va.py analysis-input/EmwatMethods.bpl1 0x005ECADC --before 0x20 --after 0xA0 > word-lifecycle-analysis/data-5ECADC.md
+          python tools/inspect_pe_va.py analysis-input/EmwatMethods.bpl1 0x005ECE0C --before 0x20 --after 0xA0 > word-lifecycle-analysis/data-5ECE0C.md
+          python tools/inspect_pe_va.py analysis-input/EmwatMethods.bpl1 0x005ECE58 --before 0x20 --after 0xA0 > word-lifecycle-analysis/data-5ECE58.md
+          python tools/inspect_pe_va.py analysis-input/EmwatMethods.bpl1 0x005ECE78 --before 0x20 --after 0xA0 > word-lifecycle-analysis/data-5ECE78.md
+          python tools/inspect_pe_va.py analysis-input/EmwatMethods.bpl1 0x005ECE94 --before 0x20 --after 0xA0 > word-lifecycle-analysis/data-5ECE94.md
+          python tools/inspect_pe_va.py analysis-input/EmwatMethods.bpl1 0x005ECEB0 --before 0x20 --after 0xA0 > word-lifecycle-analysis/data-5ECEB0.md
+          python tools/inspect_pe_va.py analysis-input/EmwatMethods.bpl1 0x005ECEE4 --before 0x20 --after 0xA0 > word-lifecycle-analysis/data-5ECEE4.md
+          python tools/inspect_pe_va.py analysis-input/EmwatMethods.bpl1 0x005ECF18 --before 0x20 --after 0xA0 > word-lifecycle-analysis/data-5ECF18.md
+          python tools/inspect_pe_va.py analysis-input/EmwatMethods.bpl1 0x005ECF90 --before 0x20 --after 0xA0 > word-lifecycle-analysis/data-5ECF90.md
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004011F0 word-lifecycle-analysis/helper-4011F0.md 220 ret
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x00401370 word-lifecycle-analysis/helper-401370.md 180 ret
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x0040414C word-lifecycle-analysis/helper-40414C.md 180 ret
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004028D0 word-lifecycle-analysis/helper-4028D0.md 180 ret
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x00404F04 word-lifecycle-analysis/helper-404F04.md 180 ret
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x00404E84 word-lifecycle-analysis/helper-404E84.md 180 ret
           python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x0046C82C word-lifecycle-analysis/TEmwatMethod-Invoke.md
           python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x0046C82C word-lifecycle-analysis/TEmwatMethod-Invoke-callers.md
           python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x005EF8AC word-lifecycle-analysis/TCompareWordDocument-PerformMethod.md
