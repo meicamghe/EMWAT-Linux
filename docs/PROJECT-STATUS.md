@@ -1151,3 +1151,10 @@ Run 29 با شناسه `43589571290` و artifact `14111108881` با موفقیت
 فرضیهٔ فنی محتمل این است که هنگام بستن، Word یا EMWAT یک Save/Silent Save انجام می‌دهد و سپس EMWAT خروجی نهایی را از مسیر پاسخ HTTP به مرورگر تحویل می‌دهد. این فقط فرضیه است و باید با trace زمان‌بندی‌شدهٔ COM و HTTP اثبات شود.
 
 در ادامه سه مرحله جداگانه بررسی شوند: (۱) ذخیره‌شدن واقعی سند در Word هنگام close، (۲) جمع‌آوری artifact نهایی توسط EMWAT، (۳) تحویل پاسخ به مرورگر و ثبت آن در الماس گام. در مستندات از عبارت «ثبت بدون Save کاربر» استفاده شود، نه «انتقال بدون ذخیره‌شدن سند».
+
+
+## Native Linux bridge transport — initial implementation (2026-11-14)
+
+A first protocol-neutral Python transport layer now exists under `python/`. It binds only to IPv4 loopback, exposes `GET /healthz`, accepts opaque POST bodies at `/`, preserves the query string/body bytes for a future verified dispatcher, applies a configurable body-size limit and exact Origin allowlist, rejects unsupported methods/routes and sanitizes handler exceptions. It intentionally does not parse or synthesize the legacy XML envelope: the parameter child tag and complete close-response contract remain unproven.
+
+Files: `python/src/emwat_linux/bridge.py`, `python/tests/test_bridge.py`, `python/pyproject.toml`; CI: `.github/workflows/python-bridge.yml`. This is a transport foundation only, not yet an end-to-end EMWAT connector. Verify the dedicated CI run before treating the milestone as green.
