@@ -1005,3 +1005,25 @@ Raw pointer scans found the handler addresses in executable code at the expected
 The helper at `0x0043F360` is `TWordApplication.Get_ScreenUpdating`; `0x00440950` is `Get_DisplayAutoCompleteTips`; and `0x00441C68` is `TWordApplication.Quit`. These are Word automation property/method wrappers and should not be mistaken for save/close transport. `0x00404FBC` has no TD32 procedure boundary in the current symbol data.
 
 Still unproven: whether any of these callbacks causes the edited document to be serialized or POSTed after the user closes Word; the result envelope and exact payload remain unknown. The confirmed user-observed close-to-Almas behavior remains a product requirement, not a license to infer the implementation.
+
+## 2026-11-14 — Run 97: ادامهٔ مسیر ثبت callbackهای Word
+
+اجرای GitHub Actions شمارهٔ 97 با commit 58acba41c4622137a94c97bf171cc3890d26fd5d موفق شد؛ artifact با شناسهٔ 14117102104 دریافت و فایل‌های disassembly آن بررسی شدند.
+
+### نتیجه‌های قطعی جدید
+
+- در انتهای TWordViwer.OnTmrAutoSave، بعد از ثبت callbackهای اصلی، متد 0x004C5D68 اجرا می‌شود. این متد از شیء OLE در offset viewer+0x44 دو property را می‌خواند: از VMT slot +0x15C یک مقدار word و از slot +0x104 یک مقدار byte؛ سپس آن‌ها را در viewer+0x4C و viewer+0x4D ذخیره می‌کند. نام معنایی propertyها از شواهد فعلی مشخص نیست.
+- در مسیر دیگر، 0x004CDB54 روی مقدار viewer+0x44 کار می‌کند، یک رشته/مقدار را می‌خواند و تابع System.Pos(UnicodeString, UnicodeString) را از طریق thunk 0x00401398 فراخوانی می‌کند. خروجی تابع به Boolean تبدیل می‌شود. بنابراین این helper یک بررسی مبتنی بر جست‌وجوی زیررشته است؛ هنوز معنای رشتهٔ مورد جست‌وجو و شرط اجرایی آن مشخص نیست.
+- 0x00404FBC برخلاف ابهام قبلی، یک thunk به vcl230.bpl!TOleServer.SetConnectKind است. در OnTmrAutoSave روی شیء OLE با آرگومان 1 فراخوانی می‌شود. این شواهد اتصال به OLE server را تقویت می‌کند، اما به‌تنهایی نوع دقیق اتصال یا چرخهٔ event sink را اثبات نمی‌کند.
+- thunk 0x004013F8 به System.DynArrayClear می‌رسد و در OnTmrAutoSave برای پاک‌سازی آرایه‌های محلی/ساختاری استفاده شده است؛ callback dispatcher نیست.
+- thunk 0x00401368 به System.UStrCat و thunk 0x00401398 به System.Pos می‌رسند. این‌ها helperهای عمومی رشته‌اند، نه dispatcherهای event.
+- در بخش teardown مربوط به OnTmrAutoSave، در یک شاخه TWordApplication.Quit فراخوانی و سپس VMT slot +0x54 روی شیء OLE صدا زده می‌شود. در شاخهٔ دیگر callback دیگری در slot +0x88/+0x8C جایگزین و دو VMT slot دیگر (+0x100 و +0x108) روی interfaceهای گرفته‌شده از OLE فراخوانی می‌شوند. معنای دقیق slotها هنوز نیازمند resolution جدول interface/VMT است.
+
+### مرز شواهد
+
+- وجود callback pointerها در ساختار viewer+0x44 همچنان تأیید می‌شود، ولی consumer و ABI دقیق اجرای آن‌ها هنوز پیدا نشده است.
+- WordAppDocumentBeforeClose در 0x004CCBBC یک procedure واقعی و مستقل است؛ در بدنه‌اش از چند interface call با slot +0x38 و یک helper در 0x004BCA88 استفاده می‌شود. تنها direct caller شناخته‌شده همچنان FillImgFldsForPrint است. بنابراین هنوز مدرکی نداریم که این handler، رویداد اصلی بستن سند در editor باشد.
+- در این run هیچ POST، XML response یا payload مربوط به زمان بستن Word اثبات نشد.
+- مشاهدهٔ کاربر مبنی بر ثبت تغییرات هنگام بستن Word همچنان یک الزام رفتاری قطعی برای بازسازی است؛ اما اتصال آن به یک handler مشخص در باینری هنوز اثبات نشده است.
+
+Run 98 برای trace کردن 0x004BCA88، helperهای وضعیت/گزینهٔ viewer و slotهای teardown اضافه شد.
