@@ -701,10 +701,17 @@ Lifecycle runs 27–30 expanded the trace around the TD32 symbol `TWordViwer.Wor
 
 The complete caller trace shows that `0x004CCBBC` is directly called from `FillImgFldsForPrint` at `0x004CCF8F`. The call passes the caller's EBP as a Delphi nested-procedure static link. The target's receiver expression `[[ebp+8]-0x0C]` therefore resolves to the parent `FillImgFldsForPrint` local that captured incoming ECX.
 
-The only direct TD32-bounded caller found for `FillImgFldsForPrint` is `TWordViwer.GetFieldIndexInList` at `0x004CB361`. Its complete body obtains a list/array pointer from helper `0x004CB638`, queries its element count, and iterates pointer-sized 32-bit elements. Each element is passed in ECX to `FillImgFldsForPrint`. That callee dereferences the value and dispatches through vtable slots `+0x28` and `+0x38`; the nested helper uses the same receiver for two more `+0x38` dispatches.
+The only direct TD32-bounded caller found for `FillImgFldsForPrint` is `TWordViwer.GetFieldIndexInList` at `0x004CB361`. That method calls `TWordViwer.FillPrintDocFields` at `0x004CB638`; the latter's TD32 signature explicitly declares an input `DelphiInterface<Wordxp._Document>` and an output `DynamicArray<DelphiInterface<Wordxp.Fields>>`. `GetFieldIndexInList` iterates this array and passes each `Wordxp.Fields` interface element in ECX to `FillImgFldsForPrint`. The latter and its nested helper dispatch through the `Wordxp.Fields` interface vtable at slots `+0x28` and `+0x38`.
 
-**Interpretation boundary:** this is strong evidence that the target is a nested helper reached during field-list processing and that the list elements are interface-like vtable receivers. It does not establish the interface IID/type, method names, or whether the routine is also independently registered as a Word close event. The TD32 symbol name alone is not proof of event registration. Do not identify its `+0x38` calls as `_Document.Get_Tables()`; that mapping is proven only for the separate typed `Wordxp.TWordDocument.Get_Tables` wrapper.
+**Interpretation boundary:** the receiver type is now statically identified as `Wordxp.Fields`, not merely an interface-like pointer and not `_Document`. The exact method names at slots `+0x28` and `+0x38` remain to be mapped. The target is clearly a nested helper reached in a print/field-list path; its TD32 symbol name alone is not proof that it is independently registered as a Word close event. Do not identify its `+0x38` calls as `_Document.Get_Tables()`; that mapping applies only to the separate typed `Wordxp.TWordDocument.Get_Tables` wrapper.
 
 No direct link has yet been established from this helper body to the observed localhost POST `127.0.0.1:1984/?invoke=5208` or the `EditWordDocument/wordConfig` XML response. The user-observed behavior that closing the document applies changes even without pressing Save remains a confirmed product requirement; this static trace has not yet identified the internal event or transport implementing it.
 
 See [WORD-COM-INTERFACE-DISPATCH.md](WORD-COM-INTERFACE-DISPATCH.md) for instruction-level details and the run-31 follow-up targets.
+
+
+### Run 31 follow-up: typed Word Fields receiver
+
+The full TD32 signature for `TWordViwer.FillPrintDocFields` at `0x004CB638` resolves the list element type. It accepts `Wordxp._Document` and produces `DynamicArray<DelphiInterface<Wordxp.Fields>>`. `GetFieldIndexInList` then iterates that array and passes each `Wordxp.Fields` element to `FillImgFldsForPrint`; the nested `0x004CCBBC` helper receives the same interface through its static link.
+
+The next step is now narrow and type-directed: enumerate the Word wrapper VMT/RTTI for `TWordFields`, `TWordField`, and `TWordDocument`, map `Wordxp.Fields` slots `+0x28` and `+0x38`, and independently find the actual close-event registration and invoke/response path.
