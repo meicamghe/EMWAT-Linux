@@ -75,6 +75,10 @@ jobs:
           python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004CCDC8 word-lifecycle-analysis/FillImgFldsForPrint-direct-callers.md
           python tools/trace_td32_immediate_refs.py analysis-input/EmwatMethods.bpl1 0x004CCDC8 word-lifecycle-analysis/FillImgFldsForPrint-immediate-references.md
           python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x004CB361 word-lifecycle-analysis/GetFieldIndexInList-full.md
+          python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x004CB638 word-lifecycle-analysis/GetFieldIndexInList-array-provider.md
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004CB638 word-lifecycle-analysis/GetFieldIndexInList-array-provider-callers.md
+          python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x004BC5D8 word-lifecycle-analysis/FillImageField-typed-interface-control.md
+          python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x004CB5E4 word-lifecycle-analysis/Field-index-lookup-helper.md
           python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x004CB638 word-lifecycle-analysis/GetFieldIndexInList-build-array.md
           python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004CB1B4 word-lifecycle-analysis/GetFieldIndexInList-callers.md
           python tools/trace_td32_immediate_refs.py analysis-input/EmwatMethods.bpl1 0x004CB1B4 word-lifecycle-analysis/GetFieldIndexInList-immediate-references.md
