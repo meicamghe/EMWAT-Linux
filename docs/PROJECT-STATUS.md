@@ -895,11 +895,10 @@ The resulting evidence should distinguish ordinary CALL xrefs, code immediates, 
 
 ### Current next actions
 
-1. Complete the XML-object dispatch trace inside `TEmwatMethod.Invoke`: `[ebp-4]` is passed to `TXMLEmwatType.AfterConstruction` (0x0044C238); its class VMT is 0x0044B9AC, and its class slot +0x68 is null. Follow class slot +0xB0, the next receiver's +0xCC, and the final +0x68 interface method. Candidate RTTI classes are `TXMLMethodType` (VMT 0x0044BD48) and `TXMLParamType` (VMT 0x0044C08C); do not assign these types until the returned pointers are traced.
+1. Finish the TXMLParamType interface slot mapping: the +0xB0 and +0x68 calls on [ebp-8] receive the first and second dictionary-pair strings respectively. Their interface VTable thunks are 0x0044BDF5 and 0x0044BEB5; resolve the adjusted class-method targets and confirm the method names/semantics (likely key/name and value setters, not yet proven).
 2. Keep the second +0x68 call at 0x0046CBB7 separate; it uses a different local receiver in the shared base wrapper's exception/response path.
 3. Continue tracing the service parser/registry only where necessary to establish how XML method classes are resolved. The browser's `invoke=5208` value is already proven to be a random per-request nonce, not a method ID; the server-generated `TEmwatInvokeParam.SessionId` is separate.
 4. Link the registered Word BeforeClose callback at 0x004CD154 to the parent-page `postMessage` that initiates the next `EditWordDocument` request, then trace the Save/No-save branches to the final Almas Gam commit. Preserve the user's close-applies-changes observation as a hard requirement.
-
 
 
 
@@ -1040,3 +1039,16 @@ The focused receiver workflow has now narrowed the unresolved `TEmwatMethod.Invo
 The implementation-body trace adds a major semantic step: `TXMLEmwatType` interface slot `+0xB0` resolves to `TXMLMethodType.AfterConstruction` (`0x0044C458`), which constructs the method-type interface returned into `[ebp-0x1C]`. The `TXMLMethodType` interface slot `+0xCC` resolves to `TXMLMethodType.Insert` (`0x0044C754`), which inserts a child at index `-1` and returns an interface into `[ebp-8]`. RTTI identifies `TXMLParamType` as the child-parameter class; its implemented interface VTable is `0x0044BF5C`, with candidate `+0xB0` slot pointer `0x0044BDF5` and `+0x68` slot pointer `0x0044BEB5`. `Invoke` then passes the two dictionary pair strings to the returned child's `+0xB0` and `+0x68` slots respectively. This strongly indicates that `Invoke` constructs XML parameter child nodes and assigns each key/value pair; the exact property names still await the TXMLParamType thunk traces.
 
 The initial focused dictionary/enumerator workflow completed successfully (run `43570769839`). The XML interface VTable workflow completed successfully (run `43571030574`). Latest thunk-trace workflow: `43571171939`; artifact pending at the time of this update. Detailed address evidence is in `docs/WORD-COM-INTERFACE-DISPATCH.md` and the `emwat-invoke-receiver-analysis` workflow artifact.
+
+
+## Invoke XML interface chain — focused runs 6–9 (2026-11-14)
+
+- The first receiver chain is now mapped through interface implementations, not just numeric VTable slots:
+  - [ebp-4] is a TXMLEmwatType interface; its +0xB0 thunk 0x0044B709 adjusts Self by -0x50 and jumps to 0x0044C458.
+  - 0x0044C458 is TD32-labelled TXMLMethodType.AfterConstruction. It returns a TXMLMethodType interface into the output pointer supplied by TEmwatMethod.Invoke.
+  - [ebp-1C] is therefore a TXMLMethodType interface; its +0xCC thunk 0x0044BA61 adjusts Self by -0x70 and jumps to 0x0044C754.
+  - 0x0044C754 is TD32-labelled TXMLMethodType.Insert. It invokes its own VMT slot +0x20 with index -1, then returns the created child interface into the caller's output pointer [ebp-8].
+  - RTTI identifies the child interface candidate as TXMLParamType (interface offset +0x50, VTable 0x0044BF5C). Its +0xB0 and +0x68 VTable entries are 0x0044BDF5 and 0x0044BEB5; the Invoke loop passes the first dictionary-pair string to +0xB0 and the second to +0x68.
+- This strongly maps [ebp-8] to TXMLParamType. The exact setter method names and adjusted implementation addresses remain under analysis in focused runs 8 and 9.
+- The generic dictionary enumerator is now separated from the XML receiver: helpers 0x0046DE84 and 0x0046E324 produce/iterate pair data, while TXMLParamType receives the pair fields through its own interface methods.
+- Detailed instruction traces and VTable evidence are in [WORD-COM-INTERFACE-DISPATCH.md](WORD-COM-INTERFACE-DISPATCH.md).
