@@ -606,7 +606,7 @@ This makes the XML-object path the current leading explanation for the +0xB0 →
 Run 3's VMT/interface dump adds a useful exclusion and candidate:
 - The TXMLEmwatType class VMT at 0x0044B9AC has a null value at class slot +0x68 (address 0x0044BA14). Therefore the +0x68 receiver cannot be this class object using its ordinary class VMT.
 - TXMLEmwatType implements IID e7e941dd-cf1c-4856-9cec-8b6d2370c439 through interface offset +0x50, VTable 0x0044B878. That interface VTable has a valid +0x68 entry at 0x0044B8E0, containing thunk pointer 0x0044B7D1. This is a candidate only; no dataflow yet proves [ebp-8] is this interface pointer.
-- The TXMLEmwatType class VMT has executable thunks at +0xB0 (0x0044BA5C) and +0xCC (0x0044BA78). The first five bytes are relative JMP stubs, so trace_td32_procedure at the thunk addresses does not find the implementation procedure.
+- The TXMLEmwatType class VMT slot +0x68 is null (address 0x0044BA14), so the `+0x68` receiver is not this class object through its ordinary class VMT. The bytes at class-VMT-relative addresses +0xB0 (0x0044BA5C) and +0xCC (0x0044BA78) decode as relative-JMP code stubs rather than valid 32-bit VMT function-pointer entries; do not interpret those code bytes as the class's dispatch table. The observed `Invoke` call at +0xB0 is instead consistent with the implemented-interface VTable at 0x0044B878, whose +0xB0 slot is the pointer at 0x0044B928.
 - RTTI also identifies TXMLMethodType (VMT 0x0044BD48, interface offset +0x70, VTable 0x0044BBF8) and TXMLParamType (VMT 0x0044C08C, interface offset +0x50, VTable 0x0044BF5C). Their VMT/interface slot windows are now being traced to test whether TXMLMethodType is the +0xCC receiver and TXMLParamType is the +0x68 receiver.
 
 
