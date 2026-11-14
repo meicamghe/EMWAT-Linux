@@ -259,3 +259,18 @@ Next: validate allowed Origin handling with a safe test page/origin, recover the
 در تحلیل ایستای سرویس، مسیرهای query با کلیدهای `invoke`، `init` و `heartbeat` نیز جداگانه دیده شده‌اند؛ اما پاسخ دقیق heartbeat و بایت‌های پاسخ init هنوز معلوم نیست و نباید پاسخ ساختگی تولید شود.
 
 **گام بعد:** نتیجه CI parser را تأیید کن، سپس parser را به bridge متصل کن تا برای درخواست‌های XML معتبر، ساختار method/params قابل‌استفاده به dispatcher برسد؛ dispatch واقعی `EditWordDocument` را تا وقتی schema پاسخ و چرخه‌ی close به‌قدر کافی روشن نشده، پیاده‌سازی نکن.
+
+
+## Current implementation checkpoint — 2026-11-14 (CI run #20)
+
+**Green:** Python bridge workflow run `43592721635` / commit `2fa217ae83f33b80a7799ede4c75f2cc58b40d76`; 24 tests passed.
+
+Implementation now includes:
+- `bridge.py`: IPv4 loopback-only HTTP server, Host-header validation, required exact Origin allowlist, CORS echo only for the exact allowed Origin, socket timeout, bounded request/response bodies, duplicate Content-Length rejection, no request-body logs and sanitized failures.
+- `protocol.py`: UTF-8 parser for the runtime-confirmed `emwat → method → param` envelope; parameter values remain opaque.
+- `dispatcher.py`: explicit method registry; no dynamic class imports; malformed input 400, unknown method 501, handler failures sanitized.
+- Tests: `test_bridge.py`, `test_protocol.py`, `test_dispatcher.py`.
+
+**Not implemented yet:** heartbeat/init response compatibility, a real `EditWordDocument` handler, Word/LibreOffice document editing, close-time response serialization and Almas Gam end-to-end persistence. The user's confirmed behavior—closing Word is enough for the document to appear in Almas Gam without manually pressing Save—remains the core acceptance criterion.
+
+Next action: continue tracing the exact Word close-time response and the source of `wordBody`/final document payload; separately recover `?heartbeat` and `?init` contracts. Do not invent either response.
