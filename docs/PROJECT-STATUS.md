@@ -1224,3 +1224,5 @@ Added `python/src/emwat_linux/application.py` with `create_bridge_server(...)`. 
 - رشته‌های `Word document file created.`، `word-document`، `ConfigXML data loaded.`، `Word Calling Mode: `، `image/tif`، `base64` و `Result word file content read successfully. try (%d)` وجود دارند و با ایجاد فایل/پردازش محتوای ورودی سازگارند.
 - `0x00457050` تابع `Emwatutils.Finalization` و `0x00454B9C` تابع `Emwatutils.euGetASFileName` است؛ این دو را parser بدنه سند در نظر نمی‌گیریم.
 - Run #90 هنوز قرارداد POST هنگام بستن Word و نحوه اعمال پاسخ در Almas Gam را مشخص نکرده است. گام بعدی: ردیابی مسیر مقصد فایل، stream دوم در `0x004B7C39` و ارتباط فایل تولیدشده با XML پاسخ.
+
+- در ادامه همان تابع، یک `TFileStream` دوم در `0x004B7C3E` با همان مسیر مشتق‌شده و mode برابر صفر ساخته می‌شود؛ سپس اندازه stream گرفته شده و virtual slot `+0x0C` با buffer/count فراخوانی می‌شود. این مسیر با بازکردن مجدد و خواندن فایل سازگار است؛ نام دقیق متد تا resolve شدن slot در RTL قطعی اعلام نمی‌شود.
