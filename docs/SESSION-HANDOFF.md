@@ -355,3 +355,13 @@ The separate Word lifecycle workflow Run #89 is still processing its deep trace 
 - Run #93 به‌دلیل push اصلاحیه workflow لغو شد؛ Run #94 با شناسه 43598550321 روی نسخه اصلاح‌شده در حال اجراست.
 - این run بدنه و ارجاعات `OnTmrAutoSave`، helperهای 0x004CDB54، 0x004C5D68، 0x004D68D4 و 0x004D531C، constructor مربوط به WordViewer و ارجاعات pointer مسیر TIFF/Image را جمع‌آوری می‌کند.
 - پس از پایان Run #94، artifact را با شناسه واقعی از GitHub دریافت و بررسی کن؛ تا آن زمان هیچ نتیجه‌ای درباره Save/Close یا اتصال TIFF به bridge اعلام نشود.
+
+
+## Run 94 — یافته‌های جدید و اصلاح برداشت از OnTmrAutoSave
+
+- Run #94 با شناسه 43598550321 و artifact 14115756587 موفق بود.
+- تابع `TWordViwer.OnTmrAutoSave` در 0x004B8A84 فقط یک نام نماد است؛ caller مستقیم مشاهده‌شده در TD32، `LoadDocument` در 0x004B7A58 است. بدنه در زمان LoadDocument اتصال OLE Word را برقرار می‌کند، حالت‌های view/readonly/protected را می‌خواند، چند callback را ثبت می‌کند و پیام `Init word engine finished.` را ثبت می‌کند. نباید آن را صرفاً عملیات ذخیره خودکار یا close handler دانست.
+- callbackهای ثبت‌شده: 0x004CD154، 0x004CD54C، 0x004CD9C0 و بر اساس flag یکی از 0x004D00AC/0x004CE030. Run #95 برای trace بدنه و callerهای این handlerها ساخته شد.
+- 0x004CDB54 = `TWordViwer.QuitWord`; 0x004C5D68 = `TWordViwer.SetDocCaption`. دو تابع 0x004D68D4 و 0x004D531C متدهای Remove دو Dictionary برای Custom Document Properties هستند و ارتباطی با AutoSave ندارند.
+- Run #95: workflow run id 43599550286؛ commit fc4702dbd4c80ed73ac6bc5edac2b2f8d3a98654؛ وضعیت اولیه queued. پس از پایان، artifact را دریافت و handlerهای ثبت‌شده را بررسی کن.
+- پرسش فنی اصلی همچنان: کدام event واقعی Word باعث ذخیره/جمع‌آوری سند و کدام مسیر داده را به HTTP response می‌سپارد؟ تا زمانی که handlerها و callerهایشان بررسی نشده‌اند، ادعای close-time POST نکن.
