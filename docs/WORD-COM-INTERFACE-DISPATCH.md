@@ -612,6 +612,19 @@ Run 3's VMT/interface dump adds a useful exclusion and candidate:
 
 **Correction to the preliminary enumerator hypothesis:** Invoke also calls 0x0046DE84 and 0x0046E324 while processing the parameter dictionary. The latter is TD32-labelled TDictionary<System.AnsiString,System.AnsiString>.TPairEnumerator.DoGetCurrent, and its two direct calls are separate from the +0x68 dispatch at 0x0046C921. The VMT inspection of TDictionary.TPairEnumerator (VMT 0x0046BEE8) shows DoMoveNext at +0x00 and its constructor at +0x04; the area at +0x68 is RTTI/data, not an executable class virtual slot. Therefore the earlier suggestion that [ebp-8] itself was the TPairEnumerator is withdrawn. Dictionary enumeration is present in the routine, but it does not identify the +0x68 receiver.
 
+
+
+### XML interface VTable mapping (receiver run 84)
+
+The follow-up VTable inspection resolves the dispatch domain of the first call and rules out treating every displacement as a class-VMT slot:
+
+- `TXMLEmwatType` has VMT `0x0044B9AC` and one implemented interface: IID `e7e941dd-cf1c-4856-9cec-8b6d2370c439`, interface offset `0x50`, VTable `0x0044B878`.
+- The first `+0xB0` call in `Invoke` is therefore consistent with the `TXMLEmwatType` interface VTable slot at `0x0044B928`, whose pointer is `0x0044B709`. The same interface's `+0x68` slot is at `0x0044B8E0` and points to thunk `0x0044B7D1`.
+- The `+0xC8` and `+0xCC` addresses are beyond this interface VTable's mapped entries; in the PE they overlap the following interface-table metadata. Therefore the `+0xCC` call at `0x0046C8E6` must be made on the object returned into `[ebp-0x1C]`, not on the original `TXMLEmwatType` interface.
+- `TXMLMethodType` is a separate class at VMT `0x0044BD48`; its implemented interface has IID `55d7b886-a428-4f24-8766-6af7ab8f792d`, interface offset `0x70`, and VTable `0x0044BBF8`. Its `+0x68` and `+0xCC` slots are present at `0x0044BC60` and `0x0044BCC4`, pointing to thunks `0x0044BB51` and `0x0044BA61` respectively.
+
+This makes `TXMLMethodType` a concrete candidate for one of the returned XML interface objects, but does not yet prove that it is the runtime type of `[ebp-0x1C]` or `[ebp-8]`. The next trace must follow the implementation thunks (`0x0044B709`, `0x0044BA61`, and `0x0044BB51`) to their implementation bodies and correlate their return values with the out parameters in `Invoke`.
+
 A second, distinct +0x68 dispatch exists in the shared base wrapper at 0x0046CBB7 (TD32 range 0x0046C9E0–0x0046CDF7). It uses a different local receiver [ebp-4], created in the exception/response path. Do not assume the two +0x68 calls share an interface or class type.
 
 The focused receiver workflow adds the TXMLEmwatType class VMT window and its implemented-interface VTable window around offsets +0x68, +0xB0, and +0xCC, plus a trace of helper 0x0044B468. These will determine whether the +0xB0 call belongs to the class VMT and help identify the XML child/interface returned into [ebp-8].
