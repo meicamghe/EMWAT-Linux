@@ -715,3 +715,18 @@ See [WORD-COM-INTERFACE-DISPATCH.md](WORD-COM-INTERFACE-DISPATCH.md) for instruc
 The full TD32 signature for `TWordViwer.FillPrintDocFields` at `0x004CB638` resolves the list element type. It accepts `Wordxp._Document` and produces `DynamicArray<DelphiInterface<Wordxp.Fields>>`. `GetFieldIndexInList` then iterates that array and passes each `Wordxp.Fields` element to `FillImgFldsForPrint`; the nested `0x004CCBBC` helper receives the same interface through its static link.
 
 The next step is now narrow and type-directed: enumerate the Word wrapper VMT/RTTI for `TWordFields`, `TWordField`, and `TWordDocument`, map `Wordxp.Fields` slots `+0x28` and `+0x38`, and independently find the actual close-event registration and invoke/response path.
+
+
+### Run 33 — WordXP interface GUIDها و عملیات collection
+
+اسکن RTTI رابط‌ها در artifact شماره 33 این IIDها را از خود BPL استخراج کرد:
+- `Wordxp.Fields`: `00020930-0000-0000-C000-000000000046`
+- `Wordxp.Field`: `0002092F-0000-0000-C000-000000000046`
+- `Wordxp._Document`: `0002096B-0000-0000-C000-000000000046`
+- `Wordxp.Tables`: `0002094D-0000-0000-C000-000000000046`
+
+GUIDهای `Fields` و `Field` با هویت interfaceهای Word در مستندات Microsoft Learn تطبیق دارند. در مسیر بررسی‌شده، slot `+0x28` روی `Wordxp.Fields` با الگوی getter تعداد و مصرف مقدار به‌عنوان loop bound، به‌احتمال بسیار زیاد `Fields.Count` است. slot `+0x38` با دریافت index و خروجی interface، به‌احتمال بسیار زیاد `Fields.Item(index)` است که یک `Wordxp.Field` برمی‌گرداند. این نام‌گذاری‌ها inference با اطمینان بالا هستند؛ نوع receiver و IID از RTTI اثبات شده‌اند، اما declaration کامل vtable هنوز استخراج نشده است.
+
+Run 33 همچنین تنها caller مستقیم TD32-bounded برای `GetFieldIndexInList` را در `TWordViwer.BGPrintWithGamPrintOptions` در `0x004C6F3F` یافت. بنابراین زنجیرهٔ `BGPrintWithGamPrintOptions → GetFieldIndexInList → FillPrintDocFields → Wordxp.Fields → FillImgFldsForPrint → nested helper` در مسیر پردازش فیلدهای چاپ قرار دارد. این یافته نام TD32 تابع `WordAppDocumentBeforeClose` را به‌تنهایی برای اثبات ثبت آن به‌عنوان event واقعی Close ناکافی می‌کند.
+
+منابع عمومی تطبیق IID و معنای collection: [Microsoft Learn — Fields](https://learn.microsoft.com/en-us/dotnet/api/microsoft.office.interop.word.fields?view=word-pia)، [Microsoft Learn — Field](https://learn.microsoft.com/en-us/dotnet/api/microsoft.office.interop.word.field?view=word-pia).
