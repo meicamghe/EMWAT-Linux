@@ -251,13 +251,11 @@ The registered `0x004CD154` callback is the main `TWordViwer.WordAppDocumentBefo
 - `Save msgBox triggered. result: %d`
 - `Document.OnBeforeClose succeed.`
 
-The prompt presents Yes/No/Cancel choices. The code handles Cancel by setting the callback's `Cancel` word to `0xFFFF` and returning. For Yes it initializes the first OleVariant argument to `-1`; for No it initializes it to `0`. It then calls the active `Wordxp._Document` interface at slot `+0x29C` with three OleVariant arguments. The BPL export table identifies the three-argument wrapper as `TWordDocument.Close` at `0x00430070`, which dispatches the same interface slot `+0x29C`. Thus this is the explicit `Close(SaveChanges, OriginalFormat, RouteDocument)` overload path; the first argument carries the Yes/No save decision.
-
-The no-argument `TWordDocument.Close` wrapper is separately exported at `0x0042FF08` and dispatches slot `+0x4D4`. One- and two-OleVariant `Close` wrappers at `0x0042FF7C` and `0x0042FFF4` also dispatch slot `+0x29C`. Do not conflate these with the old `0x0042FEB0` address, which exports `Set_FormattingShowFilter`.
+The close handler first calls `TWordViwer.RollBackOriginalOptions` at `0x004CB108`, then reads state from the active Word document and prompts. Cancel sets the callback's `Cancel` word to `0xFFFF`. For Yes it initializes the first OleVariant argument to `-1`; for No it initializes it to `0`. It then calls the active `Wordxp._Document` interface at slot `+0x29C` with three OleVariant arguments. The BPL export table identifies the three-argument wrapper as `TWordDocument.Close` at `0x00430070`, which dispatches the same interface slot `+0x29C`. Thus this is the explicit `Close(SaveChanges, OriginalFormat, RouteDocument)` overload path; the first argument carries the Yes/No save decision. The callback also calls a `_Document` interface slot `+0xD8`; its exact property/method name remains to be mapped.
 
 The similarly named routine at `0x004CCBBC` remains a different nested helper called from `FillImgFldsForPrint`; it is not the registered close callback. A separate `uSendLog.TfrmShowAutoSaveFiles.WordAppDocumentBeforeClose` at `0x005EC589` belongs to the autosave-preview form and is unrelated to the main letter editor's callback.
 
-The close callback currently has no direct HTTP request call in its body. It prompts and invokes Word's Close overload. The next trace must follow its called viewer helpers and the BeforeSave callback to determine how the final content reaches the browser/service.
+The registered BeforeSave callback at `0x004CD54C` logs `Document.OnBeforeSave called.`, checks the `view`/permission state, dispatches `Wordxp._Document` slot `+0x2BC` (mapped to `PrintOutOld()`), and calls `TWordViwer.SetDocCaption` at `0x004C5E04`. The close callback itself has no direct HTTP request call in its body. It prompts and invokes Word's Close overload; the next trace must follow its viewer helpers and the BeforeSave path to determine how the final content reaches the browser/service.
 
 
 
