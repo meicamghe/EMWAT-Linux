@@ -805,3 +805,14 @@ Run `43232846364` با موفقیت کامل (148/148 مرحله) پایان ی�
 - نتیجهٔ Boolean هر lookup در state/flagهای viewer اعمال می‌شود. بنابراین `GetDocFieldName → GetDocFieldIndex` یک مسیر مشخص برای تطبیق نام فیلدهای config با فیلدهای واقعی Word است.
 - اسکن direct CALL برای `GetDocFieldName` هیچ caller مستقیمی در procedureهای TD32-bounded پیدا نکرد؛ ورود از VMT/property/indirect path یا legacy code هنوز ممکن است.
 - **گام بعد:** ادامهٔ بررسی close callback دوم `uSendLog` و wrapperهای `TWordDocument.Close`؛ همچنین تعیین entry path تابع `GetDocFieldName` و اتصال field config به invoke/response.
+
+
+### Run 54–55 — callback مربوط به فرم autosave و wrapperهای Close (2026-11-14)
+
+- Run 54 و 55 با موفقیت پایان یافتند.
+- `uSendLog.TfrmShowAutoSaveFiles.WordAppDocumentBeforeClose` در `0x005EC580` فقط ۱۸ بایت است: مقدار word در `[ecx]` را با `0x2E` مقایسه می‌کند و در صورت تطبیق `CloseWordApp` را در `0x005EBDA8` صدا می‌زند.
+- `CloseWordApp` دو caller مستقیم دارد: `btnShowFileClick` و همین callback. این تابع مجموعهٔ documentهای فرم autosave را پیمایش می‌کند و سپس یک متد در slot `+0x104` روی object application-like صدا می‌زند. نوع دقیق interface هنوز نیاز به نگاشت دارد.
+- raw pointer scan برای `0x005EC580` دو occurrence در `.text` پیدا کرد (`0x005EB524` و `0x005EB607`)؛ resource scan فرم `TFRMSHOWAUTOSAVEFILES` در workflow بعدی برای اثبات event binding اجرا می‌شود.
+- wrapperهای WordXP: `TWordDocument.Close()` بدون آرگومان slot `+0x4D4` را صدا می‌زند؛ overloadهای ۱، ۲ و ۳ `OleVariant` به‌ترتیب slot `+0x29C` را؛ `ClosePrintPreview` slot `+0x36C` را. caller مستقیم برای wrapper بدون آرگومان پیدا نشد.
+- `WordCompareCommandUnit.CloseMyDoc` با وجود نامش slot `+0x2BC` را صدا می‌زند که از positive control قبلی به `_Document.PrintOutOld()` نگاشت شده است؛ این مسیر close واقعی نیست.
+- **طبقه‌بندی فعلی:** handler دوم یک close-related event واقعی برای UI فایل‌های autosave است، اما هنوز callback اصلی نامه نیست. `0x004CCBBC` نیز helper داخلی مسیر print/field است. مسیر POST اصلی هنگام بستن نامه همچنان نامشخص است.
