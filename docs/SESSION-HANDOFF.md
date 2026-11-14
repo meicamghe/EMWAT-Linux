@@ -305,3 +305,10 @@ The separate Word lifecycle workflow Run #89 is still processing its deep trace 
 - After those two calls, LoadDocument uses Delphi runtime/import thunks at 0x004012F8, 0x00401270, and 0x004012E0; these jump through the import table to external runtime addresses not mapped in the BPL. The code then constructs an object using global 0x0062F800 and constructor helper 0x004041BC, and calls its virtual slot +0x10 with the computed data pointer and length. The destination class and whether this represents a stream/file writer are not yet established.
 - Do not describe wordBody as raw body bytes or a known file path yet. The parameter is handled as a Delphi UnicodeString, transformed by the filename helper, then a length/data pair is passed to an as-yet-unidentified object.
 - Run #90 (43595049501) has been queued to decode LoadDocument string constants, inspect global 0x0062F800, trace constructor 0x004041BC, and expand the entry procedure.
+
+
+## Run 89 supplement — DocFileName evidence
+
+- The LoadDocument string constants include the exact error text `DocFileName can not be null.` at 0x004B8238. In the LoadDocument control flow, the transformed local string is checked for zero length immediately before this error path. This is strong evidence that the LoadDocument argument is being treated as a document filename, not simply as arbitrary document-body bytes.
+- The same routine contains the strings `word-document`, `ConfigXML data loaded.`, and `Word Calling Mode: `, indicating logging/configuration activity around document loading. The strings `.doc` and `.docx` are present in the filename validation/normalization helper path. Their exact branch semantics are not yet established.
+- Update the working interpretation: outer connector key `wordBody` is passed into LoadDocument, but inside LoadDocument it is validated/processed as a DocFileName-like UnicodeString. Do not assume the key name accurately describes its runtime value type.
