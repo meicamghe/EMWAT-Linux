@@ -65,7 +65,7 @@ def main():
         found = set()
         patterns = [
             ("ASCII", re.compile(rb"[ -~]{4,}")),
-            ("UTF-16LE", re.compile(rb"(?:[ -~]\\x00){4,}")),
+            ("UTF-16LE", re.compile(rb"(?:[ -~]\x00){4,}")),
         ]
         for encoding, rx in patterns:
             for m in rx.finditer(blob):
