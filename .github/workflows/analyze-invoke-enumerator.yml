@@ -54,6 +54,22 @@ jobs:
           python tools/inspect_pe_va.py analysis-input/EmwatMethods.bpl1 0x0044BC60 --before 0 --after 0x10 > invoke-enumerator-analysis/TXMLMethodType-interface-slot-68.md
           python tools/inspect_pe_va.py analysis-input/EmwatMethods.bpl1 0x0044BCA8 --before 0 --after 0x30 > invoke-enumerator-analysis/TXMLMethodType-interface-slots-B0-through-CC.md
           python tools/inspect_pe_va.py analysis-input/EmwatMethods.bpl1 0x0044BA5C --before 0 --after 0x70 > invoke-enumerator-analysis/TXMLEmwatType-class-vmt-near-B0.md
+          python tools/inspect_delphi_vmt_address.py analysis-input/EmwatMethods.bpl1 0x0044BD48 invoke-enumerator-analysis/TXMLMethodType-vmt.md
+          python tools/inspect_delphi_vmt_address.py analysis-input/EmwatMethods.bpl1 0x0044C08C invoke-enumerator-analysis/TXMLParamType-vmt.md
+          python tools/inspect_pe_va.py analysis-input/EmwatMethods.bpl1 0x0044BDB0 --before 0 --after 0x90 > invoke-enumerator-analysis/TXMLMethodType-class-slots-68-through-CC.md
+          python tools/inspect_pe_va.py analysis-input/EmwatMethods.bpl1 0x0044C0F4 --before 0 --after 0x90 > invoke-enumerator-analysis/TXMLParamType-class-slots-68-through-CC.md
+          python tools/inspect_pe_va.py analysis-input/EmwatMethods.bpl1 0x0044BFC4 --before 0 --after 0x90 > invoke-enumerator-analysis/TXMLParamType-interface-slots-68-through-CC.md
+          python tools/inspect_pe_va.py analysis-input/EmwatMethods.bpl1 0x0044C00C --before 0 --after 0x30 > invoke-enumerator-analysis/TXMLParamType-interface-slots-B0-through-CC.md
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x0044BA5C invoke-enumerator-analysis/TXMLEmwatType-class-slot-B0.md 120 ret
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x0044BA78 invoke-enumerator-analysis/TXMLEmwatType-class-slot-CC.md 120 ret
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x0044BDF8 invoke-enumerator-analysis/TXMLMethodType-class-slot-B0.md 120 ret
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x0044BE14 invoke-enumerator-analysis/TXMLMethodType-class-slot-CC.md 120 ret
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x0044C13C invoke-enumerator-analysis/TXMLParamType-class-slot-B0.md 120 ret
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x0044C158 invoke-enumerator-analysis/TXMLParamType-class-slot-CC.md 120 ret
+          python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x0044BC60 0x0044BC78 invoke-enumerator-analysis/TXMLMethodType-interface-slot-68-code.md
+          python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x0044BCA8 0x0044BCD0 invoke-enumerator-analysis/TXMLMethodType-interface-slots-B0-CC-code.md
+          python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x0044BFC4 0x0044BFDC invoke-enumerator-analysis/TXMLParamType-interface-slot-68-code.md
+          python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x0044C00C 0x0044C034 invoke-enumerator-analysis/TXMLParamType-interface-slots-B0-CC-code.md
       - uses: actions/upload-artifact@v4
         with:
           name: emwat-invoke-receiver-analysis
