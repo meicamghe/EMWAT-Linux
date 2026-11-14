@@ -501,6 +501,11 @@ jobs:
           python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x004CCCC0 0x004CCD59 word-lifecycle-analysis/BeforeClose-helper-return-run99.md
           python tools/trace_delphi_interfaces.py analysis-input/EmwatMethods.bpl1 word-lifecycle-analysis/Delphi-interfaces-run99.md
           python tools/scan_named_pe_resource.py analysis-input/EmwatMethods.bpl1 word-lifecycle-analysis/Word-close-named-resources-run99.md
+      - name: Decode QuitWord and teardown literals
+        run: |
+          mkdir -p word-lifecycle-analysis
+          python tools/decode_pe_strings.py analysis-input/EmwatMethods.bpl1 0x004CD154 0x004CD54C 0x004CD9C0 0x004CE030 0x004D00AC 0x004BCA88 0x004CDB54 0x004C5D68 > word-lifecycle-analysis/Word-close-chain-strings-run98.md
+          python tools/decode_pe_strings.py analysis-input/EmwatMethods.bpl1 0x004CDC14 0x004BA438 0x004BA4B4 0x004BA4CC 0x004BA508 0x004BA5EC > word-lifecycle-analysis/QuitWord-and-teardown-literals-run99.md
       - uses: actions/upload-artifact@v4
         with:
           name: emwat-word-lifecycle-analysis
