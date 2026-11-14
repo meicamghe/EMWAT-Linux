@@ -10,6 +10,7 @@ on:
       - 'tools/resolve_delphi_vmt_slots.py'
       - 'tools/trace_field_accesses.py'
       - 'tools/trace_td32_immediate_refs.py'
+      - 'tools/trace_delphi_interfaces.py'
       - 'tools/trace_td32_procedure.py'
 permissions:
   contents: read
@@ -69,6 +70,8 @@ jobs:
           python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x004CB5E4 word-lifecycle-analysis/FillImgFldsForPrint-field-lookup.md
           python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x004BC170 word-lifecycle-analysis/FillImgFldsForPrint-field-match.md
           python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x004C0690 word-lifecycle-analysis/GetDocFieldIndex-full.md
+          python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x004C6F3F word-lifecycle-analysis/BGPrintWithGamPrintOptions-full.md
+          python tools/trace_delphi_interfaces.py analysis-input/EmwatMethods.bpl1 word-lifecycle-analysis/Word-interface-tables.md
           python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004CD154 word-lifecycle-analysis/BeforeSave-extended.md 320 ret
           python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004CD54C word-lifecycle-analysis/WordAppNewDocument-4CD54C.md 420 ret
           python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004CD54C word-lifecycle-analysis/Callers-4CD54C.md
