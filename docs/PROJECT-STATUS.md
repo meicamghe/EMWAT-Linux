@@ -1264,3 +1264,11 @@ Added `python/src/emwat_linux/application.py` with `create_bridge_server(...)`. 
 - `WordAppDocumentBeforeClose` at `0x004CCBBC` remains unproven as an active editor close callback; its only direct caller found is `FillImgFldsForPrint`.
 - No close-time HTTP request/response or final document-return payload was established. Do not implement guessed protocol behavior.
 - User-confirmed product requirement: closing Word is sufficient for the edited file to appear in Almas Gam; the native implementation must preserve this behavior using a verified LibreOffice lifecycle path.
+
+
+### Run 96 — callback record layout
+
+- Analysis run `43600693760` succeeded; artifact `14116641628` inspected.
+- In `OnTmrAutoSave`, a Word-related object at `viewer + 0x44` receives callback/context pairs: `(+0x80,+0x84) → WordAppDocumentBeforeSave`, `(+0x90,+0x94) → WordAppNewDocument`, `(+0x98,+0x9C) → WordAppWindowActivate`, and `(+0x88,+0x8C) → LoadOptions or WordAppDocumentBeforePrintBGPrint`.
+- The fourth callback selection tests `[viewer + 0x3C]`; later code can assign the same pair again. Exact event dispatch ABI is not yet resolved.
+- Helpers identified: `0x0043F360` = Get_ScreenUpdating; `0x00440950` = Get_DisplayAutoCompleteTips; `0x00441C68` = WordApplication.Quit. No close-time payload/POST found.
