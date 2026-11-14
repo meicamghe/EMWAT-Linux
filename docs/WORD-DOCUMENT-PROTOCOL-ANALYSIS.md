@@ -853,3 +853,14 @@ Run 26 (43584217243, artifact 14109926135) completed successfully and supersedes
 - 0x004CB108 is PreparePrintDocument; 0x00430070 is SaveAs2000, not Close.
 
 This correction is explicit because the earlier paragraph above misidentified the registered callback. The relationship between BeforeSave, user-initiated document close, and the web page's close-time POST remains unresolved. The user's observed behavior that changes apply on close even without Save remains a product requirement. Next: resolve the COM target behind +0x29C and trace the parent page's postMessage handler and localhost POST body/response. Do not claim native Linux runtime support from this analysis.
+
+
+## Run 29 — field lookup / temporary cleanup correction (2026-11-14)
+
+Run 29 (`43589571290`, artifact `14111108881`) completed successfully and narrows two previously over-interpreted candidate paths:
+
+1. `TWordViwer.GetDocFieldName` (`0x004BB81C–0x004BC16F`) calls `SilentSaveEmwatDoc` (`0x004D23D8`) only when a field-name value returned through interface slot `+0xAC` fails a comparison against a static string. This is a conditional fallback during field-name resolution. It is not evidence of a close event or a close-time HTTP request.
+2. The previously traced SilentSave callees are print-options routines: `0x004AEA78` is `TfrmWordPrintOption.SetLetterReceivers`; `0x004AEBBC` is `TfrmWordPrintOption.FreePrinters`. Do not describe them as generic save/close helpers.
+3. `DeleteTempRAW` (`0x0044AE98–0x0044B053`) calls `Emwat.Sys.CloseAllWords` at `0x0044B01C` after its temporary-file/process checks. The `CloseAllWords` body composes four strings and calls `0x0044B0F8`; TD32 identifies that target as `Emwat.Sys.GetFileVersion`. The evidence therefore does not prove that `CloseAllWords` actually closes Word processes. Its only direct caller found is the RAW cleanup path, not the main letter connector.
+
+No close-time POST trigger, response correlation, or final document-application behavior was recovered in this run. Keep the user's tested apply-on-close behavior as a product requirement, not a claim explained by this static trace. The server-side `EditWordDocument → LoadDocument → AResponseInfo.ContentText → WriteContent` path remains confirmed; the page-side `postMessage` sender and close-time response consumer remain the decisive unresolved targets.
