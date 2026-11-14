@@ -1185,3 +1185,10 @@ Tests: `python/tests/test_protocol.py`. CI verification is pending at the time o
 - **CI:** `Python bridge transport` run #20, run ID `43592721635`, commit `2fa217ae83f33b80a7799ede4c75f2cc58b40d76`, conclusion **success**. 24 tests passed across transport, parser and dispatcher.
 
 Next: recover exact heartbeat/init responses and remaining Word response schema; implement a real `EditWordDocument` adapter only after close-time document content and response semantics are understood. Keep the legacy apply-on-close behavior as a mandatory acceptance test.
+
+
+### Strict HTTP framing — verified in CI run #22
+
+The bridge now additionally rejects Host headers containing path/query/fragment components and validates Content-Length as one ASCII decimal value. Transfer-Encoding is rejected before body framing is considered. Tests were added for Host path injection, duplicate Content-Length and non-decimal Content-Length.
+
+**CI:** `Python bridge transport` run #22 (`43593083176`), commit `22a803912b0fa92c3bb5537fb1f0c7952fda7615`, **success**; 27 tests passed.
