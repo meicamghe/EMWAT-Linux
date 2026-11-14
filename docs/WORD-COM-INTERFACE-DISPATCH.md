@@ -394,3 +394,15 @@ The lifecycle workflow now traces these typed procedures and the `TWordDocument.
 The symbol inventory located `Wordxp.TWordDocument.Get_Fields` in module `EmwatConsts`; the complete procedure is at VA `0x0042B55C`. Its body calls the existing `TWordDocument` interface accessor `0x0042ABA0`, then dispatches slot `+0x80` on the returned interface. This is a typed wrapper positive control for the `Get_Fields` property on the wrapper's underlying Word document interface.
 
 The direct-call scan found no immediate CALL xrefs to `0x0042B55C`; this wrapper may be reached through a VMT/property path or may be unused in the analyzed call paths. Importantly, this wrapper's `+0x80` dispatch does **not** identify the separate `+0x12C` dispatch in `FillPrintDocFields`. The latter has multiple output arguments and its method identity remains unresolved. Do not describe `FillPrintDocFields`'s `+0x12C` call as the proven `Get_Fields` getter until the interface method signature is mapped.
+
+
+## Typed field-helper caller graph (lifecycle run 43)
+
+Direct TD32 call-site scans established these caller relationships:
+
+- `FillImageField` (`0x004BC30C`) has two direct calls, both from `FillTextField` at `0x004BC9CB` and `0x004BCA10`. Each call uses `push ebp` as a nested-procedure static link. Thus image-field processing is a nested branch of the text-field routine, not an independently called top-level operation in the scanned direct-call graph.
+- `FillMSWFields` (`0x004C009C`) has four direct calls: three from `GetDocFieldIndex` and one from `GetCaptionItemFont`.
+- `AddImagesToDoc` (`0x004C0410`) has one direct caller: `GetDocFieldIndex` at `0x004C0A5D`.
+- `FillField` (`0x004BC2C4`) and `TWordDocument.Get_Fields` (`0x0042B55C`) have no direct immediate CALL xrefs in TD32-bounded procedures. Indirect/VMT/property access remains outside this scan.
+
+This makes `GetDocFieldIndex` a central field-processing routine: it iterates a Word collection, calls `FillMSWFields` for selected entries and conditionally calls `AddImagesToDoc`; the text-field routine separately dispatches into its nested image-field helper. The exact `Wordxp.Field` property names used by `FillImageField` remain unresolved; its typed body uses slots `+0x40`, `+0x38`, and `+0x20` on interface receivers. Lifecycle run 46 adds a complete trace of the parent `FillTextField` procedure and caller scans for `GetDocFieldIndex`.
