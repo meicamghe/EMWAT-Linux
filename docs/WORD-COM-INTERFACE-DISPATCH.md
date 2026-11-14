@@ -688,3 +688,10 @@ Focused run 17 (`43574768657`, artifact `14106455607`) adds two useful constrain
 - `0x00401430` is another thunk through IAT slot `0x0062EC40`; the prior target trace only resolved the slot to an address outside the BPL image. Its actual imported symbol is pending a dedicated import-table lookup. It is called with `EAX=ESI`, `EDX=[EBP-4]`, and `ECX=0x0044C4FC`.
 
 The constructor's remaining side effect is therefore unresolved. Run 18 adds an exact import-slot lookup and byte-context dump before any semantic conclusion is made.
+ 
+
+## Constructor import-slot correction (focused run 19)
+
+Focused run 19 (`43575191082`, artifact `14106206890`) performed the exact import-descriptor lookup for `0x0062EC40`. The address is in the `.idata` section, but **no parsed import descriptor entry has this exact IAT address**; the on-disk DWORD is `0x00231274`, which may be unresolved or relocated. Thus the previous description “IAT thunk” is only an observed indirect jump through that slot, not proof that the slot is a normal imported symbol. Its semantic identity remains unknown. The constant at `0x0044C4FC` contains bytes matching the `TXMLMethodType` IID layout, but this alone does not prove the called helper's contract. Do not label it QueryInterface or infer an XML field.
+
+Run 20 adds a direct probe of `TXMLParamType.AfterConstruction` at the class VMT `+0x0C` slot (`0x0044B4F8`) to identify the actual parameter element tag from its constructor behavior.
