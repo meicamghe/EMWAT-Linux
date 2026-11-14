@@ -98,6 +98,10 @@ jobs:
           python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x0044C754 invoke-enumerator-analysis/TXMLMethodType-interface-CC-implementation-callers.md
           python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x0044BA59 invoke-enumerator-analysis/TXMLMethodType-interface-C8-thunk.md 48 ret
           python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x0044BA59 0x0044BA69 invoke-enumerator-analysis/TXMLMethodType-interface-C8-CC-thunks.md
+          python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x0044C62C invoke-enumerator-analysis/TXMLMethodType-interface-C8-implementation.md
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x0044C62C invoke-enumerator-analysis/TXMLMethodType-interface-C8-implementation-body.md 160 ret
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x0044C62C invoke-enumerator-analysis/TXMLMethodType-interface-C8-implementation-callers.md
+          python tools/inspect_pe_va.py analysis-input/EmwatMethods.bpl1 0x0044B8CC --before 0 --after 0x10 > invoke-enumerator-analysis/TXMLEmwatType-interface-slot-54.md
           python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x0044B568 invoke-enumerator-analysis/XML-interface-slot-68-shared-implementation.md
           python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x0044B568 invoke-enumerator-analysis/XML-interface-slot-68-shared-implementation-callers.md
       - uses: actions/upload-artifact@v4
