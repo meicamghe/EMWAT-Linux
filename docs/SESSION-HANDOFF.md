@@ -102,3 +102,8 @@ Run 17 (`43574768657`, artifact `14106455607`) confirms `0x0044B4D8` is `xmlrtl2
 ## Constructor import lookup correction — run 19
 
 Run 19 (`43575191082`, artifact `14106206890`) finds no import-descriptor entry for slot `0x0062EC40`, despite the slot residing in `.idata`; the on-disk DWORD is `0x00231274`. Treat the indirect jump as an unresolved external/relocated dispatch, not as a named imported routine. The constant at `0x0044C4FC` resembles the `TXMLMethodType` IID bytes but its use is not proven. Next, inspect `TXMLParamType.AfterConstruction` at `0x0044B4F8` (VMT `+0x0C`) to identify the parameter XML element tag. Preserve the existing confirmed mapping: method element + `class` attribute; parameter key in `name`, value in text; serializer getter calls `TXMLNode.GetXML`.
+ 
+
+## Parameter element constructor probe — run 20
+
+Run 20 (`43576636790`, artifact `14106479073`) corrected a bad VMT assumption: `0x0044B4F8` (`TXMLParamType` VMT `+0x0C`) is an import-style jump thunk via `0x006302B4` to the out-of-image address `0x0024060C`, not a TD32 procedure. Do not use it as `AfterConstruction` or infer the XML tag. The new `tools/find_td32_class_procedures.py` indexes TD32 decorated symbols by class name. Next: inspect its output for actual `TXMLParamType` procedures, trace the constructor candidate and its string references, then update the protocol docs only if the element tag is explicit.
