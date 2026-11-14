@@ -1064,3 +1064,15 @@ Focused run 11 (`43571811038`, artifact `14105075475`) closes the key/value sett
 - Pair value → XML node text: interface thunk `0x0044BEB5` reaches `0x0044B568`, the `xmlrtl230.bpl!TXMLNode.SetText(UnicodeString)` import thunk.
 
 This is statically confirmed parameter-node structure, not yet runtime-confirmed end-to-end request XML. Next: resolve the method object's `+0xC8` attribute literal (likely the method/class discriminator based on service parser schema, but do not assume until decoded), and map `TXMLEmwatType` interface slot `+0x54` to the actual XML serialization getter. Then compare complete request/response XML with runtime captures.
+
+## Invoke XML method envelope and serializer — confirmed (2026-11-14)
+
+Focused run 16 (`43573798242`, artifact `14105735885`) maps the XML serialization getter and method-name attribute:
+
+- `TXMLEmwatType` interface slot `+0x54` points to thunk `0x0044B7A9`, which adjusts `Self` by `-0x50` and jumps to `0x0044B590`.
+- `0x0044B590` is the IAT thunk for `xmlrtl230.bpl!TXMLNode.GetXML`; this is the getter used to serialize the constructed XML node tree into Invoke's output string.
+- `TXMLMethodType` implementation `0x0044C62C` calls `TXMLNode.SetAttribute` with literal `class` and the incoming method name.
+- `TXMLMethodType.AfterConstruction` (`0x0044C458`) passes literal `method` into the XML element setup path. It also calls helper `0x00401430` with constant pointer `0x0044C4FC`; the second constant's semantic role remains pending.
+- `TXMLMethodType.Insert` appends each parameter child. Every child node receives `name=` dictionary key and text equal to dictionary value, as confirmed in focused run 11.
+
+The proven structure is therefore a `method` element with `class=` method-name and parameter children with `name` attributes and text values; `TXMLNode.GetXML` returns the serialized XML string. This remains static-analysis evidence; complete document envelope/encoding and runtime request capture comparison are still open.
