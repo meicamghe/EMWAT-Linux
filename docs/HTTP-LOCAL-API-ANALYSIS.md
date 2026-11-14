@@ -238,3 +238,12 @@ The bridge script evidence remains unchanged: each window message is POSTed with
 بسته اولیه `python/src/emwat_linux/bridge.py` یک HTTP server محدود به loopback فراهم می‌کند. بدنه POST را opaque نگه می‌دارد، query string را بدون تفسیر به handler می‌دهد، سقف اندازه دارد، Origin را در صورت وجود فقط از allowlist دقیق می‌پذیرد و خطای داخلی را بدون جزئیات به کلاینت برمی‌گرداند. `/healthz` برای سلامت سرویس است. تست‌های `python/tests/test_bridge.py` و workflow مستقل `Python bridge transport` اضافه شده‌اند.
 
 این لایه هنوز پروتکل XML را parse نمی‌کند و endpoint واقعی سازگار با الماس گام محسوب نمی‌شود. علت: تگ فرزند پارامتر XML و قرارداد کامل پاسخ close هنوز اثبات نشده‌اند. بدنه درخواست و response باید تا زمان کشف schema به‌صورت bytes خام حفظ شوند. قبل از اعلام این milestone به‌عنوان موفق، نتیجه CI بررسی شود.
+
+
+## تکمیل لایه انتقال HTTP بومی — نتیجه CI (2026-11-14)
+
+Workflow مستقل `Python bridge transport` با شناسه `43592145701` روی commit `c705ed34ad9a9e87b42d7e2d85d3aa60aea83815` با موفقیت تمام شد. هفت تست خودکار، bind محدود به loopback، health endpoint، حفظ بدنه و query درخواست، رد Origin غیرمجاز، CORS دقیق برای Origin مجاز، محدودیت اندازه، رد مسیر/متد نامعتبر و پاک‌سازی خطای handler را بررسی کردند.
+
+در پاسخ به درخواست‌های دارای Origin مجاز، مقدار `Access-Control-Allow-Origin` دقیقاً همان Origin پیکربندی‌شده است و wildcard استفاده نمی‌شود؛ این برای خواندن پاسخ XHR از صفحه مرورگر لازم است. Origin واقعی سامانه الماس هنوز باید هنگام integration به‌صورت صریح پیکربندی و آزمایش شود. دو شکست اولیه CI ناشی از وابستگی غیرضروری setuptools در workflow و کوچک‌بودن سقف fixture تست بود که اصلاح شدند.
+
+این نتیجه فقط صحت لایه انتقال را تأیید می‌کند؛ هنوز سازگاری XML، گردش‌کار Word/LibreOffice یا ثبت انتها‌به‌انتهای نامه در الماس گام تأیید نشده است.
