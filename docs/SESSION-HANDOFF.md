@@ -107,3 +107,11 @@ Run 19 (`43575191082`, artifact `14106206890`) finds no import-descriptor entry 
 ## Parameter element constructor probe — run 20
 
 Run 20 (`43576636790`, artifact `14106479073`) corrected a bad VMT assumption: `0x0044B4F8` (`TXMLParamType` VMT `+0x0C`) is an import-style jump thunk via `0x006302B4` to the out-of-image address `0x0024060C`, not a TD32 procedure. Do not use it as `AfterConstruction` or infer the XML tag. The new `tools/find_td32_class_procedures.py` indexes TD32 decorated symbols by class name. Next: inspect its output for actual `TXMLParamType` procedures, trace the constructor candidate and its string references, then update the protocol docs only if the element tag is explicit.
+
+## XML constructor comparison checkpoint — run 22
+
+Run 22 (`43578292246`, artifact `14106852706`) completed successfully. It found a TD32 `TXMLParamType.AfterConstruction` procedure at `0x00614EC8` in the separate `WordRequestXML` module only. That constructor calls `0x0044B4D8` (`xmlrtl230.bpl!TXMLNode.GetChildNodes`) and then unresolved helper `0x00401430` with binary GUID-like constant `0x00614F2C`, not a text tag. The generic Invoke path's XmlResponse module has no own `TXMLParamType.AfterConstruction` symbol in the indexed procedures. The XmlResponse VMT parent pointers `0x00630314` and `0x0063030C` are outside the BPL image and have not been named.
+
+Do not claim the parameter element tag is known. Do not copy the WordRequestXML constructor semantics into XmlResponse. The method/parameter field mapping and GetXML serializer remain statically confirmed; the complete envelope and wire bytes remain unknown.
+
+**Resume here:** resolve the external parent VMT/class references or find the actual XmlResponse parameter initialization path; then prioritize tracing the parent-page message that triggers the close-time POST. Avoid repeating the already-completed TD32 symbol index. Keep image/scanner workflows in scope.
