@@ -606,7 +606,7 @@ Artifact اجرای موفق run `43500518664` با شناسه `14073787351` ب�
 - trace خطی تابع `OnTmrAutoSave` نیز در ناحیه‌ای شامل داده/بخش‌های exception به انتهای disassembly معتبر نرسیده است؛ بنابراین پایان واقعی تابع و همه branchها هنوز استخراج نشده‌اند.
 - توابع helper `0x00440950`، `0x00440A68` و `0x00441C68` wrapperهای کوتاه برای فراخوانی interface method در offsetهای `+0x174`، `+0x180` و `+0x1E0` هستند؛ معنای دقیق این slotها بدون resolve کردن interface/VMT مشخص نیست.
 
-این مسیر `+0x38 → GetXmlFieldInfo` در آدرس `0x004CCBBC` اکنون helper داخلی پردازش فیلدهای تصویر/چاپ شناخته می‌شود، نه event واقعی Close. callback ثبت‌شدهٔ Close در آدرس `0x004CD154` است و در event record در offset `+0x80` قرار می‌گیرد. این callback وضعیت `Document.Saved` را از slot `+0xD8` می‌خواند، پیام Yes/No/Cancel نشان می‌دهد و از slot `+0x29C` برای Close استفاده می‌کند. درخواست runtime `invoke=5208` همچنان باید از پیام parent-page به bridge تا POST دنبال شود.
+این مسیر `+0x38 → GetXmlFieldInfo` در آدرس `0x004CCBBC` در تحلیل run 26 به‌عنوان helper فیلدهای تصویر/چاپ با یک caller مستقیم (`FillImgFldsForPrint`) شناسایی شد؛ نقش آن به‌عنوان event واقعی Close اثبات نشده است. callback ثبت‌شده در `0x004CD154` در event record در offset `+0x80` قرار دارد، اما TD32 آن را `WordAppDocumentBeforeSave` معرفی می‌کند، نه BeforeClose. این callback وضعیت `Document.Saved` را از slot `+0xD8` می‌خواند، پیام Yes/No/Cancel نشان می‌دهد و در Yes/No مستقیماً slot `+0x29C` را با سه OleVariant صدا می‌زند. درخواست runtime `invoke=5208` همچنان باید از پیام parent-page به bridge تا POST دنبال شود.
 
 
 ## Run 109 — ارزیابی خروجی VMT و اصلاح فیلتر مقصدها (2026-11-14)
