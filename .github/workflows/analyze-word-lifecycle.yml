@@ -96,6 +96,7 @@ jobs:
           python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 0x005EC580 word-lifecycle-analysis/uSendLog-WordAppDocumentBeforeClose-raw-pointer-refs.md
           python tools/scan_named_pe_resource.py analysis-input/EmwatMethods.bpl1 TFRMSHOWAUTOSAVEFILES word-lifecycle-analysis/TFRMSHOWAUTOSAVEFILES-resource-strings.md
           python tools/scan_named_pe_resource.py analysis-input/EmwatMethods.bpl1 TFRMSENDLOG word-lifecycle-analysis/TFRMSENDLOG-resource-strings.md
+          python tools/scan_named_pe_resource.py analysis-input/EmwatMethods.bpl1 '*' word-lifecycle-analysis/all-RCDATA-resource-strings.md
           python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x005EBDA8 word-lifecycle-analysis/uSendLog-CloseWordApp.md
           python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x005EB81C word-lifecycle-analysis/uSendLog-btnShowFileClick.md
           python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x005EC1A8 word-lifecycle-analysis/uSendLog-FormCreate.md
