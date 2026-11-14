@@ -84,6 +84,9 @@ jobs:
           python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x0042B55C word-lifecycle-analysis/Wordxp-TWordDocument-Get_Fields-callers.md
           python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x004BC2C4 word-lifecycle-analysis/Wordxp-TWordViwer-FillField.md
           python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x004BC30C word-lifecycle-analysis/Wordxp-TWordViwer-FillImageField.md
+          python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x004BC980 word-lifecycle-analysis/Wordxp-TWordViwer-FillTextField.md
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004BC980 word-lifecycle-analysis/Wordxp-TWordViwer-FillTextField-callers.md
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004C0550 word-lifecycle-analysis/Wordxp-TWordViwer-GetDocFieldIndex-callers.md
           python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x004C009C word-lifecycle-analysis/Wordxp-TWordViwer-FillMSWFields.md
           python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x004C0410 word-lifecycle-analysis/Wordxp-TWordViwer-AddImagesToDoc.md
           python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x004A5F68 word-lifecycle-analysis/Wordxp-TEmwatDocPrintHandler-FillField.md
