@@ -1089,3 +1089,8 @@ Focused run 17 (`43574768657`, artifact `14106455607`) confirms `0x0044B4D8` is 
 ## XML constructor import lookup — run 19
 
 Focused run 19 (`43575191082`, artifact `14106206890`) confirms that `0x0062EC40` is located in `.idata` but does not match any parsed import descriptor entry. Its on-disk DWORD is `0x00231274`; the target is outside the BPL image and may be unresolved/relocated. Therefore the helper at `0x00401430` and the IID-like constant at `0x0044C4FC` remain semantically unresolved. Do not describe the helper as QueryInterface or claim an extra XML field. Run 20 directly traces `TXMLParamType.AfterConstruction` (VMT `+0x0C`, address `0x0044B4F8`) to recover the parameter element tag.
+ 
+
+## XML parameter element constructor — run 20 correction
+
+Run 20 (`43576636790`, artifact `14106479073`) shows that `TXMLParamType` VMT `+0x0C` (`0x0044B4F8`) is an import-style jump thunk through `0x006302B4`, not a TD32 constructor procedure; the slot's on-disk target `0x0024060C` is outside the BPL image. The parameter XML element tag remains unknown. A TD32 decorated-symbol indexer was added as `tools/find_td32_class_procedures.py`; the next run uses it to locate actual `TXMLParamType` and `TXMLMethodType` procedure addresses before tracing constructors.
