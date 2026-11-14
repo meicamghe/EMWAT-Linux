@@ -1167,3 +1167,10 @@ The first CI attempts failed before meaningful tests because the workflow tried 
 The transport also now returns `Access-Control-Allow-Origin` and `Vary: Origin` only when the request Origin exactly matches the configured allowlist. No wildcard CORS is used. This is necessary for browser JavaScript to read the localhost XHR response, but the actual Almas Gam origin must be configured and validated during integration.
 
 **Verified:** Python bridge workflow run `43592145701`, commit `c705ed34ad9a9e87b42d7e2d85d3aa60aea83815`, conclusion `success`. Seven unit/integration tests passed. This verifies the transport behavior only; no legacy XML, Word, LibreOffice, or Almas Gam end-to-end compatibility is claimed.
+
+
+## XML method-envelope parser added (2026-11-14)
+
+Runtime response evidence confirms the observed close response begins with `<emwat version="1.0"><method class="EditWordDocument"><param name="wordConfig">`. This establishes the `param` child tag for that observed path. Added `python/src/emwat_linux/protocol.py` with a conservative UTF-8 parser for the outer `emwat → method → param` envelope. It preserves parameter values as opaque strings and rejects malformed XML, unsupported versions, duplicate names, nested markup, DTD/entity declarations and oversized input. It does not decode or interpret document data and does not implement a fake method response.
+
+Tests: `python/tests/test_protocol.py`. CI verification is pending at the time of this entry. Service analysis also confirms query branches `invoke`, `init`, and `heartbeat`; exact init/heartbeat response contracts are still unknown.
