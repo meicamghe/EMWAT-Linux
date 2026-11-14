@@ -260,6 +260,12 @@ jobs:
           python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x0046E324 word-lifecycle-analysis/TEmwatMethod-Invoke-helper-46E324.md
           python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x0046E3CC word-lifecycle-analysis/TEmwatMethod-Invoke-helper-46E3CC.md
           python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x0046DC8C word-lifecycle-analysis/TEmwatMethod-Invoke-helper-46DC8C.md
+          python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x0044C238 word-lifecycle-analysis/TEmwatMethod-Invoke-enumerator-construction.md
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x0044C238 word-lifecycle-analysis/TEmwatMethod-Invoke-enumerator-construction-callers.md
+          python tools/inspect_pe_va.py analysis-input/EmwatMethods.bpl1 0x0046AEFC --before 0 --after 0x90 > word-lifecycle-analysis/TEnumerator-TPair-vtable-68-through-CC.md
+          python tools/inspect_pe_va.py analysis-input/EmwatMethods.bpl1 0x0046BF50 --before 0 --after 0x90 > word-lifecycle-analysis/TPairEnumerator-vtable-68-through-CC.md
+          python tools/inspect_pe_va.py analysis-input/EmwatMethods.bpl1 0x0046C13C --before 0 --after 0x90 > word-lifecycle-analysis/TDictionary-vtable-68-through-CC.md
+          python tools/inspect_pe_va.py analysis-input/EmwatMethods.bpl1 0x0046B078 --before 0 --after 0x90 > word-lifecycle-analysis/TEnumerable-TPair-vtable-68-through-CC.md
           python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x004B7430 word-lifecycle-analysis/Wordviewer-OpenDoc-full.md
           python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004B7430 word-lifecycle-analysis/Wordviewer-OpenDoc-direct-callers.md
           python tools/trace_td32_immediate_refs.py analysis-input/EmwatMethods.bpl1 0x004B7430 word-lifecycle-analysis/Wordviewer-OpenDoc-immediate-refs.md
