@@ -924,3 +924,19 @@ The service string dump also contains `TEmwatInvokeParam`, `ParseMethod`, `Calli
 4. Determine the query value's server-side purpose independently from the method-class dispatch.
 5. Link the close-time HTTP 200 response to document serialization/transfer and the user-observed apply-on-close behavior.
 
+
+
+## Original service executable recovered from installer (2026-11-14)
+
+The project Library contained the original `EmwatInstaller.exe`. Its embedded CAB was extracted locally with libarchive, revealing `EmwatService.exe`, `EmwatAgent.exe`, and the full package set. The extracted BPL is byte-for-byte identical to `analysis-input/EmwatMethods.bpl1` in the repository (Git blob SHA-1 match), validating the current BPL analysis against the installer package.
+
+New document: `docs/EMWAT-SERVICE-EXECUTABLE-ANALYSIS.md`.
+
+Key additional facts:
+- The extracted `EmwatService.exe` is a 679,936-byte PE32 executable. It imports Indy 23 packages and contains RTTI for `TIdHTTPServer`, `TIdHTTPRequestInfo`, and `TIdHTTPResponseInfo`, consistent with the loopback HTTP bridge.
+- Its embedded JavaScript bridge is confirmed in the executable, with the per-message random `invoke` value and request/response `postMessage` flow.
+- The service PE contains `TEmwatInvokeParam` RTTI: a 20-byte Delphi record with managed fields `System.string` at offset 0 and `System.AnsiString` at offset 8, and named fields `SessionId`, `bUnloadPkg`, `bResultSet`, `BufferIn`, `AResponseInfo`, and `AContext`.
+- The same record is declared in BPL unit `Emwat.Sys`; `Wordviewer.OpenDoc` at `0x004B7430` has a `PEmwatInvokeParam` parameter. This establishes that request context reaches the Word document module, but not yet the exact call chain or field assignments.
+
+The service executable has no TD32 debug section. Continue with PE/RTTI/import/x86 analysis locally; do not claim full symbolic reconstruction. See the new service analysis document for hashes, offsets and evidence limits.
+
