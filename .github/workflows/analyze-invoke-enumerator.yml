@@ -135,6 +135,13 @@ jobs:
       - name: Locate XML class constructor procedures by TD32 symbols
         run: |
           python tools/find_td32_class_procedures.py analysis-input/EmwatMethods.bpl1 TXMLParamType TXMLMethodType > invoke-enumerator-analysis/XML-class-procedure-index.md
+          python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x00614EC8 invoke-enumerator-analysis/WordRequestXML-TXMLParamType-AfterConstruction.md
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x00614EC8 invoke-enumerator-analysis/WordRequestXML-TXMLParamType-AfterConstruction-callers.md
+          python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x0061F8FC invoke-enumerator-analysis/EmwatMethods-TXMLMethodType-AfterConstruction.md
+          python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x00614B64 invoke-enumerator-analysis/WordRequestXML-TXMLMethodType-AfterConstruction.md
+          python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x0044C458 invoke-enumerator-analysis/XmlResponse-TXMLMethodType-AfterConstruction.md
+          python tools/inspect_pe_va.py analysis-input/EmwatMethods.bpl1 0x00614EC8 --before 0x30 --after 0x90 > invoke-enumerator-analysis/WordRequestXML-param-constructor-constant-context.md
+          python tools/decode_pe_strings.py analysis-input/EmwatMethods.bpl1 0x00614EC8 0x00614F3C 0x00614F8C > invoke-enumerator-analysis/WordRequestXML-param-constructor-strings.md
       - uses: actions/upload-artifact@v4
         with:
           name: emwat-invoke-receiver-analysis
