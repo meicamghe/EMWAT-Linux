@@ -237,6 +237,15 @@ jobs:
           python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 0x005EF8AC word-lifecycle-analysis/TCompareWordDocument-PerformMethod-raw-pointer-refs.md
           python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 0x005EF300 word-lifecycle-analysis/TEditExcelWorkBook-PerformMethod-raw-pointer-refs.md
           python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 0x005EFE4C word-lifecycle-analysis/TShowSendLog-PerformMethod-raw-pointer-refs.md
+          python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x0046CA67 word-lifecycle-analysis/TEmwatMethod-Finalization.md
+          python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x0046DE84 word-lifecycle-analysis/TEmwatMethod-Invoke-helper-46DE84.md
+          python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x0046E324 word-lifecycle-analysis/TEmwatMethod-Invoke-helper-46E324.md
+          python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x0046E3CC word-lifecycle-analysis/TEmwatMethod-Invoke-helper-46E3CC.md
+          python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x0046DC8C word-lifecycle-analysis/TEmwatMethod-Invoke-helper-46DC8C.md
+          python tools/inspect_pe_va.py analysis-input/EmwatMethods.bpl1 0x005EDF34 --before 0x30 --after 0x90 > word-lifecycle-analysis/TCompareWordDocument-PerformMethod-metadata.md
+          python tools/inspect_pe_va.py analysis-input/EmwatMethods.bpl1 0x005EDE1C --before 0x30 --after 0x90 > word-lifecycle-analysis/TEditExcelWorkBook-PerformMethod-metadata.md
+          python tools/inspect_pe_va.py analysis-input/EmwatMethods.bpl1 0x005EE2A4 --before 0x30 --after 0x90 > word-lifecycle-analysis/TShowSendLog-PerformMethod-metadata.md
+          python tools/inspect_pe_va.py analysis-input/EmwatMethods.bpl1 0x0046C9E0 --before 0x30 --after 0xA0 > word-lifecycle-analysis/TEmwatMethod-Invoke-near-metadata.md
       - uses: actions/upload-artifact@v4
         with:
           name: emwat-word-lifecycle-analysis
