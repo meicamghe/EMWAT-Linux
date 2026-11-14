@@ -501,3 +501,10 @@ The WordXP wrapper traces show:
 No direct CALL xref was found for the no-argument `TWordDocument.Close()` wrapper. These slot mappings are observed wrapper behavior; the exact underlying COM method names and any actual callers through VMT/property paths remain to be confirmed. Separately, `WordCompareCommandUnit.CloseMyDoc` dispatches slot `+0x2BC`, which the typed positive control maps to `_Document.PrintOutOld()`; despite its name, this routine is not a document-close call.
 
 **Current classification:** the `uSendLog` callback is a real close-related handler for the autosave-files UI, but not yet the main letter-editing close path. The original `0x004CCBBC` remains a nested print/field helper with no exact raw pointer references. The main close-triggered update and localhost POST still need a separate event/connector trace.
+
+
+## Autosave form DFM resource evidence (lifecycle run 57)
+
+The named RCDATA resource `TFRMSHOWAUTOSAVEFILES` was extracted and scanned (1,149 bytes; SHA256 recorded in the CI artifact). Its printable properties include `OnClose=FormClose`, `OnCreate=FormCreate`, and `OnShow=FormShow`, plus the list/button event handlers. The resource contains no `WordAppDocumentBeforeClose` or Word-application event property string. `TFRMSENDLOG` likewise contains only its form/UI event properties.
+
+This confirms that the second `WordAppDocumentBeforeClose` handler is not wired by a visible DFM event property in `TFRMSHOWAUTOSAVEFILES`. If it is connected to Word, that connection is likely established by runtime code in `FormCreate`, `btnShowFileClick`, or a helper that creates/opens the preview Word instance; that remains to be traced. Do not describe the handler as a statically DFM-bound Word event.
