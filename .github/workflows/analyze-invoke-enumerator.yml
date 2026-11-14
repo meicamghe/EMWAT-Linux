@@ -80,6 +80,10 @@ jobs:
         run: |
           python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x0044BDF5 invoke-enumerator-analysis/TXMLParamType-interface-B0-thunk.md 48 ret
           python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x0044BEB5 invoke-enumerator-analysis/TXMLParamType-interface-68-thunk.md 48 ret
+      - name: Identify TXMLParamType key attribute
+        run: |
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x0044B4C0 invoke-enumerator-analysis/TXMLParamType-key-attribute-helper.md 48 ret
+          python tools/decode_pe_strings.py analysis-input/EmwatMethods.bpl1 0x0044C95C > invoke-enumerator-analysis/TXMLParamType-key-attribute-name.md
       - name: Trace TXMLParamType setter implementations
         run: |
           python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x0044C8E4 invoke-enumerator-analysis/TXMLParamType-interface-B0-implementation.md
