@@ -974,3 +974,12 @@ The original service PE was extracted from the Library installer and analyzed di
 - Three additional internal service routines call the same dispatcher with embedded XML (including `ShowEmwatSetting` and `ShowSendLog`).
 
 The exact BPL method represented by service-side virtual slot `+0x0C` remains unresolved. The complete evidence and disassembly offsets are in `docs/EMWAT-SERVICE-EXECUTABLE-ANALYSIS.md`. The chain is now proven through dynamic class-instance dispatch, but not yet through the concrete `EditWordDocument` implementation or close-time commit/response behavior.
+
+
+### Correction to run-62 connector dictionary and call-path interpretation (run 76)
+
+The run-62 generic signature was initially read as `TDictionary<AnsiString, TValue>`; this was incorrect. The BPL's concrete generic RTTI and the service's `TMethodInfo.Params` type establish `TDictionary<AnsiString, AnsiString>`. The XML parser's string values therefore flow into the connector methods as a string-to-string dictionary.
+
+The run-62 statement that the only direct CALL to `TEmwatMethod.Invoke` came from `Finalization` was also incomplete. The routine at `0x0046C9E0` (TD32 label `Emwatmethod.Finalization`) is the shared `TEmwatMethod` virtual wrapper at VMT slot `+0x0C`. The service dispatcher invokes that slot; the wrapper calls `TEmwatMethod.Invoke` at `0x0046C82C`, then invokes the concrete class's VMT slot `+0x10`. Thus the apparent finalization call is part of the ordinary request dispatch path.
+
+The corrected class-RTTI scan also found the previously missed small connector classes (instance size `0x0C`). Their VMT slot `+0x10` targets are documented in `WORD-COM-INTERFACE-DISPATCH.md`; for `TEditWordDocument`, the concrete target is `0x005EE82C`. TD32 procedure labels for some other targets differ from the VMT class mapping, so keep those names and target addresses separate until code behavior is reconciled.
