@@ -124,7 +124,11 @@ class BridgeHTTPServer:
                 if parsed.path != "/":
                     self._send(404, b"", "text/plain; charset=utf-8")
                     return
-                if len(self.headers.get_all("Content-Length", [])) != 1:
+                content_lengths = self.headers.get_all("Content-Length", [])
+                if not content_lengths:
+                    self._send(411, b"content_length_required", "text/plain; charset=utf-8")
+                    return
+                if len(content_lengths) != 1:
                     self._send(400, b"invalid_content_length", "text/plain; charset=utf-8")
                     return
                 if self.headers.get("Transfer-Encoding"):
@@ -173,7 +177,7 @@ class BridgeHTTPServer:
                         raise ValueError("invalid HTTP response status")
                     if not isinstance(response.body, bytes) or len(response.body) > owner._max_response_bytes:
                         raise ValueError("invalid or oversized response body")
-                    if not isinstance(response.content_type, str) or "\\r" in response.content_type or "\\n" in response.content_type:
+                    if not isinstance(response.content_type, str) or "\r" in response.content_type or "\n" in response.content_type:
                         raise ValueError("invalid response content type")
                     self._send(response.status, response.body, response.content_type)
                 except Exception:
