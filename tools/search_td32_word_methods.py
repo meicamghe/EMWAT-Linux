@@ -36,11 +36,18 @@ lines = [
     f"- Matching procedures: {len(selected)}",
     "- This is a symbol inventory; names and offsets alone do not prove runtime dispatch or override relationships.", "",
     "## Matching procedures", "",
-    "| TD32 module | Module name | Symbol | Segment | Code offset | Size |",
-    "|---:|---|---|---:|---:|---:|",
+    "| TD32 module | Module name | Symbol | Segment | Section offset | Mapped VA | Size |",
+    "|---:|---|---|---:|---:|---:|---:|",
 ]
 for p in sorted(selected, key=lambda x: (x["module"], x["name"].lower(), x["offset"])):
-    lines.append(f'| {p["module"]} | {module_name(p["module"])} | `{p["name"]}` | {p["segment"]} | 0x{p["offset"]:08X} | 0x{p["size"]:X} |')
+    section = pe.sections[p["segment"] - 1] if 1 <= p["segment"] <= len(pe.sections) else None
+    module = modules.get(p["module"])
+    seg = next((item for item in module[1] if item[0] == p["segment"]), None) if module else None
+    valid = bool(section and seg and seg[2] <= p["offset"] and p["offset"] + p["size"] <= seg[2] + seg[3]
+                 and p["offset"] + p["size"] <= section.SizeOfRawData)
+    va = pe.OPTIONAL_HEADER.ImageBase + section.VirtualAddress + p["offset"] if valid else None
+    va_text = f"0x{va:08X}" if va is not None else "unmapped"
+    lines.append(f'| {p["module"]} | {module_name(p["module"])} | `{p["name"]}` | {p["segment"]} | 0x{p["offset"]:08X} | {va_text} | 0x{p["size"]:X} |')
 
 lines += ["", "## TD32 module segment descriptors", "",
           "| Module | Module name | Segment | Flags | Segment base | Segment size |",
@@ -58,7 +65,7 @@ for dll in dlls:
 lines += ["", "## Interpretation notes", "",
           "- A short procedure that jumps to Delphi RTL AbstractError is consistent with an abstract-method trap, but the symbol inventory alone cannot identify a concrete override.",
           "- A concrete override may have a different decorated name, be registered through a VMT, or reside in another package/module not present in this BPL.",
-          "- Segment offsets are reported as TD32 metadata; they are not asserted to be runtime virtual addresses."]
+          "- Mapped VA is computed as PE ImageBase + section.VirtualAddress + TD32 section offset, and is emitted only when the procedure fits both its module segment descriptor and the PE section."]
 out.parent.mkdir(parents=True, exist_ok=True)
 out.write_text("\n".join(lines) + "\n", encoding="utf-8")
 print(f"Wrote {out}; matched {len(selected)} procedures")
