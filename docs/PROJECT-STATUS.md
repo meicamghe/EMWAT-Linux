@@ -1199,3 +1199,12 @@ The bridge now additionally rejects Host headers containing path/query/fragment 
 Added `python/src/emwat_linux/application.py` with `create_bridge_server(...)`. It composes the IPv4 loopback HTTP server, conservative XML parser and explicit dispatcher registry. It requires callers to provide an exact Origin allowlist and explicit handler mapping; it does not silently enable any legacy operation. Integration tests verify the complete HTTP POST → XML parse → explicitly registered handler → HTTP response path and reject missing/unlisted origins.
 
 **CI:** Python bridge transport run #24, ID `43593185429`, commit `27986ee96b45009283cd96eecde95110e1b9e448`, **success**; 29 tests passed. The registered handler in the integration test is only a fixture; no real `EditWordDocument` implementation exists yet.
+
+
+## تحلیل جدید LoadDocument — Run 89
+- Workflow #89 با موفقیت تمام شد و artifact آن بررسی شد.
+- آدرس 0x00457050 تابع Emwatutils.Finalization در ماژول EmailUtil است؛ تنها caller مستقیم پیدا‌شده در TD32، TWordViwer.LoadDocument است. تابع دو رشته سراسری را با ورودی UnicodeString مقایسه می‌کند؛ معنی دقیق رشته‌ها هنوز باید decode شود.
+- آدرس 0x00454B9C تابع Emwatutils.euGetASFileName(UnicodeString, UnicodeString) است و علاوه بر LoadDocument در توابع TIFF و تصویر نیز استفاده می‌شود. بنابراین مسیر به احتمال قوی filename/path normalization دارد، نه اینکه این تابع parser بایت‌های بدنه Word باشد.
+- پس از این دو مرحله، LoadDocument از thunkهای runtime در 0x004012F8، 0x00401270 و 0x004012E0 استفاده می‌کند، سپس با global 0x0062F800 و constructor helper 0x004041BC یک object می‌سازد و virtual slot +0x10 را با data pointer و length فراخوانی می‌کند. نوع object و ماهیت دقیق عملیات هنوز قطعی نیست.
+- بنابراین wordBody فعلاً باید به‌عنوان ورودی UnicodeString با semantics نامشخص ثبت شود؛ نه «قطعاً بایت خام» و نه «قطعاً مسیر فایل».
+- Run #90 برای decode کردن رشته‌ها، بررسی VMT/global مقصد، و trace سازنده آغاز شده است.
