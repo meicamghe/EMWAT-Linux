@@ -10,6 +10,7 @@ on:
       - 'tools/inspect_pe_va.py'
       - 'tools/inspect_delphi_vmt_address.py'
       - 'tools/analyze_emwat_td32.py'
+      - 'tools/find_td32_class_procedures.py'
 permissions:
   contents: read
 jobs:
@@ -131,13 +132,9 @@ jobs:
           cp bpl-analysis/EmwatMethods-import-and-caller-trace.md invoke-enumerator-analysis/Delphi-XML-constructor-helper-import.md
           python tools/inspect_pe_va.py analysis-input/EmwatMethods.bpl1 0x0044C4FC --before 0x30 --after 0x50 > invoke-enumerator-analysis/TXMLMethodType-constructor-constant-context.md
           python tools/inspect_pe_va.py analysis-input/EmwatMethods.bpl1 0x0062EC40 --before 0x10 --after 0x10 > invoke-enumerator-analysis/Delphi-XML-constructor-IAT-slot.md
-      - name: Resolve TXMLParamType element constructor
+      - name: Locate XML class constructor procedures by TD32 symbols
         run: |
-          python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x0044B4F8 invoke-enumerator-analysis/TXMLParamType-AfterConstruction.md
-          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x0044B4F8 invoke-enumerator-analysis/TXMLParamType-AfterConstruction-body.md 180 ret
-          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x0044B4F8 invoke-enumerator-analysis/TXMLParamType-AfterConstruction-callers.md
-          python tools/inspect_pe_va.py analysis-input/EmwatMethods.bpl1 0x0044B4F8 --before 0x20 --after 0xB0 > invoke-enumerator-analysis/TXMLParamType-AfterConstruction-constant-context.md
-          python tools/decode_pe_strings.py analysis-input/EmwatMethods.bpl1 0x0044B4F8 0x0044B500 0x0044B4A8 > invoke-enumerator-analysis/TXMLParamType-constructor-strings.md
+          python tools/find_td32_class_procedures.py analysis-input/EmwatMethods.bpl1 TXMLParamType TXMLMethodType > invoke-enumerator-analysis/XML-class-procedure-index.md
       - uses: actions/upload-artifact@v4
         with:
           name: emwat-invoke-receiver-analysis
