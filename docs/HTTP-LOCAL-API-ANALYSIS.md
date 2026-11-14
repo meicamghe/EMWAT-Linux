@@ -256,3 +256,12 @@ The close-time runtime response previously recorded in this document explicitly 
 A conservative UTF-8 envelope parser now lives at `python/src/emwat_linux/protocol.py`. It parses the confirmed `emwat/method/param` structure, preserves parameter text unchanged, rejects duplicate names and unsafe/malformed XML constructs, and leaves values such as `wordConfig`, `wordBody`, `letterImages` and `signData` uninterpreted. The parser does not dispatch methods or synthesize responses. Unit tests are in `python/tests/test_protocol.py`; check GitHub Actions before marking them green.
 
 Static service analysis independently confirms separate query branches for `invoke`, `init` and `heartbeat`. Only the existence of those branches is known; heartbeat response status/body and init script response bytes remain unresolved.
+
+
+## Linux bridge hardening and dispatcher checkpoint (2026-11-14)
+
+The Python transport now defaults to requiring a request Origin and accepts it only if it exactly matches the configured allowlist. It echoes CORS only for that same allowed Origin. It also validates exactly one Host header against the bound IPv4 loopback address/port, rejects duplicate/missing Content-Length (411 for missing), rejects Transfer-Encoding, applies socket timeouts, and bounds both request and handler response bodies. IPv6 is explicitly rejected because this server implementation binds IPv4 only.
+
+The XML envelope parser uses runtime-confirmed element names from the close-time response prefix: `emwat version="1.0"`, `method class`, and `param name`. It preserves values as opaque text. The explicit dispatcher only invokes registered handlers and never resolves user-supplied class names dynamically. No actual EditWordDocument handler is registered yet.
+
+**CI green:** Python bridge transport run #20 (`43592721635`), commit `2fa217ae83f33b80a7799ede4c75f2cc58b40d76`; 24 tests passed. Exact `?heartbeat` and `?init` response behavior remains unresolved; static analysis proves only that the service has separate branches for those query keys.
