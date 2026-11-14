@@ -184,3 +184,13 @@ Workflow extension commit: `334b841dd279773345086e3e8903de068390c139`.
 The next run adds a TD32 symbol inventory and traces the `CloseMyDoc` callsite at `0x005E9258`, its raw pointer references, `SilentSaveEmwatDoc` and callers, plus final cross-checks of the BeforeClose helper and BeforeSave callers. Do not treat the `CloseMyDoc` name or its `+0x2BC` dispatch as a proven document-close method until its receiver interface is typed. Do not equate `+0x29C` and `+0x4D4` without identifying the Word `_Document` typelib declarations.
 
 The browser-side close POST remains the decisive missing contract. User runtime evidence shows a localhost POST when the document is closed and no equivalent request on Ctrl+S; static callback traces have not explained its trigger or response semantics. Native Linux runtime implementation is not established by these analysis runs.
+
+
+## Run27 — close-path triage (2026-11-14)
+
+- Run `43586456343` completed successfully; artifact `14110509457`.
+- The newly traced `CloseMyDoc` at `0x005E9174` belongs to TD32 module `WordCompareCommandUnit`, not the main `TEditWordDocument` connector class. It invokes interface VMT slots `+0x13C` and `+0x2F0`, then slot `+0x2BC`; no direct raw pointer references to its callsite were found. Do not treat this method as the main letter close implementation without a caller/dispatch link.
+- `SilentSaveEmwatDoc` at `0x004D23D8` is a substantial Wordviewer routine. It checks four controller-owned collections/objects at offsets `+0x8C/+0x94/+0x98/+0x9C`, allocates helper objects, invokes `0x004AEBBC`, sets a viewer flag at `+0x44C`, and calls helper `0x004D2948`. It is a stronger next analysis target than the unrelated `CloseMyDoc`, but its invocation timing and relation to HTTP response are not yet established.
+- `uSendLog.TfrmShowAutoSaveFiles.WordAppDocumentBeforeClose` at `0x005EC580` belongs to the autosave-files UI and calls `CloseWordApp`; it is not evidence that the main editor registers this callback.
+- Run27 did not establish the active Word close event or the close-time POST contract. User-observed close behavior remains the product requirement; static symbol names must not override it.
+- Next focused trace: `0x004D2948` and callers/refs of `SilentSaveEmwatDoc`, plus `Emwat.Sys.CloseAllWords` only if its callers connect it to the main editor. Keep the main `TEditWordDocument → LoadDocument → HTTP response` path as the integration anchor.
