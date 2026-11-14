@@ -1094,3 +1094,11 @@ Focused run 19 (`43575191082`, artifact `14106206890`) confirms that `0x0062EC40
 ## XML parameter element constructor — run 20 correction
 
 Run 20 (`43576636790`, artifact `14106479073`) shows that `TXMLParamType` VMT `+0x0C` (`0x0044B4F8`) is an import-style jump thunk through `0x006302B4`, not a TD32 constructor procedure; the slot's on-disk target `0x0024060C` is outside the BPL image. The parameter XML element tag remains unknown. A TD32 decorated-symbol indexer was added as `tools/find_td32_class_procedures.py`; the next run uses it to locate actual `TXMLParamType` and `TXMLMethodType` procedure addresses before tracing constructors.
+
+## XML constructor comparison — run 22
+
+Run 22 (`43578292246`, artifact `14106852706`) completed successfully. TD32 indexing found `TXMLParamType.AfterConstruction` at `0x00614EC8` only in the separate `WordRequestXML` module, not in the indexed `XmlResponse` class procedures. The WordRequestXML constructor calls `0x0044B4D8` (`xmlrtl230.bpl!TXMLNode.GetChildNodes`) and then the still-unresolved helper `0x00401430` with binary GUID-like constant `0x00614F2C`; that constant is not a readable Delphi string. The XmlResponse VMT parent pointers (`0x00630314` for TXMLParamType and `0x0063030C` for TXMLMethodType) point outside the BPL image, so their parent class identities are not established.
+
+**No parameter tag was recovered.** Do not treat the WordRequestXML constructor as the XmlResponse constructor without evidence that the classes share the relevant construction path. The exact child element tag, full XML envelope, encoding and runtime wire representation remain unknown. The generic Invoke tree facts established in runs 11 and 16 remain confirmed: `method` element, `class` method-name attribute, parameter `name` key attribute, value as node text, serialized via `TXMLNode.GetXML`.
+
+Next analysis: resolve external parent VMT/class references and trace how XmlResponse creates/initializes the parameter node returned by `TXMLMethodType.Insert`; then return to the parent-page close-time POST and response protocol. Do not spend another run repeating the TD32 symbol index unless new module inputs arrive.
