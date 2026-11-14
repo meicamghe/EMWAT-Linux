@@ -1025,3 +1025,16 @@ The callback body does not directly issue the localhost HTTP request. The embedd
 - The dictionary enumeration helpers `0x0046DE84` and `0x0046E324` are separate from the +0x68 receiver dispatch. The earlier hypothesis that local `[ebp-8]` itself was a `TDictionary.TPairEnumerator` is withdrawn: that class's VMT has only its own leading enumerator slots and +0x68 falls in metadata/data, not an executable class virtual slot.
 
 **Evidence boundary:** this advances the type of the first receiver in the chain and narrows the likely XML class/interface family, but the exact types of `[ebp-0x1C]` and `[ebp-8]`, plus the method name at +0x68, remain unresolved. See [WORD-COM-INTERFACE-DISPATCH.md](WORD-COM-INTERFACE-DISPATCH.md).
+
+
+## Invoke XML-interface receiver investigation (2026-11-14)
+
+The focused receiver workflow has now narrowed the unresolved `TEmwatMethod.Invoke` indirect dispatch at `0x0046C921` beyond the earlier dictionary-enumerator hypothesis:
+
+- `Invoke` accepts `TDictionary<AnsiString,AnsiString>` and stores its first receiver in local `[ebp-4]`. The only direct caller of helper `0x0044C238` is `Invoke` at `0x0046C877`; TD32 labels the helper `TXMLEmwatType.AfterConstruction`. Treat that symbol as a helper label until its full factory/dataflow is resolved.
+- Class RTTI identifies `TXMLEmwatType` at VMT `0x0044B9AC`, instance size `0x5C`, implementing IID `e7e941dd-cf1c-4856-9cec-8b6d2370c439` at interface offset `0x50` with VTable `0x0044B878`.
+- That interface's `+0xB0` slot is at `0x0044B928` and points to thunk `0x0044B709`; its `+0x68` slot points to thunk `0x0044B7D1`. This is an interface VTable dispatch, not a class-VMT `+0xB0` slot.
+- The next `+0xCC` call at `0x0046C8E6` acts on the returned object `[ebp-0x1C]`, not the original `TXMLEmwatType` interface. `TXMLMethodType` is a separate class with IID `55d7b886-a428-4f24-8766-6af7ab8f792d`, interface offset `0x70`, and VTable `0x0044BBF8`; its `+0xCC` and `+0x68` slots point to thunks `0x0044BA61` and `0x0044BB51` respectively.
+- `TXMLMethodType` remains a candidate for a returned XML interface, not a proven runtime type for either local. The exact type of `[ebp-0x1C]` and `[ebp-8]` remains unresolved until the interface thunk bodies and out-parameter dataflow are traced.
+
+The initial focused dictionary/enumerator workflow completed successfully (run `43570769839`). The XML interface VTable workflow completed successfully (run `43571030574`). Latest thunk-trace workflow: `43571171939`; artifact pending at the time of this update. Detailed address evidence is in `docs/WORD-COM-INTERFACE-DISPATCH.md` and the `emwat-invoke-receiver-analysis` workflow artifact.
