@@ -271,7 +271,7 @@ Artifact اجرای موفق GitHub Actions با SHA برابر `0eef619164c64f3
 
 ### شواهد جدید و تفسیر محدود
 
-1. **ثبت handlerهای Word در مسیر timer:** در `OnTmrAutoSave`، کد pointerهای handler را روی object وابسته به Word viewer قرار می‌دهد. یکی از pointerها دقیقاً به entry متد `WordAppDocumentBeforeClose` یعنی `0x004CD154` اشاره می‌کند. callback مربوط به `WordAppDocumentBeforeSave` در `0x004CD54C` و callback با export name `WordAppNewDocument` در `0x004CD9C0` قرار دارند؛ دو مسیر BeforePrint نیز به `0x004D00AC` و `0x004CE030` تنظیم می‌شوند. همچنین فراخوانی‌های virtual روی object مرتبط با Word انجام می‌شود. این شواهد وجود مکانیزم timer/event و اتصال BeforeSave را تأیید می‌کنند؛ اما به‌تنهایی ثابت نمی‌کنند که هر tick واقعاً سند را ذخیره یا به وب‌اپلیکیشن ارسال می‌کند.
+1. **ثبت handlerهای Word در مسیر timer:** در OnTmrAutoSave، کد pointerهای handler را روی object وابسته به Word viewer قرار می‌دهد. طبق اصلاح runهای 25 و 26، آدرس 0x004CD154 در event record +0x80 قرار دارد اما TD32 آن را WordAppDocumentBeforeSave معرفی می‌کند، نه BeforeClose. آدرس‌های دیگر شامل 0x004CD54C در +0x90، 0x004CD9C0 در +0x98 و 0x004D00AC یا 0x004CE030 در +0x88 (BeforePrint) هستند. این شواهد وجود مکانیزم timer/event را تأیید می‌کنند؛ اما به‌تنهایی ثابت نمی‌کنند که هر tick سند را ذخیره یا به وب‌اپلیکیشن ارسال می‌کند.
 
 2. **BeforeSave یک event handler واقعی است:** `WordAppDocumentBeforeSave` آرگومان سند را با reference داخلی مقایسه می‌کند، وضعیت‌های داخلی را بررسی می‌کند و در چند branch مقدار cancel را تنظیم می‌کند. در مسیرهای دیگر helperهای داخلی و یک فراخوانی virtual روی سند Word اجرا می‌شود. بنابراین برنامه در مسیر Save استاندارد Word مداخله می‌کند؛ اما از این بدنه به‌تنهایی نمی‌توان نتیجه گرفت که Ctrl+S همان payload شبکه‌ای را می‌سازد یا داده را به سامانه ارسال می‌کند.
 
