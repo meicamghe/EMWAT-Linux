@@ -108,7 +108,7 @@ The service PE's `TMethodInfo` class has VMT `0x0047097C` and instance size `0x1
 
 After parsing, the dispatcher takes the XML class name, prefixes it with the literal `T`, and calls the imported `System.Classes.GetClass(UnicodeString)` through thunk `0x00402354` (IAT target `0x00487B9C`). Therefore an XML envelope with `class="EditWordDocument"` is resolved as Delphi class `TEditWordDocument`.
 
-The dispatcher then creates an instance of the resolved class, stores the `TEmwatInvokeParam` pointer in the instance's first field at offset `+4`, and calls the instance VMT slot `+0x0C` with the parsed parameter dictionary and an output string. This is the actual dynamic class-dispatch point. The concrete connector methods named `TCompareWordDocument.PerformMethod`, `TEditExcelWorkBook.PerformMethod`, and `TShowSendLog.PerformMethod` are present in BPL metadata; the next step is to prove their exact mapping to the slot using the class VMT/interface tables.
+The dispatcher then creates an instance of the resolved class, stores the `TEmwatInvokeParam` pointer in the instance's first field at offset `+4`, and calls instance VMT slot `+0x0C` with the parsed parameter dictionary and an output string. The BPL VMT/RTTI scan resolves this slot for all `TEmwatMethod` descendants to shared base routine `0x0046C9E0`; that routine calls `TEmwatMethod.Invoke` at `0x0046C82C`, then dispatches to the instance's subclass slot `+0x10`. For XML `class="EditWordDocument"`, `GetClass` resolves `TEditWordDocument`, whose VMT slot `+0x10` targets `0x005EE82C`. That target reads the `document` parameter and calls helper `0x004B7724`.
 
 ### Package and response path
 
@@ -161,4 +161,4 @@ The shared dispatcher at `0x00470D00` has three additional direct callers in the
 
 These routines construct local `TEmwatInvokeParam` records and pass embedded XML to the same class-dispatch path. Their embedded XML includes internal method classes such as `ShowEmwatSetting` and `ShowSendLog`. Consequently, `0x00470D00` is a reusable service-side method dispatcher used both by the HTTP command handler and by internal service routines.
 
-**Evidence boundary:** the static call chain now proves request-body-to-record-to-XML-class-resolution-to-dynamic-instance-dispatch. It does not yet prove which BPL virtual method name occupies slot `+0x0C`, which concrete class implements `EditWordDocument`, or how the Word document's close-triggered changes are serialized and committed.
+**Evidence boundary:** the static chain now proves request-body-to-record-to-XML-class-resolution-to-`TEmwatMethod.Invoke`-to-concrete `TEditWordDocument` VMT slot `+0x10` (`0x005EE82C`). The body/helper semantics at `0x005EE82C` / `0x004B7724`, the final response serialization/transport, and the upstream Word-close event that initiates the request remain under investigation.
