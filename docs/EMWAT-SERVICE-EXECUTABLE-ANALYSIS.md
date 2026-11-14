@@ -162,3 +162,15 @@ The shared dispatcher at `0x00470D00` has three additional direct callers in the
 These routines construct local `TEmwatInvokeParam` records and pass embedded XML to the same class-dispatch path. Their embedded XML includes internal method classes such as `ShowEmwatSetting` and `ShowSendLog`. Consequently, `0x00470D00` is a reusable service-side method dispatcher used both by the HTTP command handler and by internal service routines.
 
 **Evidence boundary:** the static chain now proves request-body-to-record-to-XML-class-resolution-to-`TEmwatMethod.Invoke`-to-concrete `TEditWordDocument` VMT slot `+0x10` (`0x005EE82C`). The body/helper semantics at `0x005EE82C` / `0x004B7724`, the final response serialization/transport, and the upstream Word-close event that initiates the request remain under investigation.
+
+### Response result flag and HTTP send path
+
+The dispatcher at `0x00470D00` checks `TEmwatInvokeParam.bResultSet` immediately after the class method returns:
+
+- If `bResultSet != 0`, the connector has marked the response as already handled; the service skips its default output-string response path.
+- If `bResultSet == 0`, the service checks that the output string is nonempty and `AResponseInfo` at record offset `+0x0C` is non-null.
+- It assigns the output string to `AResponseInfo.ContentText` at object offset `+0xBC), calls helper `0x004610FC`, then sets `bResultSet = 1`.
+
+The helper `0x004610FC` operates on the Indy response-info object and examines status/response fields before sending; it is the response-send path used by the default branch. Its full imported/virtual call mapping is still being traced.
+
+This means the Word connector can either write the HTTP response itself and set `bResultSet`, or leave the flag false and return a string for the service's default response handling. The observed `wordConfig` XML response may therefore be produced by the connector-specific branch; inspect `TEditWordDocument` for writes to `AResponseInfo` and `bResultSet` before assigning the response serialization to the generic service handler.
