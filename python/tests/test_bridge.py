@@ -58,6 +58,39 @@ class BridgeHTTPServerTests(unittest.TestCase):
         self.assertEqual(self.seen[0].query, "invoke=12345")
         self.assertEqual(self.seen[0].origin, "https://office.example")
 
+    def test_host_header_must_match_loopback_listener(self):
+        status, body, _ = self.request(
+            "GET", "/healthz", headers={"Host": "attacker.example:1984"}
+        )
+        self.assertEqual(status, 400)
+        self.assertEqual(body, b"invalid_host_header")
+
+    def test_missing_content_length_is_rejected(self):
+        conn = http.client.HTTPConnection(self.host, self.port, timeout=2)
+        conn.putrequest("POST", "/")
+        conn.putheader("Host", f"{self.host}:{self.port}")
+        conn.endheaders()
+        response = conn.getresponse()
+        self.assertEqual(response.status, 411)
+        self.assertEqual(response.read(), b"content_length_required")
+        conn.close()
+
+    def test_oversized_handler_response_is_not_sent(self):
+        self.server.shutdown()
+        self.server.server_close()
+        self.thread.join(timeout=2)
+        self.server = BridgeHTTPServer(
+            lambda _request: BridgeResponse(b"x" * 9),
+            max_response_bytes=8,
+            allowed_origins=frozenset(),
+        )
+        self.thread = threading.Thread(target=self.server.serve_forever, daemon=True)
+        self.thread.start()
+        self.host, self.port = self.server.address
+        status, body, _ = self.request("POST", "/", b"x")
+        self.assertEqual(status, 500)
+        self.assertEqual(body, b"internal_bridge_error")
+
     def test_unlisted_origin_is_rejected(self):
         status, body, _ = self.request(
             "POST", "/", b"x", {"Origin": "https://attacker.example"}
