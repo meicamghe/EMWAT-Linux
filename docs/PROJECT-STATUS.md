@@ -1130,3 +1130,15 @@ Run 26 (43584217243, artifact 14109926135) completed successfully with all 16 wo
 TWordDocument.Close overloads: no-arg 0x0042FEB0 dispatches through interface slot +0x4D4; one-arg 0x0042FF08, two-arg 0x0042FF7C, and three-arg 0x0042FFF4 dispatch through +0x29C. The registered BeforeSave callback calls PreparePrintDocument (0x004CB108), checks the Word Saved property through +0xD8, conditionally displays the changed-document prompt, sets Cancel to 0xFFFF on Cancel, and directly invokes interface slot +0x29C with three OleVariant arguments (the same dispatch slot used by the three-argument wrapper at 0x0042FFF4) for Yes/No. 0x00430070 is SaveAs2000, not Close.
 
 Still unresolved: concrete runtime target behind +0x29C; any separate close-event registration; page-side postMessage and close-time POST response semantics. The user's observed close behavior (changes apply even without pressing Save) remains authoritative and is not contradicted by this static trace. No native Linux runtime implementation is claimed.
+
+
+## به‌روزرسانی Run 29 — 2026-11-14
+
+Run 29 با شناسه `43589571290` و artifact `14111108881` با موفقیت تمام شد.
+
+- `TWordViwer.GetDocFieldName` در بازه `0x004BB81C–0x004BC16F` فقط در شاخهٔ fallback و پس از ناموفق‌بودن مقایسهٔ نام فیلد، `SilentSaveEmwatDoc` را صدا می‌زند. این مسیر lookup فیلد است، نه شاهدی برای callback بستن سند.
+- آدرس `0x004AEA78` در واقع `TfrmWordPrintOption.SetLetterReceivers` و `0x004AEBBC` تابع `TfrmWordPrintOption.FreePrinters` است؛ این دو helper عمومی ذخیره‌سازی سند نیستند و به وضعیت پنجرهٔ تنظیمات چاپ مربوط‌اند.
+- `DeleteTempRAW` در `0x0044B01C` تابع `CloseAllWords` را فراخوانی می‌کند، اما فقط در شاخه‌ای پس از بررسی‌های فایل/فرآیند موقت.
+- با وجود نام TD32 تابع `CloseAllWords`، چهار فراخوانی داخلی آن به `0x0044B0F8` می‌روند که TD32 آن را `GetFileVersion` نام‌گذاری کرده است. بنابراین از نام `CloseAllWords` نمی‌توان نتیجه گرفت که Word را می‌بندد؛ رفتار واقعی آن هنوز به‌طور مستقل اثبات نشده است. این مسیر نیز به cleanup فایل RAW مربوط است، نه connector اصلی نامه.
+
+**نتیجه:** Run 29 رویداد Close یا POST نهایی هنگام بستن نامه را پیدا نکرد. اولویت بعدی باید کد صفحهٔ وبِ فرستندهٔ `postMessage` و نحوهٔ اعمال پاسخ HTTP باشد؛ از تکرار تحلیل نمادهای چاپ/cleanup که caller مرتبطی ندارند خودداری شود. رفتار مشاهده‌شدهٔ کاربر (اعمال تغییرات با بستن سند، حتی بدون Save) همچنان الزام قطعی محصول است.
