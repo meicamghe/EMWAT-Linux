@@ -81,7 +81,7 @@ class BridgeHTTPServerTests(unittest.TestCase):
         self.server = BridgeHTTPServer(
             lambda _request: BridgeResponse(b"x" * 9),
             max_response_bytes=8,
-            allowed_origins=frozenset(),
+            allowed_origins=frozenset({"https://office.example"}),
         )
         self.thread = threading.Thread(target=self.server.serve_forever, daemon=True)
         self.thread.start()
@@ -129,7 +129,9 @@ class BridgeHTTPServerTests(unittest.TestCase):
         def fail(_request):
             raise RuntimeError("private diagnostic")
 
-        self.server = BridgeHTTPServer(fail, allowed_origins=frozenset())
+        self.server = BridgeHTTPServer(
+            fail, allowed_origins=frozenset({"https://office.example"})
+        )
         self.thread = threading.Thread(target=self.server.serve_forever, daemon=True)
         self.thread.start()
         self.host, self.port = self.server.address
