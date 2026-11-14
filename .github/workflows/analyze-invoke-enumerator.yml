@@ -76,8 +76,9 @@ jobs:
           python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x0044BA61 invoke-enumerator-analysis/TXMLMethodType-interface-CC-thunk.md 48 ret
           python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x0044B7D1 invoke-enumerator-analysis/TXMLEmwatType-interface-68-thunk.md 48 ret
           python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x0044BB51 invoke-enumerator-analysis/TXMLMethodType-interface-68-thunk.md 48 ret
-      - name: Resolve TXMLParamType interface slot +0x68
+      - name: Resolve TXMLParamType interface key/value slots
         run: |
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x0044BDF5 invoke-enumerator-analysis/TXMLParamType-interface-B0-thunk.md 48 ret
           python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x0044BEB5 invoke-enumerator-analysis/TXMLParamType-interface-68-thunk.md 48 ret
       - name: Trace resolved XML interface method implementations
         run: |
