@@ -218,3 +218,28 @@ The `Get_Tables` wrapper also clarifies its own acquisition pattern: it invokes 
 Run 24 also resolves `0x00401478` to `rtl230.bpl!@System@@CheckAutoResult`. This is compiler/runtime error checking after the interface dispatch, not an application connector call.
 
 **Updated next step:** trace the producer/caller of `WordAppDocumentBeforeClose` and identify the object/context pointer passed at `[ebp+8]), then trace its field at `-0x0C). Only after that type is established should the `+0x38` method be named. Keep the local POST / `invoke=5208` mapping open.
+
+
+## Direct-call cross-reference correction: BeforeClose target is also used by image-field printing (run 26)
+
+The TD32 direct-call scan for target `0x004CCBBC` found one direct call site:
+
+- Caller procedure: `FillImgFldsForPrint`
+- Call instruction: `0x004CCF8F`
+- Call setup immediately before the call:
+  - `movzx edx, byte ptr [ebp-0x11]`
+  - `mov eax, ebx`
+  - `call 0x004CCBBC`
+
+This is important because the target at `0x004CCBBC`, despite its TD32 symbol/name being treated as `WordAppDocumentBeforeClose` in the earlier lifecycle notes, is directly invoked from a procedure named `FillImgFldsForPrint`. The evidence establishes a direct call relationship; it does not yet establish why this helper is called there, whether the caller is preparing image fields for print, or whether the target is also independently registered as a Word close event callback.
+
+Consequently, do not describe `0x004CCBBC` as exclusively an event callback until its complete caller procedure, TD32 signature, and callback-registration references are reconciled. The existing receiver analysis remains valid at the instruction level: the two `+0x38` dispatches use the context-derived pointer `[[ebp+8]-0x0C]`, while the local `[ebp-0x0C]` is a separate temporary. The actual interface type remains unresolved.
+
+A new workflow helper, `tools/trace_td32_procedure.py`, was added to disassemble the entire TD32 procedure containing an arbitrary VA. Lifecycle run 27 uses it on `0x004CCF8F` to capture the complete `FillImgFldsForPrint` body. Its result must be reviewed before assigning semantics to the call or changing the broader close/save model.
+
+### Evidence boundary
+
+- **Proven:** one TD32-bounded direct `CALL 0x004CCBBC` exists inside `FillImgFldsForPrint`.
+- **Proven:** the call site passes a value in `EAX` and a byte-derived value in `EDX`.
+- **Not proven:** the complete purpose of the call, whether the target is also registered as a close event, or whether either interface dispatch triggers the observed localhost POST.
+- **Not proven:** that this helper call is itself the user-visible document-close action.
