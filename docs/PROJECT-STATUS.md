@@ -935,7 +935,7 @@ Key additional facts:
 - The extracted `EmwatService.exe` is a 679,936-byte PE32 executable. It imports Indy 23 packages and contains RTTI for `TIdHTTPServer`, `TIdHTTPRequestInfo`, and `TIdHTTPResponseInfo`, consistent with the loopback HTTP bridge.
 - Its embedded JavaScript bridge is confirmed in the executable, with the per-message random `invoke` value and request/response `postMessage` flow.
 - The service PE contains `TEmwatInvokeParam` RTTI: a 20-byte Delphi record with managed fields `System.string` at offset 0 and `System.AnsiString` at offset 8, and named fields `SessionId`, `bUnloadPkg`, `bResultSet`, `BufferIn`, `AResponseInfo`, and `AContext`.
-- The same record is declared in BPL unit `Emwat.Sys`; `Wordviewer.OpenDoc` at `0x004B7430` has a `PEmwatInvokeParam` parameter. This establishes that request context reaches the Word document module, but not yet the exact call chain or field assignments.
+- The same record is declared in BPL unit `Emwat.Sys`; `Wordviewer.OpenDoc` at `0x004B7430` has a `PEmwatInvokeParam` parameter. The service handler's record fields and dynamic class dispatch are now statically traced, and the record pointer is stored at offset `+0x04` of the instantiated connector object. The direct concrete-method-to-`Wordviewer.OpenDoc` call chain is still being resolved.
 
 The service executable has no TD32 debug section. Continue with PE/RTTI/import/x86 analysis locally; do not claim full symbolic reconstruction. See the new service analysis document for hashes, offsets and evidence limits.
 
