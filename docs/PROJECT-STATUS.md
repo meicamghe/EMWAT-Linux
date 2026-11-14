@@ -743,3 +743,14 @@ Run `43232846364` با موفقیت کامل (148/148 مرحله) پایان ی�
 - `TWordViwer.FillImageField` امضای تایپ‌شدهٔ `Wordxp._Document` و `Wordxp.Field` دارد و در بدنه از slotهای `+0x40)، `+0x38)، `+0x20) روی receiverهای interface استفاده می‌کند. نام متدهای این slotها هنوز مشخص نیست.
 - `FillMSWFields` و `AddImagesToDoc` نیز trace شدند؛ اولی روی آرایه/فیلدهای داخلی و دومی از interface `Wordxp.Fields` برای افزودن تصویر به سند استفاده می‌کند.
 - **گام بعد:** شناسایی IIDهای `Wordxp.Range` و `StoryRanges`، تطبیق slotهای `Wordxp.Field` در `FillImageField`، و بررسی نتایج caller scans برای این helperها.
+
+
+### Run 43 — caller graph برای field/image helperها (2026-11-14)
+
+- Run 43 با موفقیت پایان یافت.
+- `FillImageField` دو caller مستقیم دارد که هر دو از `FillTextField` هستند (`0x004BC9CB` و `0x004BCA10)) و هر دو EBP والد را به‌عنوان static link می‌فرستند؛ پس image-field branch یک nested path در text-field processing است.
+- `FillMSWFields` چهار caller مستقیم دارد: سه مورد از `GetDocFieldIndex` و یک مورد از `GetCaptionItemFont`.
+- `AddImagesToDoc` فقط یک caller مستقیم در scan دارد: `GetDocFieldIndex` در `0x004C0A5D).
+- `FillField` و `TWordDocument.Get_Fields` هیچ CALL مستقیم در procedureهای TD32-bounded ندارند؛ indirect/VMT/property paths همچنان ممکن‌اند.
+- این caller graph، `GetDocFieldIndex` را در مرکز field processing قرار می‌دهد: آن routine روی مجموعهٔ Word حرکت می‌کند، `FillMSWFields` را برای موارد منتخب صدا می‌زند و در یک branch، `AddImagesToDoc` را اجرا می‌کند.
+- **گام بعد:** trace کامل والد `FillTextField` در `0x004BC980)، بررسی callerهای `GetDocFieldIndex)، و تعیین slotهای `Wordxp.Field` در nested `FillImageField`.
