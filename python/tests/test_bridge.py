@@ -47,12 +47,13 @@ class BridgeHTTPServerTests(unittest.TestCase):
 
     def test_post_preserves_opaque_body_and_query(self):
         payload = b'<emwat><method class="EditWordDocument"/></emwat>'
-        status, body, _ = self.request(
+        status, body, headers = self.request(
             "POST", "/?invoke=12345", payload,
             {"Content-Type": "text/plain;charset=UTF-8", "Origin": "https://office.example"},
         )
         self.assertEqual(status, 200)
         self.assertEqual(body, b"<reply/>")
+        self.assertEqual(headers.get("Access-Control-Allow-Origin"), "https://office.example")
         self.assertEqual(self.seen[0].body, payload)
         self.assertEqual(self.seen[0].query, "invoke=12345")
         self.assertEqual(self.seen[0].origin, "https://office.example")
