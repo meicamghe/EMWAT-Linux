@@ -326,3 +326,14 @@ The separate Word lifecycle workflow Run #89 is still processing its deep trace 
 - Immediate next work: trace the destination filename construction (`0x00401348`, `0x004012F8`, `0x00401270`, `0x004012E0`), inspect the second file-stream creation in `LoadDocument` around `0x004B7C39`, and correlate the file path/data with the final response XML.
 
 - Additional Run #90 detail: a second object is constructed through the same `TFileStream` VMT/constructor path at `0x004B7C3E`, using the same derived filename and constructor mode argument `0`. Its code obtains stream size and calls virtual slot `+0x0C` with a buffer/count pair, consistent with reopening and reading the file. Treat the exact operation name as provisional until the RTL VMT slot is resolved.
+
+
+## Run 91 — تأیید عملیات نوشتن/خواندن فایل در TFileStream
+
+- Run #91 (43595953793) با موفقیت تمام شد؛ artifact 14114711446.
+- import/VMT slot در 0x0062F800 به نماد کلاس rtl230.bpl!@System@Classes@TFileStream@ resolve شد و constructor در 0x004041BC به TFileStream.Create(UnicodeString, Word) تعلق دارد.
+- در مسیر اول LoadDocument، مقدار mode برابر 0xFF00 است که در قرارداد TFileStream.Create معادل fmCreate است؛ سپس virtual slot +0x10 با pointer و count داده فراخوانی می‌شود. در layout استاندارد TStream این slot متد Write است. بنابراین فایل مقصد ایجاد و داده ورودی در آن نوشته می‌شود.
+- در مسیر دوم، همان VMT/constructor با mode برابر صفر (fmOpenRead) استفاده می‌شود؛ سپس اندازه stream گرفته شده و virtual slot +0x0C با buffer و count فراخوانی می‌شود که در layout استاندارد TStream متد Read است. این تأیید می‌کند فایل تولیدشده دوباره باز و خوانده می‌شود.
+- این دو مسیر شواهد مستقیم یک چرخه create/write سپس open-read/read را فراهم می‌کنند. مسیر واقعی فایل و مقصد نهایی داده خوانده‌شده هنوز مشخص نیست؛ بنابراین فعلاً نام آن را «فایل میانی» می‌گذاریم، نه الزاماً temp directory خاص.
+- helperهای 0x00401270، 0x004012E0، 0x00401348 به slotهای .idata می‌پرند که در import descriptorهای قابل‌تحلیل پیدا نشدند؛ نام‌گذاری این helperها یا نسبت‌دادن قطعی آن‌ها به تبدیل encoding مجاز نیست.
+- Run #91 هیچ قرارداد close-time POST یا response payload تازه‌ای پیدا نکرد. مرحله بعد: تحلیل ادامه LoadDocument پس از خواندن فایل، مشخص‌کردن مسیر فایل و اینکه بایت‌های خوانده‌شده چگونه به Word/فرمت TIFF و پاسخ HTTP منتقل می‌شوند.
