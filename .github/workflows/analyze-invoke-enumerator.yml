@@ -70,6 +70,12 @@ jobs:
           python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x0044BCA8 0x0044BCD0 invoke-enumerator-analysis/TXMLMethodType-interface-slots-B0-CC-code.md
           python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x0044BFC4 0x0044BFDC invoke-enumerator-analysis/TXMLParamType-interface-slot-68-code.md
           python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x0044C00C 0x0044C034 invoke-enumerator-analysis/TXMLParamType-interface-slots-B0-CC-code.md
+      - name: Trace XML interface implementation thunks
+        run: |
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x0044B709 invoke-enumerator-analysis/TXMLEmwatType-interface-B0-thunk.md 48 ret
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x0044BA61 invoke-enumerator-analysis/TXMLMethodType-interface-CC-thunk.md 48 ret
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x0044B7D1 invoke-enumerator-analysis/TXMLEmwatType-interface-68-thunk.md 48 ret
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x0044BB51 invoke-enumerator-analysis/TXMLMethodType-interface-68-thunk.md 48 ret
       - uses: actions/upload-artifact@v4
         with:
           name: emwat-invoke-receiver-analysis
