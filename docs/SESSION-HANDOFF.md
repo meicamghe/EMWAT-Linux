@@ -205,3 +205,15 @@ The browser-side close POST remains the decisive missing contract. User runtime 
 - These three items are downgraded as candidates for the main letter-close path. Do not infer lifecycle from names alone.
 - Main confirmed anchor remains `TEditWordDocument` slot `+0x10` → `0x005EE82C` → `TWordViwer.LoadDocument` `0x004B7724` → HTTP response writer. The user's observed close behavior remains a product requirement; the static path explaining it is unresolved.
 - Next: trace the exact `GetDocFieldName → SilentSaveEmwatDoc` call context and the command targets under `DeleteTempRAW/CloseAllWords`; continue searching for the parent-page close POST and concrete response application path.
+
+
+## Run 29 — field lookup and cleanup trace (2026-11-14)
+
+Run 29 (`43589571290`, artifact `14111108881`) completed successfully. It adds the following corrections and scope limits:
+
+- `TWordViwer.GetDocFieldName` (`0x004BB81C–0x004BC16F`) calls `SilentSaveEmwatDoc` (`0x004D23D8`) only on a conditional fallback branch: after obtaining a field-name value through interface slot `+0xAC`, it compares that value with a static string and calls SilentSave only when the comparison fails. This is a field-name resolution path, not evidence of a user-close callback.
+- The helper addresses used by SilentSave were reclassified: `0x004AEA78` is `TfrmWordPrintOption.SetLetterReceivers`; `0x004AEBBC` is `TfrmWordPrintOption.FreePrinters`. They are print-options UI routines, not generic document-save helpers. The call context shows SilentSave interacts with print-option state; its wider side effects still need tracing.
+- `Emwat.Sys.DeleteTempRAW` (`0x0044AE98–0x0044B053`) calls `Emwat.Sys.CloseAllWords` (`0x0044AD30`) at `0x0044B01C` only on a branch reached after its temporary-file/process checks.
+- Although TD32 names the routine `CloseAllWords`, its four direct calls at `0x0044AD7E/0x0044ADA0/0x0044ADC2/0x0044ADF1` target `0x0044B0F8`, which TD32 identifies as `Emwat.Sys.GetFileVersion`. Thus the current static evidence does **not** establish that this routine closes Word processes; the symbol name must not be treated as behavioral proof. Its caller remains the RAW cleanup path, not the main editor connector.
+
+**Run 29 conclusion:** no close-time POST trigger or final apply-on-close mechanism was identified. Preserve the user's close-applies-changes observation as a product requirement. The proven server-side `EditWordDocument → LoadDocument → HTTP WriteContent` path remains the anchor; the missing work is still the page-side message sender and the exact response/application lifecycle. Do not spend more runs on these unrelated print/cleanup symbols unless new caller evidence appears.
