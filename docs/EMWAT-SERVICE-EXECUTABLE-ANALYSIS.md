@@ -31,7 +31,7 @@ The embedded HTML/JavaScript bridge is stored in the service executable at file 
 4. POST `event.data` to `http://127.0.0.1:$V{myport}?invoke=` plus that generated number.
 5. When XHR `readyState == 4`, send `responseText` back to the original source using `postMessage(responseText, origin)`.
 
-This confirms that the observed `invoke=5208` is a per-message, client-generated random request value, not a stable operation ID. The operation name is in the XML body (for example, the observed `method class="EditWordDocument"` envelope). The service-side purpose of the random value—correlation, logging, or an internal request/session map—remains to be established from its request handler.
+This confirms that the observed `invoke=5208` is a per-message, client-generated random request value, not a stable operation ID. The operation name is in the XML body (for example, the observed `method class="EditWordDocument"` envelope). The handler later inspects the `invoke` query key, but the numeric query value is not copied into `TEmwatInvokeParam.SessionId`; that field is generated independently by the service. Whether the browser's numeric value is consumed for any additional purpose remains unresolved.
 
 ## TEmwatInvokeParam record RTTI
 
@@ -90,7 +90,7 @@ The record is 20 bytes (`0x14`) and its RTTI lists the same six field names. The
 
 The browser's `invoke` query value is **not** copied into `TEmwatInvokeParam.SessionId` by this handler. The handler separately calls the imported `System.Random(900000)`, adds `100000`, and passes the result through imported `SysUtils.IntToStr`. Thus the internal `SessionId` is a separate server-generated six-digit value in the range 100000–999999.
 
-The handler also calls two virtual methods on the request parameter collection at `[ARequestInfo+0xD0]` using the literal key `invoke` (calls at `0x0047BFAA` and `0x0047BFBE`). This establishes that the parameter is inspected, but the exact semantics of the two collection slots and whether the numeric value is otherwise consumed remain unresolved. Do not describe the query value as the internal session ID.
+The handler calls two virtual methods on the request parameter collection at `[ARequestInfo+0xD0]` using the literal key `invoke` (calls at `0x0047BFAA` and `0x0047BFBE`). The route-selection logic uses the presence/lookup of this key to reach the XML-dispatch path. The exact semantics of the collection slots and whether the numeric value is consumed elsewhere remain unresolved. Do not describe the query value as the internal session ID.
 
 ### XML parser and method metadata object
 
@@ -138,3 +138,27 @@ For `EditWordDocument`, the final method target is `0x005EE82C`. Its code reads 
 The corrected VMT scan also recovered these other method targets: `TScanDocument=0x005EEB48`, `TFaxDocument=0x005EEDFC`, `TGetEmwatVersion=0x005EF110`, `TSetEmwatVersion=0x005EF218`, `TUpgradeEmwat=0x005EF24C`, `TImageEdition=0x005EF300`, `TEditExcelWorkBook=0x005EF8AC`, `TCompareWordDocument=0x005EFC54`, `TShowEmwatSetting=0x005EFD4C`, `TShowLastEditedDocs=0x005EFE4C`, and `TShowSendLog=0x005EFF4C`.
 
 **Important naming caveat:** some TD32 procedure labels differ from the class whose VMT slot points to the code address. For example, `TEditExcelWorkBook` VMT slot `+0x10` points to `0x005EF8AC`, whose TD32 label is `TCompareWordDocument.PerformMethod`. Keep the VMT target and TD32 label separate until the method body semantics resolve the discrepancy.
+
+### Additional route branches and common dispatcher callers
+
+The same `TMainForm.IdHTTPServerCommandGet` body checks three request parameter keys in the request parameter collection at `[ARequestInfo+0xD0]`:
+
+| Key | Check site | Branch purpose |
+|---|---:|---|
+| `invoke` | `0x0047BF9D` | Main XML method dispatch path |
+| `init` | `0x0047C102` | Returns the embedded JavaScript bridge and logs the script request |
+| `heartbeat` | `0x0047C25F` | Handles the Agent heartbeat path |
+
+This confirms the local service has separate bridge-initialization and Agent-heartbeat routes in addition to the browser-to-XML method route. The numeric `invoke` value is not assigned to the record's `SessionId`; the handler's record gets its own random six-digit identifier as described above.
+
+The request body is obtained from an object held at `[ARequestInfo+0xD4]`. The handler queries that object for a size-like value, obtains a buffer, and calls its virtual slot `+0x0C` with a buffer/length pair before assigning the resulting string to `BufferIn`. This is consistent with reading an HTTP request-body stream, but the object's exact runtime type and virtual method names have not yet been proven from its RTTI.
+
+The shared dispatcher at `0x00470D00` has three additional direct callers in the service PE:
+
+- `0x0047D91A`
+- `0x0047DB5E`
+- `0x0047DDA2`
+
+These routines construct local `TEmwatInvokeParam` records and pass embedded XML to the same class-dispatch path. Their embedded XML includes internal method classes such as `ShowEmwatSetting` and `ShowSendLog`. Consequently, `0x00470D00` is a reusable service-side method dispatcher used both by the HTTP command handler and by internal service routines.
+
+**Evidence boundary:** the static call chain now proves request-body-to-record-to-XML-class-resolution-to-dynamic-instance-dispatch. It does not yet prove which BPL virtual method name occupies slot `+0x0C`, which concrete class implements `EditWordDocument`, or how the Word document's close-triggered changes are serialized and committed.
