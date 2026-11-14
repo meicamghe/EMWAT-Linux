@@ -905,3 +905,9 @@ Workflow #89 (43592922191) با موفقیت اجرا شد و artifact 141132373
 - 0x00454B9C تابع Emwatutils.euGetASFileName(UnicodeString, UnicodeString) است و در مسیرهای TIFF/image نیز caller دارد. در نتیجه باید آن را یک تبدیل/نرمال‌سازی مرتبط با نام فایل بررسی کرد، نه parser اختصاصی بدنه Word.
 - LoadDocument پس از این مرحله از thunkهای runtime/import برای کار با طول و داده رشته استفاده می‌کند، یک object از طریق global 0x0062F800 و helper سازنده 0x004041BC ایجاد می‌کند و virtual slot +0x10 را با data pointer و length فراخوانی می‌کند.
 - تا زمان شناسایی کلاس مقصد و decode رشته‌های ثابت، نوع فایل/stream و semantics دقیق wordBody قطعی نیست. این شواهد به‌تنهایی قرارداد HTTP یا payload پاسخ هنگام بستن Word را مشخص نمی‌کند.
+
+
+## شواهد نام فایل در ورودی LoadDocument
+در artifact مربوط به Run 89 رشته دقیق `DocFileName can not be null.` در تابع LoadDocument دیده می‌شود. مسیر کنترل، رشته محلی حاصل از تبدیل ورودی را از نظر طول بررسی می‌کند و در حالت خالی به این خطا می‌رود. این شاهد قوی است که مقدار ورودی در این لایه به‌عنوان نام فایل سند تفسیر می‌شود؛ هرچند نام پارامتر بیرونی connector همچنان `wordBody` است.
+
+همان تابع رشته‌های `word-document`، `ConfigXML data loaded.` و `Word Calling Mode: ` را دارد. helper پیش از آن نیز شامل ثابت‌های `.doc` و `.docx` است. این موارد با workflow مبتنی بر نام فایل سازگارند، اما تا تکمیل بررسی Run 90 و شناسایی object مقصد، نباید نوع فایل موقت یا روش بارگذاری آن را قطعی دانست.
