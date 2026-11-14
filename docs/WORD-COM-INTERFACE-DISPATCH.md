@@ -95,20 +95,19 @@ The `_Document` slot `+0x2BC` is now mapped with high confidence to `PrintOutOld
 
 ## Callback registration cross-check (run 15)
 
-The full `TWordViwer.OnTmrAutoSave` trace at `0x004B8A84` resolves the previously missing indirect registration for `WordAppNewDocument`.
+The full `TWordViwer.OnTmrAutoSave` trace at `0x004B8A84` resolves the main Word automation event registrations. The callback function pointers are stored in the event record with their owner/context pointers:
 
-At `0x004B8CB2..0x004B8CB8`, the code writes:
-- callback owner/context: `[event-record+0x94] = Self`
-- callback function: `[event-record+0x90] = 0x004CD54C`
+- `+0x80 = 0x004CD154`: export name `WordAppDocumentBeforeClose`; its body logs `Document.OnBeforeClose Called.` and displays the Persian “document changed; save changes?” prompt.
+- `+0x90 = 0x004CD54C`: export name `WordAppDocumentBeforeSave`; its body logs `Document.OnBeforeSave called.`.
+- `+0x98 = 0x004CD9C0`: export name `WordAppNewDocument`; its body includes Activation/Quitword/document-count handling.
+- `+0x88 = 0x004D00AC` or `0x004CE030`, selected by `TWordViwer+0x3C`: BeforePrint paths.
 
-TD32 identifies `0x004CD54C` as `TWordViwer.WordAppNewDocument`. The same registration block assigns:
-- `+0x80 = 0x004CD154` (`WordAppDocumentBeforeSave`), owner at `+0x84)
-- `+0x98 = 0x004CD9C0` (`WordAppWindowActivate`), owner at `+0x9C`)
-- `+0x88 = 0x004D00AC` or `0x004CE030`, selected by `TWordViwer+0x3C`, owner at `+0x8C`)
+The callback names above were cross-checked against the BPL export address/name tables and body strings. This corrects the earlier swapped labels. The `+0x80` callback is the actual registered main-editor BeforeClose handler; the routine at `0x004CCBBC` with the same TD32 name remains a separate nested print/field helper.
 
-This establishes that `WordAppNewDocument` is installed as an event callback through the registration structure. Therefore, the zero direct-CALL-xref result for `0x004CD54C` is expected and does not indicate dead code. The callback registration and its typed `_Document` parameter now provide a coherent path to the COM `_Document` vtable call at `+0x2BC`.
+The close handler at `0x004CD154` handles Cancel by setting the event's Cancel word to `0xFFFF`. For Yes it initializes the first OleVariant argument to `-1`; for No it initializes it to `0`. It then calls the active `Wordxp._Document` interface at slot `+0x29C` with three OleVariant arguments. The exported three-argument `TWordDocument.Close` wrapper at `0x00430070` dispatches this same slot, confirming the explicit `Close(SaveChanges, OriginalFormat, RouteDocument)` overload. The no-argument Close wrapper at `0x0042FF08` uses slot `+0x4D4`.
 
-The workflow artifact name has also been corrected to `WordAppNewDocument-4CD54C.md`; the old temporary label “BeforeSave-callback” was inaccurate.
+The callback body contains no direct HTTP request call. It prompts and invokes Word's Close overload; the remaining trace must follow its viewer helpers and the BeforeSave path to understand how final content is delivered to the web application.
+
 
 ## Slot collision scan (run 19)
 
@@ -412,15 +411,15 @@ This makes `GetDocFieldIndex` a central field-processing routine: it iterates a 
 
 A new whole-PE exact 32-bit pointer scan checked the callback candidates in all raw sections, including writable data and debug data.
 
-- Target `0x004CCBBC` (`WordAppDocumentBeforeClose`): **zero exact raw pointer references anywhere in the PE**.
-- `0x004CD154` (`WordAppDocumentBeforeSave`): pointer immediate at `0x004B8CA8` in `.text` plus a debug-section occurrence.
+- Target `0x004CCBBC` (TD32 label `WordAppDocumentBeforeClose`): **zero exact raw pointer references anywhere in the PE**; its proven direct caller is the nested `FillImgFldsForPrint` helper.
+- `0x004CD154` (export name `WordAppDocumentBeforeClose`): pointer immediate at `0x004B8CA8` in `.text` plus a debug-section occurrence; this is the registered main-editor close callback.
 - `0x004CD54C` (`WordAppNewDocument`): pointer immediate at `0x004B8CBE` in `.text`.
 - `0x004CE030` (one BeforePrint handler): pointer immediates at `0x004B8D0E` and `0x004B8E81`.
 - `0x004D00AC` (alternate BeforePrint handler): pointer immediates at `0x004B8CF6` and `0x004B8E60`.
 
 The full `OnTmrAutoSave` disassembly confirms these are actual method-pointer assignments on the Word event object at `[this+0x44]`: method addresses are stored alongside the controller instance in paired fields `+0x80/+0x84` (BeforeSave), `+0x90/+0x94` (NewDocument), `+0x98/+0x9C` (the `0x004CD9C0` handler), and `+0x88/+0x8C` (the conditional BeforePrint handler, either `0x004D00AC` or `0x004CE030`). The second registration branch later reassigns the BeforePrint pair using the same two known addresses.
 
-This is strong negative evidence against `0x004CCBBC` being the statically registered BeforeClose event handler in this BPL: the known registration routine assigns other callback addresses, and no raw pointer to `0x004CCBBC` exists in the image. It is **not an absolute proof of non-registration**: computed/relative pointers, external packages, runtime-generated method pointers or another registration path could evade this exact scan. Combined with the proven direct call from the print/field path, the current best classification is that `0x004CCBBC` is a nested print/field helper whose TD32 name is not sufficient to identify the actual close event.
+This is strong negative evidence against `0x004CCBBC` being the registered BeforeClose event handler: the known registration routine assigns `0x004CD154`, the export name and body strings identify that address as the main-editor BeforeClose callback, and no raw pointer to `0x004CCBBC` exists in the image. Combined with its proven direct call from the print/field path, classify `0x004CCBBC` as a nested print/field helper despite its misleading TD32 name.
 
 The real close-time POST (`127.0.0.1:1984/?invoke=5208`) must now be mapped through another event/connector path; do not continue treating `0x004CCBBC` as its proven source.
 
@@ -493,12 +492,13 @@ This is a tiny event handler on `TfrmShowAutoSaveFiles`: it checks a word at the
 
 `CloseWordApp` has exactly two direct callers in the scan: the form's `btnShowFileClick` handler at `0x005EB81F` and the `WordAppDocumentBeforeClose` event handler at `0x005EC589`. It iterates the autosave form's document collection at `[this+0x3C0]`, performs per-document operations, then calls a method at interface slot `+0x104` on the application-like object at `[this+0x3C0]`. The exact interface type/method name still needs mapping. This path belongs to the autosave-files form; it is not evidence that the main letter editor's close event is handled here, and no local POST/`invoke=5208` call appears in this 18-byte handler.
 
-The WordXP wrapper traces show:
-- no-argument `TWordDocument.Close()` at `0x0042FEB0` dispatches interface slot `+0x4D4`;
-- one-, two- and three-`OleVariant` overloads at `0x0042FF08`, `0x0042FF7C`, and `0x0042FFF4` dispatch slot `+0x29C`;
-- `ClosePrintPreview` at `0x00433A84` dispatches slot `+0x36C`.
+The WordXP export/wrapper traces show:
+- no-argument `TWordDocument.Close()` at `0x0042FF08` dispatches interface slot `+0x4D4`;
+- one-, two- and three-`OleVariant` `Close` overloads at `0x0042FF7C`, `0x0042FFF4`, and `0x00430070` dispatch slot `+0x29C`;
+- `ClosePrintPreview` at `0x00433ADC` dispatches slot `+0x36C`;
+- `0x0042FEB0` is `Set_FormattingShowFilter`, not Close.
 
-No direct CALL xref was found for the no-argument `TWordDocument.Close()` wrapper. These slot mappings are observed wrapper behavior; the exact underlying COM method names and any actual callers through VMT/property paths remain to be confirmed. Separately, `WordCompareCommandUnit.CloseMyDoc` dispatches slot `+0x2BC`, which the typed positive control maps to `_Document.PrintOutOld()`; despite its name, this routine is not a document-close call.
+The registered `WordAppDocumentBeforeClose` callback at `0x004CD154` calls the three-argument Close overload through slot `+0x29C`. These are observed wrapper/dispatch mappings; the underlying Word COM type-library method metadata is still not independently resolved. Separately, `WordCompareCommandUnit.CloseMyDoc` dispatches slot `+0x2BC`, which the typed positive control maps to `_Document.PrintOutOld()`; despite its name, this routine is not a document-close call.
 
 **Current classification:** the `uSendLog` callback is a real close-related handler for the autosave-files UI, but not yet the main letter-editing close path. The original `0x004CCBBC` remains a nested print/field helper with no exact raw pointer references. The main close-triggered update and localhost POST still need a separate event/connector trace.
 
