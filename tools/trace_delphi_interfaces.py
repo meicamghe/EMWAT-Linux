@@ -72,7 +72,7 @@ def main():
     pointer_refs={}
     for pos in range(0, len(blob)-3, 4):
         pointer_refs.setdefault(u32(blob,pos), []).append(pos)
-    for m in __import__("re").finditer(rb"[\\x01-\\x78][A-Za-z_][A-Za-z0-9_@$]{2,100}",blob):
+    for m in __import__("re").finditer(rb"[\x01-\x78][A-Za-z_][A-Za-z0-9_@$]{2,100}",blob):
         raw=m.start()
         name=shortstr(raw)
         if not name or not name.startswith("T") or not any(k in name.lower() for k in ("editor","image","gear","scan","crop","word","field","document")):
