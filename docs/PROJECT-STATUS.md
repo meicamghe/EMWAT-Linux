@@ -983,3 +983,12 @@ The run-62 generic signature was initially read as `TDictionary<AnsiString, TVal
 The run-62 statement that the only direct CALL to `TEmwatMethod.Invoke` came from `Finalization` was also incomplete. The routine at `0x0046C9E0` (TD32 label `Emwatmethod.Finalization`) is the shared `TEmwatMethod` virtual wrapper at VMT slot `+0x0C`. The service dispatcher invokes that slot; the wrapper calls `TEmwatMethod.Invoke` at `0x0046C82C`, then invokes the concrete class's VMT slot `+0x10`. Thus the apparent finalization call is part of the ordinary request dispatch path.
 
 The corrected class-RTTI scan also found the previously missed small connector classes (instance size `0x0C`). Their VMT slot `+0x10` targets are documented in `WORD-COM-INTERFACE-DISPATCH.md`; for `TEditWordDocument`, the concrete target is `0x005EE82C`. TD32 procedure labels for some other targets differ from the VMT class mapping, so keep those names and target addresses separate until code behavior is reconciled.
+
+
+## TEditWordDocument payload keys and response generation (run 77)
+
+The concrete `TEditWordDocument` VMT slot `+0x10` target `0x005EE82C` reads four named dictionary parameters: `wordConfig`, `wordBody`, `letterImages`, and `signData`. It starts a worker thread, logs `CoInitializing thread`, and passes those values plus the `TEmwatInvokeParam*` request context and an output-string reference to helper `0x004B7724`.
+
+After the helper returns, it copies the helper output to the dispatcher's result string and sets `bUnloadPkg=true), while leaving `bResultSet=false`. The service then writes the output string to `AResponseInfo.ContentText`, sends it via helper `0x004610FC`, and sets `bResultSet=true`.
+
+This statically connects the runtime `EditWordDocument` XML request to the generic HTTP response path. The exact response XML and Word automation/commit behavior are now narrowed to helper `0x004B7724` and its downstream calls. Run 77 captures the helper's complete TD32 procedure and caller references.
