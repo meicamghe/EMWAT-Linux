@@ -625,6 +625,18 @@ The follow-up VTable inspection resolves the dispatch domain of the first call a
 
 This makes `TXMLMethodType` a concrete candidate for one of the returned XML interface objects, but does not yet prove that it is the runtime type of `[ebp-0x1C]` or `[ebp-8]`. The thunk traces now resolve the implementation entry addresses: `0x0044B709` adjusts EAX by `-0x50` and jumps to `0x0044C458` (the `TXMLEmwatType +0xB0` implementation); `0x0044BA61` adjusts by `-0x70` and jumps to `0x0044C754` (the `TXMLMethodType +0xCC` implementation); `0x0044B7D1` adjusts by `-0x50` and jumps to `0x0044B568`; and `0x0044BB51` adjusts by `-0x70` and jumps to the same `0x0044B568` body for the respective `+0x68` interface slots. These are now the implementation entry points to correlate with the out parameters in `Invoke`; their complete TD32 bodies are being traced in the focused receiver workflow.
 
+
+
+### Invoke's XML parameter-object construction (receiver run 85)
+
+The implementation bodies now identify the middle of the chain:
+
+- The `TXMLEmwatType` interface `+0xB0` thunk `0x0044B709` adjusts the interface pointer by `-0x50` and jumps to `0x0044C458`. TD32 labels this body `TXMLMethodType.AfterConstruction`. It builds/initializes a `TXMLMethodType` interface and writes the result through its out parameter, matching `[ebp-0x1C]` in `Invoke`.
+- The `TXMLMethodType` interface `+0xCC` thunk `0x0044BA61` adjusts by `-0x70` and jumps to `0x0044C754`. TD32 labels this body `TXMLMethodType.Insert`. It calls the method interface's `+0x20` slot with index `-1`, then assigns the returned interface to its own out parameter, matching `[ebp-8]` in `Invoke`.
+- RTTI identifies a separate `TXMLParamType` class at VMT `0x0044C08C`, with implemented-interface VTable `0x0044BF5C` at interface offset `0x50`. Its interface `+0x68` slot is at `0x0044BFC4` (pointer `0x0044BEB5`); its `+0xB0` slot is at `0x0044C00C` (pointer `0x0044BDF5`). These are the candidate setters invoked on the returned parameter interface.
+
+In `Invoke`, the two dictionary strings from the `TPairEnumerator` are then passed separately to that returned object: the first pair string goes to interface slot `+0xB0` at `0x0046C8FE`, and the second goes to `+0x68` at `0x0046C921`. This strongly supports the interpretation that `Invoke` materializes each dictionary entry as a child XML parameter object and assigns its two string fields. The exact published property names for those two setters remain pending the TXMLParamType thunk/body trace.
+
 A second, distinct +0x68 dispatch exists in the shared base wrapper at 0x0046CBB7 (TD32 range 0x0046C9E0–0x0046CDF7). It uses a different local receiver [ebp-4], created in the exception/response path. Do not assume the two +0x68 calls share an interface or class type.
 
 The focused receiver workflow adds the TXMLEmwatType class VMT window and its implemented-interface VTable window around offsets +0x68, +0xB0, and +0xCC, plus a trace of helper 0x0044B468. These will determine whether the +0xB0 call belongs to the class VMT and help identify the XML child/interface returned into [ebp-8].
