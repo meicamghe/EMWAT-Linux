@@ -93,3 +93,7 @@ Every conclusion must be labeled as one of: user-observed, statically confirmed,
 ## Latest XML protocol finding — 2026-11-14
 
 Focused run 16 (`43573798242`, artifact `14105735885`) confirms the serialization getter: `TXMLEmwatType` interface slot `+0x54` thunk `0x0044B7A9` adjusts `Self` by `-0x50` and jumps to `0x0044B590`, an IAT thunk to `xmlrtl230.bpl!TXMLNode.GetXML`. The method node is set up using literal `method`; its `class` attribute is populated with the method name. Each parameter child stores dictionary key in `name` and dictionary value as node text. This proves the static method/parameter XML structure, but not the full document envelope or wire encoding. The constructor's additional constant at `0x0044C4FC` and helper `0x00401430` still need semantic identification.
+
+## Constructor analysis checkpoint — run 17
+
+Run 17 (`43574768657`, artifact `14106455607`) confirms `0x0044B4D8` is `xmlrtl230.bpl!TXMLNode.GetChildNodes`, used by `TXMLMethodType.AfterConstruction` before adding the `method` element. Constant `0x0044C4FC` is not a valid Delphi string. The subsequent call `0x00401430` jumps through IAT slot `0x0062EC40`; the imported symbol and meaning of its arguments remain unknown. Run 18 is resolving the import slot and dumping nearby bytes. Keep the XML envelope limited to proven `method`/`class` and parameter `name`/text until this is resolved.
