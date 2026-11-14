@@ -664,3 +664,17 @@ Focused GitHub Actions run `43571811038` completed successfully (artifact `14105
 Therefore, statically confirmed: each `TDictionary<AnsiString,AnsiString>` entry processed by `TEmwatMethod.Invoke` becomes a child XML parameter node whose `name` attribute is the dictionary key and whose text content is the dictionary value. This is the precise parameter serialization shape; it does not yet establish the complete enclosing method/request XML or its wire encoding.
 
 The workflow artifact contains the helper disassembly and string decode. The prior run-9 wording that called the attribute and literal unresolved is superseded by this section.
+
+## XML serializer and method envelope confirmation (focused run 16)
+
+Focused run 16 (`43573798242`, artifact `14105735885`) resolves the serializer dispatch and method metadata:
+
+- The `TXMLEmwatType` implemented-interface `+0x54` slot points to thunk `0x0044B7A9`. The thunk adjusts `Self` by `-0x50` and jumps to `0x0044B590`.
+- `0x0044B590` is an IAT thunk to `xmlrtl230.bpl!TXMLNode.GetXML`. Therefore the interface getter used by `TEmwatMethod.Invoke` to produce its output string is the XML node serialization getter, not an EMWAT-specific custom encoder.
+- The method-name setter implementation at `0x0044C62C` calls `TXMLNode.SetAttribute` with literal `class` and the supplied method name.
+- The method-node constructor at `0x0044C458` passes literal `method` into its XML element setup path. It also invokes a second helper with constant pointer `0x0044C4FC`; that constant/helper path still needs exact decoding before assigning its semantic meaning.
+- The constructor creates the method node, and `TXMLMethodType.Insert` appends parameter child nodes. Each child has `name=` dictionary key and text equal to dictionary value (confirmed in the previous section).
+
+Thus the statically confirmed shape is a `method` XML element with a `class` attribute containing the dispatched method name and child parameter elements carrying `name` plus text values. Calling the root XML node's `GetXML` produces the output string. Do not yet claim the full document envelope, encoding, XML declaration, or any extra method attributes: the constructor's second constant at `0x0044C4FC` remains under investigation, and no runtime capture has been compared.
+
+The older preliminary paragraphs above that say the `+0x54` getter, `class` literal, or parameter key attribute are unresolved are superseded by this section.
