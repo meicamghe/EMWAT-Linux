@@ -62,3 +62,64 @@ The actual `TEditWordDocument.PerformMethod` name appears in the TD32 name data 
 4. Identify the XML `method class="EditWordDocument"` implementation and its response serialization.
 5. Reconcile the response with the user's observed apply-on-close behavior. The browser bridge returns service response text to the calling frame; it does not itself prove how document edits are committed.
 
+
+
+## HTTP command handler and XML class dispatch (service PE disassembly)
+
+The service's main form RTTI identifies a published method table for `TMainForm`:
+
+- `TMainForm` VMT: `0x0047B284`
+- Published method table pointer: `0x0047B84E`
+- `IdHTTPServerCommandGet`: `0x0047BF30`
+- `FormCreate`: `0x0047CCD8`
+
+The `IdHTTPServerCommandGet` body is the observed loopback HTTP command handler. Its Delphi event arguments are consistent with `Self=EAX`, `AContext=EDX`, `ARequestInfo=ECX`, and `AResponseInfo=[EBP+8]`. It initializes a local `TEmwatInvokeParam` record at `[EBP-0x1C]` and fills it as follows:
+
+| Record offset | Field | Static evidence |
+|---|---|---|
+| `+0x00` | `SessionId` | A server-generated random number is converted to a string and assigned to the first managed field |
+| `+0x04` | `bUnloadPkg` | Initialized to false; later set by the dispatcher |
+| `+0x05` | `bResultSet` | Initialized to false; later tested to decide response handling |
+| `+0x08` | `BufferIn` | Request content stream is read into a string and assigned here |
+| `+0x0C` | `AResponseInfo` | Set from the HTTP event's `AResponseInfo` argument |
+| `+0x10` | `AContext` | Set from the HTTP event's `AContext` argument |
+
+The record is 20 bytes (`0x14`) and its RTTI lists the same six field names. The named offsets above are supported by the handler's explicit stores/tests and by the record's two managed-field offsets (string at 0, AnsiString at 8).
+
+### Important correction: browser invoke value versus internal SessionId
+
+The browser's `invoke` query value is **not** copied into `TEmwatInvokeParam.SessionId` by this handler. The handler separately calls the imported `System.Random(900000)`, adds `100000`, and passes the result through imported `SysUtils.IntToStr`. Thus the internal `SessionId` is a separate server-generated six-digit value in the range 100000–999999.
+
+The handler also calls two virtual methods on the request parameter collection at `[ARequestInfo+0xD0]` using the literal key `invoke` (calls at `0x0047BFAA` and `0x0047BFBE`). This establishes that the parameter is inspected, but the exact semantics of the two collection slots and whether the numeric value is otherwise consumed remain unresolved. Do not describe the query value as the internal session ID.
+
+### XML parser and method metadata object
+
+The service-side XML parser helper is at `0x00470B38`. The dispatch helper at `0x00470D00` creates a `TMethodInfo` object and passes the request record's `BufferIn` string to the parser.
+
+The parser:
+- creates an XML document and loads the input string;
+- traverses XML nodes looking for an element named `method`;
+- reads that element's `class` attribute and stores it in `TMethodInfo.ClassName` at object offset `+4`;
+- traverses `param` elements, reads each `name` attribute and value, and adds them to the `Params` dictionary at object offset `+8).
+
+The service PE's `TMethodInfo` class has VMT `0x0047097C` and instance size `0x10`. Its constructor is at `0x00471214` and initializes the internal `TDictionary<AnsiString, AnsiString>` used for parameters.
+
+### Class resolution and invocation
+
+After parsing, the dispatcher takes the XML class name, prefixes it with the literal `T`, and calls the imported `System.Classes.GetClass(UnicodeString)` through thunk `0x00402354` (IAT target `0x00487B9C`). Therefore an XML envelope with `class="EditWordDocument"` is resolved as Delphi class `TEditWordDocument`.
+
+The dispatcher then creates an instance of the resolved class, stores the `TEmwatInvokeParam` pointer in the instance's first field at offset `+4`, and calls the instance VMT slot `+0x0C` with the parsed parameter dictionary and an output string. This is the actual dynamic class-dispatch point. The concrete connector methods named `TCompareWordDocument.PerformMethod`, `TEditExcelWorkBook.PerformMethod`, and `TShowSendLog.PerformMethod` are present in BPL metadata; the next step is to prove their exact mapping to the slot using the class VMT/interface tables.
+
+### Package and response path
+
+- `TMainForm.IdHTTPServerCommandGet` calls helper `0x0047E0EC` before dispatch. Its control flow checks the package-management object at `Self+0x428` and includes the log string `Unable to load "EmwatMethods.bpl".`; classify it as a package-availability/load gate pending a complete call graph.
+- The handler sets CORS response headers using `Access-Control-Allow-Origin:*`, `Access-Control-Allow-Headers:*`, and `Access-Control-Allow-Method:*`.
+- On successful dispatch it logs `Method invoked successfully.`; parser/dispatch exception paths log `Calling ParseMethod exception:` and `Unable to call "invoke" method:`.
+- The helper that writes the final response content and the precise response serialization contract still need separate tracing.
+
+**Current proven request chain:**
+
+`browser postMessage → XHR POST 127.0.0.1:<port>?invoke=<random> → TMainForm.IdHTTPServerCommandGet → TEmwatInvokeParam(SessionId, BufferIn, AResponseInfo, AContext) → XML ParseMethod → TMethodInfo(ClassName, Params) → GetClass("T"+className) → class-instance VMT slot +0x0C`.
+
+This is now a statically supported service-to-class dispatch path. It is not yet proof that the specific `EditWordDocument` class's method completes the observed apply-on-close operation; that requires resolving its class VMT slot and response/commit path.
+
