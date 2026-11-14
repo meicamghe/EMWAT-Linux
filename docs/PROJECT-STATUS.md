@@ -859,3 +859,12 @@ Run `43232846364` با موفقیت کامل (148/148 مرحله) پایان ی�
 - پیاده‌سازی‌های نمونه trace شدند: `TCompareWordDocument.PerformMethod` در `0x005EF8AC`، `TEditExcelWorkBook.PerformMethod` در `0x005EF300` و `TShowSendLog.PerformMethod` در `0x005EFE4C`.
 - هنوز هیچ‌کدام از این شواهد، شناسهٔ `invoke=5208` یا تولید XML `EditWordDocument/wordConfig` را مشخص نمی‌کند.
 - **گام بعد:** یافتن VMT مربوط به `TEmwatMethod`، mapping slot `+0x68`، و tracing parser/registry که request ID را به object متد وصل می‌کند.
+
+
+### Run 64 — اسکن همهٔ RCDATA formها
+
+- Run 64 با موفقیت پایان یافت و ۱۴ named RCDATA resource پیدا شد.
+- فرم‌های دارای `OnClose` قابل مشاهده فقط image-tools، autosave-files و simple-image-editor هستند؛ همگی UI cleanup paths هستند. `TFRMWORDPRINTOPTION` رویداد close سند Word ندارد.
+- در هیچ resource رشتهٔ `WordAppDocumentBeforeClose`، `OnDocumentBeforeClose` یا event property مربوط به WordApplication پیدا نشد.
+- `PACKAGEINFO` واحدهای Word مانند `WordViewer`، `WordConfigRequestXML`، `WordRequestXML`، `WordResponseXML` و `WordProcessing` را همراه `EmwatConnector` و `uSendLog` فهرست می‌کند. فرم اصلی ویرایش Word به‌صورت RCDATA form مجزا وجود ندارد؛ `TWordViwer` یک code class در `ScanRequestXML` است.
+- این نتیجه DFM binding را رد می‌کند، اما runtime COM connection-point یا browser-side close/request path هنوز ممکن است.
