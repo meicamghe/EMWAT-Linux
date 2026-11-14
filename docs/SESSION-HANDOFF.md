@@ -248,3 +248,14 @@ The transport deliberately does not interpret `invoke`, XML method names, parame
 - The earlier failing runs were corrected: missing setuptools in the runner was avoided, the test payload cap was aligned, and the module was placed under the actual `src/emwat_linux` package path.
 
 Next: validate allowed Origin handling with a safe test page/origin, recover the exact XML parameter node and response envelope, then implement a typed dispatcher. Do not expose the listener to non-loopback interfaces or accept arbitrary origins.
+
+
+## ادامه کار — parser پوسته XML
+
+نمونه Response واقعی زمان بستن Word که قبلاً کاربر ثبت کرده بود، نام تگ پارامتر را مشخص می‌کند: `<emwat version="1.0"><method class="EditWordDocument"><param name="wordConfig">`. بنابراین برای همین مسیر، تگ `param` دیگر فرضیه نیست و شاهد runtime دارد.
+
+فایل `python/src/emwat_linux/protocol.py` اضافه شد. parser فقط پوسته UTF-8 را می‌خواند، یک method و فرزندان `param` با نام یکتا را می‌پذیرد و متن مقدارها را بدون decode یا تغییر نگه می‌دارد. DTD/entity، XML خراب، نسخه نامعتبر، نام تکراری، markup تو در تو و payload بزرگ‌تر از سقف رد می‌شوند. تست‌ها در `python/tests/test_protocol.py` هستند.
+
+در تحلیل ایستای سرویس، مسیرهای query با کلیدهای `invoke`، `init` و `heartbeat` نیز جداگانه دیده شده‌اند؛ اما پاسخ دقیق heartbeat و بایت‌های پاسخ init هنوز معلوم نیست و نباید پاسخ ساختگی تولید شود.
+
+**گام بعد:** نتیجه CI parser را تأیید کن، سپس parser را به bridge متصل کن تا برای درخواست‌های XML معتبر، ساختار method/params قابل‌استفاده به dispatcher برسد؛ dispatch واقعی `EditWordDocument` را تا وقتی schema پاسخ و چرخه‌ی close به‌قدر کافی روشن نشده، پیاده‌سازی نکن.
