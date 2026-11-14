@@ -534,3 +534,21 @@ Representative concrete connector implementations now traced include `TCompareWo
 The wildcard RCDATA scan found 14 named resources, including `TFRMIMAGETOOLS`, `TFRMSENDLOG`, `TFRMSHOWAUTOSAVEFILES`, `TFRMSIMPLEIMAGEEDITOR`, `TFRMWORDPRINTOPTION`, and `TPROCESSINGFORM`. The only form resources with visible `OnClose` properties are the image-tools, autosave-files, and simple-image-editor forms; their handlers are UI cleanup paths. `TFRMWORDPRINTOPTION` exposes `OnCreate` and other dialog properties but no Word document close event. No resource contains a `WordAppDocumentBeforeClose`, `OnDocumentBeforeClose`, or WordApplication event binding string.
 
 The package metadata also lists the Word-related units `WordViewer`, `WordConfigRequestXML`, `WordRequestXML`, `WordResponseXML`, and `WordProcessing`, alongside `EmwatConnector` and `uSendLog`. There is no named RCDATA form resource for the main Word editor in this package; `TWordViwer` is implemented as a code class in `ScanRequestXML`. This further points away from a DFM-bound close handler and toward a runtime COM connection point or browser-side close/request logic. It does not rule out non-DFM event hookup.
+
+
+## Run 30: complete GetFieldIndexInList list traversal
+
+Lifecycle run 30 produced the complete TD32 body for `TWordViwer.GetFieldIndexInList` (`0x004CB1B4–0x004CB5E3`). Relevant sequence:
+
+1. At `0x004CB338`, it calls `0x004CB638`, passing the viewer instance, the incoming string parameter, and an output address for a local at `[ebp-8]`.
+2. It obtains the resulting collection count via `0x004CB340 → 0x004013E0`.
+3. It iterates from index zero; at `0x004CB355–0x004CB361`, each 32-bit element at `[array_base + ESI*4]` is loaded into ECX and passed to `FillImgFldsForPrint`.
+4. The Boolean result is stored in local `[ebp-0x2D]`; a true result stops further work in the loop.
+5. After the loop, it invokes slot `+0xDC` on the incoming object stored in `[ebp-4]` at `0x004CB36D–0x004CB37B`.
+6. A later conditional branch invokes slot `+0x2EC` on that same incoming object at `0x004CB3FE–0x004CB41E`, passing the saved list/result values.
+
+This makes the source of the nested helper receiver precise: it is an element in a collection returned by `0x004CB638`, not an independently discovered close-event context. The collection element's interface type remains to be established by tracing the provider and comparing typed consumers.
+
+**Caution:** the routine's TD32 signature labels the explicit parameter as `System.UnicodeString`; the array provider and element representation must be inspected before assigning semantic names to the local collection or its elements. A 32-bit pointer-sized element alone does not prove a particular COM interface.
+
+Run 31 extends the workflow to capture the array provider `0x004CB638`, its direct callers, the typed `FillImageField` control at `0x004BC5D8`, and the field-index helper at `0x004CB5E4`.
