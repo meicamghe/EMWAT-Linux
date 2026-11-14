@@ -118,6 +118,13 @@ jobs:
           python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x0044B590 invoke-enumerator-analysis/TXMLEmwatType-serializer-getter-implementation.md
           python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x0044B590 invoke-enumerator-analysis/TXMLEmwatType-serializer-getter-body.md 160 ret
           python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x0044B590 invoke-enumerator-analysis/TXMLEmwatType-serializer-getter-callers.md
+      - name: Resolve XML method constructor metadata
+        run: |
+          python tools/decode_pe_strings.py analysis-input/EmwatMethods.bpl1 0x0044C4FC 0x0044C4EC 0x0044C2C0 > invoke-enumerator-analysis/TXMLMethodType-constructor-metadata.md
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x00401430 invoke-enumerator-analysis/Delphi-XML-constructor-helper-401430.md 100 ret
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x00401430 invoke-enumerator-analysis/Delphi-XML-constructor-helper-401430-callers.md
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x0044B4D8 invoke-enumerator-analysis/XML-node-create-helper-44B4D8.md 100 ret
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x0044B4D8 invoke-enumerator-analysis/XML-node-create-helper-44B4D8-callers.md
       - uses: actions/upload-artifact@v4
         with:
           name: emwat-invoke-receiver-analysis
