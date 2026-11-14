@@ -730,3 +730,10 @@ GUIDهای `Fields` و `Field` با هویت interfaceهای Word در مستن�
 Run 33 همچنین تنها caller مستقیم TD32-bounded برای `GetFieldIndexInList` را در `TWordViwer.BGPrintWithGamPrintOptions` در `0x004C6F3F` یافت. بنابراین زنجیرهٔ `BGPrintWithGamPrintOptions → GetFieldIndexInList → FillPrintDocFields → Wordxp.Fields → FillImgFldsForPrint → nested helper` در مسیر پردازش فیلدهای چاپ قرار دارد. این یافته نام TD32 تابع `WordAppDocumentBeforeClose` را به‌تنهایی برای اثبات ثبت آن به‌عنوان event واقعی Close ناکافی می‌کند.
 
 منابع عمومی تطبیق IID و معنای collection: [Microsoft Learn — Fields](https://learn.microsoft.com/en-us/dotnet/api/microsoft.office.interop.word.fields?view=word-pia)، [Microsoft Learn — Field](https://learn.microsoft.com/en-us/dotnet/api/microsoft.office.interop.word.field?view=word-pia).
+
+
+### Run 41 — typed Fields getter and unresolved alternate document dispatch
+
+The complete TD32 body for `Wordxp.TWordDocument.Get_Fields` at `0x0042B55C` calls the common `TWordDocument` interface accessor `0x0042ABA0`, then dispatches `+0x80` on the returned interface. The direct-call scan found no immediate CALL xrefs to this wrapper.
+
+This provides a typed getter positive control, but it also exposes an important distinction: `TWordViwer.FillPrintDocFields` calls `+0x12C` on its typed `Wordxp._Document` input with multiple output arguments. That call must **not** be labelled `Get_Fields` based only on the fact that the procedure eventually produces `DynamicArray<Wordxp.Fields>`. Its method identity and intermediate interface types remain unresolved. The next scan adds `Range`, `_Range`, and `StoryRanges` RTTI candidates to help type the intermediate COM interfaces.
