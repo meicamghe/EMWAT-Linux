@@ -1,0 +1,64 @@
+"""Explicit allowlisted dispatcher for parsed EMWAT method envelopes."""
+from __future__ import annotations
+
+from typing import Callable
+
+from emwat_linux.bridge import BridgeRequest, BridgeResponse
+from emwat_linux.protocol import MethodCall, ProtocolError, parse_method_call
+
+
+MethodHandler = Callable[[MethodCall, BridgeRequest], BridgeResponse]
+
+
+class XMLMethodDispatcher:
+    """Dispatch only methods explicitly registered by the application.
+
+    Unknown methods are rejected; XML class names are never imported or
+    resolved dynamically. No success-shaped XML response is fabricated.
+    """
+
+    def __init__(self, *, max_payload_bytes: int = 16 * 1024 * 1024) -> None:
+        if max_payload_bytes <= 0:
+            raise ValueError("max_payload_bytes must be positive")
+        self._max_payload_bytes = max_payload_bytes
+        self._handlers: dict[str, MethodHandler] = {}
+
+    def register(self, class_name: str, handler: MethodHandler) -> None:
+        if not class_name or class_name != class_name.strip():
+            raise ValueError("invalid method class name")
+        if class_name in self._handlers:
+            raise ValueError(f"handler already registered: {class_name}")
+        self._handlers[class_name] = handler
+
+    def __call__(self, request: BridgeRequest) -> BridgeResponse:
+        try:
+            call = parse_method_call(request.body, max_bytes=self._max_payload_bytes)
+        except ProtocolError:
+            return BridgeResponse(
+                b"invalid_emwat_request",
+                content_type="text/plain; charset=utf-8",
+                status=400,
+            )
+
+        handler = self._handlers.get(call.class_name)
+        if handler is None:
+            return BridgeResponse(
+                b"method_not_implemented",
+                content_type="text/plain; charset=utf-8",
+                status=501,
+            )
+        try:
+            response = handler(call, request)
+        except Exception:
+            return BridgeResponse(
+                b"internal_method_error",
+                content_type="text/plain; charset=utf-8",
+                status=500,
+            )
+        if not isinstance(response, BridgeResponse):
+            return BridgeResponse(
+                b"invalid_method_response",
+                content_type="text/plain; charset=utf-8",
+                status=500,
+            )
+        return response
