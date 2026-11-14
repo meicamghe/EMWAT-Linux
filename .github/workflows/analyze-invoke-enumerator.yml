@@ -1,4 +1,4 @@
-name: Analyze EMWAT Invoke enumerator
+name: Analyze EMWAT Invoke receiver
 on:
   workflow_dispatch:
   push:
@@ -21,12 +21,13 @@ jobs:
         with:
           python-version: '3.12'
       - run: pip install pefile capstone
-      - name: Trace Invoke and generic enumerator helpers
+      - name: Trace Invoke XML receiver and dictionary helpers
         run: |
           mkdir -p invoke-enumerator-analysis
           python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x0046C82C invoke-enumerator-analysis/TEmwatMethod-Invoke.md
-          python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x0044C238 invoke-enumerator-analysis/Enumerator-construction-helper.md
-          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x0044C238 invoke-enumerator-analysis/Enumerator-construction-helper-callers.md
+          python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x0044C238 invoke-enumerator-analysis/TXMLEmwatType-AfterConstruction.md
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x0044C238 invoke-enumerator-analysis/TXMLEmwatType-AfterConstruction-callers.md
+          python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x0044B468 invoke-enumerator-analysis/TXMLEmwatType-construction-helper-44B468.md
           python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x0046DE84 invoke-enumerator-analysis/Enumerable-ToArrayImpl.md
           python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x0046E324 invoke-enumerator-analysis/TPairEnumerator-DoGetCurrent.md
           python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x0046E324 invoke-enumerator-analysis/TPairEnumerator-DoGetCurrent-callers.md
@@ -38,6 +39,9 @@ jobs:
           python tools/inspect_delphi_vmt_address.py analysis-input/EmwatMethods.bpl1 0x0046BEE8 invoke-enumerator-analysis/TPairEnumerator-vmt.md
           python tools/inspect_delphi_vmt_address.py analysis-input/EmwatMethods.bpl1 0x0046C0D4 invoke-enumerator-analysis/TDictionary-vmt.md
           python tools/inspect_delphi_vmt_address.py analysis-input/EmwatMethods.bpl1 0x0046B010 invoke-enumerator-analysis/TEnumerable-TPair-vmt.md
+          python tools/inspect_delphi_vmt_address.py analysis-input/EmwatMethods.bpl1 0x0044B9AC invoke-enumerator-analysis/TXMLEmwatType-vmt.md
+          python tools/inspect_pe_va.py analysis-input/EmwatMethods.bpl1 0x0044BA14 --before 0 --after 0x90 > invoke-enumerator-analysis/TXMLEmwatType-class-slots-68-through-CC.md
+          python tools/inspect_pe_va.py analysis-input/EmwatMethods.bpl1 0x0044B8E0 --before 0 --after 0x90 > invoke-enumerator-analysis/TXMLEmwatType-interface-slots-68-through-CC.md
           python tools/inspect_pe_va.py analysis-input/EmwatMethods.bpl1 0x0046AEFC --before 0 --after 0x90 > invoke-enumerator-analysis/TEnumerator-TPair-slots-68-through-CC.md
           python tools/inspect_pe_va.py analysis-input/EmwatMethods.bpl1 0x0046BF50 --before 0 --after 0x90 > invoke-enumerator-analysis/TPairEnumerator-slots-68-through-CC.md
           python tools/inspect_pe_va.py analysis-input/EmwatMethods.bpl1 0x0046C13C --before 0 --after 0x90 > invoke-enumerator-analysis/TDictionary-slots-68-through-CC.md
@@ -55,5 +59,5 @@ jobs:
           python tools/inspect_pe_va.py analysis-input/EmwatMethods.bpl1 0x0044BDF8 --before 0 --after 0x70 > invoke-enumerator-analysis/TXMLMethodType-vmt-B0-through-CC.md
       - uses: actions/upload-artifact@v4
         with:
-          name: emwat-invoke-enumerator-analysis
+          name: emwat-invoke-receiver-analysis
           path: invoke-enumerator-analysis/
