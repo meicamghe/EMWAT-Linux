@@ -805,3 +805,6 @@ Run `43719180035` succeeded; artifact `14164088249` was inspected. Additional ev
 - `T7zInArchive.SetPassword` uses callback type-info reference `0x0045391C`, creates the callback from `Self+8`, and invokes the underlying archive-interface slot `+0x1C` with `indices=NULL`, `numItems=-1`, `testMode=0`.
 - Separate `T7zInArchive.ExtractTo` uses type-info reference `0x00453850`, stores callback/context at `Self+0x50/+0x54`, and invokes the same underlying slot with `testMode` selected by its Boolean parameter.
 - Both are all-items operations, but they use different callback types. The latest plugin run `43723896564` is tracing those type-info blocks and pointer references; output destination remains unproven.
+
+
+- The internal archive-interface slot `+0x1C` is identified as `IInArchive.Extract`: the wrapper methods `ExtractItem` and `ExtractTo` also call this slot with their item/test-mode arguments. Thus `SetPassword` in the recovery path issues an all-items Extract request through its own callback. The callback's output destination remains unresolved.
