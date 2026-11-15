@@ -1,0 +1,64 @@
+name: Analyze EMWAT recovery SevenZip plugin
+on:
+  push:
+    paths:
+      - '.github/workflows/analyze-recovery-plugin.yml'
+      - 'analysis-input/EmwatMethods.bpl1'
+      - 'tools/find_td32_class_procedures.py'
+      - 'tools/trace_td32_procedure.py'
+      - 'tools/trace_td32_callers.py'
+      - 'tools/scan_pe_pointer_refs.py'
+      - 'tools/inspect_pe_va.py'
+permissions:
+  contents: read
+jobs:
+  recovery-plugin:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install pefile capstone
+      - name: Index SevenZip plugin and related classes
+        run: |
+          mkdir -p recovery-plugin-analysis/plugin recovery-plugin-analysis/form-data
+          python tools/find_td32_class_procedures.py analysis-input/EmwatMethods.bpl1 T7zPlugin T7zInArchive T7zOutArchive > recovery-plugin-analysis/plugin/class-index.md
+          python - <<'PY'
+          import pathlib, re, subprocess, sys
+          source = pathlib.Path("recovery-plugin-analysis/plugin/class-index.md").read_text(encoding="utf-8")
+          index = ["# SevenZip plugin method traces", ""]
+          for line in source.splitlines():
+              if not line.startswith("|") or "Decorated procedure" in line or "|---" in line:
+                  continue
+              parts = [p.strip() for p in line.strip("|").split("|")]
+              if len(parts) < 5:
+                  continue
+              module, decorated = parts[0], parts[1].strip("`")
+              m = re.search(r"0x([0-9A-Fa-f]{8})", parts[2])
+              if not m:
+                  continue
+              va = m.group(1)
+              safe = re.sub(r"[^A-Za-z0-9_.-]+", "_", decorated)[:100]
+              trace = pathlib.Path("recovery-plugin-analysis/plugin") / f"{va}-{safe}.md"
+              callers = pathlib.Path("recovery-plugin-analysis/plugin") / f"{va}-{safe}-callers.md"
+              subprocess.run([sys.executable, "tools/trace_td32_procedure.py", "analysis-input/EmwatMethods.bpl1", "0x"+va, str(trace)], check=True)
+              subprocess.run([sys.executable, "tools/trace_td32_callers.py", "analysis-input/EmwatMethods.bpl1", "0x"+va, str(callers)], check=True)
+              index.append(f"- {module} — 0x{va} — {decorated}: {trace}; callers: {callers}")
+          pathlib.Path("recovery-plugin-analysis/plugin/index.md").write_text("\\n".join(index)+"\\n", encoding="utf-8")
+          PY
+      - name: Trace recovery transform and plugin creation boundary
+        run: |
+          for target in 00452BBC 00456F00 00452C25 004543C4 00454450 004547DC 00453860; do
+            python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x$target recovery-plugin-analysis/form-data/proc-$target.md
+            python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x$target recovery-plugin-analysis/form-data/proc-$target-callers.md
+            python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 0x$target recovery-plugin-analysis/form-data/refs-$target.md
+          done
+          for target in 004529E8 00452A00 00452A40 00452A80 00452B00 00452B40 00452C00 00452C54 00452ED8 00452558 004525B0 0045275B 0062A824 0062A858; do
+            python tools/inspect_pe_va.py analysis-input/EmwatMethods.bpl1 0x$target --before 0x30 --after 0x90 > recovery-plugin-analysis/form-data/va-$target.md
+          done
+      - uses: actions/upload-artifact@v4
+        with:
+          name: emwat-recovery-plugin-analysis
+          path: recovery-plugin-analysis/
