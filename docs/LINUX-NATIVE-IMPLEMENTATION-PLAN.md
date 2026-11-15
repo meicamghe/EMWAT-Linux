@@ -171,3 +171,15 @@ Python bridge workflow run `43720329600` completed successfully with 66 tests. T
 
 
 - OfficeAdapter protocol documentation now explicitly requires per-document handle isolation and concurrent-session safety, matching the threaded bridge. CI run `43721449170` passed 69 tests.
+
+
+### Close callback race hardening — 2026-11-15
+
+- `DocumentCoordinator` now protects office callbacks with an `RLock`. After `wait_for_close` returns, it waits for any in-flight callback and disables modification/save notifications before final export.
+- Delayed callbacks during export or after a returned/cancelled session are ignored, rather than attempting an invalid state transition. Adapter failure also disables callbacks before propagating a sanitized coordination error.
+- Regression coverage invokes late callbacks during export and after return. Python bridge CI run `43722184809` passed **70 tests**. This validates the orchestration against fake adapters; no live LibreOffice UNO integration is claimed.
+
+### SevenZip interface mapping in parallel
+
+- The recovery plugin analysis now resolves Delphi VMT slots and interface tables for `T7zArchive`, `T7zPlugin`, `T7zInArchive`, and `T7zOutArchive`, including SevenZip archive/stream interface RTTI.
+- The purpose is to map the interface returned by `CreateOutArchive` to the `euResetMemory` dispatches. The mapping is still open until artifact `SevenZip-interface-tables.md` is inspected; do not promote the current `SetPassword → OpenFile → ExtractTo` sequence beyond a strong hypothesis.
