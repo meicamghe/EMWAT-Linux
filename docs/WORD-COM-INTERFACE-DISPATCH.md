@@ -806,3 +806,15 @@ Workflow run #10 (`analyze-word-event-sink.yml`) now labels this analysis as a s
 
 
 The full expanded scan in run #11 (`43717625474`, artifact `14162998865`) adds `Err_Ignore` → `The operation was canceled by user.`, `Err_20010` → image-load failure, `Err_20016`/`Err_20017` → Excel connection/workbook-open errors, and `Err_20018` → missing user-local folder. It also finds log-level labels (`None`, `Info`, `Debug`) and Persian AutoSave interval labels. The normalized list is in `docs/WORD-ERROR-MAP.md`.
+
+
+## Generated Word server-data follow-up — 2026-11-15
+
+Word event-sink workflow run #3 (`43722341799`, artifact `14164794063`) adds the generated wrapper-class traces and server-data inspection:
+
+- `TWordApplication.InitServerData` (`0x0043E070`) passes the data record at `0x00627A38` to helper `0x0040479C`.
+- `TWordDocument.InitServerData` (`0x0042AA20`) does the same with a separate data record at `0x00627768`.
+- The broad Delphi interface-table scan reports `TWordApplication` VMT `0x004202A8` with a null interface-table pointer. This does not rule out its generated OLE event connection-point machinery; it means the event source is not represented as a direct Delphi VMT interface-table entry in this scan.
+- The `0x00627B74` region remains the server error-string map described above. It is not reclassified as an event table.
+
+A targeted follow-up run (`43722702804`) now traces helper `0x0040479C` and the supporting RTL helpers, and expands/scans the `TWordDocument` server-data record at `0x00627768`. The actual event IID/DISPID-to-callback mapping remains unresolved until that artifact is inspected.
