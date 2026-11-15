@@ -39,7 +39,7 @@ jobs:
       - name: Decode unresolved registry value names and bounded contexts
         run: |
           mkdir -p registry-analysis/data
-          python tools/decode_pe_strings.py analysis-input/EmwatMethods.bpl1 0x00466F3C 0x00466F84 0x00466FAC 0x00467F2C 0x00467F64 0x0050944C 0x00509490 0x005094A8 0x005094C0 0x005094DC 0x00509B34 0x00509B78 0x00509B90 0x00509BA8 0x00509BC4 0x00509BE0 0x00509C00 0x00509C18 0x005EB160 0x005EB198 0x005EB1D4 0x005EB204 0x005EB22C 0x005EB264 0x005094F8 0x00509518 0x00509530 0x00466D16 0x00468E0B 0x00509245 0x005099C1 0x005EAE5D > registry-analysis/data/registry-value-and-context-strings.md
+          python tools/decode_pe_strings.py analysis-input/EmwatMethods.bpl1 0x00466F3C 0x00466F84 0x00466FAC 0x00467F2C 0x00467F64 0x0050944C 0x00509490 0x005094A8 0x005094C0 0x005094DC 0x00509B34 0x00509B78 0x00509B90 0x00509BA8 0x00509BC4 0x00509BE0 0x00509C00 0x00509C18 0x005EB118 0x005EB160 0x005EB198 0x005EB1D4 0x005EB204 0x005EB22C 0x005EB264 0x005094F8 0x00509518 0x00509530 0x00466D16 0x00468E0B 0x00509245 0x005099C1 0x005EAE5D > registry-analysis/data/registry-value-and-context-strings.md
           for spec in "00466CE0 00466D40" "00467C60 00467CC0" "00468DD0 00468E40" "00509200 00509270" "00509980 005099F0" "005EAE20 005EAE80"; do
             set -- $spec
             python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x$1 0x$2 registry-analysis/data/context-$1.md
