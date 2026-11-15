@@ -606,3 +606,13 @@ Use this exact naming in future traces: public/exported TEmwatMethod.Invoke = 0x
 - Local AppData helper uses `SHGetSpecialFolderLocation(CSIDL 0x1C)` and `SHGetPathFromIDListW`. Exact `.easz` root still unknown.
 - `euClearOldAutoSaveFiles` compares an age result with `0x18`; do not call it 24 days until the age helper confirms Delphi `TDateTime` units.
 - Run #3 (`43715933101`) extends traces for the age, password-read, path-construction, and process-cleanup helpers.
+
+
+## New confirmed recovery and request-schema findings — 2026-11-15
+
+- Recovery path workflow run #4 (`43716283296`) confirms `euGetWinTempPath` calls `kernel32!GetTempPathW` (`0x004027F8`); `euGetTempFileName` appends `temp-emwatASwf\\`. The AutoSave store is `%TEMP%\\temp-emwatASwf\\*.easz`.
+- Recovery password helper `euGetAutoSavePass` calls `GetUserNameW`; it returns the Windows account name, with fallback `@25*gamsign*25@` if the API fails.
+- Cleanup age is explicitly measured with `HoursBetween(Now, FileDateToDateTime(FileAge(path)))`; threshold is 24 hours, then `DeleteFileW`.
+- Recovery `Delete` handler passes selected item path and temp root to `euResetMemory`, then constructs an additional path with `.easd`; exact file transformation is pending. Run #5 (`43716527945`) traces `euResetMemory` internals and object pointers.
+- Added `docs/EDITWORD-REQUEST-SCHEMA.md`: one captured request has a Base64 XML `wordConfig` with 180 fields (including 20 repeated signer slots across seven field families) and a Base64 legacy DOC/OLE `wordBody`. Sensitive field values were not copied.
+- Word event-sink workflow run #8 (`43716384031`) fixes an event-callback extraction regex that previously failed to match the actual table pointer format; callback target tracing is now running.
