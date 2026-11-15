@@ -769,3 +769,11 @@ Run `43719180035` succeeded; artifact `14164088249` was inspected. Additional ev
 
 - Review found that callback detachment originally occurred only on the normal-close branch. The coordinator now disables callbacks immediately after `wait_for_close` returns, before handling either `CLOSED` or `CANCELLED`.
 - Added a regression test proving delayed modify/save notifications after cancellation are ignored. Python CI run `43722805637` passed **71 tests** (4.49 seconds).
+
+
+### `euResetMemory` custom interface identity — 2026-11-15
+
+- SevenZip plugin run `43722345225` succeeded; artifact `14165136040` was inspected.
+- `CreateOutArchive` constructs `T7zInArchive` (VMT `0x004525B0`) and returns `Self+0x70`. The class interface table has seven entries; entry 6 has `IOffset=0x70`, IID `022cf785-3ece-46ef-9755-291fa84cc6c9`, and VTable `0x00452420`.
+- This proves that `euResetMemory` dispatches `+0x44`, `+0x0C`, and `+0x3C` on this custom interface. The proposed mapping to `SetPassword`, `OpenFile`, and `ExtractTo` is still a hypothesis pending direct vtable slot decoding.
+- The next run expands interface vtable output to 20 entries (through `+0x4C`) to expose those targets.
