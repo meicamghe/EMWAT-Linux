@@ -239,3 +239,10 @@ The focused trace decoded the exact BeforeSave prompt and its control flow:
 - On the non-cancel path, the handler calls the Word Document.Close interface slot +0x29C, releases the current document interface, clears the viewer's active-document state, and logs "Document.OnBeforeClose succeed."
 
 This is direct evidence that the main editor's registered 0x004CD154 handler implements the custom close/register prompt and closes the document after the user's choice. Its TD32 symbol says BeforeSave, while its own log strings say OnBeforeClose; until the event-sink slot is mapped, retain both observations rather than assuming the COM event name. It explains why pressing Word's Save toolbar button is not the only route into the registration prompt: this handler participates in the close/save lifecycle. The exact COM variant type/argument interpretation and response timing still need the focused LoadDocument control-flow trace.
+
+
+### LoadDocument Base64 boundary clarification — request-lifecycle workflow #3
+
+- LoadDocument's wordBody argument is held in [ebp-0x1C] and its bytes are written directly to the temporary TFileStream at 0x004B7821–0x004B783A.
+- The Base64Decode call at 0x004B7E44 is invoked with [ebp-8], not [ebp-0x1C]. The surrounding code walks a separate indexed data collection, so this decode must not be attributed to wordBody; it is likely image/auxiliary data, but that identity is not yet proven.
+- The capture's XML wordBody value is Base64 text. Since LoadDocument writes its argument directly, the decode may happen in EmwatService's XML/parameter layer before the BPL call. That service-side boundary is not present in the current BPL input, so this remains unresolved.
