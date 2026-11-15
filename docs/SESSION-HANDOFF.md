@@ -472,3 +472,17 @@ Important new validation notes:
 - Commits `743e6378` and `a4027a70` add IAT-indirect CALL/JMP and pointer-reference scanning and correct the post-read range. Check the latest workflow run/artifact before drawing conclusions.
 
 Do not claim the registry startup read path, main-editor close event sink, close-time HTTP request, or final Almas Gam registration payload has been resolved. Continue with the latest workflow output.
+
+## Winux/Wine live validation checkpoint — 2026-11-15
+
+The detailed evidence is recorded in [WINUX-RUNTIME-VALIDATION.md](WINUX-RUNTIME-VALIDATION.md). This checkpoint separates observed behavior from assumptions:
+
+- **User-observed / runtime-confirmed:** the Windows installer was run through Winux Engine in the managed `emwat` prefix; Winux recorded installer status `SUCCESS` (verification remained `PENDING`). This is installation success, not proof of full application compatibility.
+- **Runtime-confirmed:** `EmwatService.exe` and `EmwatAgent.exe` were present as running Wine processes under the normal desktop user, not root. Their logs report Service startup/listening on port 1984 and Agent startup. Winux's own process/service listings did not track these processes.
+- **Runtime-confirmed:** `127.0.0.1:1984` was listening. A plain GET to `http://127.0.0.1:1984/` returned `HTTP/1.1 200 OK`, `Content-Length: 0`, and an `IDHTTPSESSIONID` cookie header. The socket was attributed by `ss` to `wineserver`, not directly to either Windows executable.
+- **Strict interpretation:** this GET proves only that the loopback HTTP listener answered at that time. It does not validate `?heartbeat`, `?init`, POST dispatch, browser messaging, XML method handling, Word document round-trip, or Almas Gam registration.
+- **Runtime-confirmed:** host CUPS scheduler was running but `lpstat -t` reported no destinations/queues. GAM-related files `winzvprt5.sys`, `zvprt5.ini`, and `spool/drivers/x64/zvprt1.gpd` were present in the Wine prefix. This proves file presence only—not Windows spooler registration, printer enumeration, or successful printing.
+- **Unknown:** whether the GAM virtual printer can function under Wine, whether it can be replaced by a Linux/CUPS implementation, and what exact print data/protocol it consumes. Do not infer failure solely from the absent CUPS queue or infer success from the installed driver files.
+- **Next runtime probe:** inspect the results of GET/HEAD/OPTIONS/POST against the root endpoint and the service/agent binaries/configuration for endpoint clues. Do not send fabricated XML to production method handlers. Continue with a harmless test letter and sanitized browser Network metadata before attempting the real Almas Gam workflow.
+
+This Wine runtime experiment is a reverse-engineering aid only. The product target remains a native Linux implementation; do not make Wine or Windows kernel printer drivers dependencies of the final architecture.
