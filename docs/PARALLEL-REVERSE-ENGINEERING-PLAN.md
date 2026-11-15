@@ -316,3 +316,11 @@ The pointer list at `0x00627BB0` is an error-message string table. The previous 
 - Run #7 (`43717048702`, artifact `14163205743`) identifies `Sevenzip.T7zInArchive` in the `euResetMemory` object construction path; `0x00452ED8` is TD32-labeled `T7zInArchive.GetInArchive`. The type metadata exposes archive properties including `Password`, `Stream`, `PasswordIsDefined`, `SubArchiveMode`, and extraction callbacks.
 - Password interpretation was corrected in `docs/RECOVERY-STORE-ANALYSIS.md`: `euGetAutoSavePass` plus `@25*gamsign*25@` is a distinct AutoSave-related value, not yet proven to be the `.easz` password. The recovery open path passes `mW@Tlogs43end_+` to object slot `+0x44` when no optional password is supplied. The property/slot mapping is pending.
 - Recovery workflow run #9 (`43717439805`) adds the SevenZip class method indexes. Run #10 (`43717465958`) traces those methods and the relevant VMT metadata.
+
+
+## Current CI snapshot — 2026-11-15
+
+- Python bridge run #46 (`43717259882`) passed 58 tests after adding the inner `wordConfig` parser and `EditWordDocument` request normalizer.
+- Network metadata run #2 (`43707410915`, artifact `14159156356`) identifies 15 streams touching port 1984 and independently confirms stream 18's `EditWordDocument` request/response metadata; detailed cross-check is in `docs/PCAP-EDITWORD-DOCUMENT-ROUNDTRIP.md`.
+- Word error-map run #11 (`43717625474`, artifact `14162998865`) succeeded; full normalized strings are in `docs/WORD-ERROR-MAP.md`.
+- Recovery SevenZip class method runs #9 and #10 (`43717439805`, `43717465958`) were still executing at this status snapshot. Do not mark the archive password or `.easd` transformation as resolved until their artifacts are inspected.
