@@ -5,6 +5,7 @@ on:
     paths:
       - '.github/workflows/analyze-pcap-timing.yml'
       - 'tools/analyze_pcap_http_timing.py'
+      - 'tools/compare_editword_document_payloads.py'
       - 'emwat.pcapng'
 permissions:
   contents: read
@@ -22,6 +23,10 @@ jobs:
           mkdir -p pcap-timing-analysis
           python tools/analyze_pcap_http_timing.py emwat.pcapng --client-port 61189 > pcap-timing-analysis/stream18-request-response-timing.md
           cat pcap-timing-analysis/stream18-request-response-timing.md
+      - name: Compare captured input wordBody and response document
+        run: |
+          python tools/compare_editword_document_payloads.py emwat.pcapng --client-port 61189 > pcap-timing-analysis/stream18-document-comparison.md
+          cat pcap-timing-analysis/stream18-document-comparison.md
       - uses: actions/upload-artifact@v4
         with:
           name: emwat-pcap-http-timing
