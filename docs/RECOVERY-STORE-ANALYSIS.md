@@ -333,40 +333,24 @@ Plugin follow-up run #2 (`43720247793`, artifact `14164382428`) traces the previ
 The exact meanings of the `euUnArchive` slots `+0x28/+0x10/+0x18), the two collection argument types, and the archive direction are not yet resolved. Keep it as a separate generic SevenZip operation; do not use it to infer the .easz recovery protocol.
 
 
-## 12. SevenZip reader/writer class trace (2026-11-15)
 
-The recovery-path runs #9 and #10 completed successfully (runs `43717439805` and `43717465958`; artifacts `14163436366` and `14163367757`). The dedicated SevenZip plugin workflow run #2 also completed successfully (run `43720247793`, artifact `14164382428`). These reports trace the Delphi TD32 procedures in `EmwatMethods.bpl1`.
+## Appendix — supplemental SevenZip method-index findings (2026-11-15)
 
-### Reader construction and archive operations
+The completed class-index artifacts `14163436366`, `14163367757`, and `14164382428` include the full `T7zInArchive` and `T7zOutArchive` TD32 method indexes. The principal recovery conclusions are in sections 17–18; this appendix records additional wrapper details without changing those confidence labels.
 
-- `T7zInArchive.GetInArchive` (`0x00452ED8`) initializes the internal interface field at object offset `+0x28`, then calls `T7zPlugin.CreateObject` (`0x00452DB4`) to create the underlying SevenZip archive handler.
-- `T7zInArchive.OpenStream` (`0x00452FDC`) wraps an input stream, creates an input-stream interface object, and calls `GetItemPath` (`0x00452F08`) before opening/initializing the archive interface.
-- `GetItemPath` lazily initializes the archive interface if `+0x28` is empty, then queries the underlying archive for an item path.
-- The class exposes item count, item name, item size, folder checks, per-item extraction, and extract-to-directory methods. `ExtractItem` (`0x004531D4`) forwards to the underlying archive interface's virtual slot `+0x18`; `ExtractTo` (`0x0045375C`) configures extraction callback/state fields at `+0x50` and `+0x54`, then invokes the archive interface's extraction slot `+0x1C`.
-- `Close` (`0x00452DE8`) releases/closes the internal archive interface when present. The destructor clears password/progress-related fields and extraction state.
+### Reader wrapper details
 
-This confirms a SevenZip SDK-style archive-reader abstraction and an extraction pipeline. It does **not** alone identify the on-disk container signature: do not label `.easz` as a standard 7z file until the format properties or a real sample are verified.
+- `T7zInArchive.GetInArchive` (`0x00452ED8`) initializes the internal archive-interface field at `Self+0x28` and calls `T7zPlugin.CreateObject` (`0x00452DB4`).
+- `T7zInArchive.OpenStream` (`0x00452FDC`) creates an input-stream wrapper, obtains an item path through `GetItemPath` (`0x00452F08`), then invokes the resulting stream/interface method.
+- `GetItemPath` lazily initializes the archive interface when `Self+0x28` is empty, then obtains the item path through the archive interface.
+- `ExtractItem` (`0x004531D4`) forwards to the underlying archive interface's slot `+0x18`. `ExtractTo` (`0x0045375C`) configures transient extraction callback/context fields `+0x50/+0x54`, calls the archive interface's extraction slot `+0x1C`, and clears those fields on exit.
+- `Close` (`0x00452DE8`) releases the internal archive interface when present.
 
-### Password handling — important correction
+### Writer wrapper details
 
-- `T7zInArchive.SetPassword` (`0x00453860`) copies the supplied Delphi UnicodeString into object field `+0x58`, then uses the archive's password callback/interface path to apply it.
-- `euResetMemory` (`0x00456F00`) passes the literal `mW@Tlogs43end_+` when its optional password argument is null and the password branch is selected; the call is an indirect virtual dispatch at slot `+0x44` on the object returned by `0x00452BBC`.
-- The reader class's VMT/type information exposes a `Password` property, but the current trace does not yet prove that the `euResetMemory` slot `+0x44` is the setter implemented by `T7zInArchive.SetPassword`. The plugin base-class constructor and callback object are under separate analysis.
-- **Supersedes the earlier wording in section 10:** `euGetAutoSavePass` calls `GetUserNameW` and falls back to `@25*gamsign*25@`, but its direct callers are the cleanup/logging path. Those values are not established as the recovery archive password. Keep the `mW@Tlogs43end_+` recovery-path literal distinct.
-- `T7zOutArchive.SetPassword` (`0x004547DC`) is a nine-byte stub that returns without storing or applying its string argument. Writer password handling therefore uses a different callback/property path, or is not supported by this wrapper method.
+- `T7zOutArchive` exposes `AddFile`, `AddFiles`, `AddStream`, `SaveToStream`, and progress/completion callbacks.
+- `AddStream` (`0x00453FDC`) traverses a source collection, builds update-item records, and submits them to the underlying archive update interface. The trace shows a file/stream metadata path, but does not by itself establish which EMWAT caller creates recovery archives.
+- `SaveToStream` (`0x00454668`) creates an output-stream wrapper and calls `SetCompleted` (`0x004546C4`).
+- `T7zOutArchive.SetPassword` remains a stub; the constructor/callback path and the `TObjectList` created by `CryptoGetTextPassword2` do not yet reveal the actual writer password text or encryption settings.
 
-### Writer class
-
-- The same plugin contains `T7zOutArchive` with `AddFile`, `AddFiles`, `AddStream`, `SaveToStream`, and progress/completion callbacks.
-- `AddStream` traverses a collection of source streams and builds update-item records; `SaveToStream` creates an output stream wrapper and calls the shared completion routine.
-- The plugin constructor (`0x00452C10`) creates a password callback object via `T7zOutArchive.CryptoGetTextPassword2` and stores the returned interface at offset `+0x44). This is a writer-side callback and must not be conflated with the reader's `euResetMemory` dispatch until the exact class/VMT relationship is resolved.
-
-### Remaining proof tasks
-
-1. Resolve the exact object class returned by `0x00452BBC` in `euResetMemory` and map its VMT slot `+0x44` to a named method.
-2. Trace the caller that creates each `.easz` archive and supplies the writer's output path, format properties, and password callback.
-3. Verify the archive format using a real `.easz` sample or a traced SevenZip format identifier/property.
-4. Trace the exact archive item name/path and extracted `.easd` file lifecycle in the recovery form.
-5. Only then implement a Linux recovery reader/writer; use a subprocess/library boundary with strict path and extraction limits, and preserve opaque encrypted archives until format/password behavior is proven.
-
-Detailed disassembly: workflow artifacts `14163436366`, `14163367757`, and `14164382428`; method index in the latter is `plugin/index.md`.
+These wrapper traces confirm the available archive operations, not the exact `.easz` container signature or the complete recovery writer configuration. Do not implement a format-specific reader/writer until the archive format and caller-supplied properties are verified.
