@@ -697,7 +697,7 @@ Run `43719323732` completed successfully (artifact `14164146310`). New facts:
 
 - `T7zPlugin` has constructor, destructor, and a shared `CreateObject` method. Both `T7zInArchive.GetInArchive` and `T7zOutArchive.GetOutArchive` call that shared factory.
 - `euUnArchive` directly constructs the plugin wrapper using global `0x0062A824`; `euResetMemory` instead calls `CreateOutArchive` (`0x00452BBC`) with a 16-byte global-derived value and the literal module name `7z.dll`.
-- `CryptoGetTextPassword2` obtains a provider/interface from global `0x0062FBB8` through helper `0x00404734`, stores it at object offset `+0x2C`, and has the plugin constructor as its direct caller.
+- `CryptoGetTextPassword2` calls helper `0x00404734`, resolved as the RTL TObjectList constructor; its class pointer comes from global `0x0062FBB8`, and the list is stored at object offset `+0x2C`. This does not identify the writer password value/provider.
 - `T7zOutArchive.SetPassword` is a no-op stub. `T7zInArchive.SetPassword` stores its string at `+0x58) and forwards it to the archive interface, but no raw static pointer to this method was found. Therefore, the mapping from `euResetMemory` virtual slot `+0x44` to that setter remains a strong candidate, not a proven binding.
 - Detailed update is in `docs/RECOVERY-STORE-ANALYSIS.md`, section 16.
 
