@@ -111,6 +111,8 @@ jobs:
           python tools/inspect_pe_va.py analysis-input/EmwatMethods.bpl1 0x004525B0 --before 0x20 --after 0x180 > recovery-path-analysis/form-data/vmt-4525B0.md
           python tools/inspect_pe_va.py analysis-input/EmwatMethods.bpl1 0x0045275B --before 0x20 --after 0x100 > recovery-path-analysis/form-data/typeinfo-45275B.md
           python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x004525B0 0x004527C0 recovery-path-analysis/form-data/archive-class-vmt-and-typeinfo.md
+          python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x005EB828 recovery-path-analysis/form-data/auto-save-delete-handler.md
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x005EB828 recovery-path-analysis/form-data/auto-save-delete-handler-callers.md
       - uses: actions/upload-artifact@v4
         with:
           name: emwat-recovery-path-analysis
