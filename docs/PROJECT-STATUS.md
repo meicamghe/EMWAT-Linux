@@ -1506,3 +1506,11 @@ The BPL export/API analysis resolves the earlier naming ambiguity. The public TE
 
 
 - تحلیل بعدی برای تعیین ارث‌بری و VMT کلاس پایه `T7zArchive` با run `43721583502` شروع شده است. index کلاس پایه جدا ذخیره می‌شود تا traceهای سنگین فقط روی wrapperهای reader/writer انجام شوند؛ run قبلی گسترده‌تر `43721251511` هنوز در حال اجراست.
+
+
+## همگام‌سازی اجرای اخیر — 2026-11-15
+
+- هماهنگ‌کننده سند در `document_coordinator.py` اکنون callbackهای تغییر/ذخیره را با `RLock` در برابر پایان نشست همگام می‌کند. بعد از دریافت Close، callbackها پیش از export غیرفعال می‌شوند؛ eventهای دیررس هنگام export یا بعد از بازگشت پاسخ دیگر state نهایی را تغییر نمی‌دهند.
+- تست جدید این رفتار را در زمان export و پس از برگشت پاسخ پوشش می‌دهد. Python CI run `43722184809` موفق شد: **۷۰ تست** پاس شدند. اجرای قبلی `43722182876` نیز با ۶۹ تست موفق بود.
+- تحلیل SevenZip base-class run `43721583502` موفق شد؛ artifact `14165155588` بررسی شد. برای نگاشت قطعی interface slots، workflow جدیدتر اکنون `resolve_delphi_vmt_slots.py` و `trace_delphi_interfaces.py` را روی کلاس‌های `T7zArchive`، `T7zPlugin`، `T7zInArchive` و `T7zOutArchive` اجرا می‌کند.
+- شاخه‌های موازی جدید: SevenZip interface/VMT run `43722345225`، Word lifecycle `43722341754`، Word event sink `43722341799` و BPL method index `43722341778`؛ هنوز نتیجه نهایی آن‌ها را اعلام نمی‌کنیم.
