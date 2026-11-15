@@ -109,13 +109,14 @@ The analysis is now split across independent GitHub Actions workflows rather tha
 - Finalization at 0x00457050 defaults the output extension to .doc; it compares the leading bytes against two ZIP local-file signatures and selects .docx when either signature matches.
 - The two signature constants begin PK 03 04 14 06 and PK 03 04 14 08. The exact semantics of the ZIP flag variants are not needed for the extension-selection result.
 - LoadDocument then passes the selected extension into euGetASFileName at 0x00454B9C. That helper is shared by Word loading and several image/print/fax paths.
-- The captured wordBody begins with Compound File Binary signature D0 CF 11 E0 A1 B1 1A E1; for this captured sample the classifier therefore selects .doc, not .docx.
+- In the captured HTTP envelope, wordBody is Base64 text; decoding its prefix yields the Compound File Binary signature D0 CF 11 E0 A1 B1 1A E1. Neither the transport text prefix nor the decoded CFB prefix matches the two PK signatures, so this sample follows the .doc branch.
+- The exact stage at which the Service decodes wordBody relative to the BPL Finalization call remains unresolved. The classifier's .doc result for this sample is supported; do not infer that every Base64-wrapped DOCX would be classified correctly until the service-side decode path is traced.
 - The helper does not establish the full temporary path, cleanup policy, or persistence destination. Do not infer those from the extension selection alone.
 
 **C. Network/API capture — workflow #2, run 43707410915, success, artifact 14159156356**
 
 - The metadata-only analyzer found 15 TCP streams involving port 1984: ten heartbeat exchanges, three init requests, one GetEmwatVersion, and one EditWordDocument.
-- The captured EditWordDocument request contains wordConfig, wordBody, and empty signData; the decoded config contains 180 field elements. The wordBody and returned document both carry the Compound File Binary signature.
+- The captured EditWordDocument request contains wordConfig, wordBody, and empty signData; the decoded config contains 180 field elements. Decoding the Base64 wordBody and returned-document values yields the Compound File Binary signature.
 - The response is response-word status=success, with a return type marked application/msword and encryption=base64.
 - Init requests carry the external Almas page as Referer; the subsequent XHR POST to the local service has loopback Origin/Referer. The bridge boundary is now confirmed by runtime headers.
 - Heartbeat replies are 200 OK with body TickTack.
