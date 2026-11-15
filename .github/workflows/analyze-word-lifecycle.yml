@@ -17,6 +17,10 @@ on:
       - 'tools/scan_pe_pointer_refs.py'
       - 'tools/scan_named_pe_resource.py'
       - 'tools/trace_td32_procedure.py'
+      - 'tools/scan_registry_api_calls.py'
+      - 'docs/WORD-DOCUMENT-PROTOCOL-ANALYSIS.md'
+      - 'docs/PROJECT-STATUS.md'
+      - 'docs/SESSION-HANDOFF.md'
 concurrency:
   group: word-lifecycle-${{ github.ref }}
   cancel-in-progress: true
@@ -557,6 +561,11 @@ jobs:
           python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 0x005EAA20 word-lifecycle-analysis/AutoSave-checkbox-handler-refs.md
           python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x005EAA20 0x005EAB5C word-lifecycle-analysis/AutoSave-checkbox-registry-write-path.md
           python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x005EAD94 0x005EADBE word-lifecycle-analysis/AutoSave-settings-read-init.md
+      - name: Find registry read APIs and all direct call sites
+        run: |
+          mkdir -p word-lifecycle-analysis
+          python tools/scan_registry_api_calls.py
+          test -s word-lifecycle-analysis/registry-api-call-sites.md
       - uses: actions/upload-artifact@v4
         with:
           name: emwat-word-lifecycle-analysis
