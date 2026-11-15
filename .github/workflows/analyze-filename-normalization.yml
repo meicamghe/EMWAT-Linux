@@ -63,6 +63,14 @@ jobs:
           for target in 00402A38 00402A78 00402A80 004028D0 00404494 0044A47C 0044A59C; do
             python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x$target filename-analysis/temp-cleanup/helper-$target.md 180 ret
           done
+      - name: Resolve Word cleanup entry points and temp-path APIs
+        run: |
+          mkdir -p filename-analysis/temp-cleanup/callers
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x0044AE98 filename-analysis/temp-cleanup/callers/DeleteTempRAW-callers.md
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x0044B0F8 filename-analysis/temp-cleanup/callers/GetFileVersion-callers.md
+          for target in 004027F8 00402744 004032C8 004032E0 00403310 0040414C 00403378 00401398 00401388 00401340; do
+            python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x$target filename-analysis/temp-cleanup/helper-$target.md 180 ret
+          done
       - uses: actions/upload-artifact@v4
         with:
           name: emwat-filename-normalization-analysis
