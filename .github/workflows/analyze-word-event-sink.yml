@@ -79,6 +79,10 @@ jobs:
             python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x$target event-sink-analysis/server-metadata/callers-$target.md
           done
           python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x0043E070 0x0043E174 event-sink-analysis/server-metadata/TWordApplication-init-connect-range.md
+          python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x004499B8 0x00449E20 event-sink-analysis/server-metadata/generated-event-callback-thunks.md
+          python tools/inspect_pe_va.py analysis-input/EmwatMethods.bpl1 0x00627B74 --before 0x10 --after 0x220 > event-sink-analysis/server-metadata/event-map-627B74-expanded.md
+          python tools/inspect_pe_va.py analysis-input/EmwatMethods.bpl1 0x00627A38 --before 0x10 --after 0x220 > event-sink-analysis/server-metadata/server-data-627A38-expanded.md
+          python tools/decode_pe_strings.py analysis-input/EmwatMethods.bpl1 0x004499B8 0x004499D0 0x004499F0 0x00449A14 0x00449A34 0x00449A70 0x00449A90 0x00449AC8 0x00449AE8 0x00449B48 0x00449B68 0x00449BA4 0x00449BC4 0x00449C38 0x00449C58 0x00449CBC 0x00449CDC 0x00449D14 0x00449D34 0x00449D98 > event-sink-analysis/server-metadata/event-target-string-scan.md
           python tools/inspect_pe_va.py analysis-input/EmwatMethods.bpl1 0x00627A38 --before 0x10 --after 0x90 > event-sink-analysis/server-metadata/data-627A38.md
           python tools/inspect_pe_va.py analysis-input/EmwatMethods.bpl1 0x00627B74 --before 0x10 --after 0x90 > event-sink-analysis/server-metadata/data-627B74.md
           python tools/decode_pe_strings.py analysis-input/EmwatMethods.bpl1 0x00627A38 0x00627B74 > event-sink-analysis/server-metadata/server-data-strings.md
