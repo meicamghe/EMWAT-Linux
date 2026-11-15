@@ -1,0 +1,48 @@
+name: Analyze EMWAT recovery callback contracts
+on:
+  push:
+    paths:
+      - '.github/workflows/analyze-recovery-callback-contracts.yml'
+      - 'analysis-input/EmwatMethods.bpl1'
+      - 'tools/trace_td32_procedure.py'
+      - 'tools/trace_td32_callers.py'
+      - 'tools/inspect_pe_va.py'
+      - 'tools/scan_pe_pointer_refs.py'
+      - 'tools/trace_pe_range.py'
+      - 'tools/trace_delphi_interfaces.py'
+permissions:
+  contents: read
+jobs:
+  callback-contracts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install pefile capstone
+      - name: Trace recovery and SevenZip callback implementations
+        run: |
+          mkdir -p recovery-callback-contracts/procedures recovery-callback-contracts/typeinfo recovery-callback-contracts/interfaces
+          for target in 0044A998 004563A8 004565DC 004555D8 0045574C 00456F00 00453860 004532E4 0045375C 00452FDC 00453534 00453480 004531D4 004531EC 00453744; do
+            python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x$target recovery-callback-contracts/procedures/$target.md
+            python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x$target recovery-callback-contracts/procedures/$target-callers.md
+          done
+      - name: Inspect callback RTTI and interface references
+        run: |
+          for target in 0045391C 00453850 0045275B 004525B0 00452558 00452BBC 00452E80 0044A998 004563A8 004565DC 004555D8 0045574C; do
+            python tools/inspect_pe_va.py analysis-input/EmwatMethods.bpl1 0x$target --before 0x30 --after 0xA0 > recovery-callback-contracts/typeinfo/$target.md
+            python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 0x$target recovery-callback-contracts/typeinfo/$target-refs.md
+          done
+          python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x004525B0 0x004527C0 recovery-callback-contracts/typeinfo/sevenzip-class-vmt-and-rtti.md
+          python tools/trace_delphi_interfaces.py analysis-input/EmwatMethods.bpl1 recovery-callback-contracts/interfaces/all-delphi-interfaces.md
+      - name: Trace recovery form call chain and archive path arguments
+        run: |
+          for target in 005EB828 00456F00 0044A998 004563A8 004565DC 004555D8 0045574C; do
+            python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x$target recovery-callback-contracts/procedures/$target-all-callers.md
+          done
+      - uses: actions/upload-artifact@v4
+        with:
+          name: emwat-recovery-callback-contracts
+          path: recovery-callback-contracts/
