@@ -398,17 +398,17 @@ The pointer list at `0x00627BB0` is an error-message string table. The previous 
 - Parallel work continues in the SevenZip vtable mapping, Word server-data RTL helpers, autosave Delete caller, Word lifecycle callbacks, and BPL method-index branches. Keep event registration and close-time Almas commit as unresolved until the relevant traces prove them.
 
 
-- Confirmed one `euResetMemory` interface slot: custom vtable `0x00452420 +0x0C` forwards through thunk `0x004522E9` to `T7zInArchive.OpenStream` (`0x00452FDC`), accepting `IInStream`. This corrects the earlier `OpenFile` candidate. The first `euResetMemory` argument is an input stream interface; the form Delete trace is checking its construction. `+0x3C` and `+0x44` remain unresolved.
+- Confirmed `+0x0C` is `T7zInArchive.OpenStream(UnicodeString) -> IInStream`; the method takes the archive path and creates the stream. The `IInStream` is the return type, not the input argument.
 
 
 ### `euResetMemory` interface slot mapping resolved — 2026-11-15
 
 - The 20-slot interface table from run `43722990639` / artifact `14165676602` resolves the custom `T7zInArchive` interface calls:
-  - `+0x0C` → `OpenStream(IInStream)` at `0x00452FDC`.
+  - `+0x0C` → `OpenStream(UnicodeString) -> IInStream` at `0x00452FDC`.
   - `+0x3C` → `SetPassword(UnicodeString)` at `0x00453860`.
   - `+0x44` → virtual `T7zArchive` constructor at `0x0045392C`.
 - `SetPassword` stores its string at `Self+0x58`, creates an extraction callback from `Self+8`, and invokes the internal archive interface slot `+0x1C` for all items (`indices=NULL`, `numItems=-1`, `testMode=0`). This suggests the recovery routine triggers an all-items archive operation through this callback; do not yet claim the exact output path.
-- Remaining recovery work: inspect the autosave Delete caller to type the input stream and second string, and trace the callback object at typeinfo references `0x0045391C` and `0x00453850` to identify the output destination and lifecycle.
+- Recovery Delete caller is now traced: it passes the selected `.easz` path and a second string from helper `0x0044A998`; next trace `0x0044A998`, `0x004563A8`, `0x004565DC`, `0x004555D8`, and callback type-info `0x0045391C`/`0x00453850` to identify the password source and `.easd` output destination.
 
 
 - Compare `SetPassword` callback typeinfo `0x0045391C` with `ExtractTo` callback typeinfo `0x00453850`. Both invoke internal archive slot `+0x1C` for all items, but `SetPassword` uses `testMode=0` and a callback from `Self+8`; `ExtractTo` stores context at `Self+0x50/+0x54` and uses its Boolean argument as `testMode`. Latest plugin run `43723896564` traces both typeinfo regions and references to resolve output semantics.
