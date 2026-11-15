@@ -1524,3 +1524,10 @@ The BPL export/API analysis resolves the earlier naming ambiguity. The public TE
 - artifact `14165136040` از run `43722345225` بررسی شد. `CreateOutArchive` در واقع شیء `T7zInArchive` را با VMT `0x004525B0` می‌سازد و interface pointer را از `Self+0x70` برمی‌گرداند.
 - جدول interface کلاس ۷ ورودی دارد؛ ورودی ششم با `IOffset=0x70` دقیقاً با pointer برگشتی منطبق است. IID آن `022cf785-3ece-46ef-9755-291fa84cc6c9` و VTable آن `0x00452420` است.
 - پس سه dispatch مسیر `euResetMemory` در slotهای `+0x44/+0x0C/+0x3C` روی همین interface سفارشی اجرا می‌شوند. نام متدهای متناظر هنوز نهایی نیست؛ workflow بعدی خروجی vtable را تا slot `+0x4C` گسترش داده تا نگاشت دقیق تأیید شود.
+
+
+## همگام‌سازی شاخه‌های COM و بازیابی — 2026-11-15
+
+- Methods BPL run `43722341778` / artifact `14165431103`: `WordAppDocumentBeforeClose` در `0x004CCBBC` helper `0x004BCA88` را صدا می‌زند؛ این helper همچنین از `GetCaptionItemFont` استفاده می‌شود، بنابراین close-specific یا network/save نیست. caller مستقیم `0x004CCBBC` همچنان `FillImgFldsForPrint` است؛ ثبت زنده‌ی event هنوز اثبات نشده.
+- Word event sink run `43722990625` / artifact `14165586257`: GUIDهای server-data با COM metadata ورد همخوانی دارند؛ `000209FF` مربوط به ApplicationClass و `00020906` مربوط به DocumentClass است. فهرست شامل IIDهای ApplicationEvents و ApplicationEvents2 هم هست. این metadata، callback-pointer table نیست.
+- runهای در حال اجرا: SevenZip vtable با ۲۰ slot (`43722990639`)، Word event RTL helper trace (`43723423283`)، recovery Delete handler (`43723328264`)، Word lifecycle (`43722990611`) و Methods BPL (`43722990637`). نتیجه‌ی هیچ‌کدام تا زمان بررسی artifact نهایی اعلام نمی‌شود.
