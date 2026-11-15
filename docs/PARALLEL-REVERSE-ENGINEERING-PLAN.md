@@ -309,3 +309,10 @@ The next independent tasks are to resolve the `euGetAutoSavePass` read path, det
 ### Correction to event-sink branch interpretation
 
 The pointer list at `0x00627BB0` is an error-message string table. The previous callback-table interpretation was incorrect and is explicitly superseded in `docs/WORD-COM-INTERFACE-DISPATCH.md`. Workflow run #10 changes the extraction to decode these strings rather than tracing them as procedures. Main-viewer BeforeSave registration at `0x004CD154` remains independently confirmed.
+
+
+## Recovery archive reader identification — 2026-11-15
+
+- Run #7 (`43717048702`, artifact `14163205743`) identifies `Sevenzip.T7zInArchive` in the `euResetMemory` object construction path; `0x00452ED8` is TD32-labeled `T7zInArchive.GetInArchive`. The type metadata exposes archive properties including `Password`, `Stream`, `PasswordIsDefined`, `SubArchiveMode`, and extraction callbacks.
+- Password interpretation was corrected in `docs/RECOVERY-STORE-ANALYSIS.md`: `euGetAutoSavePass` plus `@25*gamsign*25@` is a distinct AutoSave-related value, not yet proven to be the `.easz` password. The recovery open path passes `mW@Tlogs43end_+` to object slot `+0x44` when no optional password is supplied. The property/slot mapping is pending.
+- Recovery workflow run #9 (`43717439805`) adds the SevenZip class method indexes. Run #10 (`43717465958`) traces those methods and the relevant VMT metadata.
