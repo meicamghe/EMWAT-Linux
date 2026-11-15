@@ -74,7 +74,6 @@ def inspect_value(text):
     raw = text.encode("utf-8")
     result = {
         "text_length": len(text),
-        "text_prefix": text[:100] if len(text) <= 100 else text[:100] + "...",
         "base64": False,
         "decoded_length": None,
         "decoded_magic": None,
