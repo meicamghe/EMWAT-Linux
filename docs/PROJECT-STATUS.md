@@ -1401,3 +1401,8 @@ The Python bridge now matches the captured heartbeat and init routes, can serial
 ### Response document comparison
 
 The response-word payload is not an echo of the input wordBody. The pcap contains 17 sequence gaps (68 missing Base64 characters / 51 decoded bytes) inside the response document. Accounting for those missing capture bytes yields an estimated response size of 875,008 bytes versus 872,960 input bytes (+2,048). The OLE header's first-directory-sector pointer changes from 1698 to 1702. Full-file equality remains unverified because the capture is incomplete.
+
+
+### Invoke wrapper/helper address clarification — 2026-11-15
+
+The BPL export/API analysis resolves the earlier naming ambiguity. The public TEmwatMethod.Invoke entry is 0x0046C9E0 (export name; shared descendant VMT slot +0x0C). It calls the 433-byte inner dictionary/XML helper at 0x0046C82C, then dispatches the concrete PerformMethod through VMT slot +0x10. TD32 labels are misleading: 0x0046C82C is symbolized as Invoke, while 0x0046C9E0 is symbolized as Finalization. Use the wrapper/helper distinction in current work.
