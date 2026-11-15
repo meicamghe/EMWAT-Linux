@@ -381,3 +381,18 @@ The installed files were inspected with both Unicode and narrow-string extractio
 - فایل `tcp-payloads.txt` خروجی packet-level است؛ ترتیب و تکرار segmentها باید در هر بازسازی stream لحاظ شود. طول دادهٔ بازسازی‌شدهٔ درخواست اصلی با مقدار Content-Length اختلاف چند بایتی دارد، بنابراین طول بدنه را از شمارش سادهٔ hexها نتیجه‌گیری نکنید.
 - محتوای واقعی نامه و داده‌های داخل XML پیکربندی عمداً در گزارش حذف شده‌اند.
 - این capture یک اجرای مشخص را نشان می‌دهد و برای تعمیم به تمام نسخه‌ها/متدها کافی نیست.
+
+
+### نتایج ابزار بازتولیدپذیر تحلیل TCP — workflow #2
+
+ابزار جدید `tools/analyze_tcp_payloads.py` و گردش‌کار `.github/workflows/analyze-network-capture.yml` گزارش metadata-only تولید می‌کنند؛ payload سند، متن نامه و Base64 خام وارد artifact نمی‌شوند.
+
+- Workflow run #2: `43707410915`، موفق؛ artifact `14159156356`.
+- تعداد streamهای TCP متصل به پورت 1984: **15**.
+- توزیع مشاهده‌شده: **10 heartbeat، سه init، یک GetEmwatVersion و یک EditWordDocument**.
+- XML داخلی `wordConfig` در درخواست EditWordDocument شامل **180 عنصر field** است. فقط تعداد عناصر گزارش شده؛ مقدارهای field عمداً استخراج/منتشر نشده‌اند.
+- `wordBody` ورودی و خروجی هر دو با امضای باینری `D0 CF 11 E0 A1 B1 1A E1` آغاز می‌شوند؛ این امضای Compound File Binary است. این شواهد با محتوای Word باینری و MIME برابر `application/msword` سازگارند، نه با فرض اینکه body متن ساده یا DOCX ZIP است.
+- در درخواست `GET /?init=...`، Referer صفحهٔ اصلی `https://automation.bsi.ir/` مشاهده شده است؛ اما درخواست XHR بعدی به سرویس محلی، Origin و Referer محلی `127.0.0.1:1984` دارد. بنابراین زنجیرهٔ parent page → init bridge → local XHR اکنون از روی headerها قابل تفکیک است.
+- heartbeatهای capture پاسخ `200 OK` با بدنهٔ هشت‌بایتی `TickTack` دارند.
+
+**محدودیت ابزار:** خروجی tcp-payloads فاقد TCP sequence number است؛ ابزار از ترتیب frame استفاده می‌کند و صرفاً برای کشف metadata/triage است. برای تحلیل byte-perfect، بازسازی stream باید از خود PCAPNG با sequence number و مدیریت retransmission انجام شود. گزارش CI نیز عمداً فقط metadata را نگه می‌دارد.
