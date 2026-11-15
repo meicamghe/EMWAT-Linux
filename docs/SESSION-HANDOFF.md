@@ -659,8 +659,8 @@ The reader exposes archive open, item-query and extraction methods. Do not yet n
 
 ### Verified since the previous handoff
 
-- Python bridge CI run `43720329600` succeeded with **66 tests**. The close-driven coordinator and EditWordDocument domain-service tests cover close without explicit Save, separate modification/save callbacks, cancellation, sanitized adapter failures, and rejection of non-byte output.
-- New engine-neutral files: `office_adapter.py`, `document_coordinator.py`, and `editword_service.py`. They model request normalization → open → track modifications and engine saves independently → wait for user close → export final bytes. They are not a LibreOffice implementation and are not yet connected to the production HTTP method handler.
+- Python bridge CI run `43721322012` succeeded with **69 tests**. The close-driven coordinator and EditWordDocument domain-service tests cover close without explicit Save, separate modification/save callbacks, cancellation, sanitized adapter failures, and rejection of non-byte output.
+- New engine-neutral files: `office_adapter.py`, `document_coordinator.py`, and `editword_service.py`. They model request normalization → open → track modifications and engine saves independently → wait for user close → export final bytes. They are not a LibreOffice implementation. `editword_handler.py` now adapts the service to the XML dispatcher and uses the observed success serializer, but the factory is not yet registered in the application.
 - `EditWordDocument` request normalization exists, including Base64 document decoding and conservative preservation of signData as opaque text.
 - Heartbeat response and init-script generation are implemented against the captured exchange; production allowlists must still be configured.
 - Recovery analysis identifies `T7zInArchive` as the reader wrapper relevant to recovery. Its SetPassword implementation at `0x00453860` stores the supplied Unicode password at instance offset `+0x58` and invokes an extraction-style interface call with a callback-like helper. `euResetMemory` supplies `mW@Tlogs43end_+` to virtual/interface slot `+0x44` when its optional password is absent and the flag selects the fallback. The likely SetPassword → OpenFile → ExtractTo mapping remains unproven. Do not substitute the Windows username or `@25*gamsign*25@`, which belong to a separate cleanup/logging path.
@@ -725,3 +725,11 @@ Run `43719180035` succeeded; artifact `14164088249` was inspected. Additional ev
 - `euUnArchive` (`0x00456DFC–0x00456EFF`) is the only direct bounded caller of the `T7zPlugin` constructor in this scan. It uses global `0x0062A824`, then calls object/interface slots `+0x28`, `+0x10`, and `+0x18` while iterating paired collection-like inputs.
 - This is separate from `euResetMemory` → `CreateOutArchive` and its `+0x44/+0x0C/+0x3C` sequence. The `euUnArchive` slot meanings and archive direction remain unresolved; do not use this path to infer the .easz recovery contract.
 - Full trace: `docs/RECOVERY-STORE-ANALYSIS.md`, section 18.
+
+
+### Dispatcher adapter result
+
+- Added `python/src/emwat_linux/editword_handler.py`. It adapts the domain service to the XML dispatcher and serializes successful final bytes using the observed `response-word` envelope.
+- A cancellation response factory is mandatory and injected; cancellation HTTP semantics are not guessed.
+- The factory is not registered in the running application yet. Registration waits for a real LibreOffice OfficeAdapter and captured cancellation behavior.
+- Latest Python CI: run `43721322012`, success, 69 tests.
