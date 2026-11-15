@@ -174,3 +174,16 @@ The recovery form's `Delete` handler first collects selected list-item values, c
 This establishes a recovery-open transformation path involving `.easz`, `euResetMemory`, and a constructed `.easd` path. It does **not yet** prove whether `.easd` is a decrypted file, a temporary working copy, or another intermediate; the implementation of `euResetMemory` and its internal object methods must be resolved before naming the transformation.
 
 Next trace targets: `0x00452BBC` (called inside `euResetMemory`), the VMT/object pointers at `0x0062A824` and `0x0062A858`, and the `euResetMemory` callsites.
+
+
+## 12. Recovery file transformation helper — structural trace (path workflow run #5)
+
+The `euResetMemory` procedure (`0x00456F00`) is not a simple filename rename. Its call chain uses helper `0x00452BBC`, which constructs an object using class/data metadata at `0x00452558`, then invokes a virtual method at slot `+0x4C`.
+
+Within `euResetMemory`:
+- A 16-byte block is copied from one of two global data areas (`0x0062A824` or `0x0062A858`) according to a Boolean argument.
+- The constructed object's virtual methods at `+0x0C` and `+0x3C` receive the two path arguments.
+- Another virtual method at `+0x44` may receive an optional string argument.
+- The second Boolean argument changes whether that optional method is invoked.
+
+This shape is consistent with a stateful file/memory transformation object, but the class identity, key meaning, and transform direction are not yet known. It is not yet safe to call this AES, encryption, decryption, compression, or decompression. Run #6 adds object/VMT and global-data reference inspection.
