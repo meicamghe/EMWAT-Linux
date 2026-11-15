@@ -503,7 +503,7 @@ Direct-call scans found **zero** TD32-bounded CALL sites for all four `TWordDocu
 
 ## EMWAT method dispatcher entry (lifecycle run 62)
 
-The complete TD32 trace for `TEmwatMethod.Invoke` at `0x0046C82C` (433 bytes) confirms that it accepts a `TDictionary<AnsiString, AnsiString>`, iterates dictionary data, constructs intermediate invocation state, and performs an indirect dispatch through slot `+0x68` on an interface/object value at `0x0046C921`. The concrete connector `PerformMethod` signatures use the same string-to-string dictionary. The service-side `TMethodInfo.Params` dictionary is also RTTI-typed as `TDictionary<System.AnsiString, System.AnsiString>`, so the XML parser and BPL connector parameter types align; the exact receiver type and slot `+0x68` declaration remain unresolved.
+The complete TD32 trace at `0x0046C82C` (433 bytes; symbolized as `TEmwatMethod.Invoke`) is the inner dictionary/XML helper. It accepts a `TDictionary<AnsiString, AnsiString>`, iterates dictionary data, constructs XML method/parameter nodes, and performs an indirect dispatch through slot `+0x68` at `0x0046C921`. The public virtual `TEmwatMethod.Invoke` wrapper is at `0x0046C9E0` (the BPL export name and shared VMT slot `+0x0C`); it calls this helper, then dispatches the concrete connector's `PerformMethod` through VMT slot `+0x10`. The concrete connector signatures and service-side `TMethodInfo.Params` are both typed as `TDictionary<System.AnsiString, System.AnsiString>`. The exact receiver type for the helper's `+0x68` call remains unresolved.
 
 The TD32 direct-call scan found only one direct CALL to `TEmwatMethod.Invoke`, from `Finalization` at `0x0046CA67`. Therefore, the normal request path may enter it indirectly through a VMT/interface dispatch or another module. The trace does not itself identify the numeric request ID `5208`, the HTTP query parser, or the `EditWordDocument/wordConfig` response generator.
 
@@ -556,12 +556,12 @@ The corrected class-RTTI scanner now finds the small connector classes (instance
 
 The base `TEmwatMethod` VMT at `0x0046ABFC` has slot `+0x0C = 0x0046C9E0` and slot `+0x10 = 0x00401068` (the RTL abstract-error thunk). Subclasses override slot `+0x10` with their own method target.
 
-The body at `0x0046C9E0` (TD32 symbol label: `Emwatmethod.Finalization`) is not merely an unrelated cleanup routine in this call path. The service dispatcher calls class VMT slot `+0x0C`; this body then:
-1. calls `TEmwatMethod.Invoke` at `0x0046C82C` with the parameter dictionary;
+The body at `0x0046C9E0` (TD32 symbol label: `Emwatmethod.Finalization`, BPL export name: `TEmwatMethod.Invoke`) is the public virtual wrapper in this call path. The service dispatcher calls class VMT slot `+0x0C`; this body then:
+1. calls the inner dictionary/XML helper at `0x0046C82C` with the parameter dictionary;
 2. calls the same object's virtual slot `+0x10` at `0x0046CA88`, passing the parameter dictionary and output string.
 
 This proves the two-stage dispatch:
-`service GetClass("T"+className) → instance VMT+0x0C (0x46C9E0) → TEmwatMethod.Invoke (0x46C82C) → instance VMT+0x10 (concrete method)`.
+`service GetClass("T"+className) → instance VMT+0x0C (public Invoke wrapper 0x46C9E0) → inner XML/dictionary helper (0x46C82C) → instance VMT+0x10 (concrete method)`.
 
 **Most important result:** the XML request class `EditWordDocument` resolves to `TEditWordDocument`, whose VMT slot `+0x10` points to `0x005EE82C`. This provides the previously missing concrete entry address for the Word-edit method, even though the current TD32 procedure inventory has no procedure record at that address. Its machine code is present and can be traced as a raw PE range.
 
@@ -759,3 +759,14 @@ Run 26 (`43584217243`, artifact `14109926135`) independently traced the generate
 The wrappers obtain the underlying interface through `0x0042ABA0` and invoke the corresponding vtable slot. The three-argument overload is called from the registered BeforeSave callback at `0x004CD154` in the Yes/No prompt branches. The no-argument overload uses a different slot. Until the `_Document` type-library declarations or a matching wrapper map both slots, do not assign method names to raw offsets beyond the TD32 wrapper names.
 
 The separate `WordAppDocumentBeforeClose` symbol at `0x004CCBBC` is still not proven to be registered as a live event handler. Its known direct caller is `FillImgFldsForPrint`. The user's observed close-time HTTP POST is not yet tied to either wrapper path.
+
+
+### Invoke wrapper/helper naming clarification — 2026-11-15
+
+The BPL export/API trace resolves the apparent symbol conflict:
+
+- Public virtual/exported TEmwatMethod.Invoke is 0x0046C9E0, shared by descendants at VMT slot +0x0C.
+- The wrapper calls 0x0046C82C at 0x0046CA67; this 433-byte inner routine builds/serializes the dictionary-backed XML method/parameter structure.
+- The wrapper then calls the subclass VMT slot +0x10 at 0x0046CA88.
+- TD32 labels are shifted/misleading at this boundary: 0x0046C82C carries the Invoke symbol, while 0x0046C9E0 carries the Finalization symbol. Export metadata, VMT mapping, and executable call flow establish the public wrapper/helper relationship above.
+- The +0x68 indirect call at 0x0046C921 belongs to the inner helper. A second +0x68 call at 0x0046CBB7 belongs to the wrapper and has a different receiver; do not conflate them.
