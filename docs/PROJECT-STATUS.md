@@ -1537,3 +1537,6 @@ The BPL export/API analysis resolves the earlier naming ambiguity. The public TE
 
 
 - نگاشت هر سه slot رابط بازیابی اکنون مستقیم از artifact `14165676602` تأیید شد: `+0x0C → T7zInArchive.OpenStream( IInStream )`، `+0x3C → T7zInArchive.SetPassword(UnicodeString)` و `+0x44 → T7zArchive` virtual constructor. متد `SetPassword` پس از ذخیره رشته در `Self+0x58`، callback استخراج می‌سازد و روی رابط آرشیو داخلی slot `+0x1C` را با `indices=NULL`, `numItems=-1`, `testMode=0` فراخوانی می‌کند. معنای دقیق دو رشته و مسیر خروجی callback هنوز باز است.
+
+
+- جزئیات callback آرشیو هم تفکیک شد: `SetPassword` از typeinfo آدرس `0x0045391C` استفاده می‌کند؛ `ExtractTo` از `0x00453850` و contextهای `Self+0x50/+0x54`. هر دو روی interface داخلی slot `+0x1C` را با `indices=NULL` و `numItems=-1` صدا می‌زنند؛ `testMode` در `SetPassword` صفر و در `ExtractTo` وابسته به پارامتر Boolean است. نوع دقیق callback و مقصد خروجی هنوز در شاخه‌ی جاری بررسی می‌شود.
