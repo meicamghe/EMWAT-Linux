@@ -396,3 +396,6 @@ The pointer list at `0x00627BB0` is an error-message string table. The previous 
 - `WordAppDocumentBeforeClose` (`0x004CCBBC`) calls shared helper `0x004BCA88`, which is also used by `GetCaptionItemFont`; it is not evidence of a close-time registration/POST routine. Its direct caller remains `FillImgFldsForPrint` (`0x004CCF8F`).
 - Generated Word server metadata contains CLSID `000209FF` (ApplicationClass), CLSID `00020906` (DocumentClass), and known ApplicationEvents/ApplicationEvents2 interface GUIDs. This identifies OLE metadata but not the live event sink subscription.
 - Parallel work continues in the SevenZip vtable mapping, Word server-data RTL helpers, autosave Delete caller, Word lifecycle callbacks, and BPL method-index branches. Keep event registration and close-time Almas commit as unresolved until the relevant traces prove them.
+
+
+- Confirmed one `euResetMemory` interface slot: custom vtable `0x00452420 +0x0C` forwards through thunk `0x004522E9` to `T7zInArchive.OpenStream` (`0x00452FDC`), accepting `IInStream`. This corrects the earlier `OpenFile` candidate. The first `euResetMemory` argument is an input stream interface; the form Delete trace is checking its construction. `+0x3C` and `+0x44` remain unresolved.
