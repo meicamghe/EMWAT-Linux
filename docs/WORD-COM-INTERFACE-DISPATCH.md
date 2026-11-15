@@ -770,3 +770,12 @@ The BPL export/API trace resolves the apparent symbol conflict:
 - The wrapper then calls the subclass VMT slot +0x10 at 0x0046CA88.
 - TD32 labels are shifted/misleading at this boundary: 0x0046C82C carries the Invoke symbol, while 0x0046C9E0 carries the Finalization symbol. Export metadata, VMT mapping, and executable call flow establish the public wrapper/helper relationship above.
 - The +0x68 indirect call at 0x0046C921 belongs to the inner helper. A second +0x68 call at 0x0046CBB7 belongs to the wrapper and has a different receiver; do not conflate them.
+
+
+## Generated Word event callback table — extraction corrected (2026-11-15)
+
+Word event-sink workflow run #8 (`43716384031`), artifact `14162362638`, fixes a bug in the earlier callback-target extraction step. The table at `0x00627B74` contains 20 callback code pointers, beginning at `0x004499B8` and ending at `0x00449D98`. The corrected parser now extracts all 20 targets rather than returning an empty index.
+
+The first attempt to trace those targets with TD32 procedure boundaries reports no TD32 procedure range for any of them. This is a limitation of the symbol-based procedure tracer, not evidence that the callback targets are invalid. They are pointers read from the generated Word event metadata table. A follow-up run (#9) disassembles the contiguous code range directly and expands both the event-map and server-data tables.
+
+The event sink remains distinct from the TWordViwer callback record assignments. The latter prove that the main viewer registers its BeforeSave handler at `0x004CD154`; the 20 generated event-table targets still need to be mapped to event DISPIDs/names before they can be associated with specific Word events.
