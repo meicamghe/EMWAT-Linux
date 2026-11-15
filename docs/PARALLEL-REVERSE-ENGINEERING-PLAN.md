@@ -156,3 +156,41 @@ The analysis is now split across independent GitHub Actions workflows rather tha
 - Parent-origin allowlisting is separate from POST Origin allowlisting because the capture shows the Almas page as the init Referer while the subsequent POST Origin is the local loopback service.
 - Python bridge workflow #40 (run 43708542723) passed all 45 tests, including init script generation, dynamic port, allowlisted and rejected parent origins, and malformed init query rejection. A direct comparison confirmed byte-for-byte parity with the captured init response.
 - This is a capture-matched endpoint implementation, not yet an end-to-end test against the actual Almas page/browser.
+
+
+## High-confidence request/Word lifecycle model — 2026-11-15
+
+The latest static traces and TCP capture now fit a single long-lived request model better than a separate close-time POST.
+
+### Directly observed evidence
+
+- The browser bridge sends one POST for EditWordDocument and receives one response-word success document in the same TCP stream.
+- TCP stream 18 starts at relative time 106.8698387 s and lasts 54.6315 s (to approximately 161.5013 s). The request carries 1,177,821 bytes and the response carries 1,166,820 bytes.
+- Two independent Agent heartbeat streams begin during that same interval, at 126.2416352 s and 146.4003695 s (approximately +19.37 s and +39.53 s after the EditWordDocument stream begins). This is consistent with the service keeping the document session active while the Agent remains alive.
+- TEditWordDocument.PerformMethod calls TWordViwer.LoadDocument synchronously before it sets the method result flags.
+- On the successful LoadDocument path, the BPL writes the returned document into AResponseInfo.ContentText and calls TIdHTTPResponseInfo.WriteContent.
+- The init JavaScript sends the original message body through one XHR and relays that XHR's responseText to the parent page with postMessage. It contains no separate close-time POST implementation.
+- The main editor event sink registers WordAppDocumentBeforeSave (0x004CD154), NewDocument (0x004CD54C), WindowActivate (0x004CD9C0), and a settings-dependent print/options callback. It does not register WordAppDocumentBeforeClose (0x004CCBBC) in that event record.
+- WordAppDocumentBeforeSave can display the custom save/register prompt and then calls the Word Document.Close interface slot (+0x29C). The separate BeforeClose routine is not evidence of the main editor's close hook.
+
+### Current best-fit model — not yet a fully proven causal chain
+
+1. Almas sends one EditWordDocument message to the local bridge.
+2. The service dispatches the method and enters LoadDocument; the Word session remains active while the user edits.
+3. Word's BeforeSave callback handles the save/register prompt and document-close path.
+4. LoadDocument completes its successful response path and returns response-word with the resulting Word document.
+5. The original XHR completes; the bridge JavaScript posts responseText back to the Almas parent page, which can then process/register the returned document.
+
+This model explains the user's confirmed observation that closing Word is followed by registration even without pressing Word's Save button, and it explains why the capture contains only one EditWordDocument POST rather than a second close-time POST.
+
+### What is still unproven
+
+- The capture provides conversation start/duration, not per-packet timestamps, so the exact instant at which response bytes begin is not yet established.
+- The exact control-flow edge that makes LoadDocument wait for the Word session to close still needs a focused trace through the remainder of OnTmrAutoSave and its event/message loop.
+- The exact Save / No / Cancel dialog mapping and whether each branch returns a document or cancels the XHR need string/branch confirmation.
+- The service-side Base64 decode stage for wordBody and the Almas parent page's final registration handler are outside the currently analyzed BPL.
+- Do not claim a close-time POST. Current evidence instead favors completion of the original EditWordDocument request.
+
+### Next focused trace
+
+A separate request-lifecycle analysis should decode the remainder of OnTmrAutoSave (0x004BA058–0x004BB3AF), identify message-loop/wait operations, trace LoadDocument callers and response dispatch, and decode the BeforeSave prompt strings around 0x004CD3C0–0x004CD50C.
