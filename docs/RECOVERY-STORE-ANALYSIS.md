@@ -97,3 +97,17 @@ The helper index also resolved:
 - `DeleteTempRAW` at `0x0044AE98`.
 
 Initial control-flow evidence in `euClearOldAutoSaveFiles` shows it enumerates a file collection, obtains file-age/time values, compares an age against `0x18`, and conditionally calls a deletion helper at `0x004026B4`. The exact time unit, file mask, and directory are not yet established. The helper-path workflow is being extended to resolve those constants and imported API targets.
+
+
+## 8. Shared AutoSave file enumeration path (2026-11-15)
+
+The caller scan for `euGetTempFileName` (`0x00454A58`) shows three direct call sites:
+- `euClearOldAutoSaveFiles` at `0x00456CC4`;
+- `TfrmShowAutoSaveFiles.lslFilesDblClick` at `0x005EC26B`;
+- `euRandomFileName` at `0x00454CC6`.
+
+Both the recovery UI and the old-AutoSave cleanup routine therefore use the same helper before passing a second string constant into `0x004043BC` to build/process a file collection. In the UI path that constant is `*.easz`; the cleanup path uses constant `0x00456DCC`, which is being decoded in the follow-up run. This is stronger evidence of a shared AutoSave file-store workflow than the isolated string hits alone.
+
+`euGetAutoSavePass` (`0x00456B78`) has direct callers in `DoClearOldAutoSaveFiles` (`0x00456C0C`) and `TfrmSendLog.lblFileNameClick` (`0x005ECFE5`). Its exact input/output semantics are still unresolved; the symbol name alone is not enough to claim a decryption algorithm.
+
+The path/helper rerun is resolving the constants around `euGetTempFileName`, the file enumeration helper, and the file-delete API target before a concrete directory or retention policy is documented.
