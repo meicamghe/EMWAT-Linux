@@ -92,6 +92,30 @@ jobs:
           pathlib.Path("filename-analysis/temp-cleanup/exports/all-exports.md").write_text("\n".join(rows) + "\n", encoding="utf-8")
           PY
           grep -inE "DeleteTempRAW|CloseAllWords|GetFileVersion" filename-analysis/temp-cleanup/exports/all-exports.md || true
+      - name: Validate exported cleanup symbol names against TD32 addresses
+        run: |
+          mkdir -p filename-analysis/temp-cleanup/exports
+          python - <<'PY'
+          import pefile, pathlib
+          pe = pefile.PE("analysis-input/EmwatMethods.bpl1")
+          wanted = {"@Emwat@Sys@CloseAllWords$qqrv", "@Emwat@Sys@DeleteTempRAW$qqr20System@UnicodeString", "@Emwat@Sys@GetFileVersion$qqr20System@UnicodeString"}
+          lines = ["# Cleanup export metadata and target bytes", ""]
+          for item in pe.DIRECTORY_ENTRY_EXPORT.symbols:
+              name = item.name.decode("ascii", errors="replace") if item.name else "<ordinal-only>"
+              if name not in wanted:
+                  continue
+              raw = pe.get_data(item.address, 24)
+              lines.append(f"## {name}")
+              lines.append(f"- Ordinal: {item.ordinal}")
+              lines.append(f"- RVA: 0x{item.address:08X}")
+              lines.append(f"- VA: 0x{pe.OPTIONAL_HEADER.ImageBase + item.address:08X}")
+              lines.append(f"- Forwarder: {getattr(item, 'forwarder', None)}")
+              lines.append(f"- Target bytes: {raw.hex(' ')}")
+              lines.append("")
+          pathlib.Path("filename-analysis/temp-cleanup/exports/cleanup-export-metadata.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
+          PY
+          python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x0044B2DC filename-analysis/temp-cleanup/GetFileVersion-export-target.md
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x0044B2DC filename-analysis/temp-cleanup/GetFileVersion-export-target-callers.md
       - uses: actions/upload-artifact@v4
         with:
           name: emwat-filename-normalization-analysis
