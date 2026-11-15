@@ -146,4 +146,13 @@ A new, engine-independent orchestration layer has been added in parallel with th
 - The local session identifier is supplied independently; the `invoke` query value is not reused because it is a per-request nonce.
 - Fake-adapter tests cover close without explicit Save, cancellation without export, adapter failure sanitization, and invalid output bytes.
 
-At the time of this update, the Python bridge workflow runs triggered by these commits are still in progress. Do not count the new coordinator tests as CI-verified until the latest run completes successfully. No production HTTP handler or LibreOffice implementation is connected yet.
+Python bridge workflow run `43719841339` completed successfully with 66 tests. The coordinator and service tests are CI-verified. No production HTTP handler or LibreOffice implementation is connected yet.
+
+
+### Request-to-session domain service — 2026-11-15
+
+- `python/src/emwat_linux/editword_service.py` now joins the existing outer method parser, EditWordDocument request normalizer, and DocumentCoordinator.
+- It generates an independent local session ID with a cryptographically random token by default. It deliberately does not reuse the `invoke` query nonce.
+- The OfficeAdapter contract now receives separate `on_modified` and `on_saved` callbacks. A modification marks the session dirty; an engine save only records the saved revision. Neither callback completes the bridge response: only the close event advances to final export.
+- The coordinator exports the final bytes after a normal close, including when no engine-save callback occurred. A cancelled close returns a domain-level cancelled result without exporting bytes.
+- The latest Python CI run `43719841339` passed **66 tests** (4.44 seconds). This verifies the parser-to-domain-service-to-fake-office path only; cancellation/error HTTP response semantics remain intentionally unimplemented until captured.
