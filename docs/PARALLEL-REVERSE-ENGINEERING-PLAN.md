@@ -137,3 +137,11 @@ The analysis is now split across independent GitHub Actions workflows rather tha
 3. Continue main-editor close callback → parent-page postMessage → local POST correlation. The capture proves an EditWordDocument round-trip, but not that this particular request is triggered by closing Word.
 4. Finish Word lifecycle run #121, inspect its artifact, and then update the main protocol/status handoff documents.
 5. Keep native Writer document lifecycle work independent of Wine/Winux runtime supervision.
+
+
+### Additional implementation follow-up — Python bridge workflow #33
+
+- The heartbeat handler now matches the captured Agent response: HTTP 200, body TickTack, Content-Type text/html; charset=ISO-8859-1.
+- protocol.py now exposes a bounded serializer for the observed successful response-word envelope. It Base64-encodes opaque document bytes under return-types/type with application/msword and encryption=base64; it does not transform the document.
+- Python bridge workflow #33 (run 43707888187) passed all 42 tests, including heartbeat contract checks, a synthetic >1 MB request payload, response-envelope round-trip, input validation, and response-size enforcement.
+- The response serializer is a building block only. No production EditWordDocument handler, init endpoint, LibreOffice integration, or close-time Almas registration flow is claimed complete.
