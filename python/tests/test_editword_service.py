@@ -26,8 +26,10 @@ class FakeOffice:
         self.opened_bytes = None
         self.export_count = 0
 
-    def open_document(self, request):
+    def open_document(self, request, *, on_modified, on_saved):
         self.opened_bytes = request.document_bytes
+        on_modified()
+
         return object()
 
     def wait_for_close(self, handle):
@@ -48,6 +50,7 @@ class EditWordDocumentServiceTests(unittest.TestCase):
         self.assertEqual(office.opened_bytes, b"synthetic-input-doc")
         self.assertEqual(result.session.session_id, "internal-session-id")
         self.assertEqual(result.session.state, DocumentState.RETURNED)
+        self.assertEqual(result.session.revision, 1)
         self.assertEqual(result.payload, b"synthetic-final-doc")
         self.assertEqual(office.export_count, 1)
 
