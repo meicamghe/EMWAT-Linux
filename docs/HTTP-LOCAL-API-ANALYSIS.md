@@ -396,3 +396,13 @@ The installed files were inspected with both Unicode and narrow-string extractio
 - heartbeatهای capture پاسخ `200 OK` با بدنهٔ هشت‌بایتی `TickTack` دارند.
 
 **محدودیت ابزار:** خروجی tcp-payloads فاقد TCP sequence number است؛ ابزار از ترتیب frame استفاده می‌کند و صرفاً برای کشف metadata/triage است. برای تحلیل byte-perfect، بازسازی stream باید از خود PCAPNG با sequence number و مدیریت retransmission انجام شود. گزارش CI نیز عمداً فقط metadata را نگه می‌دارد.
+
+
+## تطبیق Python bridge با capture — 2026-11-15
+
+دو مورد از قرارداد runtime اکنون در کد پایهٔ Python منعکس شده‌اند:
+
+1. مسیر GET /?heartbeat اکنون پاسخ 200 با بدنهٔ دقیق TickTack (۸ بایت) و Content-Type برابر text/html; charset=ISO-8859-1 می‌دهد؛ پیش از این، پیاده‌سازی آزمایشی پاسخ خالی می‌داد. تست قبلی نیز با قرارداد مشاهده‌شده اصلاح شد.
+2. تابع serialize_word_document_response در protocol.py پاسخ موفق مشاهده‌شده را می‌سازد: response-word با status=success و return-types/type دارای mimetype=application/msword و encryption=base64. دادهٔ سند به‌صورت bytes ورودی گرفته می‌شود و بدون تبدیل محتوایی Base64 می‌شود. محدودیت اندازهٔ پاسخ نیز اعمال می‌شود.
+
+اعتبارسنجی: Python bridge workflow #33، run 43707888187، موفق؛ 42 تست پاس شده‌اند. این تست‌ها قرارداد transport و serializer را با دادهٔ ساختگی بررسی می‌کنند؛ هنوز handler واقعی EditWordDocument، init endpoint، ارتباط با LibreOffice یا ثبت نهایی نامه پیاده‌سازی/اعتبارسنجی نشده‌اند.
