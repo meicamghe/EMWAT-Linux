@@ -1,7 +1,7 @@
 # Recovery / AutoSave form — initial static-analysis findings
 
 Date: 2026-11-15  
-Source: GitHub Actions workflow `analyze-recovery-store.yml`, run #1 (`43714978859`), artifact `14161843667`  
+Source: GitHub Actions workflow `analyze-recovery-store.yml`, corrected run #2 (`43715017039`), artifact `14162835454`  
 Input: `analysis-input/EmwatMethods.bpl1`  
 Method: TD32 procedure traces and named PE resource inspection. This is static analysis only.
 
@@ -71,6 +71,6 @@ Until those are resolved, Linux should expose a recovery-store interface but sho
 
 ## 6. Artifacts and reproducibility
 
-- Initial recovery form run: `43714978859`, artifact `14161843667` (`emwat-recovery-store-analysis`).
-- Corrected rerun: `43715017039`, run #2; pending at the time this report was written.
-- Parallel helper-path workflow: `analyze-recovery-paths.yml`, run #1 (`43715289876`); queued at the time this report was written.
+- Corrected recovery form run #2: `43715017039`, success, artifact `14162835454` (`emwat-recovery-store-analysis`).
+- Initial run #1: `43714978859`, success, artifact `14161843667`; superseded because its report formatting was corrected in run #2.
+- Parallel helper-path workflow: `analyze-recovery-paths.yml`, run #1 (`43715289876`); running while this report was updated.
