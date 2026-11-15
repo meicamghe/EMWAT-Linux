@@ -1340,3 +1340,16 @@ Added `python/src/emwat_linux/application.py` with `create_bridge_server(...)`. 
 - The initial post-read trace range began in non-code data and decoded zero instructions. The workflow was corrected to begin at the observed continuation address `0x004B7DE1`.
 - Follow-up commits `743e6378` (IAT-indirect registry call scanner) and `a4027a70` (post-read range correction) trigger a new validation run. Do not promote their expected findings until the resulting artifact is inspected.
 - Startup settings-read path, active main-editor close callback, close-time server registration request, and final registration payload remain unresolved.
+
+
+### Run 113 update — main Word Viewer startup settings read (2026-11-15)
+
+Workflow #113 (run ID `43688755518`) completed successfully; artifact `14151906706`. The startup registry-read path is now located in the main `TWordViwer` constructor at `0x004D0D24–0x004D0FE6` (correcting the previous “unresolved” status in Runs 103/104).
+
+It opens `HKCU\\Software\\Emwat\\Dynamic Config` and conditionally reads:
+- `Background Priniting` Boolean → viewer field `+0x3C` (default true).
+- `Dont Ask Save On Print` Boolean → viewer field `+0x3D` (default true).
+- `Save Before Print` Boolean → viewer field `+0x3E` (default false).
+- `AutoSaveInterval` integer → viewer field `+0x88` (default 0; clamped to at least 10000 ms).
+
+The constructor uses `ValueExists`, then `ReadBool` / `ReadInteger`, and releases the registry object. `Logging Level` and `Save I/O Trace Files` are not read in this constructor and remain unlocated. The exact timer/save semantics remain unproven. The close-time Almas Gam registration request and payload also remain unresolved.
