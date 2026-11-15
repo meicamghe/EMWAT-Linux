@@ -55,7 +55,7 @@ jobs:
               subprocess.run([sys.executable, "tools/trace_td32_procedure.py", "analysis-input/EmwatMethods.bpl1", "0x" + va, trace], check=True)
               subprocess.run([sys.executable, "tools/trace_td32_callers.py", "analysis-input/EmwatMethods.bpl1", "0x" + va, callers], check=True)
               index.append(f"- `0x{va}` — `{decorated}` — {trace}; callers: {callers}")
-          pathlib.Path("recovery-analysis/procedures/trace-index.md").write_text("\\n".join(index) + "\\n", encoding="utf-8")
+          pathlib.Path("recovery-analysis/procedures/trace-index.md").write_text("\n".join(index) + "\n", encoding="utf-8")
           PY
       - name: Resolve known recovery Automation and callback targets
         run: |
@@ -71,12 +71,12 @@ jobs:
           import pathlib, re
           source = pathlib.Path("EmwatMethods.bpl1-strings.txt")
           text = source.read_text(encoding="utf-8", errors="replace")
-          patterns = re.compile(r"auto.?save|recover|backup|\\.asd|\\.wbk|\\.tmp|\\.docx?|\\.rtf|\\.odt|appdata|local settings|temp|temporary|recovery|save.?file", re.I)
+          patterns = re.compile(r"auto.?save|recover|backup|\.asd|\.wbk|\.tmp|\.docx?|\.rtf|\.odt|appdata|local settings|temp|temporary|recovery|save.?file", re.I)
           lines = text.splitlines()
           hits = [(i + 1, line.strip()) for i, line in enumerate(lines) if patterns.search(line)]
           out = ["# Recovery-related embedded string triage", "", f"- Source: `{source.name}`", f"- Matching lines: {len(hits)}", "- This is string triage only; a path or extension is not considered a confirmed recovery location without a code reference.", ""]
           out += [f"- L{number}: `{line[:400]}`" for number, line in hits]
-          pathlib.Path("recovery-analysis/recovery-string-triage.md").write_text("\\n".join(out) + "\\n", encoding="utf-8")
+          pathlib.Path("recovery-analysis/recovery-string-triage.md").write_text("\n".join(out) + "\n", encoding="utf-8")
           PY
       - uses: actions/upload-artifact@v4
         with:
