@@ -1208,3 +1208,28 @@ The response is therefore not a byte-for-byte echo. It is a rewritten/restructur
 ### Public Invoke wrapper versus inner XML helper — correction from BPL export workflow
 
 The BPL export/API trace confirms that the public TEmwatMethod.Invoke entry is 0x0046C9E0, shared by descendants at VMT slot +0x0C. Its body calls the 433-byte inner dictionary/XML helper at 0x0046C82C (callsite 0x0046CA67), then calls the subclass VMT slot +0x10 (callsite 0x0046CA88). TD32 labels are misleading here: 0x0046C82C is symbolized as Invoke and 0x0046C9E0 as Finalization, but export metadata and the executable call flow establish the wrapper/helper roles. The XML node construction and TXMLEmwatType serializer slot +0x54 belong to the inner helper.
+
+
+## 8. Gap-aware PCAP confirmation of the returned document (2026-11-15)
+
+A later analysis of `emwat.pcapng` (workflow run `43711788034`, artifact `14160597175`) reconstructed the `127.0.0.1:61189 ↔ 127.0.0.1:1984` exchange for `POST /?invoke=58351`.
+
+The response is HTTP 200 and contains this redacted structure:
+
+```xml
+<response-word status="success">
+  <return-types>
+    <type mimetype="application/msword" encryption="base64">…</type>
+  </return-types>
+</response-word>
+```
+
+The `type` content decodes to an OLE Compound File / legacy DOC container. The request's `wordBody` also decodes to an OLE Compound File, but the intact captured prefixes differ at decoded byte offset 48, the CFB header's first-directory-sector pointer (request 1698; response 1702). Both report 14 FAT sectors.
+
+The response capture has 17 TCP sequence gaps, each 4 bytes (68 missing capture bytes) within the Base64 document. Therefore the observed response decode is 874,957 bytes and incomplete; the analyzer estimates 875,008 complete bytes and a 2,048-byte increase over the 872,960-byte request document. These are estimates, not a verified full-file diff or response hash.
+
+The request body completes at approximately 0.002154 s from capture start; the first response payload arrives at 54.560037 s. This proves a long request-to-response interval in this sample, but not which internal component accounts for it.
+
+**Updated confidence:** the captured `EditWordDocument` response does return a Base64-encoded Word document with MIME type `application/msword`, and that returned container differs from the submitted `wordBody` in the intact captured prefix. This materially strengthens the close/finalization return-path model. It still does not prove that every session uses the same timing or that the response is emitted exclusively by a specific Word event.
+
+Detailed measurements, limitations, and reproducibility are in [PCAP-EDITWORD-DOCUMENT-ROUNDTRIP.md](PCAP-EDITWORD-DOCUMENT-ROUNDTRIP.md).
