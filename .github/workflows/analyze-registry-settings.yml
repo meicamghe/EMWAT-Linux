@@ -25,21 +25,21 @@ jobs:
       - name: Resolve registry read and write helper callers
         run: |
           mkdir -p registry-analysis/callers
-          for target in 004043E4 004043EC 004043F4 0040440C 00404414 0040441C 00404424 0040442C 0040443C 0040444C 00404454; do
+          for target in 004043E4 004043EC 004043F4 0040440C 00404414 0040441C 00404424 0040442C 00404434 0040443C 00404444 0040444C 00404454; do
             python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x$target registry-analysis/callers/$target-callers.md
             python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 0x$target registry-analysis/callers/$target-pointer-refs.md
           done
       - name: Trace registry constructors and known settings owners
         run: |
           mkdir -p registry-analysis/procedures
-          for target in 00466D58 00467CE9 00467C60 00468E0B 00509245 005099C1 005EAA14 005EAA20 005EACDC 005EAD94 004D0D24; do
+          for target in 00466D58 00467CE9 00467C60 00468E0B 00509245 005099C1 005EAA14 005EAA20 005EACDC 005EAD94 005EAE5D 004D0D24; do
             python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x$target registry-analysis/procedures/$target.md
           done
           python tools/find_td32_class_procedures.py analysis-input/EmwatMethods.bpl1 TEmSettingForm TWordViwer TfrmShowAutoSaveFiles > registry-analysis/procedures/registry-owner-class-procedures.md
       - name: Decode unresolved registry value names and bounded contexts
         run: |
           mkdir -p registry-analysis/data
-          python tools/decode_pe_strings.py analysis-input/EmwatMethods.bpl1 0x00466F84 0x00466FAC 0x00467F2C 0x00467F64 0x005EB160 0x005EB198 0x005EB1D4 0x005EB204 0x005EB22C 0x005EB264 0x005094F8 0x00509518 0x00509530 0x00466D16 0x00468E0B 0x00509245 0x005099C1 0x005EAE5D > registry-analysis/data/registry-value-and-context-strings.md
+          python tools/decode_pe_strings.py analysis-input/EmwatMethods.bpl1 0x00466F3C 0x00466F84 0x00466FAC 0x00467F2C 0x00467F64 0x0050944C 0x00509490 0x005094A8 0x005094C0 0x005094DC 0x00509B34 0x00509B78 0x00509B90 0x00509BA8 0x00509BC4 0x00509BE0 0x00509C00 0x00509C18 0x005EB160 0x005EB198 0x005EB1D4 0x005EB204 0x005EB22C 0x005EB264 0x005094F8 0x00509518 0x00509530 0x00466D16 0x00468E0B 0x00509245 0x005099C1 0x005EAE5D > registry-analysis/data/registry-value-and-context-strings.md
           for spec in "00466CE0 00466D40" "00467C60 00467CC0" "00468DD0 00468E40" "00509200 00509270" "00509980 005099F0" "005EAE20 005EAE80"; do
             set -- $spec
             python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x$1 0x$2 registry-analysis/data/context-$1.md
