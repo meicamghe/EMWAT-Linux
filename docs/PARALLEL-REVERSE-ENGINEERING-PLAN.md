@@ -217,7 +217,7 @@ Registry workflow #2 (run 43709159573, artifact 14159334586) resolved the two se
 - It checks ValueExists, then reads integer key Logging Level into object offset +0x10.
 - It checks ValueExists, then reads Boolean key Save I/O Trace Files into object offset +0x11.
 - TWordViwer constructor separately reads Background Priniting, Dont Ask Save On Print, Save Before Print, and AutoSaveInterval.
-- The settings-unit Finalization routine also reads the same six persisted settings and assigns values to the associated controls. Its exact lifecycle trigger (unit finalization versus a mislabeled form lifecycle method) remains to be mapped.
+- The settings-unit Finalization routine opens the same HKCU\\Software\\Emwat\\Dynamic Config subkey and reads the same six persisted settings into associated controls. Its exact lifecycle trigger (unit finalization versus a mislabeled form lifecycle method) remains to be mapped.
 
 The TETracer.GetUniquePostfix procedure at 0x00467C18 uses the exact registry names Save I/O Trace Files and Created IO Trace Count. It checks whether I/O tracing is enabled, reads the count, decrements it, and writes it back. When the count becomes non-positive, it disables Save I/O Trace Files and resets Created IO Trace Count to 15. The routine then creates and writes a trace file. This is a bounded trace-file quota/countdown, not evidence of the main letter's save-registration path.
 
