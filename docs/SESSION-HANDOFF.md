@@ -741,4 +741,13 @@ Run `43719180035` succeeded; artifact `14164088249` was inspected. Additional ev
 ### Active base-class VMT analysis
 
 - New optimized workflow run `43721583502` is indexing `T7zArchive` separately from `T7zPlugin`/`T7zInArchive`/`T7zOutArchive`, to avoid tracing every inherited method as a duplicate. It also traces target `0x00453950` and VMT/typeinfo references.
-- Earlier broad run `43721251511` is still active at the combined index step; prefer artifact from the optimized run if it completes first.
+- Earlier broad run `43721251511` has now completed successfully; artifact `14164434028` was inspected. It indexes `T7zArchive` base-class procedures including constructor `0x0045392C`, `GetClassId` `0x00453950`, and handler/library-property helpers. The optimized run `43721583502` remains active at its class-index step.
+
+
+### Base-class index result — 2026-11-15
+
+- Broad plugin workflow run #3 (`43721251511`) completed successfully; artifact `14164434028` was inspected.
+- The base class `T7zArchive` is now indexed separately. Constructor `0x0045392C` writes its UnicodeString argument to `Self+0x44` and sets a Boolean at `Self+0x40` according to whether the string is nonempty.
+- `GetHandlerProperty` (`0x00453A54`) copies the 16-byte handler-property record at `Self+0x18`. `GetClassId` (`0x00453950`) initializes the base object, resolves a handler using the stored name, and copies a 16-byte property record from global `0x0062A820` into `Self+0x18`.
+- These are object-field offsets, not proof of the virtual dispatch slot numbers used by `euResetMemory`. Keep the +0x44 dispatch mapping as the leading hypothesis until the interface/VMT layout is recovered.
+- Optimized workflow run #4 (`43721583502`) is still in progress, indexing the class family and related interface/type metadata.
