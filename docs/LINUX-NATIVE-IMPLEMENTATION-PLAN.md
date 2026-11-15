@@ -121,3 +121,16 @@ No module should depend directly on LibreOffice UNO from the HTTP layer.
 ## Evidence and uncertainty policy
 
 Every behavior must be labeled as Confirmed, Strongly inferred, or Unknown. Unknown protocol values must remain configurable or isolated behind adapters. Guesses must not silently become compatibility requirements.
+
+
+## Implementation progress (2026-11-15)
+
+The first two workstreams now have concrete code in the repository:
+
+- **Bridge transport:** GET /?heartbeat returns HTTP 200 with an empty body, matching the observed Agent liveness probe. The existing /healthz endpoint remains a separate development health check. This does not implement the opaque /?init contract.
+- **Document lifecycle:** python/src/emwat_linux/sessions.py introduces an office-engine-independent state machine with explicit initialization, opened/dirty, engine-save, finalizing, returned, failed, and cancelled states.
+- **Close semantics:** the state machine deliberately permits finalization and return without an explicit engine-save event, reflecting the confirmed user-visible close-without-Save requirement.
+- **Idempotency:** duplicate finalization requests are ignored while finalizing/returned; an identical returned payload is accepted as a no-op, while a conflicting second payload is rejected.
+- **Tests added:** python/tests/test_sessions.py and an additional heartbeat test in python/tests/test_bridge.py. These commits have been written to the repository; a fresh CI result for these newest commits has not yet been verified.
+
+Still not implemented: real Almas Gam Origin configuration, /?init response, production EditWordDocument handler, LibreOffice UNO adapter, recovery store, and CUPS/SANE backends.
