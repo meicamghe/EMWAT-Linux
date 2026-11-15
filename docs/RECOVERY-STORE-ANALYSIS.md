@@ -215,7 +215,7 @@ The class method T7zInArchive.SetPassword at 0x00453860:
 - invokes that interface's method at vtable offset +0x1C, passing the password string;
 - releases its temporary string/interface references on exit.
 
-The T7zInArchive type metadata independently exposes a Password property, alongside PasswordIsDefined, PasswordSender, Stream, and extraction-related properties. In euResetMemory (0x00456F00), the optional password argument is passed to the archive object's virtual dispatch at slot +0x44; if that argument is null while the password flag is enabled, the literal mW@Tlogs43end_+ is supplied instead. The class method body and property metadata strongly identify this dispatch as the archive password-setting path. The Windows username / @25*gamsign*25@ result from euGetAutoSavePass remains a separate cleanup/logging path and is not the recovery-open password.
+The T7zInArchive type metadata independently exposes a Password property, alongside PasswordIsDefined, PasswordSender, Stream, and extraction-related properties. In euResetMemory (0x00456F00), the optional password argument is passed to the archive object's virtual dispatch at slot +0x44; if that argument is null while the password flag is enabled, the literal mW@Tlogs43end_+ is supplied instead. The class method body and property metadata show that T7zInArchive has a Password setter, but the exact mapping from euResetMemory's virtual slot +0x44 to that setter is not yet proven. The later raw pointer scan found no direct static pointer to T7zInArchive.SetPassword (0x00453860), so retain this as a strong candidate rather than a confirmed VMT binding. The Windows username / @25*gamsign*25@ result from euGetAutoSavePass remains a separate cleanup/logging path and is not the recovery-open password.
 
 ### Reader operations
 
@@ -251,3 +251,32 @@ The T7zOutArchive class trace adds an important constraint to the archive-creati
 - T7zOutArchive exposes AddFile, AddFiles, AddStream, SaveToFile, and SaveToStream. Direct bounded CALL scans did not find callers for the wrapper methods, so writer usage is likely through indirect/VMT dispatch or a helper not yet mapped.
 
 Consequently, the recovery reader password path is substantially better understood than the .easz creation path. The exact archive writer, output format, password callback value, and compression/encryption properties remain open questions.
+
+
+## 16. SevenZip plugin factory and password callback boundary — 2026-11-15
+
+The plugin-focused workflow run #1 (`43719323732`, artifact `14164146310`) traces the shared SevenZip plugin class and both archive wrappers. It adds a useful separation between the reader's password setter and the plugin-level callback provider.
+
+### Plugin class and factory
+
+- TD32 identifies `T7zPlugin` constructor at `0x00452C10`, destructor at `0x00452C64`, and `CreateObject` at `0x00452DB4`.
+- The plugin constructor calls `T7zOutArchive.CryptoGetTextPassword2` (`0x004543C4`) with a class/data pointer at `0x004529E8), then stores the returned interface/reference through a helper and invokes a plugin virtual method at slot `+0x30`.
+- `T7zPlugin.CreateObject` is directly called by both `T7zInArchive.GetInArchive` (`0x00452ED8`) and `T7zOutArchive.GetOutArchive` (`0x00454450`). Thus the same plugin factory is shared by the reader and writer wrappers.
+- The recovery helper `CreateOutArchive` (`0x00452BBC)) constructs the wrapper using the literal `7z.dll` at `0x00452C00), passes a 16-byte value copied from one of the globals `0x0062A824` / `0x0062A858`, then invokes a virtual method at slot `+0x4C`. The helper name and its factory call alone do not prove which archive interface GUID is selected or whether the object is configured for input versus output.
+
+### Password paths — keep the layers distinct
+
+- `T7zOutArchive.CryptoGetTextPassword2` (`0x004543C4`) obtains a provider/interface from global `0x0062FBB8` via helper `0x00404734`, and stores it at instance offset `+0x2C). Its only direct bounded caller is the `T7zPlugin` constructor at `0x00452C25`.
+- `T7zOutArchive.SetPassword` (`0x004547DC`) remains a no-op stub; it does not write a password or configure the archive interface.
+- `T7zInArchive.SetPassword` (`0x00453860`) stores a Unicode string at instance offset `+0x58) and passes it to the archive interface through interface slot `+0x1C). However, the raw static-pointer scan found no direct pointer to this method. The recovery call through wrapper VMT slot `+0x44) is therefore not yet mapped conclusively to this method.
+- In `euResetMemory` (`0x00456F00`), slot `+0x44) receives the caller-supplied password or fallback `mW@Tlogs43end_+`; slots `+0x0C) and `+0x3C) receive the two path arguments. The precise VMT slot names and the archive-interface GUID remain open.
+
+### New direct caller evidence
+
+The plugin constructor has a direct caller in `euUnArchive` (`0x00456E37`), which uses global `0x0062A824` and then operates on the returned object. This is a separate unarchive path from `euResetMemory`, which calls `CreateOutArchive` at `0x00452BBC`. Both paths use the shared SevenZip plugin layer, but they must not be collapsed into one identical operation until their GUIDs, input/output direction, and callback setup are decoded.
+
+### Updated confidence
+
+Confirmed: the 7z plugin wrapper, shared CreateObject factory, input/output wrapper methods, provider object stored by CryptoGetTextPassword2, and the distinct euUnArchive/euResetMemory entry paths.
+
+Still unresolved: the exact interface GUIDs and direction selected by each factory, the VMT method names for euResetMemory slots +0x0C/+0x3C/+0x44, the concrete source of the writer password provider, and the exact archive format/options used for .easz.
