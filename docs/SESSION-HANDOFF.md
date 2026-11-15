@@ -790,3 +790,11 @@ Run `43719180035` succeeded; artifact `14164088249` was inspected. Additional ev
 
 - From artifact `14165136040`, the custom interface vtable at `0x00452420` slot `+0x0C` points to thunk `0x004522E9`, which forwards to `T7zInArchive.OpenStream` (`0x00452FDC`). Its decorated signature accepts `Sevenzip.IInStream`.
 - Therefore `euResetMemory`'s first argument is an input-stream interface, not a plain file path. The caller-side stream construction is being checked in the autosave Delete handler trace. Slots `+0x3C` and `+0x44` remain under direct mapping.
+
+
+### All three `euResetMemory` SevenZip slots mapped — 2026-11-15
+
+- Plugin run `43722990639` succeeded; artifact `14165676602` includes 20 interface vtable slots.
+- On custom interface vtable `0x00452420`: `+0x0C` forwards to `T7zInArchive.OpenStream` (`0x00452FDC`, `IInStream`); `+0x3C` forwards to `T7zInArchive.SetPassword` (`0x00453860`, UnicodeString); `+0x44` forwards to virtual constructor `T7zArchive.$bctr` (`0x0045392C`).
+- `SetPassword` stores its string at `Self+0x58`, creates an extraction callback interface from `Self+8`, and invokes the underlying archive interface at `+0x1C` with `indices=NULL`, `numItems=-1`, `testMode=0`. This is an all-items archive operation; callback output semantics are not yet proven.
+- `euResetMemory` therefore takes an input stream, a UnicodeString passed to `SetPassword`, and an optional UnicodeString passed to the base constructor (fallback `mW@Tlogs43end_+` when selected). The meaning of the two strings and callback output path remain open. `ExtractTo` is a separate wrapper, not one of the three direct slots.
