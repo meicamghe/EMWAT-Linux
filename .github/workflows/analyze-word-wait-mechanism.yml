@@ -107,7 +107,7 @@ jobs:
                           rows.append(f"- CALL [IAT] at VA 0x{va:08X}")
                           start = offset + 1
                   rows.append("")
-          pathlib.Path("wait-mechanism-analysis/imported-wait-apis.md").write_text("\\n".join(rows) + "\\n", encoding="utf-8")
+          pathlib.Path("wait-mechanism-analysis/imported-wait-apis.md").write_text("\n".join(rows) + "\n", encoding="utf-8")
           PY
       - uses: actions/upload-artifact@v4
         with:
