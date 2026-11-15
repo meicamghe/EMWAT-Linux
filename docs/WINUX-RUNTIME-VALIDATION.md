@@ -199,3 +199,54 @@ DateTime=2026:11:15 09:45:26
 - هیچ محتوای نامه، تصویر، امضا، Cookie، token، credential یا HAR خام در این سند قرار نگرفته است.
 - نتایج وابسته به همان prefix، میزبان و زمان آزمایش‌اند؛ برای تعمیم به نسخه‌های دیگر باید تکرار شوند.
 - Wine صرفاً ابزار آزمایش رفتار نسخه Windows است و جزء معماری نهایی EMWAT-Linux نیست.
+
+## تکمیل آزمایش HTTP و بررسی رشته‌های اجرایی — 2026-11-15
+
+### 1. بررسی متدهای HTTP در مسیر ریشه
+
+با سرویس فعال، چهار درخواست بدون payload کاربردی به مسیر ریشه پورت 1984 ارسال شد:
+
+| متد | مسیر | نتیجه مشاهده‌شده |
+|---|---|---|
+| GET | `/` | `200 OK`، بدنه خالی، header کوکی `IDHTTPSESSIONID` |
+| HEAD | `/` | `200 OK`، بدنه خالی، header کوکی `IDHTTPSESSIONID` |
+| OPTIONS | `/` | `200 OK`، بدنه خالی؛ کوکی در خروجی مشاهده نشد |
+| POST | `/` | `200 OK`، بدنه خالی، header کوکی `IDHTTPSESSIONID` |
+
+Listener همچنان روی `127.0.0.1:1984` بود و `ss` مالک socket را `wineserver` گزارش کرد.
+
+**تفسیر محدود:** این آزمایش فقط پاسخ‌گویی مسیر ریشه به چهار متد را ثابت می‌کند. POST بدون envelope معتبر و بدون endpoint/method واقعی، آزمون dispatch نیست. پاسخ 200 خالی می‌تواند از handler عمومی یا پیش‌فرض ناشی شده باشد. این خروجی‌ها پشتیبانی CORS، اجرای متدهای EMWAT، parse شدن body یا سازگاری API را ثابت نمی‌کنند.
+
+### 2. رشته‌های استخراج‌شده از فایل‌های اجرایی
+
+هر دو فایل `EmwatAgent.exe` و `EmwatService.exe` در مسیر نصب‌شده با استخراج رشته‌های Unicode و narrow بررسی شدند.
+
+**رشته‌های EmwatService.exe:**
+- نمادها و نوع‌های Indy HTTP server/session دیده شدند: `IdCustomHTTPServer`، `TIdHTTPRequestInfo`، `TIdHTTPResponseInfo`، `TIdHTTPSession`، `TIdHTTPCreateSession`، `TIdHTTPCreatePostStream` و `TIdHTTPDoneWithPostStream`.
+- نام کوکی session: `IDHTTPSESSIONID`.
+- رشته‌های HTTP شامل `HTTP/1.1`، `X-HTTP-Method`، `X-HTTP-Method-Override`، `Service Unavailable` و `HTTP version not supported`.
+- رشته خطای bind پورت هشدار می‌دهد که EMWAT از قبل اجرا نباشد و پورت 1984 آزاد باشد.
+- marker خاتمه سرویس: `{2EC42BF4-EA08-4476-AB86-466763F80E9A}_TERMINATE_EM_SERVICE_`.
+
+**رشته‌های EmwatAgent.exe:**
+- رشته‌های `LOCALHOST` و `127.0.0.1` وجود دارند.
+- پیام‌های خطای مرتبط با Word: `Error on connect to MS-Word. Exception:`، `Can not open document.` و `Error on insert sign to word document. Exception:`.
+- رشته‌های RTTI/symbol مربوط به `TLoginCredentialService` وجود دارند؛ این فقط وجود یک abstraction مرتبط با credential در binary را نشان می‌دهد و جزئیات عملکرد یا جریان داده را مشخص نمی‌کند.
+- ارجاع به `AgentLog.log` و `EmwatService.exe` نیز وجود دارد.
+
+**فایل‌های پیکربندی:** در مسیرهای جست‌وجوشده زیر ProgramData و AppData فایلی با پسوندهای `.config`، `.json`، `.xml` یا `.ini` که نام آن شامل Emwat باشد پیدا نشد. این نتیجه فقط به همان مسیرها و پسوندهای جست‌وجوشده محدود است.
+
+### 3. ارزش این شواهد برای EMWAT-Linux
+
+- وجود نمادهای Indy در Service با معماری HTTP server محلی که در تحلیل ایستا شناسایی شده بود سازگار است.
+- Agent مسیرهای خطای مشخصی برای اتصال به MS Word، بازکردن سند و درج امضا دارد؛ اما strings به‌تنهایی ثابت نمی‌کنند این عملیات در نشست فعلی اجرا یا موفق شده‌اند.
+- وجود `TLoginCredentialService` باید در تحلیل بعدی دنبال شود؛ از آن نمی‌توان نتیجه گرفت credentialها کجا ذخیره یا چگونه منتقل می‌شوند.
+- marker خاتمه سرویس یک سرنخ برای تحلیل lifecycle است، اما هنوز نباید به‌عنوان API عمومی یا فرمان قابل فراخوانی استفاده شود.
+
+### 4. آزمایش‌های بعدی
+
+1. درخواست‌های بی‌خطر GET به `/?heartbeat` و `/?init` را جداگانه بررسی و status/header/body پاک‌سازی‌شده را ثبت کن.
+2. handler مسیر ریشه و منطق ایجاد session را در Service trace کن تا علت پاسخ‌های خالی 200 مشخص شود.
+3. از یک نامه آزمایشی، metadata درخواست واقعی مرورگر به loopback را ثبت کن؛ Cookie، token، متن نامه، امضا و تصویر نباید ذخیره یا منتشر شوند.
+4. heartbeat واقعی Agent و رفتار آن هنگام توقف Service را بررسی کن.
+5. تا زمان مشاهده درخواست واقعی و تطبیق پاسخ، سازگاری POST، dispatch XML و round-trip سند را تأییدشده اعلام نکن.
