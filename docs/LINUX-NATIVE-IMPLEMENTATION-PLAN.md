@@ -127,10 +127,23 @@ Every behavior must be labeled as Confirmed, Strongly inferred, or Unknown. Unkn
 
 The first two workstreams now have concrete code in the repository:
 
-- **Bridge transport:** GET /?heartbeat returns HTTP 200 with an empty body, matching the observed Agent liveness probe. The existing /healthz endpoint remains a separate development health check. This does not implement the opaque /?init contract.
+- **Bridge transport:** GET /?heartbeat returns HTTP 200 with body `TickTack`, matching the captured Agent exchange. GET /?init=<digits>_<digits> returns the capture-matched initialization script after validating the parent-page Referer against a separate allowlist. `/healthz` remains a separate development health check.
 - **Document lifecycle:** python/src/emwat_linux/sessions.py introduces an office-engine-independent state machine with explicit initialization, opened/dirty, engine-save, finalizing, returned, failed, and cancelled states.
 - **Close semantics:** the state machine deliberately permits finalization and return without an explicit engine-save event, reflecting the confirmed user-visible close-without-Save requirement.
 - **Idempotency:** duplicate finalization requests are ignored while finalizing/returned; an identical returned payload is accepted as a no-op, while a conflicting second payload is rejected.
 - **Tests added:** python/tests/test_sessions.py and an additional heartbeat test in python/tests/test_bridge.py. These commits have been written to the repository; a fresh CI result for these newest commits has not yet been verified.
 
-Still not implemented: real Almas Gam Origin configuration, /?init response, production EditWordDocument handler, LibreOffice UNO adapter, recovery store, and CUPS/SANE backends.
+Still not implemented: production EditWordDocument handler, real LibreOffice UNO adapter, recovery store, and CUPS/SANE backends. The production deployment must supply the actual Almas parent-page and loopback Origin allowlists.
+
+
+## Close-driven office adapter boundary — 2026-11-15
+
+A new, engine-independent orchestration layer has been added in parallel with the SevenZip recovery analysis:
+
+- `python/src/emwat_linux/office_adapter.py` defines the OfficeAdapter protocol and normalized close outcomes (`CLOSED` / `CANCELLED`). It contains no UNO or COM implementation.
+- `python/src/emwat_linux/document_coordinator.py` sequences open → wait for close → export final bytes, using the existing DocumentSession state machine.
+- The coordinator deliberately waits for the close event rather than treating Save as the return trigger. This matches the observed product requirement and the captured long-lived HTTP exchange, without claiming the exact Windows callback has been mapped.
+- The local session identifier is supplied independently; the `invoke` query value is not reused because it is a per-request nonce.
+- Fake-adapter tests cover close without explicit Save, cancellation without export, adapter failure sanitization, and invalid output bytes.
+
+At the time of this update, the Python bridge workflow runs triggered by these commits are still in progress. Do not count the new coordinator tests as CI-verified until the latest run completes successfully. No production HTTP handler or LibreOffice implementation is connected yet.
