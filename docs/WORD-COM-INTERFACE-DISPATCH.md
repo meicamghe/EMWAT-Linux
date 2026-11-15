@@ -818,3 +818,14 @@ Word event-sink workflow run #3 (`43722341799`, artifact `14164794063`) adds the
 - The `0x00627B74` region remains the server error-string map described above. It is not reclassified as an event table.
 
 A targeted follow-up run (`43722702804`) now traces helper `0x0040479C` and the supporting RTL helpers, and expands/scans the `TWordDocument` server-data record at `0x00627768`. The actual event IID/DISPID-to-callback mapping remains unresolved until that artifact is inspected.
+
+
+## `WordAppDocumentBeforeClose` helper cross-reference — 2026-11-15
+
+Methods BPL analysis run `43722341778` (artifact `14165431103`) adds a direct cross-reference for the `0x004CCBBC` routine:
+
+- `TWordViwer.WordAppDocumentBeforeClose` calls `0x004BCA88` at `0x004CCCC9` and returns the helper result.
+- The same helper `0x004BCA88` is also called twice by `TWordViwer.GetCaptionItemFont` (`0x004C1A82` and `0x004C2329`). It is therefore a shared caption/font helper, not a close-specific network or save routine.
+- The direct caller scan for `0x004CCBBC` still shows only `FillImgFldsForPrint` at `0x004CCF8F`. The method body contains no proven bridge POST, final response write, or document-close call.
+
+This strengthens the caution around the TD32 method name: `WordAppDocumentBeforeClose` is a real named method and is used by print/image preparation, but the static evidence still does not prove that it is registered as the live main-editor close event. It must not be used to explain the observed Almas registration on close without the missing event-registration/response path.
