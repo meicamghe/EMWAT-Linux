@@ -412,3 +412,6 @@ The pointer list at `0x00627BB0` is an error-message string table. The previous 
 
 
 - Compare `SetPassword` callback typeinfo `0x0045391C` with `ExtractTo` callback typeinfo `0x00453850`. Both invoke internal archive slot `+0x1C` for all items, but `SetPassword` uses `testMode=0` and a callback from `Self+8`; `ExtractTo` stores context at `Self+0x50/+0x54` and uses its Boolean argument as `testMode`. Latest plugin run `43723896564` traces both typeinfo regions and references to resolve output semantics.
+
+
+- Treat internal interface slot `+0x1C` as `IInArchive.Extract`, corroborated by `ExtractItem` and `ExtractTo` wrappers using the same slot. `SetPassword` therefore triggers an all-items extraction request with its own callback; next resolve that callback's output path and password source.
