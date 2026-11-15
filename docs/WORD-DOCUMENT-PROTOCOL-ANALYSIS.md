@@ -1038,3 +1038,16 @@ Run 98 برای trace کردن 0x004BCA88، helperهای وضعیت/گزینهٔ
 - بدنهٔ `WordAppDocumentBeforeClose` (`0x004CCBBC`) روی داده‌های دو مجموعه در فیلدهای `+0xE8` و `+0xEC` از شیء جاری، مقادیر index/field را می‌سازد، دو فراخوانی interface در slot `+0x38` انجام می‌دهد و سپس `GetXmlFieldInfo` را فراخوانی می‌کند. این با آماده‌سازی/خواندن اطلاعات field سازگار است، ولی به‌تنهایی اثبات نمی‌کند این event handler در مسیر عادی بستن سند ثبت شده باشد.
 
 Run 99 برای decode کردن literal شرط QuitWord و بررسی interface tableها اجرا شده است. تا دریافت نتیجه، متن شرط و معنای slotهای teardown باز می‌ماند.
+
+
+## Run 101 — تفکیک شرط فعال‌سازی Office از چرخه بستن سند (2026-11-15)
+
+- GitHub Actions workflow run #101 با شناسه `43680106253` روی commit `cdf542e4bd486a63d92a1b26c41a05f30028ae70` با موفقیت پایان یافت؛ artifact `14148322936` دریافت و بررسی شد.
+- خطای Run 100 صرفاً از فراخوانی scanner بدون آرگومان selector لازم بود؛ workflow با selector صریح `*` اصلاح شد و Run 101 کامل شد.
+- literal در `0x004CDC14` اکنون decode شده است: `Activation` (UTF-16LE). تابع `TWordViwer.QuitWord` در `0x004CDB54` این substring را در رشته‌ای که از property شیء OLE در `viewer+0x44` می‌خواند جست‌وجو می‌کند.
+- اگر `Activation` پیدا شود، `QuitWord` مقدار False می‌دهد؛ اگر پیدا نشود، True می‌دهد. در caller یعنی `OnTmrAutoSave`، نتیجه True شاخه‌ای را فعال می‌کند که پیام `<Office LISENCE>: Word is not activated. Close Method.` را ثبت/نمایش می‌دهد و سپس `TWordApplication.Quit` را فراخوانی می‌کند. بنابراین این شاخه کنترل فعال‌سازی Office و خروج از Word است؛ مدرکی برای ذخیره سند یا ارسال آن به Almas Gam نیست.
+- در resourceهای BPL، فرم `TEmSettingForm` شامل کنترل‌های `rbAutoSave`، `rbDontSave`، `chkDntAskForSave` و `cbbAutoSaveInterval` است. این‌ها وجود تنظیمات ذخیره خودکار/عدم ذخیره و فاصله زمانی را ثابت می‌کنند، اما به‌تنهایی نشان نمی‌دهند که کدام گزینه در نصب کاربر فعال بوده یا مسیر ثبت نهایی نامه چگونه عمل می‌کند.
+- یک مسیر جدا در ماژول `uSendLog` شناسایی شد: `TfrmShowAutoSaveFiles.WordAppDocumentBeforeClose` در `0x005EC580`، تابع `CloseWordApp` در `0x005EBDA8` را فراخوانی می‌کند؛ caller دیگر `btnShowFileClick` است. نام کلاس، فرم `TfrmShowAutoSaveFiles` و callerهای مستقیم نشان می‌دهند این handler متعلق به پنجره نمایش فایل‌های AutoSave است، نه اینکه لزوماً handler اصلی ویرایش نامه باشد. بدنه CloseWordApp روی مجموعه‌ای از اشیای Word/Document loop می‌زند و متدهای interface را صدا می‌زند؛ معنای دقیق هر slot هنوز resolve نشده است.
+- این مسیر جدا را نباید با `TWordViwer.WordAppDocumentBeforeClose` در `0x004CCBBC` یکی دانست. دومی همچنان فقط caller مستقیم شناخته‌شده `FillImgFldsForPrint` دارد.
+- نتیجه منفی پابرجاست: Run 101 هیچ close-time POST تازه، payload نهایی، یا اتصال اثبات‌شده‌ای از `CloseWordApp` به پاسخ HTTP ارائه نکرد.
+- گام بعد: trace بدنه `TEmSettingForm` و ذخیره/خواندن گزینه‌های AutoSave، resolve کردن interface slotهای `CloseWordApp`، و بررسی اینکه callbackهای ثبت‌شده در WordViewer چگونه به مسیر پاسخ نهایی `EditWordDocument` می‌رسند. تا آن زمان production handler یا close protocol حدس زده نشود.
