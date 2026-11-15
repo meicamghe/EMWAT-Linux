@@ -47,6 +47,12 @@ class BridgeHTTPServerTests(unittest.TestCase):
         self.assertEqual(body, b'{"status":"ok"}')
         self.assertEqual(headers["Cache-Control"], "no-store")
 
+    def test_legacy_agent_heartbeat_endpoint(self):
+        status, body, headers = self.request("GET", "/?heartbeat")
+        self.assertEqual(status, 200)
+        self.assertEqual(body, b"")
+        self.assertEqual(headers["Content-Length"], "0")
+
     def test_post_preserves_opaque_body_and_query(self):
         payload = b'<emwat><method class="EditWordDocument"/></emwat>'
         status, body, headers = self.request(
