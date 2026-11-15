@@ -508,3 +508,16 @@ Key facts:
 Reviewed the latest Winux Engine development context and recorded the transferable findings in [WINUX-RUNTIME-VALIDATION.md](WINUX-RUNTIME-VALIDATION.md). Reusable patterns include the ServiceBackend contract and injected systemd-user backend, separation of ServiceManager from ProcessManager, read-only diagnostics, symlink-safe prefix/path handling, and explicit x86/x64 WoW64 detection. The latest Winux working-tree context reports 216 passing tests, but the public Winux GitHub docs may lag those local changes.
 
 Use these capabilities only as optional Wine-test infrastructure and as design patterns. Do not make Winux or Wine a dependency of EMWAT-Linux's native product architecture. In particular, do not equate a Winux-managed Linux user service with Windows Service Control Manager support, and do not assume the already-observed EMWAT Wine processes are tracked by Winux until verified.
+
+
+## Run 113 — startup registry read located (2026-11-15)
+
+Workflow #113 succeeded (run ID `43688755518`, artifact `14151906706`). The earlier “startup settings-read path unresolved” note is superseded: the main `TWordViwer` constructor at `0x004D0D24–0x004D0FE6` opens `HKCU\\Software\\Emwat\\Dynamic Config` and reads four values:
+- `Background Priniting` → Boolean field `+0x3C`, default true.
+- `Dont Ask Save On Print` → Boolean field `+0x3D`, default true.
+- `Save Before Print` → Boolean field `+0x3E`, default false.
+- `AutoSaveInterval` → integer field `+0x88`, default 0 and minimum 10000 ms.
+
+Reads are guarded by `ValueExists`; values are loaded with `ReadBool` / `ReadInteger`. `Logging Level` and `Save I/O Trace Files` are not handled in this constructor. Do not infer timer/save semantics solely from the interval field.
+
+**Still unresolved:** main-editor close callback semantics, close-time HTTP request/response, and final Almas Gam registration payload. Preserve the user's observed fact that closing Word without pressing Save registers the document; static analysis has not yet explained the mechanism.
