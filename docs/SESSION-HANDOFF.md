@@ -659,7 +659,7 @@ The reader exposes archive open, item-query and extraction methods. Do not yet n
 
 ### Verified since the previous handoff
 
-- Python bridge CI run `43721322012` succeeded with **69 tests**. The close-driven coordinator and EditWordDocument domain-service tests cover close without explicit Save, separate modification/save callbacks, cancellation, sanitized adapter failures, and rejection of non-byte output.
+- Python bridge CI run `43721449170` succeeded with **69 tests**. The close-driven coordinator and EditWordDocument domain-service tests cover close without explicit Save, separate modification/save callbacks, cancellation, sanitized adapter failures, and rejection of non-byte output.
 - New engine-neutral files: `office_adapter.py`, `document_coordinator.py`, and `editword_service.py`. They model request normalization → open → track modifications and engine saves independently → wait for user close → export final bytes. They are not a LibreOffice implementation. `editword_handler.py` now adapts the service to the XML dispatcher and uses the observed success serializer, but the factory is not yet registered in the application.
 - `EditWordDocument` request normalization exists, including Base64 document decoding and conservative preservation of signData as opaque text.
 - Heartbeat response and init-script generation are implemented against the captured exchange; production allowlists must still be configured.
@@ -733,3 +733,6 @@ Run `43719180035` succeeded; artifact `14164088249` was inspected. Additional ev
 - A cancellation response factory is mandatory and injected; cancellation HTTP semantics are not guessed.
 - The factory is not registered in the running application yet. Registration waits for a real LibreOffice OfficeAdapter and captured cancellation behavior.
 - Latest Python CI: run `43721322012`, success, 69 tests.
+
+
+- Concrete OfficeAdapter implementations must isolate handles/callbacks per document and support concurrent sessions because the loopback bridge serves requests concurrently. The protocol contract now states this explicitly; CI run `43721449170` passed 69 tests.
