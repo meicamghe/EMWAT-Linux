@@ -183,3 +183,6 @@ Python bridge workflow run `43720329600` completed successfully with 66 tests. T
 
 - The recovery plugin analysis now resolves Delphi VMT slots and interface tables for `T7zArchive`, `T7zPlugin`, `T7zInArchive`, and `T7zOutArchive`, including SevenZip archive/stream interface RTTI.
 - The purpose is to map the interface returned by `CreateOutArchive` to the `euResetMemory` dispatches. The mapping is still open until artifact `SevenZip-interface-tables.md` is inspected; do not promote the current `SetPassword → OpenFile → ExtractTo` sequence beyond a strong hypothesis.
+
+
+- Follow-up review fixed the cancellation branch too: office callbacks are now detached immediately after `wait_for_close`, before checking whether the result is `CLOSED` or `CANCELLED`. Late callbacks after cancellation are covered by a regression test. CI run `43722805637` passed **71 tests**.
