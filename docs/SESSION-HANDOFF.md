@@ -1,6 +1,6 @@
 # EMWAT-Linux — Project Handoff
 
-Last reviewed: 2026-11-14
+Last reviewed: 2026-11-15
 
 This is the concise continuity entry point for future sessions. Detailed reverse-engineering evidence remains in the linked analysis documents.
 
@@ -653,3 +653,32 @@ Do not treat the Windows username or `@25*gamsign*25@` as the confirmed `.easz` 
 The recovery subsystem now has a dedicated analysis report: `docs/RECOVERY-STORE-ANALYSIS.md`. Two additional recovery-path runs (#9 and #10; artifacts `14163436366` and `14163367757`) traced the SevenZip reader class. `euResetMemory` (`0x00456F00`) constructs a `T7zInArchive` reader and conditionally passes the fallback password `mW@Tlogs43end_+` through the password-setting virtual dispatch. `T7zInArchive.SetPassword` (`0x00453860`) stores the string at object offset `+0x58` and forwards it to the archive interface. The username / `@25*gamsign*25@` value returned by `euGetAutoSavePass` belongs to a separate cleanup/logging path and is not established as the recovery archive password.
 
 The reader exposes archive open, item-query and extraction methods. Do not yet name the `euResetMemory` path arguments as a proven OpenFile/ExtractTo pair: VMT slots `+0x0C` and `+0x3C` still need exact mapping. The `.easd` file's content and lifecycle, the SevenZip archive variant, and the writer-side `.easz` creation settings remain unresolved. Continue from `docs/RECOVERY-STORE-ANALYSIS.md`; do not repeat the completed class-method trace.
+
+
+## Latest continuity checkpoint — 2026-11-15
+
+### Verified since the previous handoff
+
+- Python bridge CI run `43719459423` succeeded with **62 tests**. The added close-driven coordinator tests cover successful close without explicit Save, cancellation, sanitized adapter failures, and rejection of non-byte output.
+- New engine-neutral files: `python/src/emwat_linux/office_adapter.py` and `python/src/emwat_linux/document_coordinator.py`. They model open → wait for user close → export final bytes. They are not a LibreOffice implementation and are not yet connected to the production HTTP method handler.
+- `EditWordDocument` request normalization exists, including Base64 document decoding and conservative preservation of signData as opaque text.
+- Heartbeat response and init-script generation are implemented against the captured exchange; production allowlists must still be configured.
+- Recovery analysis identifies `T7zInArchive` as the reader used by the recovery path. Its SetPassword implementation at `0x00453860` stores the supplied Unicode password at instance offset `+0x58` and forwards it to the archive interface. `euResetMemory` supplies `mW@Tlogs43end_+` when its optional password is absent and the flag selects the fallback. Do not substitute the Windows username or `@25*gamsign*25@`, which belong to a separate cleanup/logging path.
+- The reader exposes archive open, item metadata and extraction methods. Exact standard archive format, euResetMemory path-slot VMT mapping, .easd contents, and writer password callback remain unresolved. `T7zOutArchive.SetPassword` is a no-op stub; writer callback tracing is a separate task.
+- Word error strings were decoded and documented separately from the unresolved COM event dispatch map. Do not interpret the error string table as event callback metadata.
+
+### Active parallel jobs at handoff
+
+- Recovery SevenZip plugin-focused workflow: run `43719323732`.
+- Recovery path/helper workflow: run `43719180035`.
+
+Inspect their status and artifacts before starting duplicate work. If a job is still active, continue the independent native implementation track rather than waiting idle.
+
+### Immediate next actions
+
+1. Inspect the two active recovery artifacts; focus on T7zPlugin construction, VMT dispatch mapping, archive writer password callback, and the euResetMemory call chain.
+2. Keep the native OfficeAdapter/DocumentCoordinator separate from HTTP. Next implement a concrete LibreOffice UNO adapter behind the protocol only after the lifecycle event contract is clear enough to test.
+3. Connect the production EditWordDocument handler to request parsing, session coordination, and the observed response-word serializer only when a real office adapter exists; do not return the input bytes as a fake successful document.
+4. Continue tracing Word BeforeClose/BeforeSave → worker completion → response WriteContent and correlate with the approximately 54.56-second capture delay. Do not claim the close-time callback is proven.
+5. Keep docs/PROJECT-STATUS.md, docs/LINUX-NATIVE-IMPLEMENTATION-PLAN.md, docs/RECOVERY-STORE-ANALYSIS.md, and this handoff synchronized as evidence changes.
+
