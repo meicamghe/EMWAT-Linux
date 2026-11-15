@@ -1,0 +1,102 @@
+# EditWordDocument round-trip: captured DOC response analysis
+
+Date: 2026-11-15  
+Source: GitHub Actions run 6, run ID `43711788034`, artifact `14160597175`  
+Capture: `emwat.pcapng`, TCP tuple `127.0.0.1:61189 ↔ 127.0.0.1:1984`  
+Method: TCP sequence-aware reconstruction and metadata-only document comparison. The response capture has missing TCP sequence ranges; no full-file equality claim is made.
+
+## 1. HTTP exchange
+
+The capture contains a request:
+
+```http
+POST /?invoke=58351 HTTP/1.1
+Host: 127.0.0.1:1984
+Content-Type: text/plain;charset=UTF-8
+Content-Length: 1177821
+Origin: http://127.0.0.1:1984
+```
+
+The service responds with `HTTP/1.1 200 OK`, `Content-Type: text/html; charset=ISO-8859-1`, and `Content-Length: 1166820`.
+
+The response's XML metadata, with document contents omitted, is:
+
+```xml
+<response-word status="success">
+  <return-types>
+    <type mimetype="application/msword" encryption="base64">…</type>
+  </return-types>
+</response-word>
+```
+
+This is direct capture evidence that this invoke returns a Base64-encoded Microsoft Word document payload, not merely a status-only acknowledgement.
+
+## 2. Request and response document identity
+
+| Property | Request `wordBody` | Response `return-types/type` |
+|---|---:|---:|
+| Decoded bytes captured | 872,960 | 874,957 (partial) |
+| File signature | OLE Compound File | OLE Compound File |
+| MIME type | request parameter context | `application/msword` |
+| Encoding | Base64 | Base64 |
+| SHA-256 | `7aeccac3dcbf37840e44652e857a02599dd067b07e8898b54f7cfe0a70412f3e` | `6e611c028e5b986a9a82957b3ea60e4453fc79c1e331c4445d8cefd57ab5f256` |
+
+Both decoded streams begin with the Compound File Binary signature `D0 CF 11 E0 A1 B1 1A E1`, consistent with legacy `.doc` container data.
+
+The request and response are not byte-identical in the intact captured prefix. The first differing decoded byte is offset 48, which is the OLE header's first-directory-sector pointer:
+- Request: 1698
+- Response: 1702
+
+Both headers report 14 FAT sectors. This establishes that the returned document container differs from the submitted one; it does not by itself identify which Word edits or metadata account for every changed byte.
+
+## 3. Capture completeness and size bounds
+
+The request has no detected TCP sequence gaps. The response has 17 gaps of 4 bytes each: 68 missing TCP payload bytes, all inside the Base64 document value.
+
+Consequences:
+- The captured response decodes to 874,957 bytes, but the capture is incomplete.
+- The analyzer estimates 51 missing decoded document bytes.
+- Estimated complete response document size: 875,008 bytes.
+- Estimated size increase over request: 2,048 bytes.
+- The estimated response size is aligned to 512-byte sectors.
+
+The estimate is useful for interpreting the capture, but must not be treated as a verified full-file byte count or hash. A complete response capture is required before a definitive binary diff.
+
+## 4. Timing
+
+For the selected TCP conversation:
+- First request payload: 0.000232 s from capture start.
+- HTTP request body completion was observed at 0.002154 s.
+- First response payload: 54.560037 s.
+- Last response payload: 54.561399 s.
+- Gap from the final request-body byte to the first response payload: 54.557883 s.
+
+This trace shows a long interval between request completion and response emission for this exchange. It does not identify which internal operation consumes that time; Word automation, document finalization, or other service work remain candidates, not proven causes.
+
+## 5. Implications for the Linux implementation
+
+1. The `EditWordDocument` invoke response must support a document return payload, not only JSON/XML status.
+2. The observed response shape carries a `response-word` root with `status="success"`, a `return-types` collection, and a `type` item with MIME type and Base64 encoding metadata.
+3. The response document is a modified/rewritten OLE compound file in this sample. The Linux implementation must preserve the final document produced by the office engine and return it through the connector response.
+4. A close/finalize operation must not assume that the submitted `wordBody` bytes can simply be echoed unchanged.
+5. TCP sequence gaps must be handled as missing capture data, never as zero-filled evidence. Full-file comparisons should fail closed when any gap overlaps the document payload.
+
+## 6. What remains unresolved
+
+- Whether every `EditWordDocument` session returns its document only on close, or whether other invoke paths can return it earlier.
+- The exact internal trigger for this response and its relationship to Word's BeforeClose/BeforeSave callbacks.
+- Which document modifications account for the 2,048-byte estimated size increase.
+- Whether the same return contract is used for DOCX, image-only letters, TIFF/multipage documents, and other MIME types.
+- A complete, gap-free response capture and full document-level diff are still required.
+
+## 7. Reproducibility
+
+The report was generated by:
+- `tools/analyze_pcap_http_timing.py`
+- `tools/compare_editword_document_payloads.py`
+
+Workflow: `Analyze EMWAT HTTP capture timing`  
+Run: `43711788034`  
+Artifact: `14160597175` (`emwat-pcap-http-timing`)
+
+No document body, letter text, Base64 payload, cookies, or authorization values are included in this report.
