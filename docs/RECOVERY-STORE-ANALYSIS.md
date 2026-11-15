@@ -74,3 +74,26 @@ Until those are resolved, Linux should expose a recovery-store interface but sho
 - Corrected recovery form run #2: `43715017039`, success, artifact `14162835454` (`emwat-recovery-store-analysis`).
 - Initial run #1: `43714978859`, success, artifact `14161843667`; superseded because its report formatting was corrected in run #2.
 - Parallel helper-path workflow: `analyze-recovery-paths.yml`, run #1 (`43715289876`); running while this report was updated.
+
+
+## 7. New filename/filter constants recovered (2026-11-15)
+
+The recovery-form data references were decoded in workflow `analyze-recovery-paths.yml`, run #1 (`43715289876`), artifact `14162565730`:
+
+- `0x005EC49C`: `*.easz`. In `lslFilesDblClick` (`0x005EC224`), this constant is passed to helper `0x004043BC` while constructing/processing a file collection. Its wildcard syntax strongly suggests an AutoSave-file filter, but the helper semantics and directory are not yet resolved.
+- `0x005EBD3C`: `.easd`. This literal is used in string construction inside the `Delete` procedure (`0x005EB828`); its exact role as a suffix, temporary-file extension, or Automation argument remains to be proven.
+- `0x005EBD18`: `AutoSave. `.
+- `0x005EBD54`: `AutoSave. WordAppp.Connect.1st`.
+
+The coexistence of `.easz` and `.easd` means the recovery UI may interact with more than one AutoSave-related file form. Do not collapse them into a single confirmed file extension yet.
+
+The helper index also resolved:
+- `euGetAutoSavePass` at `0x00456B78`;
+- `DoClearOldAutoSaveFiles` at `0x00456C0C`;
+- `euClearOldAutoSaveFiles` at `0x00456C98`;
+- `euGetLocalAppDataPath` at `0x0044A2C4` / `0x0044A300`;
+- `euGetWinTempPath` at `0x0044A47C`;
+- `euGetTempPath` at `0x0044A7A0`;
+- `DeleteTempRAW` at `0x0044AE98`.
+
+Initial control-flow evidence in `euClearOldAutoSaveFiles` shows it enumerates a file collection, obtains file-age/time values, compares an age against `0x18`, and conditionally calls a deletion helper at `0x004026B4`. The exact time unit, file mask, and directory are not yet established. The helper-path workflow is being extended to resolve those constants and imported API targets.
