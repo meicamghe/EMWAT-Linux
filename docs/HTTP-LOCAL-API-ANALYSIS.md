@@ -1,6 +1,6 @@
 # EMWAT local HTTP bridge — تحلیل مرحله‌ای
 آخرین به‌روزرسانی: 2026-11-10
-وضعیت سند: یافته‌های ایستا از رشته‌های باینری؛ هنوز runtime-validated نیست.
+وضعیت سند: ترکیب یافته‌های ایستا و runtime-validated از capture مورخ 2026-11-15.
 
 ## 1. شواهد مستقیم
 
@@ -8,11 +8,11 @@
 |---|---|---|
 | سرویس HTTP | `TIdHTTPServer`, `TIdCustomHTTPServer`, `FHTTPServer` | سرویس از اجزای سرور HTTP کتابخانه Indy استفاده می‌کند. |
 | پورت | پیام `Port binding failed... port 1984 is free` | پورت 1984 در build بررسی‌شده پورت پیش‌فرض/مورد انتظار است. |
-| heartbeat | `http://127.0.0.1:1984/?heartbeat` در Agent | Agent برای بررسی وضعیت به loopback و مسیر query-based heartbeat درخواست می‌فرستد. |
-| bridge پیام | `POST` به `http://127.0.0.1:$V{myport}?invoke=<random>` | کد JS داده پیام را با POST به سرویس محلی می‌فرستد. |
-| پاسخ bridge | `responseText` سپس `postMessage(..., origin)` | پاسخ متنی HTTP به پنجره فرستنده بازگردانده می‌شود. |
+| heartbeat | `GET /?heartbeat` در capture | پاسخ runtime برابر `200 OK` با body دقیق `TickTack` (۸ بایت) است. |
+| bridge پیام | `POST /?invoke=<random>` در capture | درخواست UTF-8 با `Content-Type: text/plain;charset=UTF-8` به سرویس loopback ارسال می‌شود؛ body یک envelope XML با root `emwat version="1.0"` است. |
+| پاسخ bridge | `responseText` سپس `postMessage(..., origin)` و capture stream 18 | پاسخ موفق `response-word status="success"` با `return-types/type` و MIME برابر `application/msword` و Base64 است. |
 | فراخوانی متد | `Emwat method called from`, `TEmwatInvokeParam`, `{EmwatMethod` | مکانیزم dispatch متد در سرویس وجود دارد؛ قرارداد دقیق هنوز استخراج نشده است. |
-| init script | `Emwat init script requested from` و XML دارای `<emwat version="1.0">` | سرویس احتمالاً اسکریپت/تعریف اولیه را به client می‌دهد؛ endpoint دقیق نامشخص است. |
+| init script | `GET /?init=<عدد>_<عدد>` در capture | پاسخ `200 OK` حاوی HTML/JavaScript bridge است؛ Referer درخواست به صفحهٔ Almas اشاره می‌کند. |
 | تنظیمات | `Software\\Emwat\\Dynamic Config` | بخشی از تنظیمات پویا در Registry ویندوز نگهداری می‌شود. |
 
 ## 2. مدل ارتباطی موقت
@@ -31,11 +31,11 @@ flowchart LR
 
 ## 3. قرارداد API که هنوز نامعلوم است
 
-- آیا heartbeat از GET استفاده می‌کند و پاسخ موفق چه body/statusی دارد؟
-- درخواست invoke چه encoding دارد: UTF-8، ANSI، JSON، XML یا فرم؟
+- heartbeat پاسخ runtime مشخص دارد؛ تناوب دقیق و سیاست timeout/restart Agent هنوز باید از captureهای بیشتر/کد Agent استخراج شود.
+- encoding درخواست invoke در نمونهٔ ثبت‌شده UTF-8 است؛ رفتار نسخه‌ها و encoding پاسخ خطا هنوز باید بررسی شود.
 - پارامتر random صرفاً شناسه/ضد-cache است یا در dispatch نقش دارد؟
-- پاسخ خطا و موفقیت چه قالبی دارد؟
-- آیا endpointهای دیگری برای init script، settings، logging و file transfer وجود دارند؟
+- قالب پاسخ موفق EditWordDocument در capture مشخص است؛ قالب پاسخ خطا و پاسخ سایر متدها هنوز کامل نیست.
+- endpoint init و heartbeat و invoke در capture مشاهده شده‌اند؛ وجود endpointهای دیگر برای settings، logging و file transfer هنوز نامعلوم است.
 - آیا origin، host، token، session یا امضای درخواست بررسی می‌شود؟
 - محدودسازی اتصال به loopback در سطح bind انجام می‌شود یا فقط URL از 127.0.0.1 استفاده می‌کند؟
 - آیا Agent درخواست heartbeat را دوره‌ای تکرار می‌کند و سیاست restart/terminate چیست؟
