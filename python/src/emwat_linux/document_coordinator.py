@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from threading import Event
 
 from emwat_linux.editword_request import EditWordDocumentRequest
 from emwat_linux.office_adapter import CloseDisposition, OfficeAdapter
@@ -40,16 +41,30 @@ class DocumentCoordinator:
         request: EditWordDocumentRequest,
     ) -> DocumentRunResult:
         session = DocumentSession(session_id)
+        opened = Event()
+
+        def on_modified() -> int:
+            # Ignore initialization-time changes made while fields/config are applied.
+            if not opened.is_set():
+                return session.revision
+            return session.mark_dirty()
+
+        def on_saved() -> None:
+            # Initialization stores are not user-initiated engine saves.
+            if opened.is_set():
+                session.record_engine_save()
+
         try:
             session.begin_initialization()
             handle = self._office.open_document(
                 request,
-                on_modified=session.mark_dirty,
-                on_saved=session.record_engine_save,
+                on_modified=on_modified,
+                on_saved=on_saved,
             )
             if handle is None:
                 raise RuntimeError("office_adapter_returned_no_handle")
             session.mark_opened()
+            opened.set()
 
             close_event = self._office.wait_for_close(handle)
             if close_event.disposition is CloseDisposition.CANCELLED:
