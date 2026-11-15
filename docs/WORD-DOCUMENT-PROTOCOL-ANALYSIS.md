@@ -1051,3 +1051,16 @@ Run 99 برای decode کردن literal شرط QuitWord و بررسی interface 
 - این مسیر جدا را نباید با `TWordViwer.WordAppDocumentBeforeClose` در `0x004CCBBC` یکی دانست. دومی همچنان فقط caller مستقیم شناخته‌شده `FillImgFldsForPrint` دارد.
 - نتیجه منفی پابرجاست: Run 101 هیچ close-time POST تازه، payload نهایی، یا اتصال اثبات‌شده‌ای از `CloseWordApp` به پاسخ HTTP ارائه نکرد.
 - گام بعد: trace بدنه `TEmSettingForm` و ذخیره/خواندن گزینه‌های AutoSave، resolve کردن interface slotهای `CloseWordApp`، و بررسی اینکه callbackهای ثبت‌شده در WordViewer چگونه به مسیر پاسخ نهایی `EditWordDocument` می‌رسند. تا آن زمان production handler یا close protocol حدس زده نشود.
+
+
+## Run 102 — AutoSave settings and separate AutoSave viewer lifecycle
+
+- GitHub Actions run #102 (43681595513, commit 168793fd5e2dfaeff6036894409e7a5385944d31) completed successfully; artifact 14148712060 was inspected.
+- TEmSettingForm.chkDntAskForSaveClick at 0x005EAA20 opens the current-user registry hive (0x80000001, HKCU) and performs multiple registry value writes. The values include settings associated with controls at instance offsets +0x3E0, +0x3D8, +0x3C4, +0x3C8, +0x3CC, and the AutoSave interval control at +0x3F4. For interval values 1–5 it multiplies a lookup-table value by 1000; otherwise it writes 0x2710 (10000 ms). Registry value names and complete semantic mapping still require resolving the referenced string constants and registry helper APIs.
+- The settings resource confirms controls rbAutoSave, rbDontSave, chkDntAskForSave, chkSaveIOxmls, and cbbAutoSaveInterval. This proves the UI exposes AutoSave-related options; it does not prove which options were selected in the user's session or how the main editor's final registration works.
+- TEmSettingForm.FormCreate at 0x005EAD94 delegates to inherited form creation, then invokes helper 0x00402A50 and 0x0040496C; those helper semantics and the exact read-side settings mapping remain unresolved.
+- The small btnOkClick handler at 0x005EAA14 calls TCustomForm.Close via thunk 0x00404E84; it does not itself show persistence logic. The checkbox click handler is the one containing registry operations.
+- The separate TfrmShowAutoSaveFiles.FormClose at 0x005EBF20 is called from its own Delete/FormCreate/finalization paths. Its WordAppDocumentBeforeClose callback at 0x005EC580 calls CloseWordApp only when a document interface's first word equals 0x2E; this is tied to the AutoSave-files viewer, not proven to be the main Word editor's close event.
+- CloseWordApp at 0x005EBDA8 iterates a Word Documents collection, conditionally inspects/updates document items, and invokes interface slot +0x29C; exact COM method semantics remain unresolved. It does not establish an HTTP POST or final registration payload.
+- No evidence in Run 102 links these registry settings or the AutoSave viewer teardown to the main editor's final Almas Gam registration request. Keep that protocol unknown until a concrete caller/payload/response chain is found.
+- Next target: resolve registry helper APIs and string constants to map each setting key/value; separately resolve the +0x29C Word interface slot and identify actual event registration/dispatch for the main viewer's BeforeClose callback. Continue tracing the main editor's save/close-to-HTTP response path without conflating it with the AutoSave viewer.
