@@ -141,26 +141,28 @@ def main():
             limit = min(first_gap_prefix_bytes, len(request_file), len(response_file))
             prefix_equal = request_file[:limit] == response_file[:limit]
             print(f"- Request/response decoded prefix equal before first gap: {prefix_equal}")
+            first_diff = None
             if not prefix_equal:
                 first_diff = next((i for i in range(limit) if request_file[i] != response_file[i]), None)
                 print(f"- First differing decoded byte before capture gap: {first_diff}")
             if first_diff == 48 and request_file.startswith(signature) and response_file.startswith(signature):
                 print("- First difference is in the OLE header's first-directory-sector pointer.")
-        value_end_in_stream = response_body_offset + type_match.end(1)
-        gaps_inside_value = [
-            (start, end) for start, end in response_gaps
-            if start - response_base >= value_start_in_stream
-            and end - response_base <= value_end_in_stream
-        ]
-        missing_b64_chars = sum(end - start for start, end in gaps_inside_value)
-        if len(gaps_inside_value) == len(response_gaps) and missing_b64_chars % 4 == 0:
-            estimated_missing_file_bytes = (missing_b64_chars // 4) * 3
-            estimated_response_size = len(response_file) + estimated_missing_file_bytes
-            print(f"- All {missing_b64_chars} missing capture bytes fall inside the Base64 document value.")
-            print(f"- Estimated missing decoded document bytes: {estimated_missing_file_bytes}")
-            print(f"- Estimated complete response DOC size: {estimated_response_size} bytes")
-            print(f"- Estimated response size delta: {estimated_response_size - len(request_file)} bytes")
-            print(f"- Estimated response size is 512-byte-sector aligned: {estimated_response_size % 512 == 0}")
+
+            value_end_in_stream = response_body_offset + type_match.end(1)
+            gaps_inside_value = [
+                (start, end) for start, end in response_gaps
+                if start - response_base >= value_start_in_stream
+                and end - response_base <= value_end_in_stream
+            ]
+            missing_b64_chars = sum(end - start for start, end in gaps_inside_value)
+            if len(gaps_inside_value) == len(response_gaps) and missing_b64_chars % 4 == 0:
+                estimated_missing_file_bytes = (missing_b64_chars // 4) * 3
+                estimated_response_size = len(response_file) + estimated_missing_file_bytes
+                print(f"- All {missing_b64_chars} missing capture bytes fall inside the Base64 document value.")
+                print(f"- Estimated missing decoded document bytes: {estimated_missing_file_bytes}")
+                print(f"- Estimated complete response DOC size: {estimated_response_size} bytes")
+                print(f"- Estimated response size delta: {estimated_response_size - len(request_file)} bytes")
+                print(f"- Estimated response size is 512-byte-sector aligned: {estimated_response_size % 512 == 0}")
     if not response_gaps:
         print(f"- Complete files byte-identical: {request_file == response_file}")
     else:
