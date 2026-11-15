@@ -277,3 +277,48 @@ The transport now rejects Host values that include path/query/fragment component
 The new `python/src/emwat_linux/application.py` composes the transport, XML parser and explicit dispatcher through `create_bridge_server`. The factory requires the exact Origin allowlist and an explicit handler mapping. A full localhost integration test sends the confirmed outer XML envelope, passes through parsing and dispatch, and reads the handler's HTTP response. This test uses a fixture handler, not the production `EditWordDocument` method.
 
 Python bridge CI run #24 (`43593185429`, commit `27986ee96b45009283cd96eecde95110e1b9e448`) passed all 29 tests. This verifies composition of the local bridge layers, not Almas Gam compatibility or the document close/apply workflow.
+
+## Winux runtime probe and binary-string findings — 2026-11-15
+
+### Runtime method probe
+
+With the Windows Service running in the managed Winux/Wine prefix, requests to the root path `/` produced:
+
+| Method | Path | Observed response |
+|---|---|---|
+| GET | `/` | `200 OK`, empty body, `IDHTTPSESSIONID` cookie header |
+| HEAD | `/` | `200 OK`, empty body, `IDHTTPSESSIONID` cookie header |
+| OPTIONS | `/` | `200 OK`, empty body; no cookie shown |
+| POST | `/` | `200 OK`, empty body, `IDHTTPSESSIONID` cookie header |
+
+The listener was bound to `127.0.0.1:1984`. The socket owner shown by `ss` was `wineserver`.
+
+**Interpretation boundary:** these are method probes against only the root path with no meaningful application payload. They establish that Wine's exposed HTTP listener answered these requests, but do not establish that OPTIONS/CORS is supported, that POST dispatch works, that the request body was parsed, or that any EMWAT method ran. A generic/default handler may account for the empty 200 responses. Do not treat these results as API conformance.
+
+### Binary string findings from installed executables
+
+The installed files were inspected with both Unicode and narrow-string extraction. No EMWAT configuration files matching `.config`, `.json`, `.xml`, or `.ini` were found in the searched ProgramData/AppData locations; this is limited to the searched paths and extensions.
+
+**EmwatService.exe strings:**
+- Indy HTTP server/session symbols are present, including `IdCustomHTTPServer`, `TIdHTTPRequestInfo`, `TIdHTTPResponseInfo`, `TIdHTTPSession`, `TIdHTTPCreateSession`, `TIdHTTPCreatePostStream`, and `TIdHTTPDoneWithPostStream`.
+- Session cookie identifier `IDHTTPSESSIONID` is present.
+- HTTP-related strings include `HTTP/1.1`, `X-HTTP-Method`, `X-HTTP-Method-Override`, `Service Unavailable`, and `HTTP version not supported`.
+- Service identity strings include `EmwatService`, `Emwat Service`, and `Empowered Web Application Technology (Emwat) Service`.
+- A termination marker string is present: `{2EC42BF4-EA08-4476-AB86-466763F80E9A}_TERMINATE_EM_SERVICE_`.
+- A diagnostic string says the service cannot bind its port and advises ensuring EMWAT is not already running and port 1984 is free.
+
+**EmwatAgent.exe strings:**
+- Strings include `LOCALHOST` and `127.0.0.1`.
+- Word-related diagnostics include `Error on connect to MS-Word. Exception:`, `Can not open document.`, and `Error on insert sign to word document. Exception:`.
+- The binary contains `TLoginCredentialService`-related RTTI/symbol strings, indicating a login-credential service abstraction exists in the binary. Its runtime role and data flow are not established by strings alone.
+- It contains `AgentLog.log` and a reference to `EmwatService.exe`.
+
+**Interpretation:** the Service binary's Indy symbols corroborate the statically recovered local HTTP-server architecture. The Agent's Word error strings establish that it has explicit error paths for connecting to MS Word, opening a document, and inserting a signature. They do not prove that those operations were attempted or succeeded in the current Wine session. The credential-service symbols do not justify assuming credentials are stored or transmitted in any particular way.
+
+### Revised investigation priorities
+
+1. Trace the Agent's concrete connection target and heartbeat request in runtime logs/network observation; do not infer the full URL solely from string fragments.
+2. Inspect the Service's root-path command handler and session creation behavior to explain the empty 200 responses.
+3. Probe `?heartbeat` and `?init` separately using harmless GET requests and record status, headers, and sanitized body.
+4. Capture a real browser-originated request from a test letter using metadata only (method, path/query, Origin, Content-Type, body length, status); redact cookies, credentials, letter contents, signatures, and images.
+5. Continue to treat XML dispatch and the close-time response as unresolved until a real application request/response is correlated.
