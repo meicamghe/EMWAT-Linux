@@ -1422,3 +1422,8 @@ The BPL export/API analysis resolves the earlier naming ambiguity. The public TE
 - در کد فرم، literal فیلتر `*.easz` و literal `.easd` در string construction دیده شده‌اند. این‌ها شواهد مهم فرمت AutoSave هستند، اما هنوز نقش نهایی هر پسوند و مسیر ذخیره‌سازی قطعی نشده است.
 - helperهای `euGetAutoSavePass`، `DoClearOldAutoSaveFiles`، `euClearOldAutoSaveFiles`، `euGetLocalAppDataPath` و `euGetWinTempPath` شناسایی و trace شده‌اند. workflow دوم برای resolve کردن مسیر، ماسک فایل و APIهای filesystem در حال اجراست.
 - مستند جدید: `docs/RECOVERY-STORE-ANALYSIS.md`.
+
+
+- در تحلیل بازیابی، `0x004043BC` به `TDirectory.GetFiles` و `0x004026B4` به `DeleteFileW` resolve شد. هر دو مسیر UI بازیابی و پاک‌سازی AutoSave از ماسک `*.easz` استفاده می‌کنند؛ بنابراین این پسوند اکنون به‌عنوان ماسک واقعی فهرست‌سازی فایل در این زیرسیستم تأیید شده است.
+- helper `euGetLocalAppDataPath` از `SHGetSpecialFolderLocation` با CSIDL `0x1C` و `SHGetPathFromIDListW` استفاده می‌کند. هنوز اتصال مستقیم این ریشه به پوشه `.easz` ثابت نشده است.
+- cleanup بر اساس سن فایل تصمیم به `DeleteFileW` می‌گیرد و مقدار مقایسه `0x18` است؛ واحد/معنای دقیق retention تا trace helper زمان تأیید نشده. workflow recovery-path run #3 برای همین و برای خواندن AutoSave password در حال اجراست.
