@@ -70,6 +70,26 @@ def parse_document_nodes(request_body, response_body):
     return word_body_node.text, response_node.text, clean_response
 
 
+def xml_shape(data):
+    root = ET.fromstring(data)
+
+    def walk(node):
+        safe = {
+            key: value
+            for key, value in node.attrib.items()
+            if key in {"status", "mimetype", "encryption", "version", "name", "type"}
+        }
+        return {
+            "tag": node.tag,
+            "attributes": sorted(node.attrib.keys()),
+            "safe_attribute_values": safe,
+            "text_length": len(node.text or ""),
+            "children": [walk(child) for child in list(node)],
+        }
+
+    return walk(root)
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("pcapng")
@@ -102,6 +122,7 @@ def main():
         request_b64, response_b64, clean_response = parse_document_nodes(request_body, response_body)
         request_file = decode_b64(request_b64, "wordBody")
         response_file = decode_b64(response_b64, "response-word")
+        response_shape = xml_shape(clean_response)
     except (ET.ParseError, SystemExit) as exc:
         print(f"- Full comparison unavailable: {exc}")
         print("- The response capture contains sequence gaps; no full-file equality claim is made.")
@@ -109,6 +130,10 @@ def main():
 
     describe("Request wordBody", request_file)
     describe("Response application/msword (partial capture)", response_file)
+    print("### Response XML structure (values redacted)")
+    import json
+    print(json.dumps(response_shape, ensure_ascii=False, indent=2))
+    print()
 
     signature = bytes.fromhex("D0 CF 11 E0 A1 B1 1A E1")
     if request_file.startswith(signature) and response_file.startswith(signature):
