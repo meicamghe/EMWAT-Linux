@@ -56,6 +56,42 @@ jobs:
               index.append(f"- `0x{va}` — `{decorated}` — {trace}; callers: {callers}")
           pathlib.Path("recovery-path-analysis/helpers/trace-index.md").write_text("\n".join(index) + "\n", encoding="utf-8")
           PY
+      - name: Trace SevenZip archive reader and writer methods
+        run: |
+          mkdir -p recovery-path-analysis/sevenzip
+          python - <<'PY'
+          import pathlib, re, subprocess, sys
+          out = pathlib.Path("recovery-path-analysis/sevenzip")
+          index = ["# SevenZip archive class method traces", ""]
+          for source_name in (
+              "recovery-path-analysis/helpers/sevenzip-inarchive-method-index.md",
+              "recovery-path-analysis/helpers/sevenzip-outarchive-method-index.md",
+          ):
+              source = pathlib.Path(source_name)
+              if not source.exists():
+                  continue
+              text = source.read_text(encoding="utf-8")
+              for line in text.splitlines():
+                  if not line.startswith("|") or "Decorated procedure" in line or "|---" in line:
+                      continue
+                  parts = [part.strip() for part in line.strip("|").split("|")]
+                  if len(parts) < 5:
+                      continue
+                  module, decorated = parts[0], parts[1].strip("`")
+                  match = re.search(r"0x([0-9A-Fa-f]{8})", parts[2])
+                  if not match:
+                      continue
+                  va = match.group(1)
+                  safe = re.sub(r"[^A-Za-z0-9_.-]+", "_", decorated)[:100]
+                  trace = out / f"{va}-{safe}.md"
+                  callers = out / f"{va}-{safe}-callers.md"
+                  subprocess.run([sys.executable, "tools/trace_td32_procedure.py",
+                                  "analysis-input/EmwatMethods.bpl1", "0x" + va, str(trace)], check=True)
+                  subprocess.run([sys.executable, "tools/trace_td32_callers.py",
+                                  "analysis-input/EmwatMethods.bpl1", "0x" + va, str(callers)], check=True)
+                  index.append(f"- {module} — 0x{va} — {decorated}: {trace}; callers: {callers}")
+          (out / "index.md").write_text("\\n".join(index) + "\\n", encoding="utf-8")
+          PY
       - name: Decode form data constants and helper call targets
         run: |
           python tools/decode_pe_strings.py analysis-input/EmwatMethods.bpl1 0x005EC1F8 0x005EC49C 0x005EC4B8 0x005EC4F4 0x005EC508 0x005EC51C 0x005EC52C 0x005EBD18 0x005EBD3C 0x005EBDA0 0x005EBD54 0x00456DCC 0x00456C78 0x00456FEC 0x0044A92C 0x0044A940 0x0044A950 0x0044A968 0x0044A434 0x0044A44C 0x0044A554 0x0044A56C 0x0044B060 0x0044B094 0x0044B0A8 0x0044B0B4 0x0044B0DC 0x00454B24 0x00454B44 0x00454B54 0x00454B6C > recovery-path-analysis/form-data/recovery-form-constants.md
