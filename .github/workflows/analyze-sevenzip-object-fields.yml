@@ -1,0 +1,37 @@
+name: Analyze EMWAT SevenZip object field contracts
+on:
+  push:
+    paths:
+      - '.github/workflows/analyze-sevenzip-object-fields.yml'
+      - 'analysis-input/EmwatMethods.bpl1'
+      - 'tools/trace_field_accesses.py'
+      - 'tools/inspect_delphi_vmt_address.py'
+      - 'tools/inspect_pe_va.py'
+      - 'tools/trace_pe_range.py'
+permissions:
+  contents: read
+jobs:
+  sevenzip-object-fields:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install pefile capstone
+      - name: Resolve archive object layout and all field accesses
+        run: |
+          mkdir -p sevenzip-object-fields
+          python tools/inspect_delphi_vmt_address.py analysis-input/EmwatMethods.bpl1 0x00452528 sevenzip-object-fields/t7zinarchive-vmt.md
+          for field in 0x3C 0x40 0x44 0x50 0x54 0x58; do
+            python tools/trace_field_accesses.py analysis-input/EmwatMethods.bpl1 $field sevenzip-object-fields/field-${field#0x}.md
+          done
+          for target in 0x00452528 0x004527B8 0x0045392C 0x004532E4 0x004531EC 0x00453744; do
+            python tools/inspect_pe_va.py analysis-input/EmwatMethods.bpl1 $target --before 0x40 --after 0x100 > sevenzip-object-fields/inspect-${target#0x}.md
+          done
+          python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x00452500 0x00452900 sevenzip-object-fields/class-rtti-region.md
+      - uses: actions/upload-artifact@v4
+        with:
+          name: emwat-sevenzip-object-fields
+          path: sevenzip-object-fields/
