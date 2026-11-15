@@ -55,10 +55,15 @@ def main():
             f"- Segment: {proc['segment']}",
             f"- Procedure VA range: 0x{start_va:08X}–0x{start_va + proc['size'] - 1:08X}",
             f"- Procedure size: 0x{proc['size']:X} ({proc['size']} bytes)",
+            f"- PE section: {section.Name.rstrip(bytes([0])).decode('ascii', errors='replace')}",
+            f"- File offset: 0x{raw:08X}",
             f"- Requested VA offset: +0x{target - start_va:X}", "",
             "```asm"
         ]
-        for ins in decoder.disasm(code, start_va):
+        decoded = list(decoder.disasm(code, start_va))
+        decoded_bytes = sum(ins.size for ins in decoded)
+        lines.append(f"; Decoded {decoded_bytes}/{len(code)} procedure bytes ({len(decoded)} instructions)")
+        for ins in decoded:
             marker = "  <-- requested VA" if ins.address == target else ""
             lines.append(f"{ins.address:08X}  {ins.mnemonic:<8} {ins.op_str}{marker}")
         lines += ["```", ""]
