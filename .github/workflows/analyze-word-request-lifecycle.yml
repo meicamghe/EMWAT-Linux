@@ -47,6 +47,19 @@ jobs:
           done
           python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004B7724 request-lifecycle-analysis/helpers/LoadDocument-callers.md
           python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004B7F9C request-lifecycle-analysis/helpers/LoadDocument-response-write-callers.md
+      - name: Trace complete LoadDocument request blocking and response path
+        run: |
+          mkdir -p request-lifecycle-analysis/loaddocument
+          python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x004B7724 0x004B8A84 request-lifecycle-analysis/loaddocument/LoadDocument-complete-range.md
+          python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x004B7724 0x004B7DE1 request-lifecycle-analysis/loaddocument/LoadDocument-entry-and-file-create.md
+          python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x004B7DE1 0x004B809D request-lifecycle-analysis/loaddocument/LoadDocument-read-and-response.md
+          python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x004B809D 0x004B8A84 request-lifecycle-analysis/loaddocument/LoadDocument-post-response-tail.md
+          for target in 004B7724 004B7A58 004B7DE1 004B7F9C 004B8080; do
+            python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x$target request-lifecycle-analysis/loaddocument/procedure-$target.md
+            python tools/trace_td32_immediate_refs.py analysis-input/EmwatMethods.bpl1 0x$target request-lifecycle-analysis/loaddocument/refs-$target.md
+          done
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004B7724 request-lifecycle-analysis/loaddocument/LoadDocument-direct-callers.md
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004B7F9C request-lifecycle-analysis/loaddocument/LoadDocument-response-writer-callers.md
       - uses: actions/upload-artifact@v4
         with:
           name: emwat-word-request-lifecycle-analysis
