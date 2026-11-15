@@ -534,6 +534,29 @@ jobs:
               summary.append(f"- {module.strip()} — `0x{va}` — `{decorated}` — {output}")
           pathlib.Path("word-lifecycle-analysis/AutoSave-class-method-trace-index.md").write_text("\n".join(summary) + "\n", encoding="utf-8")
           PY
+      - name: Resolve AutoSave registry helpers and persisted setting names
+        run: |
+          mkdir -p word-lifecycle-analysis
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x00402A50 word-lifecycle-analysis/AutoSave-helper-402A50.md 220 ret
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x0040496C word-lifecycle-analysis/AutoSave-helper-40496C.md 260 ret
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004043CC word-lifecycle-analysis/AutoSave-registry-helper-4043CC.md 180 ret
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004043E4 word-lifecycle-analysis/AutoSave-registry-helper-4043E4.md 180 ret
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004043EC word-lifecycle-analysis/AutoSave-registry-helper-4043EC.md 180 ret
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x00404414 word-lifecycle-analysis/AutoSave-registry-helper-404414.md 180 ret
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x00404424 word-lifecycle-analysis/AutoSave-registry-helper-404424.md 180 ret
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x00403438 word-lifecycle-analysis/AutoSave-helper-403438.md 180 ret
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x00403480 word-lifecycle-analysis/AutoSave-helper-403480.md 180 ret
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x00402A50 word-lifecycle-analysis/AutoSave-helper-402A50-callers.md
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x0040496C word-lifecycle-analysis/AutoSave-helper-40496C-callers.md
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004043CC word-lifecycle-analysis/AutoSave-registry-helper-4043CC-callers.md
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004043E4 word-lifecycle-analysis/AutoSave-registry-helper-4043E4-callers.md
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004043EC word-lifecycle-analysis/AutoSave-registry-helper-4043EC-callers.md
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x00404414 word-lifecycle-analysis/AutoSave-registry-helper-404414-callers.md
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x00404424 word-lifecycle-analysis/AutoSave-registry-helper-404424-callers.md
+          python tools/decode_pe_strings.py analysis-input/EmwatMethods.bpl1 0x005EAB6C 0x005EABB4 0x005EABDC 0x005EAC14 0x005EAC4C 0x005EAC88 0x005EACB8 > word-lifecycle-analysis/AutoSave-registry-value-names.md
+          python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 0x005EAA20 word-lifecycle-analysis/AutoSave-checkbox-handler-refs.md
+          python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x005EAA20 0x005EAB5C word-lifecycle-analysis/AutoSave-checkbox-registry-write-path.md
+          python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x005EAD94 0x005EADBE word-lifecycle-analysis/AutoSave-settings-read-init.md
       - uses: actions/upload-artifact@v4
         with:
           name: emwat-word-lifecycle-analysis
