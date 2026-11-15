@@ -1503,3 +1503,6 @@ The BPL export/API analysis resolves the earlier naming ambiguity. The public TE
 
 
 - handler adapter جدید در `editword_handler.py` پاسخ موفق را با serializer ثبت‌شده `response-word` می‌سازد. پاسخ لغو باید با factory اجباری تزریق شود؛ تا وقتی payload لغو اصلی معلوم نیست، status/body حدس زده نمی‌شود. CI run `43721322012` با ۶۹ تست موفق است.
+
+
+- تحلیل بعدی برای تعیین ارث‌بری و VMT کلاس پایه `T7zArchive` با run `43721583502` شروع شده است. index کلاس پایه جدا ذخیره می‌شود تا traceهای سنگین فقط روی wrapperهای reader/writer انجام شوند؛ run قبلی گسترده‌تر `43721251511` هنوز در حال اجراست.
