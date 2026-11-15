@@ -343,3 +343,13 @@ The pointer list at `0x00627BB0` is an error-message string table. The previous 
 - The adapter contract separates modification callbacks, engine-save callbacks, close notification, and final export. Save records a revision but does not return the document; close triggers final export.
 - The service normalizes an EditWordDocument MethodCall and assigns a fresh local session ID; it does not reuse the `invoke` query nonce.
 - Python bridge CI run `43719841339` passed **66 tests**. These tests use a fake office adapter; no LibreOffice UNO implementation or production HTTP handler is claimed complete.
+
+
+### Recovery path workflow #10 — reader/extract and cleanup targets
+
+- Workflow run `43719180035` completed successfully; artifact `14164088249` inspected.
+- `T7zInArchive.SetPassword` stores the Unicode password at `Self+0x58` and invokes the archive interface's extraction-style slot with a callback-like helper. `PrepareOperation` reads the stored password field and handles callback/context fields `+0x50/+0x54`. `CryptoGetTextPassword` and `SetPasswordCallback` are stubs.
+- The `euResetMemory` dispatch sequence (+0x44 password, +0x0C path, +0x3C path) strongly aligns with `SetPassword` → `OpenFile` → `ExtractTo`, but the VMT/interface slot table remains unproven. Keep this as the leading hypothesis.
+- Cleanup APIs resolve exactly: `TDirectory.GetFiles` for `*.easz`, `FileAge`, `FileDateToDateTime`, `Now`, `HoursBetween`, and `DeleteFileW`; threshold is 24 hours.
+- The `CryptoGetTextPassword2` helper was corrected: it initializes a `TObjectList` via RTL constructor `0x00404734`; it does not identify the writer password provider.
+- See `docs/RECOVERY-STORE-ANALYSIS.md`, sections 16–17.
