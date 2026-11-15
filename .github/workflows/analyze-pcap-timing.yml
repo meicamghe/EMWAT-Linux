@@ -1,0 +1,28 @@
+name: Analyze EMWAT HTTP capture timing
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/analyze-pcap-timing.yml'
+      - 'tools/analyze_pcap_http_timing.py'
+      - 'emwat.pcapng'
+permissions:
+  contents: read
+jobs:
+  pcap-timing:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install scapy
+      - name: Reconstruct EditWordDocument request and response timestamps
+        run: |
+          mkdir -p pcap-timing-analysis
+          python tools/analyze_pcap_http_timing.py emwat.pcapng --client-port 61189 > pcap-timing-analysis/stream18-request-response-timing.md
+          cat pcap-timing-analysis/stream18-request-response-timing.md
+      - uses: actions/upload-artifact@v4
+        with:
+          name: emwat-pcap-http-timing
+          path: pcap-timing-analysis/
