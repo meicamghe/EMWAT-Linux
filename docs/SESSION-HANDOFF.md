@@ -659,8 +659,8 @@ The reader exposes archive open, item-query and extraction methods. Do not yet n
 
 ### Verified since the previous handoff
 
-- Python bridge CI run `43719459423` succeeded with **62 tests**. The added close-driven coordinator tests cover successful close without explicit Save, cancellation, sanitized adapter failures, and rejection of non-byte output.
-- New engine-neutral files: `python/src/emwat_linux/office_adapter.py` and `python/src/emwat_linux/document_coordinator.py`. They model open → wait for user close → export final bytes. They are not a LibreOffice implementation and are not yet connected to the production HTTP method handler.
+- Python bridge CI run `43719841339` succeeded with **66 tests**. The close-driven coordinator and EditWordDocument domain-service tests cover close without explicit Save, separate modification/save callbacks, cancellation, sanitized adapter failures, and rejection of non-byte output.
+- New engine-neutral files: `office_adapter.py`, `document_coordinator.py`, and `editword_service.py`. They model request normalization → open → track modifications and engine saves independently → wait for user close → export final bytes. They are not a LibreOffice implementation and are not yet connected to the production HTTP method handler.
 - `EditWordDocument` request normalization exists, including Base64 document decoding and conservative preservation of signData as opaque text.
 - Heartbeat response and init-script generation are implemented against the captured exchange; production allowlists must still be configured.
 - Recovery analysis identifies `T7zInArchive` as the reader used by the recovery path. Its SetPassword implementation at `0x00453860` stores the supplied Unicode password at instance offset `+0x58` and forwards it to the archive interface. `euResetMemory` supplies `mW@Tlogs43end_+` when its optional password is absent and the flag selects the fallback. Do not substitute the Windows username or `@25*gamsign*25@`, which belong to a separate cleanup/logging path.
@@ -682,3 +682,10 @@ Inspect their status and artifacts before starting duplicate work. If a job is s
 4. Continue tracing Word BeforeClose/BeforeSave → worker completion → response WriteContent and correlate with the approximately 54.56-second capture delay. Do not claim the close-time callback is proven.
 5. Keep docs/PROJECT-STATUS.md, docs/LINUX-NATIVE-IMPLEMENTATION-PLAN.md, docs/RECOVERY-STORE-ANALYSIS.md, and this handoff synchronized as evidence changes.
 
+
+
+### Follow-up: request-to-session service verified
+
+- `EditWordDocumentService.process(MethodCall)` now normalizes the request and invokes the coordinator. It generates a local random session ID and never reads the HTTP `invoke` nonce.
+- Office adapters must report document modifications and engine-save events separately. A save records a revision but does not release the waiting request; close triggers export.
+- Latest verified CI: run `43719841339`, success, 66 tests.
