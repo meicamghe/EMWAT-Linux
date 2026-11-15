@@ -11,7 +11,8 @@ The table stores adjacent Delphi string references. The following pairings are b
 
 | Code label | Message |
 |---|---|
-| `Err_0` | Generic/empty code label; adjacent message is `Err_20000` / `Exception: ` |
+| `Err_0` | Sentinel/default code label; no message pointer is stored in the following slot. |
+| `Err_20000` | `Exception: ` (generic exception prefix). |
 | `Err_20001` | Request XML is invalid. |
 | `Err_20002` | Request Doc is Empty. |
 | `Err_20003` | Error on connect to MS-Word. Exception: |
