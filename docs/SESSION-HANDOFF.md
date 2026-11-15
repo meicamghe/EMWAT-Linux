@@ -549,7 +549,7 @@ Continue autonomously; no user input is required for the current static-analysis
 - Dynamic Config reads are now mapped: Background Priniting, Dont Ask Save On Print, Save Before Print, AutoSaveInterval, Logging Level, Save I/O Trace Files. TETracer's Created IO Trace Count is a 15-count trace quota.
 - Image/print settings use HKCU\SOFTWARE\Emwat\PrintParams with mLeft/mTop/mRight/mBottom, Posotion, Size, PrintRange.
 - DeleteTempRAW enumerates Word windows, may execute taskkill.exe /f /im WINWORD.EXE, then CloseAllWords removes matching temp files. Its caller is still unknown; do not equate it with the user's close action.
-- Packet-level timing confirms one long-lived EditWordDocument request: body complete at 0.002154 s, first response byte at 54.560037 s, gap 54.557883 s; the response transfers in about 1.362 ms. The exact Word/COM event that releases the held request is still unresolved.
+- Packet-level timing confirms one long-lived EditWordDocument request: body complete at 0.002154 s, first response byte at 54.560037 s, gap 54.557883 s; the response transfers in about 1.362 ms. The returned DOC is rewritten: input 872,960 bytes; estimated complete response 875,008 bytes (+2,048); OLE first-directory-sector pointer 1698 → 1702 at offset 48. The exact Word/COM release event is still unresolved.
 - LoadDocument writes wordBody bytes directly to a temporary stream. Base64Decode at 0x004B7E44 uses [ebp-8], not the wordBody argument. Do not claim this call decodes wordBody.
 - The successful LoadDocument path writes AResponseInfo.ContentText and calls WriteContent. Exact timing relative to Word close remains unresolved.
 
@@ -566,5 +566,10 @@ Continue autonomously; no user input is required for the current static-analysis
 1. Continue the request-lifecycle workflow around LoadDocument helper calls and event-sink slot mapping.
 2. Resolve the DeleteTempRAW caller through unit initialization/finalization tables or indirect references.
 3. Finish image/print registry value mapping and temp cleanup helper semantics.
-4. Keep all new conclusions evidence-tagged; do not promote the single-long-lived-request theory or a close-time POST without proof.
+4. Keep all conclusions evidence-tagged: the long-lived XHR is confirmed, but the exact Word close callback that releases it and the parent page's final Almas POST still need proof.
 5. Translate only confirmed contracts into the native Linux bridge and LibreOffice integration.
+
+
+### Request/response DOC evidence
+
+Pcap workflow #4 (run 43710628491, artifact 14159604189) confirms the returned application/msword document differs from wordBody. Input size is 872,960 bytes; the response capture decodes to 874,957 bytes with 68 Base64 characters missing (51 decoded bytes), giving an estimated complete size of 875,008 bytes (+2,048). The OLE header's first-directory-sector pointer changes from 1698 to 1702 at offset 48. Full-file equality is not authoritative because the response capture is incomplete.
