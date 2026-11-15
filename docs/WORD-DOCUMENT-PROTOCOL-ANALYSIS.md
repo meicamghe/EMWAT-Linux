@@ -1077,3 +1077,16 @@ Run 99 برای decode کردن literal شرط QuitWord و بررسی interface 
 - All four `TWordDocument.Close` overload wrappers were traced. The no-argument overload dispatches slot `+0x4D4`; overloads with one, two, or three optional arguments dispatch slot `+0x29C`. TD32 direct-call scans show no direct CALL xrefs for these wrappers; raw pointer matches occur in debug metadata, so do not infer which overload is used by the main editor solely from those scans.
 - No verified close-time HTTP POST, response payload, or final Almas Gam registration operation was found. The user's observed behavior (closing Word without manually pressing Save still registers the document) remains an important runtime fact to reconcile, not a protocol proven by this static trace.
 - Next targets: locate the *read-side* registry operations for `Dynamic Config` and the actual settings form initialization; trace callback record consumption / COM connection-point wiring around `OnTmrAutoSave`; identify real main-editor close and final local HTTP request/response chain. Keep the AutoSave files viewer's separate close handler isolated from the main editor.
+
+
+## Run 104 — registry API scan and post-read range validation (2026-11-15)
+
+Workflow run `43683614577` completed successfully (37/37 steps); artifact `14150300042`.
+
+- The PE import table contains registry-related imports including `advapi32!RegQueryValueExW`, `RegOpenKeyExW`, and Delphi `TRegistry` read/write methods (`ReadBool`, `ReadInteger`, `ReadString`, `WriteBool`, `WriteInteger`, and related methods).
+- The first scanner reported zero direct CALL/JMP references to detected import thunks. This is a limitation of that scanner, not evidence that the read APIs are unused: x86 code can call imported APIs through `call dword ptr [IAT]`, and can use register-based indirect calls or wrappers.
+- The scanner's first version detected one executable thunk (`0x00404150` → Delphi `TRegistry` destructor) but no direct callers. The report is retained as a negative result with explicit scope limitations.
+- The post-read disassembly requested at `0x004B7CFA–0x004B809D` decoded zero instructions because the start address lands in non-code/alignment data after the preceding exception-handling sequence. The valid continuation target observed in the preceding LoadDocument trace is `0x004B7DE1`; the workflow range has been corrected to start there.
+- Follow-up commits `743e6378` and `a4027a70` expand the registry scanner to detect absolute IAT-indirect CALL/JMP operands and raw pointer references, and correct the post-read trace range. Their rerun results must be checked before interpreting the new report.
+
+No evidence from Run 104 establishes the exact startup registry-read path, a close-time HTTP POST, or the final Almas Gam registration payload. Continue treating these as unresolved.
