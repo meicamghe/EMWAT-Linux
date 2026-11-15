@@ -423,9 +423,9 @@ The installed files were inspected with both Unicode and narrow-string extractio
 
 ### پیاده‌سازی فعلی Python
 
-- GET /?init=<عدد>_<عدد> اکنون script سازگار با capture را برمی‌گرداند و پورت listener را در URL محلی جایگزین می‌کند.
+- GET /?init=<عدد>_<عدد> اکنون script را برمی‌گرداند. template آن با بدنهٔ stream 4 به‌صورت byte-for-byte یکسان است (994 بایت)؛ فقط پورت listener و parent origin در آن جایگزین می‌شوند.
 - parent origin از Referer استخراج می‌شود و باید در allowed_parent_origins باشد؛ Referer مفقود یا origin خارج از allowlist با 403 رد می‌شود. این allowlist عمداً جدا از allowed_origins درخواست POST است، چون capture نشان می‌دهد Referer صفحهٔ والد و Origin درخواست POST دو origin متفاوت‌اند.
 - CORS headerهای wildcard مشاهده‌شده در پاسخ init بازتولید می‌شوند؛ اما فقط پس از بررسی allowlist parent origin.
 - تست‌های init شامل تولید script، پورت پویا، origin مجاز، origin غیرمجاز و query نامعتبر هستند.
 
-اعتبارسنجی: Python bridge workflow #36، run 43708383619، موفق؛ 45 تست پاس شده‌اند. این endpoint اکنون با capture تطبیق داده شده، اما ارتباط واقعی با Almas و مرورگر کاربر هنوز در محیط هدف end-to-end آزمایش نشده است.
+اعتبارسنجی: Python bridge workflow #40، run 43708542723، موفق؛ 45 تست پاس شده‌اند. مقایسهٔ مستقیم template تولیدی با پاسخ stream 4 نیز تطابق byte-for-byte در حالت port=1984 و parent origin اصلی را تأیید کرد. این endpoint اکنون با capture تطبیق داده شده، اما ارتباط واقعی با Almas و مرورگر کاربر هنوز در محیط هدف end-to-end آزمایش نشده است.
