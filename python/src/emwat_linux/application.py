@@ -1,7 +1,8 @@
 """Composition root for the EMWAT local bridge.
 
-Production callers must supply the real Almas Gam Origin allowlist and the
-method handlers supported by that installation. No legacy method is enabled
+Production callers must explicitly allow the loopback Origin used by the browser XHR,
+separately allow the Almas parent-page origins used by the init script, and supply
+the method handlers supported by that installation. No legacy method is enabled
 implicitly.
 """
 from __future__ import annotations
@@ -16,6 +17,7 @@ def create_bridge_server(
     *,
     allowed_origins: frozenset[str],
     handlers: Mapping[str, MethodHandler],
+    allowed_parent_origins: frozenset[str] = frozenset(),
     host: str = "127.0.0.1",
     port: int = 1984,
     max_request_bytes: int = 16 * 1024 * 1024,
@@ -34,5 +36,6 @@ def create_bridge_server(
         max_response_bytes=max_response_bytes,
         socket_timeout_seconds=socket_timeout_seconds,
         allowed_origins=allowed_origins,
+        allowed_parent_origins=allowed_parent_origins,
         require_origin=True,
     )
