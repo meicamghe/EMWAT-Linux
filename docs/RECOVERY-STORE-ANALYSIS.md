@@ -187,3 +187,17 @@ Within `euResetMemory`:
 - The second Boolean argument changes whether that optional method is invoked.
 
 This shape is consistent with a stateful file/memory transformation object, but the class identity, key meaning, and transform direction are not yet known. It is not yet safe to call this AES, encryption, decryption, compression, or decompression. Run #6 adds object/VMT and global-data reference inspection.
+
+
+## 13. Archive implementation identified; password roles corrected (2026-11-15)
+
+The run #7 artifact (`14163205743`) identifies the object constructed by `euResetMemory` as a SevenZip archive reader: TD32 names the class method `@Sevenzip@T7zInArchive@GetInArchive` at `0x00452ED8`, and the adjacent type information contains the class name `T7zInArchive`. Its metadata includes properties named `Password`, `PasswordSender`, `ProgressSender`, `Stream`, `PasswordIsDefined`, `SubArchiveMode`, `SubArchiveName`, and extraction callbacks. This is strong evidence that the recovery path uses the 7-Zip archive reader component, rather than a plain file rename or simple stream copy.
+
+Two different password-like strings were found and must not be conflated:
+
+- `euGetAutoSavePass` (`0x00456B78`) returns the Windows account name (or its fallback `@25*gamsign*25@`). Its direct caller `DoClearOldAutoSaveFiles` (`0x00456C0C`) concatenates that returned value with `@25*gamsign*25@` when its Boolean-like argument selects that branch. Another direct caller is `TfrmSendLog.lblFileNameClick`. This proves the helper's output construction, but does **not yet** prove that this exact string is the password used by the `.easz` recovery archive.
+- `euResetMemory` (`0x00456F00`) supplies the literal `mW@Tlogs43end_+` to object virtual slot `+0x44` when its optional string argument is null and the relevant flag is set. The class metadata has a `Password` property, but the exact mapping of virtual slot `+0x44` to the property setter and the exact archive-open method are still being resolved.
+
+**Correction to section 10:** do not describe the Windows username or `@25*gamsign*25@` as the confirmed `.easz` archive password. The helper returns/combines those strings in one AutoSave-related path, while the recovery-open path separately supplies `mW@Tlogs43end_+` to the SevenZip object. The archive password and transformation sequence remain unresolved until the SevenZip VMT method mapping and call semantics are confirmed.
+
+The `.easd` path is still only a constructed path in the recovery `Delete` handler. The current evidence is consistent with it being an extracted or working document path, but does not yet establish its content or exact lifecycle.
