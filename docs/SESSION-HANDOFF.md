@@ -736,3 +736,9 @@ Run `43719180035` succeeded; artifact `14164088249` was inspected. Additional ev
 
 
 - Concrete OfficeAdapter implementations must isolate handles/callbacks per document and support concurrent sessions because the loopback bridge serves requests concurrently. The protocol contract now states this explicitly; CI run `43721449170` passed 69 tests.
+
+
+### Active base-class VMT analysis
+
+- New optimized workflow run `43721583502` is indexing `T7zArchive` separately from `T7zPlugin`/`T7zInArchive`/`T7zOutArchive`, to avoid tracing every inherited method as a duplicate. It also traces target `0x00453950` and VMT/typeinfo references.
+- Earlier broad run `43721251511` is still active at the combined index step; prefer artifact from the optimized run if it completes first.
