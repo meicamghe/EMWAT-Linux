@@ -1474,7 +1474,7 @@ The BPL export/API analysis resolves the earlier naming ambiguity. The public TE
 ## به‌روزرسانی تحلیل AutoSave و بازیابی — 2026-11-15
 
 - دو اجرای موازی recovery-paths (#9 و #10) با موفقیت تمام شدند؛ artifactها `14163436366` و `14163367757` هستند.
-- مسیر بازیابی به کلاس SevenZip `T7zInArchive` متصل شد. متد `SetPassword` در `0x00453860` رشته رمز را در فیلد `+0x58` قرار می‌دهد و آن را به رابط آرشیو منتقل می‌کند. مسیر `euResetMemory` در `0x00456F00` در صورت نیاز مقدار پیش‌فرض `mW@Tlogs43end_+` را از طریق dispatch مربوط به رمز عبور می‌فرستد.
+- مسیر بازیابی به کلاس SevenZip `T7zInArchive` متصل شد. متد `SetPassword` در `0x00453860` رشته را در فیلد `+0x58` قرار می‌دهد و از مسیر callback استخراج استفاده می‌کند؛ ارتباط دقیق آن با dispatch `euResetMemory +0x44` هنوز فرضیه قوی است، نه اثبات نهایی. مسیر `euResetMemory` در `0x00456F00` در صورت نیاز مقدار پیش‌فرض `mW@Tlogs43end_+` را از طریق dispatch مربوط به رمز عبور می‌فرستد.
 - نام کاربری ویندوز و fallback `@25*gamsign*25@` متعلق به مسیر جداگانه `euGetAutoSavePass`/پاک‌سازی هستند؛ آن‌ها را رمز بازیابی `.easz` فرض نکنید.
 - متدهای بازکردن آرشیو، فهرست‌کردن آیتم‌ها و استخراج در `T7zInArchive` ردیابی شده‌اند. نگاشت دقیق slotهای `+0x0C` و `+0x3C` در `euResetMemory` و ماهیت دقیق فایل `.easd` هنوز باز است.
 - جزئیات و محدودیت‌های شواهد در [RECOVERY-STORE-ANALYSIS.md](RECOVERY-STORE-ANALYSIS.md) ثبت شده است.
