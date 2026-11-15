@@ -25,14 +25,15 @@ class FakeOffice:
         self.disposition = disposition
         self.opened_bytes = None
         self.export_count = 0
+        self.on_modified = None
 
     def open_document(self, request, *, on_modified, on_saved):
         self.opened_bytes = request.document_bytes
-        on_modified()
-
+        self.on_modified = on_modified
         return object()
 
     def wait_for_close(self, handle):
+        self.on_modified()
         return OfficeCloseEvent(self.disposition)
 
     def export_final_document(self, handle):
