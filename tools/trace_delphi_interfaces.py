@@ -48,7 +48,7 @@ def main():
             if s.PointerToRawData<=raw<s.PointerToRawData+s.SizeOfRawData:
                 return s.Name.rstrip(b"\x00").decode("ascii","replace")
         return "?"
-    def disasm_vtable(vtable, count=12):
+    def disasm_vtable(vtable, count=20):
         r=va_raw(vtable)
         if r is None: return []
         md=Cs(CS_ARCH_X86,CS_MODE_32)
