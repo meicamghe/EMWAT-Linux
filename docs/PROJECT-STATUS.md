@@ -1442,3 +1442,5 @@ The BPL export/API analysis resolves the earlier naming ambiguity. The public TE
 
 - parser مستقل `python/src/emwat_linux/word_config.py` اضافه شد تا لایه داخلی Base64/XML یعنی `wordConfig` را از envelope بیرونی جداگانه بخواند؛ مقادیر فیلدها را opaque نگه می‌دارد و decoding سراسری URL/Base64 انجام نمی‌دهد. تست‌های امنیتی/ساختاری این parser اضافه شد.
 - CI پل پایتون بعد از این تغییر در run #44 با **53 تست موفق** پایان یافت. run #43 مربوط به commit میانی (45 تست) نیز موفق بود.
+
+- **تصحیح مهم رمز AutoSave:** helper نام کاربر (`euGetAutoSavePass`) را برمی‌گرداند و caller مشخصی آن را با `@25*gamsign*25@` ترکیب می‌کند؛ اما هنوز ثابت نشده این رشته رمز آرشیو `.easz` باشد. مسیر بازیابی از SevenZip `T7zInArchive` استفاده می‌کند و در `euResetMemory` در صورت نبودن رمز، رشته دیگری (`mW@Tlogs43end_+`) به slot مجازی `+0x44` داده می‌شود. تا تعیین setter و متدهای آرشیو، رمز واقعی `.easz` نامشخص است. جزئیات در `docs/RECOVERY-STORE-ANALYSIS.md`.
