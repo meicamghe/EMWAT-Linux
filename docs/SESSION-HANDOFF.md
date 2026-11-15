@@ -824,3 +824,11 @@ Run `43719180035` succeeded; artifact `14164088249` was inspected. Additional ev
 - Word lifecycle run 43722990611 completed successfully; artifact 14165369436 resolved registry thunks: 0x404414 WriteInteger, 0x404424 WriteBool, 0x40441C ReadInteger, 0x40442C ReadBool, and 0x404454 ValueExists.
 - Detailed findings were appended to docs/RECOVERY-STORE-ANALYSIS.md sections 21–22 in commit d17a801d0d02f12e4a6b286af7aa1e21a9e691ac.
 - Recovery-path run 43724386278 was still in progress at the last check. Keep the .easd destination, archive password semantics, and Almas close-time registration protocol unresolved until direct evidence is available.
+
+
+### Current recovery reverse-engineering state — 2026-11-15
+
+- Run 13 (`43724386278`, artifact `14165938809`) completed. `0x0044A998` is `Emwat.Sys.MyMessageDialog`, called by the recovery Delete handler to produce the string passed as `euResetMemory`'s second argument; it then reaches `T7zInArchive.SetPassword` through interface slot `+0x3C`. Exact dialog semantics and the returned string's relation to the archive password are not proven.
+- Do not confuse that helper with `euGetAutoSavePass` (`0x00456B78`), a separate `GetUserNameW` helper used in cleanup/logging.
+- Recovery Delete applies `FixDirectionInFarsiNumericMode` (`0x004563A8`) to a path-like value before constructing a `.easd` path; extraction destination/content remains unresolved.
+- Callback-contract analysis is now a separate workflow. It traces callback RTTI, `+0x44` dispatch target, and the archive extraction callbacks. See `docs/RECOVERY-STORE-ANALYSIS.md` section 23 and commit `b753390bd421047e22d072b1012d9be3d829015a`.
