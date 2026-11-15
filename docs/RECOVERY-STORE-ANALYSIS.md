@@ -247,7 +247,7 @@ Still pending:
 
 The T7zOutArchive class trace adds an important constraint to the archive-creation investigation:
 - T7zOutArchive.SetPassword at 0x004547DC is a tiny stub that returns zero and does not store the supplied string or call the archive interface. Do not treat this wrapper as proof that the writer is configured with a password through this method.
-- T7zOutArchive.CryptoGetTextPassword2 at 0x004543C4 obtains an object through global pointer 0x0062FBB8 and passes it through helper 0x00404734, then stores the resulting interface/reference at object offset +0x2C. This is consistent with a callback/provider path for writer password handling, but the provider's semantic value and initialization remain unresolved.
+- T7zOutArchive.CryptoGetTextPassword2 at 0x004543C4 calls helper 0x00404734, resolved as rtl230.bpl!TObjectList.$bctr$qqrv. It passes the class pointer from global 0x0062FBB8, stores the constructed TObjectList at instance offset +0x2C, and zeroes +0x30 and +0x34. This is collection initialization, not evidence of the writer password value or provider.
 - T7zOutArchive exposes AddFile, AddFiles, AddStream, SaveToFile, and SaveToStream. Direct bounded CALL scans did not find callers for the wrapper methods, so writer usage is likely through indirect/VMT dispatch or a helper not yet mapped.
 
 Consequently, the recovery reader password path is substantially better understood than the .easz creation path. The exact archive writer, output format, password callback value, and compression/encryption properties remain open questions.
@@ -260,13 +260,13 @@ The plugin-focused workflow run #1 (`43719323732`, artifact `14164146310`) trace
 ### Plugin class and factory
 
 - TD32 identifies `T7zPlugin` constructor at `0x00452C10`, destructor at `0x00452C64`, and `CreateObject` at `0x00452DB4`.
-- The plugin constructor calls `T7zOutArchive.CryptoGetTextPassword2` (`0x004543C4`) with a class/data pointer at `0x004529E8), then stores the returned interface/reference through a helper and invokes a plugin virtual method at slot `+0x30`.
+- The plugin constructor calls `T7zOutArchive.CryptoGetTextPassword2` (`0x004543C4`) with the class/data pointer at `0x004529E8`. That method constructs a `TObjectList` using the class pointer at global `0x0062FBB8` and stores it at instance offset `+0x2C`; the constructor then adjusts/stores a returned object reference and invokes a plugin virtual method at slot `+0x30`. Do not interpret this as proof of the actual writer password provider.
 - `T7zPlugin.CreateObject` is directly called by both `T7zInArchive.GetInArchive` (`0x00452ED8`) and `T7zOutArchive.GetOutArchive` (`0x00454450`). Thus the same plugin factory is shared by the reader and writer wrappers.
-- The recovery helper `CreateOutArchive` (`0x00452BBC)) constructs the wrapper using the literal `7z.dll` at `0x00452C00), passes a 16-byte value copied from one of the globals `0x0062A824` / `0x0062A858`, then invokes a virtual method at slot `+0x4C`. The helper name and its factory call alone do not prove which archive interface GUID is selected or whether the object is configured for input versus output.
+- The recovery helper `CreateOutArchive` (`0x00452BBC`) constructs the wrapper using the literal `7z.dll` at `0x00452C00`, passes a 16-byte value copied from one of the globals `0x0062A824` / `0x0062A858`, then invokes a virtual method at slot `+0x4C`. The helper name and its factory call alone do not prove which archive interface GUID is selected or whether the object is configured for input versus output.
 
 ### Password paths — keep the layers distinct
 
-- `T7zOutArchive.CryptoGetTextPassword2` (`0x004543C4`) obtains a provider/interface from global `0x0062FBB8` via helper `0x00404734`, and stores it at instance offset `+0x2C). Its only direct bounded caller is the `T7zPlugin` constructor at `0x00452C25`.
+- `T7zOutArchive.CryptoGetTextPassword2` (`0x004543C4`) initializes a `TObjectList`: helper `0x00404734` is the RTL TObjectList constructor, with class pointer from global `0x0062FBB8`; the new list is stored at instance offset `+0x2C`. Its only direct bounded caller is the `T7zPlugin` constructor at `0x00452C25`. This does not reveal the password text or prove a provider implementation.
 - `T7zOutArchive.SetPassword` (`0x004547DC`) remains a no-op stub; it does not write a password or configure the archive interface.
 - `T7zInArchive.SetPassword` (`0x00453860`) stores a Unicode string at instance offset `+0x58) and passes it to the archive interface through interface slot `+0x1C). However, the raw static-pointer scan found no direct pointer to this method. The recovery call through wrapper VMT slot `+0x44) is therefore not yet mapped conclusively to this method.
 - In `euResetMemory` (`0x00456F00`), slot `+0x44) receives the caller-supplied password or fallback `mW@Tlogs43end_+`; slots `+0x0C) and `+0x3C) receive the two path arguments. The precise VMT slot names and the archive-interface GUID remain open.
@@ -277,11 +277,11 @@ The plugin constructor has a direct caller in `euUnArchive` (`0x00456E37`), whic
 
 ### Updated confidence
 
-Confirmed: the 7z plugin wrapper, shared CreateObject factory, input/output wrapper methods, provider object stored by CryptoGetTextPassword2, and the distinct euUnArchive/euResetMemory entry paths.
+Confirmed: the 7z plugin wrapper, shared CreateObject factory, input/output wrapper methods, TObjectList initialization inside CryptoGetTextPassword2, and the distinct euUnArchive/euResetMemory entry paths.
 
 Still unresolved: the exact interface GUIDs and direction selected by each factory, the VMT method names for euResetMemory slots +0x0C/+0x3C/+0x44, the writer's actual password text/callback semantics, and the exact archive format/options used for .easz.
 
 
 ### Correction from recovery path workflow run #10 — TObjectList constructor resolution
 
-The additional API target trace resolves `0x00404734` as `rtl230.bpl!TObjectList.$bctr$qqrv`. Therefore, the previous description of `T7zOutArchive.CryptoGetTextPassword2` as obtaining a provider/interface from `0x0062FBB8` was too strong. The confirmed operation is construction of a TObjectList using the class pointer at that global, stored at `Self+0x2C), followed by zeroing `Self+0x30` and `Self+0x34`. The writer password provider/value remains unresolved.
+The additional API target trace resolves `0x00404734` as `rtl230.bpl!TObjectList.$bctr$qqrv`. Therefore, the previous description of `T7zOutArchive.CryptoGetTextPassword2` as obtaining a provider/interface from `0x0062FBB8` was too strong. The confirmed operation is construction of a TObjectList using the class pointer at that global, stored at `Self+0x2C`, followed by zeroing `Self+0x30` and `Self+0x34`. The writer password provider/value remains unresolved.
