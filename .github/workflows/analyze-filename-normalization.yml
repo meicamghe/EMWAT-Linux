@@ -51,6 +51,18 @@ jobs:
           for target in 00401200 00401208 00401218 00401220 00401238 00401240 00401248 00401258 00401270 004012F8 00401370 00401378 00401390 00403270 00403278 004032C0 004032C8 00403378; do
             python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x$target filename-analysis/helper-thunks/$target.md 180 ret
           done
+      - name: Trace temporary RAW cleanup and collision handling
+        run: |
+          mkdir -p filename-analysis/temp-cleanup
+          python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x0044AD30 filename-analysis/temp-cleanup/CloseAllWords.md
+          python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x0044AE98 filename-analysis/temp-cleanup/DeleteTempRAW.md
+          python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x0044B0F8 filename-analysis/temp-cleanup/DeleteTempRAW-helper-4B0F8.md
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x0044AD30 filename-analysis/temp-cleanup/CloseAllWords-callers.md
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x0044B0F8 filename-analysis/temp-cleanup/DeleteTempRAW-helper-callers.md
+          python tools/decode_pe_strings.py analysis-input/EmwatMethods.bpl1 0x0044AE40 0x0044AE54 0x0044AE68 0x0044AE7C 0x0044B060 0x0044B094 0x0044B0A8 0x0044B0B4 0x0044B0DC > filename-analysis/temp-cleanup/cleanup-string-constants.md
+          for target in 00402A38 00402A78 00402A80 004028D0 00404494 0044A47C 0044A59C; do
+            python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x$target filename-analysis/temp-cleanup/helper-$target.md 180 ret
+          done
       - uses: actions/upload-artifact@v4
         with:
           name: emwat-filename-normalization-analysis
