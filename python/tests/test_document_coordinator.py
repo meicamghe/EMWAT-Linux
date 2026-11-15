@@ -117,6 +117,20 @@ class DocumentCoordinatorTests(unittest.TestCase):
         self.assertEqual(result.session.revision, 1)
         self.assertIsNone(result.session.saved_revision)
 
+
+    def test_late_engine_callbacks_are_ignored_after_cancel(self):
+        office = FakeOffice(close=CloseDisposition.CANCELLED)
+        result = DocumentCoordinator(office).run(
+            session_id="local-session-cancelled-callback", request=sample_request()
+        )
+        self.assertEqual(result.session.state, DocumentState.CANCELLED)
+        self.assertEqual(result.session.revision, 1)
+        self.assertIsNone(result.session.saved_revision)
+        self.assertEqual(office.on_modified(), 1)
+        office.on_saved()
+        self.assertEqual(result.session.revision, 1)
+        self.assertIsNone(result.session.saved_revision)
+
     def test_adapter_failure_is_sanitized(self):
         class BrokenOffice(FakeOffice):
             def wait_for_close(self, handle):
