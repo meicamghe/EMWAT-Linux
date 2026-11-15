@@ -122,6 +122,14 @@ jobs:
           done
           python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x004B7A20 0x004B7A80 wait-mechanism-analysis/import-references/LoadDocument-OnTmrAutoSave-call.md
           python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x004B7F00 0x004B7FC0 wait-mechanism-analysis/import-references/LoadDocument-response-write.md
+      - name: Trace call sites for imported wait and message-pump thunks
+        run: |
+          mkdir -p wait-mechanism-analysis/wait-callers
+          for target in 00402902 004028D2 00404F06 00402AB2 00402A2A 00402B02 0040343A 00404226; do
+            python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x$target wait-mechanism-analysis/wait-callers/thunk-$target-callers.md
+            python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 0x$target wait-mechanism-analysis/wait-callers/thunk-$target-pointer-refs.md
+            python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x$target wait-mechanism-analysis/wait-callers/thunk-$target.md 80 ret
+          done
       - uses: actions/upload-artifact@v4
         with:
           name: emwat-word-wait-mechanism
