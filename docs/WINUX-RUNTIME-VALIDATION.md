@@ -250,3 +250,28 @@ Listener همچنان روی `127.0.0.1:1984` بود و `ss` مالک socket ر�
 3. از یک نامه آزمایشی، metadata درخواست واقعی مرورگر به loopback را ثبت کن؛ Cookie، token، متن نامه، امضا و تصویر نباید ذخیره یا منتشر شوند.
 4. heartbeat واقعی Agent و رفتار آن هنگام توقف Service را بررسی کن.
 5. تا زمان مشاهده درخواست واقعی و تطبیق پاسخ، سازگاری POST، dispatch XML و round-trip سند را تأییدشده اعلام نکن.
+
+
+## Cross-project Winux Engine updates — relevance to EMWAT (2026-11-15)
+
+The separate Winux development work has progressed beyond the initial runtime experiment. The latest working-tree context reports the following capabilities/design decisions; these are Winux capabilities, not proof that EMWAT itself has been integrated with them:
+
+- A ServiceBackend contract with SystemdUserBackend, dependency-injected backend selection, and a systemd user-service default. A plugin entry-point mechanism (winux.service_backends) supports registered backends while recording plugin-load errors; it does not silently switch to an arbitrary backend.
+- ServiceManager is kept separate from ProcessManager. Winux-managed services are Linux user services that supervise a foreground runner which launches a Windows application through Wine. This is not Windows Service Control Manager compatibility.
+- winux doctor is intended to be read-only and validates Wine/prefix/runtime state. The latest reported PrefixManager hardening rejects symlinked path components beneath the user's home directory rather than following them during prefix operations.
+- The current compatibility design supports x86 and x64 Windows applications through a 64-bit WoW64 prefix model where the installed Wine build supports it; separate pure 32-bit prefixes are not the default architecture.
+- The latest Winux working-tree test baseline reported 216 passing tests. This is a Winux test result, not an EMWAT integration test.
+
+### What EMWAT should reuse
+
+1. Use the backend contract/injection pattern if EMWAT later needs multiple Linux service managers; retain a predictable systemd-user default rather than auto-selecting an unverified backend.
+2. Keep process supervision separate from the HTTP bridge's application protocol and from document lifecycle logic.
+3. Reuse the read-only diagnostics and symlink-safe path validation principles for EMWAT's runtime directories, temporary document files, and user-selected prefixes.
+4. Keep x86/x64 architecture detection explicit in any Wine-based compatibility test harness. Do not assume a successful installer run proves that Agent, Service, Word automation, or printing works.
+5. For the current Wine investigation only, Winux's service/process facilities may provide a controlled way to launch and observe the Windows binaries. The earlier experiment explicitly found that the running EmwatAgent.exe and EmwatService.exe processes were not yet tracked by Winux's ProcessManager or ServiceManager; that integration must be tested rather than assumed.
+
+### Architecture boundary
+
+These Winux improvements are development/test infrastructure and reusable engineering patterns. EMWAT-Linux's product target remains a native Linux bridge and document workflow using Linux-native components. Do not make Wine, Windows Service Control Manager emulation, a Windows kernel printer driver, or a Winux-specific runtime dependency of the final EMWAT architecture.
+
+**Source freshness note:** the Winux local working-tree updates described above were reported in the separate Winux development session. The public Winux GitHub documentation snapshot may lag those local changes; verify the latest Winux source/tests before treating the 216-test baseline or newest backend/security behavior as a released, committed version.
