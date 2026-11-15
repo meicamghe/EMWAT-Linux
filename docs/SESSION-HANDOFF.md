@@ -521,3 +521,10 @@ Workflow #113 succeeded (run ID `43688755518`, artifact `14151906706`). The earl
 Reads are guarded by `ValueExists`; values are loaded with `ReadBool` / `ReadInteger`. `Logging Level` and `Save I/O Trace Files` are not handled in this constructor. Do not infer timer/save semantics solely from the interval field.
 
 **Still unresolved:** main-editor close callback semantics, close-time HTTP request/response, and final Almas Gam registration payload. Preserve the user's observed fact that closing Word without pressing Save registers the document; static analysis has not yet explained the mechanism.
+
+
+## Registry follow-up — Runs 116–117 (2026-11-15)
+
+Runs #116 (`43699248792`) and #117 (`43703253785`) succeeded (37/37 and 38/38 steps). The new artifact identifies `TETracer.GetUniquePostfix` as a registry **write** path: create `TRegistry` (`0x00467C99`), set root to HKCU (`0x00467CB7`), call `WriteBool` (`0x00467D63`) and `WriteInteger` (`0x00467D75`). The value-name strings at `0x00467F2C` and `0x00467F64` are not yet decoded. The `0x00466D16` hit is only a raw pointer reference; its surrounding bounded trace is incomplete. Do not claim that either path reads `Logging Level` or `Save I/O Trace Files`.
+
+**Resume target:** extract complete procedure boundaries/disassembly for `TETracer.GetUniquePostfix` and decode the two string arguments, then locate actual `ReadBool` / `ReadInteger` consumers for the remaining settings. Do not disturb the established Run 113 read-side mapping. The main Word close-to-Almas registration chain remains unproven.
