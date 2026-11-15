@@ -94,6 +94,29 @@ class DocumentCoordinatorTests(unittest.TestCase):
         self.assertEqual(result.session.state, DocumentState.CANCELLED)
         self.assertEqual([call[0] for call in office.calls], ["open", "wait_for_close"])
 
+
+    def test_late_engine_callbacks_are_ignored_after_close(self):
+        class LateCallbackOffice(FakeOffice):
+            def export_final_document(self, handle):
+                # Some office engines emit delayed change/save notifications
+                # while closing or exporting. They must not mutate a terminal session.
+                self.on_modified()
+                self.on_saved()
+                return self.output
+
+        office = LateCallbackOffice()
+        result = DocumentCoordinator(office).run(
+            session_id="local-session-late-callback", request=sample_request()
+        )
+        self.assertEqual(result.session.state, DocumentState.RETURNED)
+        self.assertEqual(result.session.revision, 1)
+        self.assertIsNone(result.session.saved_revision)
+        # A callback arriving after the coordinator has returned is harmless too.
+        self.assertEqual(office.on_modified(), 1)
+        office.on_saved()
+        self.assertEqual(result.session.revision, 1)
+        self.assertIsNone(result.session.saved_revision)
+
     def test_adapter_failure_is_sanitized(self):
         class BrokenOffice(FakeOffice):
             def wait_for_close(self, handle):
