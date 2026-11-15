@@ -324,3 +324,22 @@ The pointer list at `0x00627BB0` is an error-message string table. The previous 
 - Network metadata run #2 (`43707410915`, artifact `14159156356`) identifies 15 streams touching port 1984 and independently confirms stream 18's `EditWordDocument` request/response metadata; detailed cross-check is in `docs/PCAP-EDITWORD-DOCUMENT-ROUNDTRIP.md`.
 - Word error-map run #11 (`43717625474`, artifact `14162998865`) succeeded; full normalized strings are in `docs/WORD-ERROR-MAP.md`.
 - Recovery SevenZip class method runs #9 and #10 (`43717439805`, `43717465958`) were still executing at this status snapshot. Do not mark the archive password or `.easd` transformation as resolved until their artifacts are inspected.
+
+
+## Parallel update — SevenZip plugin and native close orchestration (2026-11-15)
+
+### Recovery/plugin branch
+
+- Workflow `Analyze EMWAT recovery SevenZip plugin`, run `43719323732`, completed successfully; artifact `14164146310`.
+- TD32 indexes `T7zPlugin`, `T7zInArchive`, and `T7zOutArchive`. The shared `T7zPlugin.CreateObject` method is directly called by both `T7zInArchive.GetInArchive` and `T7zOutArchive.GetOutArchive`.
+- The plugin constructor at `0x00452C10) calls `T7zOutArchive.CryptoGetTextPassword2` at `0x004543C4`; the latter obtains a provider/interface from global `0x0062FBB8` through helper `0x00404734` and stores it at object offset `+0x2C`.
+- `euUnArchive` is a direct caller of the plugin constructor and uses global `0x0062A824`. `euResetMemory` instead calls the separate `CreateOutArchive` helper at `0x00452BBC), which uses the literal `7z.dll` and a 16-byte global-derived value before a virtual dispatch.
+- The wrapper `T7zOutArchive.SetPassword` is a no-op stub. `T7zInArchive.SetPassword` stores the Unicode password at instance offset `+0x58` and forwards it to the archive interface at slot `+0x1C`; however, no raw static pointer to this method was found. The exact mapping of `euResetMemory` slot `+0x44` remains unresolved.
+- Full caveats and method traces are in `docs/RECOVERY-STORE-ANALYSIS.md`, sections 14–16.
+
+### Native document orchestration branch
+
+- Added `office_adapter.py`, `document_coordinator.py), and `editword_service.py` under `python/src/emwat_linux/`.
+- The adapter contract separates modification callbacks, engine-save callbacks, close notification, and final export. Save records a revision but does not return the document; close triggers final export.
+- The service normalizes an EditWordDocument MethodCall and assigns a fresh local session ID; it does not reuse the `invoke` query nonce.
+- Python bridge CI run `43719841339` passed **66 tests**. These tests use a fake office adapter; no LibreOffice UNO implementation or production HTTP handler is claimed complete.
