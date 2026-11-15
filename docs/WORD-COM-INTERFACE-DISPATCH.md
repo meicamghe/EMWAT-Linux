@@ -829,3 +829,21 @@ Methods BPL analysis run `43722341778` (artifact `14165431103`) adds a direct cr
 - The direct caller scan for `0x004CCBBC` still shows only `FillImgFldsForPrint` at `0x004CCF8F`. The method body contains no proven bridge POST, final response write, or document-close call.
 
 This strengthens the caution around the TD32 method name: `WordAppDocumentBeforeClose` is a real named method and is used by print/image preparation, but the static evidence still does not prove that it is registered as the live main-editor close event. It must not be used to explain the observed Almas registration on close without the missing event-registration/response path.
+
+
+## Word OLE server-data GUID correlation — 2026-11-15
+
+The expanded metadata at `0x00627A38` and `0x00627768` contains GUID-shaped records. The leading values correlate with Microsoft Word's generated COM classes:
+
+- `0x00627A38` begins with `000209FF-0000-0000-C000-000000000046`, the GUID on Microsoft Learn's `ApplicationClass`.
+- `0x00627768` begins with `00020906-0000-0000-C000-000000000046`, the GUID on Microsoft Learn's `DocumentClass`.
+- The adjacent GUID inventory includes `000209F7` (`ApplicationEvents`) and `000209FE` (`ApplicationEvents2`). Microsoft Learn identifies `000209FE` as the `ApplicationEvents2` IID and lists `DocumentBeforeClose`, `DocumentBeforePrint`, and `DocumentBeforeSave` among its methods.
+- The Word `DocumentEvents` IID `000209F6` is also present immediately before the `0x00627768` block in the captured data region.
+
+This supports interpreting these blocks as generated Word OLE server/type-library metadata, not as a raw callback-pointer table. The `WordAppDocumentBeforeClose` method signature/name is consistent with an ApplicationEvents2 `DocumentBeforeClose` handler, but the code path that advises/registers that event sink is still not recovered. Do not equate GUID presence with a confirmed live event subscription.
+
+References:
+- ApplicationClass: https://learn.microsoft.com/en-us/dotnet/api/microsoft.office.interop.word.applicationclass?view=word-pia
+- DocumentClass: https://learn.microsoft.com/en-us/dotnet/api/microsoft.office.interop.word.documentclass?view=word-pia
+- ApplicationEvents2 IID and method list: https://learn.microsoft.com/en-us/dotnet/api/microsoft.office.interop.word.applicationevents2?view=word-pia
+- DocumentEvents IID: https://learn.microsoft.com/en-us/dotnet/api/microsoft.office.interop.word.documentevents?view=word-pia
