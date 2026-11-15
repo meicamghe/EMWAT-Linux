@@ -17,6 +17,7 @@ EMWAT واسط محلی بین اتوماسیون تحت وب الماس گام 
 گزارش کامل وضعیت، شواهد، موارد نامشخص و گام‌های بعدی در این فایل نگهداری می‌شود:
 
 - [گزارش وضعیت و نقطه ادامه پروژه](docs/PROJECT-STATUS.md)
+- [اعتبارسنجی runtime نسخه Windows با Winux/Wine](docs/WINUX-RUNTIME-VALIDATION.md)
 - [تحلیل گردش‌کار واقعی EMWAT در الماس گام](docs/PRODUCT-WORKFLOW-ANALYSIS.md)
 - [تحلیل connector و ساختار XML گردش‌کار Word](docs/WORD-DOCUMENT-PROTOCOL-ANALYSIS.md)
 - [تحلیل سرویس HTTP محلی و bridge](docs/HTTP-LOCAL-API-ANALYSIS.md)
@@ -63,13 +64,11 @@ EMWAT واسط محلی بین اتوماسیون تحت وب الماس گام 
 
 For the current project decisions, implementation boundaries, and next-session checklist, see [docs/SESSION-HANDOFF.md](docs/SESSION-HANDOFF.md).
 
-
 ## پل بومی HTTP در لینوکس — لایه انتقال اولیه
 
 در شاخه فعلی، یک بسته Python اولیه در مسیر `python/` اضافه شده است. لایه انتقال HTTP بدنه را به‌صورت bytes خام نگه می‌دارد؛ parser و dispatcher در ماژول‌های جداگانه قرار دارند. parser پوسته تأییدشده `emwat → method → param` را می‌خواند و dispatcher فقط handlerهای صریحاً ثبت‌شده را اجرا می‌کند. schema محتوای `EditWordDocument` و پاسخ نهایی هنوز کامل نیست.
 
 تست‌های واحد در `python/tests/test_bridge.py` و workflow مستقل `Python bridge transport` در GitHub Actions قرار دارند. این milestone فقط foundation انتقال است و هنوز با وب‌اپ الماس گام یا Word/LibreOffice یکپارچه نیست.
-
 
 **CI verification (latest):** workflow `Python bridge transport` run #20 (`43592721635`) passed all 24 tests on commit `2fa217ae83f33b80a7799ede4c75f2cc58b40d76`. This verifies only the transport, envelope parser and explicit dispatcher—not compatibility with the production Almas Gam origin or the full Word workflow.
 
@@ -79,10 +78,8 @@ The Python package now contains a conservative parser for the runtime-confirmed 
 
 The loopback transport is hardened with IPv4-loopback-only binding, Host-header validation, required exact allowlisted Origin by default, bounded request/response bodies, socket read timeouts, duplicate Content-Length rejection, and sanitized errors. CI run #20 passes all 24 tests. This remains a transport/protocol foundation, not a usable Almas Gam connector.
 
-
 **Latest CI hardening:** Python bridge transport run #22 (`43593083176`) passed all 27 tests on commit `22a803912b0fa92c3bb5537fb1f0c7952fda7615`. Additional tests cover Host header path injection, duplicate Content-Length and non-decimal Content-Length. The listener now rejects malformed Host values and strict-invalid HTTP framing before dispatch.
-
 
 ### Application composition factory
 
-`python/src/emwat_linux/application.py` now provides `create_bridge_server(...)`, wiring the loopback transport, XML envelope parser and explicit method registry. The caller must provide the exact allowed Origin list and explicit method handlers; nothing is implicitly enabled. An integration test exercises the complete local HTTP → XML parser → registered handler → HTTP response path. Python bridge workflow run #24 (`43593185429`) passed all 29 tests on commit `27986ee96b45009283cd96eecde95110e1b9e448`. The only registered method in the integration test is a test fixture, not the real EMWAT document handler.
+`python/src/emwat_linux/application.py` now provides `create_bridge_server(...)`, wiring the loopback transport, XML parser and explicit method registry. The caller must provide the exact allowed Origin list and explicit method handlers; nothing is implicitly enabled. An integration test exercises the complete local HTTP → XML parser → registered handler → HTTP response path. Python bridge workflow run #24 (`43593185429`) passed all 29 tests on commit `27986ee96b45009283cd96eecde95110e1b9e448`. The only registered method in the integration test is a test fixture, not the real EMWAT document handler.
