@@ -173,7 +173,7 @@ The recovery form's `Delete` handler first collects selected list-item values, c
 
 This establishes a recovery-open path involving `.easz`, `euResetMemory`, and a constructed `.easd` path. Later SevenZip interface tracing identifies the reader and its `OpenStream`/`SetPassword`/`IInArchive.Extract` call chain. It still does **not** prove whether `.easd` is the extracted document itself, a temporary working copy, or another intermediate.
 
-Those initial targets have since been traced. Current follow-ups are the caller-side `IInStream` construction, the two callback type-info blocks (`0x0045391C` and `0x00453850`), the output/member destination, and the final `.easd` lifecycle.
+Those initial targets have since been traced. Current follow-ups are the caller-side archive-path and second-string source, the two callback type-info blocks (`0x0045391C` and `0x00453850`), the output/member destination, and the final `.easd` lifecycle.
 
 
 ## 12. Recovery file transformation helper — structural trace (path workflow run #5)
@@ -182,8 +182,8 @@ The `euResetMemory` procedure (`0x00456F00`) is not a simple filename rename. It
 
 Within `euResetMemory`:
 - A 16-byte block is copied from one of two global data areas (`0x0062A824` or `0x0062A858`) according to a Boolean argument.
-- The constructed object's custom interface methods at `+0x0C` and `+0x3C` receive, respectively, an input-stream interface and a UnicodeString. The method at `+0x44` receives an optional UnicodeString when the second Boolean condition selects that branch.
-- Later class/interface tracing identifies the object as `T7zInArchive` and maps the slots: `+0x0C` → `OpenStream(IInStream)`, `+0x3C` → `SetPassword(UnicodeString)`, and `+0x44` → the virtual `T7zArchive` constructor. `SetPassword` issues an all-items `IInArchive.Extract` request through a callback.
+- The constructed object's custom interface methods at `+0x0C` and `+0x3C` receive, respectively, an archive-path UnicodeString and a second UnicodeString. The method at `+0x44` receives an optional UnicodeString when the second Boolean condition selects that branch.
+- Later class/interface tracing identifies the object as `T7zInArchive` and maps the slots: `+0x0C` → `OpenStream(UnicodeString) -> IInStream`, `+0x3C` → `SetPassword(UnicodeString)`, and `+0x44` → the virtual `T7zArchive` constructor. `OpenStream` creates the input stream from the archive path; `SetPassword` issues an all-items `IInArchive.Extract` request through a callback.
 
 This section records the initial structural interpretation only. Sections 13–19 supersede its earlier uncertainty about the class identity and virtual slot names. The exact callback output destination and `.easd` contents remain open.
 
@@ -214,17 +214,17 @@ The class method T7zInArchive.SetPassword at 0x00453860:
 - invokes that interface's method at vtable offset +0x1C, passing the password string;
 - releases its temporary string/interface references on exit.
 
-The `T7zInArchive` type metadata exposes `Password`, `PasswordIsDefined`, `PasswordSender`, `Stream`, and extraction-related properties. `euResetMemory` now has a proven slot mapping: `+0x44` calls the base `T7zArchive` virtual constructor with the optional string/fallback; `+0x0C` calls `T7zInArchive.OpenStream(IInStream)`; and `+0x3C` calls `T7zInArchive.SetPassword(UnicodeString)`. The Windows username / `@25*gamsign*25@` result from `euGetAutoSavePass` remains a separate cleanup/logging path and is not established as either recovery string.
+The `T7zInArchive` type metadata exposes `Password`, `PasswordIsDefined`, `PasswordSender`, `Stream`, and extraction-related properties. `euResetMemory` now has a proven slot mapping: `+0x44` calls the base `T7zArchive` virtual constructor with the optional string/fallback; `+0x0C` calls `T7zInArchive.OpenStream(UnicodeString) -> IInStream` using the archive path; and `+0x3C` calls `T7zInArchive.SetPassword(UnicodeString)` using the second string. The Windows username / `@25*gamsign*25@` result from `euGetAutoSavePass` remains a separate cleanup/logging path and is not established as either recovery string.
 
 ### Reader operations
 
 The reader implementation exposes these operations:
 - `OpenFile` (`0x00452FB8`) accepts a UnicodeString and invokes internal archive-interface slot `+0x14`;
-- `OpenStream` (`0x00452FDC`) accepts `IInStream`, creates an input-stream wrapper, and invokes the archive interface's open operation at `+0x0C`;
+- `OpenStream` (`0x00452FDC`) accepts an archive-path UnicodeString and returns an `IInStream`; it creates the input-stream wrapper and invokes the archive interface's open operation at `+0x0C`;
 - `GetNumberOfItems`, `GetItemPath`, `GetItemName`, `GetItemSize`, and `GetItemProp` query archive entries;
 - `ExtractItem`, `ExtractItems`, `ExtractAll`, and `ExtractTo` invoke the archive interface's extraction method.
 
-`euResetMemory` constructs the reader and invokes the custom interface in this confirmed order: `+0x44` → `T7zArchive` constructor with the optional/fallback string; `+0x0C` → `OpenStream(IInStream)` with the first register argument; `+0x3C` → `SetPassword(UnicodeString)` with the second register argument. `SetPassword` then issues an all-items `IInArchive.Extract` request through its callback. The recovery-form Delete handler separately constructs a `.easd` path and proceeds into Word Automation. The exact input-stream construction, second string source, callback output/member path, archive format, and final `.easd` lifecycle remain open.
+`euResetMemory` constructs the reader and invokes the custom interface in this confirmed order: `+0x44` → `T7zArchive` constructor with the optional/fallback string; `+0x0C` → `OpenStream(UnicodeString) -> IInStream` with the first register argument (the `.easz` path); `+0x3C` → `SetPassword(UnicodeString)` with the second register argument. `SetPassword` then issues an all-items `IInArchive.Extract` request through its callback. The recovery-form Delete handler separately constructs a `.easd` path and proceeds into Word Automation. The source of the second string, callback output/member path, archive format, and final `.easd` lifecycle remain open.
 
 ### What is now established vs. pending
 
@@ -236,7 +236,7 @@ Established:
 - .easz is the enumerated recovery-file mask under %TEMP%\\temp-emwatASwf\\.
 
 Still pending:
-- caller-side construction of the `IInStream` argument and source/meaning of the second UnicodeString;
+- source/meaning of the second UnicodeString passed to `SetPassword`, callback output destination, and final `.easd` lifecycle;
 - whether the archive is standard 7z or another SevenZip-supported format/configuration;
 - whether .easd is the extracted document itself or a subsequent intermediate;
 - the archive writer path and the exact creation/encryption settings for .easz.
@@ -268,7 +268,7 @@ The plugin-focused workflow run #1 (`43719323732`, artifact `14164146310`) trace
 - `T7zOutArchive.CryptoGetTextPassword2` (`0x004543C4`) initializes a `TObjectList`: helper `0x00404734` is the RTL TObjectList constructor, with class pointer from global `0x0062FBB8`; the new list is stored at instance offset `+0x2C`. Its only direct bounded caller is the `T7zPlugin` constructor at `0x00452C25`. This does not reveal the password text or prove a provider implementation.
 - `T7zOutArchive.SetPassword` (`0x004547DC`) remains a no-op stub; it does not write a password or configure the archive interface.
 - `T7zInArchive.SetPassword` (`0x00453860`) stores a UnicodeString at `Self+0x58`, creates a callback interface from `Self+8` using type-info `0x0045391C`, and invokes `IInArchive.Extract` (`+0x1C`) for all items. The direct custom-interface slot is `+0x3C`, not `+0x44`.
-- In `euResetMemory` (`0x00456F00`), slot `+0x44` calls the `T7zArchive` virtual constructor with the optional/fallback string; slot `+0x0C` calls `OpenStream(IInStream)`; slot `+0x3C` calls `SetPassword(UnicodeString)`. The custom interface IID is `022cf785-3ece-46ef-9755-291fa84cc6c9` and its vtable is `0x00452420`.
+- In `euResetMemory` (`0x00456F00`), slot `+0x44` calls the `T7zArchive` virtual constructor with the optional/fallback string; slot `+0x0C` calls `OpenStream(UnicodeString) -> IInStream` using the archive path; slot `+0x3C` calls `SetPassword(UnicodeString)` using the second string. The custom interface IID is `022cf785-3ece-46ef-9755-291fa84cc6c9` and its vtable is `0x00452420`.
 
 ### New direct caller evidence
 
@@ -306,7 +306,7 @@ The completed recovery path workflow run #10 (`43719180035`, artifact `141640882
 2. `+0x0C` with the first path argument.
 3. `+0x3C` with the second path argument.
 
-The 20-slot interface table now proves the bindings: `+0x44` is the `T7zArchive` virtual constructor, `+0x0C` is `T7zInArchive.OpenStream(IInStream)`, and `+0x3C` is `T7zInArchive.SetPassword(UnicodeString)`. The helper's symbol is still `CreateOutArchive` even though it constructs `T7zInArchive`; preserve this naming/type discrepancy. Do not describe the second and third calls as `OpenFile`/`ExtractTo`: `SetPassword` itself calls `IInArchive.Extract` with a callback.
+The 20-slot interface table now proves the bindings: `+0x44` is the `T7zArchive` virtual constructor, `+0x0C` is `T7zInArchive.OpenStream(UnicodeString) -> IInStream`, and `+0x3C` is `T7zInArchive.SetPassword(UnicodeString)`. The helper's symbol is still `CreateOutArchive` even though it constructs `T7zInArchive`; preserve this naming/type discrepancy. Do not describe the second and third calls as `OpenFile`/`ExtractTo`: `SetPassword` itself calls `IInArchive.Extract` with a callback.
 
 ### Cleanup API targets independently resolved
 
@@ -317,7 +317,7 @@ The 20-slot interface table now proves the bindings: `+0x44` is the `T7zArchive`
 
 ### Confidence update
 
-Confirmed: `euResetMemory` uses a custom `T7zInArchive` interface, opens an `IInStream`, and calls `SetPassword`, which issues an all-items `IInArchive.Extract` request through a callback. Still unproven: input-stream creation, the meaning of the two UnicodeStrings, callback output destination/member selection, exact `.easd` bytes/lifecycle, and archive format/options.
+Confirmed: `euResetMemory` uses a custom `T7zInArchive` interface, opens the `.easz` archive path through `OpenStream` (which returns `IInStream`), and calls `SetPassword`, which issues an all-items `IInArchive.Extract` request through a callback. Still unproven: the second UnicodeString's source/meaning, callback output destination/member selection, exact `.easd` bytes/lifecycle, and archive format/options.
 
 
 ## 18. Separate euUnArchive helper path — 2026-11-15
@@ -366,10 +366,22 @@ The SevenZip interface-table artifact from plugin workflow run `43722345225` (ar
 
 The 20-slot interface trace now resolves all three calls:
 
-- `+0x0C` → thunk `0x004522E9` → `T7zInArchive.OpenStream` (`0x00452FDC`), whose signature accepts `Sevenzip.IInStream`. The first `euResetMemory` argument is therefore an input-stream interface.
+- `+0x0C` → thunk `0x004522E9` → `T7zInArchive.OpenStream` (`0x00452FDC`), whose decorated signature returns `Sevenzip.IInStream`. The method accepts the archive-path UnicodeString and constructs/returns the input-stream interface.
 - `+0x3C` → thunk `0x0045235F` → `T7zInArchive.SetPassword` (`0x00453860`), whose signature accepts a UnicodeString. It stores that string at `Self+0x58`, builds an extraction callback interface from `Self+8`, then calls the underlying `IInArchive.Extract` slot `+0x1C` with `indices=NULL`, `numItems=-1`, `testMode=0`, and that callback. This is an all-items extraction request; its exact callback/output semantics are still being traced.
 - `+0x44` → thunk `0x00452373` → virtual constructor `T7zArchive.$bctr` (`0x0045392C`). It stores its UnicodeString argument at `Self+0x44` and sets the Boolean at `Self+0x40` according to whether the string is nonempty.
 
 Thus `euResetMemory` receives an input stream in its first register argument, a password-like UnicodeString in its second register argument (passed to `SetPassword`), and an optional UnicodeString in its third register argument (passed to the base constructor, with fallback `mW@Tlogs43end_+` when selected). The exact meaning of the two string values and the extraction callback's output target remain open. `T7zInArchive.ExtractTo` (`0x0045375C`) is a separate wrapper that also calls the underlying archive interface `+0x1C`, but it is not one of the three direct `euResetMemory` slots.
 
 `SetPassword` and `ExtractTo` use distinct callback type-info references: `SetPassword` passes `0x0045391C` to the interface-construction helper and uses the callback built from `Self+8`; `ExtractTo` passes `0x00453850`, first stores its two callback/context arguments in `Self+0x50/+0x54`, and then invokes the same underlying archive-interface slot `+0x1C`. `ExtractTo` sets the extraction `testMode` argument from its Boolean parameter (1 or 0), while `SetPassword` uses 0. Both pass `indices=NULL` and `numItems=-1` to the underlying `IInArchive.Extract` method. This method-name mapping is corroborated by `ExtractItem` and `ExtractTo` calling the same slot with their own item/test-mode arguments. The callback type metadata at `0x0045391C` and `0x00453850` is being inspected separately to identify the actual output/stream destination.
+
+
+## 20. Autosave Delete caller argument types — 2026-11-15
+
+The full `TfrmShowAutoSaveFiles.Delete` trace (`0x005EB828`, artifact `14165058222`) resolves the caller-side types passed to `euResetMemory`:
+
+- The selected archive path is copied into local `[ebp-4]` using the Delphi `UStrLAsg` thunk `0x00401248` from the selected list item's field at `+0x20`. It is a UnicodeString path, not an `IInStream` interface.
+- The second local `[ebp-8]` is produced by helper `0x0044A998` immediately before the call. It is passed as the second UnicodeString argument and therefore reaches `T7zInArchive.SetPassword` via interface slot `+0x3C`. Its source helper has not yet been semantically decoded.
+- The call at `0x005EB938` passes `EAX=[ebp-4]` (archive path), `EDX=[ebp-8]` (second string), `ECX=0`, and two stack Boolean arguments both equal to 1. Thus the fallback string `mW@Tlogs43end_+` is selected for the base constructor branch.
+- After `euResetMemory`, the caller invokes `0x004563A8` with the same two strings to construct a further path/value, then calls `0x004565DC` and `0x004555D8` before continuing into Word automation. These helpers need separate tracing to identify the `.easd` output path and cleanup sequence.
+
+This corrects the earlier assumption that the first argument was already a stream object: `OpenStream` is a factory method that accepts the archive path and returns the `IInStream` used by the SevenZip reader.
