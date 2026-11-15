@@ -1540,3 +1540,6 @@ The BPL export/API analysis resolves the earlier naming ambiguity. The public TE
 
 
 - جزئیات callback آرشیو هم تفکیک شد: `SetPassword` از typeinfo آدرس `0x0045391C` استفاده می‌کند؛ `ExtractTo` از `0x00453850` و contextهای `Self+0x50/+0x54`. هر دو روی interface داخلی slot `+0x1C` را با `indices=NULL` و `numItems=-1` صدا می‌زنند؛ `testMode` در `SetPassword` صفر و در `ExtractTo` وابسته به پارامتر Boolean است. نوع دقیق callback و مقصد خروجی هنوز در شاخه‌ی جاری بررسی می‌شود.
+
+
+- slot داخلی `+0x1C` اکنون با اطمینان به‌عنوان `IInArchive.Extract` شناخته می‌شود: متدهای wrapper به نام‌های `ExtractItem` و `ExtractTo` نیز همین slot را با آرگومان‌های item/test-mode خود فراخوانی می‌کنند. بنابراین `SetPassword` در این مسیر عملاً یک درخواست Extract برای همه‌ی آیتم‌ها با callback اختصاصی می‌فرستد؛ مقصد callback هنوز در دست بررسی است.
