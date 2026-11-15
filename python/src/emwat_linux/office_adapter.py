@@ -30,7 +30,9 @@ class OfficeAdapter(Protocol):
 
     wait_for_close is intentionally unbounded by default: the captured Windows
     exchange keeps its HTTP request open while the document is being edited.
-    The adapter reports modification and engine-save events separately.
+    The adapter reports modification and engine-save events separately. The
+    bridge serves requests concurrently, so concrete adapters must keep handles
+    and callbacks isolated per document and be safe for concurrent sessions.
     """
 
     def open_document(
