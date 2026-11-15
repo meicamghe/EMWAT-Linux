@@ -573,3 +573,8 @@ Continue autonomously; no user input is required for the current static-analysis
 ### Request/response DOC evidence
 
 Pcap workflow #4 (run 43710628491, artifact 14159604189) confirms the returned application/msword document differs from wordBody. Input size is 872,960 bytes; the response capture decodes to 874,957 bytes with 68 Base64 characters missing (51 decoded bytes), giving an estimated complete size of 875,008 bytes (+2,048). The OLE header's first-directory-sector pointer changes from 1698 to 1702 at offset 48. Full-file equality is not authoritative because the response capture is incomplete.
+
+
+### Dispatch address clarification — 2026-11-15
+
+Use this exact naming in future traces: public/exported TEmwatMethod.Invoke = 0x0046C9E0 (VMT slot +0x0C); inner dictionary/XML helper = 0x0046C82C (433 bytes; TD32 symbol says Invoke). The wrapper calls the helper at 0x0046CA67, then the subclass PerformMethod at VMT slot +0x10 / callsite 0x0046CA88. Do not describe 0x0046C82C as the public service dispatch entry.
