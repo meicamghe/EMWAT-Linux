@@ -224,3 +224,18 @@ The TETracer.GetUniquePostfix procedure at 0x00467C18 uses the exact registry na
 The same caller scan also found TfrmImageTools.SetOldParamRecord reading additional integer values named Posotion (exact misspelling), Size, and PrintRange, plus four floating-point settings. TfrmImageTools.ShowPrintPanel writes the corresponding values. These belong to the image/print tools; their registry subkey and remaining float value names are being decoded separately.
 
 This closes the earlier uncertainty about Logging Level and Save I/O Trace Files startup reads. Do not conflate these diagnostic/image settings with the Word close/registration workflow.
+
+
+## Word close prompt confirmed — request-lifecycle workflow #1
+
+The focused trace decoded the exact BeforeSave prompt and its control flow:
+
+- The callback's log strings are "Document.OnBeforeClose Called." and "Document.OnBeforeClose succeed."
+- The Persian prompt is: "محتويات اين سند تغيير كرده است. آيا مايل به ثبت تغييرات مي‌باشيد؟" (the document contents changed; would you like to register the changes?).
+- The three buttons are "موافقم", "خیر", and "انصراف".
+- Dialog result 2 writes Cancel = -1 and exits without invoking the final Document.Close call.
+- Dialog result 6 enters the affirmative branch and passes -1 through the SaveChanges variant setup.
+- Other non-cancel results enter the negative branch and pass 0 through the SaveChanges variant setup.
+- On the non-cancel path, the handler calls the Word Document.Close interface slot +0x29C, releases the current document interface, clears the viewer's active-document state, and logs "Document.OnBeforeClose succeed."
+
+This is direct evidence that the main editor's registered BeforeSave callback also implements the custom close/register prompt and closes the document after the user's choice. It explains why pressing Word's Save toolbar button is not the only route into the registration prompt: Word can enter this callback as part of its close/save lifecycle. The exact COM variant type/argument interpretation and the response timing still need the focused LoadDocument control-flow trace.
