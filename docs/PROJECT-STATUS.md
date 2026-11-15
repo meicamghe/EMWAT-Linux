@@ -1562,3 +1562,14 @@ The BPL export/API analysis resolves the earlier naming ambiguity. The public TE
 - artifact 14165369436 توابع registry را resolve کرد: 0x404414=WriteInteger، 0x404424=WriteBool، 0x40441C=ReadInteger، 0x40442C=ReadBool و 0x404454=ValueExists.
 - مستندات تفصیلی در بخش‌های ۲۱ و ۲۲ docs/RECOVERY-STORE-ANALYSIS.md ثبت شد؛ commit: d17a801d0d02f12e4a6b286af7aa1e21a9e691ac.
 - recovery-path run 43724386278 در آخرین بررسی در حال اجرا بود. Word lifecycle run 43722990611 با موفقیت کامل شد. مقصد استخراج و ثبت نهایی نامه هنوز قطعی نیست.
+
+
+### Recovery caller trace correction and parallel callback analysis — 2026-11-15
+
+- Recovery-path run 13 completed successfully (run ID `43724386278`, artifact `14165938809`). The full `euResetMemory` call sequence and the recovery form's `Delete` caller were rechecked.
+- `0x0044A998` is TD32-symbolized as `Emwat.Sys.MyMessageDialog`; it is the producer of the second string passed by the recovery Delete handler into `euResetMemory`, and that string reaches `T7zInArchive.SetPassword` via interface slot `+0x3C`. Its exact dialog/output semantics remain unknown. It is not `euGetAutoSavePass`.
+- `euGetAutoSavePass` at `0x00456B78` remains a separate `GetUserNameW` helper used by cleanup/logging paths; its result is not proven to be the `.easz` password.
+- `0x004563A8` is `FixDirectionInFarsiNumericMode`; `0x004565DC` is `DirIsEmpty`; `0x004555D8` is `ForceForegroundWindow`; `0x0045574C` is `euGetFileSize`. These helpers are now classified and no longer treated as unknown password/extraction helpers.
+- The `.easd` suffix is appended in the recovery Delete path after a string-normalization helper call, but the actual archive extraction output destination and the relation of the `.easd` path to that output remain unresolved.
+- A new independent workflow, `analyze-recovery-callback-contracts.yml`, is tracing the SevenZip interface slot `+0x44`, callback RTTI at `0x0045391C`/`0x00453850`, and the recovery caller chain. Workflow runs 1 and 2 are queued/in progress as of this update.
+- Detailed findings and correction are recorded in `docs/RECOVERY-STORE-ANALYSIS.md` section 23 (commit `b753390bd421047e22d072b1012d9be3d829015a`).
