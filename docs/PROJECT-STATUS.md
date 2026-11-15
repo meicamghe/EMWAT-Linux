@@ -1416,3 +1416,9 @@ The BPL export/API analysis resolves the earlier naming ambiguity. The public TE
 - CI پل پایتون در run #42 موفق شد: 45 تست.
 - CI هسته بومی در run #104 موفق شد: 4 تست build/test و 4 تست sanitizer.
 - workflow مستقل تحلیل Recovery Store اضافه شده و run #2 در حال اجراست؛ تا دریافت artifact هیچ مسیر یا پسوند recovery قطعی اعلام نمی‌شود.
+
+
+- شاخه Recovery Store اکنون workflow مستقل دارد و run #2 آن موفق شده است. تحلیل فرم `TfrmShowAutoSaveFiles`، رویدادهای `FormClose` و `WordAppDocumentBeforeClose` و اتصال آن به Word Automation ثبت شده است.
+- در کد فرم، literal فیلتر `*.easz` و literal `.easd` در string construction دیده شده‌اند. این‌ها شواهد مهم فرمت AutoSave هستند، اما هنوز نقش نهایی هر پسوند و مسیر ذخیره‌سازی قطعی نشده است.
+- helperهای `euGetAutoSavePass`، `DoClearOldAutoSaveFiles`، `euClearOldAutoSaveFiles`، `euGetLocalAppDataPath` و `euGetWinTempPath` شناسایی و trace شده‌اند. workflow دوم برای resolve کردن مسیر، ماسک فایل و APIهای filesystem در حال اجراست.
+- مستند جدید: `docs/RECOVERY-STORE-ANALYSIS.md`.
