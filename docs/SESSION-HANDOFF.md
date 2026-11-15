@@ -835,3 +835,12 @@ Run `43719180035` succeeded; artifact `14164088249` was inspected. Additional ev
 
 
 - Follow-up correction commit `6ed0f8f490515f548065a39afe546c9a6838c660` fixes the recovery Delete call-site description: `0x004563A8` receives only the selected `.easz` path (with Boolean flags false) and produces the normalized path-like string used to construct the `.easd` path. It is not passed the password string.
+
+
+### Latest callback-contract findings — 2026-11-15
+
+- Callback-contract run 2 (`43725294172`, artifact `14165994624`) confirms `T7zArchive.$bctr` at `0x0045392C` stores its string at `Self+0x44` and sets `Self+0x40` according to whether it is nonempty. The recovery fallback `mW@Tlogs43end_+` is passed to this constructor, not to `SetPassword`.
+- The `MyMessageDialog` result is a separate string passed to `T7zInArchive.SetPassword` via slot `+0x3C`.
+- Callback references `0x00453850` and `0x0045391C` contain the same `IArchiveExtractCallback` IID. Their construction contexts differ, but they implement the same COM callback interface.
+- `PrepareOperation` has distinct branches using `Self+0x3C`, `Self+0x50/+0x54`, and `Self+0x58`; exact property mapping and final output destination remain open. See `docs/RECOVERY-STORE-ANALYSIS.md` sections 24–25.
+- Follow-up workflow run 3 is queued to resolve the remaining non-TD32 slot targets and dialog strings.
