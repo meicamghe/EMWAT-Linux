@@ -4,8 +4,8 @@
 
 ## وضعیت اجرایی و شواهد جدید — 2026-11-15
 
-- **مسیر پایتون:** آخرین CI پل پایتون، run `43719459423`، موفق است: **۶۲ تست** اجرا شده و همگی پاس شده‌اند. چهار تست جدید هماهنگ‌کننده چرخه سند نیز در همین اجرا موفق‌اند.
-- **هماهنگ‌کننده سند:** `python/src/emwat_linux/office_adapter.py` قرارداد مستقل موتور آفیس را تعریف می‌کند؛ `document_coordinator.py` مسیر open → wait for close → export final bytes را اجرا می‌کند. این کد هنوز به handler واقعی HTTP یا LibreOffice UNO متصل نیست.
+- **مسیر پایتون:** آخرین CI پل پایتون، run `43719841339`، موفق است: **۶۶ تست** اجرا شده و همگی پاس شده‌اند. تست‌های جدید هماهنگ‌کننده سند و سرویس دامنه EditWordDocument نیز در این اجرا موفق‌اند.
+- **هماهنگ‌کننده سند:** `office_adapter.py` قرارداد مستقل موتور آفیس را تعریف می‌کند؛ `document_coordinator.py` مسیر open → wait for close → export final bytes را اجرا می‌کند و `editword_service.py` parser درخواست را به این هماهنگ‌کننده وصل می‌کند. callbackهای تغییر سند و Save موتور جدا هستند؛ Save باعث بازگشت پاسخ نمی‌شود. این کد هنوز به handler واقعی HTTP یا LibreOffice UNO متصل نیست.
 - **قرارداد درخواست:** parser برای `EditWordDocument` و `wordConfig` وجود دارد؛ سند ورودی Base64 به bytes تبدیل می‌شود، اما `signData` عمداً به‌صورت متن opaque نگه داشته می‌شود. این adapter هنوز handler تولیدی نیست.
 - **شبکه:** heartbeat واقعی پاسخ `TickTack` و init script capture-matched در پل پایتون پیاده شده‌اند. مقدار `invoke` فقط nonce هر درخواست است، نه شناسه جلسه.
 - **بازیابی:** `.easz` در `%TEMP%\\temp-emwatASwf\\` فهرست می‌شود؛ مسیر بازیابی از کلاس `T7zInArchive` استفاده می‌کند. متد `SetPassword` در `0x00453860` رشته رمز را در فیلد `+0x58` نگه می‌دارد و آن را به رابط آرشیو می‌دهد. مقدار پیش‌فرضی که مسیر `euResetMemory` به dispatch رمز می‌دهد `mW@Tlogs43end_+` است؛ نام کاربری Windows و `@25*gamsign*25@` متعلق به مسیر مجزای cleanup/logging هستند و نباید با رمز بازیابی یکی فرض شوند.
