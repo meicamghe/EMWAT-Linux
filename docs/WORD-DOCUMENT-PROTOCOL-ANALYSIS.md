@@ -1179,9 +1179,9 @@ The earlier Run 116–117 uncertainty about Logging Level and Save I/O Trace Fil
 - TEditWordDocument.PerformMethod calls TWordViwer.LoadDocument synchronously. The successful LoadDocument path assigns AResponseInfo.ContentText and calls TIdHTTPResponseInfo.WriteContent.
 - The decoded LoadDocument range does not show an obvious explicit WaitFor/ProcessMessages loop. The OnTmrAutoSave tail at 0x004BA058–0x004BB3AF is compiler cleanup/exception handling, not an identified wait loop.
 - LoadDocument writes its wordBody argument bytes directly to the temporary TFileStream. The Base64Decode call at 0x004B7E44 operates on [ebp-8], not the wordBody argument at [ebp-0x1C]; do not claim that this call decodes wordBody. The captured XML wordBody is Base64 text, so the decode may occur upstream in EmwatService's XML/parameter layer; that boundary is not present in the BPL.
-- Packet-level timing now confirms that the original EditWordDocument POST remains open after its complete body arrives: request body complete at 0.002154 s, first response payload at 54.560037 s, a 54.557883-second server-side wait. The 1,166,820-byte response transfers in about 1.362 ms. This proves a long-lived XHR, but the exact Word/COM event that releases it is still unresolved. No separate close-time POST appears in this captured stream; other workflows may differ.
+- Packet-level timing confirms that the original EditWordDocument POST remains open after its complete body arrives: request body complete at 0.002154 s, first response payload at 54.560037 s, a 54.557883-second server-side wait. The 1,166,820-byte response transfers in about 1.362 ms. This proves a long-lived XHR; the exact Word/COM event that releases it remains unresolved. No separate close-time POST appears in this captured stream; other workflows may differ.
 
-Current conclusion: the custom register-changes prompt is confirmed, but the exact causal chain from Word close to the Almas page's final registration remains open. The single-long-lived-request theory is not proven.
+Current conclusion: the custom register-changes prompt and long-lived XHR are confirmed. The response DOC is a rewritten OLE container, strongly consistent with the Word operation completing before the response is released. The exact callback-to-response edge and the parent page's final Almas registration request remain open.
 
 ### Native bridge implementation checkpoint
 
@@ -1190,3 +1190,16 @@ Current conclusion: the custom register-changes prompt is confirmed, but the exa
 - protocol.py has a bounded serializer for the observed response-word success envelope (application/msword, encryption=base64).
 - create_bridge_server now separates allowed_origins (the local XHR Origin, captured as http://127.0.0.1:1984) from allowed_parent_origins (the Almas page origin derived from init Referer, captured as https://automation.bsi.ir).
 - Python bridge workflow #42 (run 43709846976) passed all 45 tests. No production EditWordDocument handler, LibreOffice integration, or live Almas end-to-end test is claimed complete.
+
+
+### Request/response DOC comparison
+
+The packet-level document comparison (pcap workflow #4, run 43710628491, artifact 14159604189) found:
+
+- Request wordBody decodes to 872,960 bytes, OLE Compound File.
+- Response application/msword decodes to 874,957 captured bytes. The response has 17 TCP sequence gaps totaling 68 missing Base64 characters, all within the Base64 document value.
+- The missing 68 Base64 characters represent 51 decoded bytes. Estimated complete response size is 875,008 bytes, exactly 2,048 bytes larger than the input and aligned to 512-byte sectors.
+- Both files have 14 FAT sectors. The first-directory-sector pointer at OLE header offset 48 changes from 1698 in the request to 1702 in the response.
+- The first differing byte is offset 48, before the first capture gap; the first approximately 49,041 decoded bytes are available for comparison and are not equal.
+
+The response is therefore not a byte-for-byte echo. It is a rewritten/restructured legacy DOC container. Full-file hash equality cannot be claimed because 51 decoded response bytes were not captured.
