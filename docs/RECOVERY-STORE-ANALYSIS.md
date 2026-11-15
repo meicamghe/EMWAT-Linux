@@ -111,3 +111,20 @@ Both the recovery UI and the old-AutoSave cleanup routine therefore use the same
 `euGetAutoSavePass` (`0x00456B78`) has direct callers in `DoClearOldAutoSaveFiles` (`0x00456C0C`) and `TfrmSendLog.lblFileNameClick` (`0x005ECFE5`). Its exact input/output semantics are still unresolved; the symbol name alone is not enough to claim a decryption algorithm.
 
 The path/helper rerun is resolving the constants around `euGetTempFileName`, the file enumeration helper, and the file-delete API target before a concrete directory or retention policy is documented.
+
+
+## 9. Confirmed file enumeration and filesystem APIs (path workflow run #2)
+
+Artifact `14162601983` from `analyze-recovery-paths.yml` run #2 resolved several previously unknown helper targets:
+
+- `0x004043BC` is an IAT thunk to `rtl230.bpl!TDirectory.GetFiles`.
+- Both the recovery UI (`lslFilesDblClick`) and `euClearOldAutoSaveFiles` pass the wildcard `*.easz` to this file-enumeration path. This confirms `.easz` is an actual file-listing mask used by the recovery subsystem, not merely an unrelated embedded string.
+- `0x004026B4` resolves to `kernel32!DeleteFileW`. The cleanup loop conditionally passes an enumerated file path to this API.
+- `euGetLocalAppDataPath` uses `shell32!SHGetSpecialFolderLocation` and `SHGetPathFromIDListW` with CSIDL `0x1C` (Local AppData). This establishes a Windows Local AppData path helper, but does not yet prove that the `.easz` store is located directly beneath it.
+- `euGetWinTempPath` uses the Local AppData helper and the literal `emwt.tmp` as part of a separate temporary-path routine. Do not assume this temp-file path is the AutoSave archive directory.
+
+The cleanup routine `euClearOldAutoSaveFiles` enumerates `*.easz`, calculates a file-age value, compares it with `0x18`, and conditionally calls `DeleteFileW`. The exact age helper and unit still need confirmation; if the value is a Delphi `TDateTime` day delta, `0x18` would represent 24 days, but that interpretation is not yet promoted to a confirmed retention policy.
+
+`DoClearOldAutoSaveFiles` supplies either a fallback constant (redacted in this report) or a value returned by `euGetAutoSavePass` to the cleanup routine. The password helper uses a 0x400-byte buffer and is also called by `TfrmSendLog.lblFileNameClick`; its exact encoding/decryption behavior remains unresolved.
+
+A separate helper, `DeleteTempRAW`, contains the command strings `taskkill.exe` and `/f /im WINWORD.EXE`, along with `GamElectronic EMWAT` and `.doc` markers. This is a distinct Word/temp cleanup path; it must not be confused with the `.easz` archive deletion loop. A native Linux port should manage only its own office-engine processes rather than blindly reproducing a global `taskkill` of all Word/office processes.
