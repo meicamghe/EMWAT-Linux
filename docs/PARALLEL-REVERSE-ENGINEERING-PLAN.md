@@ -146,3 +146,13 @@ The analysis is now split across independent GitHub Actions workflows rather tha
 - protocol.py now exposes a bounded serializer for the observed successful response-word envelope. It Base64-encodes opaque document bytes under return-types/type with application/msword and encryption=base64; it does not transform the document.
 - Python bridge workflow #33 (run 43707888187) passed all 42 tests, including heartbeat contract checks, a synthetic >1 MB request payload, response-envelope round-trip, input validation, and response-size enforcement.
 - The response serializer is a building block only. No production EditWordDocument handler, init endpoint, LibreOffice integration, or close-time Almas registration flow is claimed complete.
+
+
+### Additional implementation follow-up — init script workflow #36
+
+- Stream 4's complete init response confirms the bridge script listens for parent-window message events, POSTs event.data to the local /?invoke endpoint, returns responseText to event.source via postMessage, and sends the <inited /> marker to the parent.
+- The script generates invoke values with Math.floor(Math.random() * 99999); this is a per-request random value, not a method identifier.
+- Python BridgeHTTPServer now implements GET /?init=<digits>_<digits>, substitutes its bound loopback port, and derives the parent target origin from Referer only when that origin is explicitly allowlisted.
+- Parent-origin allowlisting is separate from POST Origin allowlisting because the capture shows the Almas page as the init Referer while the subsequent POST Origin is the local loopback service.
+- Python bridge workflow #36 (run 43708383619) passed all 45 tests, including init script generation, dynamic port, allowlisted and rejected parent origins, and malformed init query rejection.
+- This is a capture-matched endpoint implementation, not yet an end-to-end test against the actual Almas page/browser.
