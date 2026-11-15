@@ -42,7 +42,11 @@ class DocumentCoordinator:
         session = DocumentSession(session_id)
         try:
             session.begin_initialization()
-            handle = self._office.open_document(request)
+            handle = self._office.open_document(
+                request,
+                on_modified=session.mark_dirty,
+                on_saved=session.record_engine_save,
+            )
             if handle is None:
                 raise RuntimeError("office_adapter_returned_no_handle")
             session.mark_opened()
