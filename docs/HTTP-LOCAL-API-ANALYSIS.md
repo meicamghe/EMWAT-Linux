@@ -429,3 +429,15 @@ The installed files were inspected with both Unicode and narrow-string extractio
 - تست‌های init شامل تولید script، پورت پویا، origin مجاز، origin غیرمجاز و query نامعتبر هستند.
 
 اعتبارسنجی: Python bridge workflow #40، run 43708542723، موفق؛ 45 تست پاس شده‌اند. مقایسهٔ مستقیم template تولیدی با پاسخ stream 4 نیز تطابق byte-for-byte در حالت port=1984 و parent origin اصلی را تأیید کرد. این endpoint اکنون با capture تطبیق داده شده، اما ارتباط واقعی با Almas و مرورگر کاربر هنوز در محیط هدف end-to-end آزمایش نشده است.
+
+
+### تفکیک Originها در factory
+
+capture دو origin متفاوت را نشان می‌دهد و اکنون در create_bridge_server نیز جداگانه پیکربندی می‌شوند:
+
+- allowed_origins: Origin درخواست XHR به سرویس محلی؛ در capture برابر http://127.0.0.1:1984 است.
+- allowed_parent_origins: origin صفحهٔ والد Almas که از Referer درخواست init استخراج می‌شود؛ در capture برابر https://automation.bsi.ir است.
+
+این دو مقدار نباید با هم اشتباه شوند. Factory هر دو allowlist را به BridgeHTTPServer منتقل می‌کند و init در صورت نبودن parent allowlist یا خارج‌بودن Referer از آن، fail-closed می‌شود. تست composition نیز اکنون POST با Origin محلی و GET init با Referer صفحهٔ والد را جداگانه بررسی می‌کند.
+
+اعتبارسنجی: Python bridge workflow #42، run 43709846976، موفق؛ 45 تست پاس شده‌اند.
