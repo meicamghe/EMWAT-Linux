@@ -1,0 +1,105 @@
+name: Analyze EMWAT Word wait and COM call chain
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/analyze-word-wait-mechanism.yml'
+      - 'analysis-input/EmwatMethods.bpl1'
+      - 'tools/inspect_delphi_vmt_address.py'
+      - 'tools/find_td32_class_procedures.py'
+      - 'tools/trace_td32_procedure.py'
+      - 'tools/trace_td32_callers.py'
+      - 'tools/trace_pe_range.py'
+permissions:
+  contents: read
+jobs:
+  wait-mechanism:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install pefile capstone
+      - name: Inspect TWordApplication VMT and Connect slot
+        run: |
+          mkdir -p wait-mechanism-analysis/vmt
+          python tools/inspect_delphi_vmt_address.py analysis-input/EmwatMethods.bpl1 0x004202A8 wait-mechanism-analysis/vmt/TWordApplication-vmt.md
+          python - <<'PY'
+          import pathlib, re, subprocess, sys
+          source = pathlib.Path("wait-mechanism-analysis/vmt/TWordApplication-vmt.md").read_text(encoding="utf-8")
+          targets = sorted(set(re.findall(r"Slot \\+0x50: 0x([0-9A-Fa-f]{8})", source)))
+          summary = ["# TWordApplication VMT +0x50 target traces", ""]
+          for target in targets:
+              output = f"wait-mechanism-analysis/vmt/slot-50-{target}.md"
+              subprocess.run([sys.executable, "tools/trace_td32_procedure.py", "analysis-input/EmwatMethods.bpl1", "0x" + target, output], check=True)
+              summary.append(f"- Slot +0x50 target 0x{target}: {output}")
+          pathlib.Path("wait-mechanism-analysis/vmt/slot-50-index.md").write_text("\\n".join(summary) + "\\n", encoding="utf-8")
+          PY
+      - name: Trace Word COM setup and activation branch
+        run: |
+          mkdir -p wait-mechanism-analysis/word-com
+          python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x004B8D12 0x004B8E90 wait-mechanism-analysis/word-com/OnTmrAutoSave-connect-and-quit.md
+          for target in 0043F360 00440950 00440A68 00441C68 004CDB54 004C5D68 004B8A84 004B7724; do
+            python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x$target wait-mechanism-analysis/word-com/procedure-$target.md
+            python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x$target wait-mechanism-analysis/word-com/callers-$target.md
+          done
+      - name: Search VCL wait, message-pump, and Word connection methods
+        run: |
+          mkdir -p wait-mechanism-analysis/classes
+          python tools/find_td32_class_procedures.py analysis-input/EmwatMethods.bpl1 TApplication TThread TTimer TWordApplication TOleServer TWordViwer TEditWordDocument > wait-mechanism-analysis/classes/candidate-methods.md
+          python - <<'PY'
+          import pathlib, re, subprocess, sys
+          source = pathlib.Path("wait-mechanism-analysis/classes/candidate-methods.md").read_text(encoding="utf-8")
+          terms = re.compile(r"wait|processmessages|handlemessage|connect|disconnect|quit|showmodal|synchronize|execute|visible|open|timer", re.I)
+          rows = re.findall(r"\\|\\s*([^|]+?)\\s*\\|\\s*([^|]+?)\\s*\\|\\s*([^|]+?)\\s*\\|", source)
+          outdir = pathlib.Path("wait-mechanism-analysis/classes/traces")
+          outdir.mkdir(parents=True, exist_ok=True)
+          summary = ["# Selected VCL/Word method traces", ""]
+          seen = set()
+          for module, decorated, target in rows:
+              if not terms.search(decorated):
+                  continue
+              match = re.search(r"0x([0-9A-Fa-f]{8})", target)
+              if not match or match.group(1) in seen:
+                  continue
+              va = match.group(1)
+              seen.add(va)
+              safe = re.sub(r"[^A-Za-z0-9_.-]+", "_", decorated.replace(chr(96), ""))[:80]
+              output = outdir / f"{va}-{safe}.md"
+              subprocess.run([sys.executable, "tools/trace_td32_procedure.py", "analysis-input/EmwatMethods.bpl1", "0x" + va, str(output)], check=True)
+              summary.append(f"- {module.strip()} — 0x{va} — {decorated.strip()} — {output}")
+          pathlib.Path("wait-mechanism-analysis/classes/trace-index.md").write_text("\\n".join(summary) + "\\n", encoding="utf-8")
+          PY
+      - name: List imported wait and message APIs with call sites
+        run: |
+          python - <<'PY'
+          import pathlib, struct, pefile
+          pe = pefile.PE("analysis-input/EmwatMethods.bpl1")
+          wanted = ("wait", "sleep", "message", "peek", "dispatch", "process", "coWait", "inputIdle")
+          rows = ["# Imported wait/message APIs and direct call sites", ""]
+          for dll in getattr(pe, "DIRECTORY_ENTRY_IMPORT", []):
+              for imp in dll.imports:
+                  name = (imp.name or b"").decode("ascii", errors="replace")
+                  if not any(term.lower() in name.lower() for term in wanted):
+                      continue
+                  rows.append(f"## {dll.dll.decode('ascii', errors='replace')}!{name}")
+                  rows.append(f"- IAT VA: 0x{imp.address:08X}")
+                  pattern = b"\\xFF\\x15" + struct.pack("<I", imp.address)
+                  for section in pe.sections:
+                      data = section.get_data()
+                      start = 0
+                      while True:
+                          offset = data.find(pattern, start)
+                          if offset < 0:
+                              break
+                          va = pe.OPTIONAL_HEADER.ImageBase + section.VirtualAddress + offset
+                          rows.append(f"- CALL [IAT] at VA 0x{va:08X}")
+                          start = offset + 1
+                  rows.append("")
+          pathlib.Path("wait-mechanism-analysis/imported-wait-apis.md").write_text("\\n".join(rows) + "\\n", encoding="utf-8")
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: emwat-word-wait-mechanism
+          path: wait-mechanism-analysis/
