@@ -71,6 +71,21 @@ class MethodEnvelopeTests(unittest.TestCase):
         with self.assertRaises(ProtocolError):
             parse_method_call(b"<emwat version='1.0'/>", max_bytes=4)
 
+
+    def test_preserves_capture_sized_opaque_document_payload(self):
+        # The captured EditWordDocument request carried a >1 MB Base64 wordBody.
+        # Keep this synthetic: no captured customer document enters the test suite.
+        opaque = b"AQID" * 300_000
+        payload = (
+            b'<emwat version="1.0"><method class="EditWordDocument">'
+            b'<param name="wordBody">' + opaque +
+            b'</param></method></emwat>'
+        )
+        call = parse_method_call(payload, max_bytes=2 * 1024 * 1024)
+        self.assertEqual(len(call.params["wordBody"]), len(opaque))
+        self.assertEqual(call.params["wordBody"][:16], "AQID" * 4)
+        self.assertEqual(call.params["wordBody"][-16:], "AQID" * 4)
+
     def test_rejects_non_bytes(self):
         with self.assertRaises(TypeError):
             parse_method_call("<emwat/>")  # type: ignore[arg-type]
