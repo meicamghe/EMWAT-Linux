@@ -12,7 +12,7 @@ TARGET_CLASSES = (
     "TSetOfSinglePageImages", "TProcessResult", "TScanCommand",
     "TEmwatMethod", "TEditWordDocument", "TWordViwer", "TEDPController",
     "TEmwatDocPrintHandler", "TWordDocument", "TWordFields", "TWordField",
-    "TWordFieldCollection",
+    "TWordFieldCollection", "T7zArchive", "T7zPlugin", "T7zInArchive", "T7zOutArchive",
 )
 SLOTS = tuple(range(0x00, 0x300, 4))
 VMT_SELF = -88
