@@ -302,5 +302,10 @@ The next independent tasks are to resolve the `euGetAutoSavePass` read path, det
 
 - Recovery path run #5 (`43716527945`, artifact `14162334126`) confirmed that `euResetMemory` constructs an object from class metadata at `0x00452558`, calls virtual slot `+0x4C`, and passes source/destination paths to virtual slots `+0x0C` and `+0x3C`. It copies a 16-byte block from one of two global data areas based on a Boolean flag. Exact class and transform semantics are pending.
 - Recovery path run #6 (`43716808189`, artifact `14162727483`) succeeded and supplied the VMT/global reference dumps. Run #7 (`43717048702`) is tracing the class typeinfo and its VMT method implementations.
-- Word event sink run #8 (`43716384031`, artifact `14162362638`) now extracts all 20 callback pointers from the generated event table at `0x00627B74`. TD32 procedure tracing cannot assign ranges to those pointers, so run #9 (`43716905570`) disassembles the raw code region and expands the table data.
+- Word event sink run #8 (`43716384031`, artifact `14162362638`) extracted 20 pointers from `0x00627B74`, but run #9 (`43716905570`, artifact `14162568118`) proved these point to Delphi error strings (`Err_20000`, `Request XML is invalid.`, `Can not open document.`, etc.), not callback functions. The workflow has been corrected to classify this as a server error map. Actual event callback/DISPID mapping remains unresolved.
 - The inner `wordConfig` parser (`python/src/emwat_linux/word_config.py`) is implemented and covered by CI. Python bridge run #44 (`43716641854`) passed 53 tests. It preserves opaque field contents and per-field encoding metadata; no production document handler is wired yet.
+
+
+### Correction to event-sink branch interpretation
+
+The pointer list at `0x00627BB0` is an error-message string table. The previous callback-table interpretation was incorrect and is explicitly superseded in `docs/WORD-COM-INTERFACE-DISPATCH.md`. Workflow run #10 changes the extraction to decode these strings rather than tracing them as procedures. Main-viewer BeforeSave registration at `0x004CD154` remains independently confirmed.
