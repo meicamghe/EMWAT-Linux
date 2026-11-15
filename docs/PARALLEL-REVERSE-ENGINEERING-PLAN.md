@@ -296,3 +296,11 @@ Recovery analysis is now split into two independent workflows:
 Confirmed recovery evidence now includes the `*.easz` file mask in both the recovery UI and old-AutoSave cleanup, `TDirectory.GetFiles` as the enumeration API, `DeleteFileW` as the conditional cleanup API, and Local AppData resolution through CSIDL `0x1C`. The actual AutoSave directory and exact retention interval are still unresolved. Details: `docs/RECOVERY-STORE-ANALYSIS.md`.
 
 The next independent tasks are to resolve the `euGetAutoSavePass` read path, determine the units behind the `0x18` age threshold, and identify the root/prefix returned by `euGetTempFileName`. Do not infer a final directory or retention policy from the current evidence.
+
+
+## Additional parallel outputs — 2026-11-15
+
+- Recovery path run #5 (`43716527945`, artifact `14162334126`) confirmed that `euResetMemory` constructs an object from class metadata at `0x00452558`, calls virtual slot `+0x4C`, and passes source/destination paths to virtual slots `+0x0C` and `+0x3C`. It copies a 16-byte block from one of two global data areas based on a Boolean flag. Exact class and transform semantics are pending.
+- Recovery path run #6 (`43716808189`, artifact `14162727483`) succeeded and supplied the VMT/global reference dumps. Run #7 (`43717048702`) is tracing the class typeinfo and its VMT method implementations.
+- Word event sink run #8 (`43716384031`, artifact `14162362638`) now extracts all 20 callback pointers from the generated event table at `0x00627B74`. TD32 procedure tracing cannot assign ranges to those pointers, so run #9 (`43716905570`) disassembles the raw code region and expands the table data.
+- The inner `wordConfig` parser (`python/src/emwat_linux/word_config.py`) is implemented and covered by CI. Python bridge run #44 (`43716641854`) passed 53 tests. It preserves opaque field contents and per-field encoding metadata; no production document handler is wired yet.
