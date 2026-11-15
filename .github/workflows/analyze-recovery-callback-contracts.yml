@@ -42,6 +42,13 @@ jobs:
           for target in 005EB828 00456F00 0044A998 004563A8 004565DC 004555D8 0045574C; do
             python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x$target recovery-callback-contracts/procedures/$target-all-callers.md
           done
+      - name: Resolve non-TD32 interface slot targets and password prompt strings
+        run: |
+          for target in 00452373 0045392C 00453B84 00453A54 0044AB70 0044AB9C 0044ABB4; do
+            python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x$target recovery-callback-contracts/typeinfo/pe-target-$target.md 32
+            python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 0x$target recovery-callback-contracts/typeinfo/pe-target-$target-refs.md
+          done
+          python tools/decode_pe_strings.py analysis-input/EmwatMethods.bpl1 0x0044AB70 0x0044AB9C 0x0044ABB4 > recovery-callback-contracts/typeinfo/recovery-dialog-strings.md
       - uses: actions/upload-artifact@v4
         with:
           name: emwat-recovery-callback-contracts
