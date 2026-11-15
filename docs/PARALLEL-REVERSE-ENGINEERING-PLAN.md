@@ -285,3 +285,14 @@ The latest request-parameter artifact confirms that the captured `wordBody` is B
 3. Preserve capture gaps and partial disassembly coverage explicitly; never silently fill missing bytes or treat missing procedures as proof of absence.
 4. Continue the next analysis in parallel: (a) resolve the Word event sink's actual dispatch/argument mapping, (b) improve recovery form list-population and storage-path tracing, (c) analyze the TCP payload export alongside the PCAP with sequence-aware validation, and (d) maintain the Python bridge/session tests.
 5. The highest-value external evidence is a second, gap-free capture of the same close-without-Save workflow, ideally with a known harmless edit, so request and returned document can be compared completely.
+
+
+## Recovery workstream split — verified 2026-11-15
+
+Recovery analysis is now split into two independent workflows:
+- `analyze-recovery-store.yml`: form procedures, Word Automation lifecycle, resource and embedded-string triage. Run #2 (`43715017039`) succeeded; artifact `14162835454`.
+- `analyze-recovery-paths.yml`: autosave helper implementations, direct callers, path constants, and filesystem APIs. Run #2 (`43715620696`) succeeded; artifact `14162601983`. Run #3 (`43715933101`) adds age/password/process helper traces and is queued/running.
+
+Confirmed recovery evidence now includes the `*.easz` file mask in both the recovery UI and old-AutoSave cleanup, `TDirectory.GetFiles` as the enumeration API, `DeleteFileW` as the conditional cleanup API, and Local AppData resolution through CSIDL `0x1C`. The actual AutoSave directory and exact retention interval are still unresolved. Details: `docs/RECOVERY-STORE-ANALYSIS.md`.
+
+The next independent tasks are to resolve the `euGetAutoSavePass` read path, determine the units behind the `0x18` age threshold, and identify the root/prefix returned by `euGetTempFileName`. Do not infer a final directory or retention policy from the current evidence.
