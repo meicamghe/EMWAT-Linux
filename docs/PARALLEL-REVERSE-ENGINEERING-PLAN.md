@@ -334,7 +334,7 @@ The pointer list at `0x00627BB0` is an error-message string table. The previous 
 - TD32 indexes `T7zPlugin`, `T7zInArchive`, and `T7zOutArchive`. The shared `T7zPlugin.CreateObject` method is directly called by both `T7zInArchive.GetInArchive` and `T7zOutArchive.GetOutArchive`.
 - The plugin constructor at `0x00452C10` calls `T7zOutArchive.CryptoGetTextPassword2` at `0x004543C4`; that method calls helper `0x00404734`, resolved as the RTL TObjectList constructor, using the class pointer at global `0x0062FBB8` and storing the list at object offset `+0x2C`. This does not identify the writer password value/provider.
 - `euUnArchive` is a direct caller of the plugin constructor and uses global `0x0062A824`. `euResetMemory` instead calls the separate `CreateOutArchive` helper at `0x00452BBC), which uses the literal `7z.dll` and a 16-byte global-derived value before a virtual dispatch.
-- The wrapper `T7zOutArchive.SetPassword` is a no-op stub. `T7zInArchive.SetPassword` stores the Unicode password at instance offset `+0x58` and forwards it to the archive interface at slot `+0x1C`; however, no raw static pointer to this method was found. The exact mapping of `euResetMemory` slot `+0x44` remains unresolved.
+- The wrapper `T7zOutArchive.SetPassword` is a no-op stub. `T7zInArchive.SetPassword` stores the Unicode password at instance offset `+0x58` and invokes an extraction-style interface slot with a callback-like helper; no raw static pointer to this method was found. The exact mapping of `euResetMemory` slot `+0x44` remains unresolved.
 - Full caveats and method traces are in `docs/RECOVERY-STORE-ANALYSIS.md`, sections 14–16.
 
 ### Native document orchestration branch
