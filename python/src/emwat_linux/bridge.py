@@ -95,7 +95,7 @@ class BridgeHTTPServer:
                     self.send_header("Access-Control-Allow-Origin", response_origin)
                     self.send_header("Vary", "Origin")
                 for name, value in (extra_headers or {}).items():
-                    if any(ch in name or ch in value for ch in "\\r\\n"):
+                    if any(ch in name or ch in value for ch in "\r\n"):
                         raise ValueError("invalid response header")
                     self.send_header(name, value)
                 self.send_header("Connection", "close")
@@ -128,7 +128,7 @@ class BridgeHTTPServer:
                     # Captured Windows Agent exchange: HTTP 200, body "TickTack".
                     self._send(200, b"TickTack", "text/html; charset=ISO-8859-1")
                 elif parsed.path == "/" and parsed.query.startswith("init="):
-                    if not re.fullmatch(r"init=\\d+_\\d+", parsed.query):
+                    if not re.fullmatch(r"init=\d+_\d+", parsed.query):
                         self._send(404, b"", "text/plain; charset=utf-8")
                         return
                     referer = self.headers.get("Referer")
