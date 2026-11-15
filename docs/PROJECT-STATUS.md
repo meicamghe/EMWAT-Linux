@@ -1382,7 +1382,7 @@ The project now has independent CI analysis lanes for Word request lifecycle, re
 - Main Word settings read from HKCU\Software\Emwat\Dynamic Config include the four operational viewer values plus TETracer's Logging Level and Save I/O Trace Files. TETracer's Created IO Trace Count is a 15-count diagnostic trace quota.
 - Image/print settings are stored separately under HKCU\SOFTWARE\Emwat\PrintParams.
 - DeleteTempRAW can taskkill WINWORD.EXE and then remove matching files under the Windows temp directory; its invocation point remains unknown.
-- The captured EditWordDocument round-trip lasts 54.6315 seconds, but there is no direct proof that it waits for Word close. The response path is known; the close-to-response timing is not.
+- Packet-level timing confirms the EditWordDocument request body is complete at 0.002154 s and the first response byte arrives at 54.560037 s: a 54.557883-second server-side wait. The 1.166 MB response transfers in about 1.362 ms. The request is long-lived; the exact Word/COM event that releases it is still being traced.
 - The BPL writes wordBody bytes directly to a temp file. The Base64Decode call at 0x004B7E44 targets a different local value, not proven to be wordBody.
 
 ### Native implementation state
