@@ -24,7 +24,8 @@ jobs:
       - name: Index SevenZip plugin and related classes
         run: |
           mkdir -p recovery-plugin-analysis/plugin recovery-plugin-analysis/form-data
-          python tools/find_td32_class_procedures.py analysis-input/EmwatMethods.bpl1 T7zArchive T7zPlugin T7zInArchive T7zOutArchive > recovery-plugin-analysis/plugin/class-index.md
+          python tools/find_td32_class_procedures.py analysis-input/EmwatMethods.bpl1 T7zPlugin T7zInArchive T7zOutArchive > recovery-plugin-analysis/plugin/class-index.md
+          python tools/find_td32_class_procedures.py analysis-input/EmwatMethods.bpl1 T7zArchive > recovery-plugin-analysis/plugin/base-class-index.md
           python - <<'PY'
           import pathlib, re, subprocess, sys
           source = pathlib.Path("recovery-plugin-analysis/plugin/class-index.md").read_text(encoding="utf-8")
