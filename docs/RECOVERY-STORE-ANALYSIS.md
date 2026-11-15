@@ -354,3 +354,15 @@ The completed class-index artifacts `14163436366`, `14163367757`, and `141643824
 - `T7zOutArchive.SetPassword` remains a stub; the constructor/callback path and the `TObjectList` created by `CryptoGetTextPassword2` do not yet reveal the actual writer password text or encryption settings.
 
 These wrapper traces confirm the available archive operations, not the exact `.easz` container signature or the complete recovery writer configuration. Do not implement a format-specific reader/writer until the archive format and caller-supplied properties are verified.
+
+
+## 19. `euResetMemory` interface identity resolved — 2026-11-15
+
+The SevenZip interface-table artifact from plugin workflow run `43722345225` (artifact `14165136040`) establishes the concrete interface object used by `euResetMemory`:
+
+- `CreateOutArchive` (`0x00452BBC`) constructs `T7zInArchive` using VMT `0x004525B0` (loaded from global `0x00452558`), then returns the interface pointer at `Self+0x70`.
+- The `T7zInArchive` VMT has instance size `0x78` and interface table `0x00452474` with seven entries. Entry 6 has `IOffset=112 (0x70)`, matching the pointer returned by `CreateOutArchive` exactly.
+- That entry's IID is `022cf785-3ece-46ef-9755-291fa84cc6c9` and its interface vtable is `0x00452420`.
+- Therefore the three indirect calls in `euResetMemory` are confirmed to target this custom interface's vtable at slots `+0x44`, `+0x0C`, and `+0x3C`. This is a stronger result than merely correlating signatures with wrapper methods.
+
+The semantic names of those three vtable slots are not yet mapped. The next plugin run extends interface vtable decoding to 20 entries so offsets `+0x3C` and `+0x44` can be read directly and compared against the `SetPassword`, `OpenFile`, and `ExtractTo` implementations. Until that artifact is inspected, keep the mapping `+0x44 → SetPassword`, `+0x0C → OpenFile`, `+0x3C → ExtractTo` as a leading hypothesis rather than a confirmed method-name mapping.
