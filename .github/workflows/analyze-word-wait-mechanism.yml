@@ -24,7 +24,9 @@ jobs:
       - name: Inspect TWordApplication VMT and Connect slot
         run: |
           mkdir -p wait-mechanism-analysis/vmt
-          python tools/inspect_delphi_vmt_address.py analysis-input/EmwatMethods.bpl1 0x004202A8 > wait-mechanism-analysis/vmt/TWordApplication-vmt.md
+          mkdir -p bpl-analysis
+          python tools/inspect_delphi_vmt_address.py analysis-input/EmwatMethods.bpl1 0x004202A8
+          cp bpl-analysis/EmwatMethods-vmt-address.md wait-mechanism-analysis/vmt/TWordApplication-vmt.md
           python - <<'PY'
           import pathlib, re, subprocess, sys
           source = pathlib.Path("wait-mechanism-analysis/vmt/TWordApplication-vmt.md").read_text(encoding="utf-8")
@@ -46,7 +48,7 @@ jobs:
         run: |
           mkdir -p wait-mechanism-analysis/word-com
           python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x004B8D12 0x004B8E90 wait-mechanism-analysis/word-com/OnTmrAutoSave-connect-and-quit.md
-          for target in 0043E070 0043E0F0 0043E0FC 0043E174 0043F360 00440950 00440A68 00441C68 004CDB54 004C5D68 004B8A84 004B7724; do
+          for target in 0043E070 0043E0F0 0043E0FC 0043E174 0043E270 0042ABF8 00404FAC 00404F8C 00401188 00401430 00401420 00401478 00403550 00403480 00403ED0 00403ED8 0043F360 00440950 00440A68 00441C68 004CDB54 004C5D68 004B8A84 004B7724; do
             python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x$target wait-mechanism-analysis/word-com/procedure-$target.md
             python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x$target wait-mechanism-analysis/word-com/callers-$target.md
           done
@@ -109,6 +111,17 @@ jobs:
                   rows.append("")
           pathlib.Path("wait-mechanism-analysis/imported-wait-apis.md").write_text("\n".join(rows) + "\n", encoding="utf-8")
           PY
+      - name: Scan imported wait and message API references
+        run: |
+          mkdir -p wait-mechanism-analysis/import-references
+          for target in 0062F084 0062F09C 00630038 0062EFA8 0062EFE8 0062EF80 0062F350 0062F638; do
+            python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 0x$target wait-mechanism-analysis/import-references/IAT-$target-pointer-refs.md
+          done
+          for target in 00404FAC 00404F8C 00401188 00401430 00403ED0; do
+            python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x$target wait-mechanism-analysis/import-references/helper-$target-callers.md
+          done
+          python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x004B7A20 0x004B7A80 wait-mechanism-analysis/import-references/LoadDocument-OnTmrAutoSave-call.md
+          python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x004B7F00 0x004B7FC0 wait-mechanism-analysis/import-references/LoadDocument-response-write.md
       - uses: actions/upload-artifact@v4
         with:
           name: emwat-word-wait-mechanism
