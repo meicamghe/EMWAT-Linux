@@ -1,0 +1,67 @@
+name: Analyze EMWAT autosave and recovery paths
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/analyze-recovery-paths.yml'
+      - 'analysis-input/EmwatMethods.bpl1'
+      - 'tools/find_td32_class_procedures.py'
+      - 'tools/trace_td32_procedure.py'
+      - 'tools/trace_td32_callers.py'
+      - 'tools/decode_pe_strings.py'
+      - 'tools/inspect_pe_va.py'
+      - 'tools/scan_pe_pointer_refs.py'
+permissions:
+  contents: read
+jobs:
+  autosave-paths:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install pefile capstone
+      - name: Find autosave path, cleanup, and temporary-file helpers
+        run: |
+          mkdir -p recovery-path-analysis/helpers recovery-path-analysis/form-data
+          python tools/find_td32_class_procedures.py analysis-input/EmwatMethods.bpl1 euGetAutoSavePath euGetAutoSavePass DoClearOldAutoSaveFiles euClearOldAutoSaveFiles euGetLocalAppDataPath euGetTempPath euGetWinTempPath DeleteTempRAW euClearTempFiles > recovery-path-analysis/helpers/autosave-helper-index.md
+          test -s recovery-path-analysis/helpers/autosave-helper-index.md
+      - name: Trace each helper implementation and callers
+        run: |
+          python - <<'PY'
+          import pathlib, re, subprocess, sys
+          source = pathlib.Path("recovery-path-analysis/helpers/autosave-helper-index.md").read_text(encoding="utf-8")
+          rows = []
+          for line in source.splitlines():
+              if not line.startswith("|") or "Decorated procedure" in line or "|---" in line:
+                  continue
+              parts = [part.strip() for part in line.strip("|").split("|")]
+              if len(parts) < 5:
+                  continue
+              decorated = parts[1].strip("`")
+              match = re.search(r"0x([0-9A-Fa-f]{8})", parts[2])
+              if match:
+                  rows.append((decorated, match.group(1)))
+          index = ["# Autosave/recovery helper traces", ""]
+          for decorated, va in rows:
+              safe = re.sub(r"[^A-Za-z0-9_.-]+", "_", decorated)[:110]
+              trace = f"recovery-path-analysis/helpers/{va}-{safe}.md"
+              callers = f"recovery-path-analysis/helpers/{va}-{safe}-callers.md"
+              subprocess.run([sys.executable, "tools/trace_td32_procedure.py", "analysis-input/EmwatMethods.bpl1", "0x" + va, trace], check=True)
+              subprocess.run([sys.executable, "tools/trace_td32_callers.py", "analysis-input/EmwatMethods.bpl1", "0x" + va, callers], check=True)
+              index.append(f"- `0x{va}` — `{decorated}` — {trace}; callers: {callers}")
+          pathlib.Path("recovery-path-analysis/helpers/trace-index.md").write_text("\n".join(index) + "\n", encoding="utf-8")
+          PY
+      - name: Decode form data constants and helper call targets
+        run: |
+          python tools/decode_pe_strings.py analysis-input/EmwatMethods.bpl1 0x005EC1F8 0x005EC49C 0x005EC4B8 0x005EC4F4 0x005EC508 0x005EC51C 0x005EC52C 0x005EBD18 0x005EBD3C 0x005EBDA0 0x005EBD54 > recovery-path-analysis/form-data/recovery-form-constants.md
+          for target in 00467088 00454A58 00456DDC 00456F00 004563A8 004565DC 004555D8 0045574C; do
+            python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x$target recovery-path-analysis/form-data/helper-$target.md
+            python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x$target recovery-path-analysis/form-data/helper-$target-callers.md
+          done
+      - uses: actions/upload-artifact@v4
+        with:
+          name: emwat-recovery-path-analysis
+          path: recovery-path-analysis/
