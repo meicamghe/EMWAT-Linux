@@ -319,3 +319,15 @@ The signatures and semantics align closely with the reader wrapper's `SetPasswor
 ### Confidence update
 
 Leading hypothesis: `euResetMemory` is a password-aware SevenZip reader/extract path that opens an `.easz` file and extracts to a temporary `.easd` path. Confirmed pieces: reader wrapper methods, password field and callback handling, cleanup enumeration, 24-hour age threshold, and DeleteFileW. Still unproven: the exact VMT slot bindings, exact content of `.easd`, and archive format/options.
+
+
+## 18. Separate euUnArchive helper path — 2026-11-15
+
+Plugin follow-up run #2 (`43720247793`, artifact `14164382428`) traces the previously identified direct constructor caller `euUnArchive` (`0x00456DFC–0x00456EFF`).
+
+- `euUnArchive` calls the `T7zPlugin` constructor at `0x00452C10) using global `0x0062A824`.
+- It then calls object/interface slots `+0x28), `+0x10), and `+0x18). The function obtains a count from one of its collection-like arguments, iterates indices, retrieves corresponding values from two collection-like arguments through their slot `+0x0C), and passes those values to the plugin object's slot `+0x10). At the end it calls slot `+0x18) with the remaining path/context argument.
+- The direct bounded caller scan for `euUnArchive` found no direct CALL sites. The T7zPlugin constructor's only direct bounded caller in this scan is `euUnArchive`.
+- This is a distinct plugin-based multi-item extraction path. It is not the same call chain as `euResetMemory`, which uses the separate `CreateOutArchive` helper at `0x00452BBC) and calls slots `+0x44/+0x0C/+0x3C).
+
+The exact meanings of the `euUnArchive` slots `+0x28/+0x10/+0x18), the two collection argument types, and the archive direction are not yet resolved. Keep it as a separate generic SevenZip operation; do not use it to infer the .easz recovery protocol.
