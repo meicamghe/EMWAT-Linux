@@ -130,3 +130,19 @@ This is evidence of a user-visible autosave/recovery-file management feature, di
 - recovery-file discovery, preview/open, and deletion.
 
 The actual autosave directory, filename pattern, and recovery file format have not yet been established from this trace.
+
+
+## 9. BeforePrint string constants decoded
+
+The adjacent PE data dump resolves several previously opaque constants used by `WordAppDocumentBeforePrintBGPrint`:
+
+- `0x004CEB9C`: UTF-16LE string `false`.
+- `0x004CEC64`: UTF-16LE string `Word Print Dialog`.
+- `0x004CEC94`: UTF-16LE string `SOFTWARE\\Emwat\\Dynamic Config`.
+- `0x004CECDC`: UTF-16LE string `setting as you print with "Gam" print dialog` (the literal appears to contain `Gam`; preserve the binary spelling until the complete resource/context is checked).
+
+The callback's first comparison is therefore against the literal `false`. If the document-side property is not equal to `false`, EMWAT constructs a dialog whose caption/title input is `Word Print Dialog`, uses the message beginning `setting as you print with "Gam" print dialog`, sets the Word BeforePrint Cancel argument, and exits. This is a much more concrete finding than the earlier generic "document mismatch" interpretation: the branch is tied to a document property and a print-dialog warning/confirmation path.
+
+The callback then reads configuration under `HKCU\\Software\\Emwat\\Dynamic Config`, using the value name `setting as you print with "Gam" print dialog` (exact binary spelling). If this setting check fails, it also cancels the print event. On the accepted path it prepares the global print-option object and transfers recipient/printer state.
+
+**Implementation consequence:** the Linux print workflow needs a per-user configuration option corresponding to this prompt/confirmation behavior, and a print gate that can cancel before dispatching the job. Do not hardcode the current Windows registry storage; map the setting into Winux's per-user configuration model.
