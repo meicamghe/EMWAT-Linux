@@ -26,7 +26,9 @@ jobs:
       - name: Find autosave path, cleanup, and temporary-file helpers
         run: |
           mkdir -p recovery-path-analysis/helpers recovery-path-analysis/form-data
-          python tools/find_td32_class_procedures.py analysis-input/EmwatMethods.bpl1 euGetAutoSavePath euGetAutoSavePass DoClearOldAutoSaveFiles euClearOldAutoSaveFiles euGetLocalAppDataPath euGetTempPath euGetWinTempPath DeleteTempRAW euClearTempFiles > recovery-path-analysis/helpers/autosave-helper-index.md
+          python tools/find_td32_class_procedures.py analysis-input/EmwatMethods.bpl1 euGetAutoSavePath euGetAutoSavePass DoClearOldAutoSaveFiles euClearOldAutoSaveFiles euGetLocalAppDataPath euGetTempPath euGetWinTempPath DeleteTempRAW euClearTempFiles T7zInArchive T7zOutArchive > recovery-path-analysis/helpers/autosave-helper-index.md
+          python tools/find_td32_class_procedures.py analysis-input/EmwatMethods.bpl1 T7zInArchive > recovery-path-analysis/helpers/sevenzip-inarchive-method-index.md
+          python tools/find_td32_class_procedures.py analysis-input/EmwatMethods.bpl1 T7zOutArchive > recovery-path-analysis/helpers/sevenzip-outarchive-method-index.md
           test -s recovery-path-analysis/helpers/autosave-helper-index.md
       - name: Trace each helper implementation and callers
         run: |
