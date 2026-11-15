@@ -285,3 +285,37 @@ Still unresolved: the exact interface GUIDs and direction selected by each facto
 ### Correction from recovery path workflow run #10 — TObjectList constructor resolution
 
 The additional API target trace resolves `0x00404734` as `rtl230.bpl!TObjectList.$bctr$qqrv`. Therefore, the previous description of `T7zOutArchive.CryptoGetTextPassword2` as obtaining a provider/interface from `0x0062FBB8` was too strong. The confirmed operation is construction of a TObjectList using the class pointer at that global, stored at `Self+0x2C`, followed by zeroing `Self+0x30` and `Self+0x34`. The writer password provider/value remains unresolved.
+
+
+## 17. Reader password and extract path correlation — 2026-11-15
+
+The completed recovery path workflow run #10 (`43719180035`, artifact `14164088249`) provides deeper traces for the reader wrapper and cleanup helpers.
+
+### Reader method semantics
+
+- `T7zInArchive.OpenFile` (`0x00452FB8`) accepts one UnicodeString path and invokes the archive interface at `Self+0x28`, vtable slot `+0x14`, before a follow-up helper call.
+- `T7zInArchive.ExtractTo` (`0x0045375C`) accepts one UnicodeString destination path, stores transient fields at `Self+0x50` and `Self+0x54`, then invokes interface slot `+0x1C` with an extraction-style argument set. It clears the transient fields on exit.
+- `T7zInArchive.SetPassword` (`0x00453860`) stores the supplied UnicodeString at `Self+0x58`. It then creates a helper/callback object and invokes the same interface slot `+0x1C` with a callback-style argument set. This is not a direct call that forwards the password string as a COM setter.
+- `T7zInArchive.PrepareOperation` (`0x004532E4`) reads the stored password field `Self+0x58` and has separate branches for the callback/context fields at `+0x50) and `+0x54). This supports the interpretation that the password is consumed through the extraction callback path.
+- `T7zInArchive.CryptoGetTextPassword` (`0x00453480`) and `SetPasswordCallback` (`0x00453534`) are tiny stubs returning zero; do not attribute the working password flow to either stub.
+
+### euResetMemory virtual-call correlation
+
+`euResetMemory` calls the returned object's virtual/interface slots in this order:
+
+1. `+0x44` with the optional password or fallback `mW@Tlogs43end_+`.
+2. `+0x0C` with the first path argument.
+3. `+0x3C` with the second path argument.
+
+The signatures and semantics align closely with the reader wrapper's `SetPassword(UnicodeString)`, `OpenFile(UnicodeString)`, and `ExtractTo(UnicodeString)` methods, respectively. This is now the leading working hypothesis for recovery: set the password, open the `.easz` archive, then extract to the `.easd` working path. However, the class VMT/interface slot table has not yet been mapped well enough to call these three bindings proven. The factory helper's symbol is `CreateOutArchive`, while the class metadata identifies `T7zInArchive`; preserve this naming/type discrepancy instead of silently resolving it.
+
+### Cleanup API targets independently resolved
+
+- `0x004043BC` resolves to RTL `TDirectory.GetFiles`; the cleanup code enumerates `*.easz`.
+- `0x004032B8` resolves to RTL `FileAge`; `0x00403330` resolves to `FileDateToDateTime`; `0x004033A0` resolves to `Now`; and `0x00404344` resolves to `HoursBetween`.
+- The age comparison uses `0x18` hours (24 hours) before calling the file-delete helper. `0x004026B4` resolves to `kernel32!DeleteFileW`.
+- These imports confirm the earlier cleanup interpretation; the exact archive format remains unverified.
+
+### Confidence update
+
+Leading hypothesis: `euResetMemory` is a password-aware SevenZip reader/extract path that opens an `.easz` file and extracts to a temporary `.easd` path. Confirmed pieces: reader wrapper methods, password field and callback handling, cleanup enumeration, 24-hour age threshold, and DeleteFileW. Still unproven: the exact VMT slot bindings, exact content of `.easd`, and archive format/options.
