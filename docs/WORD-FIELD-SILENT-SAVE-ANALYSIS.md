@@ -66,3 +66,22 @@ Do not collapse these into one periodic timer without further evidence.
 - **Confirmed:** helper symbols for recipient setup and printer cleanup are invoked by the silent-save routine.
 - **Confirmed:** `OnTmrAutoSave` registers multiple callback records.
 - **Unknown:** special field literal, exact serialization, exact persistence destination, and semantic meaning of the virtual `+0x13C` call.
+
+
+## 5. Callback target identities resolved
+
+TD32 symbols in the same artifact resolve several callback addresses written by `OnTmrAutoSave` into the Word event sink:
+
+| Address | TD32 method identity | Meaning |
+|---|---|---|
+| `0x004CD154` | `WordAppDocumentBeforeSave` | Word document BeforeSave callback |
+| `0x004CD54C` | `WordAppNewDocument` | NewDocument callback |
+| `0x004CD9C0` | `WordAppWindowActivate` | WindowActivate callback |
+| `0x004CE030` | `WordAppDocumentBeforePrintBGPrint` | BeforePrint callback path with background-print handling |
+| `0x004D00AC` | `LoadOptions` | Alternative callback target selected by the `[viewer + 0x3C]` flag; not a Word event name in the TD32 symbol table |
+
+The registration code at `0x004B8C9C–0x004B8D12` writes callback function pointers and their `TWordViwer` context into the Word application/event sink object. It selects `0x004D00AC` when `[TWordViwer + 0x3C] != 0`, otherwise `0x004CE030`. The other three callback/context pairs are registered unconditionally in this path.
+
+This narrows the lifecycle model: EMWAT explicitly hooks Word's **BeforeSave**, **NewDocument**, **WindowActivate**, and a **BeforePrint/background-print** path, plus a mode-dependent `LoadOptions` callback. The event registration is therefore not merely generic timer setup. It is the central integration point for reacting to Word document and window lifecycle events.
+
+The exact COM event interface slot-to-name mapping is supported here by the Delphi TD32 procedure symbols and the registration sequence; the detailed side effects of every callback still require separate procedure-level analysis.
