@@ -798,3 +798,10 @@ Run `43719180035` succeeded; artifact `14164088249` was inspected. Additional ev
 - On custom interface vtable `0x00452420`: `+0x0C` forwards to `T7zInArchive.OpenStream` (`0x00452FDC`, `IInStream`); `+0x3C` forwards to `T7zInArchive.SetPassword` (`0x00453860`, UnicodeString); `+0x44` forwards to virtual constructor `T7zArchive.$bctr` (`0x0045392C`).
 - `SetPassword` stores its string at `Self+0x58`, creates an extraction callback interface from `Self+8`, and invokes the underlying archive interface at `+0x1C` with `indices=NULL`, `numItems=-1`, `testMode=0`. This is an all-items archive operation; callback output semantics are not yet proven.
 - `euResetMemory` therefore takes an input stream, a UnicodeString passed to `SetPassword`, and an optional UnicodeString passed to the base constructor (fallback `mW@Tlogs43end_+` when selected). The meaning of the two strings and callback output path remain open. `ExtractTo` is a separate wrapper, not one of the three direct slots.
+
+
+### SevenZip extraction callback comparison — 2026-11-15
+
+- `T7zInArchive.SetPassword` uses callback type-info reference `0x0045391C`, creates the callback from `Self+8`, and invokes the underlying archive-interface slot `+0x1C` with `indices=NULL`, `numItems=-1`, `testMode=0`.
+- Separate `T7zInArchive.ExtractTo` uses type-info reference `0x00453850`, stores callback/context at `Self+0x50/+0x54`, and invokes the same underlying slot with `testMode` selected by its Boolean parameter.
+- Both are all-items operations, but they use different callback types. The latest plugin run `43723896564` is tracing those type-info blocks and pointer references; output destination remains unproven.
