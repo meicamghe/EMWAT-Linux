@@ -751,3 +751,15 @@ Run `43719180035` succeeded; artifact `14164088249` was inspected. Additional ev
 - `GetHandlerProperty` (`0x00453A54`) copies the 16-byte handler-property record at `Self+0x18`. `GetClassId` (`0x00453950`) initializes the base object, resolves a handler using the stored name, and copies a 16-byte property record from global `0x0062A820` into `Self+0x18`.
 - These are object-field offsets, not proof of the virtual dispatch slot numbers used by `euResetMemory`. Keep the +0x44 dispatch mapping as the leading hypothesis until the interface/VMT layout is recovered.
 - Optimized workflow run #4 (`43721583502`) is still in progress, indexing the class family and related interface/type metadata.
+
+
+### Close-callback race hardening — 2026-11-15
+
+- `DocumentCoordinator` now guards modification/save callbacks with an `RLock` and disables them immediately after `wait_for_close` returns, before final export. This prevents delayed office-engine events from mutating a finalizing/returned session.
+- New regression coverage invokes both callbacks during export and again after return; the revision and saved revision remain unchanged. Python CI run `43722184809` passed **70 tests**.
+
+### SevenZip interface/VMT resolution branch — 2026-11-15
+
+- The completed optimized class-index workflow run `43721583502` succeeded; artifact `14165155588` was inspected.
+- The next workflow run `43722345225` now invokes both `resolve_delphi_vmt_slots.py` and `trace_delphi_interfaces.py` for the SevenZip class family. The resolver target list and interface scanner were extended to include `T7zArchive`, `T7zPlugin`, `T7zInArchive`, `T7zOutArchive`, and SevenZip archive/stream interface RTTI names.
+- This is specifically intended to resolve whether `euResetMemory`'s interface slots `+0x44/+0x0C/+0x3C` map to the reader wrapper's password/open/extract methods. Do not treat the mapping as proven until the generated interface table is inspected.
