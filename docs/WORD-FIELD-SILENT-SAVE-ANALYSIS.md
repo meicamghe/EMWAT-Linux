@@ -146,3 +146,47 @@ The callback's first comparison is therefore against the literal `false`. If the
 The callback then reads configuration under `HKCU\\Software\\Emwat\\Dynamic Config` through the same registry helper family used elsewhere in EMWAT. The two arguments supplied to that helper are `Word Print Dialog` and the registry path, so `Word Print Dialog` is the candidate registry value name. The subsequent string comparison determines whether printing proceeds or is cancelled. The separate text at `0x004CECDC` is passed as a message/logging string in this path; the trace does not prove it is a registry value name.
 
 **Implementation consequence:** the Linux print workflow needs a per-user configuration option corresponding to the `Word Print Dialog` setting, and a print gate that can cancel before dispatching the job. Do not hardcode the current Windows registry storage; map the setting into Winux's per-user configuration model.
+
+
+## 10. Autosave/recovery form lifecycle: more precise findings
+
+### FormShow is initialization, not file discovery
+
+`TfrmShowAutoSaveFiles.FormShow` (`0x005EC1B4–0x005EC223`) resets the form's Word-application tracking member at offset `+0x3D0` to nil, creates/obtains a Word automation wrapper, and stores an interface/reference at `+0x3D8`. It does not enumerate recovery files in this procedure. Therefore the actual file-discovery operation is elsewhere (or performed by the wrapper/component before this handler).
+
+### Double-click handler is a list transformation, not direct proof of opening
+
+`lslFilesDblClick` (`0x005EC224–0x005EC567`) iterates a collection associated with the list control, obtains each entry's text, converts/parses a numeric/date-like value, applies a comparison involving constant `0x18`, and rewrites the displayed list item text using string slicing/formatting helpers. The procedure does not visibly call Word's `Documents.Open` or an equivalent document-open interface method. Consequently, despite the event name, this handler appears to normalize/reformat list entries and filter/mark entries; it is not evidence by itself of the actual recovery-file open operation. The precise meaning of the 24-unit comparison is unresolved (it may be a time/duration threshold, but the units and direction are not established).
+
+### BeforeClose handler on the recovery form
+
+`TfrmShowAutoSaveFiles.WordAppDocumentBeforeClose` is only 18 bytes. It checks the first word of the event's document-related argument against `0x2E`; when equal, it calls `CloseWordApp`. This is a narrow conditional hook, not a general handler that processes every document close.
+
+### CloseWordApp tracks and closes automation objects
+
+`CloseWordApp` (`0x005EBDA8–0x005EBF1F`) iterates a collection stored under form member `+0x3C0`, accesses each entry's object/reference at offset `+0x20`, invokes interface methods on it, and releases the collection entry. After iteration, it checks a separate object at `+0x3C0` and conditionally invokes another method before clearing state. This is consistent with cleanup/closing of tracked Word automation objects, but the exact COM methods (including whether a given call is Quit, Close, or Release) are not symbolically resolved.
+
+### FormClose performs deterministic cleanup
+
+`FormClose` (`0x005EBF20–0x005EC1A7`) performs cleanup only when member `+0x3D0` is non-null. It iterates the tracked automation collection, obtains each tracked document/object, invokes a method at vtable offset `+0x29C`, clears the tracking member, then releases the Word automation wrapper at `+0x3D8` and associated list/object state. The interface slot is unresolved, so describe this as per-item COM cleanup rather than asserting a specific Word Close call.
+
+## 11. Recovery-file path remains unknown
+
+The current run-117 artifact does not expose a confirmed recovery directory, filename extension, or stable naming template. The FormShow routine does not enumerate files, and the double-click routine alone does not identify the open operation. Avoid implementing a guessed `.asd`, `.wbk`, or EMWAT-specific path in Linux until the file-discovery caller and its constants are recovered.
+
+## 12. Revised Linux implementation requirements
+
+The evidence supports these independent components:
+
+1. **Word lifecycle adapter:** track the document owned by EMWAT and handle BeforeSave, BeforePrint, NewDocument, WindowActivate, and close-related callbacks.
+2. **Print gate:** validate the active document and per-user print-dialog setting before dispatching a print job; cancellation must be possible before printing.
+3. **Document preparation:** preserve the two currently unidentified document-interface operations from `PreparePrintDocument` as explicit adapter hooks until their semantics are resolved.
+4. **Recovery manager:** keep recovery discovery, listing, preview/open, deletion, and Word-process cleanup separate from the in-session autosave/event subsystem.
+5. **Per-user settings:** represent Windows Dynamic Config values in a Linux per-user config store; do not emulate the Windows registry as the native storage backend.
+
+### Confidence
+
+- **Confirmed:** FormShow initializes a Word automation wrapper and resets a tracking field; it does not itself enumerate recovery files.
+- **Confirmed:** the double-click handler rewrites/transforms list entries and contains a `0x18` comparison; no direct Word Documents.Open call is visible in that procedure.
+- **Confirmed:** recovery-form close hooks conditionally invoke tracked Word automation cleanup.
+- **Unknown:** recovery directory, filename pattern, file format, exact COM interface method names, and the semantic units of the `0x18` comparison.
