@@ -1427,3 +1427,14 @@ The BPL export/API analysis resolves the earlier naming ambiguity. The public TE
 - در تحلیل بازیابی، `0x004043BC` به `TDirectory.GetFiles` و `0x004026B4` به `DeleteFileW` resolve شد. هر دو مسیر UI بازیابی و پاک‌سازی AutoSave از ماسک `*.easz` استفاده می‌کنند؛ بنابراین این پسوند اکنون به‌عنوان ماسک واقعی فهرست‌سازی فایل در این زیرسیستم تأیید شده است.
 - helper `euGetLocalAppDataPath` از `SHGetSpecialFolderLocation` با CSIDL `0x1C` و `SHGetPathFromIDListW` استفاده می‌کند. هنوز اتصال مستقیم این ریشه به پوشه `.easz` ثابت نشده است.
 - cleanup بر اساس سن فایل تصمیم به `DeleteFileW` می‌گیرد و مقدار مقایسه `0x18` است؛ واحد/معنای دقیق retention تا trace helper زمان تأیید نشده. workflow recovery-path run #3 برای همین و برای خواندن AutoSave password در حال اجراست.
+
+
+## تکمیل شواهد 2026-11-15 (شاخه‌های موازی بعدی)
+
+- رمز AutoSave در مسیر کد به `GetUserNameW` متصل است: نام حساب Windows، و در صورت شکست API مقدار fallback برابر `@25*gamsign*25@` است. الگوریتم رمزگذاری/بازکردن فایل هنوز جداگانه باید resolve شود.
+- سیاست پاک‌سازی `.easz` با `FileAge`، `FileDateToDateTime`، `Now` و `HoursBetween` تأیید شد: فایل‌های با سن حداقل 24 ساعت به `DeleteFileW` سپرده می‌شوند.
+- مسیر پایه AutoSave اکنون مشخص است: `GetTempPathW` + `temp-emwatASwf\\`; فایل‌های `*.easz` در این پوشه enumerate می‌شوند. در مستند به شکل `%TEMP%\\temp-emwatASwf\\*.easz` ثبت شد.
+- در handler بازیابی، فایل انتخاب‌شده به `euResetMemory` داده می‌شود و مسیر دیگری با پسوند `.easd` ساخته می‌شود؛ رابطه دقیق این دو فایل هنوز در بررسی است.
+- مستند ساختار درخواست: `docs/EDITWORD-REQUEST-SCHEMA.md`. نمونه request شامل `wordConfig` به‌صورت Base64 XML با 180 فیلد، 20 slot برای هرکدام از 7 خانواده فیلد امضاکننده، و `wordBody` به‌صورت Base64 فایل DOC/OLE است. مقادیر نامه و گیرندگان در مستند کپی نشده‌اند.
+- workflow بازیابی run #5 (`43716527945`) برای تحلیل `euResetMemory` و اشیای داخلی در حال اجراست.
+- workflow رویدادهای Word run #8 (`43716384031`) پس از اصلاح استخراج جدول callback در حال اجراست؛ نسخه قبلی به‌خاطر regex اشتباه فهرست callbackهای تولیدشده را خالی می‌گذاشت.
