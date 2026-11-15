@@ -1085,7 +1085,7 @@ Workflow run `43683614577` completed successfully (37/37 steps); artifact `14150
 
 - The PE import table contains registry-related imports including `advapi32!RegQueryValueExW`, `RegOpenKeyExW`, and Delphi `TRegistry` read/write methods (`ReadBool`, `ReadInteger`, `ReadString`, `WriteBool`, `WriteInteger`, and related methods).
 - The first scanner reported zero direct CALL/JMP references to detected import thunks. This is a limitation of that scanner, not evidence that the read APIs are unused: x86 code can call imported APIs through `call dword ptr [IAT]`, and can use register-based indirect calls or wrappers.
-- The scanner's first version detected one executable thunk (`0x00404150` → Delphi `TRegistry` destructor) but no direct callers. The report is retained as a negative result with explicit scope limitations.
+- The scanner's first version detected one executable thunk (`0x00624150` → Delphi `TRegistry` destructor) but no direct callers. The report is retained as a negative result with explicit scope limitations.
 - The post-read disassembly requested at `0x004B7CFA–0x004B809D` decoded zero instructions because the start address lands in non-code/alignment data after the preceding exception-handling sequence. The valid continuation target observed in the preceding LoadDocument trace is `0x004B7DE1`; the workflow range has been corrected to start there.
 - Follow-up commits `743e6378` and `a4027a70` expand the registry scanner to detect absolute IAT-indirect CALL/JMP operands and raw pointer references, and correct the post-read trace range. Their rerun results must be checked before interpreting the new report.
 
