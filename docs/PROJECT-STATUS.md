@@ -12,7 +12,7 @@
 - **محدودیت بازیابی:** وجود reader و عملیات استخراج تأیید شده، اما نوع دقیق فرمت آرشیو، نگاشت قطعی دو dispatch مسیرها در `euResetMemory`، محتوای `.easd` و تنظیمات writer هنوز باز هستند. wrapper متد `T7zOutArchive.SetPassword` یک stub بی‌اثر است؛ مسیر callback رمز writer هنوز باید ردیابی شود.
 - **Word lifecycle:** پاسخ EditWordDocument در capture پس از حدود ۵۴٫۵۶ ثانیه انتظار صادر شده است. این با نشست طولانی و انتظار برای پایان ویرایش سازگار است، اما callback دقیق Close که پاسخ را آزاد می‌کند هنوز اثبات نشده است.
 - **تحلیل خطاها:** جدول پیام‌های خطا در `docs/WORD-ERROR-MAP.md` از جدول event/COM جدا شده است؛ رشته‌های آن error map هستند، نه فهرست callbackها. نگاشت واقعی event DISPIDها هنوز نامعلوم است.
-- **تحلیل موازی جاری:** workflowهای تحلیل plugin/recovery با شناسه‌های `43719323732` و `43719180035` در آخرین بررسی در حال اجرا بودند؛ نتایجشان تا دریافت artifact نهایی قطعی محسوب نمی‌شود.
+- **تحلیل موازی جاری:** تحلیل مستقل SevenZip plugin، run `43719323732`، با موفقیت تمام شده و artifact `14164146310` بررسی شده است؛ workflow تکمیلی مسیر recovery با شناسه `43719180035` هنوز در مرحله ردیابی reader/writer بود.
 
 گزارش‌های تفصیلی: `docs/RECOVERY-STORE-ANALYSIS.md`، `docs/PCAP-EDITWORD-DOCUMENT-ROUNDTRIP.md`، `docs/WORD-ERROR-MAP.md` و `docs/LINUX-NATIVE-IMPLEMENTATION-PLAN.md`.
 
@@ -1478,3 +1478,11 @@ The BPL export/API analysis resolves the earlier naming ambiguity. The public TE
 - نام کاربری ویندوز و fallback `@25*gamsign*25@` متعلق به مسیر جداگانه `euGetAutoSavePass`/پاک‌سازی هستند؛ آن‌ها را رمز بازیابی `.easz` فرض نکنید.
 - متدهای بازکردن آرشیو، فهرست‌کردن آیتم‌ها و استخراج در `T7zInArchive` ردیابی شده‌اند. نگاشت دقیق slotهای `+0x0C` و `+0x3C` در `euResetMemory` و ماهیت دقیق فایل `.easd` هنوز باز است.
 - جزئیات و محدودیت‌های شواهد در [RECOVERY-STORE-ANALYSIS.md](RECOVERY-STORE-ANALYSIS.md) ثبت شده است.
+
+
+### یافته تکمیلی SevenZip plugin
+
+- کلاس `T7zPlugin` و factory مشترک `CreateObject` شناسایی شدند؛ `GetInArchive` و `GetOutArchive` هر دو از این factory استفاده می‌کنند.
+- مسیر `euUnArchive` یک caller مستقیم برای constructor پلاگین است؛ مسیر `euResetMemory` از helper جداگانه `CreateOutArchive` استفاده می‌کند. این دو مسیر نباید یکی فرض شوند.
+- `CryptoGetTextPassword2` یک provider/interface را از global `0x0062FBB8` دریافت و در offset `+0x2C` نگه می‌دارد. `T7zOutArchive.SetPassword` همچنان stub بی‌اثر است.
+- نگاشت دقیق dispatch رمز `euResetMemory +0x44` به `T7zInArchive.SetPassword` هنوز اثبات نشده؛ گزارش recovery این عدم قطعیت را صریحاً اصلاح کرده است.
