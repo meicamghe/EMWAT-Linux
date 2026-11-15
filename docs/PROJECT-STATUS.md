@@ -4,8 +4,8 @@
 
 ## وضعیت اجرایی و شواهد جدید — 2026-11-15
 
-- **مسیر پایتون:** آخرین CI پل پایتون، run `43719841339`، موفق است: **۶۶ تست** اجرا شده و همگی پاس شده‌اند. تست‌های جدید هماهنگ‌کننده سند و سرویس دامنه EditWordDocument نیز در این اجرا موفق‌اند.
-- **هماهنگ‌کننده سند:** `office_adapter.py` قرارداد مستقل موتور آفیس را تعریف می‌کند؛ `document_coordinator.py` مسیر open → wait for close → export final bytes را اجرا می‌کند و `editword_service.py` parser درخواست را به این هماهنگ‌کننده وصل می‌کند. callbackهای تغییر سند و Save موتور جدا هستند؛ Save باعث بازگشت پاسخ نمی‌شود. این کد هنوز به handler واقعی HTTP یا LibreOffice UNO متصل نیست.
+- **مسیر پایتون:** آخرین CI پل پایتون، run `43720329600`، موفق است: **۶۶ تست** اجرا شده و همگی پاس شده‌اند. تست‌های جدید هماهنگ‌کننده سند و سرویس دامنه EditWordDocument نیز در این اجرا موفق‌اند.
+- **هماهنگ‌کننده سند:** `office_adapter.py` قرارداد مستقل موتور آفیس را تعریف می‌کند؛ `document_coordinator.py` مسیر open → wait for close → export final bytes را اجرا می‌کند و `editword_service.py` parser درخواست را به این هماهنگ‌کننده وصل می‌کند. callbackهای تغییر سند و Save موتور جدا هستند؛ رویدادهای زمان initialization نادیده گرفته می‌شوند و Save باعث بازگشت پاسخ نمی‌شود. این کد هنوز به handler واقعی HTTP یا LibreOffice UNO متصل نیست.
 - **قرارداد درخواست:** parser برای `EditWordDocument` و `wordConfig` وجود دارد؛ سند ورودی Base64 به bytes تبدیل می‌شود، اما `signData` عمداً به‌صورت متن opaque نگه داشته می‌شود. این adapter هنوز handler تولیدی نیست.
 - **شبکه:** heartbeat واقعی پاسخ `TickTack` و init script capture-matched در پل پایتون پیاده شده‌اند. مقدار `invoke` فقط nonce هر درخواست است، نه شناسه جلسه.
 - **بازیابی:** `.easz` در `%TEMP%\\temp-emwatASwf\\` فهرست می‌شود؛ مسیر بازیابی از کلاس `T7zInArchive` استفاده می‌کند. متد `SetPassword` در `0x00453860` رشته رمز را در فیلد `+0x58` نگه می‌دارد و آن را به رابط آرشیو می‌دهد. مقدار پیش‌فرضی که مسیر `euResetMemory` به dispatch رمز می‌دهد `mW@Tlogs43end_+` است؛ نام کاربری Windows و `@25*gamsign*25@` متعلق به مسیر مجزای cleanup/logging هستند و نباید با رمز بازیابی یکی فرض شوند.
@@ -1486,3 +1486,6 @@ The BPL export/API analysis resolves the earlier naming ambiguity. The public TE
 - مسیر `euUnArchive` یک caller مستقیم برای constructor پلاگین است؛ مسیر `euResetMemory` از helper جداگانه `CreateOutArchive` استفاده می‌کند. این دو مسیر نباید یکی فرض شوند.
 - `CryptoGetTextPassword2` یک provider/interface را از global `0x0062FBB8` دریافت و در offset `+0x2C` نگه می‌دارد. `T7zOutArchive.SetPassword` همچنان stub بی‌اثر است.
 - نگاشت دقیق dispatch رمز `euResetMemory +0x44` به `T7zInArchive.SetPassword` هنوز اثبات نشده؛ گزارش recovery این عدم قطعیت را صریحاً اصلاح کرده است.
+
+
+- آخرین تحلیل مستقل plugin run `43719323732` با موفقیت تمام شده و artifact آن بررسی شده است. تحلیل تکمیلی برای ردیابی `euUnArchive` با run `43720247793` در حال اجراست؛ workflow کامل‌تر recovery/helper نیز run `43719180035` است.
