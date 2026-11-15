@@ -784,3 +784,9 @@ Run `43719180035` succeeded; artifact `14164088249` was inspected. Additional ev
 - Methods BPL run `43722341778` (artifact `14165431103`) shows `WordAppDocumentBeforeClose` (`0x004CCBBC`) calls `0x004BCA88`; the same helper is used by `GetCaptionItemFont`. Direct caller of `0x004CCBBC` remains `FillImgFldsForPrint` (`0x004CCF8F`). No close-time HTTP/response path was found in this body.
 - Word event-sink run `43722990625` (artifact `14165586257`) confirms server-data records begin with Word's `ApplicationClass` CLSID (`000209FF`) and `DocumentClass` CLSID (`00020906`) and include known ApplicationEvents/ApplicationEvents2 IIDs. These are generated OLE metadata, not a callback address map.
 - Active follow-ups: SevenZip interface vtable through slot `+0x4C` (`43722990639`), RTL helper disassembly for Word server data (`43723423283`), autosave Delete caller (`43723328264`), Word lifecycle (`43722990611`), and broad Methods BPL trace (`43722990637`).
+
+
+### SevenZip `OpenStream` slot mapped — 2026-11-15
+
+- From artifact `14165136040`, the custom interface vtable at `0x00452420` slot `+0x0C` points to thunk `0x004522E9`, which forwards to `T7zInArchive.OpenStream` (`0x00452FDC`). Its decorated signature accepts `Sevenzip.IInStream`.
+- Therefore `euResetMemory`'s first argument is an input-stream interface, not a plain file path. The caller-side stream construction is being checked in the autosave Delete handler trace. Slots `+0x3C` and `+0x44` remain under direct mapping.
