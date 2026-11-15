@@ -1,8 +1,8 @@
 """Loopback HTTP transport for the native EMWAT bridge.
 
-This module deliberately treats request and response bodies as opaque bytes.
-The legacy XML envelope and close-time response schema are not fully recovered;
-protocol parsing belongs in a separately tested handler once that contract is known.
+The captured heartbeat and init-script routes are implemented here. Request
+bodies remain opaque at the transport layer; XML method parsing and the full
+close-time registration contract remain separate, explicitly tested concerns.
 """
 from __future__ import annotations
 
