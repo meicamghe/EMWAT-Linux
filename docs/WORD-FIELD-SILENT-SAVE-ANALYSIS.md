@@ -190,3 +190,64 @@ The evidence supports these independent components:
 - **Confirmed:** the double-click handler rewrites/transforms list entries and contains a `0x18` comparison; no direct Word Documents.Open call is visible in that procedure.
 - **Confirmed:** recovery-form close hooks conditionally invoke tracked Word automation cleanup.
 - **Unknown:** recovery directory, filename pattern, file format, exact COM interface method names, and the semantic units of the `0x18` comparison.
+
+
+## 10. Recovery form lifecycle rechecked against the actual procedure bodies
+
+A more conservative re-read of the TD32 traces refines the earlier interpretation:
+
+### FormShow does not scan files
+
+`TfrmShowAutoSaveFiles.FormShow` (`0x005EC1B4–0x005EC223`) is only 112 bytes. It:
+- clears the form member at offset `+0x3D0`;
+- calls a helper against global `0x00464720`;
+- stores the returned interface/reference in the form member at `+0x3D8`.
+
+There is no visible directory enumeration, wildcard search, or file-open operation in this method. Therefore the earlier suggestion that FormShow itself initializes the recovery-file list is not established. The actual population path is elsewhere (possibly form construction, a helper, or code outside this traced method).
+
+### Double-click is a list transformation, not proven file opening
+
+`lslFilesDblClick` (`0x005EC224–0x005EC567`) iterates an internal set/list of selected indexes, reads associated list-item data, performs numeric/date-like conversions and string slicing/reformatting, and writes a transformed string back through a list-view item interface. The visible body does not call Word `Documents.Open`, `Workbooks.Open`, ShellExecute, or an obvious file-open API. The method appears to format/update displayed list information; its name alone is not evidence that it opens the selected recovery document.
+
+### Delete is a multi-stage operation
+
+`Delete` (`0x005EB828–0x005EBDA7`) first gathers selected list entries from the list control into a temporary string list. If there are selections, it:
+- calls the form's `FormClose` handler as part of its cleanup/preparation path;
+- creates a secondary form/object and wires its owner/callback fields;
+- invokes its virtual method at vtable offset `+0x50`;
+- performs further list/string processing and calls another virtual method at offset `+0x54`;
+- stores the resulting value in form member `+0x3D4`, waits 100 ms, and calls a further helper on the selected list data.
+
+The actual filesystem deletion primitive is not yet identified in this trace. It would be incorrect to say that this procedure definitely calls Win32 `DeleteFile` directly; deletion may be delegated to the created helper object or another layer.
+
+### CloseWordApp has a tracked-instance collection
+
+`CloseWordApp` (`0x005EBDA8–0x005EBF1F`) iterates a collection exposed through form member `+0x3C0` and nested member `+0x2BC`. For each entry whose state/flag at offset `+0x20` is true, it obtains a referenced object and calls its virtual method at offset `+0x10`, then clears/releases that entry through a helper. It subsequently checks a separate object from member `+0x3C0`, sets a flag, and invokes virtual method `+0x104`.
+
+This confirms that the form tracks multiple Word-related objects and performs controlled teardown. The exact COM interface names for these slots remain unresolved.
+
+### BeforeClose callback is only a small gate
+
+`TfrmShowAutoSaveFiles.WordAppDocumentBeforeClose` is 18 bytes:
+- compare the first word of its event argument with `0x2E`;
+- if equal, call `CloseWordApp`;
+- return.
+
+This callback is a narrow condition-triggered cleanup gate, not a general recovery-file save implementation.
+
+## 11. Recovery subsystem confidence update
+
+What is now supported:
+- a recovery/management form exists;
+- it tracks Word-related object/interface collections;
+- it has selection, formatting, delete, and controlled Word teardown paths;
+- the BeforeClose callback can trigger teardown under a specific event-argument condition.
+
+What remains unproven:
+- the directory or directories containing recovery files;
+- the file naming convention and extension;
+- the component that enumerates and populates the list;
+- the actual open/recover operation;
+- the exact filesystem deletion primitive and confirmation flow.
+
+The Linux implementation should not yet assume Word's standard `.asd` / `.wbk` locations. Recovery discovery should remain behind a pluggable provider until the native format and location are identified.
