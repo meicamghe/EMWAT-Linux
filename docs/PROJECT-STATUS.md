@@ -1514,3 +1514,6 @@ The BPL export/API analysis resolves the earlier naming ambiguity. The public TE
 - تست جدید این رفتار را در زمان export و پس از برگشت پاسخ پوشش می‌دهد. Python CI run `43722184809` موفق شد: **۷۰ تست** پاس شدند. اجرای قبلی `43722182876` نیز با ۶۹ تست موفق بود.
 - تحلیل SevenZip base-class run `43721583502` موفق شد؛ artifact `14165155588` بررسی شد. برای نگاشت قطعی interface slots، workflow جدیدتر اکنون `resolve_delphi_vmt_slots.py` و `trace_delphi_interfaces.py` را روی کلاس‌های `T7zArchive`، `T7zPlugin`، `T7zInArchive` و `T7zOutArchive` اجرا می‌کند.
 - شاخه‌های موازی جدید: SevenZip interface/VMT run `43722345225`، Word lifecycle `43722341754`، Word event sink `43722341799` و BPL method index `43722341778`؛ هنوز نتیجه نهایی آن‌ها را اعلام نمی‌کنیم.
+
+
+- اصلاح تکمیلی هماهنگ‌کننده: غیرفعال‌سازی callbackها بلافاصله پس از برگشت `wait_for_close` انجام می‌شود، پیش از تفکیک نتیجه `CLOSED` یا `CANCELLED`. تست جدید رویدادهای دیررس پس از لغو را نیز پوشش می‌دهد. CI run `43722805637` موفق شد: **۷۱ تست** پاس شدند.
