@@ -1488,4 +1488,12 @@ The BPL export/API analysis resolves the earlier naming ambiguity. The public TE
 - نگاشت دقیق dispatch رمز `euResetMemory +0x44` به `T7zInArchive.SetPassword` هنوز اثبات نشده؛ گزارش recovery این عدم قطعیت را صریحاً اصلاح کرده است.
 
 
-- آخرین تحلیل مستقل plugin run `43719323732` با موفقیت تمام شده و artifact آن بررسی شده است. تحلیل تکمیلی برای ردیابی `euUnArchive` با run `43720247793` در حال اجراست؛ workflow کامل‌تر recovery/helper نیز run `43719180035` است.
+- آخرین تحلیل مستقل plugin run `43719323732` با موفقیت تمام شده و artifact آن بررسی شده است. تحلیل تکمیلی برای ردیابی `euUnArchive` با run `43720247793` در حال اجراست؛ workflow کامل‌تر recovery/helper، run `43719180035`، با موفقیت تمام شده و artifact `14164088249` بررسی شده است. workflow تکمیلی caller مسیر `euUnArchive` با run `43720247793` هنوز در حال اجراست.
+
+
+### فرضیه تازه مسیر استخراج بازیابی
+
+- traceهای جدید `T7zInArchive.OpenFile`، `ExtractTo`، `SetPassword` و `PrepareOperation` نشان می‌دهند رمز در فیلد `+0x58` نگه‌داری و از مسیر callback استخراج مصرف می‌شود؛ `CryptoGetTextPassword` و `SetPasswordCallback` خودشان stub هستند.
+- سه dispatch در `euResetMemory` از نظر امضا و رفتار با ترتیب `SetPassword` → `OpenFile` → `ExtractTo` سازگارند. این فعلاً فرضیه قوی است، نه نگاشت قطعی VMT.
+- پاک‌سازی فایل‌ها به‌طور مستقل با RTL resolve شد: `TDirectory.GetFiles("*.easz")`، `FileAge`، `HoursBetween` و حذف فایل‌های قدیمی‌تر از ۲۴ ساعت با `DeleteFileW`.
+- جزئیات و محدودیت‌ها در بخش ۱۷ `docs/RECOVERY-STORE-ANALYSIS.md` ثبت شده‌اند.
