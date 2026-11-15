@@ -578,3 +578,12 @@ Pcap workflow #4 (run 43710628491, artifact 14159604189) confirms the returned a
 ### Dispatch address clarification — 2026-11-15
 
 Use this exact naming in future traces: public/exported TEmwatMethod.Invoke = 0x0046C9E0 (VMT slot +0x0C); inner dictionary/XML helper = 0x0046C82C (433 bytes; TD32 symbol says Invoke). The wrapper calls the helper at 0x0046CA67, then the subclass PerformMethod at VMT slot +0x10 / callsite 0x0046CA88. Do not describe 0x0046C82C as the public service dispatch entry.
+
+
+## Latest verified continuation — 2026-11-15
+
+- The captured `EditWordDocument` exchange now has a dedicated gap-aware report at `docs/PCAP-EDITWORD-DOCUMENT-ROUNDTRIP.md`. The response is a successful `response-word` envelope containing Base64 `application/msword` data. It differs from the submitted DOC in the intact prefix, but 17 TCP sequence gaps (68 bytes) prevent a full-file comparison.
+- The native protocol module includes a bounded `serialize_word_document_response` helper and synthetic tests. This is not yet wired to a production `EditWordDocument` handler or LibreOffice.
+- Latest verified CI snapshots: Python bridge run #42, 45 tests passed; native core run #104, normal tests 4/4 and sanitizer tests 4/4.
+- A separate `.github/workflows/analyze-recovery-store.yml` workflow is being executed to trace every `TfrmShowAutoSaveFiles` / `TfrmSendLog` procedure, callers, callback references, resources, and recovery-related embedded strings. Treat results as pending until run #2 artifact is checked.
+- Existing analysis branches remain independent: request parameters, PCAP timing, registry settings, Word event sink, wait/COM, filename normalization, Word lifecycle, native core, and Python bridge.
