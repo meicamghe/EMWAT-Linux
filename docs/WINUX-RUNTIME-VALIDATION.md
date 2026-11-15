@@ -275,3 +275,23 @@ The separate Winux development work has progressed beyond the initial runtime ex
 These Winux improvements are development/test infrastructure and reusable engineering patterns. EMWAT-Linux's product target remains a native Linux bridge and document workflow using Linux-native components. Do not make Wine, Windows Service Control Manager emulation, a Windows kernel printer driver, or a Winux-specific runtime dependency of the final EMWAT architecture.
 
 **Source freshness note:** the Winux local working-tree updates described above were reported in the separate Winux development session. The public Winux GitHub documentation snapshot may lag those local changes; verify the latest Winux source/tests before treating the 216-test baseline or newest backend/security behavior as a released, committed version.
+
+
+## Public Winux repository cross-check — 2026-11-15
+
+The latest public Winux repository was checked directly against its current source and documentation. This supersedes the earlier caution that managed-service work was only present in a separate local working tree:
+
+- Public commit ef006c3 adds managed application services, including ServiceManager, SystemdUserBackend, the foreground service runner, and CLI lifecycle commands.
+- Public commit 221def3 adds ProcessManager separately from ServiceManager. Do not use process tracking and long-running service supervision as interchangeable concepts.
+- Public source includes a RuntimeManager with Wine as the default runtime and discovery of registered runtime plugins through the winux.runtimes entry-point group. Plugin load/registration errors are retained and logged; a plugin is not silently selected as the default.
+- Public source includes VerificationManager profiles with file, process, port, and registry check types. Port checks are restricted to loopback/localhost. This can support a future Wine-harness verification profile for the EMWAT process and port 1984, but no such EMWAT profile has yet been executed.
+- The architecture and handoff docs continue to define 64-bit WoW64 prefixes for x86/x64 Windows applications where the installed Wine build supports them.
+- Winux-managed services remain Linux user services that supervise Windows applications through Wine; they are not native Windows SCM services.
+
+### EMWAT integration decision
+
+For the Windows compatibility research harness only, evaluate Winux ServiceManager for EmwatService.exe and, separately if needed, EmwatAgent.exe. Before creating either service, verify each process's expected foreground behavior, shutdown behavior, working directory, environment, and whether one depends on the other. The earlier runtime experiment found both processes running but not tracked by Winux managers; that gap is still not proof that service supervision is required.
+
+Do not make this integration a prerequisite for the native EMWAT-Linux product. The final product remains a native Linux bridge and Writer workflow, with Linux-native process/service management chosen according to its own lifecycle requirements.
+
+**Test-count boundary:** the previously reported 216 passing Winux tests came from the separate local working-tree report. It is not inferred from these source commits and is not an EMWAT integration test. Use the Winux repository's actual CI result for any public test-count claim.
