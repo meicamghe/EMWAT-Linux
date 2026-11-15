@@ -255,3 +255,33 @@ The second pcap workflow compared the decoded request wordBody with the response
 This proves the response is not a byte-for-byte echo of wordBody. The response is a rewritten/restructured legacy DOC container; the directory-sector pointer moves by four sectors and the complete file is estimated to grow by 2 KiB. The pcap's 68 missing Base64 characters prevent a full-file hash/equality comparison, so do not claim exact content edits beyond the intact prefix and OLE header evidence.
 
 Combined with the 54.557883-second wait after the request body completes, this strongly supports the model that EMWAT holds the original request during the Word editing operation and returns the processed document when the operation ends. The custom register-changes prompt is the leading candidate for the release point; the exact callback-to-response call chain and the parent page's final Almas POST still need proof.
+
+
+## Parallel execution update — verified runs on 2026-11-15
+
+The repository already contains separate GitHub Actions workflows for the independent branches. The latest checked runs below all completed successfully; this is a status snapshot, not a claim that every workstream is finished.
+
+| Branch | Workflow run | Result | Artifact |
+|---|---:|---|---|
+| HTTP capture timing + document comparison | #6 / `43711788034` | success | `14160597175` |
+| EditWordDocument request parameter structure | #3 / `43711758572` | success | `14161075867` |
+| Word wait/COM call chain | #7 / `43711714558` | success | `14161275669` |
+| Word event sink | #7 / `43711661477` | success | `14160309683` |
+
+### New result: captured response contains the returned DOC
+
+The PCAP comparison branch establishes that the selected `POST /?invoke=58351` receives HTTP 200 with a `response-word status="success"` XML envelope and a `return-types/type` payload marked `mimetype="application/msword"` and `encryption="base64"`. The decoded payload begins with the OLE Compound File signature.
+
+The returned document differs from the submitted `wordBody` in the intact capture prefix, including the CFB first-directory-sector pointer (1698 → 1702). The response capture has 17 four-byte TCP sequence gaps, so its full size and hash cannot be verified. The estimated size delta is 2,048 bytes, but remains an estimate. See `docs/PCAP-EDITWORD-DOCUMENT-ROUNDTRIP.md`.
+
+### New request structure observations
+
+The latest request-parameter artifact confirms that the captured `wordBody` is Base64 text decoding to 872,960 bytes of OLE Compound File / legacy DOC data. The request includes a `requested-types/type` entry for `application/msword`. It also contains a `tokenizedReceivers` optional attribute whose nested content is marked `urlencoded`; this is a structural observation only, and its content is intentionally not copied into documentation.
+
+### Parallel execution rules going forward
+
+1. Keep the existing independent workflows separate; do not duplicate their jobs inside the monolithic Word lifecycle workflow.
+2. Treat each artifact as a branch output and merge only evidence summaries into shared docs.
+3. Preserve capture gaps and partial disassembly coverage explicitly; never silently fill missing bytes or treat missing procedures as proof of absence.
+4. Continue the next analysis in parallel: (a) resolve the Word event sink's actual dispatch/argument mapping, (b) improve recovery form list-population and storage-path tracing, (c) analyze the TCP payload export alongside the PCAP with sequence-aware validation, and (d) maintain the Python bridge/session tests.
+5. The highest-value external evidence is a second, gap-free capture of the same close-without-Save workflow, ideally with a known harmless edit, so request and returned document can be compared completely.
