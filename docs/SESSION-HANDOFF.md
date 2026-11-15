@@ -788,16 +788,15 @@ Run `43719180035` succeeded; artifact `14164088249` was inspected. Additional ev
 
 ### SevenZip `OpenStream` slot mapped — 2026-11-15
 
-- From artifact `14165136040`, the custom interface vtable at `0x00452420` slot `+0x0C` points to thunk `0x004522E9`, which forwards to `T7zInArchive.OpenStream` (`0x00452FDC`). Its decorated signature accepts `Sevenzip.IInStream`.
-- Therefore `euResetMemory`'s first argument is an input-stream interface, not a plain file path. The caller-side stream construction is being checked in the autosave Delete handler trace. Slots `+0x3C` and `+0x44` remain under direct mapping.
+- From artifact `14165136040`, custom interface slot `+0x0C` points through thunk `0x004522E9` to `T7zInArchive.OpenStream` (`0x00452FDC`). `IInStream` is the method's return type; the method accepts an archive-path UnicodeString and creates the stream.
 
 
 ### All three `euResetMemory` SevenZip slots mapped — 2026-11-15
 
 - Plugin run `43722990639` succeeded; artifact `14165676602` includes 20 interface vtable slots.
-- On custom interface vtable `0x00452420`: `+0x0C` forwards to `T7zInArchive.OpenStream` (`0x00452FDC`, `IInStream`); `+0x3C` forwards to `T7zInArchive.SetPassword` (`0x00453860`, UnicodeString); `+0x44` forwards to virtual constructor `T7zArchive.$bctr` (`0x0045392C`).
-- `SetPassword` stores its string at `Self+0x58`, creates an extraction callback interface from `Self+8`, and invokes the underlying archive interface at `+0x1C` with `indices=NULL`, `numItems=-1`, `testMode=0`. This is an all-items archive operation; callback output semantics are not yet proven.
-- `euResetMemory` therefore takes an input stream, a UnicodeString passed to `SetPassword`, and an optional UnicodeString passed to the base constructor (fallback `mW@Tlogs43end_+` when selected). The meaning of the two strings and callback output path remain open. `ExtractTo` is a separate wrapper, not one of the three direct slots.
+- On custom interface vtable `0x00452420`: `+0x0C` forwards to `OpenStream(UnicodeString) -> IInStream` (`0x00452FDC`); `+0x3C` forwards to `SetPassword(UnicodeString)` (`0x00453860`); `+0x44` forwards to virtual constructor `T7zArchive.$bctr` (`0x0045392C`).
+- `SetPassword` stores its string at `Self+0x58`, creates an extraction callback interface from `Self+8`, and invokes `IInArchive.Extract` (`+0x1C`) with `indices=NULL`, `numItems=-1`, `testMode=0`. This is an all-items archive operation; callback output semantics are not yet proven.
+- The autosave Delete trace shows `euResetMemory` takes the selected `.easz` path as its first UnicodeString, a second string from helper `0x0044A998` as the `SetPassword` argument, and a null optional third string. Two true Boolean flags select the constructor fallback `mW@Tlogs43end_+`. The meaning of the second string and callback output path remain open. `ExtractTo` is a separate wrapper, not one of the three direct slots.
 
 
 ### SevenZip extraction callback comparison — 2026-11-15
@@ -808,3 +807,11 @@ Run `43719180035` succeeded; artifact `14164088249` was inspected. Additional ev
 
 
 - The internal archive-interface slot `+0x1C` is identified as `IInArchive.Extract`: the wrapper methods `ExtractItem` and `ExtractTo` also call this slot with their item/test-mode arguments. Thus `SetPassword` in the recovery path issues an all-items Extract request through its own callback. The callback's output destination remains unresolved.
+
+
+### Autosave Delete caller argument types — 2026-11-15
+
+- Run `43723328264` / artifact `14165058222` traces `TfrmShowAutoSaveFiles.Delete` (`0x005EB828`). The selected archive path is copied from the selected item record's `+0x20` field into `[ebp-4]` via `UStrLAsg`; this is the first `euResetMemory` argument.
+- `[ebp-8]`, the second argument, is produced by helper `0x0044A998` and passed to `SetPassword`. Its source semantics remain unknown.
+- The call passes `ECX=0` and two stack Boolean flags set to 1, selecting the `mW@Tlogs43end_+` constructor fallback.
+- After `euResetMemory`, the caller invokes `0x004563A8` with the same two strings, then `0x004565DC` and `0x004555D8`. These helpers are the next targets for identifying the `.easd` output path and cleanup.
