@@ -1,0 +1,84 @@
+name: Analyze EMWAT recovery store
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/analyze-recovery-store.yml'
+      - 'analysis-input/EmwatMethods.bpl1'
+      - 'EmwatMethods.bpl1-strings.txt'
+      - 'tools/find_td32_class_procedures.py'
+      - 'tools/trace_td32_procedure.py'
+      - 'tools/trace_td32_callers.py'
+      - 'tools/trace_td32_immediate_refs.py'
+      - 'tools/scan_pe_pointer_refs.py'
+      - 'tools/scan_named_pe_resource.py'
+permissions:
+  contents: read
+jobs:
+  recovery-form:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install pefile capstone
+      - name: Index recovery and autosave form procedures
+        run: |
+          mkdir -p recovery-analysis/procedures recovery-analysis/resources
+          python tools/find_td32_class_procedures.py analysis-input/EmwatMethods.bpl1 TfrmShowAutoSaveFiles TfrmSendLog > recovery-analysis/procedures/recovery-form-method-index.md
+          python tools/scan_named_pe_resource.py analysis-input/EmwatMethods.bpl1 TFRMSHOWAUTOSAVEFILES recovery-analysis/resources/TFRMSHOWAUTOSAVEFILES.md
+          python tools/scan_named_pe_resource.py analysis-input/EmwatMethods.bpl1 TFRMSENDLOG recovery-analysis/resources/TFRMSENDLOG.md
+          test -s recovery-analysis/procedures/recovery-form-method-index.md
+      - name: Trace every recovery form method and its direct callers
+        run: |
+          python - <<'PY'
+          import pathlib, re, subprocess, sys
+          source = pathlib.Path("recovery-analysis/procedures/recovery-form-method-index.md").read_text(encoding="utf-8")
+          rows = []
+          for line in source.splitlines():
+              if "TfrmShowAutoSaveFiles@" not in line and "TfrmSendLog@" not in line:
+                  continue
+              parts = [part.strip() for part in line.strip("|").split("|")]
+              if len(parts) < 5:
+                  continue
+              decorated = parts[1].strip("`")
+              match = re.search(r"0x([0-9A-Fa-f]{8})", parts[2])
+              if match:
+                  rows.append((decorated, match.group(1)))
+          index = ["# Recovery/autosave form procedure traces", ""]
+          for decorated, va in rows:
+              safe = re.sub(r"[^A-Za-z0-9_.-]+", "_", decorated)[:110]
+              trace = f"recovery-analysis/procedures/{va}-{safe}.md"
+              callers = f"recovery-analysis/procedures/{va}-{safe}-callers.md"
+              subprocess.run([sys.executable, "tools/trace_td32_procedure.py", "analysis-input/EmwatMethods.bpl1", "0x" + va, trace], check=True)
+              subprocess.run([sys.executable, "tools/trace_td32_callers.py", "analysis-input/EmwatMethods.bpl1", "0x" + va, callers], check=True)
+              index.append(f"- `0x{va}` — `{decorated}` — {trace}; callers: {callers}")
+          pathlib.Path("recovery-analysis/procedures/trace-index.md").write_text("\\n".join(index) + "\\n", encoding="utf-8")
+          PY
+      - name: Resolve known recovery Automation and callback targets
+        run: |
+          for target in 005EB81C 005EBDA8 005EC580 005EC594 005EBB18 005EBFB9 005EC109 005EC119 005EC134; do
+            python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x$target recovery-analysis/procedures/target-$target.md
+            python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x$target recovery-analysis/procedures/target-$target-callers.md
+            python tools/trace_td32_immediate_refs.py analysis-input/EmwatMethods.bpl1 0x$target recovery-analysis/procedures/target-$target-refs.md
+          done
+          python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 0x005EC594 recovery-analysis/procedures/recovery-event-callback-pointer-refs.md
+      - name: Search embedded strings for recovery storage and file patterns
+        run: |
+          python - <<'PY'
+          import pathlib, re
+          source = pathlib.Path("EmwatMethods.bpl1-strings.txt")
+          text = source.read_text(encoding="utf-8", errors="replace")
+          patterns = re.compile(r"auto.?save|recover|backup|\\.asd|\\.wbk|\\.tmp|\\.docx?|\\.rtf|\\.odt|appdata|local settings|temp|temporary|recovery|save.?file", re.I)
+          lines = text.splitlines()
+          hits = [(i + 1, line.strip()) for i, line in enumerate(lines) if patterns.search(line)]
+          out = ["# Recovery-related embedded string triage", "", f"- Source: `{source.name}`", f"- Matching lines: {len(hits)}", "- This is string triage only; a path or extension is not considered a confirmed recovery location without a code reference.", ""]
+          out += [f"- L{number}: `{line[:400]}`" for number, line in hits]
+          pathlib.Path("recovery-analysis/recovery-string-triage.md").write_text("\\n".join(out) + "\\n", encoding="utf-8")
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: emwat-recovery-store-analysis
+          path: recovery-analysis/
