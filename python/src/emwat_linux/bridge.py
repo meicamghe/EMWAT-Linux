@@ -117,8 +117,8 @@ class BridgeHTTPServer:
                     return
                 parsed = urlsplit(self.path)
                 if parsed.path == "/" and parsed.query == "heartbeat":
-                    # Windows Agent probes this exact loopback URL for liveness.
-                    self._send(200, b"", "text/plain; charset=utf-8")
+                    # Captured Windows Agent exchange: HTTP 200, body "TickTack".
+                    self._send(200, b"TickTack", "text/html; charset=ISO-8859-1")
                 elif parsed.path == "/healthz":
                     self._send(200, b'{"status":"ok"}', "application/json; charset=utf-8")
                 else:
