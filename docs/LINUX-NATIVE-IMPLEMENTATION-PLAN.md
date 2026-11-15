@@ -133,7 +133,7 @@ The first two workstreams now have concrete code in the repository:
 - **Idempotency:** duplicate finalization requests are ignored while finalizing/returned; an identical returned payload is accepted as a no-op, while a conflicting second payload is rejected.
 - **Tests added:** python/tests/test_sessions.py and an additional heartbeat test in python/tests/test_bridge.py. These commits have been written to the repository; a fresh CI result for these newest commits has not yet been verified.
 
-Still not implemented: production EditWordDocument handler, real LibreOffice UNO adapter, recovery store, and CUPS/SANE backends. The production deployment must supply the actual Almas parent-page and loopback Origin allowlists.
+Still not implemented: application registration of the EditWordDocument handler, a real LibreOffice UNO adapter, recovery store, and CUPS/SANE backends. The dispatcher handler factory now exists, but requires an explicit cancellation response policy and a real OfficeAdapter before production registration. The production deployment must supply the actual Almas parent-page and loopback Origin allowlists.
 
 
 ## Close-driven office adapter boundary — 2026-11-15
@@ -159,3 +159,12 @@ Python bridge workflow run `43720329600` completed successfully with 66 tests. T
 
 
 - The coordinator now ignores office modification/save notifications fired during document initialization; only events after the session is marked OPENED can change revision/save state. This avoids treating config/field population as user edits. Run `43720329600` passed all 66 tests after this guard was added.
+
+
+### Dispatcher handler adapter — 2026-11-15
+
+- Added `python/src/emwat_linux/editword_handler.py` to connect `EditWordDocumentService` to the XML dispatcher contract.
+- Successful close responses use the observed `response-word` Base64 serializer and the captured Word MIME envelope.
+- Cancellation response generation is injected and mandatory; no HTTP status/body is invented because the original cancellation envelope has not been captured.
+- The factory is not yet registered in the application and must not be treated as production-ready until a real LibreOffice adapter and explicit cancellation policy are provided.
+- Python bridge CI run `43721322012` passed **69 tests**.
