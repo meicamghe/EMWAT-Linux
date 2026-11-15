@@ -56,8 +56,8 @@ jobs:
           PY
       - name: Decode form data constants and helper call targets
         run: |
-          python tools/decode_pe_strings.py analysis-input/EmwatMethods.bpl1 0x005EC1F8 0x005EC49C 0x005EC4B8 0x005EC4F4 0x005EC508 0x005EC51C 0x005EC52C 0x005EBD18 0x005EBD3C 0x005EBDA0 0x005EBD54 0x00456DCC 0x00456C78 0x0044A92C 0x0044A940 0x0044A950 0x0044A968 0x0044A434 0x0044A44C 0x0044A554 0x0044A56C 0x0044B060 0x0044B094 0x0044B0A8 0x0044B0B4 0x0044B0DC 0x00454B24 0x00454B44 0x00454B54 0x00454B6C > recovery-path-analysis/form-data/recovery-form-constants.md
-          for target in 00467088 00454A58 00456DDC 00456F00 004563A8 004565DC 004555D8 0045574C 004525B4 004525DE 00452736 0045274C 004527B8 00451F44 00452ED8; do
+          python tools/decode_pe_strings.py analysis-input/EmwatMethods.bpl1 0x005EC1F8 0x005EC49C 0x005EC4B8 0x005EC4F4 0x005EC508 0x005EC51C 0x005EC52C 0x005EBD18 0x005EBD3C 0x005EBDA0 0x005EBD54 0x00456DCC 0x00456C78 0x00456FEC 0x0044A92C 0x0044A940 0x0044A950 0x0044A968 0x0044A434 0x0044A44C 0x0044A554 0x0044A56C 0x0044B060 0x0044B094 0x0044B0A8 0x0044B0B4 0x0044B0DC 0x00454B24 0x00454B44 0x00454B54 0x00454B6C > recovery-path-analysis/form-data/recovery-form-constants.md
+          for target in 00467088 00454A58 00456DDC 00456F00 004563A8 004565DC 004555D8 0045574C 004525B4 004525DE 00452736 0045274C 004527B8 00451F44 00452ED8 004525BC 004525EC 004525F4 004525FC; do
             python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x$target recovery-path-analysis/form-data/helper-$target.md
             python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x$target recovery-path-analysis/form-data/helper-$target-callers.md
           done
