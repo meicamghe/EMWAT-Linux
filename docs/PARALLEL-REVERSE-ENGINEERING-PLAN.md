@@ -158,31 +158,32 @@ The analysis is now split across independent GitHub Actions workflows rather tha
 - This is a capture-matched endpoint implementation, not yet an end-to-end test against the actual Almas page/browser.
 
 
-## Single-request hypothesis and timing limits — 2026-11-15
+## Long-lived EditWordDocument request confirmed; close trigger pending — 2026-11-15
 
-The runtime capture confirms one EditWordDocument request/response round-trip, but the latest full LoadDocument trace does **not** yet prove that this request remains open until Word closes. Keep the close-wait theory as a hypothesis, not a conclusion.
+Packet-level analysis of stream 18 has now resolved the timing question:
 
-### Directly observed evidence
+### Direct packet timing
 
-- The browser bridge sends one POST for EditWordDocument and receives one response-word success document in the same TCP stream.
-- TCP stream 18 starts at relative time 106.8698387 s and lasts 54.6315 s (to approximately 161.5013 s). The request carries 1,177,821 bytes and the response carries 1,166,820 bytes.
-- Two independent Agent heartbeat streams begin during that same interval, at 126.2416352 s and 146.4003695 s (approximately +19.37 s and +39.53 s after the EditWordDocument stream begins). This proves the Agent remained active during the conversation, but without per-packet timestamps it does not prove that the server was waiting for Word to close.
-- TEditWordDocument.PerformMethod calls TWordViwer.LoadDocument synchronously before it sets the method result flags.
-- LoadDocument calls OnTmrAutoSave, performs temporary-file write/read operations, and then reaches a successful response path that assigns AResponseInfo.ContentText and calls TIdHTTPResponseInfo.WriteContent.
-- The decoded LoadDocument range contains no obvious explicit WaitFor/ProcessMessages loop. The OnTmrAutoSave tail at 0x004BA058–0x004BB3AF is compiler cleanup/exception handling, not an identified wait loop. Other helper calls and non-contiguous code regions still need resolution.
-- The init JavaScript sends the original message body through one XHR and relays that XHR's responseText to the parent page with postMessage. It contains no separate close-time POST implementation.
-- The main editor event record installs routine 0x004CD154 (TD32 symbol: WordAppDocumentBeforeSave), NewDocument (0x004CD54C), WindowActivate (0x004CD9C0), and a settings-dependent print/options callback. The separate routine symbolized WordAppDocumentBeforeClose (0x004CCBBC) is not the pointer installed in this record. The exact COM event-slot name corresponding to record offset +0x80 remains to be proven.
-- The registered 0x004CD154 handler displays the custom register-changes prompt and calls the Word Document.Close interface slot +0x29C on the non-cancel path.
+- TCP tuple: 127.0.0.1:61189 → 127.0.0.1:1984.
+- The complete HTTP request body (Content-Length 1,177,821) is present by relative time 0.002154 s.
+- The first server response payload arrives at relative time 54.560037 s.
+- Gap from complete request body to first response byte: 54.557883 s.
+- The 1,166,820-byte response is transmitted between 54.560037 s and 54.561399 s (about 1.362 ms).
+- Two Agent heartbeat streams begin during the wait, at 126.2416352 s and 146.4003695 s in capture-relative time.
+- The request is POST /?invoke=58351; its Origin is http://127.0.0.1:1984. The response is HTTP/1.1 200 with Content-Length 1,166,820.
 
-### Current interpretation
+This proves the local service receives the full EditWordDocument body promptly, keeps the HTTP request open for about 54.56 seconds, and only then begins sending the response. The delay is not the time required to transfer the response document.
 
-The user-confirmed behavior (closing Word results in the letter being registered) is directly consistent with the custom register-changes prompt and Document.Close handler. The transport capture proves the local bridge returns a Word document to the parent through the original XHR. However, the exact causal link between the Word close event and that HTTP response is not yet established. The 54.63-second stream duration is suggestive but insufficient by itself.
+### What this means
 
-Do not yet claim that LoadDocument waits until close, that the response is generated after close, or that no separate close request exists in other sessions. The capture only shows that no separate close request occurred in this captured session.
+The single long-lived XHR is now confirmed at the transport level. It is strongly consistent with the Word editing session remaining active during the wait and the response being released when that operation finishes. The user's observation and the custom register-changes prompt make Word close/save the leading explanation for the release event.
+
+However, the exact causal edge from the Word close callback to the HTTP response is still not directly mapped. The LoadDocument code reaches WriteContent after a series of COM/helper calls, but no obvious explicit WaitFor/ProcessMessages loop has yet been identified in the decoded ranges. The wait may be inside a COM call, nested modal/message processing, or another helper.
+
 
 ### What is still unproven
 
-- Whether LoadDocument blocks on a COM call, modal UI loop, worker synchronization, or another helper before writing its response.
+- Which COM call, modal UI loop, worker synchronization, or helper keeps LoadDocument active for the 54.56-second interval.
 - Whether the captured response is produced before the user finishes editing or after the close/register prompt.
 - The exact Save / No / Cancel COM variant types and how the returned file is consumed by the Almas page.
 - The service-side Base64 decode stage for wordBody and the Almas parent page's final registration handler.
@@ -191,7 +192,7 @@ Do not yet claim that LoadDocument waits until close, that the response is gener
 
 ### Next focused trace
 
-A separate request-lifecycle analysis should decode the complete LoadDocument range (0x004B7724–0x004B8A84), identify message-loop/wait operations outside the OnTmrAutoSave cleanup tail, trace callers and response dispatch, and decode the BeforeSave prompt strings around 0x004CD3C0–0x004CD50C.
+A separate request-lifecycle analysis should trace the COM/helper calls between LoadDocument entry and WriteContent, identify the wait/release mechanism, and correlate it with the registered Word close/register callback, and decode the BeforeSave prompt strings around 0x004CD3C0–0x004CD50C.
 
 
 ## Temporary Word-process cleanup discovery — 2026-11-15
