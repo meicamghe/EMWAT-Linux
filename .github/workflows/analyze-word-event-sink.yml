@@ -1,0 +1,69 @@
+name: Analyze EMWAT Word event sink
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/analyze-word-event-sink.yml'
+      - 'analysis-input/EmwatMethods.bpl1'
+      - 'tools/find_td32_class_procedures.py'
+      - 'tools/trace_td32_procedure.py'
+      - 'tools/trace_td32_callers.py'
+      - 'tools/trace_pe_range.py'
+      - 'tools/trace_delphi_interfaces.py'
+      - 'tools/inspect_delphi_vmt_address.py'
+      - 'tools/resolve_delphi_vmt_slots.py'
+      - 'tools/scan_pe_pointer_refs.py'
+      - 'tools/scan_named_pe_resource.py'
+permissions:
+  contents: read
+jobs:
+  event-sink:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install pefile capstone
+      - name: Find Word automation and OLE event classes
+        run: |
+          mkdir -p event-sink-analysis/classes
+          python tools/find_td32_class_procedures.py analysis-input/EmwatMethods.bpl1 TWordApplication TOleServer TWordApplicationEvents TWordApplicationEventsSink TWordAppEvents TWordDocument TWordViwer > event-sink-analysis/classes/word-automation-class-procedures.md
+          python - <<'PY'
+          import pathlib, re, subprocess, sys
+          source = pathlib.Path("event-sink-analysis/classes/word-automation-class-procedures.md").read_text(encoding="utf-8")
+          rows = re.findall(r"\|\s*([^|]+?)\s*\|\s*([^|]+?)\s*\|\s*([^|]+?)\s*\|", source)
+          outdir = pathlib.Path("event-sink-analysis/classes/traces")
+          outdir.mkdir(parents=True, exist_ok=True)
+          summary = ["# Word automation class method traces", ""]
+          for module, decorated, target in rows:
+              match = re.search(r"0x([0-9A-Fa-f]{8})", target)
+              if not match:
+                  continue
+              va = match.group(1)
+              safe = re.sub(r"[^A-Za-z0-9_.-]+", "_", decorated.replace(chr(96), ""))[:100]
+              output = outdir / f"{va}-{safe}.md"
+              subprocess.run([sys.executable, "tools/trace_td32_procedure.py", "analysis-input/EmwatMethods.bpl1", "0x" + va, str(output)], check=True)
+              summary.append(f"- {module.strip()} — 0x{va} — {decorated.strip()} — {output}")
+          pathlib.Path("event-sink-analysis/classes/trace-index.md").write_text("\n".join(summary) + "\n", encoding="utf-8")
+          PY
+      - name: Trace event callback record assignments and handlers
+        run: |
+          mkdir -p event-sink-analysis/callbacks
+          python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x004B8C60 0x004B8D10 event-sink-analysis/callbacks/OnTmrAutoSave-event-record-assignments.md
+          python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x004CD154 0x004CD364 event-sink-analysis/callbacks/BeforeSave-event-body.md
+          for target in 004CD154 004CCBBC 004CD54C 004CD9C0 004CE030 004D00AC; do
+            python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x$target event-sink-analysis/callbacks/$target-callers.md
+            python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 0x$target event-sink-analysis/callbacks/$target-pointer-refs.md
+          done
+      - name: Resolve Word COM interface and VMT event metadata
+        run: |
+          mkdir -p event-sink-analysis/interfaces
+          python tools/trace_delphi_interfaces.py analysis-input/EmwatMethods.bpl1 event-sink-analysis/interfaces/word-com-interfaces.md
+          python tools/resolve_delphi_vmt_slots.py analysis-input/EmwatMethods.bpl1 event-sink-analysis/interfaces/word-vmt-slots.md
+          python tools/scan_named_pe_resource.py analysis-input/EmwatMethods.bpl1 TWORDAPPLICATION event-sink-analysis/interfaces/TWORDAPPLICATION-resources.md
+          python tools/scan_named_pe_resource.py analysis-input/EmwatMethods.bpl1 TWORDAPPLICATIONEVENTS event-sink-analysis/interfaces/TWORDAPPLICATIONEVENTS-resources.md
+      - uses: actions/upload-artifact@v4
+        with:
+          name: emwat-word-event-sink-analysis
+          path: event-sink-analysis/
