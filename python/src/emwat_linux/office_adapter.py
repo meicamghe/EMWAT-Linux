@@ -5,6 +5,7 @@ The adapter contract keeps engine lifecycle details out of the HTTP transport.
 """
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
 from enum import Enum
 from typing import Protocol
@@ -29,11 +30,16 @@ class OfficeAdapter(Protocol):
 
     wait_for_close is intentionally unbounded by default: the captured Windows
     exchange keeps its HTTP request open while the document is being edited.
-    Implementations may provide their own cancellation or shutdown mechanism,
-    but must not equate an ordinary Save with Close.
+    The adapter reports modification and engine-save events separately.
     """
 
-    def open_document(self, request: EditWordDocumentRequest) -> object:
+    def open_document(
+        self,
+        request: EditWordDocumentRequest,
+        *,
+        on_modified: Callable[[], int],
+        on_saved: Callable[[], None],
+    ) -> object:
         """Open the supplied document and apply supported config fields."""
 
     def wait_for_close(self, handle: object) -> OfficeCloseEvent:
