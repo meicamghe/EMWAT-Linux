@@ -306,3 +306,30 @@ The code-level `btnShowFileClick` remains a 10-byte wrapper that calls `CloseWor
 - Still unknown: collection interface type, vtable slot names, file paths/extensions, list population source, and whether selected items are Word documents, recovery files, or another Word-side collection.
 
 Next high-value target: resolve the shared Word Automation class VMT/interface slots `+0x20`, `+0x30`, `+0x50`, and `+0x29C`, then trace how selected-item strings from `Delete` reach that object.
+
+
+## 18. The `+0x29C` calls are late-bound Automation dispatch, not a named VMT method
+
+A cross-check against the generated Word type-library wrapper resolves the nature of one previously ambiguous call.
+
+The generated `TWordDocument.Close` overloads in module `EmwatConsts` (addresses `0x0042FEB0`, `0x0042FF08`, `0x0042FF7C`, and `0x0042FFF4`) all:
+1. obtain the underlying document interface through `TWordDocument.GetDefaultInterface` at `0x0042ABA0`;
+2. invoke the interface entry at vtable offset `+0x29C`;
+3. release the temporary interface reference.
+
+The no-argument, one-argument, two-argument, and three-argument Close wrappers all use this same slot. A separate generated `SaveAs2000` wrapper at `0x00430070` also uses `+0x29C`. This is characteristic of the type-library's late-bound Automation invocation entry, where the actual operation is selected by the dispatch metadata/arguments; it is not a uniquely named native VMT method.
+
+### Reinterpretation of the recovery FormClose loop
+
+The recovery form's `FormClose` loop also invokes `+0x29C` on a temporary interface after building per-item string/variant arguments. This means it is performing a late-bound Automation call on each iterated item. The exact dispatch member cannot be named from the slot alone. Although `TWordDocument.Close` uses the same slot, it would be an overclaim to conclude that the recovery loop calls `Document.Close` without recovering its DISPID/name and argument layout.
+
+The `+0x30` call in the same loop is made on a separate temporary interface returned by the wrapper after an index/string lookup. Its method identity is also unresolved.
+
+### Evidence boundary
+
+- **Confirmed:** `+0x29C` is used by generated Word Automation wrappers for multiple named methods, including `TWordDocument.Close` and `SaveAs2000`.
+- **Strong inference:** the recovery FormClose loop uses the same late-bound Automation dispatch mechanism on per-item interfaces.
+- **Unknown:** which dispatch member the recovery loop invokes, what the generated index/string arguments mean, and whether the operation closes, saves, or otherwise processes a document.
+- **Unknown:** the identity of the separate `+0x30` interface method.
+
+This corrects the earlier wording: describe the FormClose loop as per-item Automation dispatch, not as a confirmed Close call.
