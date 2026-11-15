@@ -61,9 +61,15 @@ jobs:
             python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x$target recovery-path-analysis/form-data/helper-$target.md
             python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x$target recovery-path-analysis/form-data/helper-$target-callers.md
           done
-          for target in 0044A59C 004027F8 00452BBC 004043BC 004026B4 004026A4 00402684 00402744 00402A38 00402A80 00402A78 004044A4 0040449C 0040264C 004027F8 00404494 00404344 004032B8 00403330 004033A0 0044A59C; do
+          for target in 0044A59C 004027F8 00452BBC 00452E80 004043BC 004026B4 004026A4 00402684 00402744 00402A38 00402A80 00402A78 004044A4 0040449C 0040264C 004027F8 00404494 00404344 004032B8 00403330 004033A0 0044A59C; do
             python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x$target recovery-path-analysis/form-data/api-$target.md 24
           done
+          for target in 00452BBC 00452E80 0062A824 0062A858 00452558; do
+            python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 0x$target recovery-path-analysis/form-data/refs-$target.md
+          done
+          python tools/inspect_pe_va.py analysis-input/EmwatMethods.bpl1 0x0062A824 --before 0x20 --after 0x80 > recovery-path-analysis/form-data/global-62A824.md
+          python tools/inspect_pe_va.py analysis-input/EmwatMethods.bpl1 0x0062A858 --before 0x20 --after 0x80 > recovery-path-analysis/form-data/global-62A858.md
+          python tools/inspect_pe_va.py analysis-input/EmwatMethods.bpl1 0x00452558 --before 0x20 --after 0x80 > recovery-path-analysis/form-data/class-452558.md
       - uses: actions/upload-artifact@v4
         with:
           name: emwat-recovery-path-analysis
