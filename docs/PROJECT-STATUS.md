@@ -1445,3 +1445,11 @@ The BPL export/API analysis resolves the earlier naming ambiguity. The public TE
 
 - **تصحیح مهم رمز AutoSave:** helper نام کاربر (`euGetAutoSavePass`) را برمی‌گرداند و caller مشخصی آن را با `@25*gamsign*25@` ترکیب می‌کند؛ اما هنوز ثابت نشده این رشته رمز آرشیو `.easz` باشد. مسیر بازیابی از SevenZip `T7zInArchive` استفاده می‌کند و در `euResetMemory` در صورت نبودن رمز، رشته دیگری (`mW@Tlogs43end_+`) به slot مجازی `+0x44` داده می‌شود. تا تعیین setter و متدهای آرشیو، رمز واقعی `.easz` نامشخص است. جزئیات در `docs/RECOVERY-STORE-ANALYSIS.md`.
 - یک لایه نرمال‌سازی مستقل برای درخواست واقعی `EditWordDocument` اضافه شد: `python/src/emwat_linux/editword_request.py`، که `wordConfig` را با parser داخلی می‌خواند، `wordBody` را به بایت‌های سند تبدیل می‌کند و `signData` را عمداً به‌صورت متن opaque نگه می‌دارد. CI پل Python run #46 با **58 تست موفق** پایان یافت.
+
+## اصلاح برداشت‌ها و نتایج جدید — 2026-11-15
+
+- **اصلاح شاخه رویداد Word:** آدرس‌های استخراج‌شده از `0x00627B74` callback نیستند؛ run #9 نشان داد آن‌ها pointer به رشته‌های خطا مانند `Request XML is invalid.`، `Can not open document.` و `Temp path not Found.` هستند. workflow از run #11 به‌جای disassemble کردن این ناحیه، کل error-string map را decode می‌کند. callback اصلی `BeforeSave` در `0x004CD154` همچنان مستقل و قطعی است.
+- **شناسایی آرشیو بازیابی:** run #7 کلاس `Sevenzip.T7zInArchive` را در مسیر `euResetMemory` شناسایی کرد. این مسیر از یک reader هفت‌زیپ استفاده می‌کند؛ پس `.easz` به‌احتمال زیاد یک archive است، اما فرمت دقیق فایل و password آن تا تکمیل نگاشت متدهای VMT قطعی نیست.
+- رشته `mW@Tlogs43end_+` در مسیر `euResetMemory` به slot مجازی `+0x44` داده می‌شود؛ `euGetAutoSavePass` نیز نام حساب را برمی‌گرداند و caller دیگری آن را با `@25*gamsign*25@` ترکیب می‌کند. هیچ‌کدام را تا نگاشت setter و مسیر بازکردن آرشیو، رمز قطعی `.easz` اعلام نمی‌کنیم.
+- run #7 تحلیل recovery-path موفق شد؛ run #9 و #10 برای فهرست و trace متدهای `T7zInArchive`/`T7zOutArchive` در حال اجرا هستند. run #10 شاخه event error-map نیز موفق شد؛ run #11 نسخه کامل‌تر جدول را decode می‌کند.
+- پل Python اکنون 58 تست موفق دارد؛ دو جزء جدید `word_config.py` و `editword_request.py` هنوز به handler تولیدی و موتور LibreOffice متصل نشده‌اند.
