@@ -171,9 +171,9 @@ This is the process user's Windows temp directory, not the separate Local AppDat
 
 The recovery form's `Delete` handler first collects selected list-item values, calls `FormClose` on the recovery form, and then passes the selected path plus the temp directory into `euResetMemory` (`0x00456F00`). It next appends a value derived from the temp path and the literal `.easd` to a path variable, creates/connects a Word Automation application wrapper, and performs late-bound Automation calls.
 
-This establishes a recovery-open transformation path involving `.easz`, `euResetMemory`, and a constructed `.easd` path. It does **not yet** prove whether `.easd` is a decrypted file, a temporary working copy, or another intermediate; the implementation of `euResetMemory` and its internal object methods must be resolved before naming the transformation.
+This establishes a recovery-open path involving `.easz`, `euResetMemory`, and a constructed `.easd` path. Later SevenZip interface tracing identifies the reader and its `OpenStream`/`SetPassword`/`IInArchive.Extract` call chain. It still does **not** prove whether `.easd` is the extracted document itself, a temporary working copy, or another intermediate.
 
-Next trace targets: `0x00452BBC` (called inside `euResetMemory`), the VMT/object pointers at `0x0062A824` and `0x0062A858`, and the `euResetMemory` callsites.
+Those initial targets have since been traced. Current follow-ups are the caller-side `IInStream` construction, the two callback type-info blocks (`0x0045391C` and `0x00453850`), the output/member destination, and the final `.easd` lifecycle.
 
 
 ## 12. Recovery file transformation helper — structural trace (path workflow run #5)
@@ -182,11 +182,10 @@ The `euResetMemory` procedure (`0x00456F00`) is not a simple filename rename. It
 
 Within `euResetMemory`:
 - A 16-byte block is copied from one of two global data areas (`0x0062A824` or `0x0062A858`) according to a Boolean argument.
-- The constructed object's virtual methods at `+0x0C` and `+0x3C` receive the two path arguments.
-- Another virtual method at `+0x44` may receive an optional string argument.
-- The second Boolean argument changes whether that optional method is invoked.
+- The constructed object's custom interface methods at `+0x0C` and `+0x3C` receive, respectively, an input-stream interface and a UnicodeString. The method at `+0x44` receives an optional UnicodeString when the second Boolean condition selects that branch.
+- Later class/interface tracing identifies the object as `T7zInArchive` and maps the slots: `+0x0C` → `OpenStream(IInStream)`, `+0x3C` → `SetPassword(UnicodeString)`, and `+0x44` → the virtual `T7zArchive` constructor. `SetPassword` issues an all-items `IInArchive.Extract` request through a callback.
 
-This shape is consistent with a stateful file/memory transformation object, but the class identity, key meaning, and transform direction are not yet known. It is not yet safe to call this AES, encryption, decryption, compression, or decompression. Run #6 adds object/VMT and global-data reference inspection.
+This section records the initial structural interpretation only. Sections 13–19 supersede its earlier uncertainty about the class identity and virtual slot names. The exact callback output destination and `.easd` contents remain open.
 
 
 ## 13. Archive implementation identified; password roles corrected (2026-11-15)
