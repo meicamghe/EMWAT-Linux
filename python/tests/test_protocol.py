@@ -1,6 +1,13 @@
+import base64
 import unittest
+import xml.etree.ElementTree as ET
 
-from emwat_linux.protocol import ProtocolError, parse_method_call
+from emwat_linux.protocol import (
+    WORD_RESPONSE_CONTENT_TYPE,
+    ProtocolError,
+    parse_method_call,
+    serialize_word_document_response,
+)
 
 
 class MethodEnvelopeTests(unittest.TestCase):
@@ -85,6 +92,33 @@ class MethodEnvelopeTests(unittest.TestCase):
         self.assertEqual(len(call.params["wordBody"]), len(opaque))
         self.assertEqual(call.params["wordBody"][:16], "AQID" * 4)
         self.assertEqual(call.params["wordBody"][-16:], "AQID" * 4)
+
+
+    def test_serializes_observed_word_document_response(self):
+        document = bytes.fromhex("d0cf11e0a1b11ae1") + b"synthetic-word-bytes"
+        response = serialize_word_document_response(document)
+        root = ET.fromstring(response)
+        self.assertEqual(root.tag, "response-word")
+        self.assertEqual(root.attrib, {"status": "success"})
+        node = root.find("./return-types/type")
+        self.assertIsNotNone(node)
+        self.assertEqual(node.attrib, {
+            "mimetype": "application/msword",
+            "encryption": "base64",
+        })
+        self.assertEqual(base64.b64decode(node.text, validate=True), document)
+        self.assertEqual(
+            WORD_RESPONSE_CONTENT_TYPE,
+            "text/html; charset=ISO-8859-1",
+        )
+
+    def test_word_response_serializer_enforces_size_and_input_type(self):
+        with self.assertRaises(ProtocolError):
+            serialize_word_document_response(b"document", max_response_bytes=8)
+        with self.assertRaises(ProtocolError):
+            serialize_word_document_response(b"")
+        with self.assertRaises(TypeError):
+            serialize_word_document_response("not bytes")  # type: ignore[arg-type]
 
     def test_rejects_non_bytes(self):
         with self.assertRaises(TypeError):
