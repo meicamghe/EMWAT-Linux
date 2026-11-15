@@ -1353,3 +1353,12 @@ It opens `HKCU\\Software\\Emwat\\Dynamic Config` and conditionally reads:
 - `AutoSaveInterval` integer → viewer field `+0x88` (default 0; clamped to at least 10000 ms).
 
 The constructor uses `ValueExists`, then `ReadBool` / `ReadInteger`, and releases the registry object. `Logging Level` and `Save I/O Trace Files` are not read in this constructor and remain unlocated. The exact timer/save semantics remain unproven. The close-time Almas Gam registration request and payload also remain unresolved.
+
+
+### Runs 116–117 update — TETracer registry references (2026-11-15)
+
+- Run #116 (ID `43699248792`) and Run #117 (ID `43703253785`) both completed successfully (37/37 and 38/38 steps respectively).
+- Run #117 confirms a registry **write** path inside `TETracer.GetUniquePostfix`: it constructs `TRegistry` at `0x00467C99`, selects `HKEY_CURRENT_USER` at `0x00467CB7`, then calls `TRegistry.WriteBool` at `0x00467D63` and `TRegistry.WriteInteger` at `0x00467D75`.
+- The two value-name pointers (`0x00467F2C`, `0x00467F64`) are not decoded in the artifact. Do not identify them as `Save I/O Trace Files` / `Logging Level` without string evidence.
+- The `0x00466D16` hit is a raw pointer-reference result, not a proven call site. Its bounded context at `0x00466CE0` is incomplete (only one instruction decoded).
+- Therefore `Logging Level` and `Save I/O Trace Files` remain unresolved on the read side. The four constructor-read settings from Run 113 remain confirmed. Main-editor close-time registration is still unresolved.
