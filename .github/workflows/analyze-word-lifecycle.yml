@@ -506,6 +506,34 @@ jobs:
           mkdir -p word-lifecycle-analysis
           python tools/decode_pe_strings.py analysis-input/EmwatMethods.bpl1 0x004CD154 0x004CD54C 0x004CD9C0 0x004CE030 0x004D00AC 0x004BCA88 0x004CDB54 0x004C5D68 > word-lifecycle-analysis/Word-close-chain-strings-run98.md
           python tools/decode_pe_strings.py analysis-input/EmwatMethods.bpl1 0x004CDC14 0x004BA438 0x004BA4B4 0x004BA4CC 0x004BA508 0x004BA5EC > word-lifecycle-analysis/QuitWord-and-teardown-literals-run99.md
+      - name: Trace AutoSave settings form and settings-file lifecycle
+        run: |
+          mkdir -p word-lifecycle-analysis
+          python tools/find_td32_class_procedures.py analysis-input/EmwatMethods.bpl1 TEmSettingForm TfrmShowAutoSaveFiles > word-lifecycle-analysis/AutoSave-settings-class-procedures.md
+          python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x005EAD94 word-lifecycle-analysis/TEmSettingForm-FormCreate.md
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x005EAD94 word-lifecycle-analysis/TEmSettingForm-FormCreate-callers.md
+          python tools/inspect_delphi_vmt_address.py analysis-input/EmwatMethods.bpl1 0x005EA41C word-lifecycle-analysis/TEmSettingForm-VMT.md
+          python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 0x005EA41C word-lifecycle-analysis/TEmSettingForm-VMT-pointer-refs.md
+          python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x005EBF20 word-lifecycle-analysis/TfrmShowAutoSaveFiles-FormClose.md
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x005EBF20 word-lifecycle-analysis/TfrmShowAutoSaveFiles-FormClose-callers.md
+          python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x005EBDA8 word-lifecycle-analysis/TfrmShowAutoSaveFiles-CloseWordApp.md
+          python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x005EC580 word-lifecycle-analysis/TfrmShowAutoSaveFiles-WordAppDocumentBeforeClose.md
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x005EC580 word-lifecycle-analysis/TfrmShowAutoSaveFiles-WordAppDocumentBeforeClose-callers.md
+          python tools/scan_named_pe_resource.py analysis-input/EmwatMethods.bpl1 TEMSETTINGFORM word-lifecycle-analysis/TEmSettingForm-resource.md
+          python - <<'PY'
+          import pathlib, re, subprocess, sys
+          source = pathlib.Path("word-lifecycle-analysis/AutoSave-settings-class-procedures.md").read_text(encoding="utf-8")
+          rows = re.findall(r"\|\s*([^|]+?)\s*\|\s*`([^`]+)`\s*\|\s*`0x([0-9A-Fa-f]{8})`\s*\|", source)
+          outdir = pathlib.Path("word-lifecycle-analysis/AutoSave-class-methods")
+          outdir.mkdir(exist_ok=True)
+          summary = ["# AutoSave form class procedure traces", ""]
+          for module, decorated, va in rows:
+              safe = re.sub(r"[^A-Za-z0-9_.-]+", "_", decorated)[:100]
+              output = outdir / f"{va}-{safe}.md"
+              subprocess.run([sys.executable, "tools/trace_td32_procedure.py", "analysis-input/EmwatMethods.bpl1", "0x" + va, str(output)], check=True)
+              summary.append(f"- {module.strip()} — `0x{va}` — `{decorated}` — {output}")
+          pathlib.Path("word-lifecycle-analysis/AutoSave-class-method-trace-index.md").write_text("\n".join(summary) + "\n", encoding="utf-8")
+          PY
       - uses: actions/upload-artifact@v4
         with:
           name: emwat-word-lifecycle-analysis
