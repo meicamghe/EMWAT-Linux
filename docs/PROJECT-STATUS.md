@@ -4,7 +4,7 @@
 
 ## وضعیت اجرایی و شواهد جدید — 2026-11-15
 
-- **مسیر پایتون:** آخرین CI پل پایتون، run `43721322012`، موفق است: **۶۹ تست** اجرا شده و همگی پاس شده‌اند. تست‌های جدید هماهنگ‌کننده سند و سرویس دامنه EditWordDocument نیز در این اجرا موفق‌اند.
+- **مسیر پایتون:** آخرین CI پل پایتون، run `43721449170`، موفق است: **۶۹ تست** اجرا شده و همگی پاس شده‌اند. تست‌های جدید هماهنگ‌کننده سند و سرویس دامنه EditWordDocument نیز در این اجرا موفق‌اند.
 - **هماهنگ‌کننده سند:** `office_adapter.py` قرارداد مستقل موتور آفیس را تعریف می‌کند؛ `document_coordinator.py` مسیر open → wait for close → export final bytes را اجرا می‌کند و `editword_service.py` parser درخواست را به این هماهنگ‌کننده وصل می‌کند. callbackهای تغییر سند و Save موتور جدا هستند؛ رویدادهای زمان initialization نادیده گرفته می‌شوند و Save باعث بازگشت پاسخ نمی‌شود. factory مربوط به handler در `editword_handler.py` اضافه شده و serializer موفقیت را به dispatcher وصل می‌کند، اما هنوز در application ثبت نشده و LibreOffice UNO واقعی وجود ندارد.
 - **قرارداد درخواست:** parser برای `EditWordDocument` و `wordConfig` وجود دارد؛ سند ورودی Base64 به bytes تبدیل می‌شود، اما `signData` عمداً به‌صورت متن opaque نگه داشته می‌شود. این adapter هنوز handler تولیدی نیست.
 - **شبکه:** heartbeat واقعی پاسخ `TickTack` و init script capture-matched در پل پایتون پیاده شده‌اند. مقدار `invoke` فقط nonce هر درخواست است، نه شناسه جلسه.
