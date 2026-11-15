@@ -39,13 +39,13 @@ class FakeOffice:
         self.calls.append(("open", request.document_bytes))
         self.on_modified = on_modified
         self.on_saved = on_saved
-        on_modified()
-        if self.save:
-            on_saved()
         return object()
 
     def wait_for_close(self, handle):
         self.calls.append(("wait_for_close", handle))
+        self.on_modified()
+        if self.save:
+            self.on_saved()
         return OfficeCloseEvent(self.close)
 
     def export_final_document(self, handle):
