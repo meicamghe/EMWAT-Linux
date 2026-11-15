@@ -406,3 +406,26 @@ The installed files were inspected with both Unicode and narrow-string extractio
 2. تابع serialize_word_document_response در protocol.py پاسخ موفق مشاهده‌شده را می‌سازد: response-word با status=success و return-types/type دارای mimetype=application/msword و encryption=base64. دادهٔ سند به‌صورت bytes ورودی گرفته می‌شود و بدون تبدیل محتوایی Base64 می‌شود. محدودیت اندازهٔ پاسخ نیز اعمال می‌شود.
 
 اعتبارسنجی: Python bridge workflow #33، run 43707888187، موفق؛ 42 تست پاس شده‌اند. این تست‌ها قرارداد transport و serializer را با دادهٔ ساختگی بررسی می‌کنند؛ هنوز handler واقعی EditWordDocument، init endpoint، ارتباط با LibreOffice یا ثبت نهایی نامه پیاده‌سازی/اعتبارسنجی نشده‌اند.
+
+
+## تحلیل init script و پیاده‌سازی endpoint — 2026-11-15
+
+از stream شمارهٔ 4، درخواست GET با query برابر init و Referer صفحهٔ Almas و پاسخ HTML کامل بازیابی شد. رفتار script مشاهده‌شده:
+
+- listener برای رویداد message با addEventListener ثبت می‌کند و در مرورگرهای قدیمی از attachEvent استفاده می‌کند.
+- event.origin و event.source را نگه می‌دارد.
+- event.data را با XMLHttpRequest و متد POST به loopback، مسیر /?invoke=<nonce> می‌فرستد.
+- nonce هر invoke از Math.floor(Math.random() * 99999) ساخته می‌شود؛ بنابراین مقدار invoke نقش method name ندارد و در این script فقط یک مقدار تصادفی درخواست است.
+- وقتی readyState به 4 رسید، responseText را با postMessage به event.source و event.origin اولیه برمی‌گرداند.
+- در پایان، پیام <inited /> را به parent با target origin صفحهٔ Almas می‌فرستد.
+
+این capture نشان می‌دهد GET init فقط یک صفحهٔ ثابت HTML نیست؛ کد واسط پیام‌رسانی را نصب می‌کند و زنجیرهٔ parent page → iframe محلی → POST invoke → postMessage response را برقرار می‌سازد.
+
+### پیاده‌سازی فعلی Python
+
+- GET /?init=<عدد>_<عدد> اکنون script سازگار با capture را برمی‌گرداند و پورت listener را در URL محلی جایگزین می‌کند.
+- parent origin از Referer استخراج می‌شود و باید در allowed_parent_origins باشد؛ Referer مفقود یا origin خارج از allowlist با 403 رد می‌شود. این allowlist عمداً جدا از allowed_origins درخواست POST است، چون capture نشان می‌دهد Referer صفحهٔ والد و Origin درخواست POST دو origin متفاوت‌اند.
+- CORS headerهای wildcard مشاهده‌شده در پاسخ init بازتولید می‌شوند؛ اما فقط پس از بررسی allowlist parent origin.
+- تست‌های init شامل تولید script، پورت پویا، origin مجاز، origin غیرمجاز و query نامعتبر هستند.
+
+اعتبارسنجی: Python bridge workflow #36، run 43708383619، موفق؛ 45 تست پاس شده‌اند. این endpoint اکنون با capture تطبیق داده شده، اما ارتباط واقعی با Almas و مرورگر کاربر هنوز در محیط هدف end-to-end آزمایش نشده است.
