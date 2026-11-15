@@ -779,3 +779,27 @@ Word event-sink workflow run #8 (`43716384031`), artifact `14162362638`, fixes a
 The first attempt to trace those targets with TD32 procedure boundaries reports no TD32 procedure range for any of them. This is a limitation of the symbol-based procedure tracer, not evidence that the callback targets are invalid. They are pointers read from the generated Word event metadata table. A follow-up run (#9) disassembles the contiguous code range directly and expands both the event-map and server-data tables.
 
 The event sink remains distinct from the TWordViwer callback record assignments. The latter prove that the main viewer registers its BeforeSave handler at `0x004CD154`; the 20 generated event-table targets still need to be mapped to event DISPIDs/names before they can be associated with specific Word events.
+
+
+## Correction — 2026-11-15: 0x00627B74 is an error-string table, not an event callback table
+
+The run #8 extraction correctly found 20 pointers, but the initial interpretation of those pointers as Word event callbacks was wrong. Run #9 (`43716905570`, artifact `14162568118`) decoded the targets as Delphi string literals, not executable callback routines. The raw disassembly attempt at `0x004499B8–0x00449E20` yielded data-like bytes and is not valid evidence of callback code.
+
+The decoded strings include:
+
+- `Err_0`, `Err_20000`, `Err_20001` … `Err_20008`, `Err_Ignore`;
+- `Exception: `;
+- `Request XML is invalid.`;
+- `Request Doc is Empty.`;
+- `Error on connect to MS-Word. Exception: `;
+- `Can not open document.`;
+- `Error on insert sign to word document. Exception: `;
+- `Field "%s" of Twin fields not found in Doc.`;
+- `Temp path not Found.`;
+- `Scan failed on %s. The error code(s)= %s\\r%s`.
+
+Therefore the pointer region beginning at `0x00627BB0` is a server error-message/string mapping structure (exact record semantics still need full structure analysis). It must not be used to identify Word event callback functions. The earlier subsection titled “Generated Word event callback table — extraction corrected” is superseded by this correction.
+
+The live main-viewer event registration evidence is unchanged: `OnTmrAutoSave` assigns `TWordViwer.WordAppDocumentBeforeSave` (`0x004CD154`) to callback field `+0x80`, plus other event handlers at `+0x90`, `+0x98`, and conditional `+0x88`. The 20 string pointers provide error handling text for the Word/EMWAT subsystem, not a map of those event registrations.
+
+Workflow run #10 (`analyze-word-event-sink.yml`) now labels this analysis as a server error-map string extraction and no longer attempts to trace the string pointers as procedures. A separate event-dispatch investigation is still required to map actual COM event DISPIDs to the registered callback records.
