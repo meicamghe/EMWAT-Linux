@@ -279,4 +279,9 @@ The plugin constructor has a direct caller in `euUnArchive` (`0x00456E37`), whic
 
 Confirmed: the 7z plugin wrapper, shared CreateObject factory, input/output wrapper methods, provider object stored by CryptoGetTextPassword2, and the distinct euUnArchive/euResetMemory entry paths.
 
-Still unresolved: the exact interface GUIDs and direction selected by each factory, the VMT method names for euResetMemory slots +0x0C/+0x3C/+0x44, the concrete source of the writer password provider, and the exact archive format/options used for .easz.
+Still unresolved: the exact interface GUIDs and direction selected by each factory, the VMT method names for euResetMemory slots +0x0C/+0x3C/+0x44, the writer's actual password text/callback semantics, and the exact archive format/options used for .easz.
+
+
+### Correction from recovery path workflow run #10 — TObjectList constructor resolution
+
+The additional API target trace resolves `0x00404734` as `rtl230.bpl!TObjectList.$bctr$qqrv`. Therefore, the previous description of `T7zOutArchive.CryptoGetTextPassword2` as obtaining a provider/interface from `0x0062FBB8` was too strong. The confirmed operation is construction of a TObjectList using the class pointer at that global, stored at `Self+0x2C), followed by zeroing `Self+0x30` and `Self+0x34`. The writer password provider/value remains unresolved.
