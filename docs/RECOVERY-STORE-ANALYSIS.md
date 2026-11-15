@@ -380,7 +380,7 @@ Thus `euResetMemory` receives an input stream in its first register argument, a 
 The full `TfrmShowAutoSaveFiles.Delete` trace (`0x005EB828`, artifact `14165058222`) resolves the caller-side types passed to `euResetMemory`:
 
 - The selected archive path is copied into local `[ebp-4]` using the Delphi `UStrLAsg` thunk `0x00401248` from the selected list item's field at `+0x20`. It is a UnicodeString path, not an `IInStream` interface.
-- The second local `[ebp-8]` is produced by helper `0x0044A998` immediately before the call. It is passed as the second UnicodeString argument and therefore reaches `T7zInArchive.SetPassword` via interface slot `+0x3C`. Its source helper has not yet been semantically decoded.
+- The second local `[ebp-8]` is produced by `0x0044A998`, whose TD32 symbol is `Emwat.Sys.MyMessageDialog` (artifact `14165938809`, trace `form-data/helper-0044A998.md`). It is passed as the second UnicodeString argument and reaches `T7zInArchive.SetPassword` via interface slot `+0x3C`. This corrects the earlier label “undecoded helper”: the routine's symbol is known, but its precise UI/output semantics and why its result is used as the archive password remain unresolved. Do not conflate it with `euGetAutoSavePass` (`0x00456B78`), which is a separate `GetUserNameW`-based cleanup/logging helper.
 - The call at `0x005EB938` passes `EAX=[ebp-4]` (archive path), `EDX=[ebp-8]` (second string), `ECX=0`, and two stack Boolean arguments both equal to 1. Thus the fallback string `mW@Tlogs43end_+` is selected for the base constructor branch.
 - After `euResetMemory`, the caller invokes `0x004563A8` with the same two strings to construct a further path/value, then calls `0x004565DC` and `0x004555D8` before continuing into Word automation. These helpers need separate tracing to identify the `.easd` output path and cleanup sequence.
 
@@ -409,3 +409,16 @@ The completed Word lifecycle artifact 14165369436 resolves registry thunks used 
 - 0x00404454 → TRegistry.ValueExists.
 
 The checkbox handler opens HKCU (0x80000001) and writes values below Software\Emwat\Dynamic Config. The persisted names and types are recorded in section 17. These are RTL TRegistry wrappers, not application-specific registry algorithms.
+
+
+## 23. Recovery caller helper identity and path transformation — 2026-11-15
+
+Recovery-path workflow run 13 (artifact `14165938809`) traced the remaining helper addresses passed through `TfrmShowAutoSaveFiles.Delete`:
+
+- `0x0044A998` is symbolized by TD32 as `Emwat.Sys.MyMessageDialog`, not `euGetAutoSavePass`. The Delete handler passes a local string output from this call as the second `euResetMemory` argument, which subsequently reaches `T7zInArchive.SetPassword` at interface slot `+0x3C`. The exact dialog behavior/output and its relation to the archive password remain unresolved.
+- `euGetAutoSavePass` (`0x00456B78`) remains separate: it calls `GetUserNameW` and is used by cleanup/logging callers. Its username/fallback value is not proven to be the `.easz` password.
+- `0x004563A8` is `FixDirectionInFarsiNumericMode(UnicodeString, Boolean, Boolean, out UnicodeString)`. The Delete handler applies it to a path-like string before combining the result with the literal `.easd`; this is a string-normalization step, not an extraction callback.
+- The same Delete path passes the selected `.easz` archive path to `euResetMemory`, then separately constructs a `.easd`-suffixed path and enters the Word Automation flow. The exact relationship between the archive's extracted output and this constructed path is still unproven.
+- `0x004565DC` is `DirIsEmpty(UnicodeString)` and `0x0045574C` is `euGetFileSize(UnicodeString)`; neither should be described as password or archive extraction helpers. `0x004555D8` is `ForceForegroundWindow` and is unrelated to the archive data path.
+
+The callback-contract workflow is being extended to trace the interface's `+0x44` target and the two callback RTTI pointers independently. Until that resolves, keep the optional `euResetMemory` argument semantics and the extracted-file destination open.
