@@ -1135,3 +1135,58 @@ The expanded registry scan adds useful call-site evidence, but it does **not** e
 **Current settings status:** the four values read by the main `TWordViwer` constructor remain confirmed by Run 113. `Logging Level` and `Save I/O Trace Files` are confirmed as values written by the settings UI, but their startup/read-side consumers are still not located. Next analysis must recover complete TD32 function boundaries and full disassembly around `TETracer.GetUniquePostfix` (including `0x00467D00–0x00467E80` and the string data at `0x00467F2C` / `0x00467F64`), then search all read-side call paths rather than treating raw IAT references as execution evidence.
 
 No new evidence in Runs 116–117 establishes the main editor's close-time HTTP request, response payload, or final Almas Gam registration operation.
+
+
+## Parallel reverse-engineering checkpoint — 2026-11-15 (Word, registry, cleanup, and bridge)
+
+### Main Word close/register callback
+
+The focused request-lifecycle analysis confirms the following:
+
+- The main editor event record stores routine 0x004CD154 (TD32 symbol: WordAppDocumentBeforeSave) at offset +0x80. It also stores NewDocument 0x004CD54C at +0x90 and WindowActivate 0x004CD9C0 at +0x98. A settings-dependent callback at +0x88 is either 0x004CE030 or 0x004D00AC.
+- The separate routine symbolized WordAppDocumentBeforeClose at 0x004CCBBC is not the pointer installed in that event record. Its only previously identified direct caller is in the FillImgFldsForPrint path.
+- Routine 0x004CD154 logs "Document.OnBeforeClose Called." and "Document.OnBeforeClose succeed." Its prompt text is: "محتويات اين سند تغيير كرده است. آيا مايل به ثبت تغييرات مي‌باشيد؟" Buttons are "موافقم", "خیر", and "انصراف".
+- Dialog result 2 sets Cancel = -1 and aborts. Result 6 enters the affirmative branch and passes -1 through the SaveChanges variant setup; other non-cancel results pass 0. The non-cancel path calls the Word Document.Close interface slot +0x29C, releases the active document interface, and clears viewer state.
+- The method's TD32 symbol says BeforeSave, while its own log strings say OnBeforeClose. The exact COM event name corresponding to callback-record offset +0x80 is still unresolved. Do not silently equate the symbol name with the event-sink slot name.
+
+This is strong evidence for the custom register-changes prompt in the Word close/save lifecycle and is consistent with the user's observed behavior. It does not by itself establish the final HTTP or Almas registration path.
+
+### Registry read-side closure
+
+The earlier Run 116–117 uncertainty about Logging Level and Save I/O Trace Files is superseded by the focused registry runs:
+
+- Main TWordViwer constructor reads HKCU\Software\Emwat\Dynamic Config:
+  - Background Priniting (Boolean, viewer +0x3C, default true)
+  - Dont Ask Save On Print (Boolean, viewer +0x3D, default true)
+  - Save Before Print (Boolean, viewer +0x3E, default false)
+  - AutoSaveInterval (Integer, viewer +0x88, default 0, clamped to at least 10000 ms)
+- TETracer constructor reads Logging Level (Integer, object +0x10) and Save I/O Trace Files (Boolean, object +0x11) from the same HKCU\Software\Emwat\Dynamic Config subkey.
+- TETracer.GetUniquePostfix also uses Save I/O Trace Files and Created IO Trace Count. It decrements the count; when it becomes non-positive it disables Save I/O Trace Files and resets the count to 15, then creates/writes a trace file. This is a bounded diagnostic trace quota, not the letter-registration path.
+- The settings-unit Finalization routine reads the six Dynamic Config values into associated controls; its exact lifecycle trigger remains unresolved.
+- Image/print tools use a separate HKCU\SOFTWARE\Emwat\PrintParams subkey. Float values are mLeft, mTop, mRight, mBottom; integer values are Posotion (exact spelling), Size, PrintRange.
+
+### Temporary Word-process cleanup
+
+- DeleteTempRAW (0x0044AE98) enumerates top-level windows using FindWindowW/GetWindow/GetWindowTextW and checks window-title markers including "GamElectronic EMWAT" and ".doc".
+- On a match it calls ShellExecuteW with taskkill.exe and "/f /im WINWORD.EXE", waits 100 ms, and repeats the scan before calling CloseAllWords.
+- CloseAllWords obtains the Windows temp path and passes masks including %TEMP%\efg*.*, %TEMP%\~$g*.*, and %TEMP%\temp-emwatwf\*.* to helper 0x0044B0F8.
+- Despite its TD32 name GetFileVersion, helper 0x0044B0F8 enumerates matching files with FindFirst/FindNext, normalizes attributes with FileSetAttr, and deletes matches with DeleteFile. The temp-emwatwf directory is ensured before its final cleanup pass.
+- No direct caller or raw pointer reference to DeleteTempRAW has been found. Its invocation point (startup, shutdown, or indirect path) remains unknown. Do not treat it as the user's main-editor close callback.
+
+### Request/response timing and Base64 boundary
+
+- Capture stream 18 contains one EditWordDocument POST and one response-word response in the same TCP stream. Its conversation duration is 54.6315 seconds; two Agent heartbeat streams begin during that interval. This timing is suggestive but does not prove that the request waits for Word to close.
+- TEditWordDocument.PerformMethod calls TWordViwer.LoadDocument synchronously. The successful LoadDocument path assigns AResponseInfo.ContentText and calls TIdHTTPResponseInfo.WriteContent.
+- The decoded LoadDocument range does not show an obvious explicit WaitFor/ProcessMessages loop. The OnTmrAutoSave tail at 0x004BA058–0x004BB3AF is compiler cleanup/exception handling, not an identified wait loop.
+- LoadDocument writes its wordBody argument bytes directly to the temporary TFileStream. The Base64Decode call at 0x004B7E44 operates on [ebp-8], not the wordBody argument at [ebp-0x1C]; do not claim that this call decodes wordBody. The captured XML wordBody is Base64 text, so the decode may occur upstream in EmwatService's XML/parameter layer; that boundary is not present in the BPL.
+- The capture shows no separate close-time POST in this particular session. It does not rule out another close request in other sessions.
+
+Current conclusion: the custom register-changes prompt is confirmed, but the exact causal chain from Word close to the Almas page's final registration remains open. The single-long-lived-request theory is not proven.
+
+### Native bridge implementation checkpoint
+
+- GET /?heartbeat now returns HTTP 200 with the captured body TickTack and Content-Type text/html; charset=ISO-8859-1.
+- GET /?init=<digits>_<digits> returns the 994-byte init script byte-for-byte identical to capture stream 4 when port and parent origin match; only those two values are substituted.
+- protocol.py has a bounded serializer for the observed response-word success envelope (application/msword, encryption=base64).
+- create_bridge_server now separates allowed_origins (the local XHR Origin, captured as http://127.0.0.1:1984) from allowed_parent_origins (the Almas page origin derived from init Referer, captured as https://automation.bsi.ir).
+- Python bridge workflow #42 (run 43709846976) passed all 45 tests. No production EditWordDocument handler, LibreOffice integration, or live Almas end-to-end test is claimed complete.

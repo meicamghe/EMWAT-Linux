@@ -1362,3 +1362,37 @@ The constructor uses `ValueExists`, then `ReadBool` / `ReadInteger`, and release
 - The two value-name pointers (`0x00467F2C`, `0x00467F64`) are not decoded in the artifact. Do not identify them as `Save I/O Trace Files` / `Logging Level` without string evidence.
 - The `0x00466D16` hit is a raw pointer-reference result, not a proven call site. Its bounded context at `0x00466CE0` is incomplete (only one instruction decoded).
 - Therefore `Logging Level` and `Save I/O Trace Files` remain unresolved on the read side. The four constructor-read settings from Run 113 remain confirmed. Main-editor close-time registration is still unresolved.
+
+
+## Parallel analysis status — 2026-11-15
+
+The project now has independent CI analysis lanes for Word request lifecycle, registry settings, filename/temp cleanup, and Python bridge transport.
+
+### Latest verified runs
+
+- Word lifecycle #121 (run 43707049641): completed successfully; artifact 14158949168. Reconfirmed callback record layout, registry contexts, and LoadDocument response path.
+- Word request lifecycle #3 (run 43709706063): completed successfully, 13/13 steps; artifact 14159833681. Added complete LoadDocument ranges, BeforeSave prompt strings, and helper traces.
+- Registry settings #4 (run 43709607471): completed successfully; artifact 14159692702. Confirmed TETracer read-side values and image/print registry subkey.
+- Filename/temp cleanup #7 (run 43709510495): completed successfully; artifact 14160380463. Confirmed DeleteTempRAW process termination and temp-file cleanup helpers.
+- Python bridge #42 (run 43709846976): completed successfully; 45 tests passed.
+
+### Current confirmed findings
+
+- Word's registered 0x004CD154 handler presents the Persian register-changes prompt and calls Document.Close on non-cancel paths. The TD32 symbol says BeforeSave; internal log strings say OnBeforeClose. Event-sink slot naming remains unresolved.
+- Main Word settings read from HKCU\Software\Emwat\Dynamic Config include the four operational viewer values plus TETracer's Logging Level and Save I/O Trace Files. TETracer's Created IO Trace Count is a 15-count diagnostic trace quota.
+- Image/print settings are stored separately under HKCU\SOFTWARE\Emwat\PrintParams.
+- DeleteTempRAW can taskkill WINWORD.EXE and then remove matching files under the Windows temp directory; its invocation point remains unknown.
+- The captured EditWordDocument round-trip lasts 54.6315 seconds, but there is no direct proof that it waits for Word close. The response path is known; the close-to-response timing is not.
+- The BPL writes wordBody bytes directly to a temp file. The Base64Decode call at 0x004B7E44 targets a different local value, not proven to be wordBody.
+
+### Native implementation state
+
+The Python bridge now matches the captured heartbeat and init routes, can serialize the observed response-word success envelope, and has separate local-XHR and parent-page origin allowlists. All 45 Python tests pass. The actual EditWordDocument handler, LibreOffice document lifecycle, and Almas registration integration are still unimplemented.
+
+### Open questions
+
+1. Map the callback-record offset +0x80 to the exact Word COM event name.
+2. Trace the full close-to-registration path, including any other local invoke methods or browser-side response handling.
+3. Identify where the service decodes the Base64 wordBody before it reaches the BPL.
+4. Find the caller/invocation point for DeleteTempRAW.
+5. Decode the remaining temp-path and image-print helpers before implementing their Linux equivalents.

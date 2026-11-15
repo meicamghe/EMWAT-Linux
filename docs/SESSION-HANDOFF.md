@@ -528,3 +528,43 @@ Reads are guarded by `ValueExists`; values are loaded with `ReadBool` / `ReadInt
 Runs #116 (`43699248792`) and #117 (`43703253785`) succeeded (37/37 and 38/38 steps). The new artifact identifies `TETracer.GetUniquePostfix` as a registry **write** path: create `TRegistry` (`0x00467C99`), set root to HKCU (`0x00467CB7`), call `WriteBool` (`0x00467D63`) and `WriteInteger` (`0x00467D75`). The value-name strings at `0x00467F2C` and `0x00467F64` are not yet decoded. The `0x00466D16` hit is only a raw pointer reference; its surrounding bounded trace is incomplete. Do not claim that either path reads `Logging Level` or `Save I/O Trace Files`.
 
 **Resume target:** extract complete procedure boundaries/disassembly for `TETracer.GetUniquePostfix` and decode the two string arguments, then locate actual `ReadBool` / `ReadInteger` consumers for the remaining settings. Do not disturb the established Run 113 read-side mapping. The main Word close-to-Almas registration chain remains unproven.
+
+
+## Handoff — parallel reverse-engineering checkpoint (2026-11-15)
+
+Continue autonomously; no user input is required for the current static-analysis work.
+
+### Latest workflow results
+
+- Word lifecycle #121: run 43707049641, successful; artifact 14158949168.
+- Word request lifecycle #3: run 43709706063, successful 13/13; artifact 14159833681.
+- Registry settings #4: run 43709607471, successful; artifact 14159692702.
+- Filename/temp cleanup #7: run 43709510495, successful; artifact 14160380463.
+- Python bridge #42: run 43709846976, successful; 45 tests.
+
+### Critical findings to preserve
+
+- Main Word callback record installs 0x004CD154 at +0x80. Its TD32 symbol is WordAppDocumentBeforeSave, but its log strings say OnBeforeClose. It displays the custom Persian register-changes prompt and calls Document.Close through interface slot +0x29C on non-cancel paths. The exact COM event-slot name remains unproven.
+- The separate routine 0x004CCBBC (symbolized WordAppDocumentBeforeClose) is not the pointer installed in the main event record.
+- Dynamic Config reads are now mapped: Background Priniting, Dont Ask Save On Print, Save Before Print, AutoSaveInterval, Logging Level, Save I/O Trace Files. TETracer's Created IO Trace Count is a 15-count trace quota.
+- Image/print settings use HKCU\SOFTWARE\Emwat\PrintParams with mLeft/mTop/mRight/mBottom, Posotion, Size, PrintRange.
+- DeleteTempRAW enumerates Word windows, may execute taskkill.exe /f /im WINWORD.EXE, then CloseAllWords removes matching temp files. Its caller is still unknown; do not equate it with the user's close action.
+- One captured EditWordDocument POST and response share a 54.6315-second TCP stream with two heartbeats inside. This is not enough to prove the request waits for Word close.
+- LoadDocument writes wordBody bytes directly to a temporary stream. Base64Decode at 0x004B7E44 uses [ebp-8], not the wordBody argument. Do not claim this call decodes wordBody.
+- The successful LoadDocument path writes AResponseInfo.ContentText and calls WriteContent. Exact timing relative to Word close remains unresolved.
+
+### Python bridge
+
+- Heartbeat returns captured TickTack.
+- Init route returns the 994-byte capture-matched script with dynamic local port and allowlisted parent origin.
+- response-word success serializer is implemented.
+- allowed_origins is for the local XHR Origin; allowed_parent_origins is for the Almas page Referer.
+- Python CI is green with 45 tests. There is still no production EditWordDocument handler or LibreOffice integration.
+
+### Next autonomous work
+
+1. Continue the request-lifecycle workflow around LoadDocument helper calls and event-sink slot mapping.
+2. Resolve the DeleteTempRAW caller through unit initialization/finalization tables or indirect references.
+3. Finish image/print registry value mapping and temp cleanup helper semantics.
+4. Keep all new conclusions evidence-tagged; do not promote the single-long-lived-request theory or a close-time POST without proof.
+5. Translate only confirmed contracts into the native Linux bridge and LibreOffice integration.

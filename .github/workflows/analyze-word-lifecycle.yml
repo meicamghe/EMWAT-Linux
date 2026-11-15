@@ -18,9 +18,6 @@ on:
       - 'tools/scan_named_pe_resource.py'
       - 'tools/trace_td32_procedure.py'
       - 'tools/scan_registry_api_calls.py'
-      - 'docs/WORD-DOCUMENT-PROTOCOL-ANALYSIS.md'
-      - 'docs/PROJECT-STATUS.md'
-      - 'docs/SESSION-HANDOFF.md'
 concurrency:
   group: word-lifecycle-${{ github.ref }}
   cancel-in-progress: true
