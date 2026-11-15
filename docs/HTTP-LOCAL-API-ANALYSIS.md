@@ -322,3 +322,62 @@ The installed files were inspected with both Unicode and narrow-string extractio
 3. Probe `?heartbeat` and `?init` separately using harmless GET requests and record status, headers, and sanitized body.
 4. Capture a real browser-originated request from a test letter using metadata only (method, path/query, Origin, Content-Type, body length, status); redact cookies, credentials, letter contents, signatures, and images.
 5. Continue to treat XML dispatch and the close-time response as unresolved until a real application request/response is correlated.
+
+
+## تحلیل مستقیم TCP capture — 2026-11-15
+
+منبع: `emwat.pcapng` و خروجی `tcp-payloads.txt` / `tcp-conversations.txt` در همین مخزن. داده‌ها از streamهای TCP بازسازی شدند؛ محتوای سندها عمداً در این مستند بازنشر نشده است.
+
+### درخواست‌های مستقل مشاهده‌شده
+
+| TCP stream | درخواست | نتیجه قابل مشاهده |
+|---:|---|---|
+| 2، 3، 6، 13، 14، 16، 19، 21، 22، 23 | `GET /?heartbeat` | پاسخ `200 OK` با body برابر `TickTack` (۸ بایت) |
+| 4، 15، 17 | `GET /?init=<عدد>_<عدد>` | پاسخ `200 OK` با HTML حاوی JavaScript bridge |
+| 5 | `POST /?invoke=26186` | envelope با `method class="GetEmwatVersion"` و پاسخ `200 OK` |
+| 18 | `POST /?invoke=58351` | envelope با `method class="EditWordDocument"` و پاسخ سندی موفق |
+
+مقادیر عددی query در این جدول فقط مقادیر مشاهده‌شده در همین capture هستند؛ معنای آن‌ها به‌عنوان شناسهٔ متد یا شناسهٔ session اثبات نشده است.
+
+### جزئیات جریان اصلی EditWordDocument — stream 18
+
+**درخواست**
+- مبدأ و مقصد: `127.0.0.1:61189 → 127.0.0.1:1984`
+- HTTP: `POST /?invoke=58351`
+- `Content-Type: text/plain;charset=UTF-8`
+- `Content-Length: 1177821`
+- `Origin: http://127.0.0.1:1984`
+- `Referer: http://127.0.0.1:1984/?init=23273_1195`
+- envelope ریشه: `emwat version="1.0"`
+- کلاس متد: `EditWordDocument`
+- پارامترها و طول متنی ثبت‌شده:
+  - `wordConfig`: 13,668 کاراکتر Base64
+  - `wordBody`: 1,163,948 کاراکتر Base64
+  - `signData`: خالی
+
+پیشوند Base64 در `wordConfig` پس از decode با XML دارای ریشه `word-document` و وضعیت `edit` آغاز می‌شود. پیشوند Base64 در `wordBody` با امضای فایل Compound Binary شناخته‌شدهٔ Office (`D0 CF 11 E0 A1 B1 1A E1`) سازگار است؛ بنابراین این پارامتر در این نمونه یک محتوای سند باینری Office را حمل می‌کند، نه متن ساده. این مشاهده به‌تنهایی نسخهٔ دقیق فرمت یا تمام محتوای فایل را تعیین نمی‌کند.
+
+**پاسخ**
+- HTTP: `200 OK`
+- `Content-Type: text/html; charset=ISO-8859-1`
+- `Content-Length: 1166820`
+- هدرهای ثبت‌شده شامل `Access-Control-Allow-Origin: *`، `Access-Control-Allow-Headers: *` و `Access-Control-Allow-Method: *` هستند.
+- ریشهٔ پاسخ: `response-word status="success"`
+- بخش خروجی: `return-types/type`
+- نوع MIME: `application/msword`
+- ویژگی `encryption`: مقدار `base64`
+- بدنهٔ `type` حاوی دادهٔ Base64 سند است.
+
+### پیامد برای طراحی و پیاده‌سازی
+
+1. درخواست `EditWordDocument` فقط یک فرمان متنی نیست؛ در نمونهٔ واقعی، دادهٔ سند ورودی را در `wordBody` حمل می‌کند و پاسخ نیز یک سند Word باینری را برمی‌گرداند.
+2. `wordConfig` یک XML داخلی Base64شده است؛ باید جدا از envelope بیرونی decode و تحلیل شود. مقدارهای شخصی/محتوای نامه نباید وارد log یا مستندات عمومی شوند.
+3. مقدار `Origin` در این TCP capture برابر loopback است و `Referer` نیز صفحهٔ init محلی است. این با مشاهدهٔ HAR قبلی از caller وب تفاوت لایه‌ای دارد: باید زنجیرهٔ parent page، iframe/bridge و درخواست محلی را از هم تفکیک کرد؛ نباید Origin صفحهٔ اصلی وب را به درخواست محلی نسبت داد.
+4. پاسخ موفق این stream، شکل واقعی `response-word` و لایهٔ `return-types/type` را تأیید می‌کند؛ اما رفتار Save/Close و اینکه چه رویدادی باعث ارسال درخواست بعدی می‌شود، از همین stream به‌تنهایی قابل اثبات نیست.
+5. در heartbeat، body دقیق `TickTack` با پاسخ `200 OK` تأیید شده است؛ پیاده‌سازی heartbeat لینوکس باید پس از بررسی درخواست‌های کامل و نسخه‌ها با همین قرارداد سازگار شود.
+
+### محدودیت‌های بازسازی
+
+- فایل `tcp-payloads.txt` خروجی packet-level است؛ ترتیب و تکرار segmentها باید در هر بازسازی stream لحاظ شود. طول دادهٔ بازسازی‌شدهٔ درخواست اصلی با مقدار Content-Length اختلاف چند بایتی دارد، بنابراین طول بدنه را از شمارش سادهٔ hexها نتیجه‌گیری نکنید.
+- محتوای واقعی نامه و داده‌های داخل XML پیکربندی عمداً در گزارش حذف شده‌اند.
+- این capture یک اجرای مشخص را نشان می‌دهد و برای تعمیم به تمام نسخه‌ها/متدها کافی نیست.
