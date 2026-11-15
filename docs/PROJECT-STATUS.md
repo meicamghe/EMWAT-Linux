@@ -1552,3 +1552,13 @@ The BPL export/API analysis resolves the earlier naming ambiguity. The public TE
 - local `[ebp-8]` بلافاصله قبل از فراخوانی توسط helper `0x0044A998` تولید می‌شود و آرگومان دوم `euResetMemory` است؛ این رشته به `SetPassword` می‌رسد. معنای دقیق helper و رشته هنوز باید decode شود.
 - caller، `ECX=0` و دو Boolean برابر 1 می‌فرستد؛ بنابراین شاخه‌ی fallback constructor با `mW@Tlogs43end_+` فعال است.
 - بعد از `euResetMemory`، helper `0x004563A8` با همان دو رشته مسیر/مقدار دیگری می‌سازد و سپس `0x004565DC` و `0x004555D8` اجرا می‌شوند. این سه helper در شاخه‌ی بعدی trace می‌شوند تا مقصد `.easd` مشخص شود.
+
+
+### تکمیل تحلیل callbackهای SevenZip و registry — 2026-11-15
+
+- artifact 14166161804 از run 43723896564 نشان داد T7zInArchive.SetPassword فقط مقدار رمز را ذخیره نمی‌کند: callback استخراج را می‌سازد و IInArchive.Extract را برای تمام آیتم‌ها با testMode=0 فراخوانی می‌کند.
+- PrepareOperation مسیر callback/context در Self+0x50/+0x54 را از مسیر استفاده از رشته‌ی Self+0x58 جدا می‌کند. مقصد نهایی stream هنوز اثبات نشده است.
+- ExtractTo از callback type-info متفاوت (0x00453850) استفاده می‌کند؛ SetPassword از 0x0045391C.
+- artifact 14165369436 توابع registry را resolve کرد: 0x404414=WriteInteger، 0x404424=WriteBool، 0x40441C=ReadInteger، 0x40442C=ReadBool و 0x404454=ValueExists.
+- مستندات تفصیلی در بخش‌های ۲۱ و ۲۲ docs/RECOVERY-STORE-ANALYSIS.md ثبت شد؛ commit: d17a801d0d02f12e4a6b286af7aa1e21a9e691ac.
+- recovery-path run 43724386278 در آخرین بررسی در حال اجرا بود. Word lifecycle run 43722990611 با موفقیت کامل شد. مقصد استخراج و ثبت نهایی نامه هنوز قطعی نیست.
