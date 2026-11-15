@@ -705,4 +705,15 @@ Run `43719323732` completed successfully (artifact `14164146310`). New facts:
 ### Latest coordinator verification
 
 - Python bridge run `43720329600` passed **66 tests** after adding an initialization-event guard. Writer/config initialization events do not mark the document dirty or record a user save; only callbacks after OPENED affect the session state.
-- Recovery path workflow `43719180035` is still running its final constant/helper trace step. Plugin follow-up run `43720247793` is separately tracing the `euUnArchive` caller path.
+- Recovery path workflow `43719180035` completed successfully; artifact `14164088249` was inspected. Plugin follow-up run `43720247793` is separately tracing the `euUnArchive` caller path.
+
+
+### Recovery path workflow #10 result
+
+Run `43719180035` succeeded; artifact `14164088249` was inspected. Additional evidence:
+
+- `T7zInArchive.SetPassword` stores the password at `Self+0x58` and invokes an extraction-style interface call with a callback-like helper; it does not simply forward the string as a COM setter.
+- `PrepareOperation` reads `Self+0x58` and handles callback/context fields at `+0x50/+0x54`. The explicit `CryptoGetTextPassword` and `SetPasswordCallback` methods are stubs.
+- The three euResetMemory dispatches (+0x44 password, +0x0C path, +0x3C path) align by signature and behavior with SetPassword → OpenFile → ExtractTo. Treat this as the leading hypothesis, not a proven VMT mapping.
+- Cleanup imports are now resolved: `TDirectory.GetFiles` enumerates `*.easz`; FileAge/FileDateToDateTime/Now/HoursBetween implement the 24-hour threshold; DeleteFileW deletes older files.
+- Detailed update is in `docs/RECOVERY-STORE-ANALYSIS.md`, section 17.
