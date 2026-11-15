@@ -30,6 +30,8 @@ class FakeOffice:
     def open_document(self, request, *, on_modified, on_saved):
         self.opened_bytes = request.document_bytes
         self.on_modified = on_modified
+        # Initialization-time changes must not mark the user session dirty.
+        on_modified()
         return object()
 
     def wait_for_close(self, handle):
