@@ -1381,7 +1381,7 @@ The project now has independent CI analysis lanes for Word request lifecycle, re
 - Word's registered 0x004CD154 handler presents the Persian register-changes prompt and calls Document.Close on non-cancel paths. The TD32 symbol says BeforeSave; internal log strings say OnBeforeClose. Event-sink slot naming remains unresolved.
 - Main Word settings read from HKCU\Software\Emwat\Dynamic Config include the four operational viewer values plus TETracer's Logging Level and Save I/O Trace Files. TETracer's Created IO Trace Count is a 15-count diagnostic trace quota.
 - Image/print settings are stored separately under HKCU\SOFTWARE\Emwat\PrintParams.
-- DeleteTempRAW can taskkill WINWORD.EXE and then remove matching files under the Windows temp directory; its invocation point remains unknown.
+- Exported CloseAllWords (0x0044AE98) can taskkill WINWORD.EXE and then invoke exported DeleteTempRAW (0x0044B0F8) to remove temp-file masks. Exported GetFileVersion is at 0x0044B2DC. TD32 labels are mismatched; the external service invocation point remains unknown.
 - Packet-level timing confirms the EditWordDocument request body is complete at 0.002154 s and the first response byte arrives at 54.560037 s: a 54.557883-second server-side wait. The 1.166 MB response transfers in about 1.362 ms. The returned DOC is rewritten: input 872,960 bytes; estimated complete response 875,008 bytes (+2,048); OLE first-directory-sector pointer changes 1698 → 1702 at offset 48. The exact Word/COM release event remains under investigation.
 - The BPL writes wordBody bytes directly to a temp file. The Base64Decode call at 0x004B7E44 targets a different local value, not proven to be wordBody.
 
