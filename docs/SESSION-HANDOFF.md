@@ -635,3 +635,9 @@ The 20 addresses extracted from `0x00627B74` are not Word event callback pointer
 ## Recovery archive password correction — 2026-11-15
 
 Do not treat the Windows username or `@25*gamsign*25@` as the confirmed `.easz` archive password. `euGetAutoSavePass` returns the account name (or fallback) and `DoClearOldAutoSaveFiles` concatenates it with `@25*gamsign*25@`, but the exact archive consumer is unresolved. The recovery `Delete` path constructs a `Sevenzip.T7zInArchive` object; `euResetMemory` passes `mW@Tlogs43end_+` to virtual slot `+0x44` when its optional password string is null. The exact slot/property mapping and archive open/extract sequence remain pending. See `docs/RECOVERY-STORE-ANALYSIS.md`.
+
+## EditWordDocument request adapter — 2026-11-15
+
+- Added `python/src/emwat_linux/editword_request.py` with `parse_editword_request(MethodCall)`: validates the method name and required parameters, parses Base64 `wordConfig`, decodes Base64 `wordBody` to opaque document bytes, preserves `signData` text and extra parameters, and enforces size limits.
+- It deliberately does not assume `signData` is one Base64 blob; the inner config declares concatenation and per-field encoding.
+- Python bridge CI run #46 (`43717259882`) passed **58 tests**. This adapter is not yet wired into a production method handler or office engine.
