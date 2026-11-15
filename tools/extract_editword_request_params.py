@@ -60,9 +60,19 @@ def describe_xml(data):
     root = ET.fromstring(data)
 
     def walk(node):
+        safe_attribute_values = {
+            key: value
+            for key, value in node.attrib.items()
+            if key in {
+                "status", "allowCopy", "allowPrint", "allowSave", "name",
+                "id", "type", "mimetype", "encryption", "paramId",
+                "concater", "separator",
+            }
+        }
         return {
             "tag": node.tag,
             "attributes": sorted(node.attrib.keys()),
+            "safe_attribute_values": safe_attribute_values,
             "text_length": len(node.text or ""),
             "children": [walk(child) for child in list(node)],
         }
