@@ -404,7 +404,7 @@ jobs:
           python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004B7C39 word-lifecycle-analysis/LoadDocument-second-stream-callers.md
       - name: Trace post-read Word and TIFF processing pipeline
         run: |
-          python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x004B7CFA 0x004B809D word-lifecycle-analysis/LoadDocument-post-read-processing.md
+          python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x004B7DE1 0x004B809D word-lifecycle-analysis/LoadDocument-post-read-processing.md
           python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x004B8A84 word-lifecycle-analysis/LoadDocument-result-dispatch.md
           python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004B8A84 word-lifecycle-analysis/LoadDocument-result-dispatch-callers.md
           python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x004D1454 word-lifecycle-analysis/LoadDocument-viewer-postprocess.md
