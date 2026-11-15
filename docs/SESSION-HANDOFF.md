@@ -659,7 +659,7 @@ The reader exposes archive open, item-query and extraction methods. Do not yet n
 
 ### Verified since the previous handoff
 
-- Python bridge CI run `43719841339` succeeded with **66 tests**. The close-driven coordinator and EditWordDocument domain-service tests cover close without explicit Save, separate modification/save callbacks, cancellation, sanitized adapter failures, and rejection of non-byte output.
+- Python bridge CI run `43720329600` succeeded with **66 tests**. The close-driven coordinator and EditWordDocument domain-service tests cover close without explicit Save, separate modification/save callbacks, cancellation, sanitized adapter failures, and rejection of non-byte output.
 - New engine-neutral files: `office_adapter.py`, `document_coordinator.py`, and `editword_service.py`. They model request normalization → open → track modifications and engine saves independently → wait for user close → export final bytes. They are not a LibreOffice implementation and are not yet connected to the production HTTP method handler.
 - `EditWordDocument` request normalization exists, including Base64 document decoding and conservative preservation of signData as opaque text.
 - Heartbeat response and init-script generation are implemented against the captured exchange; production allowlists must still be configured.
@@ -700,3 +700,9 @@ Run `43719323732` completed successfully (artifact `14164146310`). New facts:
 - `CryptoGetTextPassword2` obtains a provider/interface from global `0x0062FBB8` through helper `0x00404734`, stores it at object offset `+0x2C`, and has the plugin constructor as its direct caller.
 - `T7zOutArchive.SetPassword` is a no-op stub. `T7zInArchive.SetPassword` stores its string at `+0x58) and forwards it to the archive interface, but no raw static pointer to this method was found. Therefore, the mapping from `euResetMemory` virtual slot `+0x44` to that setter remains a strong candidate, not a proven binding.
 - Detailed update is in `docs/RECOVERY-STORE-ANALYSIS.md`, section 16.
+
+
+### Latest coordinator verification
+
+- Python bridge run `43720329600` passed **66 tests** after adding an initialization-event guard. Writer/config initialization events do not mark the document dirty or record a user save; only callbacks after OPENED affect the session state.
+- Recovery path workflow `43719180035` is still running its final constant/helper trace step. Plugin follow-up run `43720247793` is separately tracing the `euUnArchive` caller path.
