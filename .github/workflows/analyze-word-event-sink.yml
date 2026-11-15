@@ -84,6 +84,25 @@ jobs:
           python tools/decode_pe_strings.py analysis-input/EmwatMethods.bpl1 0x00627A38 0x00627B74 > event-sink-analysis/server-metadata/server-data-strings.md
           python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 0x00627A38 event-sink-analysis/server-metadata/data-627A38-pointer-refs.md
           python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 0x00627B74 event-sink-analysis/server-metadata/data-627B74-pointer-refs.md
+      - name: Trace generated Word event callback table targets
+        run: |
+          mkdir -p event-sink-analysis/event-handlers
+          python - <<'PY'
+          import pathlib, re, subprocess, sys
+          source = pathlib.Path("event-sink-analysis/server-metadata/data-627B74.md").read_text(encoding="utf-8")
+          targets = sorted(set(re.findall(r"0x(0044[0-9A-Fa-f]{4})", source)))
+          index = ["# Generated Word event callback target traces", ""]
+          for target in targets:
+              output = f"event-sink-analysis/event-handlers/{target}.md"
+              callers = f"event-sink-analysis/event-handlers/{target}-callers.md"
+              subprocess.run([sys.executable, "tools/trace_td32_procedure.py", "analysis-input/EmwatMethods.bpl1", "0x" + target, output], check=True)
+              subprocess.run([sys.executable, "tools/trace_td32_callers.py", "analysis-input/EmwatMethods.bpl1", "0x" + target, callers], check=True)
+              index.append(f"- 0x{target}: {output}; callers: {callers}")
+          pathlib.Path("event-sink-analysis/event-handlers/index.md").write_text("\n".join(index) + "\n", encoding="utf-8")
+          PY
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x00404F8C event-sink-analysis/event-handlers/InvokeEvent-dispatch-helper.md 180 ret
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x00401188 event-sink-analysis/event-handlers/InvokeEvent-callback-helper.md 180 ret
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x00404FAC event-sink-analysis/event-handlers/ConnectTo-helper.md 220 ret
       - uses: actions/upload-artifact@v4
         with:
           name: emwat-word-event-sink-analysis
