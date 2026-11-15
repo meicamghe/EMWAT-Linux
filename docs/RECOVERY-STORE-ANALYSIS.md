@@ -128,3 +128,24 @@ The cleanup routine `euClearOldAutoSaveFiles` enumerates `*.easz`, calculates a 
 `DoClearOldAutoSaveFiles` supplies either a fallback constant (redacted in this report) or a value returned by `euGetAutoSavePass` to the cleanup routine. The password helper uses a 0x400-byte buffer and is also called by `TfrmSendLog.lblFileNameClick`; its exact encoding/decryption behavior remains unresolved.
 
 A separate helper, `DeleteTempRAW`, contains the command strings `taskkill.exe` and `/f /im WINWORD.EXE`, along with `GamElectronic EMWAT` and `.doc` markers. This is a distinct Word/temp cleanup path; it must not be confused with the `.easz` archive deletion loop. A native Linux port should manage only its own office-engine processes rather than blindly reproducing a global `taskkill` of all Word/office processes.
+
+
+## 10. AutoSave password and retention interval resolved (path workflow run #3)
+
+Artifact `14162781931` from `analyze-recovery-paths.yml` run #3 provides two important resolutions:
+
+### AutoSave password source
+
+`euGetAutoSavePass` (`0x00456B78`) calls `advapi32!GetUserNameW` with a 0x400-character buffer. On success it sets the returned Delphi string length to the returned character count minus the terminating NUL. If the API fails, the function clears the output and assigns the literal fallback `@25*gamsign*25@`.
+
+Therefore, the recovery/cleanup password is the **current Windows account user name**, with `@25*gamsign*25@` as the fallback when `GetUserNameW` fails. This is code-path evidence, not an inference from the helper's name. The exact downstream encryption/decryption algorithm for `.easz` remains unresolved.
+
+### Retention interval
+
+The cleanup loop uses `FileAge(path)`, converts the timestamp with `FileDateToDateTime`, obtains `Now`, calculates elapsed time with `DateUtils.HoursBetween`, and compares the result against `0x18` (24). Files at least **24 hours old** are passed to `DeleteFileW`. This corrects the earlier uncertainty: the threshold is 24 hours, not 24 days.
+
+### Temporary AutoSave directory (partially resolved)
+
+`euGetTempFileName` (`0x00454A58`) calls `euGetWinTempPath` (`0x0044A47C`) when its cached path is empty, then appends `temp-emwatASwf\\`. The resulting path is the base for `*.easz` enumeration. The exact implementation of the Windows temp-path helper and its API call chain is the remaining path question.
+
+Evidence: `GetUserNameW` `0x0040264C`; `FileAge` `0x004032B8`; `FileDateToDateTime` `0x00403330`; `Now` `0x004033A0`; `HoursBetween` `0x00404344`; `DeleteFileW` `0x004026B4`.
