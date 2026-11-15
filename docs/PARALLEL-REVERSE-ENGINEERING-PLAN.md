@@ -197,14 +197,14 @@ A separate request-lifecycle analysis should trace the COM/helper calls between 
 
 ## Temporary Word-process cleanup discovery — corrected by export-table evidence (2026-11-15)
 
-Filename workflow #9 (run 43710547860, artifact 14160317510) resolved the external export names. The export table is authoritative for the exported API names; TD32 procedure labels at these addresses are shifted/mismatched:
+Filename workflow #9 (run 43710547860, artifact 14160317510) and the complete export table establish the public BPL API names. TD32 procedure labels at these addresses are shifted/mismatched:
 
-- Exported CloseAllWords is at VA 0x0044AE98. It enumerates top-level windows with FindWindowW/GetWindow/GetWindowTextW and checks title markers including "GamElectronic EMWAT" and ".doc".
-- On a match it calls ShellExecuteW with taskkill.exe and "/f /im WINWORD.EXE", sleeps 100 ms, and repeats the scan. It then calls the internal helper at 0x0044AD30 (TD32 symbol CloseAllWords).
-- The internal helper obtains the Windows temp path through GetTempPathW and invokes DeleteTempRAW on masks including %TEMP%\efg*.*, %TEMP%\~$g*.*, and %TEMP%\temp-emwatwf\*.* (the last mask is retried after ensuring the directory exists).
+- Exported RemoveTempFiles is at VA 0x0044AD30. It obtains the Windows temp path and invokes DeleteTempRAW on masks including %TEMP%\efg*.*, %TEMP%\~$g*.*, and %TEMP%\temp-emwatwf\*.* (the last mask is retried after ensuring the directory exists).
+- Exported CloseAllWords is at VA 0x0044AE98. It enumerates top-level windows with FindWindowW/GetWindow/GetWindowTextW and checks title markers including "GamElectronic EMWAT" and ".doc". On a match it runs taskkill.exe /f /im WINWORD.EXE, sleeps 100 ms, and repeats; it then calls RemoveTempFiles (0x0044AD30).
 - Exported DeleteTempRAW is at VA 0x0044B0F8. Although TD32 labels this address GetFileVersion, its body enumerates matching files with FindFirst/FindNext, normalizes attributes with FileSetAttr, and deletes matches with DeleteFile.
 - Exported GetFileVersion is at VA 0x0044B2DC. Although TD32 labels this address Finalization, its body parses version-resource data. Its direct callers include Applicationactivities.SetEmwatVersion and UpgradeEmwatPlugin.
-- No internal direct caller or raw pointer reference to the exported CloseAllWords entry was found. Because it is exported, EmwatService.exe may invoke it externally by package export; the service binary is not present in this analysis set, so the external call site is unknown.
+- The full export list also exposes TEmwatMethod.Invoke (0x0046C9E0) and the PerformMethod entrypoints for EditWordDocument, CompareWordDocument, ScanDocument, ImageEdition, and related operations. These exports form the likely service-to-BPL dispatch surface.
+- No internal direct caller of exported CloseAllWords was found. Because it is exported, EmwatService.exe may invoke it externally by package export; the service binary is not present in this analysis set, so the external call site is unknown.
 
 This is a global Word-process/temp-file cleanup API, not evidence of the main editor's user-driven close callback. Do not connect it to the observed user close behavior until the external invocation point is identified.
 
