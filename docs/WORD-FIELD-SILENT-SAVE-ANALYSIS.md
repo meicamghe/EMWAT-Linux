@@ -85,3 +85,16 @@ The registration code at `0x004B8C9C–0x004B8D12` writes callback function poin
 This narrows the lifecycle model: EMWAT explicitly hooks Word's **BeforeSave**, **NewDocument**, **WindowActivate**, and a **BeforePrint/background-print** path, plus a mode-dependent `LoadOptions` callback. The event registration is therefore not merely generic timer setup. It is the central integration point for reacting to Word document and window lifecycle events.
 
 The exact COM event interface slot-to-name mapping is supported here by the Delphi TD32 procedure symbols and the registration sequence; the detailed side effects of every callback still require separate procedure-level analysis.
+
+
+### BeforeSave callback behavior (procedure-level observations)
+
+The callback at `0x004CD154` is not an empty notification hook:
+
+- It first checks that the Word document passed by COM matches the viewer's tracked document pointer at `[TWordViwer + 0x48]`; unrelated documents are ignored.
+- It checks viewer state byte `+0x5E`. When that state is false, it writes `0xFFFF` to the callback's `WordBool`-sized argument at the supplied pointer and exits. In the Word BeforeSave event signature, this is consistent with setting the event's Cancel flag.
+- When active, it invokes `TWordViwer.PreparePrintDocument` at `0x004CB108`, then inspects the Word document through a virtual/interface call at vtable offset `+0xD8`.
+- A further branch controlled by viewer byte `+0x5F` creates/shows a Delphi form/dialog and can also set the Cancel flag. It then updates viewer state bytes `+0x5C` and `+0x5E`, and performs additional Word document operations.
+- The routine therefore participates in controlling Word's native Save event and coordinating EMWAT's own document preparation/state. It should not be implemented as a passive event logger.
+
+The exact user-facing dialog text and all branch meanings still require decoding of the referenced string constants and form resources. The callback's Cancel writes are directly visible; their business meaning is not yet fully established.
