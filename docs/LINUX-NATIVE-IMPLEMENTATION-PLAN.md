@@ -167,4 +167,7 @@ Python bridge workflow run `43720329600` completed successfully with 66 tests. T
 - Successful close responses use the observed `response-word` Base64 serializer and the captured Word MIME envelope.
 - Cancellation response generation is injected and mandatory; no HTTP status/body is invented because the original cancellation envelope has not been captured.
 - The factory is not yet registered in the application and must not be treated as production-ready until a real LibreOffice adapter and explicit cancellation policy are provided.
-- Python bridge CI run `43721322012` passed **69 tests**.
+- Python bridge CI run `43721449170` passed **69 tests**.
+
+
+- OfficeAdapter protocol documentation now explicitly requires per-document handle isolation and concurrent-session safety, matching the threaded bridge. CI run `43721449170` passed 69 tests.
