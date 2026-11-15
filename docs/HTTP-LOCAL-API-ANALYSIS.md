@@ -441,3 +441,16 @@ capture دو origin متفاوت را نشان می‌دهد و اکنون در 
 این دو مقدار نباید با هم اشتباه شوند. Factory هر دو allowlist را به BridgeHTTPServer منتقل می‌کند و init در صورت نبودن parent allowlist یا خارج‌بودن Referer از آن، fail-closed می‌شود. تست composition نیز اکنون POST با Origin محلی و GET init با Referer صفحهٔ والد را جداگانه بررسی می‌کند.
 
 اعتبارسنجی: Python bridge workflow #42، run 43709846976، موفق؛ 45 تست پاس شده‌اند.
+
+
+### Packet-level EditWordDocument request timing — 2026-11-15
+
+The pcapng timing workflow reconstructed the HTTP body boundaries for TCP stream 18:
+
+- Client 127.0.0.1:61189 sends POST /?invoke=58351 to 127.0.0.1:1984.
+- The full request body (Content-Length 1,177,821) is complete at 0.002154 s relative to the stream's first packet.
+- The first response payload arrives at 54.560037 s: 54.557883 seconds after the complete request body.
+- The response Content-Length is 1,166,820 bytes; response payload transmission spans about 1.362 ms.
+- Two Agent heartbeat requests occur during the held-request interval.
+
+This proves the service holds the original EditWordDocument HTTP request open for approximately 54.56 seconds after receiving the full body, then sends the response rapidly. The wait is server-side, not document-transfer time. The exact Word/COM/helper event that releases the held request remains to be identified.
