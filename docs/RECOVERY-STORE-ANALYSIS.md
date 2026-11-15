@@ -241,3 +241,13 @@ Still pending:
 - whether the archive is standard 7z or another SevenZip-supported format/configuration;
 - whether .easd is the extracted document itself or a subsequent intermediate;
 - the archive writer path and the exact creation/encryption settings for .easz.
+
+
+## 15. Writer-side SevenZip password hook inspected (2026-11-15)
+
+The T7zOutArchive class trace adds an important constraint to the archive-creation investigation:
+- T7zOutArchive.SetPassword at 0x004547DC is a tiny stub that returns zero and does not store the supplied string or call the archive interface. Do not treat this wrapper as proof that the writer is configured with a password through this method.
+- T7zOutArchive.CryptoGetTextPassword2 at 0x004543C4 obtains an object through global pointer 0x0062FBB8 and passes it through helper 0x00404734, then stores the resulting interface/reference at object offset +0x2C. This is consistent with a callback/provider path for writer password handling, but the provider's semantic value and initialization remain unresolved.
+- T7zOutArchive exposes AddFile, AddFiles, AddStream, SaveToFile, and SaveToStream. Direct bounded CALL scans did not find callers for the wrapper methods, so writer usage is likely through indirect/VMT dispatch or a helper not yet mapped.
+
+Consequently, the recovery reader password path is substantially better understood than the .easz creation path. The exact archive writer, output format, password callback value, and compression/encryption properties remain open questions.
