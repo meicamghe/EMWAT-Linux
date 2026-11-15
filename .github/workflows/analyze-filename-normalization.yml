@@ -79,6 +79,19 @@ jobs:
           for target in 004032D8 004032E8 004032F0 004032F8 00403310 00403338 00403328; do
             python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x$target filename-analysis/temp-cleanup/deeper/helper-$target.md 220 ret
           done
+      - name: Check whether cleanup helpers are exported from the BPL
+        run: |
+          mkdir -p filename-analysis/temp-cleanup/exports
+          python - <<'PY'
+          import pefile, pathlib
+          pe = pefile.PE("analysis-input/EmwatMethods.bpl1")
+          rows = ["# EmwatMethods BPL exports", ""]
+          for item in getattr(pe, "DIRECTORY_ENTRY_EXPORT", []).symbols:
+              name = item.name.decode("ascii", errors="replace") if item.name else "<ordinal-only>"
+              rows.append(f"- {name} — RVA 0x{item.address:08X}")
+          pathlib.Path("filename-analysis/temp-cleanup/exports/all-exports.md").write_text("\n".join(rows) + "\n", encoding="utf-8")
+          PY
+          grep -inE "DeleteTempRAW|CloseAllWords|GetFileVersion" filename-analysis/temp-cleanup/exports/all-exports.md || true
       - uses: actions/upload-artifact@v4
         with:
           name: emwat-filename-normalization-analysis
