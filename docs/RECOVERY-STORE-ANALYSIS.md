@@ -385,3 +385,27 @@ The full `TfrmShowAutoSaveFiles.Delete` trace (`0x005EB828`, artifact `141650582
 - After `euResetMemory`, the caller invokes `0x004563A8` with the same two strings to construct a further path/value, then calls `0x004565DC` and `0x004555D8` before continuing into Word automation. These helpers need separate tracing to identify the `.easd` output path and cleanup sequence.
 
 This corrects the earlier assumption that the first argument was already a stream object: `OpenStream` is a factory method that accepts the archive path and returns the `IInStream` used by the SevenZip reader.
+
+
+## 21. SevenZip callback control-flow and extraction semantics — 2026-11-15
+
+Artifact 14166161804 (plugin run 43723896564) adds implementation-level details:
+
+- T7zInArchive.SetPassword (0x00453860) stores its UnicodeString at Self+0x58, constructs an extraction callback using type-info 0x0045391C and Self+8, then calls IInArchive.Extract (internal slot +0x1C) with indices=NULL, numItems=-1, testMode=0. It initiates an all-items extraction; it is not a passive password setter.
+- T7zInArchive.PrepareOperation (0x004532E4) checks callback/context fields Self+0x50 and Self+0x54. When that callback path is active, it calls the stored function pointer with operation arguments and context. Otherwise, when Self+0x58 is populated, it consults the item property and constructs a stream/interface used by the archive callback path. The exact callback contract and output destination remain unresolved.
+- T7zInArchive.ExtractTo (0x0045375C) stores its supplied callback/context values at Self+0x50/+0x54, performs an all-items IInArchive.Extract request, and clears both fields. Its callback type-info reference is 0x00453850, distinct from SetPassword's 0x0045391C.
+- T7zInArchive.OpenStream (0x00452FDC) takes an archive-path UnicodeString, creates an input stream and returns IInStream. The selected .easz path therefore enters the reader as a path string.
+
+These traces do not establish whether the callback writes extracted data to .easd, a temporary stream, or another target. Do not implement a guessed password or extraction format.
+
+## 22. Word registry helper import resolution — 2026-11-15
+
+The completed Word lifecycle artifact 14165369436 resolves registry thunks used by TEmSettingForm.chkDntAskForSaveClick:
+
+- 0x00404414 → TRegistry.WriteInteger.
+- 0x00404424 → TRegistry.WriteBool.
+- 0x0040441C → TRegistry.ReadInteger.
+- 0x0040442C → TRegistry.ReadBool.
+- 0x00404454 → TRegistry.ValueExists.
+
+The checkbox handler opens HKCU (0x80000001) and writes values below Software\Emwat\Dynamic Config. The persisted names and types are recorded in section 17. These are RTL TRegistry wrappers, not application-specific registry algorithms.
