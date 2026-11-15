@@ -251,3 +251,20 @@ What remains unproven:
 - the exact filesystem deletion primitive and confirmation flow.
 
 The Linux implementation should not yet assume Word's standard `.asd` / `.wbk` locations. Recovery discovery should remain behind a pluggable provider until the native format and location are identified.
+
+
+## 12. Additional correction: the recovery form's "Show File" handler is misnamed at the code level
+
+The TD32 symbol `btnShowFileClick` at `0x005EB81C` is only 10 bytes and directly calls `TfrmShowAutoSaveFiles.CloseWordApp` (`0x005EBDA8`). It does not itself open a selected file. This may be a UI naming mismatch, a handler whose actual behavior is cleanup, or an incomplete view of work delegated elsewhere; the disassembly is unambiguous about the direct call.
+
+The form's `FormShow` also does not enumerate a directory. Consequently, neither the button handler nor FormShow currently provides the missing recovery-file discovery/open implementation. Further tracing must locate the code that populates the list and the helper object created by `Delete`.
+
+## 13. Practical consequence for implementation scope
+
+Do not implement the recovery window as if the binary already proved a conventional "browse autosave files and reopen document" workflow. The defensible feature contract at this point is narrower:
+- a UI with a selectable list and display-string transformation;
+- a tracked collection of Word-related objects;
+- a selected-item deletion workflow delegated partly to helper objects;
+- cleanup of tracked Word instances on a conditional BeforeClose event.
+
+The actual recovery semantics remain an open reverse-engineering item.
