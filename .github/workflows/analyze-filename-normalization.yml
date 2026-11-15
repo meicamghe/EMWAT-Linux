@@ -71,6 +71,14 @@ jobs:
           for target in 004027F8 00402744 004032C8 004032E0 00403310 0040414C 00403378 00401398 00401388 00401340; do
             python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x$target filename-analysis/temp-cleanup/helper-$target.md 180 ret
           done
+      - name: Resolve temp cleanup enumeration helpers and indirect callers
+        run: |
+          mkdir -p filename-analysis/temp-cleanup/deeper
+          python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 0x0044AE98 filename-analysis/temp-cleanup/deeper/DeleteTempRAW-pointer-refs.md
+          python tools/trace_td32_immediate_refs.py analysis-input/EmwatMethods.bpl1 0x0044AE98 filename-analysis/temp-cleanup/deeper/DeleteTempRAW-immediate-refs.md
+          for target in 004032D8 004032E8 004032F0 004032F8 00403310 00403338 00403328; do
+            python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x$target filename-analysis/temp-cleanup/deeper/helper-$target.md 220 ret
+          done
       - uses: actions/upload-artifact@v4
         with:
           name: emwat-filename-normalization-analysis
