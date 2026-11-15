@@ -409,3 +409,6 @@ The pointer list at `0x00627BB0` is an error-message string table. The previous 
   - `+0x44` → virtual `T7zArchive` constructor at `0x0045392C`.
 - `SetPassword` stores its string at `Self+0x58`, creates an extraction callback from `Self+8`, and invokes the internal archive interface slot `+0x1C` for all items (`indices=NULL`, `numItems=-1`, `testMode=0`). This suggests the recovery routine triggers an all-items archive operation through this callback; do not yet claim the exact output path.
 - Remaining recovery work: inspect the autosave Delete caller to type the input stream and second string, and trace the callback object at typeinfo references `0x0045391C` and `0x00453850` to identify the output destination and lifecycle.
+
+
+- Compare `SetPassword` callback typeinfo `0x0045391C` with `ExtractTo` callback typeinfo `0x00453850`. Both invoke internal archive slot `+0x1C` for all items, but `SetPassword` uses `testMode=0` and a callback from `Self+8`; `ExtractTo` stores context at `Self+0x50/+0x54` and uses its Boolean argument as `testMode`. Latest plugin run `43723896564` traces both typeinfo regions and references to resolve output semantics.
