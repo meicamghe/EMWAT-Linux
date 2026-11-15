@@ -84,3 +84,8 @@ The loopback transport is hardened with IPv4-loopback-only binding, Host-header 
 ### Application composition factory
 
 `python/src/emwat_linux/application.py` now provides `create_bridge_server(...)`, wiring the loopback transport, XML parser and explicit method registry. The caller must provide the exact allowed Origin list and explicit method handlers; nothing is implicitly enabled. An integration test exercises the complete local HTTP → XML parser → registered handler → HTTP response path. Python bridge workflow run #24 (`43593185429`) passed all 29 tests on commit `27986ee96b45009283cd96eecde95110e1b9e448`. The only registered method in the integration test is a test fixture, not the real EMWAT document handler.
+
+
+### Parallel implementation progress (2026-11-15)
+
+The native bridge now includes the observed Agent liveness route GET /?heartbeat (HTTP 200, empty response body) with a regression test. A separate office-independent document-session state machine is available at python/src/emwat_linux/sessions.py; it distinguishes office-engine Save from close-time finalization and supports safe idempotent return. Tests were added for lifecycle transitions and heartbeat behavior. These newest commits are not yet represented by a verified CI run, and no production Almas Gam handler or LibreOffice integration is claimed.
