@@ -17,6 +17,7 @@ class BridgeHTTPServerTests(unittest.TestCase):
             handler,
             max_body_bytes=128,
             allowed_origins=frozenset({"https://office.example"}),
+            allowed_parent_origins=frozenset({"https://office.example"}),
         )
         self.thread = threading.Thread(target=self.server.serve_forever, daemon=True)
         self.thread.start()
@@ -40,6 +41,45 @@ class BridgeHTTPServerTests(unittest.TestCase):
             BridgeHTTPServer(lambda _request: BridgeResponse(b""), host="0.0.0.0")
         with self.assertRaises(ValueError):
             BridgeHTTPServer(lambda _request: BridgeResponse(b""), host="::1")
+
+
+    def test_init_endpoint_returns_captured_bridge_script(self):
+        status, body, headers = self.request(
+            "GET",
+            "/?init=40169_57326",
+            headers={"Referer": "https://office.example/"},
+        )
+        script = body.decode("iso-8859-1")
+        self.assertEqual(status, 200)
+        self.assertEqual(headers["Content-Type"], "text/html; charset=ISO-8859-1")
+        self.assertEqual(headers["Access-Control-Allow-Origin"], "*")
+        self.assertIn(f"http://127.0.0.1:{self.port}?invoke=", script)
+        self.assertIn('"https://office.example/"', script)
+        self.assertIn("addEventListener", script)
+        self.assertIn("attachEvent", script)
+        self.assertIn("responseText", script)
+
+    def test_init_endpoint_requires_allowlisted_parent_referer(self):
+        status, body, _ = self.request("GET", "/?init=123_456")
+        self.assertEqual(status, 403)
+        self.assertEqual(body, b"init_referer_required")
+
+        status, body, _ = self.request(
+            "GET",
+            "/?init=123_456",
+            headers={"Referer": "https://attacker.example/"},
+        )
+        self.assertEqual(status, 403)
+        self.assertEqual(body, b"init_origin_not_allowed")
+
+    def test_init_endpoint_rejects_unrecognized_query_shape(self):
+        status, body, _ = self.request(
+            "GET",
+            "/?init=not-a-captured-token",
+            headers={"Referer": "https://office.example/"},
+        )
+        self.assertEqual(status, 404)
+        self.assertEqual(body, b"")
 
     def test_health_endpoint(self):
         status, body, headers = self.request("GET", "/healthz")
