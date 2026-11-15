@@ -832,3 +832,6 @@ Run `43719180035` succeeded; artifact `14164088249` was inspected. Additional ev
 - Do not confuse that helper with `euGetAutoSavePass` (`0x00456B78`), a separate `GetUserNameW` helper used in cleanup/logging.
 - Recovery Delete applies `FixDirectionInFarsiNumericMode` (`0x004563A8`) to a path-like value before constructing a `.easd` path; extraction destination/content remains unresolved.
 - Callback-contract analysis is now a separate workflow. It traces callback RTTI, `+0x44` dispatch target, and the archive extraction callbacks. See `docs/RECOVERY-STORE-ANALYSIS.md` section 23 and commit `b753390bd421047e22d072b1012d9be3d829015a`.
+
+
+- Follow-up correction commit `6ed0f8f490515f548065a39afe546c9a6838c660` fixes the recovery Delete call-site description: `0x004563A8` receives only the selected `.easz` path (with Boolean flags false) and produces the normalized path-like string used to construct the `.easd` path. It is not passed the password string.
