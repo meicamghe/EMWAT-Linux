@@ -1453,3 +1453,5 @@ The BPL export/API analysis resolves the earlier naming ambiguity. The public TE
 - رشته `mW@Tlogs43end_+` در مسیر `euResetMemory` به slot مجازی `+0x44` داده می‌شود؛ `euGetAutoSavePass` نیز نام حساب را برمی‌گرداند و caller دیگری آن را با `@25*gamsign*25@` ترکیب می‌کند. هیچ‌کدام را تا نگاشت setter و مسیر بازکردن آرشیو، رمز قطعی `.easz` اعلام نمی‌کنیم.
 - run #7 تحلیل recovery-path موفق شد؛ run #9 و #10 برای فهرست و trace متدهای `T7zInArchive`/`T7zOutArchive` در حال اجرا هستند. run #10 شاخه event error-map نیز موفق شد؛ run #11 نسخه کامل‌تر جدول را decode می‌کند.
 - پل Python اکنون 58 تست موفق دارد؛ دو جزء جدید `word_config.py` و `editword_request.py` هنوز به handler تولیدی و موتور LibreOffice متصل نشده‌اند.
+
+- run #11 شاخه error-map با موفقیت تمام شد و رشته‌های خطای Word/Excel، خطای تصویر، لغو عملیات، سطح‌های log و گزینه‌های زمان AutoSave را استخراج کرد. مستند جدید `docs/WORD-ERROR-MAP.md`؛ این جدول callbackهای COM نیست.
