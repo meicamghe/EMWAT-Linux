@@ -90,7 +90,7 @@ jobs:
           python - <<'PY'
           import pathlib, re, subprocess, sys
           source = pathlib.Path("event-sink-analysis/server-metadata/data-627B74.md").read_text(encoding="utf-8")
-          targets = sorted(set(re.findall(r"0x(0044[0-9A-Fa-f]{4})", source)))
+          targets = sorted(set(re.findall(r"^0x[0-9A-Fa-f]{8}: (0044[0-9A-Fa-f]{4}) ->", source, re.M)))
           index = ["# Generated Word event callback target traces", ""]
           for target in targets:
               output = f"event-sink-analysis/event-handlers/{target}.md"
