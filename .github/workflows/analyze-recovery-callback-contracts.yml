@@ -25,13 +25,13 @@ jobs:
       - name: Trace recovery and SevenZip callback implementations
         run: |
           mkdir -p recovery-callback-contracts/procedures recovery-callback-contracts/typeinfo recovery-callback-contracts/interfaces
-          for target in 0044A998 004563A8 004565DC 004555D8 0045574C 00456F00 00453860 004532E4 0045375C 00452FDC 00453534 00453480 004531D4 004531EC 00453744; do
+          for target in 0044A998 004563A8 004565DC 004555D8 0045574C 00456F00 00453860 004532E4 0045375C 00452FDC 00453534 00453480 004531D4 0045392C 00453B84 00453A54 004531EC 00453744; do
             python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x$target recovery-callback-contracts/procedures/$target.md
             python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x$target recovery-callback-contracts/procedures/$target-callers.md
           done
       - name: Inspect callback RTTI and interface references
         run: |
-          for target in 0045391C 00453850 0045275B 004525B0 00452558 00452BBC 00452E80 0044A998 004563A8 004565DC 004555D8 0045574C; do
+          for target in 0045391C 00453850 0045275B 004525B0 00452558 00452BBC 00452E80 0044A998 004563A8 004565DC 004555D8 0045574C 0045392C 00453B84 00453A54; do
             python tools/inspect_pe_va.py analysis-input/EmwatMethods.bpl1 0x$target --before 0x30 --after 0xA0 > recovery-callback-contracts/typeinfo/$target.md
             python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 0x$target recovery-callback-contracts/typeinfo/$target-refs.md
           done
