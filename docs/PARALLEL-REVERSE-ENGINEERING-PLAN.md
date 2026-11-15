@@ -382,3 +382,10 @@ The pointer list at `0x00627BB0` is an error-message string table. The previous 
 - The base-class workflow run `43721583502` completed successfully (artifact `14165155588`). It indexed `T7zArchive` base methods, but did not resolve the returned COM-style interface's virtual slots.
 - Extended `resolve_delphi_vmt_slots.py` and `trace_delphi_interfaces.py` to include the SevenZip classes and `IInArchive`/`IOutArchive`/stream interface RTTI. Updated `.github/workflows/analyze-recovery-plugin.yml` to emit `SevenZip-VMT-slots.md` and `SevenZip-interface-tables.md`.
 - New analysis run `43722345225` is in progress. Its purpose is to prove or reject the leading `SetPassword → OpenFile → ExtractTo` mapping for `euResetMemory`, not to assume it.
+
+
+### SevenZip custom interface identity resolved — 2026-11-15
+
+- Plugin workflow run `43722345225` completed successfully; artifact `14165136040` was inspected.
+- `CreateOutArchive` constructs `T7zInArchive` at VMT `0x004525B0` and returns the interface at `Self+0x70`. Its interface table entry 6 has `IOffset=0x70`, IID `022cf785-3ece-46ef-9755-291fa84cc6c9`, and VTable `0x00452420`.
+- Thus `euResetMemory` slots `+0x44/+0x0C/+0x3C` are confirmed to be calls on this custom interface. Method names remain unproven; vtable tracing was extended to 20 entries to expose the actual targets.
