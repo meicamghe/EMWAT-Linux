@@ -24,7 +24,7 @@ jobs:
       - name: Index SevenZip plugin and related classes
         run: |
           mkdir -p recovery-plugin-analysis/plugin recovery-plugin-analysis/form-data
-          python tools/find_td32_class_procedures.py analysis-input/EmwatMethods.bpl1 T7zPlugin T7zInArchive T7zOutArchive > recovery-plugin-analysis/plugin/class-index.md
+          python tools/find_td32_class_procedures.py analysis-input/EmwatMethods.bpl1 T7zArchive T7zPlugin T7zInArchive T7zOutArchive > recovery-plugin-analysis/plugin/class-index.md
           python - <<'PY'
           import pathlib, re, subprocess, sys
           source = pathlib.Path("recovery-plugin-analysis/plugin/class-index.md").read_text(encoding="utf-8")
@@ -50,12 +50,12 @@ jobs:
           PY
       - name: Trace recovery transform and plugin creation boundary
         run: |
-          for target in 00452BBC 00456F00 00456E37 00452C10 00452DB4 00452C25 004543C4 00454450 004547DC 00453860; do
+          for target in 00452BBC 00456F00 00456E37 00452C10 00452DB4 00452C25 004543C4 00454450 004547DC 00453860 00453950; do
             python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x$target recovery-plugin-analysis/form-data/proc-$target.md
             python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x$target recovery-plugin-analysis/form-data/proc-$target-callers.md
             python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 0x$target recovery-plugin-analysis/form-data/refs-$target.md
           done
-          for target in 004529E8 00452A00 00452A40 00452A80 00452B00 00452B40 00452C00 00452C54 00452ED8 00452558 004525B0 0045275B 0062A824 0062A858 0062FBB8; do
+          for target in 00452474 00452558 004525AC 004525B0 0045275B 004529E8 00452A00 00452A40 00452A80 00452B00 00452B40 00452C00 00452C54 00452ED8 00453950 0062A824 0062A858 0062FBB8; do
             python tools/inspect_pe_va.py analysis-input/EmwatMethods.bpl1 0x$target --before 0x30 --after 0x90 > recovery-plugin-analysis/form-data/va-$target.md
           done
       - uses: actions/upload-artifact@v4
