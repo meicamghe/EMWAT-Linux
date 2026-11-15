@@ -389,3 +389,10 @@ The pointer list at `0x00627BB0` is an error-message string table. The previous 
 - Plugin workflow run `43722345225` completed successfully; artifact `14165136040` was inspected.
 - `CreateOutArchive` constructs `T7zInArchive` at VMT `0x004525B0` and returns the interface at `Self+0x70`. Its interface table entry 6 has `IOffset=0x70`, IID `022cf785-3ece-46ef-9755-291fa84cc6c9`, and VTable `0x00452420`.
 - Thus `euResetMemory` slots `+0x44/+0x0C/+0x3C` are confirmed to be calls on this custom interface. Method names remain unproven; vtable tracing was extended to 20 entries to expose the actual targets.
+
+
+### Word event source and autosave recovery follow-ups — 2026-11-15
+
+- `WordAppDocumentBeforeClose` (`0x004CCBBC`) calls shared helper `0x004BCA88`, which is also used by `GetCaptionItemFont`; it is not evidence of a close-time registration/POST routine. Its direct caller remains `FillImgFldsForPrint` (`0x004CCF8F`).
+- Generated Word server metadata contains CLSID `000209FF` (ApplicationClass), CLSID `00020906` (DocumentClass), and known ApplicationEvents/ApplicationEvents2 interface GUIDs. This identifies OLE metadata but not the live event sink subscription.
+- Parallel work continues in the SevenZip vtable mapping, Word server-data RTL helpers, autosave Delete caller, Word lifecycle callbacks, and BPL method-index branches. Keep event registration and close-time Almas commit as unresolved until the relevant traces prove them.
