@@ -100,3 +100,16 @@ Run: `43711788034`
 Artifact: `14160597175` (`emwat-pcap-http-timing`)
 
 No document body, letter text, Base64 payload, cookies, or authorization values are included in this report.
+
+
+## TCP payload-export cross-check — 2026-11-15
+
+The metadata-only analyzer for `tcp-payloads.txt` (network-capture workflow run #2, artifact `14159156356`) independently identifies 15 TCP streams touching port 1984. In stream 18 it reports:
+
+- `POST /?invoke=<nonce>` with request `Content-Length: 1,177,821`;
+- `wordConfig`: 13,668 Base64-like text characters; decoded XML root `word-document`, status `edit`, 180 fields;
+- `wordBody`: 1,163,948 Base64-like text characters; decoded prefix `d0cf11e0a1b11ae1` (OLE Compound File signature);
+- `signData`: empty in this capture;
+- HTTP 200 response, XML root/status `response-word / success`, returned MIME/encryption `application/msword / base64`, response Base64 text length 1,166,680, decoded prefix again `d0cf11e0a1b11ae1`.
+
+This is a useful independent metadata cross-check for the PCAP round-trip report. The Wireshark text export has frame order but no TCP sequence column; it is not used for byte-perfect reassembly or full-document comparison. Sequence-gap accounting and the incomplete-response caveat remain governed by the PCAP/Scapy analysis above.
