@@ -815,3 +815,12 @@ Run `43719180035` succeeded; artifact `14164088249` was inspected. Additional ev
 - `[ebp-8]`, the second argument, is produced by helper `0x0044A998` and passed to `SetPassword`. Its source semantics remain unknown.
 - The call passes `ECX=0` and two stack Boolean flags set to 1, selecting the `mW@Tlogs43end_+` constructor fallback.
 - After `euResetMemory`, the caller invokes `0x004563A8` with the same two strings, then `0x004565DC` and `0x004555D8`. These helpers are the next targets for identifying the `.easd` output path and cleanup.
+
+
+### Latest verified work — 2026-11-15
+
+- Recovery/SevenZip artifact 14166161804 (run 43723896564) shows T7zInArchive.SetPassword initiates IInArchive.Extract for all items through a callback; it is not merely a password-field assignment. PrepareOperation has distinct callback/context and stored-string paths. Output stream destination remains unresolved.
+- ExtractTo uses callback type-info 0x00453850; SetPassword uses 0x0045391C.
+- Word lifecycle run 43722990611 completed successfully; artifact 14165369436 resolved registry thunks: 0x404414 WriteInteger, 0x404424 WriteBool, 0x40441C ReadInteger, 0x40442C ReadBool, and 0x404454 ValueExists.
+- Detailed findings were appended to docs/RECOVERY-STORE-ANALYSIS.md sections 21–22 in commit d17a801d0d02f12e4a6b286af7aa1e21a9e691ac.
+- Recovery-path run 43724386278 was still in progress at the last check. Keep the .easd destination, archive password semantics, and Almas close-time registration protocol unresolved until direct evidence is available.
