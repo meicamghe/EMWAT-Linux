@@ -486,3 +486,18 @@ The detailed evidence is recorded in [WINUX-RUNTIME-VALIDATION.md](WINUX-RUNTIME
 - **Next runtime probe:** inspect the results of GET/HEAD/OPTIONS/POST against the root endpoint and the service/agent binaries/configuration for endpoint clues. Do not send fabricated XML to production method handlers. Continue with a harmless test letter and sanitized browser Network metadata before attempting the real Almas Gam workflow.
 
 This Wine runtime experiment is a reverse-engineering aid only. The product target remains a native Linux implementation; do not make Wine or Windows kernel printer drivers dependencies of the final architecture.
+
+## Winux HTTP method and binary-string checkpoint — 2026-11-15
+
+New runtime evidence and executable-string findings are recorded in:
+- [WINUX-RUNTIME-VALIDATION.md](WINUX-RUNTIME-VALIDATION.md)
+- [HTTP-LOCAL-API-ANALYSIS.md](HTTP-LOCAL-API-ANALYSIS.md)
+
+Key facts:
+- GET, HEAD, OPTIONS and POST to only `http://127.0.0.1:1984/` each returned `200 OK` with an empty body. GET/HEAD/POST showed an `IDHTTPSESSIONID` cookie header; OPTIONS did not in the captured output.
+- These root-path probes used no valid EMWAT application request. They do **not** establish CORS support, XML parsing, POST dispatch, heartbeat/init behavior, or document workflow success.
+- `EmwatService.exe` contains Indy HTTP server/session symbols, `IDHTTPSESSIONID`, HTTP method-override strings, a port-1984 bind-failure message, and a service termination marker `{2EC42BF4-EA08-4476-AB86-466763F80E9A}_TERMINATE_EM_SERVICE_`.
+- `EmwatAgent.exe` contains localhost/127.0.0.1 strings, Word connection/open-document/sign-insertion error messages, and `TLoginCredentialService` RTTI/symbol strings. These are static string/RTTI observations, not proof those code paths executed in the current session.
+- No matching Emwat-named config files with the searched extensions were found in the searched ProgramData/AppData locations; this is not proof that no configuration exists elsewhere.
+
+**Resume:** inspect `?heartbeat` and `?init` safely; identify root handler/session creation; trace Agent heartbeat and Word automation failure/success paths; then capture sanitized metadata for a real browser-originated request. Do not send fabricated payloads to real application methods. Do not treat generic empty 200 responses as API compatibility.
