@@ -201,3 +201,43 @@ Two different password-like strings were found and must not be conflated:
 **Correction to section 10:** do not describe the Windows username or `@25*gamsign*25@` as the confirmed `.easz` archive password. The helper returns/combines those strings in one AutoSave-related path, while the recovery-open path separately supplies `mW@Tlogs43end_+` to the SevenZip object. The archive password and transformation sequence remain unresolved until the SevenZip VMT method mapping and call semantics are confirmed.
 
 The `.easd` path is still only a constructed path in the recovery `Delete` handler. The current evidence is consistent with it being an extracted or working document path, but does not yet establish its content or exact lifecycle.
+
+
+## 14. SevenZip password setter and recovery dispatch narrowed (2026-11-15)
+
+Artifacts from analyze-recovery-paths.yml runs #9 (14163436366) and #10 (14163367757) trace the SevenZip reader methods and the euResetMemory caller path.
+
+### Password argument
+
+The class method T7zInArchive.SetPassword at 0x00453860:
+- copies the supplied Unicode string into the object field at +0x58;
+- obtains the archive interface stored at +0x28;
+- invokes that interface's method at vtable offset +0x1C, passing the password string;
+- releases its temporary string/interface references on exit.
+
+The T7zInArchive type metadata independently exposes a Password property, alongside PasswordIsDefined, PasswordSender, Stream, and extraction-related properties. In euResetMemory (0x00456F00), the optional password argument is passed to the archive object's virtual dispatch at slot +0x44; if that argument is null while the password flag is enabled, the literal mW@Tlogs43end_+ is supplied instead. The class method body and property metadata strongly identify this dispatch as the archive password-setting path. The Windows username / @25*gamsign*25@ result from euGetAutoSavePass remains a separate cleanup/logging path and is not the recovery-open password.
+
+### Reader operations
+
+The reader implementation exposes these operations:
+- OpenFile (0x00452FB8) opens the archive interface using a filename;
+- OpenStream (0x00452FDC) wraps an input stream and invokes the archive interface's open operation;
+- GetNumberOfItems, GetItemPath, GetItemName, GetItemSize, and GetItemProp query archive entries;
+- ExtractItem, ExtractItems, ExtractAll, and ExtractTo invoke extraction methods on the archive interface.
+
+The euResetMemory body constructs the reader object, conditionally supplies the password, then dispatches two path arguments through object virtual slots +0x0C and +0x3C. The method index/VMT mapping for those two path slots is not yet independently decoded, so this report does not label them as a proven OpenFile + ExtractTo pair. The separate recovery-form Delete handler subsequently constructs a .easd path and proceeds into Word Automation. This supports an archive-to-working-file recovery pipeline, but does not yet establish the exact extracted member name, archive format variant, output bytes, or complete file lifecycle.
+
+### What is now established vs. pending
+
+Established:
+- the recovery component is a SevenZip archive reader (T7zInArchive);
+- the recovery path has a dedicated password-setting dispatch;
+- the fallback password passed by euResetMemory is mW@Tlogs43end_+;
+- the reader exposes normal archive-open, entry-query, and extraction methods;
+- .easz is the enumerated recovery-file mask under %TEMP%\\temp-emwatASwf\\.
+
+Still pending:
+- exact VMT method names for euResetMemory slots +0x0C and +0x3C;
+- whether the archive is standard 7z or another SevenZip-supported format/configuration;
+- whether .easd is the extracted document itself or a subsequent intermediate;
+- the archive writer path and the exact creation/encryption settings for .easz.
