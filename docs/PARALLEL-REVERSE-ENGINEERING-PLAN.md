@@ -194,3 +194,16 @@ This model explains the user's confirmed observation that closing Word is follow
 ### Next focused trace
 
 A separate request-lifecycle analysis should decode the remainder of OnTmrAutoSave (0x004BA058–0x004BB3AF), identify message-loop/wait operations, trace LoadDocument callers and response dispatch, and decode the BeforeSave prompt strings around 0x004CD3C0–0x004CD50C.
+
+
+## Temporary Word-process cleanup discovery — 2026-11-15
+
+Filename workflow #5 (run 43708844302, artifact 14158984794) clarified that the routine named DeleteTempRAW is not a simple file-deletion loop:
+
+- DeleteTempRAW (0x0044AE98) calls FindWindowW with null class/title filters, then iterates windows using GetWindow and reads each title with GetWindowTextW.
+- It compares window-title text against embedded strings including "GamElectronic EMWAT", ".doc", and other markers.
+- On a matching window it calls ShellExecuteW with taskkill.exe and arguments "/f /im WINWORD.EXE", then sleeps 100 ms and repeats the window scan.
+- Once the scan ends it calls CloseAllWords (0x0044AD30).
+- No direct DeleteFile call appears in the decoded DeleteTempRAW procedure. The subsequent CloseAllWords routine constructs temp-path patterns and calls a helper named GetFileVersion; its exact file handling remains unresolved.
+
+This is potentially a global Word cleanup/termination path, not evidence of the main editor's user-driven close callback. Its actual caller and whether it runs at startup, service shutdown, or another lifecycle point are still unknown. Do not connect it to the observed user close behavior until callers are traced.
