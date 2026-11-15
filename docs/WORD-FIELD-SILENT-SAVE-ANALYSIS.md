@@ -98,3 +98,35 @@ The callback at `0x004CD154` is not an empty notification hook:
 - The routine therefore participates in controlling Word's native Save event and coordinating EMWAT's own document preparation/state. It should not be implemented as a passive event logger.
 
 The exact user-facing dialog text and all branch meanings still require decoding of the referenced string constants and form resources. The callback's Cancel writes are directly visible; their business meaning is not yet fully established.
+
+
+## 6. BeforePrint callback: confirmed control flow
+
+The callback at `0x004CE030` is now traced through its full procedure range (`0x004CE030–0x004CE36A`).
+
+Observed sequence:
+
+1. It compares the COM document argument with the viewer's tracked document at `[TWordViwer + 0x48]`. A different document is ignored.
+2. It obtains a Word document property through the document interface (vtable offset `+0xB4`, then `+0xAC`) and compares the resulting string against a constant at `0x004CEB9C`.
+3. If that comparison does not match, it constructs a Delphi dialog using constants at `0x004CEBB4`, `0x004CEBCC`, `0x004CEC04`, and `0x004CEC18`, sets the event Cancel argument to `0xFFFF`, and exits.
+4. If it matches, it initially clears the event Cancel argument, reads a viewer option/state string (constants at `0x004CEC64` and `0x004CEC94`), and may set Cancel again if the option/state check fails.
+5. On the continuing path, it creates the same global print-option object used by `SilentSaveEmwatDoc` (`0x0062A828`), copies viewer state at `+0x58` into it through helper `0x0040496C`, and copies a local value into object offset `+0x448`.
+6. It creates two temporary string/list-like objects and transfers values from viewer members `+0x90` / `+0x94` and `+0x98` / `+0x9C`, then calls `TfrmWordPrintOption.FreePrinters` (`0x004AEBBC`).
+
+This confirms that the BeforePrint callback is an active print-preparation/validation gate. It can cancel printing for a document mismatch or a failed state/option check, and on the accepted path it prepares the global print-option state and recipient/printer-related data. The exact meaning of the compared document property and option strings is still unresolved because the referenced string constants have not yet been decoded.
+
+## 7. PreparePrintDocument is small but significant
+
+`TWordViwer.PreparePrintDocument` at `0x004CB108` is only 172 bytes. It obtains a Word document object from viewer member `+0x44`, invokes a document-interface method at vtable offset `+0x160` with argument `-1`, then invokes another method at offset `+0x108` with either the viewer byte at `+0x4D` or the constant `10`.
+
+This is the complete observed body; the COM interface slot names are not resolved. It is called from the accepted BeforeSave path. It is therefore safe to say it applies a pair of document-level operations before EMWAT's save handling continues, but not safe yet to label those operations as a particular Word setting.
+
+## 8. Autosave recovery UI is a separate feature
+
+The same binary contains `TfrmShowAutoSaveFiles` in module `uSendLog`, with handlers for listing, opening, deleting, and closing Word documents. The form's `Delete` method iterates selected list entries and performs file deletion operations; `CloseWordApp` iterates tracked Word instances and closes them; `FormClose` releases the tracked document/application objects and associated state.
+
+This is evidence of a user-visible autosave/recovery-file management feature, distinct from the viewer's `OnTmrAutoSave` callback registration. The Linux design should therefore treat these as separate capabilities:
+- in-session Word lifecycle and print/save interception;
+- recovery-file discovery, preview/open, and deletion.
+
+The actual autosave directory, filename pattern, and recovery file format have not yet been established from this trace.
