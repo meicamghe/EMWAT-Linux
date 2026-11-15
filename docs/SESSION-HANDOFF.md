@@ -630,3 +630,8 @@ Use this exact naming in future traces: public/exported TEmwatMethod.Invoke = 0x
 ## Event table interpretation correction — 2026-11-15
 
 The 20 addresses extracted from `0x00627B74` are not Word event callback pointers. Run #9 (`43716905570`, artifact `14162568118`) decoded them as server error strings (`Err_20000`, `Request XML is invalid.`, `Can not open document.`, `Temp path not Found.`, etc.). The earlier callback-table interpretation is retracted. Workflow run #10 now extracts this as an error map. The main viewer's `BeforeSave` registration at `0x004CD154` remains confirmed independently from `OnTmrAutoSave`.
+
+
+## Recovery archive password correction — 2026-11-15
+
+Do not treat the Windows username or `@25*gamsign*25@` as the confirmed `.easz` archive password. `euGetAutoSavePass` returns the account name (or fallback) and `DoClearOldAutoSaveFiles` concatenates it with `@25*gamsign*25@`, but the exact archive consumer is unresolved. The recovery `Delete` path constructs a `Sevenzip.T7zInArchive` object; `euResetMemory` passes `mW@Tlogs43end_+` to virtual slot `+0x44` when its optional password string is null. The exact slot/property mapping and archive open/extract sequence remain pending. See `docs/RECOVERY-STORE-ANALYSIS.md`.
