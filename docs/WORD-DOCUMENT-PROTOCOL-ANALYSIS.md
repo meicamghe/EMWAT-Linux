@@ -1175,13 +1175,13 @@ The earlier Run 116–117 uncertainty about Logging Level and Save I/O Trace Fil
 
 ### Request/response timing and Base64 boundary
 
-- Capture stream 18 contains one EditWordDocument POST and one response-word response in the same TCP stream. Its conversation duration is 54.6315 seconds; two Agent heartbeat streams begin during that interval. This timing is suggestive but does not prove that the request waits for Word to close.
+- Capture stream 18 contains one EditWordDocument POST and one response-word response in the same TCP stream. Packet-level timing shows the full request body completes at 0.002154 s and the first response payload arrives at 54.560037 s, a 54.557883-second server-side wait. The response transfers in about 1.362 ms; two Agent heartbeats occur during the wait. This confirms a long-lived XHR, not merely a slow file transfer.
 - TEditWordDocument.PerformMethod calls TWordViwer.LoadDocument synchronously. The successful LoadDocument path assigns AResponseInfo.ContentText and calls TIdHTTPResponseInfo.WriteContent.
 - The decoded LoadDocument range does not show an obvious explicit WaitFor/ProcessMessages loop. The OnTmrAutoSave tail at 0x004BA058–0x004BB3AF is compiler cleanup/exception handling, not an identified wait loop.
 - LoadDocument writes its wordBody argument bytes directly to the temporary TFileStream. The Base64Decode call at 0x004B7E44 operates on [ebp-8], not the wordBody argument at [ebp-0x1C]; do not claim that this call decodes wordBody. The captured XML wordBody is Base64 text, so the decode may occur upstream in EmwatService's XML/parameter layer; that boundary is not present in the BPL.
 - Packet-level timing confirms that the original EditWordDocument POST remains open after its complete body arrives: request body complete at 0.002154 s, first response payload at 54.560037 s, a 54.557883-second server-side wait. The 1,166,820-byte response transfers in about 1.362 ms. This proves a long-lived XHR; the exact Word/COM event that releases it remains unresolved. No separate close-time POST appears in this captured stream; other workflows may differ.
 
-Current conclusion: the custom register-changes prompt and long-lived XHR are confirmed. The response DOC is a rewritten OLE container, strongly consistent with the Word operation completing before the response is released. The exact callback-to-response edge and the parent page's final Almas registration request remain open.
+Current conclusion: the custom register-changes prompt and long-lived XHR are confirmed. The response DOC is a rewritten OLE container (estimated 875,008 bytes versus 872,960 input; first-directory-sector pointer 1698 → 1702), strongly consistent with the Word operation completing before the response is released. The exact callback-to-response edge and the parent page's final Almas registration request remain open.
 
 ### Native bridge implementation checkpoint
 
