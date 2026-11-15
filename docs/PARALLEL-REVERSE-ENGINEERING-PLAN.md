@@ -207,3 +207,20 @@ Filename workflow #5 (run 43708844302, artifact 14158984794) clarified that the 
 - No direct DeleteFile call appears in the decoded DeleteTempRAW procedure. The subsequent CloseAllWords routine constructs temp-path patterns and calls a helper named GetFileVersion; its exact file handling remains unresolved.
 
 This is potentially a global Word cleanup/termination path, not evidence of the main editor's user-driven close callback. Its actual caller and whether it runs at startup, service shutdown, or another lifecycle point are still unknown. Do not connect it to the observed user close behavior until callers are traced.
+
+
+## Registry read-side closure — 2026-11-15
+
+Registry workflow #2 (run 43709159573, artifact 14159334586) resolved the two settings that were previously marked as lacking a startup read path:
+
+- TETracer constructor at 0x00466CA0 opens HKCU and the Dynamic Config key (the path literal is being cross-checked in the next focused run).
+- It checks ValueExists, then reads integer key Logging Level into object offset +0x10.
+- It checks ValueExists, then reads Boolean key Save I/O Trace Files into object offset +0x11.
+- TWordViwer constructor separately reads Background Priniting, Dont Ask Save On Print, Save Before Print, and AutoSaveInterval.
+- TEmSettingForm.Finalization reads the same six persisted settings for the settings UI: the three print/save Booleans, Logging Level, Save I/O Trace Files, and AutoSaveInterval.
+
+The TETracer.GetUniquePostfix procedure at 0x00467C18 uses the exact registry names Save I/O Trace Files and Created IO Trace Count. It checks whether I/O tracing is enabled, reads the count, decrements it, and writes it back. When the count becomes non-positive, it disables Save I/O Trace Files and resets Created IO Trace Count to 15. The routine then creates and writes a trace file. This is a bounded trace-file quota/countdown, not evidence of the main letter's save-registration path.
+
+The same caller scan also found TfrmImageTools.SetOldParamRecord reading additional integer values named Posotion (exact misspelling), Size, and PrintRange, plus four floating-point settings. TfrmImageTools.ShowPrintPanel writes the corresponding values. These belong to the image/print tools; their registry subkey and remaining float value names are being decoded separately.
+
+This closes the earlier uncertainty about Logging Level and Save I/O Trace Files startup reads. Do not conflate these diagnostic/image settings with the Word close/registration workflow.
