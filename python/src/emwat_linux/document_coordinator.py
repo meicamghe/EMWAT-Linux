@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from threading import Event
+from threading import RLock
 
 from emwat_linux.editword_request import EditWordDocumentRequest
 from emwat_linux.office_adapter import CloseDisposition, OfficeAdapter
@@ -41,18 +41,21 @@ class DocumentCoordinator:
         request: EditWordDocumentRequest,
     ) -> DocumentRunResult:
         session = DocumentSession(session_id)
-        opened = Event()
+        callbacks_lock = RLock()
+        callbacks_active = False
 
         def on_modified() -> int:
-            # Ignore initialization-time changes made while fields/config are applied.
-            if not opened.is_set():
-                return session.revision
-            return session.mark_dirty()
+            # Serialize callbacks with close/finalize so late engine events are ignored.
+            with callbacks_lock:
+                if not callbacks_active:
+                    return session.revision
+                return session.mark_dirty()
 
         def on_saved() -> None:
-            # Initialization stores are not user-initiated engine saves.
-            if opened.is_set():
-                session.record_engine_save()
+            # Ignore initialization and post-close engine saves.
+            with callbacks_lock:
+                if callbacks_active:
+                    session.record_engine_save()
 
         try:
             session.begin_initialization()
@@ -64,9 +67,12 @@ class DocumentCoordinator:
             if handle is None:
                 raise RuntimeError("office_adapter_returned_no_handle")
             session.mark_opened()
-            opened.set()
+            with callbacks_lock:
+                callbacks_active = True
 
             close_event = self._office.wait_for_close(handle)
+            # Wait for any callback already in progress, then detach both callbacks
+            # before finalization/export. Engines may emit delayed events on close.
             if close_event.disposition is CloseDisposition.CANCELLED:
                 session.cancel()
                 return DocumentRunResult(session=session, payload=None)
@@ -74,12 +80,17 @@ class DocumentCoordinator:
             if close_event.disposition is not CloseDisposition.CLOSED:
                 raise RuntimeError("office_adapter_returned_invalid_close_event")
 
+            with callbacks_lock:
+                callbacks_active = False
+
             # A close-time return is independent of whether the user pressed Save.
             session.begin_finalize()
             payload = self._office.export_final_document(handle)
             session.complete_finalize(payload)
             return DocumentRunResult(session=session, payload=payload)
         except Exception as exc:
+            with callbacks_lock:
+                callbacks_active = False
             if session.state not in (
                 DocumentState.RETURNED,
                 DocumentState.FAILED,
