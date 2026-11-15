@@ -1,0 +1,67 @@
+name: Analyze EMWAT BPL exported API
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/analyze-emwat-bpl-exports.yml'
+      - 'analysis-input/EmwatMethods.bpl1'
+      - 'tools/trace_td32_procedure.py'
+      - 'tools/trace_td32_callers.py'
+      - 'tools/scan_pe_pointer_refs.py'
+permissions:
+  contents: read
+jobs:
+  bpl-exports:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install pefile capstone
+      - name: Dump application-specific package exports
+        run: |
+          mkdir -p bpl-export-analysis/exports bpl-export-analysis/traces
+          python - <<'PY'
+          import pathlib, pefile, re, subprocess, sys
+          pe = pefile.PE("analysis-input/EmwatMethods.bpl1")
+          wanted = re.compile(r"@Emwat@|@Emwatmethod@|@Emwatconnector@|@Applicationactivities@|@Emwatmethods@|TEmwatMethod|PerformMethod|CloseAllWords|RemoveTempFiles|DeleteTempRAW|GetFileVersion", re.I)
+          rows = []
+          for item in pe.DIRECTORY_ENTRY_EXPORT.symbols:
+              name = item.name.decode("ascii", errors="replace") if item.name else f"ordinal_{item.ordinal}"
+              if wanted.search(name):
+                  va = pe.OPTIONAL_HEADER.ImageBase + item.address
+                  rows.append((name, item.ordinal, item.address, va))
+          rows.sort(key=lambda row: (row[0].lower(), row[2]))
+          report = ["# EMWAT application-specific BPL exports", ""]
+          for name, ordinal, rva, va in rows:
+              report.append(f"- {name} — ordinal {ordinal} — RVA 0x{rva:08X} — VA 0x{va:08X}")
+          pathlib.Path("bpl-export-analysis/exports/application-exports.md").write_text("\n".join(report) + "\n", encoding="utf-8")
+
+          trace_terms = re.compile(r"TEmwatMethod@Invoke|PerformMethod|CloseAllWords|RemoveTempFiles|DeleteTempRAW|GetFileVersion|GetEmwatVersion|PackageLoad|PackageUnload|GetPackageInfoTable", re.I)
+          trace_rows = [(name, va) for name, _ordinal, _rva, va in rows if trace_terms.search(name)]
+          # Include both previously discussed Invoke addresses to resolve the symbol/export discrepancy.
+          trace_rows.extend([("TEmwatMethod.Invoke-legacy-candidate", 0x0046C82C), ("TEmwatMethod.Invoke-export-address", 0x0046C9E0)])
+          seen = set()
+          index = ["# Selected export target traces", ""]
+          for name, va in trace_rows:
+              if va in seen:
+                  continue
+              seen.add(va)
+              safe = re.sub(r"[^A-Za-z0-9_.-]+", "_", name)[:100]
+              out = pathlib.Path("bpl-export-analysis/traces") / f"{va:08X}-{safe}.md"
+              subprocess.run([sys.executable, "tools/trace_td32_procedure.py", "analysis-input/EmwatMethods.bpl1", f"0x{va:08X}", str(out)], check=True)
+              callers = out.with_name(out.stem + "-callers.md")
+              subprocess.run([sys.executable, "tools/trace_td32_callers.py", "analysis-input/EmwatMethods.bpl1", f"0x{va:08X}", str(callers)], check=True)
+              index.append(f"- {name} — 0x{va:08X} — {out} — callers: {callers}")
+          pathlib.Path("bpl-export-analysis/traces/index.md").write_text("\n".join(index) + "\n", encoding="utf-8")
+          PY
+      - name: Trace key Invoke and PerformMethod entrypoints
+        run: |
+          for target in 0046C82C 0046C9E0 005EE82C 005EF8AC 005EF300 005EEB48 005EF110 005EF218 005EF24C 005EFD4C 005EFE4C 005EFF4C 005EEDFC 005EF300; do
+            python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 0x$target bpl-export-analysis/traces/pointers-$target.md
+          done
+      - uses: actions/upload-artifact@v4
+        with:
+          name: emwat-bpl-export-api
+          path: bpl-export-analysis/
