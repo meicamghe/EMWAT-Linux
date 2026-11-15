@@ -39,6 +39,9 @@ class FakeOffice:
         self.calls.append(("open", request.document_bytes))
         self.on_modified = on_modified
         self.on_saved = on_saved
+        # Simulate configuration/field initialization before the session opens.
+        on_modified()
+        on_saved()
         return object()
 
     def wait_for_close(self, handle):
