@@ -72,16 +72,17 @@ class DocumentCoordinator:
 
             close_event = self._office.wait_for_close(handle)
             # Wait for any callback already in progress, then detach both callbacks
-            # before finalization/export. Engines may emit delayed events on close.
+            # before interpreting the close result or exporting. Engines may emit
+            # delayed events on close, including when the user cancels the session.
+            with callbacks_lock:
+                callbacks_active = False
+
             if close_event.disposition is CloseDisposition.CANCELLED:
                 session.cancel()
                 return DocumentRunResult(session=session, payload=None)
 
             if close_event.disposition is not CloseDisposition.CLOSED:
                 raise RuntimeError("office_adapter_returned_invalid_close_event")
-
-            with callbacks_lock:
-                callbacks_active = False
 
             # A close-time return is independent of whether the user pressed Save.
             session.begin_finalize()
