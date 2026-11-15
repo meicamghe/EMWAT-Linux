@@ -1406,3 +1406,13 @@ The response-word payload is not an echo of the input wordBody. The pcap contain
 ### Invoke wrapper/helper address clarification — 2026-11-15
 
 The BPL export/API analysis resolves the earlier naming ambiguity. The public TEmwatMethod.Invoke entry is 0x0046C9E0 (export name; shared descendant VMT slot +0x0C). It calls the 433-byte inner dictionary/XML helper at 0x0046C82C, then dispatches the concrete PerformMethod through VMT slot +0x10. TD32 labels are misleading: 0x0046C82C is symbolized as Invoke, while 0x0046C9E0 is symbolized as Finalization. Use the wrapper/helper distinction in current work.
+
+
+## به‌روزرسانی تکمیلی — 2026-11-15
+
+- تحلیل PCAP برای درخواست `POST /?invoke=58351` پاسخ HTTP 200 با XML ریشه `response-word` و سند برگشتی `application/msword` با Base64 را نشان داده است. سند برگشتی در prefix سالم ضبط با ورودی یکسان نیست؛ به‌علت 17 شکاف TCP و 68 بایت گمشده، مقایسه کامل و اندازه دقیق پاسخ هنوز تأیید نشده‌اند. جزئیات در `docs/PCAP-EDITWORD-DOCUMENT-ROUNDTRIP.md` است.
+- ساختار request در artifact مستقل تأیید می‌کند `wordBody` نمونه، Base64 سند OLE Compound File / DOC است و `requested-types` شامل `application/msword` می‌شود.
+- `python/src/emwat_linux/protocol.py` اکنون serializer محدود و تست‌شده برای envelope موفق `response-word` دارد؛ این فقط codec است و handler تولیدی EditWordDocument محسوب نمی‌شود.
+- CI پل پایتون در run #42 موفق شد: 45 تست.
+- CI هسته بومی در run #104 موفق شد: 4 تست build/test و 4 تست sanitizer.
+- workflow مستقل تحلیل Recovery Store اضافه شده و run #2 در حال اجراست؛ تا دریافت artifact هیچ مسیر یا پسوند recovery قطعی اعلام نمی‌شود.
