@@ -74,16 +74,19 @@ jobs:
       - name: Trace generated Word server metadata and event dispatch
         run: |
           mkdir -p event-sink-analysis/server-metadata
-          for target in 0043E070 0043E0F0 0043E0FC 0043E174 0043E270 0042ABF8 00404F8C 00404FAC 00401188 00401198 00401430; do
+          for target in 0043E070 0043E0F0 0043E0FC 0043E174 0043E270 0042ABF8 00404F8C 00404FAC 00401188 00401198 00401430 0040479C 00401358 00401210 00401420; do
             python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x$target event-sink-analysis/server-metadata/procedure-$target.md
             python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x$target event-sink-analysis/server-metadata/callers-$target.md
           done
           python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x0043E070 0x0043E174 event-sink-analysis/server-metadata/TWordApplication-init-connect-range.md
           python tools/inspect_pe_va.py analysis-input/EmwatMethods.bpl1 0x00627B74 --before 0x10 --after 0x220 > event-sink-analysis/server-metadata/event-map-627B74-expanded.md
+          python tools/inspect_pe_va.py analysis-input/EmwatMethods.bpl1 0x00627768 --before 0x10 --after 0x220 > event-sink-analysis/server-metadata/server-data-627768-expanded.md
+          python tools/inspect_pe_va.py analysis-input/EmwatMethods.bpl1 0x00627768 --before 0x10 --after 0x90 > event-sink-analysis/server-metadata/data-627768.md
+          python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 0x00627768 event-sink-analysis/server-metadata/data-627768-pointer-refs.md
           python tools/inspect_pe_va.py analysis-input/EmwatMethods.bpl1 0x00627A38 --before 0x10 --after 0x220 > event-sink-analysis/server-metadata/server-data-627A38-expanded.md
           python tools/inspect_pe_va.py analysis-input/EmwatMethods.bpl1 0x00627A38 --before 0x10 --after 0x90 > event-sink-analysis/server-metadata/data-627A38.md
           python tools/inspect_pe_va.py analysis-input/EmwatMethods.bpl1 0x00627B74 --before 0x10 --after 0x90 > event-sink-analysis/server-metadata/data-627B74.md
-          python tools/decode_pe_strings.py analysis-input/EmwatMethods.bpl1 0x00627A38 0x00627B74 > event-sink-analysis/server-metadata/server-data-strings.md
+          python tools/decode_pe_strings.py analysis-input/EmwatMethods.bpl1 0x00627768 0x00627A38 0x00627B74 > event-sink-analysis/server-data-strings.md
           python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 0x00627A38 event-sink-analysis/server-metadata/data-627A38-pointer-refs.md
           python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 0x00627B74 event-sink-analysis/server-metadata/data-627B74-pointer-refs.md
       - name: Decode generated Word server error-map strings
