@@ -1,0 +1,29 @@
+name: Analyze EditWordDocument request parameters
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/analyze-editword-request-params.yml'
+      - 'tools/analyze_pcap_http_timing.py'
+      - 'tools/extract_editword_request_params.py'
+      - 'emwat.pcapng'
+permissions:
+  contents: read
+jobs:
+  request-params:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install scapy
+      - name: Extract redacted request parameter structure
+        run: |
+          mkdir -p editword-param-analysis
+          python tools/extract_editword_request_params.py emwat.pcapng --client-port 61189 --output-dir editword-param-analysis > editword-param-analysis/request-parameter-structure.md
+          cat editword-param-analysis/request-parameter-structure.md
+      - uses: actions/upload-artifact@v4
+        with:
+          name: emwat-editword-request-params
+          path: editword-param-analysis/
