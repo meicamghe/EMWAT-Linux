@@ -268,7 +268,7 @@ The plugin-focused workflow run #1 (`43719323732`, artifact `14164146310`) trace
 
 - `T7zOutArchive.CryptoGetTextPassword2` (`0x004543C4`) initializes a `TObjectList`: helper `0x00404734` is the RTL TObjectList constructor, with class pointer from global `0x0062FBB8`; the new list is stored at instance offset `+0x2C`. Its only direct bounded caller is the `T7zPlugin` constructor at `0x00452C25`. This does not reveal the password text or prove a provider implementation.
 - `T7zOutArchive.SetPassword` (`0x004547DC`) remains a no-op stub; it does not write a password or configure the archive interface.
-- `T7zInArchive.SetPassword` (`0x00453860`) stores a Unicode string at instance offset `+0x58) and passes it to the archive interface through interface slot `+0x1C). However, the raw static-pointer scan found no direct pointer to this method. The recovery call through wrapper VMT slot `+0x44) is therefore not yet mapped conclusively to this method.
+- `T7zInArchive.SetPassword` (`0x00453860`) stores a Unicode string at instance offset `+0x58`, creates a callback-like helper object, and invokes the archive interface's extraction-style slot `+0x1C`. The raw static-pointer scan found no direct pointer to this method, so the recovery call through slot `+0x44` remains a strong but unproven mapping.
 - In `euResetMemory` (`0x00456F00`), slot `+0x44) receives the caller-supplied password or fallback `mW@Tlogs43end_+`; slots `+0x0C) and `+0x3C) receive the two path arguments. The precise VMT slot names and the archive-interface GUID remain open.
 
 ### New direct caller evidence
