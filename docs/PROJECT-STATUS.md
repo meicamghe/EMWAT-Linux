@@ -1517,3 +1517,10 @@ The BPL export/API analysis resolves the earlier naming ambiguity. The public TE
 
 
 - اصلاح تکمیلی هماهنگ‌کننده: غیرفعال‌سازی callbackها بلافاصله پس از برگشت `wait_for_close` انجام می‌شود، پیش از تفکیک نتیجه `CLOSED` یا `CANCELLED`. تست جدید رویدادهای دیررس پس از لغو را نیز پوشش می‌دهد. CI run `43722805637` موفق شد: **۷۱ تست** پاس شدند.
+
+
+### هویت interface بازیابی SevenZip مشخص شد — 2026-11-15
+
+- artifact `14165136040` از run `43722345225` بررسی شد. `CreateOutArchive` در واقع شیء `T7zInArchive` را با VMT `0x004525B0` می‌سازد و interface pointer را از `Self+0x70` برمی‌گرداند.
+- جدول interface کلاس ۷ ورودی دارد؛ ورودی ششم با `IOffset=0x70` دقیقاً با pointer برگشتی منطبق است. IID آن `022cf785-3ece-46ef-9755-291fa84cc6c9` و VTable آن `0x00452420` است.
+- پس سه dispatch مسیر `euResetMemory` در slotهای `+0x44/+0x0C/+0x3C` روی همین interface سفارشی اجرا می‌شوند. نام متدهای متناظر هنوز نهایی نیست؛ workflow بعدی خروجی vtable را تا slot `+0x4C` گسترش داده تا نگاشت دقیق تأیید شود.
