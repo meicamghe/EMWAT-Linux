@@ -195,19 +195,18 @@ However, the exact causal edge from the Word close callback to the HTTP response
 A separate request-lifecycle analysis should trace the COM/helper calls between LoadDocument entry and WriteContent, identify the wait/release mechanism, and correlate it with the registered Word close/register callback, and decode the BeforeSave prompt strings around 0x004CD3C0–0x004CD50C.
 
 
-## Temporary Word-process cleanup discovery — 2026-11-15
+## Temporary Word-process cleanup discovery — corrected by export-table evidence (2026-11-15)
 
-Filename workflow #5 (run 43708844302, artifact 14158984794) clarified that the routine named DeleteTempRAW is not a simple file-deletion loop:
+Filename workflow #9 (run 43710547860, artifact 14160317510) resolved the external export names. The export table is authoritative for the exported API names; TD32 procedure labels at these addresses are shifted/mismatched:
 
-- DeleteTempRAW (0x0044AE98) calls FindWindowW with null class/title filters, then iterates windows using GetWindow and reads each title with GetWindowTextW.
-- It compares window-title text against embedded strings including "GamElectronic EMWAT", ".doc", and other markers.
-- On a matching window it calls ShellExecuteW with taskkill.exe and arguments "/f /im WINWORD.EXE", then sleeps 100 ms and repeats the window scan.
-- Once the scan ends it calls CloseAllWords (0x0044AD30).
-- CloseAllWords obtains the Windows temp directory through GetTempPathW and passes four masks to the helper at 0x0044B0F8: %TEMP%\\efg*.*, %TEMP%\\~$g*.*, and %TEMP%\\temp-emwatwf\\*.* (the last mask is retried after ensuring the temp-emwatwf directory exists).
-- Despite its TD32 name GetFileVersion, 0x0044B0F8 performs file cleanup: it extracts the directory, checks DirectoryExists, enumerates matches with FindFirst/FindNext, normalizes attributes with FileSetAttr, and deletes each match with DeleteFile; it then closes the search and frees the list.
-- The direct caller and raw-pointer scans found no references to DeleteTempRAW. It may be reached through unit initialization/finalization or an indirect path not captured by these scans; its invocation point is still unknown.
+- Exported CloseAllWords is at VA 0x0044AE98. It enumerates top-level windows with FindWindowW/GetWindow/GetWindowTextW and checks title markers including "GamElectronic EMWAT" and ".doc".
+- On a match it calls ShellExecuteW with taskkill.exe and "/f /im WINWORD.EXE", sleeps 100 ms, and repeats the scan. It then calls the internal helper at 0x0044AD30 (TD32 symbol CloseAllWords).
+- The internal helper obtains the Windows temp path through GetTempPathW and invokes DeleteTempRAW on masks including %TEMP%\efg*.*, %TEMP%\~$g*.*, and %TEMP%\temp-emwatwf\*.* (the last mask is retried after ensuring the directory exists).
+- Exported DeleteTempRAW is at VA 0x0044B0F8. Although TD32 labels this address GetFileVersion, its body enumerates matching files with FindFirst/FindNext, normalizes attributes with FileSetAttr, and deletes matches with DeleteFile.
+- Exported GetFileVersion is at VA 0x0044B2DC. Although TD32 labels this address Finalization, its body parses version-resource data. Its direct callers include Applicationactivities.SetEmwatVersion and UpgradeEmwatPlugin.
+- No internal direct caller or raw pointer reference to the exported CloseAllWords entry was found. Because it is exported, EmwatService.exe may invoke it externally by package export; the service binary is not present in this analysis set, so the external call site is unknown.
 
-This is a global Word-process/temp-file cleanup path, not evidence of the main editor's user-driven close callback. Do not connect it to the observed user close behavior until its lifecycle invocation is identified.
+This is a global Word-process/temp-file cleanup API, not evidence of the main editor's user-driven close callback. Do not connect it to the observed user close behavior until the external invocation point is identified.
 
 
 ## Registry read-side closure — 2026-11-15
