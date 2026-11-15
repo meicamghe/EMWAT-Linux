@@ -329,7 +329,7 @@ Plugin follow-up run #2 (`43720247793`, artifact `14164382428`) traces the previ
 - The direct bounded caller scan for `euUnArchive` found no direct CALL sites. The T7zPlugin constructor's only direct bounded caller in this scan is `euUnArchive`.
 - This is a distinct plugin-based multi-item extraction path. It is not the same call chain as `euResetMemory`, which uses the separate `CreateOutArchive` helper at `0x00452BBC) and calls slots `+0x44/+0x0C/+0x3C).
 
-The exact meanings of the `euUnArchive` slots `+0x28/+0x10/+0x18), the two collection argument types, and the archive direction are not yet resolved. Keep it as a separate generic SevenZip operation; do not use it to infer the .easz recovery protocol.
+The exact meanings of the `euUnArchive` slots `+0x28/+0x10/+0x18`, the two collection argument types, its interface GUID/direction, and callback setup are not yet resolved. The `euResetMemory` custom interface GUID and its `+0x44/+0x0C/+0x3C` methods are now mapped separately; keep `euUnArchive` as a distinct generic SevenZip operation and do not use it to infer the `.easz` recovery protocol.
 
 
 
