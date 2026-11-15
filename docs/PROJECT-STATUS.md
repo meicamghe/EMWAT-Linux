@@ -1331,3 +1331,12 @@ Added `python/src/emwat_linux/application.py` with `create_bridge_server(...)`. 
 - All four `TWordDocument.Close` overload wrappers were traced. The no-argument overload dispatches slot `+0x4D4`; overloads with one, two, or three optional arguments dispatch slot `+0x29C`. TD32 direct-call scans show no direct CALL xrefs for these wrappers; raw pointer matches occur in debug metadata, so do not infer which overload is used by the main editor solely from those scans.
 - No verified close-time HTTP POST, response payload, or final Almas Gam registration operation was found. The user's observed behavior (closing Word without manually pressing Save still registers the document) remains an important runtime fact to reconcile, not a protocol proven by this static trace.
 - Next targets: locate the *read-side* registry operations for `Dynamic Config` and the actual settings form initialization; trace callback record consumption / COM connection-point wiring around `OnTmrAutoSave`; identify real main-editor close and final local HTTP request/response chain. Keep the AutoSave files viewer's separate close handler isolated from the main editor.
+
+
+### Run 104 update — 2026-11-15
+
+- Word lifecycle analysis workflow #104 completed successfully (37/37 steps), artifact `14150300042`.
+- Registry-related imports are present in the PE, including Win32 registry APIs and Delphi `TRegistry` read/write methods. The initial direct-thunk-only scan found zero call sites and is not sufficient to conclude that reads are absent.
+- The initial post-read trace range began in non-code data and decoded zero instructions. The workflow was corrected to begin at the observed continuation address `0x004B7DE1`.
+- Follow-up commits `743e6378` (IAT-indirect registry call scanner) and `a4027a70` (post-read range correction) trigger a new validation run. Do not promote their expected findings until the resulting artifact is inspected.
+- Startup settings-read path, active main-editor close callback, close-time server registration request, and final registration payload remain unresolved.
