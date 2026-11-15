@@ -24,19 +24,25 @@ jobs:
       - name: Inspect TWordApplication VMT and Connect slot
         run: |
           mkdir -p wait-mechanism-analysis/vmt
-          python tools/inspect_delphi_vmt_address.py analysis-input/EmwatMethods.bpl1 0x004202A8 wait-mechanism-analysis/vmt/TWordApplication-vmt.md
+          python tools/inspect_delphi_vmt_address.py analysis-input/EmwatMethods.bpl1 0x004202A8 > wait-mechanism-analysis/vmt/TWordApplication-vmt.md
           python - <<'PY'
           import pathlib, re, subprocess, sys
           source = pathlib.Path("wait-mechanism-analysis/vmt/TWordApplication-vmt.md").read_text(encoding="utf-8")
-          targets = sorted(set(re.findall(r"Slot \\+0x50: 0x([0-9A-Fa-f]{8})", source)))
+          targets = sorted(set(
+              match.group(1)
+              for line in source.splitlines()
+              if "Slot +0x50:" in line
+              for match in [re.search(r"0x([0-9A-Fa-f]{8})", line)]
+              if match
+          ))
           summary = ["# TWordApplication VMT +0x50 target traces", ""]
           for target in targets:
               output = f"wait-mechanism-analysis/vmt/slot-50-{target}.md"
               subprocess.run([sys.executable, "tools/trace_td32_procedure.py", "analysis-input/EmwatMethods.bpl1", "0x" + target, output], check=True)
               summary.append(f"- Slot +0x50 target 0x{target}: {output}")
-          pathlib.Path("wait-mechanism-analysis/vmt/slot-50-index.md").write_text("\\n".join(summary) + "\\n", encoding="utf-8")
+          pathlib.Path("wait-mechanism-analysis/vmt/slot-50-index.md").write_text("\n".join(summary) + "\n", encoding="utf-8")
           PY
-      - name: Trace Word COM setup and activation branch
+     - name: Trace Word COM setup and activation branch
         run: |
           mkdir -p wait-mechanism-analysis/word-com
           python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x004B8D12 0x004B8E90 wait-mechanism-analysis/word-com/OnTmrAutoSave-connect-and-quit.md
@@ -52,26 +58,30 @@ jobs:
           import pathlib, re, subprocess, sys
           source = pathlib.Path("wait-mechanism-analysis/classes/candidate-methods.md").read_text(encoding="utf-8")
           terms = re.compile(r"wait|processmessages|handlemessage|connect|disconnect|quit|showmodal|synchronize|execute|visible|open|timer", re.I)
-          rows = re.findall(r"\\|\\s*([^|]+?)\\s*\\|\\s*([^|]+?)\\s*\\|\\s*([^|]+?)\\s*\\|", source)
+          rows = []
+          for line in source.splitlines():
+              parts = [part.strip() for part in line.split("|")]
+              if len(parts) < 4:
+                  continue
+              module, decorated, target = parts[1], parts[2].strip(chr(96)), parts[3]
+              match = re.search(r"0x([0-9A-Fa-f]{8})", target)
+              if match and terms.search(decorated):
+                  rows.append((module, decorated, match.group(1)))
           outdir = pathlib.Path("wait-mechanism-analysis/classes/traces")
           outdir.mkdir(parents=True, exist_ok=True)
           summary = ["# Selected VCL/Word method traces", ""]
           seen = set()
-          for module, decorated, target in rows:
-              if not terms.search(decorated):
+          for module, decorated, va in rows:
+              if va in seen:
                   continue
-              match = re.search(r"0x([0-9A-Fa-f]{8})", target)
-              if not match or match.group(1) in seen:
-                  continue
-              va = match.group(1)
               seen.add(va)
-              safe = re.sub(r"[^A-Za-z0-9_.-]+", "_", decorated.replace(chr(96), ""))[:80]
+              safe = re.sub(r"[^A-Za-z0-9_.-]+", "_", decorated)[:80]
               output = outdir / f"{va}-{safe}.md"
               subprocess.run([sys.executable, "tools/trace_td32_procedure.py", "analysis-input/EmwatMethods.bpl1", "0x" + va, str(output)], check=True)
-              summary.append(f"- {module.strip()} — 0x{va} — {decorated.strip()} — {output}")
-          pathlib.Path("wait-mechanism-analysis/classes/trace-index.md").write_text("\\n".join(summary) + "\\n", encoding="utf-8")
+              summary.append(f"- {module} — 0x{va} — {decorated} — {output}")
+          pathlib.Path("wait-mechanism-analysis/classes/trace-index.md").write_text("\n".join(summary) + "\n", encoding="utf-8")
           PY
-      - name: List imported wait and message APIs with call sites
+     - name: List imported wait and message APIs with call sites
         run: |
           python - <<'PY'
           import pathlib, struct, pefile
@@ -85,7 +95,7 @@ jobs:
                       continue
                   rows.append(f"## {dll.dll.decode('ascii', errors='replace')}!{name}")
                   rows.append(f"- IAT VA: 0x{imp.address:08X}")
-                  pattern = b"\\xFF\\x15" + struct.pack("<I", imp.address)
+                  pattern = b"\xFF\x15" + struct.pack("<I", imp.address)
                   for section in pe.sections:
                       data = section.get_data()
                       start = 0
