@@ -6,6 +6,7 @@ Unicode text; document-specific XML/Base64 decoding belongs to later adapters.
 from __future__ import annotations
 
 from dataclasses import dataclass
+import base64
 from types import MappingProxyType
 from typing import Mapping
 import xml.etree.ElementTree as ET
@@ -78,3 +79,38 @@ def parse_method_call(payload: bytes, *, max_bytes: int = 16 * 1024 * 1024) -> M
         params=MappingProxyType(params),
         version=version,
     )
+
+
+# Observed in the 2026-11-15 TCP capture for EditWordDocument responses.
+WORD_RESPONSE_CONTENT_TYPE = "text/html; charset=ISO-8859-1"
+
+
+def serialize_word_document_response(
+    document: bytes,
+    *,
+    max_response_bytes: int = 16 * 1024 * 1024,
+) -> bytes:
+    """Serialize the observed successful response-word envelope.
+
+    The returned document is opaque binary data encoded as Base64. This helper
+    does not inspect, convert, or modify the Word document.
+    """
+    if not isinstance(document, bytes):
+        raise TypeError("document must be bytes")
+    if not document:
+        raise ProtocolError("empty_document")
+    if max_response_bytes <= 0:
+        raise ValueError("max_response_bytes must be positive")
+
+    root = ET.Element("response-word", {"status": "success"})
+    return_types = ET.SubElement(root, "return-types")
+    node = ET.SubElement(
+        return_types,
+        "type",
+        {"mimetype": "application/msword", "encryption": "base64"},
+    )
+    node.text = base64.b64encode(document).decode("ascii")
+    response = ET.tostring(root, encoding="utf-8")
+    if len(response) > max_response_bytes:
+        raise ProtocolError("response_size_invalid")
+    return response
