@@ -1090,3 +1090,31 @@ Workflow run `43683614577` completed successfully (37/37 steps); artifact `14150
 - Follow-up commits `743e6378` and `a4027a70` expand the registry scanner to detect absolute IAT-indirect CALL/JMP operands and raw pointer references, and correct the post-read trace range. Their rerun results must be checked before interpreting the new report.
 
 No evidence from Run 104 establishes the exact startup registry-read path, a close-time HTTP POST, or the final Almas Gam registration payload. Continue treating these as unresolved.
+
+
+## Run 113 — main Word Viewer startup registry reads (2026-11-15)
+
+Workflow run #113 (run ID `43688755518`, commit `caf4412c466cb8dbbbec01c15c853956e731f063`) completed successfully; artifact `14151906706`.
+
+**Correction to the Run 103/104 status:** the startup settings-read path is now located. It is in the main `TWordViwer` constructor at `0x004D0D24–0x004D0FE6`, not in `TEmSettingForm.FormCreate` and not in the short `FormCreate` body previously examined.
+
+The constructor performs this sequence:
+- Creates a Delphi `TRegistry` object through `0x004043CC`.
+- Sets root key to `HKEY_CURRENT_USER` (`0x80000001`) through `0x004043E4`.
+- Opens `Software\\Emwat\\Dynamic Config` through `0x004043EC`, using the UTF-16 string at `0x004D0FF4`.
+- If the key opens, checks each value with `TRegistry.ValueExists` (thunk `0x00404454`) and reads existing values with `TRegistry.ReadBool` (thunk `0x0040442C`) or `TRegistry.ReadInteger` (thunk `0x0040441C`).
+- Releases the registry object through its destructor path at `0x004043DC`.
+
+Confirmed read-side value mapping from constructor instructions and UTF-16 string constants:
+| Registry value | Type | Viewer instance field | Behavior |
+| --- | --- | --- | --- |
+| `Background Priniting` | Boolean | `+0x3C` | If present, overwrites the constructor default `true` |
+| `Dont Ask Save On Print` | Boolean | `+0x3D` | If present, overwrites the constructor default `true` |
+| `Save Before Print` | Boolean | `+0x3E` | If present, overwrites the constructor default `false` |
+| `AutoSaveInterval` | Integer | `+0x88` | Defaults to `0`; if present, reads integer; values below `10000` are clamped to `10000` |
+
+The interval field is therefore a millisecond value with a 10-second minimum in this constructor. The save-side settings UI previously showed selected interval lookup values multiplied by 1000 before writing, consistent with this unit. Do not infer the actual timer schedule or save operation from the field alone.
+
+The constructor trace does **not** show reads for `Logging Level` or `Save I/O Trace Files`; those remain unresolved and may be handled elsewhere. The exact user-selected values at runtime are also unknown.
+
+This closes the specific question “where does the main Word Viewer read these four Dynamic Config values?” It does **not** close the main-editor document-close/Almas Gam registration question: no close-time HTTP POST, final response payload, or registration commit was established by Run 113. Keep the user's observed close-without-manual-Save behavior as a separate runtime fact to reconcile.
