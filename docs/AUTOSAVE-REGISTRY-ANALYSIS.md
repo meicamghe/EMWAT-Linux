@@ -52,7 +52,27 @@ HKCU\Software\Emwat\Dynamic Config
 
 این شواهد نشان می‌دهد این تنظیمات در سطح پروفایل کاربر نگهداری می‌شوند و در طراحی نسخه Linux بهتر است در پیکربندی per-user ذخیره شوند، نه در فایل تنظیمات سراسری سیستم.
 
-## 5. پیامد برای Winux / EMWAT-Linux
+## 5. یافته تکمیلی: اتصال LoadDocument به callback موسوم به AutoSave
+
+در trace تابع `LoadDocument` یک فراخوانی مستقیم به آدرس `0x004B8A84` در `0x004B7A58` دیده می‌شود. TD32 این آدرس را به‌عنوان متد `TWordViwer.OnTmrAutoSave` نام‌گذاری کرده است. بنابراین این متد در جریان بارگذاری/آماده‌سازی Word Viewer فراخوانی می‌شود؛ نام آن به‌تنهایی نباید باعث شود آن را صرفاً یک ذخیره‌سازی دوره‌ای ساده فرض کنیم.
+
+بدنه disassembly این متد شامل ساخت و ثبت چند callback مرتبط با Word OLE است. در آن چند آدرس handler در object/interface state نوشته می‌شوند، از جمله:
+
+- `0x004CD154`
+- `0x004CD54C`
+- `0x004CD9C0`
+- `0x004CE030`
+- `0x004D00AC`
+
+همچنین مسیرهای state/options مانند `0x004CDB54` و `0x004C5D68` فراخوانی می‌شوند. این موضوع نشان می‌دهد متد نام‌گذاری‌شده OnTmrAutoSave در این بخش، دست‌کم بخشی از آماده‌سازی و اتصال eventهای Word را انجام می‌دهد. هنوز اثبات نشده که خود این تابع زمان‌بندی timer را ایجاد می‌کند یا عملیات ذخیره دوره‌ای را مستقیماً اجرا می‌کند.
+
+## 6. ارتباط محدود اما قطعی SilentSaveEmwatDoc
+
+در باینری، تنها direct CALL ثبت‌شده به `SilentSaveEmwatDoc` در آدرس `0x004D23D8` از متدی با نماد `TWordViwer.GetDocFieldName` و در محل `0x004BBA86` است. این فراخوانی در یک شرط قرار دارد و پیش از ادامه مسیر پردازش field اجرا می‌شود.
+
+این یافته با این فرض ساده که SilentSaveEmwatDoc فقط در رویداد BeforeClose فراخوانی می‌شود سازگار نیست. در عین حال، direct-call scan فراخوانی‌های غیرمستقیم از طریق VMT/interface را پوشش نمی‌دهد؛ بنابراین نمی‌توان نتیجه گرفت که این تنها مسیر اجرایی آن است.
+
+## 7. پیامد برای Winux / EMWAT-Linux
 
 برای نسخه Linux، یک لایه تنظیمات مستقل از Word و HTTP پیشنهاد می‌شود:
 
@@ -61,22 +81,24 @@ HKCU\Software\Emwat\Dynamic Config
 - تبدیل واحد زمان به میلی‌ثانیه در مرز adapter، نه در منطق اصلی.
 - مقدار پیش‌فرض AutoSave برابر 10000 میلی‌ثانیه فقط به‌عنوان رفتار مشاهده‌شده در این فرم؛ باید با چرخه واقعی AutoSave تطبیق داده شود.
 - گزینه‌های Logging و I/O trace باید با کنترل حجم، حذف اطلاعات حساس و مجوزهای امن فایل پیاده شوند.
+- lifecycle سند باید event-driven طراحی شود؛ بارگذاری، اتصال eventها، تغییرات سند، ذخیره موقت و بازگشت پاسخ از هم جدا باشند.
 
 هیچ‌یک از این گزینه‌ها نباید به‌عنوان قرارداد HTTP یا پروتکل wire تلقی شوند.
 
-## 6. محدودیت‌ها و کار بعدی
+## 8. محدودیت‌ها و کار بعدی
 
 این تحلیل ایستا است. هنوز موارد زیر قطعی نشده‌اند:
 
 1. مقادیر دقیق جدول فاصله‌های AutoSave در UI.
 2. نوع Registry هر گزینه (DWORD، string یا نوع دیگر) در تمام مسیرهای خواندن و نوشتن.
 3. اینکه این تنظیمات در شروع سرویس خوانده می‌شوند یا فقط هنگام ایجاد Word Viewer.
-4. ارتباط دقیق AutoSave با `SilentSaveEmwatDoc` و ارسال پاسخ `EditWordDocument`.
-5. اینکه AutoSaveInterval صفر یا مقدار پیش‌فرض چگونه بر timer واقعی اثر می‌گذارد.
+4. اینکه timer واقعی کجا ساخته و فعال می‌شود و callback دوره‌ای دقیقاً چه عملی انجام می‌دهد.
+5. ارتباط کامل `SilentSaveEmwatDoc` با `EditWordDocument` و serialization پاسخ.
+6. مسیرهای غیرمستقیم/VMT دیگری که ممکن است `SilentSaveEmwatDoc` را فراخوانی کنند.
 
-گام بعدی باید اتصال readerهای Registry به فرم، Word Viewer و callback تایمر باشد؛ سپس مسیر AutoSave به ذخیره موقت سند و پاسخ connector متصل شود.
+گام بعدی: trace کردن callerهای `0x004BBA86` و بدنه کامل `GetDocFieldName`، شناسایی منبع timer و دنبال‌کردن فراخوانی‌های غیرمستقیم Word eventها تا محل ذخیره و تولید پاسخ connector.
 
-## 7. مرجع artifact
+## 9. مرجع artifact
 
 Artifact: `emwat-word-lifecycle-analysis`  
 Workflow run: 117  
@@ -88,4 +110,6 @@ Commit ورودی تحلیل: `ed267e0fac1f4f077bf3c92510e5e4c6bd8f9d1e`
 - `AutoSave-checkbox-registry-write-path.md`
 - `AutoSave-settings-read-init.md`
 - `AutoSave-class-methods/005EAA14-...btnOkClick....md`
+- `OnTmrAutoSave-full.md`
+- `SilentSaveEmwatDoc-callers.md`
 - `registry-api-call-sites.md`
