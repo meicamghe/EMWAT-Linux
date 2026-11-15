@@ -149,3 +149,28 @@ The cleanup loop uses `FileAge(path)`, converts the timestamp with `FileDateToDa
 `euGetTempFileName` (`0x00454A58`) calls `euGetWinTempPath` (`0x0044A47C`) when its cached path is empty, then appends `temp-emwatASwf\\`. The resulting path is the base for `*.easz` enumeration. The exact implementation of the Windows temp-path helper and its API call chain is the remaining path question.
 
 Evidence: `GetUserNameW` `0x0040264C`; `FileAge` `0x004032B8`; `FileDateToDateTime` `0x00403330`; `Now` `0x004033A0`; `HoursBetween` `0x00404344`; `DeleteFileW` `0x004026B4`.
+
+
+## 11. Exact AutoSave root path and recovery-open pipeline (path workflow run #4)
+
+Artifact `14162323614` from `analyze-recovery-paths.yml` run #4 resolves the missing OS API:
+
+- `euGetWinTempPath` (`0x0044A47C`) calls `kernel32!GetTempPathW` (`0x004027F8`) with a 260-character buffer.
+- `euGetTempFileName` (`0x00454A58`) appends the literal `temp-emwatASwf\\` to that returned path.
+- The AutoSave list and cleanup routines enumerate `*.easz` under that directory.
+
+The Windows-side recovery store path is therefore:
+
+```text
+%TEMP%\\temp-emwatASwf\\*.easz
+```
+
+This is the process user's Windows temp directory, not the separate Local AppData helper or the `emwt.tmp` marker path.
+
+### Selected-file open path — unresolved transformation details
+
+The recovery form's `Delete` handler first collects selected list-item values, calls `FormClose` on the recovery form, and then passes the selected path plus the temp directory into `euResetMemory` (`0x00456F00`). It next appends a value derived from the temp path and the literal `.easd` to a path variable, creates/connects a Word Automation application wrapper, and performs late-bound Automation calls.
+
+This establishes a recovery-open transformation path involving `.easz`, `euResetMemory`, and a constructed `.easd` path. It does **not yet** prove whether `.easd` is a decrypted file, a temporary working copy, or another intermediate; the implementation of `euResetMemory` and its internal object methods must be resolved before naming the transformation.
+
+Next trace targets: `0x00452BBC` (called inside `euResetMemory`), the VMT/object pointers at `0x0062A824` and `0x0062A858`, and the `euResetMemory` callsites.
