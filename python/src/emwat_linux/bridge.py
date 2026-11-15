@@ -116,7 +116,10 @@ class BridgeHTTPServer:
                     self._send(400, b"invalid_host_header", "text/plain; charset=utf-8")
                     return
                 parsed = urlsplit(self.path)
-                if parsed.path == "/healthz":
+                if parsed.path == "/" and parsed.query == "heartbeat":
+                    # Windows Agent probes this exact loopback URL for liveness.
+                    self._send(200, b"", "text/plain; charset=utf-8")
+                elif parsed.path == "/healthz":
                     self._send(200, b'{"status":"ok"}', "application/json; charset=utf-8")
                 else:
                     self._send(404, b"", "text/plain; charset=utf-8")
