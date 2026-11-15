@@ -1167,11 +1167,11 @@ The earlier Run 116–117 uncertainty about Logging Level and Save I/O Trace Fil
 
 ### Temporary Word-process cleanup
 
-- DeleteTempRAW (0x0044AE98) enumerates top-level windows using FindWindowW/GetWindow/GetWindowTextW and checks window-title markers including "GamElectronic EMWAT" and ".doc".
-- On a match it calls ShellExecuteW with taskkill.exe and "/f /im WINWORD.EXE", waits 100 ms, and repeats the scan before calling CloseAllWords.
-- CloseAllWords obtains the Windows temp path and passes masks including %TEMP%\efg*.*, %TEMP%\~$g*.*, and %TEMP%\temp-emwatwf\*.* to helper 0x0044B0F8.
-- Despite its TD32 name GetFileVersion, helper 0x0044B0F8 enumerates matching files with FindFirst/FindNext, normalizes attributes with FileSetAttr, and deletes matches with DeleteFile. The temp-emwatwf directory is ensured before its final cleanup pass.
-- No direct caller or raw pointer reference to DeleteTempRAW has been found. Its invocation point (startup, shutdown, or indirect path) remains unknown. Do not treat it as the user's main-editor close callback.
+- Exported CloseAllWords (0x0044AE98) enumerates top-level windows with FindWindowW/GetWindow/GetWindowTextW and checks title markers including "GamElectronic EMWAT" and ".doc". On a match it runs taskkill.exe /f /im WINWORD.EXE, sleeps 100 ms, and repeats.
+- It then calls an internal helper at 0x0044AD30, which obtains the Windows temp path and invokes exported DeleteTempRAW (0x0044B0F8) on masks including %TEMP%\efg*.*, %TEMP%\~$g*.*, and %TEMP%\temp-emwatwf\*.*.
+- Exported DeleteTempRAW (0x0044B0F8) enumerates matches with FindFirst/FindNext, normalizes attributes with FileSetAttr, and deletes them with DeleteFile. Exported GetFileVersion is at 0x0044B2DC and parses version-resource data.
+- The export table confirms these external names; TD32 labels at the same addresses are mismatched. No internal caller of exported CloseAllWords was found, so EmwatService.exe may invoke it externally. The external call site remains unknown.
+
 
 ### Request/response timing and Base64 boundary
 
