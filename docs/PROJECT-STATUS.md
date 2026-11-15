@@ -1534,3 +1534,6 @@ The BPL export/API analysis resolves the earlier naming ambiguity. The public TE
 
 
 - نگاشت یک slot از رابط SevenZip هم تأیید شد: `VTable 0x00452420 +0x0C` به thunk `0x004522E9` می‌رسد که به `T7zInArchive.OpenStream` در `0x00452FDC` می‌پرد؛ امضای متد ورودی `Sevenzip.IInStream` است. بنابراین آرگومان اول `euResetMemory` یک input-stream interface است، نه مسیر فایل ساده. نحوه‌ی ساخت stream در caller فرم Delete در حال بررسی است؛ slotهای `+0x3C` و `+0x44` هنوز نام‌گذاری قطعی نشده‌اند.
+
+
+- نگاشت هر سه slot رابط بازیابی اکنون مستقیم از artifact `14165676602` تأیید شد: `+0x0C → T7zInArchive.OpenStream( IInStream )`، `+0x3C → T7zInArchive.SetPassword(UnicodeString)` و `+0x44 → T7zArchive` virtual constructor. متد `SetPassword` پس از ذخیره رشته در `Self+0x58`، callback استخراج می‌سازد و روی رابط آرشیو داخلی slot `+0x1C` را با `indices=NULL`, `numItems=-1`, `testMode=0` فراخوانی می‌کند. معنای دقیق دو رشته و مسیر خروجی callback هنوز باز است.
