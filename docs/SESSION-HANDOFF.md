@@ -641,3 +641,9 @@ Do not treat the Windows username or `@25*gamsign*25@` as the confirmed `.easz` 
 - Added `python/src/emwat_linux/editword_request.py` with `parse_editword_request(MethodCall)`: validates the method name and required parameters, parses Base64 `wordConfig`, decodes Base64 `wordBody` to opaque document bytes, preserves `signData` text and extra parameters, and enforces size limits.
 - It deliberately does not assume `signData` is one Base64 blob; the inner config declares concatenation and per-field encoding.
 - Python bridge CI run #46 (`43717259882`) passed **58 tests**. This adapter is not yet wired into a production method handler or office engine.
+
+## Word error map — 2026-11-15
+
+- Event/error workflow run #11 (`43717625474`), artifact `14162998865`, decoded the full pointer list in the server metadata block. It contains `Err_20001` XML-invalid, `Err_20002` empty document, `Err_20003` Word connection, `Err_20004` document open, `Err_20005` signature insertion, `Err_20006` missing twin field, `Err_20007` temp path, `Err_20008` scan failure, `Err_Ignore` user cancellation, `Err_20010` image load, `Err_20016` Excel connection, `Err_20017` workbook open, and `Err_20018` missing user-local folder.
+- The same block includes log-level labels and Persian AutoSave interval labels. See `docs/WORD-ERROR-MAP.md`.
+- Important: this is a string/error map, not a Word COM callback table. The live BeforeSave registration remains separately confirmed at `0x004CD154`.
