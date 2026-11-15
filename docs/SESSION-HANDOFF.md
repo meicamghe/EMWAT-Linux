@@ -587,3 +587,12 @@ Use this exact naming in future traces: public/exported TEmwatMethod.Invoke = 0x
 - Latest verified CI snapshots: Python bridge run #42, 45 tests passed; native core run #104, normal tests 4/4 and sanitizer tests 4/4.
 - A separate `.github/workflows/analyze-recovery-store.yml` workflow is being executed to trace every `TfrmShowAutoSaveFiles` / `TfrmSendLog` procedure, callers, callback references, resources, and recovery-related embedded strings. Treat results as pending until run #2 artifact is checked.
 - Existing analysis branches remain independent: request parameters, PCAP timing, registry settings, Word event sink, wait/COM, filename normalization, Word lifecycle, native core, and Python bridge.
+
+
+## Recovery branch update — 2026-11-15
+
+- Recovery form workflow run #2 (`43715017039`) completed successfully; artifact `14162835454`.
+- The form is `TfrmShowAutoSaveFiles` in module `uSendLog`; its separate Word Automation lifecycle is not the main editor's `TWordViwer` lifecycle.
+- Recovered literals: `*.easz` at `0x005EC49C` is passed from `lslFilesDblClick` to helper `0x004043BC`; `.easd` at `0x005EBD3C` is used in string construction inside `Delete`. Their exact roles remain under analysis.
+- Autosave helpers identified: `euGetAutoSavePass` (`0x00456B78`), `DoClearOldAutoSaveFiles` (`0x00456C0C`), `euClearOldAutoSaveFiles` (`0x00456C98`), and path/temp helpers under `Emwat.Sys`. The path/helper workflow run #2 (`43715620696`) is in progress; do not treat its results as final yet.
+- See `docs/RECOVERY-STORE-ANALYSIS.md` for confirmed evidence and unresolved items.
