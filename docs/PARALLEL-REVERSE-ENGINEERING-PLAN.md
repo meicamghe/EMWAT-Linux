@@ -247,3 +247,18 @@ This is direct evidence that the main editor's registered 0x004CD154 handler imp
 - LoadDocument's wordBody argument is held in [ebp-0x1C] and its bytes are written directly to the temporary TFileStream at 0x004B7821–0x004B783A.
 - The Base64Decode call at 0x004B7E44 is invoked with [ebp-8], not [ebp-0x1C]. The surrounding code walks a separate indexed data collection, so this decode must not be attributed to wordBody; it is likely image/auxiliary data, but that identity is not yet proven.
 - The capture's XML wordBody value is Base64 text. Since LoadDocument writes its argument directly, the decode may happen in EmwatService's XML/parameter layer before the BPL call. That service-side boundary is not present in the current BPL input, so this remains unresolved.
+
+
+### Request/response DOC comparison — pcap workflow #4
+
+The second pcap workflow compared the decoded request wordBody with the response-word payload:
+
+- Request DOC: 872,960 bytes; OLE Compound File signature.
+- Response DOC: 874,957 bytes available from the capture; the response contains 17 sequence gaps totaling 68 missing Base64 characters, all inside the document value.
+- Those 68 missing Base64 characters represent 51 decoded bytes. The estimated complete response size is therefore 875,008 bytes, exactly 2,048 bytes (four 512-byte sectors) larger than the request and sector-aligned.
+- Both OLE headers report 14 FAT sectors. The first directory sector pointer at header offset 48 changes from 1698 (request) to 1702 (response).
+- The first differing decoded byte is offset 48, before the first capture gap; the first approximately 49,041 decoded bytes are available for comparison and are not equal.
+
+This proves the response is not a byte-for-byte echo of wordBody. The response is a rewritten/restructured legacy DOC container; the directory-sector pointer moves by four sectors and the complete file is estimated to grow by 2 KiB. The pcap's 68 missing Base64 characters prevent a full-file hash/equality comparison, so do not claim exact content edits beyond the intact prefix and OLE header evidence.
+
+Combined with the 54.557883-second wait after the request body completes, this strongly supports the model that EMWAT holds the original request during the Word editing operation and returns the processed document when the operation ends. The custom register-changes prompt is the leading candidate for the release point; the exact callback-to-response call chain and the parent page's final Almas POST still need proof.
