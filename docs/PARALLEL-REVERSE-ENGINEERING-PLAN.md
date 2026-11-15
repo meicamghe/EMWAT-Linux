@@ -4,21 +4,15 @@ Source: existing GitHub Actions artifact `emwat-word-lifecycle-run117` and its T
 
 ## Workstream A — request/command dispatch and TEmwatMethod.Invoke
 
-### Confirmed observations
-- `TEmwatMethod.Invoke` is a 433-byte procedure at `0x0046C82C–0x0046C9DC`.
-- Its Delphi signature contains a `TDictionary<AnsiString, ...>`.
-- It constructs/initializes a `TXMLEmwatType` object through `0x0044C238`.
-- It enumerates dictionary pairs using `TEnumerable.ToArrayImpl` (`0x0046DE84`) and `TPairEnumerator.DoGetCurrent` (`0x0046E324`).
-- It uses `TDictionary.AddOrSetValue` (`0x0046DC8C`) to insert/update values in a dictionary during this traversal.
-- The only direct TD32-bounded caller currently identified is `TEmwatMethod.Finalization` at `0x0046CA67`. This is important: the current evidence does **not** establish that this method is the HTTP `invoke` route handler.
+- The public/exported TEmwatMethod.Invoke entry is 0x0046C9E0. Every TEmwatMethod descendant uses this address in VMT slot +0x0C.
+- The shared wrapper at 0x0046C9E0 calls the inner dictionary/XML helper at 0x0046C82C (433 bytes) at callsite 0x0046CA67, then invokes the concrete subclass's VMT slot +0x10 at callsite 0x0046CA88.
+- The inner helper at 0x0046C82C builds the XML method/parameter structure from TDictionary<AnsiString,AnsiString> and calls TXMLEmwatType interface slot +0x54 at 0x0046C937 to serialize it.
+- TD32 labels are misleading at this boundary: 0x0046C82C is symbolized as TEmwatMethod.Invoke, while 0x0046C9E0 is symbolized as Emwatmethod.Finalization. The export name, shared VMT slot +0x0C, and call graph establish 0x0046C9E0 as the public virtual Invoke wrapper and 0x0046C82C as its inner helper.
+- There are two distinct +0x68 indirect dispatches: one in the inner helper at 0x0046C921 and another in the wrapper at 0x0046CBB7. Their receiver types must not be conflated.
+- The concrete EditWordDocument VMT slot +0x10 target is 0x005EE82C. Its body retrieves wordConfig, wordBody, letterImages, and signData, then calls TWordViwer.LoadDocument at 0x004B7724.
+- The BPL export table confirms the service-facing PerformMethod names and targets. TD32 procedure labels for several neighboring connector methods are shifted by one class name; use export names together with method-body semantics when mapping the public method identifiers.
+- The helper's XML serializer getter target is TXMLEmwatType interface slot +0x54, resolved through thunk 0x0044B7A9 to xmlrtl230.bpl!TXMLNode.GetXML at 0x0044B590.
 
-### Implication
-Treat this as a dictionary-to-XML/type-object transformation/finalization helper until the caller chain and request dispatcher are resolved. Do not equate its name with the HTTP query parameter `?invoke=`.
-
-### Next targets
-1. Trace `TEmwatMethod.Finalization` around `0x0046CA67` and identify the dictionary's producer and consumer.
-2. Resolve the class/VMT method that dispatches the HTTP `invoke` parameter.
-3. Correlate command metadata with the observed `POST /?invoke=58351` payload only after the request parser is identified.
 
 ## Workstream B — Word document lifecycle
 
