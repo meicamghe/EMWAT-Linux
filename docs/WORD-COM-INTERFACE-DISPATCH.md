@@ -803,3 +803,6 @@ Therefore the pointer region beginning at `0x00627BB0` is a server error-message
 The live main-viewer event registration evidence is unchanged: `OnTmrAutoSave` assigns `TWordViwer.WordAppDocumentBeforeSave` (`0x004CD154`) to callback field `+0x80`, plus other event handlers at `+0x90`, `+0x98`, and conditional `+0x88`. The 20 string pointers provide error handling text for the Word/EMWAT subsystem, not a map of those event registrations.
 
 Workflow run #10 (`analyze-word-event-sink.yml`) now labels this analysis as a server error-map string extraction and no longer attempts to trace the string pointers as procedures. A separate event-dispatch investigation is still required to map actual COM event DISPIDs to the registered callback records.
+
+
+The full expanded scan in run #11 (`43717625474`, artifact `14162998865`) adds `Err_Ignore` → `The operation was canceled by user.`, `Err_20010` → image-load failure, `Err_20016`/`Err_20017` → Excel connection/workbook-open errors, and `Err_20018` → missing user-local folder. It also finds log-level labels (`None`, `Info`, `Debug`) and Persian AutoSave interval labels. The normalized list is in `docs/WORD-ERROR-MAP.md`.
