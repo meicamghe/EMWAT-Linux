@@ -566,6 +566,14 @@ jobs:
           mkdir -p word-lifecycle-analysis
           python tools/scan_registry_api_calls.py
           test -s word-lifecycle-analysis/registry-api-call-sites.md
+      - name: Trace remaining registry object creation and read/write contexts
+        run: |
+          mkdir -p word-lifecycle-analysis
+          for spec in "00455C10 00455C70" "00455E10 00455E70" "00455ED0 00455F30" "00456040 004560A0" "00466CE0 00466D40" "00467C60 00467CC0" "00468DD0 00468E40" "00509200 00509270" "00509980 005099F0" "005EAE20 005EAE80"; do
+            set -- $spec
+            python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x$1 0x$2 word-lifecycle-analysis/registry-context-$1.md
+          done
+          python tools/find_td32_class_procedures.py analysis-input/EmwatMethods.bpl1 TEmSettingForm TWordViwer TfrmShowAutoSaveFiles > word-lifecycle-analysis/registry-related-class-procedures.md
       - uses: actions/upload-artifact@v4
         with:
           name: emwat-word-lifecycle-analysis
