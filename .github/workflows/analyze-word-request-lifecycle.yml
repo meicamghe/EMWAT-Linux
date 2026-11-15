@@ -1,0 +1,53 @@
+name: Analyze EMWAT Word request lifecycle
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/analyze-word-request-lifecycle.yml'
+      - 'analysis-input/EmwatMethods.bpl1'
+      - 'tools/trace_td32_procedure.py'
+      - 'tools/trace_td32_callers.py'
+      - 'tools/trace_td32_immediate_refs.py'
+      - 'tools/trace_pe_range.py'
+      - 'tools/trace_pe_target.py'
+      - 'tools/decode_pe_strings.py'
+permissions:
+  contents: read
+jobs:
+  request-lifecycle:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install pefile capstone
+      - name: Decode Word BeforeSave prompt and close dispatch
+        run: |
+          mkdir -p request-lifecycle-analysis/beforesave
+          python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x004CD154 request-lifecycle-analysis/beforesave/WordAppDocumentBeforeSave.md
+          python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x004CD154 0x004CD364 request-lifecycle-analysis/beforesave/BeforeSave-control-flow.md
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004CD154 request-lifecycle-analysis/beforesave/BeforeSave-callers.md
+          python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x004CCBBC request-lifecycle-analysis/beforesave/WordAppDocumentBeforeClose.md
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004CCBBC request-lifecycle-analysis/beforesave/BeforeClose-callers.md
+          python tools/decode_pe_strings.py analysis-input/EmwatMethods.bpl1 0x004CD374 0x004CD3C0 0x004CD3DC 0x004CD3F0 0x004CD40C 0x004CD41C 0x004CD42C 0x004CD4BC 0x004CD50C > request-lifecycle-analysis/beforesave/BeforeSave-prompt-strings.md
+      - name: Trace remaining OnTmrAutoSave code and wait/message loop candidates
+        run: |
+          mkdir -p request-lifecycle-analysis/autosave
+          python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x004BA058 0x004BB3AF request-lifecycle-analysis/autosave/OnTmrAutoSave-tail.md
+          python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x004BA058 request-lifecycle-analysis/autosave/OnTmrAutoSave-tail-procedure.md
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004B8A84 request-lifecycle-analysis/autosave/OnTmrAutoSave-callers.md
+          python tools/trace_td32_immediate_refs.py analysis-input/EmwatMethods.bpl1 0x004B8A84 request-lifecycle-analysis/autosave/OnTmrAutoSave-refs.md
+          python tools/decode_pe_strings.py analysis-input/EmwatMethods.bpl1 0x004BA304 0x004BA350 0x004BA368 0x004BA388 0x004BA3A8 0x004BA3C8 0x004BA414 0x004BA438 0x004BA5EC > request-lifecycle-analysis/autosave/OnTmrAutoSave-strings.md
+      - name: Resolve lifecycle COM, thread, and message helpers
+        run: |
+          mkdir -p request-lifecycle-analysis/helpers
+          for target in 00404B84 00440950 0043F360 00441C68 00440A68 0044ABE4 00403ED0 00403ED8 00401478 004013B8 00403550 004011D0; do
+            python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x$target request-lifecycle-analysis/helpers/$target.md 220 ret
+          done
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004B7724 request-lifecycle-analysis/helpers/LoadDocument-callers.md
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004B7F9C request-lifecycle-analysis/helpers/LoadDocument-response-write-callers.md
+      - uses: actions/upload-artifact@v4
+        with:
+          name: emwat-word-request-lifecycle-analysis
+          path: request-lifecycle-analysis/
