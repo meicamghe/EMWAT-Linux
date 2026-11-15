@@ -268,3 +268,41 @@ Do not implement the recovery window as if the binary already proved a conventio
 - cleanup of tracked Word instances on a conditional BeforeClose event.
 
 The actual recovery semantics remain an open reverse-engineering item.
+
+
+## 14. Delete path: shared Word Automation class identified
+
+Cross-procedure comparison resolves an important ambiguity. The global class reference at `0x00420250`, instantiated by `Delete` at `0x005EB9B5`, is also instantiated by `TWordViwer.LoadDocument` at `0x004D0EA3` and by `BGPrintWithGamPrintOptions` at `0x004C605C`. In the viewer constructor its instance is stored as the viewer's Word-side object at offset `+0x44`. This strongly identifies the class as the shared Word Automation wrapper, not an arbitrary background worker.
+
+In `Delete`, the new instance is stored in form member `+0x3D0`; the form instance and callback address `0x005EC594` are written into the new object's fields at `+0x84` and `+0x80`. It is initialized through helper `0x00404FBC`, configured through calls at `0x00440B2C`, `0x00440950`, and `0x0043F308`, then a virtual method at offset `+0x50` is invoked. The code subsequently accesses the object's event/interface member at `+0x3D8`, builds a string argument, and performs a conditional loop with further virtual calls. This is consistent with a dedicated Word Automation session being used during the selected-item deletion workflow.
+
+The exact semantics of the virtual slots and event member are not yet resolved. This does not prove that the object opens each selected file or that it is a worker thread. The earlier generic-worker interpretation should be discarded.
+
+## 15. FormClose performs Word-side per-item operations
+
+When form member `+0x3D0` is non-null, `FormClose`:
+- obtains a collection-like value from that object through an interface call at vtable offset `+0x20`;
+- iterates the resulting count;
+- for each item, builds an index/format string and obtains an item interface from the object at `+0x3D0`;
+- invokes a method at vtable offset `+0x30` on that item interface;
+- invokes a method at vtable offset `+0x29C` on a second interface associated with the iteration;
+- clears the form's `+0x3D0` reference;
+- waits 100 ms, then processes and clears a separate list stored at `+0x3D4`.
+
+This establishes that FormClose iterates Word-side collection items and invokes operations on each. The collection and method names remain unresolved; it is not yet safe to label them Documents.Close, Save, or Delete.
+
+## 16. UI resource facts
+
+The `TFRMSHOWAUTOSAVEFILES` Delphi form resource confirms a button event named `btnRemoveClick`, a plausible UI source for the `Delete` action. It also contains the standard `OnCreate`, `OnShow`, and `OnClose` event names. It exposes no recovery directory, wildcard, extension, or definitive open-file action.
+
+The code-level `btnShowFileClick` remains a 10-byte wrapper that calls `CloseWordApp`; despite its name, its direct body does not open a file. Treat this as an unresolved naming/dispatch discrepancy.
+
+## 17. Revised recovery conclusions
+
+- The deletion workflow creates and configures the same Word Automation wrapper class used by the main viewer.
+- The form's close handler performs per-item operations through Word-side collection interfaces.
+- A separate list at form offset `+0x3D4` is processed after a 100 ms delay.
+- The Delphi resource confirms a Remove button event.
+- Still unknown: collection interface type, vtable slot names, file paths/extensions, list population source, and whether selected items are Word documents, recovery files, or another Word-side collection.
+
+Next high-value target: resolve the shared Word Automation class VMT/interface slots `+0x20`, `+0x30`, `+0x50`, and `+0x29C`, then trace how selected-item strings from `Delete` reach that object.
