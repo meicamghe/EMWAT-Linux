@@ -353,3 +353,11 @@ The pointer list at `0x00627BB0` is an error-message string table. The previous 
 - Cleanup APIs resolve exactly: `TDirectory.GetFiles` for `*.easz`, `FileAge`, `FileDateToDateTime`, `Now`, `HoursBetween`, and `DeleteFileW`; threshold is 24 hours.
 - The `CryptoGetTextPassword2` helper was corrected: it initializes a `TObjectList` via RTL constructor `0x00404734`; it does not identify the writer password provider.
 - See `docs/RECOVERY-STORE-ANALYSIS.md`, sections 16–17.
+
+
+### Plugin follow-up #2 — euUnArchive is a separate path
+
+- Run `43720247793` completed successfully; artifact `14164382428` inspected.
+- `euUnArchive` (`0x00456DFC–0x00456EFF`) is the only direct bounded caller of `T7zPlugin` constructor in this scan. It uses global `0x0062A824`, then calls object/interface slots `+0x28`, `+0x10`, and `+0x18` while iterating paired collection-like inputs.
+- This multi-item helper is separate from `euResetMemory` → `CreateOutArchive` and the latter's `+0x44/+0x0C/+0x3C` dispatch sequence. Slot meanings and archive direction remain unresolved; do not use euUnArchive to infer the .easz recovery protocol.
+- Detailed trace: `docs/RECOVERY-STORE-ANALYSIS.md`, section 18.
