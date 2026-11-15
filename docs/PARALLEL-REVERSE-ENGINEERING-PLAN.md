@@ -152,7 +152,7 @@ The analysis is now split across independent GitHub Actions workflows rather tha
 
 - Stream 4's complete init response confirms the bridge script listens for parent-window message events, POSTs event.data to the local /?invoke endpoint, returns responseText to event.source via postMessage, and sends the <inited /> marker to the parent.
 - The script generates invoke values with Math.floor(Math.random() * 99999); this is a per-request random value, not a method identifier.
-- Python BridgeHTTPServer now implements GET /?init=<digits>_<digits>, substitutes its bound loopback port, and derives the parent target origin from Referer only when that origin is explicitly allowlisted.
+- Python BridgeHTTPServer now implements GET /?init=<digits>_<digits>. Its 994-byte template is byte-for-byte identical to capture stream 4 when port and parent origin match; runtime substitutions are limited to the bound loopback port and an explicitly allowlisted parent origin derived from Referer.
 - Parent-origin allowlisting is separate from POST Origin allowlisting because the capture shows the Almas page as the init Referer while the subsequent POST Origin is the local loopback service.
-- Python bridge workflow #36 (run 43708383619) passed all 45 tests, including init script generation, dynamic port, allowlisted and rejected parent origins, and malformed init query rejection.
+- Python bridge workflow #40 (run 43708542723) passed all 45 tests, including init script generation, dynamic port, allowlisted and rejected parent origins, and malformed init query rejection. A direct comparison confirmed byte-for-byte parity with the captured init response.
 - This is a capture-matched endpoint implementation, not yet an end-to-end test against the actual Almas page/browser.
