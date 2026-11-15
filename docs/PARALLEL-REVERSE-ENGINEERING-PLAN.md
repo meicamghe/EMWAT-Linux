@@ -370,3 +370,15 @@ The pointer list at `0x00627BB0` is an error-message string table. The previous 
 - Cancellation response mapping is a mandatory injected factory; original cancellation semantics remain unknown and are not guessed.
 - The factory is not yet registered in the application; a real LibreOffice adapter is still required.
 - CI run `43721449170` passed **69 tests**.
+
+
+### Close-driven coordinator concurrency hardening — 2026-11-15
+
+- `DocumentCoordinator` now serializes office callbacks with close/finalize transitions using an `RLock`; callbacks are disabled after close and before final export.
+- Regression test covers delayed modification/save events during export and after response return. Python CI run `43722184809` passed **70 tests**.
+
+### SevenZip class-interface mapping branch — 2026-11-15
+
+- The base-class workflow run `43721583502` completed successfully (artifact `14165155588`). It indexed `T7zArchive` base methods, but did not resolve the returned COM-style interface's virtual slots.
+- Extended `resolve_delphi_vmt_slots.py` and `trace_delphi_interfaces.py` to include the SevenZip classes and `IInArchive`/`IOutArchive`/stream interface RTTI. Updated `.github/workflows/analyze-recovery-plugin.yml` to emit `SevenZip-VMT-slots.md` and `SevenZip-interface-tables.md`.
+- New analysis run `43722345225` is in progress. Its purpose is to prove or reject the leading `SetPassword → OpenFile → ExtractTo` mapping for `euResetMemory`, not to assume it.
