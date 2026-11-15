@@ -847,3 +847,15 @@ References:
 - DocumentClass: https://learn.microsoft.com/en-us/dotnet/api/microsoft.office.interop.word.documentclass?view=word-pia
 - ApplicationEvents2 IID and method list: https://learn.microsoft.com/en-us/dotnet/api/microsoft.office.interop.word.applicationevents2?view=word-pia
 - DocumentEvents IID: https://learn.microsoft.com/en-us/dotnet/api/microsoft.office.interop.word.documentevents?view=word-pia
+
+
+## Server-data helper resolution — 2026-11-15
+
+Word event-sink follow-up run `43723423283` (artifact `14165491351`) resolved the important helper thunks:
+
+- `0x0040479C` is an IAT thunk to `rtl230.bpl!System.Win.ComObj.CreateRemoteComObject(WideString, GUID)`. `TWordApplication.InitServerData` and `TWordDocument.InitServerData` therefore feed their static server-data records into Delphi's OLE/COM wrapper initialization path.
+- `0x00401358` resolves to `WStrFromUStr`; `0x00401210` to `WStrClr`; and `0x00401248` to `UStrLAsg`. These are RTL string-management helpers, not EMWAT event callbacks.
+- The `0x00627A38` and `0x00627768` blocks contain Word class/interface GUID metadata. Their presence helps identify generated COM wrappers but does not provide the event-handler method pointer or prove which `IConnectionPoint::Advise` call subscribes the main editor.
+- `0x00401420` and `0x00401430` remain external/import thunks not resolved to a file-backed implementation in this package; do not assign them a semantic name from these traces alone.
+
+The missing step is now narrower: trace the generated event-sink/connection-point registration path that consumes the server data and connects the `WordAppDocumentBeforeSave`/`WordAppDocumentBeforeClose` handlers. The new lifecycle run is still tracing controller field assignments and callback registration.
