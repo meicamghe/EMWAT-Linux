@@ -422,3 +422,10 @@ Recovery-path workflow run 13 (artifact `14165938809`) traced the remaining help
 - `0x004565DC` is `DirIsEmpty(UnicodeString)` and `0x0045574C` is `euGetFileSize(UnicodeString)`; neither should be described as password or archive extraction helpers. `0x004555D8` is `ForceForegroundWindow` and is unrelated to the archive data path.
 
 The callback-contract workflow is being extended to trace the interface's `+0x44` target and the two callback RTTI pointers independently. Until that resolves, keep the optional `euResetMemory` argument semantics and the extracted-file destination open.
+
+
+## 24. SevenZip extraction callback IID cross-check — 2026-11-15
+
+The callback RTTI inspections from recovery callback-contract run 1 (artifact `14165934103`) show that the 16-byte records at `0x00453850` and `0x0045391C` are byte-identical. Both encode the 7-Zip `IArchiveExtractCallback` IID `23170F69-40C1-278A-0000-000600200000`. The code references differ because `ExtractTo` and `SetPassword` construct separate callback objects/contexts, but the COM interface contract is the same. This replaces the earlier wording that could be read as implying two distinct callback interface types.
+
+The `GetStream` method (`0x004531EC`) is also part of the `T7zInArchive` extraction callback path and stores its AskMode at `Self+0x3C` before invoking the underlying archive extraction slot. `PrepareOperation` (`0x004532E4`) branches on that mode and on the custom callback/context fields (`Self+0x50/+0x54`) or the string field (`Self+0x58`). The fallback path consults item properties and creates a stream object, but the exact mapping of the string field to a destination path versus a password/configuration value is not yet proven. Keep the actual `.easd` extraction target unresolved.
