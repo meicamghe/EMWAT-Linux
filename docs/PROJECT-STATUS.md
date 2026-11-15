@@ -1382,7 +1382,7 @@ The project now has independent CI analysis lanes for Word request lifecycle, re
 - Main Word settings read from HKCU\Software\Emwat\Dynamic Config include the four operational viewer values plus TETracer's Logging Level and Save I/O Trace Files. TETracer's Created IO Trace Count is a 15-count diagnostic trace quota.
 - Image/print settings are stored separately under HKCU\SOFTWARE\Emwat\PrintParams.
 - DeleteTempRAW can taskkill WINWORD.EXE and then remove matching files under the Windows temp directory; its invocation point remains unknown.
-- Packet-level timing confirms the EditWordDocument request body is complete at 0.002154 s and the first response byte arrives at 54.560037 s: a 54.557883-second server-side wait. The 1.166 MB response transfers in about 1.362 ms. The request is long-lived; the exact Word/COM event that releases it is still being traced.
+- Packet-level timing confirms the EditWordDocument request body is complete at 0.002154 s and the first response byte arrives at 54.560037 s: a 54.557883-second server-side wait. The 1.166 MB response transfers in about 1.362 ms. The returned DOC is rewritten: input 872,960 bytes; estimated complete response 875,008 bytes (+2,048); OLE first-directory-sector pointer changes 1698 → 1702 at offset 48. The exact Word/COM release event remains under investigation.
 - The BPL writes wordBody bytes directly to a temp file. The Base64Decode call at 0x004B7E44 targets a different local value, not proven to be wordBody.
 
 ### Native implementation state
@@ -1396,3 +1396,8 @@ The Python bridge now matches the captured heartbeat and init routes, can serial
 3. Identify where the service decodes the Base64 wordBody before it reaches the BPL.
 4. Find the caller/invocation point for DeleteTempRAW.
 5. Decode the remaining temp-path and image-print helpers before implementing their Linux equivalents.
+
+
+### Response document comparison
+
+The response-word payload is not an echo of the input wordBody. The pcap contains 17 sequence gaps (68 missing Base64 characters / 51 decoded bytes) inside the response document. Accounting for those missing capture bytes yields an estimated response size of 875,008 bytes versus 872,960 input bytes (+2,048). The OLE header's first-directory-sector pointer changes from 1698 to 1702. Full-file equality remains unverified because the capture is incomplete.
