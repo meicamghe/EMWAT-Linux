@@ -10,7 +10,6 @@ on:
       - 'tools/trace_td32_callers.py'
       - 'tools/trace_pe_range.py'
       - 'tools/trace_delphi_interfaces.py'
-      - 'tools/inspect_delphi_vmt_address.py'
       - 'tools/resolve_delphi_vmt_slots.py'
       - 'tools/scan_pe_pointer_refs.py'
       - 'tools/scan_named_pe_resource.py'
@@ -56,7 +55,7 @@ jobs:
               summary.append(f"- {module} — 0x{va} — {decorated} — {output}")
           pathlib.Path("event-sink-analysis/classes/trace-index.md").write_text("\n".join(summary) + "\n", encoding="utf-8")
           PY
-     - name: Trace event callback record assignments and handlers
+      - name: Trace event callback record assignments and handlers
         run: |
           mkdir -p event-sink-analysis/callbacks
           python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x004B8C60 0x004B8D10 event-sink-analysis/callbacks/OnTmrAutoSave-event-record-assignments.md
