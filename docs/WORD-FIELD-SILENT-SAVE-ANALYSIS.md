@@ -359,3 +359,37 @@ A targeted scan of the extracted run-117 analysis documents found no direct refe
 This is only a negative result for the extracted artifact corpus, not proof that EMWAT never uses those APIs. File discovery/deletion may be inside another BPL/DLL, imported through an unresolved helper, or represented by an Automation call.
 
 The current best next target is the helper/object contract behind `0x0043EAB8` and the event callback `0x005EC594`, plus the selected-item string construction at `0x005EBB15–0x005EBC25`. Those are the remaining links between the recovery UI and the Word Automation command.
+
+
+## 21. Recovery-form helper and callback target: additional cross-call analysis (2026-11-15)
+
+### 21.1 Stored pointer 0x005EC594
+
+TfrmShowAutoSaveFiles.Delete stores 0x005EC594 in the wrapper object's field +0x80 and the form instance in +0x84. TD32 maps 0x005EC594–0x005EC59D to a tiny Finalization procedure. Its executable body calls TfrmShowAutoSaveFiles.FormClose at 0x005EBF20 and returns with ret 4.
+
+This target is not lslFilesKeyUp (a separate procedure at 0x005EC568), nor is it an independently identified file-open callback. Its observed action is to route into the form-close cleanup path. The TD32 label Finalization is retained as symbol evidence; why this stub is installed in the wrapper field remains unresolved.
+
+### 21.2 Shared helper 0x0043EAB8
+
+Cross-references in the recovery form, BGPrintWithGamPrintOptions, and UnprotectMyDoc show that 0x0043EAB8 is a shared helper returning an interface-like object through an output location.
+
+- In TfrmShowAutoSaveFiles.FormClose, one call supplies two output locations; the returned interface is invoked through vtable +0x20 to obtain a count. A loop calls the helper again with an index and formatted key, then invokes +0x30 on one returned interface and +0x29C on another.
+- In TfrmShowAutoSaveFiles.Delete, the helper receives many prepared temporary arguments and returns an interface used through vtable +0x54. The result is stored in form member +0x3D4, followed by a 100 ms wait and further processing.
+- BGPrintWithGamPrintOptions also calls the returned interface through vtable +0x54.
+- UnprotectMyDoc obtains an interface, invokes +0x20, and branches on the returned count.
+
+This is consistent with a reusable interface/collection adapter shared by automation workflows. It does not identify the helper's exact Delphi signature, collection type, item-key semantics, or the meaning of vtable +0x54. It must not yet be described as a filesystem enumerator or deletion routine.
+
+### 21.3 Consequences and unresolved items
+
+- The recovery form's FormClose path is connected to the stub pointer installed by Delete.
+- The helper is more likely an automation/interface access layer than a file API because its callers span recovery, background printing, and document unprotection.
+- The +0x29C operation remains generic IDispatch::Invoke-style dispatch; its DISPID and argument semantics remain unknown.
+- Temporary construction before 0x43EAB8 does not identify a filename, extension, or disk path. No .asd/.wbk assumption is justified.
+- Filesystem persistence and deletion semantics remain unknown until a concrete file API, path, or runtime artifact is identified.
+
+### 21.4 Next focused targets
+
+1. Resolve the implementation of 0x43EAB8, including its argument frame and return ownership.
+2. Resolve vtable slots +0x20, +0x30, and +0x54 on the concrete interfaces returned at the recovery call sites.
+3. Trace the object stored in form member +0x3D4 after Delete, including helpers called after the 100 ms wait.
