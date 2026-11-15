@@ -549,7 +549,7 @@ Continue autonomously; no user input is required for the current static-analysis
 - Dynamic Config reads are now mapped: Background Priniting, Dont Ask Save On Print, Save Before Print, AutoSaveInterval, Logging Level, Save I/O Trace Files. TETracer's Created IO Trace Count is a 15-count trace quota.
 - Image/print settings use HKCU\SOFTWARE\Emwat\PrintParams with mLeft/mTop/mRight/mBottom, Posotion, Size, PrintRange.
 - DeleteTempRAW enumerates Word windows, may execute taskkill.exe /f /im WINWORD.EXE, then CloseAllWords removes matching temp files. Its caller is still unknown; do not equate it with the user's close action.
-- One captured EditWordDocument POST and response share a 54.6315-second TCP stream with two heartbeats inside. This is not enough to prove the request waits for Word close.
+- Packet-level timing confirms one long-lived EditWordDocument request: body complete at 0.002154 s, first response byte at 54.560037 s, gap 54.557883 s; the response transfers in about 1.362 ms. The exact Word/COM event that releases the held request is still unresolved.
 - LoadDocument writes wordBody bytes directly to a temporary stream. Base64Decode at 0x004B7E44 uses [ebp-8], not the wordBody argument. Do not claim this call decodes wordBody.
 - The successful LoadDocument path writes AResponseInfo.ContentText and calls WriteContent. Exact timing relative to Word close remains unresolved.
 
