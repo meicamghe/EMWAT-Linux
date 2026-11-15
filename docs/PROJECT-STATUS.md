@@ -1533,13 +1533,22 @@ The BPL export/API analysis resolves the earlier naming ambiguity. The public TE
 - runهای در حال اجرا: SevenZip vtable با ۲۰ slot (`43722990639`)، Word event RTL helper trace (`43723423283`)، recovery Delete handler (`43723328264`)، Word lifecycle (`43722990611`) و Methods BPL (`43722990637`). نتیجه‌ی هیچ‌کدام تا زمان بررسی artifact نهایی اعلام نمی‌شود.
 
 
-- نگاشت یک slot از رابط SevenZip هم تأیید شد: `VTable 0x00452420 +0x0C` به thunk `0x004522E9` می‌رسد که به `T7zInArchive.OpenStream` در `0x00452FDC` می‌پرد؛ امضای متد ورودی `Sevenzip.IInStream` است. بنابراین آرگومان اول `euResetMemory` یک input-stream interface است، نه مسیر فایل ساده. نحوه‌ی ساخت stream در caller فرم Delete در حال بررسی است؛ slotهای `+0x3C` و `+0x44` هنوز نام‌گذاری قطعی نشده‌اند.
+- نگاشت `+0x0C` اصلاح و قطعی شد: thunk `0x004522E9` به `T7zInArchive.OpenStream` می‌رسد؛ `IInStream` نوع خروجی متد است، نه ورودی آن. متد یک UnicodeString مسیر آرشیو می‌گیرد و stream را می‌سازد/برمی‌گرداند. caller فرم Delete نیز مسیر `.easz` را به‌صورت UnicodeString پاس می‌دهد.
 
 
-- نگاشت هر سه slot رابط بازیابی اکنون مستقیم از artifact `14165676602` تأیید شد: `+0x0C → T7zInArchive.OpenStream( IInStream )`، `+0x3C → T7zInArchive.SetPassword(UnicodeString)` و `+0x44 → T7zArchive` virtual constructor. متد `SetPassword` پس از ذخیره رشته در `Self+0x58`، callback استخراج می‌سازد و روی رابط آرشیو داخلی slot `+0x1C` را با `indices=NULL`, `numItems=-1`, `testMode=0` فراخوانی می‌کند. معنای دقیق دو رشته و مسیر خروجی callback هنوز باز است.
+- نگاشت هر سه slot رابط بازیابی از artifact `14165676602` تأیید شد: `+0x0C → OpenStream(UnicodeString) -> IInStream`، `+0x3C → SetPassword(UnicodeString)` و `+0x44 → T7zArchive` virtual constructor. `SetPassword` پس از ذخیره رشته در `Self+0x58`، callback می‌سازد و `IInArchive.Extract` را برای همه‌ی آیتم‌ها فراخوانی می‌کند. trace کامل Delete نشان داد آرگومان اول مسیر آرشیو و آرگومان دوم رشته‌ی تولیدشده توسط helper `0x0044A998` است.
 
 
 - جزئیات callback آرشیو هم تفکیک شد: `SetPassword` از typeinfo آدرس `0x0045391C` استفاده می‌کند؛ `ExtractTo` از `0x00453850` و contextهای `Self+0x50/+0x54`. هر دو روی interface داخلی slot `+0x1C` را با `indices=NULL` و `numItems=-1` صدا می‌زنند؛ `testMode` در `SetPassword` صفر و در `ExtractTo` وابسته به پارامتر Boolean است. نوع دقیق callback و مقصد خروجی هنوز در شاخه‌ی جاری بررسی می‌شود.
 
 
 - slot داخلی `+0x1C` اکنون با اطمینان به‌عنوان `IInArchive.Extract` شناخته می‌شود: متدهای wrapper به نام‌های `ExtractItem` و `ExtractTo` نیز همین slot را با آرگومان‌های item/test-mode خود فراخوانی می‌کنند. بنابراین `SetPassword` در این مسیر عملاً یک درخواست Extract برای همه‌ی آیتم‌ها با callback اختصاصی می‌فرستد؛ مقصد callback هنوز در دست بررسی است.
+
+
+## تکمیل trace فراخواننده‌ی بازیابی — 2026-11-15
+
+- Recovery workflow run `43723328264` / artifact `14165058222`، handler کامل `TfrmShowAutoSaveFiles.Delete` را استخراج کرد.
+- مسیر آرشیو انتخاب‌شده از فیلد `+0x20` آیتم لیست با `UStrLAsg` به local `[ebp-4]` کپی می‌شود؛ این همان آرگومان اول `euResetMemory` است و به `OpenStream(UnicodeString) -> IInStream` می‌رسد.
+- local `[ebp-8]` بلافاصله قبل از فراخوانی توسط helper `0x0044A998` تولید می‌شود و آرگومان دوم `euResetMemory` است؛ این رشته به `SetPassword` می‌رسد. معنای دقیق helper و رشته هنوز باید decode شود.
+- caller، `ECX=0` و دو Boolean برابر 1 می‌فرستد؛ بنابراین شاخه‌ی fallback constructor با `mW@Tlogs43end_+` فعال است.
+- بعد از `euResetMemory`، helper `0x004563A8` با همان دو رشته مسیر/مقدار دیگری می‌سازد و سپس `0x004565DC` و `0x004555D8` اجرا می‌شوند. این سه helper در شاخه‌ی بعدی trace می‌شوند تا مقصد `.easd` مشخص شود.
