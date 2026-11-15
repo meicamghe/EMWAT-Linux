@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Compare wordBody in an EditWordDocument POST with the returned response-word file."""
+"""Compare captured wordBody and response-word payloads, tolerating pcap truncation gaps."""
 
 from __future__ import annotations
 
@@ -13,7 +13,7 @@ from analyze_pcap_http_timing import collect_segments, reassemble
 
 
 def extract_http_body(segments, label):
-    data, _base, _end, gaps = reassemble(segments)
+    data, base_sequence, _end, gaps = reassemble(segments)
     if not data:
         raise SystemExit(f"{label}: no TCP payload")
     split = data.find(b"\r\n\r\n")
@@ -27,13 +27,12 @@ def extract_http_body(segments, label):
     body = data[split + 4:split + 4 + length]
     if len(body) != length:
         raise SystemExit(f"{label}: expected {length} body bytes, got {len(body)}")
-    if gaps:
-        raise SystemExit(f"{label}: TCP sequence gaps detected: {gaps}")
-    return header, body
+    return header, body, base_sequence, split + 4, gaps
 
 
 def decode_b64(text, label):
     compact = "".join(text.split())
+    compact += "=" * ((-len(compact)) % 4)
     try:
         return base64.b64decode(compact, validate=False)
     except Exception as exc:
@@ -55,6 +54,22 @@ def describe(label, data):
     print()
 
 
+def parse_document_nodes(request_body, response_body):
+    request_xml = ET.fromstring(request_body)
+    # Large TCP offload frames in this capture have 4-byte snaplen gaps.
+    # Those gaps are zero-filled by the timing reassembler; they are only
+    # removed from the XML response copy, never from the request.
+    clean_response = response_body.replace(b"\x00", b"")
+    response_xml = ET.fromstring(clean_response)
+    word_body_node = request_xml.find(".//param[@name='wordBody']")
+    response_node = response_xml.find(".//type[@mimetype='application/msword']")
+    if word_body_node is None or word_body_node.text is None:
+        raise SystemExit("Request XML has no non-empty wordBody param.")
+    if response_node is None or response_node.text is None:
+        raise SystemExit("Response XML has no non-empty application/msword type.")
+    return word_body_node.text, response_node.text, clean_response
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("pcapng")
@@ -67,37 +82,61 @@ def main():
     directions, _capture_start, _count = collect_segments(
         args.pcapng, args.client_ip, args.client_port, args.server_ip, args.server_port
     )
-    request_header, request_body = extract_http_body(directions["request"], "request")
-    response_header, response_body = extract_http_body(directions["response"], "response")
-
-    request_xml = ET.fromstring(request_body)
-    response_xml = ET.fromstring(response_body)
-    word_body_node = request_xml.find(".//param[@name='wordBody']")
-    response_node = response_xml.find(".//type[@mimetype='application/msword']")
-    if word_body_node is None or word_body_node.text is None:
-        raise SystemExit("Request XML has no non-empty wordBody param.")
-    if response_node is None or response_node.text is None:
-        raise SystemExit("Response XML has no non-empty application/msword type.")
-
-    request_file = decode_b64(word_body_node.text, "wordBody")
-    response_file = decode_b64(response_node.text, "response-word")
+    request_header, request_body, _req_base, _req_body_offset, request_gaps = extract_http_body(
+        directions["request"], "request"
+    )
+    response_header, response_body, response_base, response_body_offset, response_gaps = extract_http_body(
+        directions["response"], "response"
+    )
 
     print("# EditWordDocument document payload comparison")
     print()
     print(f"- Request: {request_header.splitlines()[0]}")
     print(f"- Response: {response_header.splitlines()[0]}")
+    print(f"- Request sequence gaps: {len(request_gaps)}")
+    print(f"- Response sequence gaps: {len(response_gaps)}")
+    print(f"- Missing response capture bytes indicated by sequence gaps: {sum(end-start for start, end in response_gaps)}")
     print()
+
+    try:
+        request_b64, response_b64, clean_response = parse_document_nodes(request_body, response_body)
+        request_file = decode_b64(request_b64, "wordBody")
+        response_file = decode_b64(response_b64, "response-word")
+    except (ET.ParseError, SystemExit) as exc:
+        print(f"- Full comparison unavailable: {exc}")
+        print("- The response capture contains sequence gaps; no full-file equality claim is made.")
+        return
+
     describe("Request wordBody", request_file)
-    describe("Response application/msword", response_file)
+    describe("Response application/msword (partial capture)", response_file)
 
     print("### Comparison")
-    print(f"- Byte-identical: {request_file == response_file}")
+    print(f"- Full byte-identical: {request_file == response_file}")
     print(f"- Length delta (response - request): {len(response_file) - len(request_file)}")
-    limit = min(len(request_file), len(response_file))
-    first_diff = next((i for i in range(limit) if request_file[i] != response_file[i]), None)
-    print(f"- First differing byte offset: {first_diff if first_diff is not None else 'none in shared range'}")
-    differing = sum(1 for a, b in zip(request_file, response_file) if a != b)
-    print(f"- Differing bytes in shared range: {differing}")
+
+    first_gap_prefix_bytes = None
+    if response_gaps:
+        type_match = re.search(
+            rb"<type\b[^>]*mimetype=[\"']application/msword[\"'][^>]*>(.*?)</type>",
+            response_body,
+            re.S,
+        )
+        if type_match:
+            value_start_in_stream = response_body_offset + type_match.start(1)
+            first_gap_stream_offset = response_gaps[0][0] - response_base
+            prefix_chars = max(0, first_gap_stream_offset - value_start_in_stream)
+            first_gap_prefix_bytes = (prefix_chars // 4) * 3
+            print(f"- Intact Base64 prefix before first capture gap: {prefix_chars} characters (~{first_gap_prefix_bytes} decoded bytes)")
+            limit = min(first_gap_prefix_bytes, len(request_file), len(response_file))
+            prefix_equal = request_file[:limit] == response_file[:limit]
+            print(f"- Request/response decoded prefix equal before first gap: {prefix_equal}")
+            if not prefix_equal:
+                first_diff = next((i for i in range(limit) if request_file[i] != response_file[i]), None)
+                print(f"- First differing decoded byte before capture gap: {first_diff}")
+    if not response_gaps:
+        print(f"- Complete files byte-identical: {request_file == response_file}")
+    else:
+        print("- Full-file comparison is not authoritative because the pcap response contains truncated sequence ranges.")
 
 
 if __name__ == "__main__":
