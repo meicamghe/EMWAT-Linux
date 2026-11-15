@@ -7,6 +7,8 @@ protocol parsing belongs in a separately tested handler once that contract is kn
 from __future__ import annotations
 
 from dataclasses import dataclass
+import json
+import re
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from ipaddress import ip_address
 from typing import Callable
@@ -43,6 +45,7 @@ class BridgeHTTPServer:
         port: int = 0,
         max_body_bytes: int = 16 * 1024 * 1024,
         allowed_origins: frozenset[str] = frozenset(),
+        allowed_parent_origins: frozenset[str] = frozenset(),
         max_response_bytes: int = 16 * 1024 * 1024,
         socket_timeout_seconds: float = 10.0,
         require_origin: bool = True,
@@ -64,6 +67,7 @@ class BridgeHTTPServer:
         self._max_response_bytes = max_response_bytes
         self._socket_timeout_seconds = socket_timeout_seconds
         self._allowed_origins = allowed_origins
+        self._allowed_parent_origins = self._normalize_parent_origins(allowed_parent_origins)
         self._require_origin = require_origin
         owner = self
 
@@ -80,7 +84,7 @@ class BridgeHTTPServer:
                 # Never log request bodies, query values, or Origin by default.
                 return
 
-            def _send(self, status: int, body: bytes, content_type: str) -> None:
+            def _send(self, status: int, body: bytes, content_type: str, extra_headers: dict[str, str] | None = None) -> None:
                 self.send_response(status)
                 self.send_header("Content-Type", content_type)
                 self.send_header("Content-Length", str(len(body)))
@@ -90,6 +94,10 @@ class BridgeHTTPServer:
                 if response_origin is not None:
                     self.send_header("Access-Control-Allow-Origin", response_origin)
                     self.send_header("Vary", "Origin")
+                for name, value in (extra_headers or {}).items():
+                    if any(ch in name or ch in value for ch in "\\r\\n"):
+                        raise ValueError("invalid response header")
+                    self.send_header(name, value)
                 self.send_header("Connection", "close")
                 self.end_headers()
                 if body:
@@ -119,6 +127,29 @@ class BridgeHTTPServer:
                 if parsed.path == "/" and parsed.query == "heartbeat":
                     # Captured Windows Agent exchange: HTTP 200, body "TickTack".
                     self._send(200, b"TickTack", "text/html; charset=ISO-8859-1")
+                elif parsed.path == "/" and parsed.query.startswith("init="):
+                    if not re.fullmatch(r"init=\\d+_\\d+", parsed.query):
+                        self._send(404, b"", "text/plain; charset=utf-8")
+                        return
+                    referer = self.headers.get("Referer")
+                    parent_origin = owner._referer_origin(referer)
+                    if parent_origin is None:
+                        self._send(403, b"init_referer_required", "text/plain; charset=utf-8")
+                        return
+                    if parent_origin not in owner._allowed_parent_origins:
+                        self._send(403, b"init_origin_not_allowed", "text/plain; charset=utf-8")
+                        return
+                    body = owner._build_init_response(parent_origin)
+                    self._send(
+                        200,
+                        body,
+                        "text/html; charset=ISO-8859-1",
+                        {
+                            "Access-Control-Allow-Origin": "*",
+                            "Access-Control-Allow-Headers": "*",
+                            "Access-Control-Allow-Method": "*",
+                        },
+                    )
                 elif parsed.path == "/healthz":
                     self._send(200, b'{"status":"ok"}', "application/json; charset=utf-8")
                 else:
@@ -212,6 +243,55 @@ class BridgeHTTPServer:
         self._server = ThreadingHTTPServer((host, port), Handler)
         self._server.daemon_threads = True
         self._server.request_queue_size = 32
+
+    @staticmethod
+    def _normalize_parent_origins(origins: frozenset[str]) -> frozenset[str]:
+        normalized = set()
+        for value in origins:
+            parsed = urlsplit(value)
+            if (
+                parsed.scheme not in {"http", "https"}
+                or not parsed.netloc
+                or parsed.username is not None
+                or parsed.password is not None
+                or parsed.path
+                or parsed.query
+                or parsed.fragment
+            ):
+                raise ValueError("allowed parent origins must be bare HTTP(S) origins")
+            normalized.add(f"{parsed.scheme.lower()}://{parsed.netloc.lower()}")
+        return frozenset(normalized)
+
+    @staticmethod
+    def _referer_origin(referer: str | None) -> str | None:
+        if not referer:
+            return None
+        try:
+            parsed = urlsplit(referer)
+            if (
+                parsed.scheme not in {"http", "https"}
+                or not parsed.netloc
+                or parsed.username is not None
+                or parsed.password is not None
+                or parsed.hostname is None
+            ):
+                return None
+            _ = parsed.port
+            return f"{parsed.scheme.lower()}://{parsed.netloc.lower()}"
+        except ValueError:
+            return None
+
+    def _build_init_response(self, parent_origin: str) -> bytes:
+        port = self._server.server_address[1]
+        template = r'''<html><body><script type="text/javascript">var _0x7079=["origin","source","random","floor","POST","http://127.0.0.1:1984?invoke=","open","onreadystatechange","readyState","responseText","postMessage","data","send","message","addEventListener","onmessage","attachEvent","\x3Cinited /\x3E","https://automation.bsi.ir/"];var _origin=null;var _source=null;function invoke(_0xe2ffx4){_origin=_0xe2ffx4[_0x7079[0]];_source=_0xe2ffx4[_0x7079[1]];var _0xe2ffx5=new XMLHttpRequest();var _0xe2ffx6=Math[_0x7079[3]](Math[_0x7079[2]]()*99999);_0xe2ffx5[_0x7079[6]](_0x7079[4],_0x7079[5]+_0xe2ffx6);_0xe2ffx5[_0x7079[7]]=function(){if(_0xe2ffx5[_0x7079[8]]==4){_source[_0x7079[10]](_0xe2ffx5[_0x7079[9]],_origin);};};_0xe2ffx5[_0x7079[12]](_0xe2ffx4[_0x7079[11]]);};try{window[_0x7079[14]](_0x7079[13],function(_0xe2ffx4){invoke(_0xe2ffx4);},false);}catch(err){window[_0x7079[16]](_0x7079[15],function(_0xe2ffx4){invoke(_0xe2ffx4);},false);};parent[_0x7079[10]](_0x7079[17],_0x7079[18]);</script></body></html>'''
+        script = template.replace(
+            "http://127.0.0.1:1984?invoke=",
+            f"http://127.0.0.1:{port}?invoke=",
+        ).replace(
+            '"https://automation.bsi.ir/"',
+            json.dumps(parent_origin + "/"),
+        )
+        return script.encode("iso-8859-1")
 
     @property
     def address(self) -> tuple[str, int]:
