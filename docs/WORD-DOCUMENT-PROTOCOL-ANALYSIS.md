@@ -1118,3 +1118,20 @@ The interval field is therefore a millisecond value with a 10-second minimum in 
 The constructor trace does **not** show reads for `Logging Level` or `Save I/O Trace Files`; those remain unresolved and may be handled elsewhere. The exact user-selected values at runtime are also unknown.
 
 This closes the specific question “where does the main Word Viewer read these four Dynamic Config values?” It does **not** close the main-editor document-close/Almas Gam registration question: no close-time HTTP POST, final response payload, or registration commit was established by Run 113. Keep the user's observed close-without-manual-Save behavior as a separate runtime fact to reconcile.
+
+
+## Runs 116–117 — TETracer registry write path (2026-11-15)
+
+Workflow #116 (run ID `43699248792`, commit `ca88b7d1a2eeb7698d8d72053f5b47b54c51c55b`) completed 37/37 steps; artifact `14155927867`. Workflow #117 (run ID `43703253785`, commit `ed267e0fac1f4f077bf3c92510e5e4c6bd8f9d1e`) completed 38/38 steps; artifact `14158186460`. Both completed successfully.
+
+The expanded registry scan adds useful call-site evidence, but it does **not** establish that the two remaining settings are read at startup:
+
+- The raw pointer reference at `0x00466D16` points to the generic Delphi `TRegistry` import slot. It is a data/reference hit, not a decoded CALL instruction and not proof that this address executes a registry read.
+- In the `TETracer.GetUniquePostfix` procedure, the bounded trace at `0x00467C60` shows `0x00467C99` calling the `TRegistry` constructor thunk `0x004043CC`, followed by `SetRootKey(HKEY_CURRENT_USER)` at `0x00467CB7`. Direct call-site context further shows calls at `0x00467D63` to `TRegistry.WriteBool` (`0x00404424`) and at `0x00467D75` to `TRegistry.WriteInteger` (`0x00404414`). Thus this is a **registry write path**, not evidence of `ReadBool` / `ReadInteger`.
+- The value-name arguments passed by `TETracer.GetUniquePostfix` are pointers `0x00467F2C` and `0x00467F64`; the current artifact does not decode those strings. Do not map them to `Save I/O Trace Files` or `Logging Level` merely because their types appear plausible.
+- The bounded trace for `0x00466CE0–0x00466D40` decodes only its first byte and is not sufficient to identify the function or its behavior. The previous lead around `0x00466D16` remains unresolved.
+- Other contexts (`0x00468E0B`, `0x00509245`, `0x005099C1`, and `0x005EAE5D`) also show TRegistry object construction, but the supplied ranges do not by themselves prove that they read either missing setting.
+
+**Current settings status:** the four values read by the main `TWordViwer` constructor remain confirmed by Run 113. `Logging Level` and `Save I/O Trace Files` are confirmed as values written by the settings UI, but their startup/read-side consumers are still not located. Next analysis must recover complete TD32 function boundaries and full disassembly around `TETracer.GetUniquePostfix` (including `0x00467D00–0x00467E80` and the string data at `0x00467F2C` / `0x00467F64`), then search all read-side call paths rather than treating raw IAT references as execution evidence.
+
+No new evidence in Runs 116–117 establishes the main editor's close-time HTTP request, response payload, or final Almas Gam registration operation.
