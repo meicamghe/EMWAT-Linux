@@ -454,3 +454,15 @@ The pcapng timing workflow reconstructed the HTTP body boundaries for TCP stream
 - Two Agent heartbeat requests occur during the held-request interval.
 
 This proves the service holds the original EditWordDocument HTTP request open for approximately 54.56 seconds after receiving the full body, then sends the response rapidly. The wait is server-side, not document-transfer time. The exact Word/COM/helper event that releases the held request remains to be identified.
+
+
+### Response document is rewritten, not echoed
+
+Pcap workflow #4 compared the decoded request wordBody and response-word values:
+
+- Input wordBody is 872,960 bytes (legacy OLE DOC).
+- Response capture decodes to 874,957 bytes, with 68 missing Base64 characters (51 decoded bytes) caused by 17 pcap sequence gaps. Estimated complete response size: 875,008 bytes, exactly +2,048 bytes.
+- Both OLE headers report 14 FAT sectors. The first-directory-sector pointer at offset 48 changes from 1698 to 1702.
+- The first differing byte is offset 48, within the intact prefix before the first capture gap.
+
+Thus the local service returns a rewritten/restructured DOC rather than echoing the original wordBody. Full-file equality cannot be claimed because the pcap is missing 51 decoded response bytes.
