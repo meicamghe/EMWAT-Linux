@@ -763,3 +763,9 @@ Run `43719180035` succeeded; artifact `14164088249` was inspected. Additional ev
 - The completed optimized class-index workflow run `43721583502` succeeded; artifact `14165155588` was inspected.
 - The next workflow run `43722345225` now invokes both `resolve_delphi_vmt_slots.py` and `trace_delphi_interfaces.py` for the SevenZip class family. The resolver target list and interface scanner were extended to include `T7zArchive`, `T7zPlugin`, `T7zInArchive`, `T7zOutArchive`, and SevenZip archive/stream interface RTTI names.
 - This is specifically intended to resolve whether `euResetMemory`'s interface slots `+0x44/+0x0C/+0x3C` map to the reader wrapper's password/open/extract methods. Do not treat the mapping as proven until the generated interface table is inspected.
+
+
+### Cancellation callback edge case — 2026-11-15
+
+- Review found that callback detachment originally occurred only on the normal-close branch. The coordinator now disables callbacks immediately after `wait_for_close` returns, before handling either `CLOSED` or `CANCELLED`.
+- Added a regression test proving delayed modify/save notifications after cancellation are ignored. Python CI run `43722805637` passed **71 tests** (4.49 seconds).
