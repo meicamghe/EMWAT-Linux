@@ -60,6 +60,15 @@ jobs:
           done
           python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004B7724 request-lifecycle-analysis/loaddocument/LoadDocument-direct-callers.md
           python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004B7F9C request-lifecycle-analysis/loaddocument/LoadDocument-response-writer-callers.md
+      - name: Resolve LoadDocument and OnTmrAutoSave helper behavior
+        run: |
+          mkdir -p request-lifecycle-analysis/remaining-helpers
+          python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x004B8A84 0x004BA058 request-lifecycle-analysis/remaining-helpers/OnTmrAutoSave-main-range.md
+          python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x004B8F30 0x004BA058 request-lifecycle-analysis/remaining-helpers/OnTmrAutoSave-late-range.md
+          for target in 00468150 00468198 004735C4 00403248 004032A8 00403368 00404F04 004A0148; do
+            python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x$target request-lifecycle-analysis/remaining-helpers/procedure-$target.md
+            python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x$target request-lifecycle-analysis/remaining-helpers/callers-$target.md
+          done
       - uses: actions/upload-artifact@v4
         with:
           name: emwat-word-request-lifecycle-analysis
