@@ -100,5 +100,27 @@ int main() {
         catch (const std::invalid_argument&) { threw = true; }
         assert(threw);
     }
+
+    {
+        ImageDocument doc;
+        doc.append_page(ImagePage{sample(), 300.0, 300.0});
+        doc.append_page(ImagePage{sample(), 150.0, 150.0});
+        doc.mark_saved();
+        const auto before_select = doc.generation();
+        doc.select_page(1);
+        assert(doc.active_page() == 1);
+        assert(doc.generation() == before_select + 1);
+        assert(!doc.dirty());
+        doc.select_page(1);
+        assert(doc.generation() == before_select + 1);
+
+        bool threw = false;
+        try { doc.select_page(2); }
+        catch (const std::out_of_range&) { threw = true; }
+        assert(threw);
+        assert(doc.active_page() == 1);
+        assert(doc.generation() == before_select + 1);
+        assert(!doc.dirty());
+    }
     return 0;
 }
