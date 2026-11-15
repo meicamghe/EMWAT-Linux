@@ -1573,3 +1573,13 @@ The BPL export/API analysis resolves the earlier naming ambiguity. The public TE
 - The `.easd` suffix is appended in the recovery Delete path after a string-normalization helper call, but the actual archive extraction output destination and the relation of the `.easd` path to that output remain unresolved.
 - A new independent workflow, `analyze-recovery-callback-contracts.yml`, is tracing the SevenZip interface slot `+0x44`, callback RTTI at `0x0045391C`/`0x00453850`, and the recovery caller chain. Workflow runs 1 and 2 are queued/in progress as of this update.
 - Detailed findings and correction are recorded in `docs/RECOVERY-STORE-ANALYSIS.md` section 23 (commit `b753390bd421047e22d072b1012d9be3d829015a`).
+
+
+### تکمیل ردیابی callbackهای آرشیو بازیابی — 2026-11-15
+
+- اجرای recovery callback-contracts شماره ۲ با موفقیت تمام شد؛ artifact `14165994624` متد `T7zArchive.$bctr` در `0x0045392C` را تأیید کرد: رشته‌ی آرگومان در `Self+0x44` ذخیره می‌شود و پرچم `Self+0x40` بر اساس خالی نبودن آن تنظیم می‌شود.
+- در مسیر `euResetMemory`، رشته‌ی fallback یعنی `mW@Tlogs43end_+` به همین سازنده می‌رسد؛ این رشته جدا از مقدار دوم است که از `MyMessageDialog` می‌آید و به `SetPassword` می‌رسد.
+- دو اشاره‌گر callback در `0x00453850` و `0x0045391C` به رکوردهای ۱۶‌بایتی یکسان با IID رابط `IArchiveExtractCallback` اشاره می‌کنند؛ دو مسیر callback از یک قرارداد COM استفاده می‌کنند.
+- `PrepareOperation` شاخه‌های متفاوتی بر اساس `Self+0x3C`، callback/context در `Self+0x50/+0x54` و رشته‌ی `Self+0x58` دارد. نگاشت قطعی فیلدها به نام propertyها و مقصد واقعی فایل خروجی هنوز در حال بررسی است.
+- مستندات به‌روزشده: `docs/RECOVERY-STORE-ANALYSIS.md` بخش‌های ۲۴ و ۲۵؛ commit `f81be2be436a1ec042ee77c15f79611c4997a89d` و commit قبلی callback IID `9cd603b96648220b84c878eb3782b36dd3e02cc4`.
+- workflow مستقل callback-contracts شماره ۳ برای disassembly هدف‌های غیر-TD32 و decode رشته‌های prompt در صف اجراست.
