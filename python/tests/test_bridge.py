@@ -58,6 +58,8 @@ class BridgeHTTPServerTests(unittest.TestCase):
         self.assertIn("addEventListener", script)
         self.assertIn("attachEvent", script)
         self.assertIn("responseText", script)
+        self.assertTrue(script.endswith("</script>"))
+        self.assertNotIn("</body></html>", script)
 
     def test_init_endpoint_requires_allowlisted_parent_referer(self):
         status, body, _ = self.request("GET", "/?init=123_456")
