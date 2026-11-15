@@ -213,7 +213,7 @@ This is potentially a global Word cleanup/termination path, not evidence of the 
 
 Registry workflow #2 (run 43709159573, artifact 14159334586) resolved the two settings that were previously marked as lacking a startup read path:
 
-- TETracer constructor at 0x00466CA0 opens HKCU and the Dynamic Config key (the path literal is being cross-checked in the next focused run).
+- TETracer constructor at 0x00466CA0 opens HKCU\\Software\\Emwat\\Dynamic Config.
 - It checks ValueExists, then reads integer key Logging Level into object offset +0x10.
 - It checks ValueExists, then reads Boolean key Save I/O Trace Files into object offset +0x11.
 - TWordViwer constructor separately reads Background Priniting, Dont Ask Save On Print, Save Before Print, and AutoSaveInterval.
