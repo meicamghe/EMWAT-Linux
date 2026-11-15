@@ -42,11 +42,11 @@ jobs:
               summary.append(f"- Slot +0x50 target 0x{target}: {output}")
           pathlib.Path("wait-mechanism-analysis/vmt/slot-50-index.md").write_text("\n".join(summary) + "\n", encoding="utf-8")
           PY
-     - name: Trace Word COM setup and activation branch
+      - name: Trace Word COM setup and activation branch
         run: |
           mkdir -p wait-mechanism-analysis/word-com
           python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x004B8D12 0x004B8E90 wait-mechanism-analysis/word-com/OnTmrAutoSave-connect-and-quit.md
-          for target in 0043F360 00440950 00440A68 00441C68 004CDB54 004C5D68 004B8A84 004B7724; do
+          for target in 0043E070 0043E0F0 0043E0FC 0043E174 0043F360 00440950 00440A68 00441C68 004CDB54 004C5D68 004B8A84 004B7724; do
             python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x$target wait-mechanism-analysis/word-com/procedure-$target.md
             python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x$target wait-mechanism-analysis/word-com/callers-$target.md
           done
@@ -81,7 +81,7 @@ jobs:
               summary.append(f"- {module} — 0x{va} — {decorated} — {output}")
           pathlib.Path("wait-mechanism-analysis/classes/trace-index.md").write_text("\n".join(summary) + "\n", encoding="utf-8")
           PY
-     - name: List imported wait and message APIs with call sites
+      - name: List imported wait and message APIs with call sites
         run: |
           python - <<'PY'
           import pathlib, struct, pefile
