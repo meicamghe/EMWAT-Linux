@@ -27,13 +27,21 @@ def sample_request():
 
 
 class FakeOffice:
-    def __init__(self, *, close=CloseDisposition.CLOSED, output=b"final-document"):
+    def __init__(self, *, close=CloseDisposition.CLOSED, output=b"final-document", save=False):
         self.close = close
         self.output = output
+        self.save = save
         self.calls = []
+        self.on_modified = None
+        self.on_saved = None
 
-    def open_document(self, request):
+    def open_document(self, request, *, on_modified, on_saved):
         self.calls.append(("open", request.document_bytes))
+        self.on_modified = on_modified
+        self.on_saved = on_saved
+        on_modified()
+        if self.save:
+            on_saved()
         return object()
 
     def wait_for_close(self, handle):
@@ -53,6 +61,20 @@ class DocumentCoordinatorTests(unittest.TestCase):
         )
         self.assertTrue(result.returned)
         self.assertEqual(result.payload, b"final-document")
+        self.assertEqual(result.session.state, DocumentState.RETURNED)
+        self.assertEqual(result.session.revision, 1)
+        self.assertIsNone(result.session.saved_revision)
+        self.assertEqual(
+            [call[0] for call in office.calls],
+            ["open", "wait_for_close", "export_final_document"],
+        )
+
+    def test_engine_save_is_recorded_but_does_not_trigger_return(self):
+        office = FakeOffice(save=True)
+        result = DocumentCoordinator(office).run(
+            session_id="local-session-save", request=sample_request()
+        )
+        self.assertEqual(result.session.saved_revision, 1)
         self.assertEqual(result.session.state, DocumentState.RETURNED)
         self.assertEqual(
             [call[0] for call in office.calls],
