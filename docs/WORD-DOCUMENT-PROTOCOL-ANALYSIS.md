@@ -1179,7 +1179,7 @@ The earlier Run 116–117 uncertainty about Logging Level and Save I/O Trace Fil
 - TEditWordDocument.PerformMethod calls TWordViwer.LoadDocument synchronously. The successful LoadDocument path assigns AResponseInfo.ContentText and calls TIdHTTPResponseInfo.WriteContent.
 - The decoded LoadDocument range does not show an obvious explicit WaitFor/ProcessMessages loop. The OnTmrAutoSave tail at 0x004BA058–0x004BB3AF is compiler cleanup/exception handling, not an identified wait loop.
 - LoadDocument writes its wordBody argument bytes directly to the temporary TFileStream. The Base64Decode call at 0x004B7E44 operates on [ebp-8], not the wordBody argument at [ebp-0x1C]; do not claim that this call decodes wordBody. The captured XML wordBody is Base64 text, so the decode may occur upstream in EmwatService's XML/parameter layer; that boundary is not present in the BPL.
-- The capture shows no separate close-time POST in this particular session. It does not rule out another close request in other sessions.
+- Packet-level timing now confirms that the original EditWordDocument POST remains open after its complete body arrives: request body complete at 0.002154 s, first response payload at 54.560037 s, a 54.557883-second server-side wait. The 1,166,820-byte response transfers in about 1.362 ms. This proves a long-lived XHR, but the exact Word/COM event that releases it is still unresolved. No separate close-time POST appears in this captured stream; other workflows may differ.
 
 Current conclusion: the custom register-changes prompt is confirmed, but the exact causal chain from Word close to the Almas page's final registration remains open. The single-long-lived-request theory is not proven.
 
