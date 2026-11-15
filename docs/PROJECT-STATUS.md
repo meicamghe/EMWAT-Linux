@@ -1488,7 +1488,7 @@ The BPL export/API analysis resolves the earlier naming ambiguity. The public TE
 - نگاشت دقیق dispatch رمز `euResetMemory +0x44` به `T7zInArchive.SetPassword` هنوز اثبات نشده؛ گزارش recovery این عدم قطعیت را صریحاً اصلاح کرده است.
 
 
-- آخرین تحلیل مستقل plugin run `43719323732` با موفقیت تمام شده و artifact آن بررسی شده است. تحلیل تکمیلی برای ردیابی `euUnArchive` با run `43720247793` در حال اجراست؛ workflow کامل‌تر recovery/helper، run `43719180035`، با موفقیت تمام شده و artifact `14164088249` بررسی شده است. workflow تکمیلی caller مسیر `euUnArchive` با run `43720247793` هم موفق شد؛ artifact `14164382428` بررسی شده است.
+- آخرین تحلیل مستقل plugin run `43719323732` با موفقیت تمام شده و artifact آن بررسی شده است. تحلیل تکمیلی برای ردیابی `euUnArchive` با run `43720247793` با موفقیت تمام شد؛ artifact `14164382428` بررسی شده است. اجرای class-base analysis با run `43721251511` نیز موفق شد؛ artifact `14164434028` بررسی شده است.
 
 
 ### فرضیه تازه مسیر استخراج بازیابی
