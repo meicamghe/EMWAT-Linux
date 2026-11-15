@@ -7,6 +7,7 @@ on:
       - 'analysis-input/EmwatMethods.bpl1'
       - 'tools/find_td32_class_procedures.py'
       - 'tools/trace_td32_procedure.py'
+      - 'tools/trace_pe_target.py'
       - 'tools/trace_td32_callers.py'
       - 'tools/trace_pe_range.py'
       - 'tools/trace_delphi_interfaces.py'
@@ -89,6 +90,9 @@ jobs:
           python tools/decode_pe_strings.py analysis-input/EmwatMethods.bpl1 0x00627768 0x00627A38 0x00627B74 > event-sink-analysis/server-data-strings.md
           python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 0x00627A38 event-sink-analysis/server-metadata/data-627A38-pointer-refs.md
           python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 0x00627B74 event-sink-analysis/server-metadata/data-627B74-pointer-refs.md
+          for target in 0040479C 00401358 00401210 00401420 00401230 00401248 00401200 00401430; do
+            python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x$target event-sink-analysis/server-metadata/pe-target-$target.md 24
+          done
       - name: Decode generated Word server error-map strings
         run: |
           mkdir -p event-sink-analysis/server-metadata
