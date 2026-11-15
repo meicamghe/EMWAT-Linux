@@ -625,3 +625,8 @@ Use this exact naming in future traces: public/exported TEmwatMethod.Invoke = 0x
 - New tests cover the captured shape without including customer letter values.
 - Python bridge CI run #44 (`43716641854`) passed **53 tests**. The preceding intermediate commit run #43 also passed 45 tests.
 - This parser is not yet connected to a production EditWordDocument handler or LibreOffice adapter.
+
+
+## Event table interpretation correction — 2026-11-15
+
+The 20 addresses extracted from `0x00627B74` are not Word event callback pointers. Run #9 (`43716905570`, artifact `14162568118`) decoded them as server error strings (`Err_20000`, `Request XML is invalid.`, `Can not open document.`, `Temp path not Found.`, etc.). The earlier callback-table interpretation is retracted. Workflow run #10 now extracts this as an error map. The main viewer's `BeforeSave` registration at `0x004CD154` remains confirmed independently from `OnTmrAutoSave`.
