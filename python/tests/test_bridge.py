@@ -50,8 +50,9 @@ class BridgeHTTPServerTests(unittest.TestCase):
     def test_legacy_agent_heartbeat_endpoint(self):
         status, body, headers = self.request("GET", "/?heartbeat")
         self.assertEqual(status, 200)
-        self.assertEqual(body, b"")
-        self.assertEqual(headers["Content-Length"], "0")
+        self.assertEqual(body, b"TickTack")
+        self.assertEqual(headers["Content-Length"], "8")
+        self.assertEqual(headers["Content-Type"], "text/html; charset=ISO-8859-1")
 
     def test_post_preserves_opaque_body_and_query(self):
         payload = b'<emwat><method class="EditWordDocument"/></emwat>'
