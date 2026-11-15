@@ -186,14 +186,14 @@ This model explains the user's confirmed observation that closing Word is follow
 ### What is still unproven
 
 - The capture provides conversation start/duration, not per-packet timestamps, so the exact instant at which response bytes begin is not yet established.
-- The exact control-flow edge that makes LoadDocument wait for the Word session to close still needs a focused trace through the remainder of OnTmrAutoSave and its event/message loop.
+- The first focused decode of OnTmrAutoSave's tail (0x004BA058–0x004BB3AF) shows compiler cleanup/exception paths, not an obvious wait loop. The exact control-flow edge that keeps LoadDocument active still needs to be found in the complete LoadDocument range or another caller/message-loop path.
 - The exact Save / No / Cancel dialog mapping and whether each branch returns a document or cancels the XHR need string/branch confirmation.
 - The service-side Base64 decode stage for wordBody and the Almas parent page's final registration handler are outside the currently analyzed BPL.
 - Do not claim a close-time POST. Current evidence instead favors completion of the original EditWordDocument request.
 
 ### Next focused trace
 
-A separate request-lifecycle analysis should decode the remainder of OnTmrAutoSave (0x004BA058–0x004BB3AF), identify message-loop/wait operations, trace LoadDocument callers and response dispatch, and decode the BeforeSave prompt strings around 0x004CD3C0–0x004CD50C.
+A separate request-lifecycle analysis should decode the complete LoadDocument range (0x004B7724–0x004B8A84), identify message-loop/wait operations outside the OnTmrAutoSave cleanup tail, trace callers and response dispatch, and decode the BeforeSave prompt strings around 0x004CD3C0–0x004CD50C.
 
 
 ## Temporary Word-process cleanup discovery — 2026-11-15
