@@ -616,3 +616,12 @@ Use this exact naming in future traces: public/exported TEmwatMethod.Invoke = 0x
 - Recovery `Delete` handler passes selected item path and temp root to `euResetMemory`, then constructs an additional path with `.easd`; exact file transformation is pending. Run #5 (`43716527945`) traces `euResetMemory` internals and object pointers.
 - Added `docs/EDITWORD-REQUEST-SCHEMA.md`: one captured request has a Base64 XML `wordConfig` with 180 fields (including 20 repeated signer slots across seven field families) and a Base64 legacy DOC/OLE `wordBody`. Sensitive field values were not copied.
 - Word event-sink workflow run #8 (`43716384031`) fixes an event-callback extraction regex that previously failed to match the actual table pointer format; callback target tracing is now running.
+
+
+## Native protocol implementation update — 2026-11-15
+
+- Added `python/src/emwat_linux/word_config.py` to parse the inner Base64-encoded `word-document` XML separately from the outer EMWAT method envelope.
+- Parser preserves field order, duplicate IDs, per-field attributes, opaque field text, settings, permission strings, optional-attribute content, and requested MIME types. It rejects invalid Base64, non-UTF-8, DTD/entities, oversized input, and malformed field structures.
+- New tests cover the captured shape without including customer letter values.
+- Python bridge CI run #44 (`43716641854`) passed **53 tests**. The preceding intermediate commit run #43 also passed 45 tests.
+- This parser is not yet connected to a production EditWordDocument handler or LibreOffice adapter.
