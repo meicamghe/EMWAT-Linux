@@ -1438,3 +1438,7 @@ The BPL export/API analysis resolves the earlier naming ambiguity. The public TE
 - مستند ساختار درخواست: `docs/EDITWORD-REQUEST-SCHEMA.md`. نمونه request شامل `wordConfig` به‌صورت Base64 XML با 180 فیلد، 20 slot برای هرکدام از 7 خانواده فیلد امضاکننده، و `wordBody` به‌صورت Base64 فایل DOC/OLE است. مقادیر نامه و گیرندگان در مستند کپی نشده‌اند.
 - workflow بازیابی run #5 (`43716527945`) برای تحلیل `euResetMemory` و اشیای داخلی در حال اجراست.
 - workflow رویدادهای Word run #8 (`43716384031`) پس از اصلاح استخراج جدول callback در حال اجراست؛ نسخه قبلی به‌خاطر regex اشتباه فهرست callbackهای تولیدشده را خالی می‌گذاشت.
+
+
+- parser مستقل `python/src/emwat_linux/word_config.py` اضافه شد تا لایه داخلی Base64/XML یعنی `wordConfig` را از envelope بیرونی جداگانه بخواند؛ مقادیر فیلدها را opaque نگه می‌دارد و decoding سراسری URL/Base64 انجام نمی‌دهد. تست‌های امنیتی/ساختاری این parser اضافه شد.
+- CI پل پایتون بعد از این تغییر در run #44 با **53 تست موفق** پایان یافت. run #43 مربوط به commit میانی (45 تست) نیز موفق بود.
