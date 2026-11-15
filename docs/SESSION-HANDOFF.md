@@ -669,8 +669,8 @@ The reader exposes archive open, item-query and extraction methods. Do not yet n
 
 ### Active parallel jobs at handoff
 
-- Recovery SevenZip plugin-focused workflow: run `43719323732`.
-- Recovery path/helper workflow: run `43719180035`.
+- Recovery SevenZip plugin-focused workflow: run `43719323732`, completed successfully, artifact `14164146310` inspected.
+- Recovery path/helper workflow: run `43719180035`, still in progress at the SevenZip reader/writer trace step.
 
 Inspect their status and artifacts before starting duplicate work. If a job is still active, continue the independent native implementation track rather than waiting idle.
 
@@ -689,3 +689,14 @@ Inspect their status and artifacts before starting duplicate work. If a job is s
 - `EditWordDocumentService.process(MethodCall)` now normalizes the request and invokes the coordinator. It generates a local random session ID and never reads the HTTP `invoke` nonce.
 - Office adapters must report document modifications and engine-save events separately. A save records a revision but does not release the waiting request; close triggers export.
 - Latest verified CI: run `43719841339`, success, 66 tests.
+
+
+### SevenZip plugin analysis result
+
+Run `43719323732` completed successfully (artifact `14164146310`). New facts:
+
+- `T7zPlugin` has constructor, destructor, and a shared `CreateObject` method. Both `T7zInArchive.GetInArchive` and `T7zOutArchive.GetOutArchive` call that shared factory.
+- `euUnArchive` directly constructs the plugin wrapper using global `0x0062A824`; `euResetMemory` instead calls `CreateOutArchive` (`0x00452BBC`) with a 16-byte global-derived value and the literal module name `7z.dll`.
+- `CryptoGetTextPassword2` obtains a provider/interface from global `0x0062FBB8` through helper `0x00404734`, stores it at object offset `+0x2C`, and has the plugin constructor as its direct caller.
+- `T7zOutArchive.SetPassword` is a no-op stub. `T7zInArchive.SetPassword` stores its string at `+0x58) and forwards it to the archive interface, but no raw static pointer to this method was found. Therefore, the mapping from `euResetMemory` virtual slot `+0x44` to that setter remains a strong candidate, not a proven binding.
+- Detailed update is in `docs/RECOVERY-STORE-ANALYSIS.md`, section 16.
