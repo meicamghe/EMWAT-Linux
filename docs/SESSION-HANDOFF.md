@@ -705,7 +705,7 @@ Run `43719323732` completed successfully (artifact `14164146310`). New facts:
 ### Latest coordinator verification
 
 - Python bridge run `43720329600` passed **66 tests** after adding an initialization-event guard. Writer/config initialization events do not mark the document dirty or record a user save; only callbacks after OPENED affect the session state.
-- Recovery path workflow `43719180035` completed successfully; artifact `14164088249` was inspected. Plugin follow-up run `43720247793` is separately tracing the `euUnArchive` caller path.
+- Recovery path workflow `43719180035` completed successfully; artifact `14164088249` was inspected. Plugin follow-up run `43720247793` completed successfully; artifact `14164382428` was inspected for the `euUnArchive` caller path.
 
 
 ### Recovery path workflow #10 result
@@ -717,3 +717,11 @@ Run `43719180035` succeeded; artifact `14164088249` was inspected. Additional ev
 - The three euResetMemory dispatches (+0x44 password, +0x0C path, +0x3C path) align by signature and behavior with SetPassword → OpenFile → ExtractTo. Treat this as the leading hypothesis, not a proven VMT mapping.
 - Cleanup imports are now resolved: `TDirectory.GetFiles` enumerates `*.easz`; FileAge/FileDateToDateTime/Now/HoursBetween implement the 24-hour threshold; DeleteFileW deletes older files.
 - Detailed update is in `docs/RECOVERY-STORE-ANALYSIS.md`, section 17.
+
+
+### Separate euUnArchive path result
+
+- Plugin workflow run `43720247793` succeeded; artifact `14164382428` inspected.
+- `euUnArchive` (`0x00456DFC–0x00456EFF`) is the only direct bounded caller of the `T7zPlugin` constructor in this scan. It uses global `0x0062A824`, then calls object/interface slots `+0x28`, `+0x10`, and `+0x18` while iterating paired collection-like inputs.
+- This is separate from `euResetMemory` → `CreateOutArchive` and its `+0x44/+0x0C/+0x3C` sequence. The `euUnArchive` slot meanings and archive direction remain unresolved; do not use this path to infer the .easz recovery contract.
+- Full trace: `docs/RECOVERY-STORE-ANALYSIS.md`, section 18.
