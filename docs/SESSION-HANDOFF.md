@@ -460,3 +460,15 @@ Next: inspect the full tail of `OnTmrAutoSave`, determine the callback-record co
 - All four `TWordDocument.Close` overload wrappers were traced. The no-argument overload dispatches slot `+0x4D4`; overloads with one, two, or three optional arguments dispatch slot `+0x29C`. TD32 direct-call scans show no direct CALL xrefs for these wrappers; raw pointer matches occur in debug metadata, so do not infer which overload is used by the main editor solely from those scans.
 - No verified close-time HTTP POST, response payload, or final Almas Gam registration operation was found. The user's observed behavior (closing Word without manually pressing Save still registers the document) remains an important runtime fact to reconcile, not a protocol proven by this static trace.
 - Next targets: locate the *read-side* registry operations for `Dynamic Config` and the actual settings form initialization; trace callback record consumption / COM connection-point wiring around `OnTmrAutoSave`; identify real main-editor close and final local HTTP request/response chain. Keep the AutoSave files viewer's separate close handler isolated from the main editor.
+
+
+## Handoff — after Run 104 (2026-11-15)
+
+Run #104 (`43683614577`) completed successfully (37/37); artifact `14150300042`.
+
+Important new validation notes:
+- Registry-related imports exist (Win32 `RegOpenKeyExW`/`RegQueryValueExW` and Delphi `TRegistry` read/write APIs), but the first scanner only searched direct calls to executable thunks and found zero sites. This does not prove absence of registry reads.
+- The first post-read code range `0x004B7CFA–0x004B809D` decoded zero instructions because it starts in non-code data. The observed valid continuation is `0x004B7DE1`.
+- Commits `743e6378` and `a4027a70` add IAT-indirect CALL/JMP and pointer-reference scanning and correct the post-read range. Check the latest workflow run/artifact before drawing conclusions.
+
+Do not claim the registry startup read path, main-editor close event sink, close-time HTTP request, or final Almas Gam registration payload has been resolved. Continue with the latest workflow output.
