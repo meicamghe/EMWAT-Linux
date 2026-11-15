@@ -596,3 +596,13 @@ Use this exact naming in future traces: public/exported TEmwatMethod.Invoke = 0x
 - Recovered literals: `*.easz` at `0x005EC49C` is passed from `lslFilesDblClick` to helper `0x004043BC`; `.easd` at `0x005EBD3C` is used in string construction inside `Delete`. Their exact roles remain under analysis.
 - Autosave helpers identified: `euGetAutoSavePass` (`0x00456B78`), `DoClearOldAutoSaveFiles` (`0x00456C0C`), `euClearOldAutoSaveFiles` (`0x00456C98`), and path/temp helpers under `Emwat.Sys`. The path/helper workflow run #2 (`43715620696`) is in progress; do not treat its results as final yet.
 - See `docs/RECOVERY-STORE-ANALYSIS.md` for confirmed evidence and unresolved items.
+
+
+## Recovery path workflow run #2 — verified
+
+- `analyze-recovery-paths.yml` run #2 (`43715620696`) succeeded; artifact `14162601983`.
+- `0x004043BC` is `TDirectory.GetFiles`; the UI and old-AutoSave cleanup both enumerate `*.easz`.
+- `0x004026B4` is `DeleteFileW`; the cleanup loop passes aged matching file paths to this API.
+- Local AppData helper uses `SHGetSpecialFolderLocation(CSIDL 0x1C)` and `SHGetPathFromIDListW`. Exact `.easz` root still unknown.
+- `euClearOldAutoSaveFiles` compares an age result with `0x18`; do not call it 24 days until the age helper confirms Delphi `TDateTime` units.
+- Run #3 (`43715933101`) extends traces for the age, password-read, path-construction, and process-cleanup helpers.
