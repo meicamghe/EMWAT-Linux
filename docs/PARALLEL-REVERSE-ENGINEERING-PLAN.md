@@ -361,3 +361,12 @@ The pointer list at `0x00627BB0` is an error-message string table. The previous 
 - `euUnArchive` (`0x00456DFC–0x00456EFF`) is the only direct bounded caller of `T7zPlugin` constructor in this scan. It uses global `0x0062A824`, then calls object/interface slots `+0x28`, `+0x10`, and `+0x18` while iterating paired collection-like inputs.
 - This multi-item helper is separate from `euResetMemory` → `CreateOutArchive` and the latter's `+0x44/+0x0C/+0x3C` dispatch sequence. Slot meanings and archive direction remain unresolved; do not use euUnArchive to infer the .easz recovery protocol.
 - Detailed trace: `docs/RECOVERY-STORE-ANALYSIS.md`, section 18.
+
+
+### Python bridge dispatcher adapter — 2026-11-15
+
+- Added `editword_handler.py`, a factory that adapts `EditWordDocumentService` to the XML dispatcher contract.
+- Successful final bytes are serialized with the observed `response-word` envelope and Word MIME type.
+- Cancellation response mapping is a mandatory injected factory; original cancellation semantics remain unknown and are not guessed.
+- The factory is not yet registered in the application; a real LibreOffice adapter is still required.
+- CI run `43721322012` passed **69 tests**.
