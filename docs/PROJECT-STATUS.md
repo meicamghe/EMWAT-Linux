@@ -1484,7 +1484,7 @@ The BPL export/API analysis resolves the earlier naming ambiguity. The public TE
 
 - کلاس `T7zPlugin` و factory مشترک `CreateObject` شناسایی شدند؛ `GetInArchive` و `GetOutArchive` هر دو از این factory استفاده می‌کنند.
 - مسیر `euUnArchive` یک caller مستقیم برای constructor پلاگین است؛ مسیر `euResetMemory` از helper جداگانه `CreateOutArchive` استفاده می‌کند. این دو مسیر نباید یکی فرض شوند.
-- `CryptoGetTextPassword2` یک provider/interface را از global `0x0062FBB8` دریافت و در offset `+0x2C` نگه می‌دارد. `T7zOutArchive.SetPassword` همچنان stub بی‌اثر است.
+- `CryptoGetTextPassword2` از طریق thunk `0x00404734` سازنده `TObjectList` را صدا می‌زند؛ class pointer آن از global `0x0062FBB8` می‌آید و list در offset `+0x2C` ذخیره می‌شود. این هنوز منبع متن رمز writer را مشخص نمی‌کند. `T7zOutArchive.SetPassword` همچنان stub بی‌اثر است.
 - نگاشت دقیق dispatch رمز `euResetMemory +0x44` به `T7zInArchive.SetPassword` هنوز اثبات نشده؛ گزارش recovery این عدم قطعیت را صریحاً اصلاح کرده است.
 
 
