@@ -1,5 +1,20 @@
 # وضعیت پروژه EMWAT-Linux
-آخرین به‌روزرسانی: 2026-11-14
+آخرین به‌روزرسانی: 2026-11-15
+
+
+## وضعیت اجرایی و شواهد جدید — 2026-11-15
+
+- **مسیر پایتون:** آخرین CI پل پایتون، run `43719459423`، موفق است: **۶۲ تست** اجرا شده و همگی پاس شده‌اند. چهار تست جدید هماهنگ‌کننده چرخه سند نیز در همین اجرا موفق‌اند.
+- **هماهنگ‌کننده سند:** `python/src/emwat_linux/office_adapter.py` قرارداد مستقل موتور آفیس را تعریف می‌کند؛ `document_coordinator.py` مسیر open → wait for close → export final bytes را اجرا می‌کند. این کد هنوز به handler واقعی HTTP یا LibreOffice UNO متصل نیست.
+- **قرارداد درخواست:** parser برای `EditWordDocument` و `wordConfig` وجود دارد؛ سند ورودی Base64 به bytes تبدیل می‌شود، اما `signData` عمداً به‌صورت متن opaque نگه داشته می‌شود. این adapter هنوز handler تولیدی نیست.
+- **شبکه:** heartbeat واقعی پاسخ `TickTack` و init script capture-matched در پل پایتون پیاده شده‌اند. مقدار `invoke` فقط nonce هر درخواست است، نه شناسه جلسه.
+- **بازیابی:** `.easz` در `%TEMP%\\temp-emwatASwf\\` فهرست می‌شود؛ مسیر بازیابی از کلاس `T7zInArchive` استفاده می‌کند. متد `SetPassword` در `0x00453860` رشته رمز را در فیلد `+0x58` نگه می‌دارد و آن را به رابط آرشیو می‌دهد. مقدار پیش‌فرضی که مسیر `euResetMemory` به dispatch رمز می‌دهد `mW@Tlogs43end_+` است؛ نام کاربری Windows و `@25*gamsign*25@` متعلق به مسیر مجزای cleanup/logging هستند و نباید با رمز بازیابی یکی فرض شوند.
+- **محدودیت بازیابی:** وجود reader و عملیات استخراج تأیید شده، اما نوع دقیق فرمت آرشیو، نگاشت قطعی دو dispatch مسیرها در `euResetMemory`، محتوای `.easd` و تنظیمات writer هنوز باز هستند. wrapper متد `T7zOutArchive.SetPassword` یک stub بی‌اثر است؛ مسیر callback رمز writer هنوز باید ردیابی شود.
+- **Word lifecycle:** پاسخ EditWordDocument در capture پس از حدود ۵۴٫۵۶ ثانیه انتظار صادر شده است. این با نشست طولانی و انتظار برای پایان ویرایش سازگار است، اما callback دقیق Close که پاسخ را آزاد می‌کند هنوز اثبات نشده است.
+- **تحلیل خطاها:** جدول پیام‌های خطا در `docs/WORD-ERROR-MAP.md` از جدول event/COM جدا شده است؛ رشته‌های آن error map هستند، نه فهرست callbackها. نگاشت واقعی event DISPIDها هنوز نامعلوم است.
+- **تحلیل موازی جاری:** workflowهای تحلیل plugin/recovery با شناسه‌های `43719323732` و `43719180035` در آخرین بررسی در حال اجرا بودند؛ نتایجشان تا دریافت artifact نهایی قطعی محسوب نمی‌شود.
+
+گزارش‌های تفصیلی: `docs/RECOVERY-STORE-ANALYSIS.md`، `docs/PCAP-EDITWORD-DOCUMENT-ROUNDTRIP.md`، `docs/WORD-ERROR-MAP.md` و `docs/LINUX-NATIVE-IMPLEMENTATION-PLAN.md`.
 
 ## هدف قطعی
 بازسازی بومی EMWAT برای Linux با حفظ رفتار و گردش‌کارهای واقعی نسخه Windows. اجرای نسخه Windows با Wine راهکار محصول نهایی نیست. LibreOffice به‌عنوان جایگزین/پل تعامل با اسناد و صفحه‌گسترده‌ها در نظر گرفته شده، اما روش اتصال تا روشن‌شدن رفتار واقعی برنامه تعیین نمی‌شود.
