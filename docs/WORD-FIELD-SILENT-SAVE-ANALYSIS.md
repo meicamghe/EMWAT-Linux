@@ -333,3 +333,29 @@ The `+0x30` call in the same loop is made on a separate temporary interface retu
 - **Unknown:** the identity of the separate `+0x30` interface method.
 
 This corrects the earlier wording: describe the FormClose loop as per-item Automation dispatch, not as a confirmed Close call.
+
+
+## 19. Recovery cleanup dispatch cross-checked against Word type-library wrappers
+
+The same artifact contains generated `TWordDocument` wrappers in module `EmwatConsts`:
+
+- `TWordDocument.Close()`: `0x0042FEB0`
+- `TWordDocument.Close(OleVariant)`: `0x0042FF08`
+- `TWordDocument.Close(OleVariant, OleVariant)`: `0x0042FF7C`
+- `TWordDocument.Close(OleVariant, OleVariant, OleVariant)`: `0x0042FFF4`
+- `TWordDocument.SaveAs2000(...)`: `0x00430070`
+
+Each wrapper obtains the underlying COM interface through `0x0042ABA0` and calls vtable offset `+0x29C`. This validates that `+0x29C` is the late-bound Automation invocation entry used by the imported Word type-library wrapper. The operation name is supplied by the generated wrapper/dispatch metadata and arguments, not by the vtable offset itself.
+
+The recovery form's `FormClose` similarly builds per-item string/variant values, obtains temporary interfaces from the Word Automation wrapper, and calls `+0x29C` on one of them. Thus it is definitely issuing a per-item late-bound Automation command. It is not yet possible to identify the exact command as Close or another Word method from this callsite alone.
+
+## 20. Recovery filesystem search: negative evidence only
+
+A targeted scan of the extracted run-117 analysis documents found no direct references to common filesystem enumeration/deletion APIs or standard Word recovery extensions:
+- no `FindFirst` / `FindNext` procedure evidence;
+- no `DeleteFile` or `FileExists` string/procedure evidence;
+- no `TSearchRec`, `*.asd`, or `*.wbk` references.
+
+This is only a negative result for the extracted artifact corpus, not proof that EMWAT never uses those APIs. File discovery/deletion may be inside another BPL/DLL, imported through an unresolved helper, or represented by an Automation call.
+
+The current best next target is the helper/object contract behind `0x0043EAB8` and the event callback `0x005EC594`, plus the selected-item string construction at `0x005EBB15–0x005EBC25`. Those are the remaining links between the recovery UI and the Word Automation command.
