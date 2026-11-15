@@ -369,4 +369,4 @@ The pointer list at `0x00627BB0` is an error-message string table. The previous 
 - Successful final bytes are serialized with the observed `response-word` envelope and Word MIME type.
 - Cancellation response mapping is a mandatory injected factory; original cancellation semantics remain unknown and are not guessed.
 - The factory is not yet registered in the application; a real LibreOffice adapter is still required.
-- CI run `43721322012` passed **69 tests**.
+- CI run `43721449170` passed **69 tests**.
