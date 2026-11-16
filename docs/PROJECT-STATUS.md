@@ -1939,3 +1939,12 @@ Resolve the class-registration/dispatch bridge that maps the incoming XML `metho
 2. Determine whether `.easd` is a sidecar/data stream and `.easz` the archive target, using only static traces and synthetic content.
 3. Use the preserved service artifact to close the XML `class` lookup → concrete class/VMT `PerformMethod` → result/response path.
 4. Connect the archive output to the `invoke` HTTP response; do not equate periodic controller timer notifications with final Almas registration.
+
+
+### Service PE artifact workflow correction — 2026-11-16
+
+- The preserved service artifact `emwat-mainform-invoke-handler` from run `43831365563` was successfully downloaded in service workflow run `43868531786`; the binary was present and valid.
+- That first deep-trace attempt failed because `EmwatService.exe` has no TD32 debug signature. The failure was in the analysis method, not the artifact download or executable.
+- The workflow was corrected to use PE-only disassembly (`trace_pe_target.py`), raw pointer-reference scans (`scan_pe_pointer_refs.py`), VA inspection, and string decoding. TD32-only tools were removed from the service job.
+- Corrected service workflow run `43868823284` was queued at this checkpoint; its result and artifact still need inspection.
+- This preserves the service EXE as a CI artifact only; it is not committed into the public repository.
