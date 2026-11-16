@@ -215,7 +215,6 @@ class LibreOfficeAdapter:
         on_modified: Callable[[], int],
         on_saved: Callable[[], None],
     ) -> object:
-        del on_saved  # Save events are not yet mapped to a stable UNO event contract.
         work_dir = Path(tempfile.mkdtemp(prefix="emwat-lo-"))
         process: subprocess.Popen[bytes] | None = None
         try:
