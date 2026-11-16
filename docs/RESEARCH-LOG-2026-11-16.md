@@ -651,3 +651,7 @@ The remaining detail is to expand `Invoke` beyond its first internal RET and doc
 ## Full Invoke body trace added
 
 The TD32 procedure size for `TEmwatMethod.Invoke` at `0x0046C82C` is `0x1B1`, ending at `0x0046C9DD`. The previous `trace_pe_target` stopped at its first internal RET at `0x0046C95B`, so it omitted the remaining exception/finally and dispatch paths. The BPL workflow now adds a caller-bounded full-range disassembly from `0x0046C82C` through `0x0046C9DD` to locate the exact VMT `+0x10` `PerformMethod` invocation and parameter mapping.
+
+### XML class attribute is prefixed with `T` before GetClass
+
+The `ParseMethod` code island at `0x00470DF4–0x00470E07` resolves the exact class-name transformation: it reads the XML `class` attribute, loads the one-character string literal `T` at `0x004710E0`, concatenates it with the supplied class name through helper `0x00401310`, then passes the resulting string to `GetClass` at `0x00470E07`. Thus XML `class="EditWordDocument"` resolves Delphi class `TEditWordDocument`; this matches the BPL VMT at `0x005ED764`. The special comparison against `TUpgradeEmwat` is performed on the resolved class's actual `ClassName`, not the raw XML attribute.
