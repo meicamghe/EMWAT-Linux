@@ -884,7 +884,7 @@ Run `43719180035` succeeded; artifact `14164088249` was inspected. Additional ev
 
 1. بررسی دقیق قرارداد رکورد `TDocumentCProperty` و رابطه indexهای آن با collection واقعی Word CustomDocumentProperties؛ helperهای `ContainsValue` و `SetItem` اکنون شناسایی شده‌اند.
 2. اعتبارسنجی رفتار معکوس‌سازی componentهای `FindWindowExtd` با مقدار واقعی مجاز/ناشناس‌سازی‌شده؛ الگوریتم slash/hyphen و reverse order اکنون از disassembly استخراج شده، اما نمونه واقعی برای تعیین قاعده locale لازم است.
-3. بررسی نقش `ShowRecAndCcOptionForm` در فراخوانی از `GetDocFieldName` و ارتباطش با Receivers/CC.
+3. تکمیل معنای `FillPrintOptionForm` در `0x004D1B30` و نگاشت collectionهای `Receivers`/`ReceiverDeps`/`ccReceivers`/`ccReceiverDeps` به recipient/CC نهایی.
 4. پس از تکمیل این helperها، مدل Writer را به سه مقصد مستقل گسترش بده: custom properties، text-field result، و image anchors؛ mapping واقعی 180 شناسه را بدون template واقعی حدس نزن.
 5. مسیر close/XHR و پاسخ cancel هنوز end-to-end با Almas تأیید نشده است؛ از پاسخ ساختگی یا اعلام ثبت قطعی خودداری شود.
 
@@ -930,3 +930,15 @@ Run `43719180035` succeeded; artifact `14164088249` was inspected. Additional ev
 - `0x005EE82C` در TD32 با نام `TScanDocument.PerformMethod` آمده و `LoadDocument` در `0x004B7724` را فراخوانی می‌کند؛ نام procedure را به‌جای برچسب قبلی TEditWordDocument در مستندات استفاده کن.
 - COM slot `+0xDC` هنوز با wrapperهای `TWordDocument.Close` و `Save` تطبیق داده نشده. دو workflow جدید برای مقایسه slotها و decode رشته‌های controller/PerformMethod در حال اجرا هستند: `43814055308` و `43814083027`.
 - ثبت نهایی Almas و payload شبکه هنوز اثبات نشده؛ صرفاً این controller-notify sequence با finalize/close-side سازگار است.
+
+
+### آخرین وضعیت موازی — 2026-11-16
+
+- Python bridge run `43816293635`: **99 تست run، 98 پاس، 1 skip اختیاری**. URL decoder مطابق native رفتار می‌کند: `+` به فاصله و `%2B` به plus تبدیل می‌شود.
+- Word custom-property helper run `43816241948`, artifact `14201844295`: `0x004D1B30` تابع `FillPrintOptionForm` است؛ `tokenizedReceivers` و delimiter U+2020 (`†`) تأیید شدند. چهار config key شامل `Receivers`, `ReceiverDeps`, `ccReceivers`, `ccReceiverDeps` هستند.
+- LibreOffice integration run `43815592590`: **8/8 سبز**. `LibreOfficeAdapter.apply_custom_property_updates` propertyهای موجود را batch-update می‌کند و text fields را یک بار refresh می‌کند؛ complex DOCX DOCPROPERTY field نتیجهٔ جدید را نشان می‌دهد و خروجی DOC/CFB تولید می‌شود.
+- VMT/interface artifact `14201779902` از close-response run `43815900214`، آدرس VMTهای `TEditWordDocument=0x005ED764` و `TScanDocument=0x005ED884` را گزارش می‌کند؛ هر دو parent برابر `0x0046ABA4` هستند. با این حال resolver نتوانست slotهای method را از RTTI تأیید کند.
+- VMT candidate مربوط به `TWordDocument` در `0x00412174` نیز unverified است. wrapperهای typed نشان می‌دهند `Get_Saved → interface slot +0xD4`، `Set_Saved → +0xD8`، `Get_Content → +0xDC` و `Save → +0x2B8`. چون callsite در `OnControlerNotify` برای `+0xDC` آرگومان `-1` می‌فرستد، receiver/signature دقیق هنوز حل نشده؛ آن را Save/Close فرض نکن.
+- `0x005EE82C` در TD32 با نام `TScanDocument.PerformMethod` دیده می‌شود و pointer reference آن در محدودهٔ VMTهای connector نیز نیازمند تطبیق دقیق است؛ نام کلاس را قطعی به TEditWordDocument نسبت نده.
+- مسیرهای باز: قرارداد و callsiteهای `TDocumentCProperty.Add/AddOrSetValue`، معنای دقیق collectionهای Rec/CC، direct `Field.Result.Text`، image anchors، template واقعی Almas و close/XHR ثبت نهایی.
+
