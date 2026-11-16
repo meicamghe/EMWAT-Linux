@@ -34,6 +34,8 @@ jobs:
           python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x004B7724 bpl-method-invoke/TWordViwer-LoadDocument.md
           python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004B7724 bpl-method-invoke/TWordViwer-LoadDocument-callers.md
           python tools/find_td32_class_procedures.py analysis-input/EmwatMethods.bpl1 TEmwatMethod TEditWordDocument TWordViwer TWordViewer > bpl-method-invoke/method-class-procedures.md
+          python tools/resolve_delphi_vmt_slots.py analysis-input/EmwatMethods.bpl1 bpl-method-invoke/vmt-slots.md
+          python tools/trace_delphi_interfaces.py analysis-input/EmwatMethods.bpl1 bpl-method-invoke/interface-tables.md
       - uses: actions/upload-artifact@v4
         with:
           name: emwat-bpl-method-invoke-contract
