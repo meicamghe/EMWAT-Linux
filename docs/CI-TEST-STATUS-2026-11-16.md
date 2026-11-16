@@ -141,3 +141,12 @@ These checks validate the adapter and composition boundary. They do not establis
 - The artifact traces both generated Word Close wrappers: no-argument Close dispatches through _Document byte offset +0x4D4; three-OleVariant Close dispatches through +0x29C. The BeforeSave callback uses the three-argument wrapper after its Cancel/prompt logic.
 - OnControlerNotify calls CostumizeRecAndCC, which invokes _Document slot +0x2BC (PrintOutOld on the generated wrapper mapping), then calls a separate _Document slot +0xDC with -1. The +0xDC meaning and HTTP/registration connection are not yet established.
 - A follow-up workflow revision adds Get_Saved and Set_Saved wrapper traces to resolve the +0xDC slot mapping.
+
+
+## Controller notify close-side trace — 2026-11-16
+
+- Workflow run: **43813684507 — success**.
+- Artifact: **14200889822**.
+- Traced `TWordViwer.OnControlerNotify` at `0x004BB3B0`, `TScanDocument.PerformMethod` at `0x005EE82C`, and `TWordViwer.LoadDocument` at `0x004B7724`.
+- Controller notification invokes `CostumizeRecAndCC`, then passes `-1` and the document interface to COM vtable slot `+0xDC`; this is a candidate finalize/close action, but the exact method is being compared with generated Word `Close` and `Save` wrappers.
+- This does not yet prove the final Almas POST/response payload.
