@@ -1332,3 +1332,17 @@ Decode رشته‌های ثابت نشان داد مقایسه‌های این �
 - پس از نوشتن در مسیر Field.Result.Text، کد وضعیت قفل فیلد را بررسی می‌کند و log `field locked.` دارد.
 - در نتیجه، مدل مقصد فیلد در پیاده‌سازی Linux نباید فقط یک Writer text field باشد: دست‌کم مسیر Custom Document Property، مسیر نتیجه Text Field، و مسیر تصویر باید جداگانه قابل نمایش/آزمایش باشند.
 - `FillTextField` همچنان نقش تشخیص metadata/MIME و dispatch را دارد؛ اما `FillImageField` در عمل بخشی از منطق عمومی مقداردهی فیلد را هم اجرا می‌کند. mapping هر 180 شناسه به مقصد مشخص همچنان به template واقعی و تکمیل trace وابسته است.
+
+
+### Run 127 — lookup و به‌روزرسانی Custom Document Property (2026-11-16)
+
+Artifact اجرای `43812565648` با موفقیت تکمیل شد و helperهای مقصد مقدار فیلد را مشخص‌تر کرد:
+
+- `0x004D3DF8` متد `TDictionary<UnicodeString,TDocumentCProperty>.ContainsValue` است.
+- `0x004D34B0` متد `TDictionary<UnicodeString,TDocumentCProperty>.SetItem` است.
+- هر دو از `FillImageField` فراخوانی می‌شوند؛ بنابراین مسیر Custom Document Properties صرفاً inventory یا lookup نام نیست و مقدار رکورد `TDocumentCProperty` در dictionary به‌روزرسانی می‌شود.
+- متن log `CustomDocumentProperties[%d]` با این مسیر dictionary-backed سازگار است؛ اما ترتیب indexها و قرارداد کامل رکورد `TDocumentCProperty` هنوز باید با helperهای سازنده و Word collection تطبیق داده شود.
+- `0x004D1B30` طبق TD32 نام واقعی `ShowRecAndCcOptionForm` دارد و از `GetDocFieldName` فراخوانی می‌شود؛ این تابع را نباید field-name array یا silent-save helper فرض کرد.
+- `0x0045644C` تابع `Emwatutils.FindWindowExtd` است، نه date formatter. در مسیر ویژه `FillImageField` برای سه شناسه `LetterRegistrationDate`، `LetterRegistrationNo` و `ProduceDate` به‌کار می‌رود؛ معنای دقیق transform آن هنوز باز است.
+
+**اصلاح برداشت قبلی:** سه نام بالا special-case هستند، اما helper فراخوانی‌شده `FindWindowExtd` است؛ بنابراین ادعای «تاریخ‌فرمت‌کن» بودن آن حذف می‌شود تا رفتار تابع با trace کامل و call context ثابت شود.
