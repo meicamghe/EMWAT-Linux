@@ -8,6 +8,7 @@ from emwat_linux.word_fields import (
     decode_word_fields,
     extract_docproperty_identifier,
     external_parameter_bindings,
+    find_native_twin_field_index,
     is_native_business_signature_end,
     parse_word_field_identifier,
 )
@@ -48,6 +49,22 @@ class WordFieldDecodingTests(unittest.TestCase):
         for field_name in ("SignSenderEnd", "xsignSenderEnd", "signSenderStart", "signSenderEnd123", ""):
             with self.subTest(field_name=field_name):
                 self.assertFalse(is_native_business_signature_end(field_name))
+
+    def test_finds_native_twin_field_by_one_based_field_code_index(self):
+        codes = (
+            r"MERGEFIELD  IgnoreThis",
+            r"DOCPROPERTY  SignSenderStart  \\* MERGEFORMAT",
+            r"DOCPROPERTY  SignSenderEnd  \\* MERGEFORMAT",
+            r"DOCPROPERTY  LetterSubject  \\* MERGEFORMAT",
+        )
+        self.assertEqual(find_native_twin_field_index(codes, "SignSenderEnd"), 3)
+        self.assertEqual(
+            find_native_twin_field_index(codes, "SignSenderEnd", start_index=4),
+            0,
+        )
+        self.assertEqual(find_native_twin_field_index(codes, "MissingTwin"), 0)
+        with self.assertRaises(ValueError):
+            find_native_twin_field_index(codes, "SignSenderEnd", start_index=0)
 
     def test_extracts_docproperty_identifier_from_word_field_code(self):
         code = r"DOCPROPERTY  LetterSubject  \* MERGEFORMAT"
