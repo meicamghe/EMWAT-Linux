@@ -75,6 +75,7 @@ class _DocumentCloseListener:
         self._output_url = output_url
         self._on_closed = on_closed
         self._uno = uno_module
+        self._headless = headless
         self.snapshot_error: Exception | None = None
         self.snapshot_ready = Event()
 
@@ -110,6 +111,22 @@ class _DocumentCloseListener:
             return prop
         except Exception as exc:
             raise RuntimeError("libreoffice_uno_property_unavailable") from exc
+
+
+class _DocumentEventListener:
+    """Forward confirmed UNO save-complete document events."""
+
+    _SAVE_EVENTS = frozenset({"OnSaveDone", "OnSaveAsDone"})
+
+    def __init__(self, callback: Callable[[], None]) -> None:
+        self._callback = callback
+
+    def documentEventOccured(self, event: object) -> None:
+        if getattr(event, "EventName", "") in self._SAVE_EVENTS:
+            self._callback()
+
+    def disposing(self, _event: object) -> None:
+        return
 
 
 class _OfficeHandle:
@@ -150,6 +167,7 @@ class LibreOfficeAdapter:
         poll_interval_seconds: float = 0.1,
         process_factory: Callable[..., subprocess.Popen[bytes]] = subprocess.Popen,
         uno_module: object | None = None,
+        headless: bool = False,
     ) -> None:
         if connect_timeout_seconds <= 0 or poll_interval_seconds <= 0:
             raise ValueError("connection and polling timeouts must be positive")
@@ -217,6 +235,7 @@ class LibreOfficeAdapter:
                     accept,
                     "--norestore",
                     "--nodefault",
+                    *(["--headless"] if self._headless else []),
                     "--nofirststartwizard",
                     f"-env:UserInstallation={profile_url}",
                 ],
@@ -232,7 +251,7 @@ class LibreOfficeAdapter:
             )
             uno = self._uno_runtime()
             properties = (
-                self._property(uno, "Hidden", False),
+                self._property(uno, "Hidden", self._headless),
                 self._property(uno, "ReadOnly", False),
                 self._property(uno, "MacroExecutionMode", 4),  # NEVER_EXECUTE
                 self._property(uno, "UpdateDocMode", 3),  # NO_UPDATE
@@ -257,10 +276,13 @@ class LibreOfficeAdapter:
             )
             handle.close_listener = close_listener
             modify_listener = _ModifyListener(on_modified)
+            save_listener = _DocumentEventListener(on_saved)
             document.addModifyListener(modify_listener)
+            document.addDocumentEventListener(save_listener)
             document.addCloseListener(close_listener)
             # Keep strong references: PyUNO listeners must outlive their registrations.
             handle.modify_listener = modify_listener
+            handle.save_listener = save_listener
             handle.desktop = desktop
             handle.output_path = output_path
             handle.source_path = source_path
