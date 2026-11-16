@@ -1756,3 +1756,19 @@ The BPL export/API analysis resolves the earlier naming ambiguity. The public TE
 - Parser-side XML methods confirm incoming keys `separator`, `concator`, and `paramId` through `TXMLNode.GetAttributeNodes`.
 - Existing schema transcription contains `concater`; this conflicts with native `concator`. No alias is proven. The runtime keeps raw attributes unchanged and does not normalize either spelling.
 - Serializer-side TD32 `Get_*` labels do not consistently match their string literals; parser-side `Set_*` methods are the reliable incoming-attribute evidence.
+
+
+### Parallel controller callback ownership checkpoint — 2026-11-16
+
+- Word custom-property/controller-init run `43820125640` completed successfully; artifact `14204196789`.
+- `TEDPController.Notify` (`0x004D2EC8`) calls `TEmwatDocPrintHandler.GetDocFieldName` (`0x004A8F78`) with the controller's `+0x1C` member. This is not a direct call to `TWordViwer.OnControlerNotify`; do not conflate the two notification paths.
+- `TEDPController.SetOnNotify` (`0x004D2F2C`) invokes a stored method pointer from `+0x10/+0x14`; `SetPrintThread` (`0x004D2F44`) writes the two method-pointer words to those offsets. Direct call-site scans found no direct callers, so the registration/dispatch relationship still needs pointer/VMT evidence.
+- A new independent workflow, `analyze-word-controller-callback-ownership.yml`, was added to trace the viewer constructor/destructor, timer callback, controller dispatch, and print-handler ownership in parallel. Its result must be checked before assigning event semantics.
+- Python bridge run `43820250444`: **101 tests run, 100 passed, 1 optional UNO test skipped**. It verifies that the literal XML attribute spelling and backslash-n value are preserved without interpreting the unresolved concatenation semantics.
+- Native XML parser reads `concator`; the captured schema transcription currently says `concater`. Python retains raw attributes and does not alias or normalize the two spellings.
+
+### Native close-choice parity remains a production blocker — 2026-11-16
+
+- The binary's active Word BeforeSave callback asks the user Yes/No/Cancel; Yes closes with SaveChanges=True, No closes with SaveChanges=False, and Cancel vetoes closing.
+- The current LibreOffice close listener snapshots the document in `queryClosing` and does not yet implement this three-way decision. The live UNO roundtrip proves DOCX open/close/export only; it does not prove equivalent close-choice behavior.
+- Do not mark the desktop workflow production-ready or claim exact No/Cancel response parity until this behavior and the corresponding HTTP response semantics are implemented and tested.
