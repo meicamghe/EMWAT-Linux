@@ -1027,3 +1027,30 @@ Do not implement guessed `signData` joining or claim end-to-end Almas registrati
 3. Connect `TWordViwer.OnControlerNotify` → `Get_Content` → helper `0x00456DFC` to the long-lived HTTP invoke response writer, without assuming that every timer tick is a final registration response.
 4. Compare the close-time response payload with the request `wordConfig` and the opaque document bytes, using only synthetic or anonymized data.
 5. Update the docs and Python bridge only when the dispatch and response contract is evidenced.
+
+
+## Latest verified continuation — 2026-11-16
+
+### Successful runs and artifacts
+- Run `43867641761`: all 3 dispatch-crosswalk jobs succeeded. BPL artifact `14225499151`, Word artifact `14226866454`; service artifact `14226172178` is an explicit missing-input note only.
+- Run `43868190188`: all 3 expanded VMT/Word/service jobs succeeded. BPL artifact `14225224443`.
+- Run `43868321797`: controller content unpack job succeeded. Artifact `14226342809`.
+- The new service-artifact workflow run `43868531786` and expanded controller archive run `43868705082` were queued at the last check; inspect them before claiming success.
+
+### Important corrections
+1. `0x004563A8` is `FixDirectionInFarsiNumericMode`, not a list constructor. The two objects in `OnControlerNotify` are created by helper `0x0040414C` using global/class reference `0x0062F810`.
+2. Strings `0x004BB754` and `0x004BB76C` decode to `.easd` and `.easz`. The path at `TWordViwer+0x80` is direction-normalized and these suffixes are appended.
+3. `0x00452C10` is `T7zPlugin` constructor; `0x00456DFC` is `Emwatutils.euUnArchive`. The latter passes `mW@Tlogs43end_+` to plugin slot `+0x28`, paired entries to `+0x10`, and the `.easz` path to `+0x18`. This strongly indicates SevenZip-backed archive processing, but the exact vtable method names and object types still need resolution. Do not state the string is a confirmed password until slot +0x28 is mapped.
+4. The exact VMT inspection proves `TEmwatMethod` slot `+0x10` is `0x00401068`, not `TEmwatMethod.Invoke` (`0x0046C82C`). Do not assume Invoke is the request-time virtual dispatcher.
+5. `TEditWordDocument` VMT slot `+0x10` points to `0x005EE82C`, TD32-decorated as `TScanDocument.PerformMethod`; `TScanDocument` VMT slot `+0x10` points to `0x005EEB48`, TD32-decorated as `TFaxDocument.PerformMethod`. Preserve these as pointer/name discrepancies pending class-registration resolution.
+
+### New workflows
+- `.github/workflows/analyze-emwat-controller-unarchive.yml` expanded to inspect helpers `0x0040414C`, `0x004543C4`, SevenZip class procedures, VMTs, and interface tables.
+- `.github/workflows/analyze-emwat-service-dispatch.yml` downloads the preserved artifact `emwat-mainform-invoke-handler` from run `43831365563`, so the service EXE can be analyzed without adding it to the public repo.
+- The dispatch crosswalk workflow's YAML path-filter newline bug was corrected; run `43868190188` passed all jobs.
+
+### Next tasks
+1. Inspect artifact for run `43868705082` and resolve the two indexed objects and `T7zPlugin` vtable slots.
+2. Inspect artifact for run `43868531786` to continue service XML class lookup and response writer tracing.
+3. Connect the concrete `EditWordDocument` class resolution to the VMT slot and `PerformMethod` body.
+4. Trace the post-Word archive result into the `invoke` HTTP response. Keep timer-driven `OnControlerNotify` separate from close-time registration.
