@@ -122,3 +122,10 @@ A second cross-check against the extracted `TWordViwer.LoadDocument` TD32 disass
 Interpretation boundary: the destructor call and metadata-collection call are direct static evidence. They do not independently prove COM shutdown order, property names, or the final XML/HTTP response schema. Constructor activation and event hookup remain open until the constructor body is inspected.
 
 The Word automation surface document was updated in commit `6e650578c35f372ebbdff7aa11960a5308446b9e`.
+
+
+## Follow-up — Word backend compatibility inventory
+
+The TD32 class procedure index was reorganized into functional groups in `docs/WORD-AUTOMATION-SURFACE-2026-11-16.md`: lifecycle, XML/config field mapping, document field mutation, custom metadata extraction, save/close callbacks, print pipeline, and formatting/protection. This establishes the minimum scope of a LibreOffice-compatible backend beyond opening DOCX files. It remains a symbol/signature-derived requirements inventory; exact Word calls and serialization details are not yet proven.
+
+Documentation commit: `7f5f7340c514c43c47171539292ad53beaa5b678`.
