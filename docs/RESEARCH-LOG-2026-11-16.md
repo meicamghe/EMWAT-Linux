@@ -184,3 +184,23 @@ Commits:
 - Service/BPL dispatch workflow: `1312ed0d42db82063e9202f7f0459b1e272f2f13`
 
 The trace and artifact-upload guards remain in place. This change has been committed, but no new Actions run has been verified; it is not a test-pass claim.
+
+
+## Critical input correction — binaries are present in EMWAT_Extracted.zip
+
+The public repository contains `EMWAT_Extracted.zip` (24,018,540 bytes). The committed `EMWAT_zip_contents.txt` inventory lists 70 entries and confirms:
+- `EmwatMethods.bpl1` — 11,106,148 bytes
+- `EmwatService.exe` — 679,936 bytes
+- `EmwatAgent.exe` — 2,924,032 bytes
+
+The BPL is also present directly at `analysis-input/EmwatMethods.bpl1` in the current main tree. The earlier missing-input conclusion was incorrect because the archive and then-current repository tree were not checked together.
+
+Both `analyze-word-automation-surface.yml` and `analyze-emwat-dispatch-crosswalk.yml` now extract the three named binaries from the root of `EMWAT_Extracted.zip` into `analysis-input/` before analysis. The archive path is included in each workflow's push filters.
+
+Runs triggered by those workflow commits:
+- Word automation: `43882530570`, observed running at review time.
+- Service/BPL crosswalk: `43882543797`; its service trace extracted all three binaries and completed six target disassemblies, then failed because optional TD32 class/VMT/interface metadata probes returned non-zero when that PE did not expose the expected debug signature.
+
+The service workflow was corrected in commit `ce79705a41d97baf90a8b19219a1eb606fe02290` so those optional metadata probes no longer fail the whole job. Follow-up execution has not yet been verified complete.
+
+The first run log confirms extraction of all three binaries with the exact sizes above. This is current-run confirmation that CI can consume the archive, not merely an inventory-file assertion.
