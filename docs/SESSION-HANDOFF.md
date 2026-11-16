@@ -854,3 +854,32 @@ Run `43719180035` succeeded; artifact `14164088249` was inspected. Additional ev
 - Callback references `0x00453850` and `0x0045391C` contain the same `IArchiveExtractCallback` IID. Their construction contexts differ, but they implement the same COM callback interface.
 - `PrepareOperation` has distinct branches using `Self+0x3C`, `Self+0x50/+0x54`, and `Self+0x58`; exact property mapping and final output destination remain open. See `docs/RECOVERY-STORE-ANALYSIS.md` sections 24–25.
 - Follow-up workflow run 3 is queued to resolve the remaining non-TD32 slot targets and dialog strings.
+
+
+## 2026-11-16 — ادامه موازی: Twin Field، Custom Properties و مقصدهای مقداردهی Word
+
+### شواهد تأییدشده جدید
+
+- اجرای `43811074616` موفق شد؛ artifact شامل 41 فایل procedure/callers/pointer refs/strings بود.
+- اجرای helper pipeline `43812127854` موفق شد و delimiter ثابت `0x004D1768` را به `†` (U+2020) decode کرد.
+- `AddCustomDocPropertiesToDic` نام propertyهای سفارشی سند را با اولین dagger بررسی می‌کند. دو بخش غیرخالی، رکورد `TXmlWordConfigTwinField` می‌سازند؛ حالت بدون delimiter یا یک سمت خالی، به `TXmlWordConfigField` تکی برمی‌گردد.
+- dictionaryهای viewer در offsetهای `+0x68` و `+0x6C` به‌ترتیب با `TXmlWordConfigField` و `TXmlWordConfigTwinField` مرتبط‌اند. متدهای `0x004D531C` و `0x004D68D4` generic Remove هستند، نه setter.
+- `FillImageField` در `0x004BC30C` فقط image insertion نیست: logهای داخلی دو مقصد مقداردهی را تأیید می‌کنند: `CustomDocumentProperties[index]` و `Field.Result.Text`. مسیر دوم وضعیت lock فیلد را بررسی می‌کند.
+- نام‌های ویژه `LetterRegistrationDate`، `LetterRegistrationNo` و `ProduceDate` در شاخه‌ای وابسته به flag داخلی `viewer+0xF0` پردازش می‌شوند.
+- Writer catalog اکنون نام Custom Document Properties را بدون خواندن مقدارشان گزارش می‌کند.
+- `parse_word_field_identifier` در Python اولین dagger را جدا می‌کند و ورودی ناقص را single نگه می‌دارد.
+
+### CI تأییدشده
+
+- Python bridge run `43812324657`: 87 تست پاس، یک تست UNO اختیاری skip.
+- LibreOffice UNO run `43811929904`: 8/8 تست پاس؛ fixture یک UserDefinedProperty ساختگی اضافه می‌کند و فقط نام آن را از catalog می‌گیرد.
+- Word custom-property helper analysis run `43812127854`: success.
+- Word field pipeline run `43811074616`: success.
+
+### کارهای موازی بعدی
+
+1. trace کردن `0x004D3DF8` و `0x004D34B0` برای مشخص کردن lookup مقصد Custom Document Properties و Field metadata.
+2. trace کردن `0x0045644C` برای سه فیلد تاریخ/شماره ویژه.
+3. بررسی `0x004D1B30` و مسیر ساخت field-name array.
+4. پس از تکمیل helperها، مدل Writer را به سه مقصد مستقل گسترش بده: custom properties، text-field result، و image anchors؛ mapping واقعی 180 شناسه را بدون template واقعی حدس نزن.
+5. مسیر close/XHR و پاسخ cancel هنوز end-to-end با Almas تأیید نشده است؛ از پاسخ ساختگی یا اعلام ثبت قطعی خودداری شود.
