@@ -4,6 +4,7 @@ import unittest
 from emwat_linux.word_config import parse_word_config
 from emwat_linux.word_fields import (
     WordFieldDecodeError,
+    build_word_custom_property_field_maps,
     decode_optional_attributes,
     decode_word_fields,
     extract_docproperty_identifier,
@@ -40,6 +41,22 @@ class WordFieldDecodingTests(unittest.TestCase):
             parsed = parse_word_field_identifier(malformed)
             self.assertEqual(parsed.first, malformed)
             self.assertIsNone(parsed.second)
+
+    def test_builds_separate_native_single_and_twin_property_maps(self):
+        maps = build_word_custom_property_field_maps(
+            ("LetterSubject", "SignStart†SignEnd", "†Malformed", "Trailing†")
+        )
+        self.assertEqual(
+            [(item.index, item.field_name) for item in maps.singles],
+            [(0, "LetterSubject"), (2, "†Malformed"), (3, "Trailing†")],
+        )
+        self.assertEqual(
+            [
+                (item.index, item.first_field_name, item.second_field_name)
+                for item in maps.twins
+            ],
+            [(1, "SignStart", "SignEnd")],
+        )
 
     def test_matches_native_business_signature_end_pattern(self):
         for field_name in ("signsenderend", "signsenderend0", "signsenderend12", "signend29"):
