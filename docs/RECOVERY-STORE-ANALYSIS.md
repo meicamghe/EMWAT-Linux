@@ -436,3 +436,22 @@ The `GetStream` method (`0x004531EC`) is also part of the `T7zInArchive` extract
 Recovery callback-contract run 2 (artifact `14165994624`) traced the `+0x44` interface target to `T7zArchive.$bctr` (`0x0045392C`). The constructor copies its UnicodeString argument into `Self+0x44` and sets the Boolean at `Self+0x40` to whether that string is nonempty. This is a separate field and call from `T7zInArchive.SetPassword`, which receives the second `euResetMemory` string through slot `+0x3C` and stores it at `Self+0x58`.
 
 For the recovery Delete call, both stack Boolean flags are true, `ECX` (the optional third string) is zero, and `euResetMemory` substitutes `mW@Tlogs43end_+` before calling the constructor. Therefore the literal fallback is definitively the constructor's `Self+0x44` value; it is not the string passed to `SetPassword`. The semantic property name for `Self+0x40/+0x44` is being cross-checked against the class RTTI before it is labelled (likely a subarchive-mode/name pair, but not yet asserted).
+
+
+## 26. Controller-notify paired stream/archive path — 2026-11-16
+
+The close/response-chain artifact `14200889822` and its follow-up static BPL artifact `14201769656` expose a second SevenZip path, separate from the user-invoked recovery Delete path:
+
+- `TWordViwer.OnControlerNotify` (`0x004BB3B0`) has a second branch at `0x004BB544` that creates two stream objects, reads viewer fields `+0xA0` and `+0x80`, and normalizes the latter through `FixDirectionInFarsiNumericMode` (`0x004563A8`) with two different Boolean argument combinations.
+- The branch constructs two path strings by appending the literal suffixes `.easd` and `.easz` (string constants at `0x004BB754` and `0x004BB76C`). It then passes the two stream objects and one normalized path to `euUnArchive` (`0x00456DFC`).
+- `euUnArchive` creates a `T7zPlugin` instance (`0x00452C10`), obtains an archive-facing interface, iterates paired entries from two supplied collections/streams, invokes an archive operation per pair, and finalizes the archive object with the third string argument. The SevenZip plugin class index includes a distinct `T7zOutArchive` implementation with `AddStream`, `SaveToFile`, and related methods.
+- This is evidence for a controller-driven paired stream/archive workflow that produces or consumes the `.easd/.easz` pair. It is **not** yet proof that this branch is the same operation as recovery Delete, nor that it is the exact Almas registration response after Word closes.
+- The method name `euUnArchive` must not be taken literally as proof of extraction: the implementation goes through the SevenZip plugin and archive-facing methods. Exact input/output direction, per-stream content, and archive file creation point remain to be confirmed from the interface slot mapping and the callback that invokes `OnControlerNotify`.
+
+### Next trace targets
+
+1. Resolve the `T7zPlugin` returned archive interface slots used by `euUnArchive` (`+0x10`, `+0x18`, `+0x28`) against the `T7zOutArchive` wrappers.
+2. Trace the caller/dispatch source for `OnControlerNotify` to identify which controller message activates the paired stream branch.
+3. Compare the generated `.easd/.easz` pair with the recovery Delete reader path without assuming their formats or password values are interchangeable.
+
+Evidence: runs `43815900214` and `43815900243`, artifacts `14200889822` and `14201769656`.
