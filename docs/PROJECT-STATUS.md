@@ -2115,3 +2115,11 @@ Workflow تحلیل Word گسترش یافت تا helper مرکزی درج تص�
 - `viewer + 0x64`: دیکشنری runtime جداگانه از نوع `TDictionary<UnicodeString,TDocumentCProperty>`.
 
 در نسخه لینوکس این سه ساختار نباید به یک دیکشنری تخت تبدیل شوند. جزئیات و offsetها در `docs/RESEARCH-LOG-2026-11-16.md` ثبت شده‌اند.
+
+
+## اصلاح تطبیق parser فیلدهای Word با باینری — 2026-11-16
+
+ردیابی `FindFieldInActivefields` نشان داد استخراج شناسه `DOCPROPERTY` از `Pos` و `Copy` دلفی استفاده می‌کند. رفتار edge-case در Python اصلاح شد: نبودن delimiter دو فاصله باعث شروع Copy از کاراکتر دوم می‌شود و اگر فاصله بعدی وجود نداشته باشد، همان segment برگردانده می‌شود. تست جدید این دو حالت را پوشش می‌دهد.
+
+- Python CI اجرا `43889681823`: **۱۰۵ تست موفق، ۲ skip اختیاری**.
+- helper امضای business نیز با regex دقیق و case-sensitive باینری پیاده‌سازی شده است.
