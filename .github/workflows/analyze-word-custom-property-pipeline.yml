@@ -26,7 +26,7 @@ jobs:
         shell: bash
         run: |
           mkdir -p word-custom-property-pipeline
-          printf '%s\n' 004D531C 004D68D4 004D1808 004CB638 004D3F24 004D4528 004D45CC 004D23D8 > /tmp/targets
+          printf '%s\n' 004D531C 004D68D4 004D1808 004CB638 004D3F24 004D4528 004D45CC 004D23D8 004D3DF8 004D34B0 004D1B30 0045644C > /tmp/targets
           pids=()
           while read -r target; do
             (
@@ -44,7 +44,7 @@ jobs:
         shell: bash
         run: |
           pids=()
-          for spec in "004D531C 900" "004D68D4 900" "004D1808 700" "004D23D8 1200" "004CB638 700" "004D3F24 700" "004D4528 700" "004D45CC 500"; do
+          for spec in "004D531C 900" "004D68D4 900" "004D1808 700" "004D23D8 1200" "004CB638 700" "004D3F24 700" "004D4528 700" "004D45CC 500" "004D3DF8 700" "004D34B0 700" "004D1B30 900" "0045644C 1000"; do
             (
               set -e
               set -- $spec
