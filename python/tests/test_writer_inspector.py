@@ -35,6 +35,9 @@ class FakeField:
     def getImplementationName(self):
         return "com.sun.star.text.TextField.DateTime"
 
+    def getSupportedServiceNames(self):
+        return ("com.sun.star.text.TextField.DateTime",)
+
     def getPresentation(self, _show_command):
         raise AssertionError("field values must not be read by the inspector")
 
