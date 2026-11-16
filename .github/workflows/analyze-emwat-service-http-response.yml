@@ -100,6 +100,78 @@ jobs:
           python tools/list_td32_symbols.py service-http-analysis/EmwatService.exe \
             TIdHTTPResponseInfo TIdHTTPServer TEditWordDocument TScanDocument \
             > service-http-analysis/service-td32-symbols.md || true
+      - name: Resolve Indy HTTP server and response-info VMTs
+        run: |
+          python - <<'PY'
+          import pathlib, re, struct
+          import pefile
+          from capstone import Cs, CS_ARCH_X86, CS_MODE_32
+          path = pathlib.Path("service-http-analysis/EmwatService.exe")
+          blob = path.read_bytes()
+          pe = pefile.PE(data=blob, fast_load=False)
+          image = pe.OPTIONAL_HEADER.ImageBase
+          def raw_to_va(raw):
+              for sec in pe.sections:
+                  if sec.PointerToRawData <= raw < sec.PointerToRawData + sec.SizeOfRawData:
+                      return image + sec.VirtualAddress + raw - sec.PointerToRawData
+              return None
+          def va_to_raw(va):
+              rva = va - image
+              for sec in pe.sections:
+                  if sec.VirtualAddress <= rva < sec.VirtualAddress + max(sec.Misc_VirtualSize, sec.SizeOfRawData):
+                      delta = rva - sec.VirtualAddress
+                      if delta < sec.SizeOfRawData: return sec.PointerToRawData + delta
+              return None
+          def u32(raw):
+              return struct.unpack_from("<I", blob, raw)[0] if raw is not None and raw + 4 <= len(blob) else None
+          def readva(va):
+              return u32(va_to_raw(va))
+          names = ("TIdHTTPServer", "TIdCustomHTTPServer", "TIdHTTPResponseInfo",
+                   "TIdHTTPRequestInfo", "TIdContext", "TIdTCPServer",
+                   "TIdHTTPHeaderInfo", "TIdHTTPResponse")
+          out = ["# Indy HTTP VMT inspection", "", f"- PE32 ImageBase: 0x{image:08X}", ""]
+          md = Cs(CS_ARCH_X86, CS_MODE_32)
+          for name in names:
+              encoded = name.encode("ascii")
+              candidates = set()
+              for m in re.finditer(rb"(?<![A-Za-z0-9_])" + re.escape(encoded) + rb"(?![A-Za-z0-9_])", blob):
+                  for shortstring_raw in (m.start() - 1, m.start()):
+                      if shortstring_raw < 0: continue
+                      name_va = raw_to_va(shortstring_raw)
+                      if name_va is not None:
+                          candidates.add(name_va)
+                          if name_va >= 2: candidates.add(name_va - 2)
+              vmt_hits = set()
+              for pos in range(0, len(blob) - 4, 4):
+                  value = struct.unpack_from("<I", blob, pos)[0]
+                  if value in candidates:
+                      field_va = raw_to_va(pos)
+                      if field_va is None: continue
+                      vmt = field_va + 56
+                      if readva(vmt - 88) == vmt:
+                          size = readva(vmt - 52)
+                          if size is not None and 8 <= size <= 0x10000:
+                              vmt_hits.add((vmt, size))
+              out.append(f"## {name}")
+              if not vmt_hits:
+                  out.append("- No VMT candidate passed self-pointer and instance-size checks.")
+                  out.append("")
+                  continue
+              for vmt, size in sorted(vmt_hits):
+                  out.append(f"- VMT 0x{vmt:08X}; instance size 0x{size:X}")
+                  for slot in range(0, 0x80, 4):
+                      target = readva(vmt + slot)
+                      if target is None: continue
+                      raw = va_to_raw(target)
+                      if raw is None: 
+                          out.append(f"  - +0x{slot:02X}: 0x{target:08X} (unmapped)")
+                          continue
+                      insns = list(md.disasm(blob[raw:raw+32], target))[:5]
+                      desc = "; ".join(f"{x.mnemonic} {x.op_str}" for x in insns)
+                      out.append(f"  - +0x{slot:02X}: 0x{target:08X} — {desc or 'no decode'}")
+              out.append("")
+          pathlib.Path("service-http-analysis/indy-http-vmt.md").write_text("\n".join(out), encoding="utf-8")
+          PY
       - uses: actions/upload-artifact@v4
         with:
           name: emwat-service-http-response-analysis
