@@ -11,6 +11,9 @@
 
 ## پیشرفت اجرایی جدید — 2026-11-16
 
+- **parser اختصاصی DOCPROPERTY:** تابع `extract_docproperty_identifier` به decoder اضافه شد و رفتار native `FindFieldInActivefields` را با حساسیت به حروف، جداکننده دو فاصله و محدودیت ۲۵۵ کاراکتر بازسازی می‌کند. تست‌های edge-case از جمله triple-space و field ناقص اضافه شدند.
+- **CI پایتون پس از parser:** run شماره 43814423443 سبز شد: ۹۴ تست اجرا، ۹۳ پاس و یک skip اختیاری UNO.
+
 - **اصلاح مهم در تفسیر Saved:** wrapperهای تولیدشده نشان دادند `Get_Saved` از slot `+0xD4` و `Set_Saved` از slot `+0xD8` استفاده می‌کند. بنابراین استفاده callback `WordAppDocumentBeforeSave` از `+0xD8` خواندن Saved نیست؛ مقدار OleVariant ورودی و علت این setter هنوز باید ردیابی شود. slot `+0xDC` در `OnControlerNotify` نیز هیچ‌کدام از این دو نیست و بررسی `Get_Content` در حال اجراست.
 
 - **تکمیل decode ثابت‌های native:** در `SetFieldValue` ثابت `0x004BFEE8` برابر `urlencoded` و `0x004BFF0C` برابر `base64` شناسایی شد؛ این دو شاخه با decoder فعلی Python هم‌راستا هستند. تابع `FindFieldInActivefields` نیز token واقعی `DOCPROPERTY` و جداکننده‌های فاصله را پردازش می‌کند. شناسه ویژه `Hidden_Customizable` هم از مسیر `GetDocFieldName` به `SilentSaveEmwatDoc` می‌رسد؛ این مسیر مستقل از callback بستن سند است.
