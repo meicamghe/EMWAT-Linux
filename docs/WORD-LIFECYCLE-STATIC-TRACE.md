@@ -206,8 +206,24 @@ Source: Word response/controller workflow run `43872534265`, artifact `142288510
 - `OnTmrAutoSave` installs `OnControlerNotify` as the `TTimer.OnTimer` callback on the timer stored at viewer offset `+0x7C`; the timer interval at viewer offset `+0x88` is clamped to at least 10,000 ms and the timer is enabled.
 - `OnControlerNotify` is therefore a periodic local content/archive callback, not the Word `BeforeClose` event. It reads Word Content through slot `+0xDC` and creates .easd/.easz local archive paths. It is not currently proven to submit the final Almas registration.
 - `TEDPController.Notify` at `0x004D2EC8` is a separate print-handler controller callback; it invokes `TEmwatDocPrintHandler.GetDocFieldName` and must not be conflated with `TWordViwer.OnControlerNotify`.
-- The response appears approximately 54.558 seconds after the request body completes. The exact wait/release event remains unresolved; the new wait-mechanism and request-lifecycle workflows are tracing the remaining `OnTmrAutoSave` body and helper calls.
+- The response appears approximately 54.558 seconds after the request body completes. The static wait/release chain is now mapped: `LoadDocument` calls `OnTmrAutoSave` synchronously at `0x004B7A58`; `OnTmrAutoSave` repeats a `Sleep(5)` + `ProcessMessages` loop while viewer `+0x58` is nonzero; the close/registration callback at `0x004CD154` clears that field after Word `Document.Close` at `0x004CD31C`; then `LoadDocument` writes the HTTP response. The 200-iteration cycle is a repeating maintenance interval, not a one-second total timeout. The formal COM event DISPID and the initial nonzero setter for `+0x58` remain under investigation.
 
 ### Event identity caution — 2026-11-16
 
 The callback pointer at Word event-record offset `+0x80` is `0x004CD154`. TD32 names the procedure `WordAppDocumentBeforeSave`, but its first log string is `Document.OnBeforeClose Called.` and its behavior prompts for change registration before calling the three-argument `Document.Close` wrapper. The event-record slot's actual COM DISPID (DocumentBeforeSave versus DocumentBeforeClose) is not yet mapped. Do not use the TD32 method name alone as proof of the COM event identity. A generated event-dispatch thunk trace is now running against the method table at `0x00627B74`.
+
+
+## Run 153 — synchronous Word-close wait releases HTTP response — 2026-11-16
+
+The request-lifecycle and wait-mechanism artifacts reveal the full static wait chain:
+
+1. `TWordViwer.LoadDocument` calls `OnTmrAutoSave` synchronously at `0x004B7A58` and tests its return value before proceeding to the response branch.
+2. `OnTmrAutoSave` waits at `0x004B9AE8`: `kernel32!Sleep(5)`, `TApplication.ProcessMessages`, then compare viewer field `+0x58` with zero.
+3. If the field remains nonzero, it loops. Every 200 iterations it resets the counter and runs the maintenance/check block around `0x004B9B38` (calls `0x00445B10` and `0x00455108`), then repeats. Thus 200 × 5 ms is the maintenance cycle, not the total wait limit.
+4. The registered close/registration callback at `0x004CD154` calls the Word `Document.Close` wrapper at `0x004CD2FF`, then clears viewer field `+0x58` at `0x004CD31C`.
+5. The wait loop sees zero, disables the 10-second timer, and returns from `OnTmrAutoSave`.
+6. `LoadDocument` then takes its successful branch at `0x004B7F31`, writes the `response-word` XML via Indy `WriteContent`, and sets `bResultSet`.
+
+This explains why the local HTTP request remains open during Word editing and returns the document after the close/registration path. The observed ~54.558-second delay is consistent with the user's Word session duration. The initial setter of viewer `+0x58` and the formal COM event identity of callback `0x004CD154` remain open.
+
+Evidence: wait-mechanism run `43874638245`, artifact `14229716255`; request-lifecycle run `43873354906`, artifact `14229047092`; Word response run `43872534265`, artifact `14228851062`.
