@@ -39,7 +39,14 @@ The handler's successful route branch reaches `0x00470D00`, consistent with the 
 - method `class`;
 - child `param` with `name`.
 
-The parser helper `0x0046A7A4` adds a three-value record to an internal collection. The record schema and subsequent conversion to the BPL `TDictionary<AnsiString,AnsiString>` are still unresolved.
+The parser helper `0x0046A7A4` adds a three-value record to the collection. The expanded trace through `0x0046A620` and `0x0046A570` resolves the record layout for each `param`:
+- slot 0: hash computed from the parameter name;
+- slot 1: the `param name` attribute;
+- slot 2: the parameter element's text content.
+
+The caller at `0x00470B38` extracts the `name` attribute and parser text separately, computes the name hash, probes the collection, then passes the hash/name/value triple to the append helper. The append helper stores the three values at a 12-byte stride and invokes the collection's virtual methods at offsets `+0x08` and `+0x0C` with the name and value.
+
+The service image also contains TD32/VMT metadata for `TDictionary<System.AnsiString,System.AnsiString>` (VMT `0x00469A3C`, typeinfo `0x0046A054`). This is consistent with the known BPL `TEmwatMethod.Invoke` parameter type, but the current static trace has not yet linked the parser context's `+0x08` field directly to that exact VMT. Keep the structural record schema confirmed and the object-identity/dataflow link open.
 
 ## What this trace does not establish
 
@@ -142,3 +149,14 @@ For full evidence and request/response capture context, see:
 - `docs/WORD-DOCUMENT-PROTOCOL-ANALYSIS.md`
 
 The Linux bridge retains an allowlisted Origin policy as a security hardening choice; it does not blindly reproduce the Windows wildcard origin. It now emits the recovered `Access-Control-Allow-Headers` and singular `Access-Control-Allow-Method` literals on POST responses. The random invoke query remains opaque at the transport layer rather than being treated as a method name.
+
+
+## Parser collection record layout — follow-up artifact 14233736412
+
+The expanded parser-token trace resolves the prior three-slot ambiguity. In `0x00470B38`, the parser reads the `param` element's `name` attribute into one string and the element text into a second string. `0x0046A620` computes a hash from the name; `0x0046A570` probes the collection for the key/insertion slot. The caller then invokes `0x0046A7A4`, which writes the hash, name, and value into three consecutive 32-bit slots at a 12-byte stride.
+
+The collection append helper also calls its virtual methods at `+0x08` and `+0x0C` with the key and value strings. This is strong evidence that the three-slot structure is a hash-table entry representation, not an arbitrary XML token tuple.
+
+The service PE's type metadata includes `TDictionary<System.AnsiString,System.AnsiString>` at VMT `0x00469A3C` (typeinfo `0x0046A054`). The exact pointer/dataflow connection from parser context field `+0x08` to this VMT has not yet been directly proven. The service-side collection and BPL Invoke dictionary contract are therefore structurally aligned, but their identity link remains a follow-up target.
+
+Artifact: `emwat-service-dispatch-crosswalk`, run `43883105610`, artifact `14233736412`.
