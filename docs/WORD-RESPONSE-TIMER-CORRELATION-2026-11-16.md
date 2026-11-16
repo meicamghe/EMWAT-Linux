@@ -19,7 +19,7 @@ Correction applied to `docs/EDITWORD-REQUEST-SCHEMA.md`: `TEditWordDocument.Perf
 
 ## 2. OnControlerNotify is a periodic timer callback, not a Word close event
 
-The timer registration is now directly confirmed by the `OnTmrAutoSave` code and imported VCL symbols:
+The timer registration is now directly confirmed by the `OnTmrAutoSave` code and imported VCL symbols. A separate controller-owner trace also resolves `TEDPController.Notify` at `0x004D2EC8`: it invokes `TEmwatDocPrintHandler.GetDocFieldName` through a stored callback at object offset `+0x18`. This is the print-handler controller and must not be confused with `TWordViwer.OnControlerNotify` at `0x004BB3B0`, which is the timer callback:
 
 - Viewer field `+0x7C` is used as the `TTimer` instance.
 - `0x00404B94` resolves to `Vcl.ExtCtrls.TTimer.SetOnTimer`; the code assigns callback `0x004BB3B0` (`TWordViwer.OnControlerNotify`).
@@ -78,3 +78,10 @@ They extend the OnTmrAutoSave body and timer registration, inspect the remaining
 5. Can a complete gap-free response capture be obtained for a definitive document diff?
 
 No document contents, Base64 bodies, cookies, or authorization values are included in this note.
+
+
+## 8. Controller name collision resolved
+
+The separate `TEDPController.Notify` method at `0x004D2EC8` is not the timer callback. Its body checks a stored callback at object offset `+0x18`, calls `TEmwatDocPrintHandler.GetDocFieldName` at `0x004A8F78`, and clears the temporary interface/reference. Its VMT has a `SetOnNotify` property setter and `SetPrintThread` setter. Direct immediate CALL xrefs to `Notify` are absent, consistent with event/VMT invocation. The method belongs to the print-handler controller and is a separate control path from `TWordViwer.OnControlerNotify`.
+
+Evidence: controller-callback-ownership run `43873363849`, artifact `14229520023`, including `procedure-004D2EC8.md`, `controller-symbols.md`, and `timer/OnTmrAutoSave-timer-registration.md`.
