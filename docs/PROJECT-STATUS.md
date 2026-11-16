@@ -2096,3 +2096,12 @@ Workflow تحلیل Word گسترش یافت تا helper مرکزی درج تص�
 - `GetDocFieldIndex` الگوی نام فیلدهای امضا، فیلدهای twin، موارد skip شده و خطای نبود twin را مدیریت می‌کند. در نبود twin، مسیر abort و بستن سند بدون نگه‌داشتن تغییرات وجود دارد.
 - برچسب‌های شش حالت تابع `GetImageResolution` هنوز در صف decode هستند؛ از نام تابع درباره DPI یا pixel resolution نتیجه‌گیری نمی‌کنیم.
 - مستند تفصیلی: `docs/WORD-AUTOMATION-SURFACE-2026-11-16.md`.
+
+
+## پیاده‌سازی matcher امضای native و تست‌ها — 2026-11-16
+
+- آدرس `0x004B032C` به `TRegEx.IsMatch` در `rtl230.bpl` resolve شد.
+- الگوی native برای فیلدهای انتهایی امضا دقیقاً `^sign.*end[0-2]?[0-9]?$` و case-sensitive است.
+- تابع `is_native_business_signature_end()` به `word_fields.py` اضافه شد. فعلاً فقط روی نام فیلد resolve‌شده قابل استفاده است؛ به‌صورت خودکار روی XML field ID اعمال نشده تا تفاوت این دو بدون مدرک فرض نشود.
+- تست اولیه به‌علت استفاده از `End` با حروف بزرگ شکست خورد؛ تست‌ها با الگوی دقیق lowercase اصلاح شدند.
+- Python bridge run `43888658420`: **۱۰۵ تست موفق، ۲ skip اختیاری**.
