@@ -10,6 +10,7 @@ on:
       - 'tools/scan_pe_pointer_refs.py'
       - 'tools/list_td32_symbols.py'
       - 'tools/analyze_emwat_td32.py'
+      - 'tools/decode_pe_strings.py'
   workflow_dispatch:
 
 permissions:
@@ -28,7 +29,7 @@ jobs:
         shell: bash
         run: |
           mkdir -p word-custom-property-pipeline
-          printf '%s\n' 004D531C 004D68D4 004D1808 004CB638 004D3F24 004D4528 004D45CC 004D23D8 004D3DF8 004D34B0 004D1B30 0045644C 004BFDB0 004BC170 004D08B4 004D1148 004D1454 004D3B78 > /tmp/targets
+          printf '%s\n' 004D531C 004D68D4 004D1808 004CB638 004D3F24 004D4528 004D45CC 004D23D8 004D3DF8 004D34B0 004D1B30 0045644C 004BFDB0 004BC170 004D08B4 004D1148 004D1454 004D3B78 004D3B38 004D3D2C 004D3D3C 004D52DC 004D54D0 004D54E0 004D6894 004D6A88 004D6A98 004BFC18 > /tmp/targets
           pids=()
           while read -r target; do
             (
@@ -48,7 +49,9 @@ jobs:
           pids=()
           for spec in "004D531C 900" "004D68D4 900" "004D1808 700" "004D23D8 1200" "004CB638 700" "004D3F24 700" "004D4528 700" "004D45CC 500" "004D3DF8 700" "004D34B0 700" "004D1B30 900" "0045644C 1000" \
             "004BFDB0 1000" "004BC170 900" "004D08B4 1200" "004D1148 1200" \
-            "004D1454 1200" "004D3B78 700"; do
+            "004D1454 1200" "004D3B78 700" "004D3B38 500" "004D3D2C 400" "004D3D3C 500" \
+            "004D52DC 500" "004D54D0 400" "004D54E0 500" "004D6894 500" \
+            "004D6A88 400" "004D6A98 500" "004BFC18 500"; do
             (
               set -e
               set -- $spec
