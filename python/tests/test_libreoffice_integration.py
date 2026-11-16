@@ -83,7 +83,10 @@ class LibreOfficeIntegrationTests(unittest.TestCase):
         )
         try:
             user_properties = handle.document.getDocumentProperties().getUserDefinedProperties()
-            user_properties.addProperty("EMWATIntegrationMarker", 0, "initial-fixture-value")
+            self.assertEqual(
+                user_properties.getPropertyValue("EMWATIntegrationMarker"),
+                "initial-fixture-value",
+            )
             set_custom_document_property(
                 handle.document,
                 "EMWATIntegrationMarker",
