@@ -1,0 +1,33 @@
+name: LibreOffice UNO integration
+on:
+  push:
+    paths:
+      - 'python/src/emwat_linux/libreoffice_adapter.py'
+      - 'python/tests/test_libreoffice*.py'
+      - '.github/workflows/libreoffice-integration.yml'
+  pull_request:
+    paths:
+      - 'python/src/emwat_linux/libreoffice_adapter.py'
+      - 'python/tests/test_libreoffice*.py'
+      - '.github/workflows/libreoffice-integration.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  uno-roundtrip:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install LibreOffice Writer and Python UNO
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libreoffice-writer python3-uno
+      - name: Verify UNO runtime
+        run: /usr/bin/python3 -c "import uno; print('python-uno available')"
+      - name: Run adapter unit and real UNO roundtrip tests
+        env:
+          PYTHONPATH: python/src
+          EMWAT_RUN_LIBREOFFICE_INTEGRATION: "1"
+        run: /usr/bin/python3 -m unittest discover -s python/tests -p 'test_libreoffice*.py' -v
