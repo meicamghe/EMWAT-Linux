@@ -17,7 +17,6 @@ permissions:
 
 jobs:
   word-lifecycle:
-    if: hashFiles('analysis-input/EmwatMethods.bpl1') != ''
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -26,6 +25,7 @@ jobs:
           python-version: '3.12'
       - run: pip install pefile capstone
       - name: Trace document lifecycle, events and autosave
+        if: hashFiles('analysis-input/EmwatMethods.bpl1') != ''
         shell: bash
         run: |
           mkdir -p word-automation/lifecycle
@@ -36,13 +36,13 @@ jobs:
             python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 "$address" "word-automation/lifecycle/$name-callers.md" || true
           done
       - uses: actions/upload-artifact@v4
+        if: hashFiles('analysis-input/EmwatMethods.bpl1') != ''
         with:
           name: emwat-word-lifecycle
           path: word-automation/lifecycle/
           if-no-files-found: error
 
   word-field-mapping:
-    if: hashFiles('analysis-input/EmwatMethods.bpl1') != ''
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -51,6 +51,7 @@ jobs:
           python-version: '3.12'
       - run: pip install pefile capstone
       - name: Trace field extraction and document mutation
+        if: hashFiles('analysis-input/EmwatMethods.bpl1') != ''
         shell: bash
         run: |
           mkdir -p word-automation/fields
@@ -61,13 +62,13 @@ jobs:
             python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 "$address" "word-automation/fields/$name-callers.md" || true
           done
       - uses: actions/upload-artifact@v4
+        if: hashFiles('analysis-input/EmwatMethods.bpl1') != ''
         with:
           name: emwat-word-field-mapping
           path: word-automation/fields/
           if-no-files-found: error
 
   word-save-print:
-    if: hashFiles('analysis-input/EmwatMethods.bpl1') != ''
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -76,6 +77,7 @@ jobs:
           python-version: '3.12'
       - run: pip install pefile capstone
       - name: Trace save and print side effects
+        if: hashFiles('analysis-input/EmwatMethods.bpl1') != ''
         shell: bash
         run: |
           mkdir -p word-automation/save-print
@@ -89,6 +91,7 @@ jobs:
           python tools/resolve_delphi_vmt_slots.py analysis-input/EmwatMethods.bpl1 word-automation/save-print/word-vmt.md
           python tools/trace_delphi_interfaces.py analysis-input/EmwatMethods.bpl1 word-automation/save-print/word-interfaces.md
       - uses: actions/upload-artifact@v4
+        if: hashFiles('analysis-input/EmwatMethods.bpl1') != ''
         with:
           name: emwat-word-save-print
           path: word-automation/save-print/
