@@ -577,8 +577,13 @@ The captured EditWordDocument HTTP response is HTTP 200 and has this metadata-on
 </response-word>
 ```
 
-The Base64 payload decodes to a rewritten legacy OLE Compound File document. The capture is incomplete by 17 four-byte TCP sequence gaps (68 response payload bytes; estimated 51 decoded bytes), so a full response hash/equality claim is not made. The first response byte arrives about 54.558 seconds after the request body completes; the exact event/wait that releases the long-lived request remains unresolved.
+The Base64 payload decodes to a rewritten legacy OLE Compound File document. The capture is incomplete by 17 four-byte TCP sequence gaps (68 response payload bytes; estimated 51 decoded bytes), so a full response hash/equality claim is not made. The first response byte arrives about 54.558 seconds after the request body completes. The static wait/release chain is now mapped: `LoadDocument` calls `OnTmrAutoSave` synchronously; that routine polls viewer field `+0x58` with `Sleep(5)` plus `ProcessMessages` until the close/registration callback at `0x004CD154` clears the field after `Document.Close` at `0x004CD31C`. The 200-iteration loop is a repeating maintenance cycle, not a one-second total timeout. This explains why the HTTP response is returned after Word closes; the formal COM event DISPID and the initial setter of `+0x58` remain under investigation.
 
 The separate local auto-save path is now better classified: `OnTmrAutoSave` installs `TWordViwer.OnControlerNotify` as the `TTimer.OnTimer` callback on the timer at viewer offset `+0x7C`, clamps its interval at viewer offset `+0x88` to at least 10,000 ms, and enables it. `OnControlerNotify` reads Word Content via slot `+0xDC` and creates local `.easd`/`.easz` archive paths. This periodic archive path is not proven to be the final Almas registration POST. `TEDPController.Notify` is a separate print-handler callback.
 
 Evidence and full trace details: `docs/WORD-RESPONSE-TIMER-CORRELATION-2026-11-16.md`, `docs/PCAP-EDITWORD-DOCUMENT-ROUNDTRIP.md`, and `docs/WORD-LIFECYCLE-STATIC-TRACE.md` Run 152.
+
+
+### Long-lived invoke wait is mapped — 2026-11-16
+
+`TWordViwer.LoadDocument` calls `OnTmrAutoSave` at `0x004B7A58` and does not proceed to the HTTP response branch until it returns. `OnTmrAutoSave` loops at `0x004B9AE8`: `Sleep(5)`, `TApplication.ProcessMessages`, then test viewer `+0x58`. While the field remains nonzero, the loop continues; every 200 iterations it resets its counter and performs maintenance/check calls, then repeats. The close/registration callback at `0x004CD154` calls Word `Document.Close` and clears viewer `+0x58` at `0x004CD31C`. The wait then exits, and `LoadDocument` writes the `response-word` response. This static chain matches the observed ~54.558-second PCAP delay. The event callback's formal COM DISPID and the code that initially sets `+0x58` nonzero are still being traced.
