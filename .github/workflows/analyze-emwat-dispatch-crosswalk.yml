@@ -10,7 +10,7 @@ on:
       - 'tools/trace_td32_callers.py'
       - 'tools/find_td32_class_procedures.py'
       - 'tools/resolve_delphi_vmt_slots.py'
-      - 'tools/trace_delphi_interfaces.py'
+      - 'tools/trace_delphi_interfaces.py'\n      - 'tools/inspect_delphi_vmt_address.py'\n      - 'tools/trace_td32_immediate_refs.py'
   workflow_dispatch:
 
 permissions:
@@ -81,6 +81,13 @@ jobs:
           python tools/find_td32_class_procedures.py analysis-input/EmwatMethods.bpl1 TEmwatMethod TEditWordDocument TScanDocument TWordViwer TWordViewer > dispatch-crosswalk/bpl/bpl-classes.md
           python tools/resolve_delphi_vmt_slots.py analysis-input/EmwatMethods.bpl1 dispatch-crosswalk/bpl/bpl-vmt.md
           python tools/trace_delphi_interfaces.py analysis-input/EmwatMethods.bpl1 dispatch-crosswalk/bpl/bpl-interfaces.md
+          for item in "TEmwatMethod:0x0046ABFC" "TEditWordDocument:0x005ED764" "TScanDocument:0x005ED884" "TWordViwer:0x004B10A4" "TEDPController:0x004B0DFC"; do
+            name=${item%%:*}
+            address=${item#*:}
+            python tools/inspect_delphi_vmt_address.py analysis-input/EmwatMethods.bpl1 "$address" "dispatch-crosswalk/bpl/vmt-$name.md"
+          done
+          python tools/trace_td32_immediate_refs.py analysis-input/EmwatMethods.bpl1 0x005EE82C dispatch-crosswalk/bpl/editword-method-immediate-refs.md
+          python tools/trace_td32_immediate_refs.py analysis-input/EmwatMethods.bpl1 0x005EEB48 dispatch-crosswalk/bpl/scandoc-method-immediate-refs.md
       - uses: actions/upload-artifact@v4
         with:
           name: emwat-bpl-dispatch-crosswalk
