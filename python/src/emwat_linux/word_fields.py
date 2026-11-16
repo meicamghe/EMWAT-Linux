@@ -153,7 +153,8 @@ def find_native_twin_field_index(
     FillTwinFields starts at start_index, extracts each Word Field.Code through
     FindFieldInActivefields, compares names with RTL CompareText (case-insensitive),
     and returns the first matching one-based index. Native code returns zero
-    when no matching partner is found.
+    when no matching partner is found. Python casefold matches the observed
+    ASCII field identifiers; locale-specific Unicode collation is unverified.
     """
     if start_index < 1:
         raise ValueError("start_index must be one-based and positive")
