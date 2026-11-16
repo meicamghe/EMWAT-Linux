@@ -376,3 +376,19 @@ These checks validate the adapter and composition boundary. They do not establis
 - Native `FillImageField` explicitly distinguishes `CustomDocumentProperties[index]` from `Field.Result.Text` storage and reports locked/twin-field paths. The Python decoder now exposes a tested `is_image` flag based on `mimetype` beginning with `image/`.
 - Image/caption alignment values were decoded, but mapping these to actual template anchors still requires an anonymized Almas DOC/DOCX.
 - The service executable is PE32 and includes Indy HTTP response RTTI and `invoke=` strings, but no TD32 symbol data. The service workflow now has an additional VMT-resolution pass to map the Indy response/server classes.
+
+
+## Three-way close state model and Indy response writer trace — 2026-11-16
+
+| Workflow | Run ID | Result |
+|---|---:|---|
+| Python bridge transport | 43830146087 | success — 104 tests run, 102 passed, 2 optional UNO tests skipped |
+| Word finalize / HTTP response crosswalk | 43829491814 | success — both parallel jobs and both artifacts |
+| Indy HTTP response writer | 43829779730 | success — artifact 14208036695 |
+| Indy WriteContent helper chain | 43830209429 | success — artifact 14208551179 |
+
+- The lifecycle model distinguishes a real discard from a vetoed close attempt. Native Cancel keeps Word open; the adapter must continue waiting for a later close attempt. It is not a terminal session cancellation.
+- Indy RTTI maps WriteContent to 0x004610FC, ServeFile to 0x00460E48, and SmartServeFile to 0x00460FAC.
+- WriteContent checks HTTP response status codes 100, 204, and 304 before writing a body; it has separate content-stream, content-text, and fallback HTML branches. The helper chain also resolves a cleanup routine at 0x00460764 and a response-status setter at 0x004609EC.
+- Direct immediate CALL scanning did not find callsites for the published response methods; indirect/VMT dispatch remains a live possibility. This is not yet the final Almas response envelope proof.
+- One intermediate test run failed because two older coordinator tests still referenced the removed terminal close-cancel disposition. Those tests were updated to model a vetoed attempt followed by a later close; run 43830146087 is green.

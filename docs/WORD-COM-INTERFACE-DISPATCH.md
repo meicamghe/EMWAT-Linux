@@ -1056,3 +1056,12 @@ The already-traced callback maps the choices to Word COM as follows:
 | انصراف | Set event `Cancel=0xFFFF`; keep the document open |
 
 This is the exact native user-facing choice contract. It does not yet establish the HTTP envelope returned for the No/discard path. The Python lifecycle now has a distinct `DISCARDED` terminal state so it cannot be confused with Cancel or successful registration; the LibreOffice UI prompt and wire response remain separate implementation tasks.
+
+
+## Run 138 — controller close and HTTP response writer crosswalk
+
+Source: workflow 43829491814 (both jobs succeeded), artifacts 14207688343 and 14207717380.
+
+- The Word-controller range 0x004BB3B0–0x004BB777 confirms a call to TWordViwer.CostumizeRecAndCC at 0x004D281C, followed by a COM call through the document interface slot +0xDC and then helper 0x00456DFC. This is the main viewer controller-notify path and remains distinct from the print-handler controller path.
+- The service crosswalk reconfirms TIdHTTPResponseInfo.WriteContent as a published method at 0x004610FC, alongside the HTTP request/response VMT methods. The response writer itself is traced in run 140.
+- The crosswalk did not yet connect the controller notification to the exact final HTTP response serialization; do not treat this as proof of the Almas registration envelope.

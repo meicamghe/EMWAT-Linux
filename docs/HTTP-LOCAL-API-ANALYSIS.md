@@ -466,3 +466,12 @@ Pcap workflow #4 compared the decoded request wordBody and response-word values:
 - The first differing byte is offset 48, within the intact prefix before the first capture gap.
 
 Thus the local service returns a rewritten/restructured DOC rather than echoing the original wordBody. Full-file equality cannot be claimed because the pcap is missing 51 decoded response bytes.
+
+
+## Service HTTP response writer — static method RTTI and body branches (2026-11-16)
+
+The service response-info RTTI now maps WriteContent to 0x004610FC, ServeFile to 0x00460E48, and SmartServeFile to 0x00460FAC (workflow 43829779730, artifact 14208036695).
+
+The WriteContent method has three distinct response-body paths: content stream (+0xBC), content text (+0xB8), and fallback HTML. It skips body output for HTTP status 100, 204, and 304. It invokes header preparation at 0x004612F4 and cleanup at 0x00460764. SmartServeFile reads If-Modified-Since, evaluates file timestamp metadata, and uses the ServeFile VMT slot. See EMWAT-SERVICE-EXECUTABLE-ANALYSIS.md for evidence boundaries.
+
+Direct immediate CALL scanning found no caller for the published WriteContent method; indirect dispatch remains unresolved. This generic Indy method trace is not proof of the final EditWordDocument HTTP payload.

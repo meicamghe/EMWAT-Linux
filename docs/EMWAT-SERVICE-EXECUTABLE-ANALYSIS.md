@@ -329,3 +329,41 @@ Combined with the service handler, the proven data path is:
 
 The bridge itself is a generic message forwarder; it does not contain document-close-specific logic. Therefore the remaining question is which parent-page code posts the close-time XML message after Word's `BeforeClose` callback and how it obtains the updated document/configuration payload.
 
+
+
+## Indy response writer method resolution — 2026-11-16
+
+Source: workflow 43829779730, artifact 14208036695; helper trace workflow 43830209429, artifact 14208551179.
+
+### Published method names and targets
+
+The service executable's Delphi method RTTI associates these methods with executable addresses:
+
+| Method | Target | Evidence |
+|---|---:|---|
+| WriteContent | 0x004610FC | method RTTI pointer reference at raw offset 0x5B561 |
+| ServeFile | 0x00460E48 | method RTTI entry adjacent to the method name |
+| SmartServeFile | 0x00460FAC | method RTTI entry adjacent to the method name |
+
+No direct immediate CALL site was found for these published methods in the service .text scan. They may be reached through an indirect/VMT or method-RTTI dispatch path; this must be resolved before assigning a caller.
+
+### WriteContent behavior
+
+The disassembly at 0x004610FC supports the following bounded observations:
+
+- It ensures response-header preparation through helper 0x004612F4 when the response state flag at object offset +0xC2 is not set.
+- It suppresses body output for HTTP status codes 100, 204, and 304.
+- It has a content-stream branch using the response object's +0xBC field and a content-text branch using +0xB8.
+- When neither content stream nor content text is available, it constructs a fallback HTML body and uses a UTF-8 HTML content type.
+- It clears the temporary content-stream field and calls cleanup helper 0x00460764.
+
+The helper trace identifies 0x004609EC as a routine that stores the response status code at object offset +0xB0 and selects status-specific response handling. The exact names of the underlying context-interface slots are not yet proven.
+
+### SmartServeFile behavior
+
+- It reads the If-Modified-Since header.
+- It parses/compares a timestamp against file metadata.
+- It can set response status 404 (0x194) or 304 (0x130) and delegates file output through the response object's VMT slot +0x1C (the ServeFile method).
+- The exact branch condition and timestamp tolerance should be rechecked with the helper/constant trace before documenting a strict cache decision rule.
+
+Evidence boundary: this resolves the service's generic HTTP response writer, not yet the final Almas EditWordDocument response path or the exact body serialization for its close-time registration.

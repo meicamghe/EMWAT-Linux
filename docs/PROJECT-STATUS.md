@@ -1850,3 +1850,12 @@ The BPL export/API analysis resolves the earlier naming ambiguity. The public TE
 - اصلاح مهم lifecycle: گزینه «انصراف» پایان session نیست؛ فقط همان close attempt را veto می‌کند و سند باز می‌ماند. بنابراین adapter باید در `wait_for_close` منتظر تلاش بعدی بماند و هرگز آن را به‌عنوان terminal `CANCELLED` برنگرداند. `DocumentState.CANCELLED` برای لغو صریح خود session در سطح برنامه باقی می‌ماند، نه برای دکمه Cancel پنجره Word.
 - تست‌ها اکنون ثابت می‌کنند close attempt لغوشده مانع close نهایی بعدی نمی‌شود و مسیر discard بدون export می‌ماند. انتخاب‌گر گرافیکی LibreOffice و پاسخ HTTP دقیق برای گزینه «خیر» هنوز پیاده‌سازی/اثبات نشده‌اند و عمداً حدس زده نشده‌اند.
 - تحلیل موازی سرویس HTTP در run `43823657154` (artifact `14205656649`) مسیر VMT سرور Indy را تا handler داخلی `0x0045E85C` و dispatch بعدی `0x00438A2C` محدود کرده است؛ مرحله بعد، resolve کردن این زنجیره به متد واقعی درخواست و writer پاسخ است.
+
+
+## Parallel milestone — close-state semantics and Indy response writer (2026-11-16)
+
+- Main branch commit 74454d70bbeff1a55de214775e6a5d118581ffb2 passed Python bridge CI: 104 tests run, 102 passed, 2 optional UNO tests skipped.
+- The lifecycle state machine now distinguishes CLOSED (return final document) and DISCARDED (close without returning edited bytes). Native Cancel is a veto of the close attempt and must leave the session open; the adapter must keep waiting.
+- Parallel static analysis resolved the Indy published method names: WriteContent=0x004610FC, ServeFile=0x00460E48, SmartServeFile=0x00460FAC. WriteContent has stream, text, and fallback HTML response-body branches and omits bodies for status 100/204/304.
+- Two new CI workflows now separately trace the Word-controller close chain, service HTTP response chain, and response-writer helpers. All completed successfully.
+- Remaining critical work: implement the real three-choice LibreOffice close dialog/veto, prove the No/discard wire response, resolve the indirect caller of WriteContent, and obtain an anonymized representative Almas document template for visual/field fidelity.
