@@ -647,3 +647,7 @@ The service call at `0x00470EF6` is `call dword ptr [object.VMT+0x0C]`. The BPL 
 `EmwatService.ParseMethod` → `GetClass` → `TObject.Create` → object VMT slot `+0x0C` → `TEmwatMethod.Finalization` (`0x0046C9E0`) → `TEmwatMethod.Invoke` (`0x0046C82C`).
 
 The remaining detail is to expand `Invoke` beyond its first internal RET and document its indirect call to the subclass `PerformMethod` slot `+0x10`, which is overridden by `TEditWordDocument.PerformMethod` (`0x005EE82C`). The object-creation and cross-module Invoke entry are no longer open questions.
+
+## Full Invoke body trace added
+
+The TD32 procedure size for `TEmwatMethod.Invoke` at `0x0046C82C` is `0x1B1`, ending at `0x0046C9DD`. The previous `trace_pe_target` stopped at its first internal RET at `0x0046C95B`, so it omitted the remaining exception/finally and dispatch paths. The BPL workflow now adds a caller-bounded full-range disassembly from `0x0046C82C` through `0x0046C9DD` to locate the exact VMT `+0x10` `PerformMethod` invocation and parameter mapping.
