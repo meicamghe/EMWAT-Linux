@@ -1,0 +1,63 @@
+name: Analyze EMWAT Word close and response chain
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/analyze-word-close-response-chain.yml'
+      - 'analysis-input/EmwatMethods.bpl1'
+      - 'tools/trace_td32_procedure.py'
+      - 'tools/trace_td32_callers.py'
+      - 'tools/trace_pe_target.py'
+      - 'tools/list_td32_symbols.py'
+permissions:
+  contents: read
+jobs:
+  close-response-chain:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install pefile capstone
+      - name: Trace close wrappers, callbacks, and response handoff in parallel
+        shell: bash
+        run: |
+          mkdir -p word-close-response-chain
+          printf '%s\n' 0042FEB0 0042FFF4 004BB3B0 004D281C 0046C82C 005EE82C 004B7F9C 004B7724 004CD154 > /tmp/targets
+          pids=()
+          while read -r target; do
+            (
+              set -e
+              python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x$target word-close-response-chain/procedure-$target.md
+              python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x$target word-close-response-chain/callers-$target.md
+            ) &
+            pids+=("$!")
+          done < /tmp/targets
+          status=0
+          for pid in "${pids[@]}"; do wait "$pid" || status=1; done
+          exit "$status"
+      - name: Extend COM close and controller-notify procedures
+        shell: bash
+        run: |
+          pids=()
+          for spec in "0042FEB0 500" "0042FFF4 500" "004BB3B0 900" "004D281C 500" "0046C82C 700" "005EE82C 1000" "004B7F9C 700" "004B7724 900" "004CD154 600"; do
+            (
+              set -e
+              set -- $spec
+              python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x$1 word-close-response-chain/extended-$1.md $2 ret
+            ) &
+            pids+=("$!")
+          done
+          status=0
+          for pid in "${pids[@]}"; do wait "$pid" || status=1; done
+          exit "$status"
+      - name: Index related connector and Word classes
+        run: |
+          python tools/list_td32_symbols.py analysis-input/EmwatMethods.bpl1 \
+            TEditWordDocument TEmwatMethod TWordViwer TWordDocument \
+            > word-close-response-chain/related-td32-symbols.md
+      - uses: actions/upload-artifact@v4
+        with:
+          name: emwat-word-close-response-chain
+          path: word-close-response-chain/
