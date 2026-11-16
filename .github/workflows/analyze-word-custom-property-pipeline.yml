@@ -71,6 +71,10 @@ jobs:
             0x004D1704 0x004D1768 0x004D1778 0x004D13F0 0x004D1384 \
             0x004BBE24 0x004BBE58 0x004BBE9C 0x004BBEE8 \
             0x004BBF1C 0x004BBF6C 0x004BC08C 0x004BC0C0 \
+            0x004BFEE8 0x004BFF0C 0x004BC23C 0x004BC260 0x004BC274 \
+            0x004D0BD0 0x004D0BF0 0x004D0C18 0x004D0C3C \
+            0x004D0C5C 0x004D0C60 0x004D0C70 0x004D0CC8 \
+            0x004D1384 0x004D13B4 0x004D141C \
             > word-custom-property-pipeline/field-name-and-property-strings.md
       - uses: actions/upload-artifact@v4
         with:
