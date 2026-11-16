@@ -34,3 +34,18 @@ Runs `43736828611`, `43736860267`, and `43736828559` failed because their requir
 - `.github/workflows/analyze-editword-request-params.yml`: explicitly skips with a report when `emwat.pcapng` is absent.
 - `.github/workflows/analyze-network-capture.yml`: explicitly skips with a report when `tcp-payloads.txt` is absent.
 - `.github/workflows/analyze-pcap-timing.yml`: explicitly skips timing and document-comparison steps when `emwat.pcapng` is absent.
+
+
+## Subsequent native document-engine verification — 2026-11-16
+
+| Workflow | Run ID | Commit | Result |
+|---|---:|---|---|
+| LibreOffice UNO integration | 43810188525 | 63ae7210110720535f8b02ca27d91542a9efc972 | success |
+| Python bridge transport | 43810428599 | e10053ea99e1c75fd3b2a237937c550a3cbaec33 | success |
+
+- UNO integration: **8/8 tests passed**. The test installed LibreOffice Writer and python3-uno, opened a generated DOCX using a real isolated UNO process, closed the document through UNO, and verified a legacy Word CFB output snapshot.
+- Python bridge: **85 tests passed**, with one optional UNO test skipped because the separate integration workflow owns that test.
+- The Python application composition test verifies HTTP POST → EditWordDocument parser → domain service → injected OfficeAdapter → response-word serializer.
+- Field decoder tests cover URL-encoded text, Base64 image bytes, plain-text preservation, optional attributes, and opaque external signData binding.
+
+These checks validate the adapter and composition boundary. They do not establish compatibility with the original Almas Gam Word template, all 180 field IDs, or the live close/cancel/registration workflow.
