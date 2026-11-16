@@ -294,3 +294,15 @@ The Word controller-close artifact `14234120250` also resolves the event registr
 - `SilentSaveEmwatDoc` is called from `GetDocFieldName` on the `Hidden_Customizable` special-field path. It builds two temporary string lists, invokes `0x004AEBBC`, sets viewer flag `+0x44C`, and conditionally calls `TWrapRecord.LineCount`. The latter's only direct caller is this routine. Exact list semantics and serialization remain open.
 
 These corrections are recorded in `docs/WORD-AUTOMATION-SURFACE-2026-11-16.md`.
+
+
+## Follow-up — Word field lookup and image pipeline boundaries
+
+Re-opened Word field-mapping artifact `14232259712` and checked direct caller scans:
+
+- `FillPrintDocFields` (`0x004CB638`) has direct callers `GetDocFieldName` (`0x004BB8AE`) and `GetFieldIndexInList` (`0x004CB338`). Its logic therefore participates in field-name/index resolution, not only a user-triggered Print event.
+- `AddImagesToDoc` (`0x004C0410`) is called by `GetDocFieldIndex` at `0x004C0A5D` and delegates to `0x004C19C0) after a field-collection string check. The latter remains the core image-placement trace target.
+- `FillImageField` (`0x004BC30C`) is reached from `FillTextField` at two branches. It conditionally calls `FindWindowExtd` when viewer flag `+0xF0) is set and required metadata strings are missing, then branches on Word Field type/code.
+- `FillField` (`0x004BC2C4`) only appends a field interface to viewer collection `+0x60`; it is not the actual visible field mutation routine.
+
+These findings are documented in `docs/WORD-AUTOMATION-SURFACE-2026-11-16.md` (commit `0715b91c997375fe0f5062f695f9d826b86f72ea`). Keep field inventory, field mutation, and document-level image insertion as separate backend layers.
