@@ -1985,3 +1985,6 @@ Artifact `14227611377` resolves the earlier interface-signature uncertainty:
 - `euUnArchive` is assembling a password-protected 7z output archive: source path from `TWordViwer+0xA0`, archive member name from the base path + `.easd`, output archive path from the base path + `.easz`.
 - Exact stream class behind global `0x0062F800` and the password callback consumption path remain to be confirmed. No runtime archive file has yet been captured.
 - Full evidence: Run 148 in `docs/WORD-COM-INTERFACE-DISPATCH.md`.
+
+
+- Run 5 artifact `14227002967` resolves the final stream detail: `0x004041BC` is the IAT thunk to `rtl230.bpl!TFileStream.$bctr(UnicodeString, Word)`. `T7zOutArchive.SaveToStream` passes the `.easz` path to it with mode `0xFF00` (`fmCreate`), then passes the resulting stream to `T7zOutArchive.SetCompleted` at `0x004546C4`. The archive output is therefore a real file created/truncated at the `.easz` path.
