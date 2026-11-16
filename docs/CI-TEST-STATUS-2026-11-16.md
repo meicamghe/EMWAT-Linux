@@ -229,7 +229,7 @@ These checks validate the adapter and composition boundary. They do not establis
 - Python suite: **96 tests run, 95 passed, 1 optional UNO-only test skipped**.
 - UNO integration: **8/8 tests passed**. The DOCX fixture contains a custom property in `docProps/custom.xml` and a complex Word `DOCPROPERTY` field. The test updates the existing property, refreshes Writer text fields, and verifies that the displayed field result changes to the new value.
 - `writer_fields.py` exposes `refresh_writer_text_fields`; `writer_inspector.py` inventories custom field names only for `com.sun.star.text.TextField.DocInfo.Custom`, without reading field presentations or document text.
-- `word_fields.py` now mirrors the legacy DOCPROPERTY token extraction and uses `unquote_plus` for URL-encoded values. The native URL decoder trace at `0x00455314` has a dedicated plus-character branch; its replacement string constant is included in the next analysis artifact.
+- `word_fields.py` mirrors the legacy DOCPROPERTY token extraction and uses `unquote_plus`. Custom-property helper run `43815255639` (artifact `14201569927`) confirmed that native helper `0x00455314` decodes `%HH` and maps `+` to the literal space at `0x00455454`.
 - The temporary red Python runs at 43815149109, 43815162148, and 43815235425 were caused by a fake Writer field lacking the UNO `getSupportedServiceNames` API; the fixture was corrected, and run 43815297715 is green.
 - These checks prove the synthetic DOCX/Writer custom-property path, not the original Almas template, all direct Word Field.Result.Text semantics, or live Almas close-time registration.
 
@@ -241,3 +241,11 @@ These checks validate the adapter and composition boundary. They do not establis
 - writer_properties.py now validates every exact custom-property name before applying a batch, rejects non-text values, and avoids partial mutation when any property name is unknown.
 - LibreOfficeAdapter.apply_custom_property_updates() now exposes the production operation: apply a verified mapping of existing custom properties, then refresh Writer text fields once.
 - The live UNO integration run for this adapter-level operation is still in progress at the time of this update; no UNO result is claimed yet.
+
+
+## Rec/CC field-name trace expansion — 2026-11-16
+
+- Custom-property helper run **43815255639** succeeded; artifact **14201569927** also confirmed the literal XML-config names `Receivers`, `ReceiverDeps`, `ccReceivers`, and `ccReceiverDeps`.
+- Follow-up analysis run **43815667035** adds string decoding for the `ShowRecAndCcOptionForm` constants at `0x004D21D4–0x004D239C`; its result is pending.
+- The native URL decoder at `0x00455314` scans percent escapes and maps plus to a space; this is now matched by Python `unquote_plus` and covered by a test.
+
