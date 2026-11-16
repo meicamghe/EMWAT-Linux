@@ -1917,18 +1917,22 @@ Resolve the class-registration/dispatch bridge that maps the incoming XML `metho
 - Controller unpack run `43868321797`: job completed successfully, artifact `14226342809`.
 
 ### Corrected VMT conclusions
-- `TEmwatMethod` VMT `0x0046ABFC` slot `+0x10` points to `0x00401068`, not `TEmwatMethod.Invoke` at `0x0046C82C`. Combined with the zero raw-pointer-reference scan and the sole direct unit-finalization caller, this is further evidence that `Invoke` should not be assumed to be the request-time virtual dispatcher.
-- `TEditWordDocument` VMT `0x005ED764` slot `+0x10` points to `0x005EE82C`; TD32 labels that procedure `TScanDocument.PerformMethod`.
-- `TScanDocument` VMT `0x005ED884` slot `+0x10` points to `0x005EEB48`; TD32 labels that procedure `TFaxDocument.PerformMethod`.
-- These are confirmed pointer/name mismatches. Keep the VMT pointer, TD32 decorated name, parameter strings, and request class mapping as separate evidence fields; do not silently relabel the methods.
+- `TEmwatMethod` VMT `0x0046ABFC` slot `+0x0C` points to `0x0046C9E0`, the shared public virtual Invoke wrapper (TD32 misleadingly labels it `Emwatmethod.Finalization`). Slot `+0x10` is the abstract/error stub `0x00401068`.
+- The wrapper at `0x0046C9E0` calls the inner dictionary/XML helper `0x0046C82C` and then calls the concrete subclass's VMT slot `+0x10`. The raw-pointer scan's lack of references to `0x0046C82C` does not negate this direct relative CALL from the wrapper.
+- `TEditWordDocument` VMT `0x005ED764` has parent pointer `0x0046ABA4` (the `TEmwatMethod` VMT header self-pointer) and slot `+0x10` points to `0x005EE82C`; TD32 labels that routine `TScanDocument.PerformMethod`.
+- `TScanDocument` VMT `0x005ED884` has the same `TEmwatMethod` parent and slot `+0x10` points to `0x005EEB48`; TD32 labels that routine `TFaxDocument.PerformMethod`.
+- Therefore the class inheritance and BPL wrapper-to-concrete-method dispatch are confirmed. Preserve the TD32/VMT naming discrepancies rather than renaming the routines. The service-side `GetClass("T"+className)` and VMT slot `+0x0C` chain are detailed in `docs/EMWAT-SERVICE-EXECUTABLE-ANALYSIS.md`.
 
 ### Controller content and archive processing
 - `TWordViwer.OnControlerNotify` obtains Word content via the `_Document` COM interface slot `+0xDC`, then calls `Emwatutils.euUnArchive` at `0x00456DFC`.
 - `0x004563A8` is `FixDirectionInFarsiNumericMode`; it is not an object/list constructor. It transforms the base path at `TWordViwer+0x80`.
 - The decoded suffixes are `.easd` (`0x004BB754`) and `.easz` (`0x004BB76C`). The `.easd` path is passed through an object method; the `.easz` path is passed to `euUnArchive`.
-- `0x00452C10` is the `T7zPlugin` constructor. `euUnArchive` passes the hardcoded string `mW@Tlogs43end_+` to plugin vtable slot `+0x28`, iterates paired entries from two indexed objects through slot `+0x10`, then passes the `.easz` path through slot `+0x18`.
-- This strongly establishes a SevenZip-backed archive/sidecar processing path after Word content retrieval. The exact class types for the two indexed objects and the names/semantics of plugin slots `+0x28`, `+0x10`, and `+0x18` remain unresolved. Treat the hardcoded string as a likely password, not a confirmed password property, until the plugin VMT methods are mapped.
-- Detailed write-up: `docs/WORD-COM-INTERFACE-DISPATCH.md`, Run 144.
+- The two indexed inputs are `TStringList` instances. `T7zPlugin` creates a `T7zOutArchive` object and returns its interface pointer at offset `+0x44`.
+- Interface slot `+0x10` reaches `T7zOutArchive.AddFiles` (`0x00453F34`): source path from `TWordViwer+0xA0`, archive member name from base path + `.easd`.
+- Interface slot `+0x18` reaches `SaveToStream` (`0x00454668`), which creates a stream from the supplied path and saves the archive to base path + `.easz`.
+- Interface slot `+0x28` reaches `0x004547E8`; despite its TD32 label `SetProgressCallback`, its body stores the input UnicodeString in field `+0x38`, identified as `FPassword`. Thus `mW@Tlogs43end_+` is the archive password in this path. The separate `SetPassword` at `0x004547DC` is a no-op.
+- This statically establishes a password-protected 7z archive-writing path after Word content retrieval. Exact stream class at global `0x0062F800` and runtime archive bytes remain to be verified.
+- Detailed write-up: `docs/WORD-COM-INTERFACE-DISPATCH.md`, Run 148.
 
 ### New focused pipelines
 - `.github/workflows/analyze-emwat-controller-unarchive.yml` now has an expanded run that traces `0x0040414C`, `0x004543C4`, SevenZip class procedures, VMT slots, and interface tables. Run 2 is queued at this checkpoint.
