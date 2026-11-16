@@ -1820,3 +1820,14 @@ The BPL export/API analysis resolves the earlier naming ambiguity. The public TE
 - A follow-up service trace now disassembles `0x00438A2C`, `0x0045E03C`, `0x004391B0`, and decodes the relevant dispatch strings. Run is pending.
 - Print-handler review corrected a misleading TD32 label: `0x004A5014` is called by `IsCustomField` and its callers test AL as a Boolean. It is not evidence of a `TEmwatDocPrintHandler` constructor. The class's print-option `SetCCValueForMain` calls `ForgotMe`; this path remains separate from main editor registration.
 - `GetImageResolution` (`0x004C2DE0`) explicitly maps `right/center/left/top/middle/bottom` to enum values `1..6`. `EmbedTextToImage` is a separate image/caption rendering helper; the exact template anchors remain unknown.
+
+
+### Correction: Indy HTTP request/response VMTs resolved — 2026-11-16
+
+- The first custom VMT scan produced false negatives for `TIdHTTPRequestInfo` and `TIdHTTPResponseInfo`. The subsequent Delphi RTTI/interface-table scan (workflow `43823328027`, artifact `14205910254`) resolved their actual VMTs:
+  - `TIdHTTPRequestInfo`: `0x0045B704` (instance size `0x11C`)
+  - `TIdHTTPResponseInfo`: `0x0045BDE8` (instance size `0xDC`)
+  - `TIdCustomHTTPServer`: `0x0045D024` (instance size `0x1BC`)
+  - `TIdHTTPServer`: `0x00461CFC` (instance size `0x1BC`)
+- The earlier statement that no request/response VMT candidates existed is superseded; it was a limitation of the first scanner, not evidence that those classes were records.
+- A follow-up job now inventories the virtual method slots of all four classes to map request properties and response-writing methods. Its result is pending.
