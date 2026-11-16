@@ -25,7 +25,7 @@ The timer registration is now directly confirmed by the `OnTmrAutoSave` code and
 - `0x00404B94` resolves to `Vcl.ExtCtrls.TTimer.SetOnTimer`; the code assigns callback `0x004BB3B0` (`TWordViwer.OnControlerNotify`).
 - Viewer field `+0x88` is used as the interval. The code clamps it to at least `0x2710` (10,000 ms), calls `TTimer.SetInterval` through `0x00404B8C`, and enables the timer through `TTimer.SetEnabled` at `0x00404B84`.
 
-Therefore, the method named `OnControlerNotify` is registered as the timer's OnTimer callback, with a minimum 10-second interval. It is not the Word close/save callback.
+Therefore, the method named `OnControlerNotify` is registered as the timer's OnTimer callback, with a minimum 10-second interval. The associated metadata strings include selectable intervals `10 seconds`, `30 seconds`, `1 minute`, `3 minutes`, `5 minutes`, and `15 minutes`; their exact binding to viewer `+0x88` is likely but not yet proven. It is not the Word close/save callback.
 
 ## 3. What that timer callback does
 
@@ -92,7 +92,7 @@ Evidence: controller-callback-ownership run `43873363849`, artifact `14229520023
 
 The native callback at `0x004CD154` is named `WordAppDocumentBeforeSave` in TD32, but its first log string is `Document.OnBeforeClose Called.`. Its prompt text is Persian: “محتويات اين سند تغيير كرده است. آيا مايل به ثبت تغييرات مي‌باشيد؟” (“The contents of this document have changed. Do you want to register the changes?”). The Yes/No branches call the three-argument `Document.Close` wrapper with SaveChanges True/False; Cancel sets the event Cancel flag. This is close/registration behavior, but the COM event DISPID corresponding to event-record offset `+0x80` has not yet been proven.
 
-A new event-dispatch workflow is tracing the generated Word event method table at `0x00627B74` and its callback dispatch thunks to determine whether the callback is actually bound to DocumentBeforeClose or DocumentBeforeSave. Until that completes, use the neutral label “registered close/save decision callback at 0x004CD154” rather than asserting the COM event identity.
+The metadata block at `0x00627B74` has now been decoded: it is an error-message/resource map (`Err_20000`, `Request XML is invalid`, `Error on connect to MS-Word`, etc.) plus logging levels and auto-save interval labels, not the Word event DISPID table. It does not resolve the callback's formal COM event identity. Continue using the neutral label “registered close/save decision callback at 0x004CD154” rather than asserting the COM event identity.
 
 
 ## 10. Long-lived HTTP request release — confirmed static chain
