@@ -207,3 +207,7 @@ Source: Word response/controller workflow run `43872534265`, artifact `142288510
 - `OnControlerNotify` is therefore a periodic local content/archive callback, not the Word `BeforeClose` event. It reads Word Content through slot `+0xDC` and creates .easd/.easz local archive paths. It is not currently proven to submit the final Almas registration.
 - `TEDPController.Notify` at `0x004D2EC8` is a separate print-handler controller callback; it invokes `TEmwatDocPrintHandler.GetDocFieldName` and must not be conflated with `TWordViwer.OnControlerNotify`.
 - The response appears approximately 54.558 seconds after the request body completes. The exact wait/release event remains unresolved; the new wait-mechanism and request-lifecycle workflows are tracing the remaining `OnTmrAutoSave` body and helper calls.
+
+### Event identity caution — 2026-11-16
+
+The callback pointer at Word event-record offset `+0x80` is `0x004CD154`. TD32 names the procedure `WordAppDocumentBeforeSave`, but its first log string is `Document.OnBeforeClose Called.` and its behavior prompts for change registration before calling the three-argument `Document.Close` wrapper. The event-record slot's actual COM DISPID (DocumentBeforeSave versus DocumentBeforeClose) is not yet mapped. Do not use the TD32 method name alone as proof of the COM event identity. A generated event-dispatch thunk trace is now running against the method table at `0x00627B74`.
