@@ -72,3 +72,27 @@ The workflow has been committed, but its Actions run and artifacts must be check
 - Static-confirmed: TD32 symbol names, procedure addresses/sizes, type signatures, direct call to LoadDocument.
 - Inferred: COM automation dependency and the need for a Word-interface compatibility layer.
 - Unknown: exact activation ProgID, all DISPIDs, complete event registration order, and end-to-end response/save protocol.
+
+
+## Follow-up: LoadDocument lifecycle call sites cross-checked against TD32
+
+The downloaded `TWordViwer.LoadDocument` procedure trace gives three useful cross-links into the class-procedure index:
+
+- At `0x004B78E4–0x004B78E9`, `LoadDocument` calls `TWordViwer.$bdtr` at `0x004D0D24`. The destructor's TD32 procedure record is `0x004D0D24`, size `0x424`. This is a direct call-site confirmation that the document-load path explicitly tears down a `TWordViwer` instance at this point; it does not, by itself, establish the complete COM shutdown semantics.
+- At `0x004B7991–0x004B7994`, `LoadDocument` calls `AddCustomDocPropertiesToDic` at `0x004D1454`. TD32 indexes this method as a `TWordViwer` method, size `0x3B4`. This places custom document-property extraction in the load/response preparation path.
+- At `0x004B7A55–0x004B7A58`, `LoadDocument` calls `OnTmrAutoSave` at `0x004B8A84` synchronously and tests its Boolean result immediately afterwards. The detailed wait-loop and response-release evidence is recorded in the research log; this is distinct from Word's registered BeforeSave event.
+
+The TD32 index also confirms:
+- `TWordViwer.$bctr`: `0x004D08B4`, size `0x470`
+- `TWordViwer.$bdtr`: `0x004D0D24`, size `0x424`
+- `TWordViwer.AddXmlWordConfigFieldsToDic`: `0x004D1148`, size `0x30C`
+- `TWordViwer.AddCustomDocPropertiesToDic`: `0x004D1454`, size `0x3B4`
+
+The constructor is now a high-priority trace target, but its actual COM activation and event-subscription instructions have **not** yet been inspected. Likewise, the call to `AddCustomDocPropertiesToDic` proves that custom properties are collected on this path, not the exact property names or response schema. Do not infer either until the constructor and callee bodies are available.
+
+## Revised next steps
+
+1. Inspect the constructor and destructor bodies, then identify imported COM activation APIs and event connection points/dispatch interfaces.
+2. Trace `AddXmlWordConfigFieldsToDic` and `AddCustomDocPropertiesToDic` together to derive the exact metadata returned from the Word document.
+3. Trace the complete `OnTmrAutoSave` and `OnControlerNotify` bodies independently and correlate their state changes with the close-triggered HTTP response.
+4. Only after the exact Word methods and event contracts are enumerated, define the LibreOffice bridge compatibility surface.
