@@ -10,6 +10,10 @@ on:
       - 'tools/trace_pe_target.py'
       - 'tools/list_td32_symbols.py'
       - 'tools/decode_pe_strings.py'
+      - 'tools/scan_pe_pointer_refs.py'
+      - 'tools/resolve_delphi_vmt_slots.py'
+      - 'tools/trace_delphi_interfaces.py'
+      - 'tools/analyze_emwat_td32.py'
 permissions:
   contents: read
 jobs:
