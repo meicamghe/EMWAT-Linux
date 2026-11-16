@@ -390,3 +390,7 @@ Source: workflow 43832144163, artifact 14209690263.
 - The parser recognizes root tag "emwat", its "version" attribute, and child tags "method", "class", and "param"; the "param" child uses the "name" attribute.
 - Parser token helper 0x0046ADBC compares the token names and routes recognized elements. Helper 0x0046A7A4 appends a three-value record to the parser's dynamic collection (three adjacent string/value slots); exact semantic names for all three record fields remain unconfirmed.
 - This is the service-side XML parsing stage. The BPL-side TEmwatMethod.Invoke dictionary contract is known separately; the conversion/link from these parser records to the BPL invocation and the exact response payload still need proof.
+
+## Delphi runtime package and class-resolution imports
+
+The PE import table confirms that `EmwatService.exe` imports `LoadPackage`, `UnloadPackage`, `StartExe`, `GetClass`, `ClassCreate`, `ClassDestroy`, `TObject.InheritsFrom`, `ClassParent`, `ClassName`, and two `GetProcAddress` entries. This establishes the service's capability to load Delphi runtime packages and resolve/create classes dynamically. It is consistent with the service-side `TMethodInfo` parser and the BPL-side `TEmwatMethod.Invoke` contract, but the exact class-name resolution and callsite chain still require IAT-reference tracing. The current workflow scans pointer references to these import slots.
