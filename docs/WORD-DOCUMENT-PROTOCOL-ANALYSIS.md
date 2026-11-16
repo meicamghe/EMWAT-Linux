@@ -1372,12 +1372,15 @@ Trace کامل `0x004BFC18` (285 بایت) اکنون قرارداد lookup را
 این رفتار نشان می‌دهد delimiter `†` فقط یک رشته تزئینی نیست: دو شناسه را به یک رکورد twin با index مشترک و counterpart متقابل تبدیل می‌کند. پیاده‌سازی Python فعلی parsing این شناسه را انجام می‌دهد؛ مرحله بعد باید semantics خروجی index/counterpart را در مدل field-binding نگه دارد.
 
 
-### نقش SetFieldValue در پردازش فیلدها
+### قرارداد دقیق SetFieldValue و استخراج DOCPROPERTY
 
 - TD32 نام `0x004BFDB0` را `TWordViwer.SetFieldValue(TXmlWordConfigField, UnicodeString)` مشخص می‌کند.
-- این تابع از `GetDocFieldIndex` سه بار، از `GetCaptionItemFont` دو بار و از `ShowRecAndCcOptionForm` پنج بار فراخوانی مستقیم دارد.
-- بدنه آن ورودی رشته‌ای را با دو ثابت داخلی در `0x004BFEE8` و `0x004BFF0C` مقایسه می‌کند و برای دو حالت، مسیر تبدیل جداگانه دارد؛ در حالت دیگر مقدار را مستقیم کپی می‌کند.
-- چون این تابع در مسیرهای اصلی، caption و Rec/CC مشترک است، تبدیل value در آن فقط مختص body fieldها نیست. معنای دقیق دو ثابت و تبدیل‌هایشان در workflow بعدی decode می‌شود؛ تا آن زمان نوع تبدیل را حدس نمی‌زنیم.
+- ثابت `0x004BFEE8` دقیقاً `urlencoded` و ثابت `0x004BFF0C` دقیقاً `base64` است.
+- در نتیجه، `SetFieldValue` سه شاخه دارد: `urlencoded` وارد مسیر decode درصدی می‌شود؛ `base64` وارد مسیر decode باینری می‌شود؛ سایر مقادیر بدون تبدیل به setter می‌رسند.
+- این تابع از `GetDocFieldIndex` سه بار، از `GetCaptionItemFont` دو بار و از `ShowRecAndCcOptionForm` پنج بار فراخوانی مستقیم دارد؛ پس تبدیل value فقط مختص body fieldها نیست.
+- تابع `FindFieldInActivefields` در `0x004BC170` از ثابت `0x004BC23C = DOCPROPERTY`، جداکنندهٔ دو فاصله در `0x004BC260` و جداکنندهٔ یک فاصله در `0x004BC274` استفاده می‌کند. در صورت یافتن DOCPROPERTY، token پس از دو فاصله را تا فاصلهٔ بعدی استخراج می‌کند؛ در غیر این صورت رشتهٔ ورودی را حفظ می‌کند.
+- Python اکنون همین قرارداد را در `extract_docproperty_identifier` پیاده می‌کند؛ از جمله حساسیت حروف، پنجرهٔ 255 کاراکتری و رفتار fallback. تست‌های این بخش در Python CI run `43814423443` سبز شدند: 94 تست پاس و یک تست اختیاری skip.
+- جزئیات داخلی helper تبدیل URL در `0x00455314` و مسیر Base64 در `0x00455108/0x004735D0` هنوز در workflow تکمیلی بررسی می‌شوند؛ بنابراین رفتار دقیق `+` در URL-encoding هنوز جداگانه تأیید نشده است.
 
 
 ## Run 128 — مسیر Controller Notify و فراخوانی COM در پایان کار
