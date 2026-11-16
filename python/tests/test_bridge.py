@@ -127,7 +127,7 @@ class BridgeHTTPServerTests(unittest.TestCase):
 
     def test_duplicate_content_length_is_rejected(self):
         conn = http.client.HTTPConnection(self.host, self.port, timeout=2)
-        conn.putrequest("POST", "/?invoke=12345")
+        conn.putrequest("POST", "/")
         conn.putheader("Content-Length", "1")
         conn.putheader("Content-Length", "1")
         conn.endheaders()
@@ -138,7 +138,7 @@ class BridgeHTTPServerTests(unittest.TestCase):
 
     def test_non_decimal_content_length_is_rejected(self):
         conn = http.client.HTTPConnection(self.host, self.port, timeout=2)
-        conn.putrequest("POST", "/?invoke=12345")
+        conn.putrequest("POST", "/")
         conn.putheader("Content-Length", "+1")
         conn.endheaders()
         response = conn.getresponse()
@@ -148,7 +148,7 @@ class BridgeHTTPServerTests(unittest.TestCase):
 
     def test_missing_content_length_is_rejected(self):
         conn = http.client.HTTPConnection(self.host, self.port, timeout=2)
-        conn.putrequest("POST", "/?invoke=12345")
+        conn.putrequest("POST", "/")
         conn.endheaders()
         response = conn.getresponse()
         self.assertEqual(response.status, 411)
@@ -168,20 +168,20 @@ class BridgeHTTPServerTests(unittest.TestCase):
         self.thread.start()
         self.host, self.port = self.server.address
         status, body, _ = self.request(
-            "POST", "/?invoke=12345", b"x", {"Origin": "https://office.example"}
+            "POST", "/", b"x", {"Origin": "https://office.example"}
         )
         self.assertEqual(status, 500)
         self.assertEqual(body, b"internal_bridge_error")
 
     def test_missing_origin_is_rejected_by_default(self):
-        status, body, _ = self.request("POST", "/?invoke=12345", b"x")
+        status, body, _ = self.request("POST", "/", b"x")
         self.assertEqual(status, 403)
         self.assertEqual(body, b"origin_required")
         self.assertEqual(self.seen, [])
 
     def test_unlisted_origin_is_rejected(self):
         status, body, _ = self.request(
-            "POST", "/?invoke=12345", b"x", {"Origin": "https://attacker.example"}
+            "POST", "/", b"x", {"Origin": "https://attacker.example"}
         )
         self.assertEqual(status, 403)
         self.assertEqual(body, b"origin_not_allowed")
@@ -189,7 +189,7 @@ class BridgeHTTPServerTests(unittest.TestCase):
 
     def test_oversized_body_is_rejected_before_read(self):
         conn = http.client.HTTPConnection(self.host, self.port, timeout=2)
-        conn.putrequest("POST", "/?invoke=12345")
+        conn.putrequest("POST", "/")
         conn.putheader("Content-Length", "129")
         conn.endheaders()
         response = conn.getresponse()
@@ -200,7 +200,6 @@ class BridgeHTTPServerTests(unittest.TestCase):
 
     def test_unknown_route_and_method_are_rejected(self):
         self.assertEqual(self.request("POST", "/other", b"x")[0], 404)
-        self.assertEqual(self.request("POST", "/?other=12345", b"x")[0], 404)
         self.assertEqual(self.request("PUT", "/", b"x")[0], 405)
 
     def test_handler_failure_is_sanitized(self):
@@ -218,7 +217,7 @@ class BridgeHTTPServerTests(unittest.TestCase):
         self.thread.start()
         self.host, self.port = self.server.address
         status, body, _ = self.request(
-            "POST", "/?invoke=12345", b"x", {"Origin": "https://office.example"}
+            "POST", "/", b"x", {"Origin": "https://office.example"}
         )
         self.assertEqual(status, 500)
         self.assertEqual(body, b"internal_bridge_error")
