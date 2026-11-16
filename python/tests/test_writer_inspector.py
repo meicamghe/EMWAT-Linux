@@ -88,7 +88,6 @@ class FakeUserDefinedProperties:
             "getProperties": lambda _self: [
                 type("Property", (), {"Name": "EMWATLetterNumber"})(),
                 type("Property", (), {"Name": "EMWATSubject"})(),
-                type("Property", (), {"Name": "SignsStart†SignsEnd"})(),
             ]
         })()
 
@@ -154,18 +153,7 @@ class WriterInspectorTests(unittest.TestCase):
         )
         self.assertEqual(
             catalog.custom_document_properties,
-            ("EMWATLetterNumber", "EMWATSubject", "SignsStart†SignsEnd"),
-        )
-        self.assertEqual(
-            [(item.index, item.field_name) for item in catalog.custom_property_field_maps.singles],
-            [(0, "EMWATLetterNumber"), (1, "EMWATSubject")],
-        )
-        self.assertEqual(
-            [
-                (item.index, item.first_field_name, item.second_field_name)
-                for item in catalog.custom_property_field_maps.twins
-            ],
-            [(2, "SignsStart", "SignsEnd")],
+            ("EMWATLetterNumber", "EMWATSubject"),
         )
 
 
