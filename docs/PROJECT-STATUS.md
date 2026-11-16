@@ -3,6 +3,10 @@
 
 ## پیشرفت اجرایی جدید — 2026-11-16
 
+- **تکمیل موجودی ساختاری Writer:** بر اساس trace جدید `AddCustomDocPropertiesToDic`، catalog اکنون نام Custom Document Properties را هم بدون خواندن مقدارشان ثبت می‌کند. تست واحد، عدم دسترسی به مقادیر را assert می‌کند و تست UNO واقعی نیز یک property ساختگی اضافه کرده و نام آن را از catalog می‌گیرد.
+- **تفکیک دقیق‌تر فیلد متن/تصویر:** trace نشان داد `FillTextField` بیشتر نقش تشخیص MIME و dispatch به `FillImageField` را دارد؛ نباید آن را setter متنی فرض کرد. قرارداد واقعی setter و mapping فیلدها هنوز در حال بررسی است.
+- **اجرای مهندسی معکوس فیلدها:** run `43811074616` با موفقیت تمام شد و artifact شامل ۴۱ فایل disassembly/callsite/strings دریافت و بررسی شد. مسیر custom document properties و نقش شرطی `SilentSaveEmwatDoc` مستند شد.
+
 - **LibreOffice UNO واقعی:** ماژول python/src/emwat_linux/libreoffice_adapter.py اضافه شده است. برای هر سند یک process و profile مستقل LibreOffice و یک socket محلی UNO ساخته می‌شود؛ ورودی DOC/CFB و DOCX شناخته می‌شود؛ listenerهای تغییر، Save و Close ثبت می‌شوند؛ هنگام Close یک snapshot با فیلتر Word 97 به فایل DOC جداگانه نوشته می‌شود.
 - **تست موتور واقعی:** workflow 43810592239 موفق است؛ ۸ تست شامل یک roundtrip واقعی DOCX → LibreOffice UNO → Close → DOC/CFB خروجی و شناسایی bookmark واردشده از DOCX پاس شده‌اند. این تست هنوز از fixture ساختگی استفاده می‌کند، نه فایل محرمانه نامه واقعی.
 - **ترکیب سرویس:** create_libreoffice_bridge_server در application.py مسیر EditWordDocument را به EditWordDocumentService و LibreOffice adapter وصل می‌کند. سیاست پاسخ Cancel عمداً باید از بیرون تزریق شود؛ envelope اصلی Windows هنوز تأیید نشده و حدس زده نشده است.
