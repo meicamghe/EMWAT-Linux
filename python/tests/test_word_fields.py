@@ -114,6 +114,7 @@ class WordFieldDecodingTests(unittest.TestCase):
         fields = decode_word_fields(config)
         self.assertEqual(fields[0].value, b"")
         self.assertEqual(fields[0].external_parameter, "signData")
+        self.assertTrue(fields[0].is_image)
         self.assertEqual(fields[0].attributes["concater"], r"\n")
         self.assertEqual(fields[0].attributes["concator"], "|")
         self.assertEqual(fields[0].identifier.first, "SignsStart")
