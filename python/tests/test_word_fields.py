@@ -74,7 +74,7 @@ class WordFieldDecodingTests(unittest.TestCase):
             r"DOCPROPERTY  SignSenderEnd  \\* MERGEFORMAT",
             r"DOCPROPERTY  LetterSubject  \\* MERGEFORMAT",
         )
-        self.assertEqual(find_native_twin_field_index(codes, "SignSenderEnd"), 3)
+        self.assertEqual(find_native_twin_field_index(codes, "signsenderend"), 3)
         self.assertEqual(
             find_native_twin_field_index(codes, "SignSenderEnd", start_index=4),
             0,
