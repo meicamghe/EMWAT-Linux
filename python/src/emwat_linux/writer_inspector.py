@@ -38,6 +38,14 @@ def _element_names(container: object) -> tuple[str, ...]:
         return ()
 
 
+def _container_names(document: object, method_name: str) -> tuple[str, ...]:
+    try:
+        getter = getattr(document, method_name)
+        return _element_names(getter())
+    except Exception:
+        return ()
+
+
 def _text_fields(document: object) -> tuple[WriterTextFieldInfo, ...]:
     try:
         fields = document.getTextFields()
@@ -81,13 +89,13 @@ def _text_fields(document: object) -> tuple[WriterTextFieldInfo, ...]:
 def inspect_writer_document(document: object) -> WriterDocumentCatalog:
     """Return structural names and text-field metadata without document values."""
     return WriterDocumentCatalog(
-        bookmarks=_element_names(document.getBookmarks()),
-        named_ranges=_element_names(document.getNamedRanges()),
-        text_sections=_element_names(document.getTextSections()),
-        text_tables=_element_names(document.getTextTables()),
-        text_frames=_element_names(document.getTextFrames()),
-        graphic_objects=_element_names(document.getGraphicObjects()),
-        document_indexes=_element_names(document.getDocumentIndexes()),
+        bookmarks=_container_names(document, "getBookmarks"),
+        named_ranges=_container_names(document, "getNamedRanges"),
+        text_sections=_container_names(document, "getTextSections"),
+        text_tables=_container_names(document, "getTextTables"),
+        text_frames=_container_names(document, "getTextFrames"),
+        graphic_objects=_container_names(document, "getGraphicObjects"),
+        document_indexes=_container_names(document, "getDocumentIndexes"),
         text_fields=_text_fields(document),
     )
 
