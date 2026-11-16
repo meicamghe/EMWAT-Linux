@@ -61,7 +61,7 @@ def extract_docproperty_identifier(field_code: str) -> str:
     start = separator + 1 if separator >= 0 else 1
     segment = field_code[start : start + 255]
     next_space = segment.find(" ")
-    if next_space <= 0:
+    if next_space < 0:
         return field_code
     return segment[:next_space]
 
