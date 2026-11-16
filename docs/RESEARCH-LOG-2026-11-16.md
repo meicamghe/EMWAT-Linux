@@ -366,3 +366,13 @@ The routine at `0x004CCDC8` is `FillImgFldsForPrint`, called directly from `GetF
 The address `0x004B032C` is confirmed as an import thunk to `rtl230.bpl!System.RegularExpressions.TRegEx.IsMatch`. `GetDocFieldIndex` passes the exact pattern `^sign.*end[0-2]?[0-9]?$` to this helper and logs matching active-field names as skipped by business rules. The pattern is case-sensitive; the resolved active-field name is the input (not necessarily the original XML field ID).
 
 Added `is_native_business_signature_end()` in `python/src/emwat_linux/word_fields.py` and tests. The first test run failed because the fixture used mixed-case `End`, which does not match the native lower-case regex. Corrected the test cases to lower-case; rerun `43888658420` was queued. The production helper preserves native case sensitivity and is not wired into XML field IDs until the active-field-name normalization is proven.
+
+
+## Three separate native field/custom-property maps
+
+The `AddCustomDocPropertiesToDic` trace at `0x004D1454` plus VMT sizes resolves three distinct viewer-owned structures:
+- `viewer + 0x68`: single-field descriptors. Constructs `TXmlWordConfigField` (instance size `0x10`), stores property index at `+0x04) and identifier at `+0x08), then inserts via `0x004D531C`.
+- `viewer + 0x6C`: twin-field descriptors. On U+2020 (`†`) split, constructs `TXmlWordConfigTwinField` (instance size `0x18`), stores index at `+0x04), left/right identifiers at `+0x08)/`+0x0C), and associated property/interface data at `+0x10); inserts via `0x004D68D4`.
+- `viewer + 0x64`: separate runtime custom-property map, whose TD32 methods are `TDictionary<System.UnicodeString,TDocumentCProperty>.SetItem` (`0x004D34B0`), `ContainsValue` (`0x004D3DF8`), and `Remove` (`0x004D3B78`).
+
+Do not flatten these into one string dictionary in the Linux port. The native implementation distinguishes XML single-field descriptors, XML twin-field descriptors, and runtime custom-property objects.
