@@ -231,3 +231,23 @@ Known limitations:
 The metadata-only inventory workflow `43810767154` inspected the tracked `EMWAT_Extracted.zip` and found no Word-family files (`.doc`, `.docx`, `.dot`, `.dotx`, `.dotm`, or `.rtf`). Consequently, the original EMWAT Word template is not available in the current extracted installer archive.
 
 The Windows binary analysis indicates that the original application actively enumerates the Word `Fields` collection, resolves XML field metadata, and has separate text/image field paths. The Linux mapping therefore must inspect more than bookmarks: Writer text fields, named ranges, bookmarks, content controls imported from OOXML, frames, and graphics all remain candidates. The current Writer inspector inventories these structures, but a representative anonymized Almas letter/template is still required to establish the actual mapping and visual fidelity.
+
+
+## Implementation status correction — 2026-11-16
+
+The earlier roadmap sections above are historical snapshots. The following components have since been implemented and CI-verified:
+
+- A concrete LibreOffice UNO adapter exists in `python/src/emwat_linux/libreoffice_adapter.py`, including isolated process/profile setup, DOC/DOCX container recognition, modification/save/close listeners, legacy DOC export, process reaping, metadata-only Writer inventory, custom-property batch updates, and one-time Writer text-field refresh.
+- The `EditWordDocument` request parser, close-driven coordinator, response handler, and composition function `create_libreoffice_bridge_server` are present. The cancellation response factory remains explicitly injected because the exact native cancel envelope is unknown.
+- Python bridge CI reached **101 tests run, 100 passed, 1 optional UNO test skipped** (run `43820250444`). The UNO integration workflow reached **10 passing tests**, including a live DOCX → Writer → legacy DOC roundtrip and child-process cleanup (run `43818676967`).
+- Word field decoding, twin identifier parsing, DOCPROPERTY field-code extraction, custom-property inventory/update, and structural Writer inspection are implemented. They intentionally do not invent the mapping of the 180 request IDs to actual Almas template structures.
+
+### Remaining implementation blockers
+
+1. **Close-choice parity:** Native Word BeforeSave prompts Yes/No/Cancel. The current UNO close listener snapshots on close but does not yet reproduce this three-way decision. The No and Cancel HTTP outcomes are not fully captured; do not return changed content on an unverified branch.
+2. **Field/template mapping:** the installer archive contains no Word-family template. A representative anonymized Almas DOC/DOCX template is required before mapping the 180 field IDs, twin fields, image anchors, and visual formatting.
+3. **signData:** its raw XML attributes and external parameter binding are preserved, but separator/concator behavior and the canonical attribute spelling in a live request must be verified before joining or inserting signatures.
+4. **Controller/HTTP handoff:** controller notification and paired `.easd/.easz` archive paths are being traced independently. Neither should be labeled the final Almas registration response until the payload and response chain are proven.
+5. **Deployment wiring:** the composition root is available, but production Origin allowlists, explicit cancellation response policy, and a real user-facing close-decision policy still need to be configured and tested.
+
+A new parallel workflow, `.github/workflows/analyze-word-controller-callback-ownership.yml`, is now tracing the viewer constructor/destructor, timer callbacks, controller dispatch, and print-handler ownership (run `43821043328` was in progress at the last check).
