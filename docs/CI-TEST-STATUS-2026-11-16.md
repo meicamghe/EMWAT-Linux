@@ -181,3 +181,12 @@ These checks validate the adapter and composition boundary. They do not establis
 - `TWordDocument.Get_Saved` uses `+0xD4`, `Set_Saved` uses `+0xD8`, `Save` uses `+0x2B8`, and the generated `Close` overloads use `+0x29C`.
 - `OnControlerNotify` emits the explicit AutoSave log and works with local `.easd/.easz` recovery paths. This is separate from the user-visible Almas registration operation until the final HTTP exchange is captured.
 - The native field-name parser uses the case-sensitive `DOCPROPERTY` keyword and two-space delimiter; Python tests now cover the legacy Copy offset and fallback behavior.
+
+
+## Local auto-save archive path — 2026-11-16
+
+- Close/controller analysis run **43814607589** completed successfully.
+- Artifact: **14202031457**.
+- OnControlerNotify logs an auto-save execution message, constructs .easd and .easz paths from viewer state, applies Farsi-direction normalization, and passes them to euUnArchive.
+- This confirms a local auto-save/archive workflow. It does not prove a POST to Almas or the final response-word registration trigger.
+- TWordDocument.Save at 0x004309A4 dispatches through _Document slot +0x2B8; no direct bounded CALL xref was found.
