@@ -1117,11 +1117,14 @@ The new full TD32 trace resolves helper `0x00456DFC` as:
 The callsite sits after the controller callback:
 1. `OnControlerNotify` obtains the active Word document's content through the COM interface call at `0x004BB516` (document interface slot `+0xDC`).
 2. It checks that the returned string is non-empty and longer than `0x14` characters before entering the transformation path.
-3. It creates two indexed/list-like objects using helper `0x004563A8`, with string constants at `0x004BB754` and `0x004BB76C`.
-4. It calls `euUnArchive` with those two objects and a third string argument.
+3. It constructs two objects using helper `0x0040414C` and class/global reference `0x0062F810`; their exact class type is still to be resolved.
+4. It passes the base path at `TWordViwer+0x80` through `0x004563A8`, which TD32 identifies as `FixDirectionInFarsiNumericMode`, using two different flag combinations. The resulting strings have suffixes appended by helper `0x00401368`: the decoded constants are `.easd` (`0x004BB754`) and `.easz` (`0x004BB76C`).
+5. It passes the `.easd`-suffixed value to one of the constructed objects through its vtable slot `+0x3C`, then calls `euUnArchive` with the two constructed objects and the `.easz`-suffixed path.
 
-Inside `euUnArchive`, the disassembly reads a count from one indexed interface, retrieves one string from each of two indexed interfaces at matching indexes, adds the pair to a newly created object, then invokes a final method on that object with the third string argument. This is consistent with a structured unpack/translation operation, but the exact object types, the two string keys, and the archive format are not yet proven. The helper name alone is not proof that the input is a ZIP/7z archive.
+Inside `euUnArchive`, helper `0x00452C10` constructs a `T7zPlugin`. The code passes the hardcoded string `mW@Tlogs43end_+` to plugin slot `+0x28`, iterates the two indexed objects in lockstep, passes each pair of strings to plugin slot `+0x10`, and finally passes the `.easz` path to plugin slot `+0x18`. This is strong evidence that the controller path uses the SevenZip plugin to process a custom archive/sidecar representation. The hardcoded string is a likely archive password, but the exact meaning of slots `+0x28`, `+0x10`, and `+0x18` remains to be resolved from the `T7zPlugin` VMT/TD32 methods before assigning names such as SetPassword/AddFile/Extract.
 
-The new artifact confirms that the periodic controller-notify path performs a content transformation after `Get_Content`; it does **not** yet connect that transformed object to the invoke HTTP response or prove that every timer tick is a close-time registration. The next trace batch targets `0x00452C10`, `0x004563A8`, and the three string constants to resolve the object/list types and serialization boundary.
+The helper name, the `T7zPlugin` constructor, the two extensions, and the paired-entry loop together are much stronger evidence than the name `euUnArchive` alone. The exact mapping between the `.easd` and `.easz` paths and the content returned by Word still needs confirmation.
+
+The new artifact confirms that the periodic controller-notify path performs a SevenZip-backed transformation after `Get_Content`; it does **not** yet connect the transformed object to the invoke HTTP response or prove that every timer tick is a close-time registration. The next trace batch targets `0x0040414C`, `0x004543C4`, and the `T7zPlugin` VMT/methods to resolve the two object types and the archive operations.
 
 Evidence boundary: static TD32 disassembly and direct-call scan; no runtime payload capture was added.
