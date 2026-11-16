@@ -24,20 +24,20 @@ def main():
     out=pathlib.Path(sys.argv[3] if len(sys.argv)>3 else "bpl-analysis/EmwatMethods-vmt-address.md")
     blob=path.read_bytes(); pe=pefile.PE(data=blob,fast_load=False)
     hit=find_td32(blob)
-    if not hit: raise SystemExit("TD32 debug signature not found")
-    base,end,directory,_=hit
-    _,_,modules,procedures=parse_td32(blob,base,end,directory)
     names={}
-    for p in procedures:
-        if not (1<=p["segment"]<=len(pe.sections)): continue
-        sec=pe.sections[p["segment"]-1]
-        mod=modules.get(p["module"])
-        seg=next((x for x in mod[1] if x[0]==p["segment"]),None) if mod else None
-        if not seg: continue
-        _,_,segbase,segsize=seg
-        if segbase<=p["offset"]<segbase+segsize and p["offset"]<sec.SizeOfRawData:
-            va=pe.OPTIONAL_HEADER.ImageBase+sec.VirtualAddress+p["offset"]
-            names.setdefault(va,[]).append(p["name"])
+    if hit:
+        base,end,directory,_=hit
+        _,_,modules,procedures=parse_td32(blob,base,end,directory)
+        for p in procedures:
+            if not (1<=p["segment"]<=len(pe.sections)): continue
+            sec=pe.sections[p["segment"]-1]
+            mod=modules.get(p["module"])
+            seg=next((x for x in mod[1] if x[0]==p["segment"]),None) if mod else None
+            if not seg: continue
+            _,_,segbase,segsize=seg
+            if segbase<=p["offset"]<segbase+segsize and p["offset"]<sec.SizeOfRawData:
+                va=pe.OPTIONAL_HEADER.ImageBase+sec.VirtualAddress+p["offset"]
+                names.setdefault(va,[]).append(p["name"])
     def readva(addr):
         raw=va_raw(pe,addr)
         return u32(blob,raw) if raw is not None and raw+4<=len(blob) else None
@@ -50,7 +50,7 @@ def main():
       "Instance size":readva(vmt+VMT_INSTANCESIZE),
       "Parent VMT":readva(vmt+VMT_PARENT),
     }
-    lines=["# Delphi VMT address inspection","",f"- VMT VA: 0x{vmt:08X}",""]
+    lines=["# Delphi VMT address inspection","",f"- VMT VA: 0x{vmt:08X}","",f"- TD32 symbols: {"available" if hit else "not present; addresses shown without symbol labels"}",""]
     for k,val in fields.items():
         if val is None: lines.append(f"- {k}: unmapped")
         elif k=="Instance size": lines.append(f"- {k}: 0x{val:X}")
