@@ -160,3 +160,7 @@ The collection append helper also calls its virtual methods at `+0x08` and `+0x0
 The expanded VMT/constructor trace now proves the exact link: `TMethodInfo` (`0x0047097C`) constructs `TDictionary<System.AnsiString,System.AnsiString>` using class reference `0x004699E4` → VMT `0x00469A3C`, stores it at `TMethodInfo + 0x08`, and `ParseMethod` passes that dictionary to the XML parser. The BPL `TEmwatMethod.Invoke` signature accepts the same string-to-string dictionary type. Only the final indirect cross-module dispatch edge remains unresolved.
 
 Artifact: `emwat-service-dispatch-crosswalk`, run `43883105610`, artifact `14233736412`.
+
+### Duplicate parameter behavior
+
+The parser's dictionary insertion helper `0x0046ADBC` probes the hash table before appending. If the key already exists (`0x0046A570` returns a non-negative bucket index), it enters the duplicate-key exception path (`0x00402 11C` / `0x00401198`) instead of treating the second value as an overwrite. The Python envelope parser's `duplicate_parameter` rejection therefore matches the native Add semantics; it must not be changed to last-value-wins behavior.
