@@ -607,3 +607,7 @@ The service workflow now traces `FormCreate`, `FormClose`, `Terminate`, `LoadQui
 ### ClassCreate callsite belongs to TMethodInfo construction
 
 The corrected rel32 scan found a `ClassCreate` thunk call at `0x00471220`, but the surrounding trace (`0x00471214`) proves this is the Delphi constructor prologue for `TMethodInfo` (`0x0047097C`): when the constructor flag is set, it calls `ClassCreate` via thunk `0x00401158`, then creates the `TDictionary<AnsiString,AnsiString>` at `0x00471232` and stores it at `TMethodInfo+0x08`. This is allocation of the parser's metadata object, not proof of creation of the XML-selected method class. The `GetClass` candidate at `0x00470E07` remains a separate path to validate.
+
+### GetClass callsite confirmed in ParseMethod code island
+
+The code-island trace (`14268370537`) resolves the previous boundary uncertainty. `ParseMethod` at `0x00470D00` branches from `0x00470D74` to `0x00470DB2`; that reachable block reads the XML class attribute, obtains the class-name string, and calls `GetClass` through thunk `0x00402354` at `0x00470E07`. If the returned class is null, it constructs/logs an error and exits; otherwise it continues with class validation and object preparation. This is now a confirmed `ParseMethod` → `GetClass` edge. The remaining `0x00470E58–0x00470F80` block is being traced to identify inheritance checks, instance creation, and the final Invoke dispatch.
