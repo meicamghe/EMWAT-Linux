@@ -425,3 +425,7 @@ Post-change CI: Python bridge run `43891288399`: 107 tests passed, 2 optional sk
 ## Descriptor dictionary population trace queued
 
 Expanded the archive-backed Word analysis workflow to enumerate all TD32 symbols for `TXmlWordConfigField`, `TXmlWordConfigTwinField`, `TDocumentCProperty`, and `TDictionary`. The goal is to locate the actual Add/SetItem/population methods that precede the confirmed `Remove` consumption calls at `0x004D531C` and `0x004D68D4`. The next workflow run will include `field-descriptor-symbols.md` and `generic-dictionary-symbols.md`; no insertion method is claimed until those symbols are reviewed.
+
+## Conservative boundary for Writer descriptor mapping
+
+A trial integration that classified Writer custom-property names into single/twin maps was removed after reviewing the native dataflow: `AddCustomDocPropertiesToDic` calls `TDictionary.Remove` on pre-existing descriptor maps, so the source/population stage of those maps is not yet proven to be the Writer document's custom-property enumeration. `WriterDocumentCatalog` therefore remains metadata-only and reports custom-property names without attaching the descriptor classifier. `build_word_custom_property_field_maps()` remains a pure split-rule utility, not a claim of full native map construction.
