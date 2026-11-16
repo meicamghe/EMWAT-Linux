@@ -10,7 +10,9 @@ on:
       - 'tools/trace_td32_callers.py'
       - 'tools/find_td32_class_procedures.py'
       - 'tools/resolve_delphi_vmt_slots.py'
-      - 'tools/trace_delphi_interfaces.py'\n      - 'tools/inspect_delphi_vmt_address.py'\n      - 'tools/trace_td32_immediate_refs.py'
+      - 'tools/trace_delphi_interfaces.py'
+      - 'tools/inspect_delphi_vmt_address.py'
+      - 'tools/trace_td32_immediate_refs.py'
   workflow_dispatch:
 
 permissions:
