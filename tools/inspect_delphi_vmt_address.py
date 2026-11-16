@@ -5,6 +5,8 @@ import pefile
 from analyze_emwat_td32 import find_td32, parse_td32
 
 VMT_SELF=-88
+VMT_METHODTABLE=-64
+VMT_FIELDTABLE=-68
 VMT_CLASSNAME=-56
 VMT_INSTANCESIZE=-52
 VMT_PARENT=-48
@@ -46,6 +48,8 @@ def main():
         return ", ".join(names.get(addr,[])) or "no exact TD32 entry"
     fields={
       "Self pointer":readva(vmt+VMT_SELF),
+      "Method-table field":readva(vmt+VMT_METHODTABLE),
+      "Field-table field":readva(vmt+VMT_FIELDTABLE),
       "Class-name field":readva(vmt+VMT_CLASSNAME),
       "Instance size":readva(vmt+VMT_INSTANCESIZE),
       "Parent VMT":readva(vmt+VMT_PARENT),
@@ -56,6 +60,15 @@ def main():
         if val is None: lines.append(f"- {k}: unmapped")
         elif k=="Instance size": lines.append(f"- {k}: 0x{val:X}")
         else: lines.append(f"- {k}: 0x{val:08X} ({label(val)})")
+    for table_key in ("Method-table field", "Field-table field"):
+        table_va = fields[table_key]
+        if table_va:
+            table_raw = va_raw(pe, table_va)
+            if table_raw is not None:
+                sample = blob[table_raw:table_raw + 128]
+                ascii_view = "".join(chr(x) if 32 <= x < 127 else "." for x in sample)
+                lines += ["", f"- {table_key} target bytes (first 128): {sample.hex(' ')}",
+                          f"- {table_key} ASCII view: {ascii_view}"]
     cname=fields["Class-name field"]
     if cname:
         raw=va_raw(pe,cname)
