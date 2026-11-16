@@ -1,0 +1,25 @@
+name: Inventory packaged Word assets
+on:
+  push:
+    paths:
+      - 'EMWAT_Extracted.zip'
+      - 'tools/analyze_extracted_office_assets.py'
+      - '.github/workflows/analyze-extracted-office-assets.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  inventory:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Inventory Word documents and templates
+        run: |
+          python3 tools/analyze_extracted_office_assets.py EMWAT_Extracted.zip --output word-assets-inventory.md
+          cat word-assets-inventory.md
+      - uses: actions/upload-artifact@v4
+        with:
+          name: emwat-packaged-word-assets-inventory
+          path: word-assets-inventory.md
