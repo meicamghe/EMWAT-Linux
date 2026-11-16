@@ -1296,3 +1296,12 @@ Artifact اجرای `43811074616` (موفق؛ 41 فایل trace/disassembly) ب�
 - catalog ساختاری اکنون نام‌های Custom Document Properties را کنار bookmark، named range، text field، section، table، frame و graphic object ثبت می‌کند.
 - فقط نام propertyها خوانده می‌شوند؛ هیچ مقدار property، متن سند یا presentation فیلد در گزارش inventory خوانده نمی‌شود.
 - تست UNO واقعی یک custom property ساختگی به سند اضافه می‌کند و حضور نام آن را در catalog بررسی می‌کند. این تست، قابلیت inventory را تأیید می‌کند، نه mapping نهایی 180 فیلد EMWAT به قالب واقعی نامه.
+
+
+### قاعده نام‌گذاری فیلدهای امضا در GetDocFieldIndex
+
+- پس از resolve کردن نام فیلد Word و تطبیق آن با active-field list از مسیر `FindFieldInActivefields` در `0x004BC170`، تابع `GetDocFieldIndex` نام حاصل را با regex زیر بررسی می‌کند: `^sign.*end[0-2]?[0-9]?`.
+- در صورت تطبیق، مسیر log با متن `field[%d]: "%s" skiped by business.` اجرا می‌شود و شاخه پردازش عادی آن فیلد کنار گذاشته می‌شود.
+- این regex از ابتدای نام شروع می‌شود و suffix عددی اختیاری محدود به الگوی 0 تا 29 را می‌پذیرد؛ چون انتهای رشته با `$` بسته نشده، وجود ادامه بعد از این الگو نیز از نظر regex مجاز است.
+- این یک قاعده اختصاصی برای برخی فیلدهای sign/end است؛ هنوز نباید آن را معادل قرارداد کامل `signData` یا نحوه ادغام امضاها دانست.
+- مرحله بعد، trace کردن helperهای `0x004D531C` و `0x004D68D4` و decode رشته‌های ثابت مربوط به delimiter و نام فیلدهاست. workflow جدید `analyze-word-custom-property-pipeline.yml` این تحلیل‌ها را موازی اجرا می‌کند.
