@@ -81,6 +81,9 @@ jobs:
             python tools/scan_pe_pointer_refs.py analysis-input/EmwatService.exe 0x0047BF0C dispatch-crosswalk/service/mainform-classinfo-pointer-refs.md || true
             python tools/trace_pe_range.py analysis-input/EmwatService.exe 0x0047BF30 0x0047C341 dispatch-crosswalk/service/mainform-request-handler-full.md
             python tools/trace_pe_range.py analysis-input/EmwatService.exe 0x00470D00 0x00471033 dispatch-crosswalk/service/parse-method-full.md
+            python tools/trace_pe_range.py analysis-input/EmwatService.exe 0x00470DB2 0x00470E80 dispatch-crosswalk/service/parse-method-code-island-1.md
+            python tools/trace_pe_range.py analysis-input/EmwatService.exe 0x00470E00 0x00470E50 dispatch-crosswalk/service/getclass-callsite-context.md
+            python tools/trace_pe_range.py analysis-input/EmwatService.exe 0x00470F80 0x00471033 dispatch-crosswalk/service/parse-method-finally-island.md
             for range in "0x0045EA80 0x0045EC20" "0x0045F780 0x0045F940" "0x00470E80 0x00471020" "0x0047C180 0x0047C300" "0x0047D8C0 0x0047D980" "0x0047DB00 0x0047DBD0" "0x0047DD40 0x0047DE10"; do
               set -- $range
               name=${1#0x}
