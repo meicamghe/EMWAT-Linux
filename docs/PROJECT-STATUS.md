@@ -1879,3 +1879,10 @@ The MainForm invoke route reaches ParseMethod (0x00470D00) and parser worker 0x0
 ## BPL method class hierarchy resolved — 2026-11-16
 
 The BPL VMT scan establishes that TEditWordDocument inherits TEmwatMethod; TScanDocument, TFaxDocument, TGetEmwatVersion, TSetEmwatVersion, TUpgradeEmwat, TImageEdition, TEditExcelWorkBook, and TCompareWordDocument share that same base. TEmwatMethod.Invoke (0x0046C82C) accepts TDictionary<AnsiString,AnsiString> and iterates key/value pairs. Its request-time caller remains indirect/unresolved; the only direct TD32 caller found is a unit-finalization path.
+
+
+## Latest reverse-engineering pipeline verification — 2026-11-16
+
+- BPL method invoke/VMT workflow 43832553168 completed successfully (artifact 14208369288).
+- Confirmed inheritance: TEditWordDocument derives from TEmwatMethod; the common base is also used by the other method classes listed in docs/EDITWORD-REQUEST-SCHEMA.md.
+- TEmwatMethod.Invoke accepts TDictionary<AnsiString,AnsiString> and iterates key/value entries. The service's runtime call into this inherited method is still an indirect/RTTI dispatch target, not a proven direct callsite.

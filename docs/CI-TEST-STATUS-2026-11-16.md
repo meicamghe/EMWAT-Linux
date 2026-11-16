@@ -435,3 +435,6 @@ Source: workflow 43832553168, artifact 14208369288.
 - The Delphi VMT/interface scan resolves TEmwatMethod VMT method-table base at 0x0046ABFC. TEditWordDocument VMT is 0x005ED764 and its parent pointer resolves to the TEmwatMethod VMT header start (0x0046ABA4 = 0x0046ABFC - 0x58). This establishes TEditWordDocument inherits TEmwatMethod.
 - TScanDocument, TFaxDocument, TGetEmwatVersion, TSetEmwatVersion, TUpgradeEmwat, TImageEdition, TEditExcelWorkBook, and TCompareWordDocument also point to the same TEmwatMethod parent header.
 - TEmwatMethod.Invoke iterates the dictionary's key/value enumerator and dispatches each entry through an instance virtual/interface slot. Direct TD32 caller scan finds only one direct call in unit finalization; the service's runtime invocation is therefore not yet a proven direct callsite and likely uses RTTI/dynamic dispatch. This must be resolved before claiming the complete request-to-class call chain.
+
+
+| BPL method invoke / VMT contract | 43832553168 | success — TD32 Invoke trace, VMT hierarchy, and interface scan; artifact 14208369288 |
