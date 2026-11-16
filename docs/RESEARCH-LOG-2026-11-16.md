@@ -505,3 +505,7 @@ The full handler trace proves direct relative calls to `0x004610FC` at `0x0047C2
 ## Byte-level scan validates post-parse helper callsites
 
 Artifact `14267210294` shows five E8-rel32 candidates targeting `0x004610FC`; two are confirmed instructions inside the complete MainForm handler (`0x0047C237` and `0x0047C2A9`). Three additional candidates occur at `0x0045EB81`, `0x0045F883`, and `0x00470F34` and require surrounding-function validation. The same scan finds four candidates targeting `0x0047E2D4`: `0x0047C0E0` (confirmed MainForm cleanup call) and three additional sites `0x0047D92F`, `0x0047DB73`, `0x0047DDB7`. These candidates support the helper's reuse in cleanup/error paths, not a dispatch role. The service workflow now emits bounded disassembly windows around all seven additional callsites and pointer refs for `0x004610FC`.
+
+## TMainForm RTTI/VMT inspection added
+
+The service interface inventory identifies `TMainForm` at VMT `0x0047B284`, instance size `0x434`, with class typeinfo at `0x0047BF0C`. The HTTP handler body begins at `0x0047BF30`, immediately after the class typeinfo area. The service workflow now inspects this VMT, scans pointers to the VMT and class typeinfo, and traces the full handler/callsite windows. This should help map the handler to the form's published event/method table and distinguish request dispatch from response finalization.
