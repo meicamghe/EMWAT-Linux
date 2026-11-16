@@ -91,6 +91,11 @@ class DecodedWordField:
     attributes: Mapping[str, str]
 
     @property
+    def uses_native_text_field_path(self) -> bool:
+        """Whether FillTextField takes its ordinary text/plain branch."""
+        return self.mimetype == "text/plain"
+
+    @property
     def is_image(self) -> bool:
         """Whether the native field metadata declares an image MIME type."""
         return bool(self.mimetype and self.mimetype.casefold().startswith("image/"))
