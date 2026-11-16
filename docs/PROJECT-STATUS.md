@@ -1,6 +1,16 @@
 # وضعیت پروژه EMWAT-Linux
-آخرین به‌روزرسانی: 2026-11-15
+آخرین به‌روزرسانی: 2026-11-16
 
+## پیشرفت اجرایی جدید — 2026-11-16
+
+- **LibreOffice UNO واقعی:** ماژول python/src/emwat_linux/libreoffice_adapter.py اضافه شده است. برای هر سند یک process و profile مستقل LibreOffice و یک socket محلی UNO ساخته می‌شود؛ ورودی DOC/CFB و DOCX شناخته می‌شود؛ listenerهای تغییر، Save و Close ثبت می‌شوند؛ هنگام Close یک snapshot با فیلتر Word 97 به فایل DOC جداگانه نوشته می‌شود.
+- **تست موتور واقعی:** workflow 43810188525 موفق است؛ ۸ تست شامل یک roundtrip واقعی DOCX → LibreOffice UNO → Close → DOC/CFB خروجی پاس شده‌اند. این تست هنوز از fixture ساختگی استفاده می‌کند، نه فایل محرمانه نامه واقعی.
+- **ترکیب سرویس:** create_libreoffice_bridge_server در application.py مسیر EditWordDocument را به EditWordDocumentService و LibreOffice adapter وصل می‌کند. سیاست پاسخ Cancel عمداً باید از بیرون تزریق شود؛ envelope اصلی Windows هنوز تأیید نشده و حدس زده نشده است.
+- **Decode فیلدها:** word_fields.py هر field را بر اساس encryption خودش decode می‌کند: URL-encoded متن، Base64 تصویر و متن بدون encoding را جدا نگه می‌دارد. signData با paramId خارجی همچنان opaque است و separator/concater آن حدس زده نمی‌شود.
+- **تست Python:** workflow 43810428599 موفق است؛ ۸۵ تست پاس شده‌اند و یک تست اختیاری UNO به‌دلیل اجرا نشدن در آن workflow skip شده است. تست UNO واقعی در workflow جداگانه ۸/۸ پاس شده است.
+- **مرزهای باقی‌مانده:** نگاشت ۱۸۰ فیلد EMWAT به bookmark/content-control/Writer range هنوز انجام نشده؛ تصویر امضا، signData، تنظیمات/مجوزهای سند، prompt لغو، و ثبت واقعی در Almas Gam هنوز end-to-end تأیید نشده‌اند.
+
+گزارش تفصیلی معماری و مرزهای تأیید: docs/LINUX-NATIVE-IMPLEMENTATION-PLAN.md.
 
 ## وضعیت اجرایی و شواهد جدید — 2026-11-15
 
