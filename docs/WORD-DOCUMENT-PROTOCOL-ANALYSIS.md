@@ -1305,3 +1305,18 @@ Artifact اجرای `43811074616` (موفق؛ 41 فایل trace/disassembly) ب�
 - این regex از ابتدای نام شروع می‌شود و suffix عددی اختیاری محدود به الگوی 0 تا 29 را می‌پذیرد؛ چون انتهای رشته با `$` بسته نشده، وجود ادامه بعد از این الگو نیز از نظر regex مجاز است.
 - این یک قاعده اختصاصی برای برخی فیلدهای sign/end است؛ هنوز نباید آن را معادل قرارداد کامل `signData` یا نحوه ادغام امضاها دانست.
 - مرحله بعد، trace کردن helperهای `0x004D531C` و `0x004D68D4` و decode رشته‌های ثابت مربوط به delimiter و نام فیلدهاست. workflow جدید `analyze-word-custom-property-pipeline.yml` این تحلیل‌ها را موازی اجرا می‌کند.
+
+
+### تکمیل trace: delimiter واقعی فیلدهای تکی و Twin
+
+Artifact جدید `43812127854` delimiter ثابت در `0x004D1768` را به‌صورت Unicode برابر `†` (U+2020 DAGGER) decode کرد.
+
+- `AddCustomDocPropertiesToDic` رشته نام هر Custom Document Property را با اولین `†` بررسی می‌کند.
+- اگر دو سمت delimiter هر دو غیرخالی باشند، رکورد از نوع `TXmlWordConfigTwinField` ساخته می‌شود و دو بخش نام در دو عضو جداگانه رکورد ذخیره می‌شوند.
+- اگر delimiter وجود نداشته باشد، یا یکی از دو سمت خالی باشد، مسیر به رکورد `TXmlWordConfigField` تکی برمی‌گردد.
+- دو مجموعه داخلی viewer در offsetهای `+0x68` و `+0x6C` به‌ترتیب از نوع `TDictionary<UnicodeString,TXmlWordConfigField>` و `TDictionary<UnicodeString,TXmlWordConfigTwinField>` هستند. helperهای `0x004D531C` و `0x004D68D4` متدهای generic `Remove` همین دو دیکشنری‌اند؛ بنابراین آن‌ها setter یا درج‌کننده مستقیم نیستند.
+- کد پایتون اکنون `parse_word_field_identifier` را دارد: اولین dagger را جدا می‌کند، twin را تشخیص می‌دهد و ورودی با سمت خالی را مانند مسیر single نگه می‌دارد. تست‌ها حالت single، twin، چند delimiter و delimiter ابتدا/انتها را پوشش می‌دهند.
+
+### دو نام ثابت در مسیر GetDocFieldName
+
+Decode رشته‌های ثابت نشان داد مقایسه‌های این مسیر شامل `RtlDate` و `Hidden_Customizable` هستند. در نتیجه، فراخوانی `SilentSaveEmwatDoc` در `GetDocFieldName` باید همچنان یک شاخه شرطی مرتبط با این نام‌ها تلقی شود؛ نام‌ها به‌تنهایی قرارداد ثبت یا ذخیره‌سازی Almas را ثابت نمی‌کنند.
