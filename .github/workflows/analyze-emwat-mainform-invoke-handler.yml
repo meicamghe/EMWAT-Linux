@@ -1,0 +1,51 @@
+name: Analyze EMWAT main form invoke handler
+on:
+  push:
+    paths:
+      - '.github/workflows/analyze-emwat-mainform-invoke-handler.yml'
+      - 'EMWAT_Extracted.zip'
+      - 'tools/trace_pe_target.py'
+      - 'tools/trace_pe_range.py'
+      - 'tools/scan_pe_pointer_refs.py'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  mainform-invoke-handler:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install pefile capstone
+      - name: Extract EmwatService
+        run: |
+          python - <<'PY'
+          import pathlib, zipfile
+          archive = zipfile.ZipFile("EMWAT_Extracted.zip")
+          matches = [n for n in archive.namelist() if pathlib.PurePosixPath(n).name.lower() == "emwatservice.exe"]
+          if not matches:
+              raise SystemExit("EmwatService.exe not found")
+          target = pathlib.Path("mainform-invoke/EmwatService.exe")
+          target.parent.mkdir(parents=True, exist_ok=True)
+          target.write_bytes(archive.read(matches[0]))
+          print(f"Extracted {matches[0]} ({target.stat().st_size} bytes)")
+          PY
+      - name: Trace main form event handler and initialization
+        shell: bash
+        run: |
+          mkdir -p mainform-invoke
+          for target in 0047BF30 0047CCD8 0047D2C8; do
+            python tools/trace_pe_target.py mainform-invoke/EmwatService.exe 0x$target mainform-invoke/target-$target.md 7000 ret
+            python tools/scan_pe_pointer_refs.py mainform-invoke/EmwatService.exe 0x$target mainform-invoke/refs-$target.md
+          done
+          python tools/trace_pe_range.py mainform-invoke/EmwatService.exe 0x0047B820 0x0047B8D0 mainform-invoke/mainform-method-table.md
+          python tools/trace_pe_range.py mainform-invoke/EmwatService.exe 0x0047BA70 0x0047BB90 mainform-invoke/mainform-commandget-rtti.md
+      - uses: actions/upload-artifact@v4
+        with:
+          name: emwat-mainform-invoke-handler
+          path: mainform-invoke/
+          if-no-files-found: error
