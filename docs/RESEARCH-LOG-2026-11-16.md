@@ -473,3 +473,7 @@ Artifact `14238566198` now closes the identity gap. `TMethodInfo` has VMT `0x004
 ## Native duplicate parameter handling confirmed
 
 `0x0046ADBC` checks the result of `0x0046A570` before appending a parameter. An existing key enters the exception path through `0x0040211C` and `0x00401198`; a missing key is appended by `0x0046A7A4`. This confirms that the service's `TDictionary.Add` semantics reject duplicate parameter names instead of overwriting them. The existing Python `parse_method_call()` `duplicate_parameter` check matches this behavior.
+
+## Descriptor map lookup and reconciliation path clarified
+
+The latest Word field artifact (`14238059843`) provides a concrete lookup/reconciliation sequence. `viewer+0x68` and `viewer+0x6C` are the single and twin descriptor dictionaries. `GetXmlFieldInfo` (`0x004BFC18`) probes the single map, then falls back to the twin map, and returns the descriptor's index plus its one or two associated property-name strings. The `0x004BC170` normalizer is shared by XML-field lookup, twin-field filling, document-field index resolution, print-field handling, image-print handling, and viewer construction. `AddCustomDocPropertiesToDic` enumerates Word custom properties, splits names on `†`, creates single/twin record-shaped objects, and removes the corresponding descriptor keys from the maps. This proves reconciliation/consumption, not map population. The actual initial population path remains unresolved; enumerable constructors and Add/SetItem caller traces have been added to the next workflow batch.
