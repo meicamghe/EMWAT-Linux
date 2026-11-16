@@ -202,6 +202,49 @@ jobs:
         run: |
           python tools/trace_delphi_interfaces.py service-http-analysis/EmwatService.exe \
             service-http-analysis/service-http-interfaces.md
+      - name: Resolve HTTP request and response virtual method slots
+        run: |
+          python - <<'PY'
+          import pathlib, struct
+          import pefile
+          from capstone import Cs, CS_ARCH_X86, CS_MODE_32
+          path = pathlib.Path("service-http-analysis/EmwatService.exe")
+          blob = path.read_bytes()
+          pe = pefile.PE(data=blob, fast_load=False)
+          image = pe.OPTIONAL_HEADER.ImageBase
+          vmt_map = {
+              "TIdHTTPRequestInfo": 0x0045B704,
+              "TIdHTTPResponseInfo": 0x0045BDE8,
+              "TIdCustomHTTPServer": 0x0045D024,
+              "TIdHTTPServer": 0x00461CFC,
+          }
+          def raw(va):
+              rva = va - image
+              for sec in pe.sections:
+                  if sec.VirtualAddress <= rva < sec.VirtualAddress + max(sec.Misc_VirtualSize, sec.SizeOfRawData):
+                      delta = rva - sec.VirtualAddress
+                      if delta < sec.SizeOfRawData: return sec.PointerToRawData + delta
+              return None
+          md = Cs(CS_ARCH_X86, CS_MODE_32)
+          out = ["# Indy HTTP request/response VMT method inventory", ""]
+          targets = set()
+          for name, vmt in vmt_map.items():
+              out.append(f"## {name} — VMT 0x{vmt:08X}")
+              for slot in range(0, 0x180, 4):
+                  r = raw(vmt + slot)
+                  if r is None or r + 4 > len(blob): break
+                  target = struct.unpack_from("<I", blob, r)[0]
+                  tr = raw(target)
+                  if tr is None: continue
+                  targets.add(target)
+                  insns = list(md.disasm(blob[tr:tr+24], target))[:4]
+                  desc = "; ".join(f"{x.mnemonic} {x.op_str}" for x in insns)
+                  out.append(f"- +0x{slot:02X} → 0x{target:08X}: {desc}")
+              out.append("")
+          out.append("## Unique method targets")
+          out.extend(f"- 0x{x:08X}" for x in sorted(targets))
+          pathlib.Path("service-http-analysis/http-vmt-methods.md").write_text("\n".join(out), encoding="utf-8")
+          PY
       - uses: actions/upload-artifact@v4
         with:
           name: emwat-service-http-response-analysis
