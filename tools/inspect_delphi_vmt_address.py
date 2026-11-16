@@ -65,10 +65,28 @@ def main():
         if table_va:
             table_raw = va_raw(pe, table_va)
             if table_raw is not None:
-                sample = blob[table_raw:table_raw + 128]
+                sample = blob[table_raw:table_raw + 512]
                 ascii_view = "".join(chr(x) if 32 <= x < 127 else "." for x in sample)
-                lines += ["", f"- {table_key} target bytes (first 128): {sample.hex(' ')}",
+                lines += ["", f"- {table_key} target bytes (first 512): {sample.hex(' ')}",
                           f"- {table_key} ASCII view: {ascii_view}"]
+                if table_key == "Method-table field" and len(sample) >= 2:
+                    count = struct.unpack_from("<H", sample, 0)[0]
+                    lines += ["", "## Published method table", "",
+                              f"- Entry count: {count}", ""]
+                    offset = 2
+                    for index in range(count):
+                        if offset + 7 > len(sample):
+                            lines.append(f"- Entry {index}: truncated before header")
+                            break
+                        entry_size = struct.unpack_from("<H", sample, offset)[0]
+                        code_va = u32(sample, offset + 2)
+                        name_len = sample[offset + 6]
+                        if entry_size < 7 + name_len or offset + 7 + name_len > len(sample):
+                            lines.append(f"- Entry {index}: invalid/truncated size={entry_size}, name_len={name_len}")
+                            break
+                        method_name = sample[offset + 7:offset + 7 + name_len].decode("ascii", "replace")
+                        lines.append(f"- `{method_name}`: `0x{code_va:08X}` (entry size {entry_size})")
+                        offset += entry_size
     cname=fields["Class-name field"]
     if cname:
         raw=va_raw(pe,cname)
