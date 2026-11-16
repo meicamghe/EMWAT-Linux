@@ -481,3 +481,7 @@ The latest Word field artifact (`14238059843`) provides a concrete lookup/reconc
 ### Diagnostic-string/name mismatch at the custom-property routine
 
 One important naming trap: the TD32 procedure at `0x004D1454` is definitively `TWordViwer.AddCustomDocPropertiesToDic`, and its body enumerates Word custom properties and removes matched single/twin descriptor keys. However, its log string at `0x004D1704` says `AddXmlWordConfigFieldsToDic method called.` and its success log at `0x004D1778` repeats `AddXmlWordConfigFieldsToDic succeed.` The log text is stale/misleading and must not override the procedure symbol and observed behavior. The separate routine at `0x004D1148` has the same name-like theme but its observed body clears viewer collections/maps and calls `TWordApplication.ScreenRefresh`.
+
+## Service-to-BPL dispatch: next unresolved callsite isolated
+
+The service request handler trace at `0x0047BF30` shows a clear sequence: package-load gate `0x0047E0EC`; XML `ParseMethod` at `0x00470D00`; then a call to `0x0047E2D4` at handler site `0x0047C0E0`. `ParseMethod` constructs `TMethodInfo` and its `TDictionary<AnsiString,AnsiString>` as already documented. The role of `0x0047E2D4` is not yet proven; it is now the primary target for resolving the remaining service-to-BPL dispatch edge. The service workflow traces this target and scans the whole PE for direct call references, while keeping the current claim conservative: parser dictionary identity is confirmed; the final dispatch receiver/ABI is not.
