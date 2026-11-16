@@ -1372,6 +1372,14 @@ Trace کامل `0x004BFC18` (285 بایت) اکنون قرارداد lookup را
 این رفتار نشان می‌دهد delimiter `†` فقط یک رشته تزئینی نیست: دو شناسه را به یک رکورد twin با index مشترک و counterpart متقابل تبدیل می‌کند. پیاده‌سازی Python فعلی parsing این شناسه را انجام می‌دهد؛ مرحله بعد باید semantics خروجی index/counterpart را در مدل field-binding نگه دارد.
 
 
+### مسیر Rec/CC و FillPrintOptionForm
+
+- تابع `0x004D1B30` از رشتهٔ شروع `0x004D21D4 = FillPrintOptionForm method called.` و پایان `0x004D239C = FillPrintOptionForm succeed.` استفاده می‌کند؛ بنابراین نام دقیق‌تر این مسیر `FillPrintOptionForm` است، نه برچسب موقت ShowRecAndCcOptionForm.
+- کلید اختیاری `tokenizedReceivers` در `0x004D2228` خوانده می‌شود. جداکنندهٔ آن در `0x004D225C` برابر U+2020 (`†`) است؛ همین delimiter در شناسه‌های twin-field هم دیده شده است.
+- نام‌های literal در XML-config عبارت‌اند از `Receivers`، `ReceiverDeps`، `ccReceivers` و `ccReceiverDeps` (آدرس‌های `0x004D0BD0` تا `0x004D0C3C`).
+- تابع پنج بار `SetFieldValue` را فراخوانی می‌کند و چند collection موازی در viewer offsetهای `+0x8C`، `+0x90`، `+0x94`، `+0x98` و `+0x9C` را می‌سازد/فیلتر می‌کند؛ چهار مرحلهٔ OptionFormFields در logهای `0x004D226C`، `0x004D22B8`، `0x004D2304` و `0x004D2350` دیده می‌شوند.
+- این یافته مسیر ساخت گزینه‌های چاپ و recipient/CC را مشخص می‌کند، اما هنوز mapping هر collection به فیلد UI نهایی و معنای دقیق ReceiverDeps/ccReceiverDeps به نمونهٔ config واقعی نیاز دارد. مقدار و محتوای این فیلدها نباید از روی نام حدس زده شود.
+
 ### قرارداد دقیق SetFieldValue و استخراج DOCPROPERTY
 
 - TD32 نام `0x004BFDB0` را `TWordViwer.SetFieldValue(TXmlWordConfigField, UnicodeString)` مشخص می‌کند.
