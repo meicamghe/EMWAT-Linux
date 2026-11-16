@@ -72,7 +72,7 @@ jobs:
           python tools/resolve_delphi_vmt_slots.py analysis-input/EmwatMethods.bpl1 event-sink-analysis/interfaces/word-vmt-slots.md
           python tools/scan_named_pe_resource.py analysis-input/EmwatMethods.bpl1 TWORDAPPLICATION event-sink-analysis/interfaces/TWORDAPPLICATION-resources.md
           python tools/scan_named_pe_resource.py analysis-input/EmwatMethods.bpl1 TWORDAPPLICATIONEVENTS event-sink-analysis/interfaces/TWORDAPPLICATIONEVENTS-resources.md
-      - name: Trace generated Word server metadata and event dispatch
+      - name: Trace Word server and event-interface metadata
         run: |
           mkdir -p event-sink-analysis/server-metadata
           for target in 0043E070 0043E0F0 0043E0FC 0043E174 0043E270 0042ABF8 00404F8C 00404FAC 00401188 00401198 00401430 0040479C 00401358 00401210 00401420; do
@@ -113,18 +113,18 @@ jobs:
               encoding="utf-8",
           )
           PY
-      - name: Decode generated Word event metadata strings
+      - name: Decode generated Word error-map and auto-save interval strings
         shell: bash
         run: |
-          mkdir -p event-sink-analysis/event-dispatch
+          mkdir -p event-sink-analysis/error-map-strings
           python - <<'PY'
           import pathlib, re, subprocess, sys
           source = pathlib.Path("event-sink-analysis/server-metadata/event-map-627B74-expanded.md").read_text(encoding="utf-8")
           targets = sorted(set(re.findall(r"^0x[0-9A-Fa-f]{8}: (0044[0-9A-Fa-f]{4}) ->", source, re.M)))
           command = [sys.executable, "tools/decode_pe_strings.py", "analysis-input/EmwatMethods.bpl1"] + ["0x" + target for target in targets]
-          with pathlib.Path("event-sink-analysis/event-dispatch/event-metadata-strings.md").open("w", encoding="utf-8") as output:
+          with pathlib.Path("event-sink-analysis/error-map-strings/strings.md").open("w", encoding="utf-8") as output:
               subprocess.run(command, check=True, stdout=output, text=True)
-          pathlib.Path("event-sink-analysis/event-dispatch/index.md").write_text(
+          pathlib.Path("event-sink-analysis/error-map-strings/index.md").write_text(
               "# Generated Word event metadata string targets\n\n" + "\n".join(f"- 0x{x}" for x in targets) + "\n",
               encoding="utf-8",
           )
