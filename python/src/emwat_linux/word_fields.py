@@ -20,6 +20,31 @@ class WordFieldDecodeError(ValueError):
 
 
 @dataclass(frozen=True)
+class WordFieldIdentifier:
+    """A Word field key, optionally represented as an EMWAT twin-field pair."""
+
+    first: str
+    second: str | None = None
+
+    @property
+    def is_twin(self) -> bool:
+        return self.second is not None
+
+
+def parse_word_field_identifier(field_id: str) -> WordFieldIdentifier:
+    """Split the observed U+2020 twin-field delimiter once.
+
+    The native AddCustomDocPropertiesToDic routine uses the first dagger
+    separator to distinguish TXmlWordConfigTwinField from TXmlWordConfigField.
+    Empty sides fall back to a single identifier, matching its observed branch.
+    """
+    first, separator, remainder = field_id.partition("†")
+    if separator and first and remainder:
+        return WordFieldIdentifier(first=first, second=remainder)
+    return WordFieldIdentifier(first=field_id)
+
+
+@dataclass(frozen=True)
 class DecodedWordField:
     field_id: str
     value: str | bytes
