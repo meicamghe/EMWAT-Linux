@@ -359,3 +359,10 @@ New TD32 symbols:
 These helpers establish that print/document-property handling uses a typed dictionary of `TDocumentCProperty` objects, not a plain string-to-string map. `TDocumentCProperty` instance size is `0x1C`; its internal payload fields remain to be decoded.
 
 The routine at `0x004CCDC8` is `FillImgFldsForPrint`, called directly from `GetFieldIndexInList` at `0x004CB361`. It calls TD32-named `WordAppDocumentBeforeClose` (`0x004CCBBC`) only on a conditional print/image-field branch at `0x004CCF8F`. This reinforces that the symbol name does not represent a registered close event.
+
+
+## Native signature-end matcher and test correction
+
+The address `0x004B032C` is confirmed as an import thunk to `rtl230.bpl!System.RegularExpressions.TRegEx.IsMatch`. `GetDocFieldIndex` passes the exact pattern `^sign.*end[0-2]?[0-9]?$` to this helper and logs matching active-field names as skipped by business rules. The pattern is case-sensitive; the resolved active-field name is the input (not necessarily the original XML field ID).
+
+Added `is_native_business_signature_end()` in `python/src/emwat_linux/word_fields.py` and tests. The first test run failed because the fixture used mixed-case `End`, which does not match the native lower-case regex. Corrected the test cases to lower-case; rerun `43888658420` was queued. The production helper preserves native case sensitivity and is not wired into XML field IDs until the active-field-name normalization is proven.
