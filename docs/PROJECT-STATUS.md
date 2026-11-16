@@ -3,6 +3,9 @@
 
 ## پیشرفت اجرایی جدید — 2026-11-16
 
+- **یکپارچه‌سازی Twin Field در مدل decode:** شناسه‌های فیلد اکنون هنگام decode نیز به ساختار single/twin تبدیل می‌شوند؛ شناسه خام اصلی حفظ شده و دو سمت Twin جداگانه در دسترس adapter قرار می‌گیرد. این تغییر صرفاً مدل‌سازی شناسه است و هیچ mapping حدسی به bookmark یا Writer range انجام نمی‌دهد.
+- **تحلیل مسیر Custom Properties:** artifact شماره 14200962076 (run 43812565648) مسیر dictionary سفارشی را عمیق‌تر کرد. helperهای ContainsValue و SetItem در مسیر FillImageField/FillPrintDocFields به کار می‌روند؛ 0x004D1B30 در TD32 به ShowRecAndCcOptionForm نام‌گذاری شده و از GetDocFieldName فراخوانی می‌شود. FindWindowExtd در 0x0045644C از مسیر FillImageField استفاده می‌شود. این توابع هنوز به‌تنهایی معنای wire یا نگاشت همه ۱۸۰ فیلد را تعیین نمی‌کنند.
+
 - **تکمیل موجودی ساختاری Writer:** بر اساس trace جدید `AddCustomDocPropertiesToDic`، catalog اکنون نام Custom Document Properties را هم بدون خواندن مقدارشان ثبت می‌کند. تست واحد، عدم دسترسی به مقادیر را assert می‌کند و تست UNO واقعی نیز یک property ساختگی اضافه کرده و نام آن را از catalog می‌گیرد.
 - **تفکیک دقیق‌تر فیلد متن/تصویر:** trace نشان داد `FillTextField` بیشتر نقش تشخیص MIME و dispatch به `FillImageField` را دارد؛ نباید آن را setter متنی فرض کرد. قرارداد واقعی setter و mapping فیلدها هنوز در حال بررسی است.
 - **شناخت قرارداد Twin Field:** trace جدید delimiter واقعی `†` (U+2020) را پیدا کرد. فیلدهای نام‌گذاری‌شده با دو سمت غیرخالی به `TXmlWordConfigTwinField` می‌روند؛ ورودی‌های بدون delimiter یا با یک سمت خالی single محسوب می‌شوند. تابع `parse_word_field_identifier` و تست‌های آن اضافه شده‌اند.
