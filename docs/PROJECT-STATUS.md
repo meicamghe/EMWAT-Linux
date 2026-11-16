@@ -7,6 +7,7 @@
 - **تفکیک دقیق‌تر فیلد متن/تصویر:** trace نشان داد `FillTextField` بیشتر نقش تشخیص MIME و dispatch به `FillImageField` را دارد؛ نباید آن را setter متنی فرض کرد. قرارداد واقعی setter و mapping فیلدها هنوز در حال بررسی است.
 - **شناخت قرارداد Twin Field:** trace جدید delimiter واقعی `†` (U+2020) را پیدا کرد. فیلدهای نام‌گذاری‌شده با دو سمت غیرخالی به `TXmlWordConfigTwinField` می‌روند؛ ورودی‌های بدون delimiter یا با یک سمت خالی single محسوب می‌شوند. تابع `parse_word_field_identifier` و تست‌های آن اضافه شده‌اند.
 - **مقصدهای واقعی مقداردهی Word:** trace `FillImageField` نشان داد مقدار فیلد می‌تواند در `CustomDocumentProperties[index]` یا `Field.Result.Text` نوشته شود؛ مسیر Field.Result.Text وضعیت قفل فیلد را هم بررسی می‌کند. این دو مقصد در مدل Linux باید جدا بمانند.
+- **CI جدید:** Python bridge run `43812324657` با 87 تست (یک skip اختیاری UNO) سبز است؛ UNO run `43811929904` نیز 8/8 تست را پاس کرده است. اجرای helper pipeline `43812127854` هم موفق بوده است.
 - **اجرای مهندسی معکوس فیلدها:** run `43811074616` با موفقیت تمام شد و artifact شامل ۴۱ فایل disassembly/callsite/strings دریافت و بررسی شد. مسیر custom document properties و نقش شرطی `SilentSaveEmwatDoc` مستند شد.
 
 - **LibreOffice UNO واقعی:** ماژول python/src/emwat_linux/libreoffice_adapter.py اضافه شده است. برای هر سند یک process و profile مستقل LibreOffice و یک socket محلی UNO ساخته می‌شود؛ ورودی DOC/CFB و DOCX شناخته می‌شود؛ listenerهای تغییر، Save و Close ثبت می‌شوند؛ هنگام Close یک snapshot با فیلتر Word 97 به فایل DOC جداگانه نوشته می‌شود.
