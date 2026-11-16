@@ -26,7 +26,7 @@ def main() -> None:
     _, names, modules, procedures = parse_td32(blob, base, end)
     image_base = pe.OPTIONAL_HEADER.ImageBase
 
-    rows: list[tuple[int, int, str, int, int]] = []
+    rows: list[tuple[int, int, str, int, int, str]] = []
     for proc in procedures:
         name = str(proc.get("name", ""))
         if not any(term in name.casefold() for term in terms):
