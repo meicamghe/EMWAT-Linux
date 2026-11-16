@@ -163,6 +163,10 @@ class BridgeHTTPServer:
                 if parsed.path != "/":
                     self._send(404, b"", "text/plain; charset=utf-8")
                     return
+                # The embedded Windows bridge emits POST /?invoke=<random 1-5 digit ID>.
+                if not re.fullmatch(r"invoke=\\d{1,5}", parsed.query):
+                    self._send(404, b"", "text/plain; charset=utf-8")
+                    return
                 if self.headers.get("Transfer-Encoding"):
                     self._send(400, b"transfer_encoding_not_supported", "text/plain; charset=utf-8")
                     return
@@ -224,10 +228,28 @@ class BridgeHTTPServer:
                         raise ValueError("invalid or oversized response body")
                     if not isinstance(response.content_type, str) or "\r" in response.content_type or "\n" in response.content_type:
                         raise ValueError("invalid response content type")
-                    self._send(response.status, response.body, response.content_type)
+                    self._send(
+                        response.status,
+                        response.body,
+                        response.content_type,
+                        {
+                            # Preserve the exact legacy header spelling recovered from
+                            # EmwatService.exe. Origin remains allowlisted above.
+                            "Access-Control-Allow-Headers": "*",
+                            "Access-Control-Allow-Method": "*",
+                        },
+                    )
                 except Exception:
                     # Do not expose internal exception details to the browser.
-                    self._send(500, b"internal_bridge_error", "text/plain; charset=utf-8")
+                    self._send(
+                        500,
+                        b"internal_bridge_error",
+                        "text/plain; charset=utf-8",
+                        {
+                            "Access-Control-Allow-Headers": "*",
+                            "Access-Control-Allow-Method": "*",
+                        },
+                    )
 
             def do_OPTIONS(self) -> None:
                 self._send(405, b"method_not_allowed", "text/plain; charset=utf-8")
