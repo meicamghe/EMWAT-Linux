@@ -394,3 +394,7 @@ Source: workflow 43832144163, artifact 14209690263.
 ## Delphi runtime package and class-resolution imports
 
 The PE import table confirms that `EmwatService.exe` imports `LoadPackage`, `UnloadPackage`, `StartExe`, `GetClass`, `ClassCreate`, `ClassDestroy`, `TObject.InheritsFrom`, `ClassParent`, `ClassName`, and two `GetProcAddress` entries. This establishes the service's capability to load Delphi runtime packages and resolve/create classes dynamically. It is consistent with the service-side `TMethodInfo` parser and the BPL-side `TEmwatMethod.Invoke` contract, but the exact class-name resolution and callsite chain still require IAT-reference tracing. The current workflow scans pointer references to these import slots.
+
+## TMainForm published event/method table
+
+The VMT at `0x0047B284` points to a Delphi published method table at `0x0047B84E` (`VMT-0x40`). The table begins with a 16-bit count of 17, followed by records containing entry size, code address, and shortstring method name. The first entry is `IdHTTPServerCommandGet` at `0x0047BF30`, proving the HTTP request handler's class/method identity. Other recovered entries include `FormCreate`, `Terminate`, `Log`, `ShowMainForm`, `HideMainForm`, and `FormClose`. The VMT inspector now decodes the full table for the next pass.
