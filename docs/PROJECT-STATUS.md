@@ -1772,3 +1772,16 @@ The BPL export/API analysis resolves the earlier naming ambiguity. The public TE
 - The binary's active Word BeforeSave callback asks the user Yes/No/Cancel; Yes closes with SaveChanges=True, No closes with SaveChanges=False, and Cancel vetoes closing.
 - The current LibreOffice close listener snapshots the document in `queryClosing` and does not yet implement this three-way decision. The live UNO roundtrip proves DOCX open/close/export only; it does not prove equivalent close-choice behavior.
 - Do not mark the desktop workflow production-ready or claim exact No/Cancel response parity until this behavior and the corresponding HTTP response semantics are implemented and tested.
+
+
+### Legacy DOC input round-trip verified — 2026-11-16
+
+- Added a second stage to the live UNO integration test: the DOCX fixture is exported to legacy Word CFB `.doc`, then that `.doc` payload is reopened through `LibreOfficeAdapter` as an actual incoming request.
+- The second pass verifies the `.doc` input path, document text, bookmark inventory, and preservation of the updated custom document property before exporting another CFB `.doc`.
+- Python bridge run `43821455825`: **101 tests run, 100 passed, 1 optional UNO test skipped**.
+- LibreOffice UNO integration run `43821455852`: **10/10 passed**, including the DOCX → DOC → DOC roundtrip. This validates synthetic legacy DOC import/export, not an original Almas template or registration response.
+
+### Additional parallel reverse-engineering tracks
+
+- Controller ownership workflow `43821043328` completed successfully (artifact `14204701301`). It separates `TEDPController.Notify` / print-handler cleanup from the main viewer `OnControlerNotify` path; no unsupported event equivalence was inferred.
+- Print-handler/controller wiring workflow `43821379564` and image/text-field workflow `43821526090` were launched as separate jobs and were still in progress at the last check. Their results are not yet included in the confirmed findings.
