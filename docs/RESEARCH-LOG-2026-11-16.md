@@ -405,3 +405,8 @@ The field-mapping artifact `14236151592` includes the expanded `GetDocFieldIndex
 The `FillTwinFields` routine (`0x004C02EC`) scans the Word Fields collection from a one-based starting index through the collection count, extracts each `Field.Code` using `FindFieldInActivefields`, and compares the normalized identifier to the requested twin name. It returns the first matching one-based index, or `0` when no match exists. `GetDocFieldIndex` calls this routine on the twin-field path and aborts when the required twin is absent.
 
 Added `find_native_twin_field_index()` to `word_fields.py` with one-based indexing and native zero-on-miss behavior, plus tests for start offsets, missing partners, and invalid zero-based input. Python CI run `43890223183`: 106 tests passed, 2 optional skips.
+
+
+## Native custom-property field map builder implemented
+
+Added `SingleWordFieldDescriptor`, `TwinWordFieldDescriptor`, `WordCustomPropertyFieldMaps`, and `build_word_custom_property_field_maps()` in `word_fields.py`. It mirrors `AddCustomDocPropertiesToDic` enumeration from index zero, routes only non-empty first-dagger pairs to the twin map, and keeps malformed/empty-side names in the single map. Tests verify indices and separation. Python CI run `43890539219`: 107 tests passed, 2 optional skips.
