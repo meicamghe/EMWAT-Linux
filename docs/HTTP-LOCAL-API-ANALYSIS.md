@@ -472,6 +472,18 @@ Thus the local service returns a rewritten/restructured DOC rather than echoing 
 
 The service response-info RTTI now maps WriteContent to 0x004610FC, ServeFile to 0x00460E48, and SmartServeFile to 0x00460FAC (workflow 43829779730, artifact 14208036695).
 
-The WriteContent method has three distinct response-body paths: content stream (+0xBC), content text (+0xB8), and fallback HTML. It skips body output for HTTP status 100, 204, and 304. It invokes header preparation at 0x004612F4 and cleanup at 0x00460764. SmartServeFile reads If-Modified-Since, evaluates file timestamp metadata, and uses the ServeFile VMT slot. See EMWAT-SERVICE-EXECUTABLE-ANALYSIS.md for evidence boundaries.
+The WriteContent method has three distinct response-body paths: content text (+0xBC), content stream (+0xB8), and fallback HTML. It skips body output for HTTP status 100, 204, and 304. It invokes header preparation at 0x004612F4 and cleanup at 0x00460764. SmartServeFile reads If-Modified-Since, evaluates file timestamp metadata, and uses the ServeFile VMT slot. See EMWAT-SERVICE-EXECUTABLE-ANALYSIS.md for evidence boundaries.
 
 Direct immediate CALL scanning found no caller for the published WriteContent method; indirect dispatch remains unresolved. This generic Indy method trace is not proof of the final EditWordDocument HTTP payload.
+
+
+## MainForm CommandGet and concrete response-write callsites — 2026-11-16
+
+Source: workflow 43831365563, artifact 14208144442.
+
+- Delphi method RTTI resolves TMainForm.IdHTTPServerCommandGet to 0x0047BF30.
+- The handler reads the request parameter named invoke (UTF-16 string at 0x0047C360) and routes the invoke path through helper 0x0047E0EC; package lifecycle/logging helpers include 0x0047E2D4 and 0x0047D2C8. The exact close-time response body for this invoke branch still needs to be traced.
+- The same handler has separate init and heartbeat routes. The init branch reads parameter init, applies CORS response headers (Access-Control-Allow-Origin, Access-Control-Allow-Headers, Access-Control-Allow-Method), and returns the embedded initialization HTML/JavaScript at 0x0047C59C. The embedded script sends POST requests to 127.0.0.1:$V{myport}?invoke=<nonce> and forwards responseText to the parent window.
+- The init branch assigns the response text to TIdHTTPResponseInfo.ContentText at object offset +0xBC and directly calls WriteContent at 0x004610FC from 0x0047C237. The heartbeat branch checks parameter heartbeat and also calls WriteContent at 0x0047C2A9.
+- This direct callsite confirms the field layout: ContentText is +0xBC; ContentStream is +0xB8. Earlier draft notes that reversed these fields have been corrected.
+- Evidence boundary: the generic HTTP response writer is now directly tied to the MainForm handler for init/heartbeat. The invoke branch's plugin result serialization and exact close-time Almas response envelope remain the next target.

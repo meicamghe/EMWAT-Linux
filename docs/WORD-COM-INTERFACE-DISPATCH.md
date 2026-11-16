@@ -1079,3 +1079,15 @@ The complete TD32 procedure trace identifies the setup code as TWordViwer.OnTmrA
 - Helper 0x00404B84 maps to TTimer.SetEnabled; the timer is enabled.
 
 Therefore TWordViwer.OnControlerNotify is the periodic timer callback for this path. It is not the Word BeforeSave event. Its body reads the active Word document and calls 0x00456DFC; the exact semantics of that helper and its controller-message interfaces are not yet resolved. The periodic callback must not be mistaken for the final close-time response/registration path.
+
+
+## MainForm CommandGet and concrete response-write callsites — 2026-11-16
+
+Source: workflow 43831365563, artifact 14208144442.
+
+- Delphi method RTTI resolves TMainForm.IdHTTPServerCommandGet to 0x0047BF30.
+- The handler reads the request parameter named invoke (UTF-16 string at 0x0047C360) and routes the invoke path through helper 0x0047E0EC; package lifecycle/logging helpers include 0x0047E2D4 and 0x0047D2C8. The exact close-time response body for this invoke branch still needs to be traced.
+- The same handler has separate init and heartbeat routes. The init branch reads parameter init, applies CORS response headers (Access-Control-Allow-Origin, Access-Control-Allow-Headers, Access-Control-Allow-Method), and returns the embedded initialization HTML/JavaScript at 0x0047C59C. The embedded script sends POST requests to 127.0.0.1:$V{myport}?invoke=<nonce> and forwards responseText to the parent window.
+- The init branch assigns the response text to TIdHTTPResponseInfo.ContentText at object offset +0xBC and directly calls WriteContent at 0x004610FC from 0x0047C237. The heartbeat branch checks parameter heartbeat and also calls WriteContent at 0x0047C2A9.
+- This direct callsite confirms the field layout: ContentText is +0xBC; ContentStream is +0xB8. Earlier draft notes that reversed these fields have been corrected.
+- Evidence boundary: the generic HTTP response writer is now directly tied to the MainForm handler for init/heartbeat. The invoke branch's plugin result serialization and exact close-time Almas response envelope remain the next target.

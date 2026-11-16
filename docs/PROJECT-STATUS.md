@@ -1864,3 +1864,8 @@ The BPL export/API analysis resolves the earlier naming ambiguity. The public TE
 ## Word timer callback path resolved — 2026-11-16
 
 The OnTmrAutoSave procedure installs OnControlerNotify as the OnTimer event of the TTimer stored at TWordViwer offset +0x7C. The helper addresses resolve through the package IAT to VCL TTimer.SetOnTimer, SetInterval, and SetEnabled. The timer interval is clamped to at least 10 seconds (0x2710 ms) and enabled. This establishes a periodic document-notification/content-read path distinct from WordAppDocumentBeforeSave, which handles the close-time registration prompt. Helper 0x00456DFC remains under analysis.
+
+
+## MainForm HTTP entrypoint mapped — 2026-11-16
+
+The service RTTI resolves TMainForm.IdHTTPServerCommandGet to 0x0047BF30. It reads the invoke query parameter and routes that branch through the package/request helper at 0x0047E0EC. Separate init and heartbeat routes are present: init returns the embedded HTML/JavaScript bootstrap with CORS headers, and heartbeat returns a small response. The init/heartbeat branches directly set TIdHTTPResponseInfo.ContentText (+0xBC) and call WriteContent (0x004610FC). This confirms ContentText is +0xBC and ContentStream is +0xB8. The exact invoke-branch response payload remains unresolved.

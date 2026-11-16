@@ -353,7 +353,7 @@ The disassembly at 0x004610FC supports the following bounded observations:
 
 - It ensures response-header preparation through helper 0x004612F4 when the response state flag at object offset +0xC2 is not set.
 - It suppresses body output for HTTP status codes 100, 204, and 304.
-- It has a content-stream branch using the response object's +0xBC field and a content-text branch using +0xB8.
+- It has a content-text branch using the response object's +0xBC field and a content-stream branch using +0xB8.
 - When neither content stream nor content text is available, it constructs a fallback HTML body and uses a UTF-8 HTML content type.
 - It clears the temporary content-stream field and calls cleanup helper 0x00460764.
 
@@ -367,3 +367,15 @@ The helper trace identifies 0x004609EC as a routine that stores the response sta
 - The exact branch condition and timestamp tolerance should be rechecked with the helper/constant trace before documenting a strict cache decision rule.
 
 Evidence boundary: this resolves the service's generic HTTP response writer, not yet the final Almas EditWordDocument response path or the exact body serialization for its close-time registration.
+
+
+## MainForm CommandGet and concrete response-write callsites — 2026-11-16
+
+Source: workflow 43831365563, artifact 14208144442.
+
+- Delphi method RTTI resolves TMainForm.IdHTTPServerCommandGet to 0x0047BF30.
+- The handler reads the request parameter named invoke (UTF-16 string at 0x0047C360) and routes the invoke path through helper 0x0047E0EC; package lifecycle/logging helpers include 0x0047E2D4 and 0x0047D2C8. The exact close-time response body for this invoke branch still needs to be traced.
+- The same handler has separate init and heartbeat routes. The init branch reads parameter init, applies CORS response headers (Access-Control-Allow-Origin, Access-Control-Allow-Headers, Access-Control-Allow-Method), and returns the embedded initialization HTML/JavaScript at 0x0047C59C. The embedded script sends POST requests to 127.0.0.1:$V{myport}?invoke=<nonce> and forwards responseText to the parent window.
+- The init branch assigns the response text to TIdHTTPResponseInfo.ContentText at object offset +0xBC and directly calls WriteContent at 0x004610FC from 0x0047C237. The heartbeat branch checks parameter heartbeat and also calls WriteContent at 0x0047C2A9.
+- This direct callsite confirms the field layout: ContentText is +0xBC; ContentStream is +0xB8. Earlier draft notes that reversed these fields have been corrected.
+- Evidence boundary: the generic HTTP response writer is now directly tied to the MainForm handler for init/heartbeat. The invoke branch's plugin result serialization and exact close-time Almas response envelope remain the next target.
