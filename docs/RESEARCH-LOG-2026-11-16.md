@@ -325,3 +325,8 @@ Expanded `.github/workflows/analyze-word-automation-surface.yml` in two passes:
 - Added print-field comparison/branch string decoding for `0x004CCB0C`, `0x004CCB2C`, `0x004CCB38`, `0x004CCB44`, `0x004CCB60`, `0x004CCB6C`, `0x004CC280`, `0x004CC26C`, `0x004CC6DD`, `0x004CC6C9`, `0x004CCB84`, and `0x004CCAA7`.
 
 Workflow commits: `367e4aa58514029278624c65837059f13807394a` and `c159c69141da56ea1bba0c8d829e4839febaf135`. The run/artifact for these latest additions is not yet verified; do not report these traces as completed until the artifact is available.
+
+
+## CI correction — image branch string output path
+
+The expanded analysis run `43886359961` exposed a workflow-only failure in the `word-save-print` job: the new decoder wrote to `word-automation/fields/`, which is not created in that job. The lifecycle and field-mapping jobs both succeeded; only save-print failed at the shell redirection. Corrected the decoder output to `word-automation/save-print/image-field-branch-strings.md` in commit `1cb8397930047bb6612872d463b6ced688cd323f`. A fresh workflow run `43886833015` was queued. The earlier in-progress run `43886492031` predates this path fix and is expected to retain the same save-print failure; use the new run for validation.
