@@ -8,11 +8,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from emwat_linux.word_fields import (
-    WordCustomPropertyFieldMaps,
-    build_word_custom_property_field_maps,
-)
-
 
 @dataclass(frozen=True)
 class WriterTextFieldInfo:
@@ -33,7 +28,6 @@ class WriterDocumentCatalog:
     document_indexes: tuple[str, ...]
     text_fields: tuple[WriterTextFieldInfo, ...]
     custom_document_properties: tuple[str, ...]
-    custom_property_field_maps: WordCustomPropertyFieldMaps
 
 
 def _element_names(container: object) -> tuple[str, ...]:
@@ -101,19 +95,18 @@ def _text_fields(document: object) -> tuple[WriterTextFieldInfo, ...]:
     return tuple(result)
 
 
-def _custom_document_property_names_in_order(document: object) -> tuple[str, ...]:
-    """Return custom-property names in the UNO property enumeration order."""
+def _custom_document_property_names(document: object) -> tuple[str, ...]:
+    """Return custom-property names only; never retrieve property values."""
     try:
         properties = document.getDocumentProperties().getUserDefinedProperties()
         info = properties.getPropertySetInfo()
-        return tuple(str(item.Name) for item in info.getProperties())
+        return tuple(sorted(str(item.Name) for item in info.getProperties()))
     except Exception:
         return ()
 
 
 def inspect_writer_document(document: object) -> WriterDocumentCatalog:
     """Return structural names and text-field metadata without document values."""
-    property_names_in_order = _custom_document_property_names_in_order(document)
     return WriterDocumentCatalog(
         bookmarks=_container_names(document, "getBookmarks"),
         named_ranges=_container_names(document, "getNamedRanges"),
@@ -123,10 +116,7 @@ def inspect_writer_document(document: object) -> WriterDocumentCatalog:
         graphic_objects=_container_names(document, "getGraphicObjects"),
         document_indexes=_container_names(document, "getDocumentIndexes"),
         text_fields=_text_fields(document),
-        custom_document_properties=tuple(sorted(property_names_in_order)),
-        custom_property_field_maps=build_word_custom_property_field_maps(
-            property_names_in_order
-        ),
+        custom_document_properties=_custom_document_property_names(document),
     )
 
 
