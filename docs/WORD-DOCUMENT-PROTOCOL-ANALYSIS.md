@@ -1478,3 +1478,21 @@ The lifecycle artifact for run `43815900208` includes the following verified cla
 This establishes that `separator`, `concater`, and `paramId` are first-class typed properties on the XML field model, not merely arbitrary strings found in a sample. It does **not** yet establish how the Word viewer consumes them or whether `concater` is a prefix/suffix, join delimiter, or field-specific formatting token. A new targeted run traces the getter/setter bodies and inspects the three viewer-side VMT layouts before any Linux behavior is implemented.
 
 Evidence: `Word-interface-tables.md`, `Word-close-symbol-inventory.md`, lifecycle run `43815900208`, artifact `14202811972`.
+
+
+## Run 135 — XML attribute parser confirms canonical Concator spelling
+
+Artifact: custom-property helper run `43818926297`, artifact `14203857802`.
+
+The parser-side property methods provide a clearer source of truth than the TD32 getter labels:
+
+- `TXMLFieldType.Set_Separator` at `0x00478880` calls `TXMLNode.GetAttributeNodes` (import thunk `0x0044B488`) and searches the literal key `separator` (`0x00478928`).
+- `TXMLFieldType.Set_Concator` at `0x004789C8` uses the same attribute-node path and searches the literal key `concator` (`0x00478A70`).
+- `TXMLFieldType.Set_ParamId` at `0x00478B10` searches the literal key `paramId` (`0x00478BB8`).
+- `0x0044B488` is the XMLRTL thunk for `TXMLNode.GetAttributeNodes`; `0x0044B4C0` is the thunk for `TXMLNode.SetAttribute`.
+
+### Spelling discrepancy
+
+The current request-schema transcription says `concater`, while the native parser-side XML property is unambiguously spelled `concator`. These are different strings; no alias between them is proven. The TD32 `Get_*` serializer-side symbols also show a name/literal offset (for example, `Get_Concator` writes `separator`), so the parser-side `Set_*` methods are the trusted evidence for incoming XML attribute names.
+
+The Python decoder preserves all field attributes and does not currently normalize either spelling, so no runtime behavior was changed. Keep the discrepancy explicit until the raw request XML is rechecked; do not silently treat `concater` and `concator` as interchangeable.
