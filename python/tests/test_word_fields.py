@@ -42,6 +42,8 @@ class WordFieldDecodingTests(unittest.TestCase):
     def test_extracts_docproperty_identifier_from_word_field_code(self):
         code = r"DOCPROPERTY  LetterSubject  \* MERGEFORMAT"
         self.assertEqual(extract_docproperty_identifier(code), "LetterSubject")
+        triple_space = "DOCPROPERTY    LetterSubject  \\* MERGEFORMAT"
+        self.assertEqual(extract_docproperty_identifier(triple_space), "")
 
     def test_preserves_non_docproperty_or_unterminated_field_code(self):
         code = r"MERGEFIELD  LetterSubject  \* MERGEFORMAT"
