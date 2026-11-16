@@ -82,6 +82,8 @@ jobs:
             python tools/trace_pe_range.py analysis-input/EmwatService.exe 0x0047BF30 0x0047C341 dispatch-crosswalk/service/mainform-request-handler-full.md
             python tools/trace_pe_range.py analysis-input/EmwatService.exe 0x00470D00 0x00471033 dispatch-crosswalk/service/parse-method-full.md
             python tools/trace_pe_range.py analysis-input/EmwatService.exe 0x00470DB2 0x00470E80 dispatch-crosswalk/service/parse-method-code-island-1.md
+            python tools/trace_pe_range.py analysis-input/EmwatService.exe 0x00470E58 0x00470F80 dispatch-crosswalk/service/parse-method-class-validation.md
+            python tools/decode_pe_strings.py analysis-input/EmwatService.exe 0x004710E0 0x004710F0 0x00471110 0x00471128 0x00471150 0x004711FC > dispatch-crosswalk/service/parse-method-class-validation-strings.md
             python tools/trace_pe_range.py analysis-input/EmwatService.exe 0x00470E00 0x00470E50 dispatch-crosswalk/service/getclass-callsite-context.md
             python tools/trace_pe_range.py analysis-input/EmwatService.exe 0x00470F80 0x00471033 dispatch-crosswalk/service/parse-method-finally-island.md
             for range in "0x0045EA80 0x0045EC20" "0x0045F780 0x0045F940" "0x00470E80 0x00471020" "0x0047C180 0x0047C300" "0x0047D8C0 0x0047D980" "0x0047DB00 0x0047DBD0" "0x0047DD40 0x0047DE10"; do
@@ -94,7 +96,7 @@ jobs:
             python tools/resolve_delphi_vmt_slots.py analysis-input/EmwatService.exe dispatch-crosswalk/service/service-vmt.md || true
             python tools/trace_delphi_interfaces.py analysis-input/EmwatService.exe dispatch-crosswalk/service/service-interfaces.md || true
             python tools/list_pe_imports.py analysis-input/EmwatService.exe dispatch-crosswalk/service/service-imports.md
-            for address in 0x004873E0 0x0048740C 0x00487410 0x0048753C 0x004875CC 0x00487680 0x00487B9C; do
+            for address in 0x004873E0 0x0048740C 0x00487410 0x0048742C 0x00487434 0x00487438 0x00487460 0x00487464 0x0048753C 0x004875CC 0x00487680 0x00487B9C; do
               python tools/scan_pe_pointer_refs.py analysis-input/EmwatService.exe "$address" "dispatch-crosswalk/service/import-${address}-pointer-refs.md" || true
             done
             python -m py_compile tools/scan_pe_call_refs.py tools/scan_pe_rel32_call_bytes.py tools/scan_pe_ff15_iat_refs.py
