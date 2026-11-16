@@ -1101,3 +1101,27 @@ Source: workflow 43832553168, artifact 14208369288.
 - The Delphi VMT/interface scan resolves TEmwatMethod VMT method-table base at 0x0046ABFC. TEditWordDocument VMT is 0x005ED764 and its parent pointer resolves to the TEmwatMethod VMT header start (0x0046ABA4 = 0x0046ABFC - 0x58). This establishes TEditWordDocument inherits TEmwatMethod.
 - TScanDocument, TFaxDocument, TGetEmwatVersion, TSetEmwatVersion, TUpgradeEmwat, TImageEdition, TEditExcelWorkBook, and TCompareWordDocument also point to the same TEmwatMethod parent header.
 - TEmwatMethod.Invoke iterates the dictionary's key/value enumerator and dispatches each entry through an instance virtual/interface slot. Direct TD32 caller scan finds only one direct call in unit finalization; the service's runtime invocation is therefore not yet a proven direct callsite and likely uses RTTI/dynamic dispatch. This must be resolved before claiming the complete request-to-class call chain.
+
+
+## Run 144 — controller content post-processing reaches euUnArchive
+
+Source: workflow `43867641761`, job `word-controller-close` succeeded, artifact `14226866454`.
+
+The new full TD32 trace resolves helper `0x00456DFC` as:
+
+- `Emwatutils.euUnArchive`
+- VA range: `0x00456DFC–0x00456EFF`
+- Procedure size: `0x104`
+- The only direct TD32 caller found is `TWordViwer.OnControlerNotify` at callsite `0x004BB5E9`.
+
+The callsite sits after the controller callback:
+1. `OnControlerNotify` obtains the active Word document's content through the COM interface call at `0x004BB516` (document interface slot `+0xDC`).
+2. It checks that the returned string is non-empty and longer than `0x14` characters before entering the transformation path.
+3. It creates two indexed/list-like objects using helper `0x004563A8`, with string constants at `0x004BB754` and `0x004BB76C`.
+4. It calls `euUnArchive` with those two objects and a third string argument.
+
+Inside `euUnArchive`, the disassembly reads a count from one indexed interface, retrieves one string from each of two indexed interfaces at matching indexes, adds the pair to a newly created object, then invokes a final method on that object with the third string argument. This is consistent with a structured unpack/translation operation, but the exact object types, the two string keys, and the archive format are not yet proven. The helper name alone is not proof that the input is a ZIP/7z archive.
+
+The new artifact confirms that the periodic controller-notify path performs a content transformation after `Get_Content`; it does **not** yet connect that transformed object to the invoke HTTP response or prove that every timer tick is a close-time registration. The next trace batch targets `0x00452C10`, `0x004563A8`, and the three string constants to resolve the object/list types and serialization boundary.
+
+Evidence boundary: static TD32 disassembly and direct-call scan; no runtime payload capture was added.
