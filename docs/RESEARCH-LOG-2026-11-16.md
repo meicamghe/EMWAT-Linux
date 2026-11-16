@@ -285,7 +285,7 @@ For a `param` token, `0x00470B38` extracts the `name` attribute into the EDX-sid
 - slot 1: parameter name;
 - slot 2: parameter text value.
 
-The append helper then calls the collection's virtual methods at offsets `+0x08` and `+0x0C` with the two strings. This resolves the prior unknown record schema at the structural level. The exact collection class implementation and subsequent bridge into the BPL `TDictionary<AnsiString,AnsiString>` remain to be proven; do not conflate this service-side parser collection with the BPL dictionary until that dispatch is traced.
+The append helper writes the standard 12-byte dictionary entry (hash, key, value) and increments the dictionary count. The constructor/VMT chain now proves this is the `TDictionary<AnsiString,AnsiString>` owned by `TMethodInfo`, not merely a structurally similar custom collection. The same generic key/value type is used by BPL `TEmwatMethod.Invoke`.
 
 The Word controller-close artifact `14234120250` also resolves the event registration more precisely:
 - `OnTmrAutoSave` writes `WordAppDocumentBeforeSave` (`0x004CD154`), `WordAppNewDocument` (`0x004CD54C`), and `WordAppWindowActivate` (`0x004CD9C0`) into the event-sink callback record.
@@ -447,7 +447,7 @@ The trace of `0x00441DD4` identifies it as `TWordApplication.ScreenRefresh`, not
 
 Re-opened service artifact `14233736412`. `ParseMethod` (`0x00470D00`) constructs an object using class reference at `0x00470924` via `0x00471214`, then passes that object to XML parser `0x00470B38`. The parser helper chain computes the parameter-name hash (`0x0046A620`), probes the bucket table (`0x0046A570`), and appends a three-slot entry at `0x0046A7A4`: hash, key/name, value/text. The object layout uses entries pointer at `+0x04`, count at `+0x08`, comparer at `+0x0C`, and capacity at `+0x10`.
 
-The same service PE exposes `TDictionary<System.AnsiString,System.AnsiString>` VMT `0x00469A3C` (typeinfo `0x0046A054`). The parser entry layout and object field offsets strongly match this dictionary implementation, but the class reference at `0x00470924` has not yet been directly linked to that VMT. Expanded service workflow now traces `0x00471214`, the hash/probe helpers, the dictionary VMT pointer references, and the full TD32 `TDictionary` symbol list to prove the object identity and Add method chain.
+The same service PE exposes `TDictionary<System.AnsiString,System.AnsiString>` VMT `0x00469A3C` (typeinfo `0x0046A054`). The parser entry layout and object field offsets now have a direct constructor/VMT link: `TMethodInfo` (VMT `0x0047097C`, instance size `0x10`) is created by `0x00471214`; its constructor loads class reference `0x004699E4`, which points to dictionary VMT `0x00469A3C`, and calls `0x0046AA70` to create the `TDictionary<AnsiString,AnsiString>` instance stored at `TMethodInfo + 0x08`. `ParseMethod` passes this exact dictionary pointer to the XML parser. The same type is accepted by BPL `TEmwatMethod.Invoke`; only the final indirect dispatch edge remains unresolved.
 
 ## Service PE symbol-list limitation
 
@@ -465,3 +465,7 @@ This establishes that the runtime custom-property map is populated/updated from 
 ## Whole-PE direct-call scanner added
 
 Added `tools/scan_pe_call_refs.py`, which disassembles all executable PE sections and finds direct immediate CALL references without requiring TD32 procedure boundaries. It complements `trace_td32_callers.py` (symbol-bounded only) and `scan_pe_pointer_refs.py` (raw pointer bytes). The Word workflow now scans the descriptor dictionary's GetItem/SetItem/Add/AddOrSetValue/DoSetValue and enumerable-constructor addresses; the service workflow scans the dictionary constructor and parser helpers. Both workflows run `py_compile` before using the tool. This is intended to catch callsites in unsymbolized or incorrectly bounded regions.
+
+## Confirmed service parser dictionary object identity
+
+Artifact `14238566198` now closes the identity gap. `TMethodInfo` has VMT `0x0047097C` and instance size `0x10`; its constructor `0x00471214` loads the class reference at `0x004699E4`, whose pointer is the `TDictionary<System.AnsiString,System.AnsiString>` VMT `0x00469A3C`, and calls `0x0046AA70` to construct the dictionary. The dictionary pointer is stored at `TMethodInfo + 0x08`. `ParseMethod` passes this same `+0x08` pointer to `0x00470B38`; the parser's `0x0046ADBC`/`0x0046A570`/`0x0046A7A4` chain hashes, probes, and writes entries. This matches the BPL `TEmwatMethod.Invoke(TDictionary<AnsiString,AnsiString>)` contract exactly. The cross-module call to Invoke remains indirect and is still a separate unresolved dispatch edge.
