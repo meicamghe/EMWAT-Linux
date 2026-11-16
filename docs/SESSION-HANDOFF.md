@@ -1040,9 +1040,9 @@ Do not implement guessed `signData` joining or claim end-to-end Almas registrati
 ### Important corrections
 1. `0x004563A8` is `FixDirectionInFarsiNumericMode`, not a list constructor. The two objects in `OnControlerNotify` are created by helper `0x0040414C` using global/class reference `0x0062F810`.
 2. Strings `0x004BB754` and `0x004BB76C` decode to `.easd` and `.easz`. The path at `TWordViwer+0x80` is direction-normalized and these suffixes are appended.
-3. `0x00452C10` is `T7zPlugin` constructor; `0x00456DFC` is `Emwatutils.euUnArchive`. The latter passes `mW@Tlogs43end_+` to plugin slot `+0x28`, paired entries to `+0x10`, and the `.easz` path to `+0x18`. This strongly indicates SevenZip-backed archive processing, but the exact vtable method names and object types still need resolution. Do not state the string is a confirmed password until slot +0x28 is mapped.
-4. The exact VMT inspection proves `TEmwatMethod` slot `+0x10` is `0x00401068`, not `TEmwatMethod.Invoke` (`0x0046C82C`). Do not assume Invoke is the request-time virtual dispatcher.
-5. `TEditWordDocument` VMT slot `+0x10` points to `0x005EE82C`, TD32-decorated as `TScanDocument.PerformMethod`; `TScanDocument` VMT slot `+0x10` points to `0x005EEB48`, TD32-decorated as `TFaxDocument.PerformMethod`. Preserve these as pointer/name discrepancies pending class-registration resolution.
+3. `0x00452C10` constructs the `T7zOutArchive` interface returned by `T7zPlugin`; `0x00456DFC` is `Emwatutils.euUnArchive`. Its two inputs are `TStringList` instances. Interface slot `+0x10` reaches `AddFiles` (`0x453F34`), slot `+0x18` reaches `SaveToStream` (`0x454668`), and slot `+0x28` reaches `0x4547E8`, which stores the input string in field `+0x38` = `FPassword`. Thus `mW@Tlogs43end_+` is the archive password. The path `.easd` is the archive entry name and `.easz` is the output archive path.
+4. The exact VMT inspection proves `TEmwatMethod` slot `+0x0C` is the shared public Invoke wrapper `0x0046C9E0` (TD32 label `Finalization`); slot `+0x10` is the abstract/error stub `0x00401068`. The wrapper calls the inner dictionary/XML helper `0x0046C82C`, then dispatches the concrete subclass through VMT slot `+0x10`.
+5. `TEditWordDocument` inherits `TEmwatMethod`; its VMT slot `+0x10` points to `0x005EE82C`, TD32-decorated as `TScanDocument.PerformMethod`. `TScanDocument` VMT slot `+0x10` points to `0x005EEB48`, TD32-decorated as `TFaxDocument.PerformMethod`. Class resolution and the wrapper-to-subclass VMT dispatch are confirmed; preserve the pointer/name discrepancies.
 
 ### New workflows
 - `.github/workflows/analyze-emwat-controller-unarchive.yml` expanded to inspect helpers `0x0040414C`, `0x004543C4`, SevenZip class procedures, VMTs, and interface tables.
@@ -1050,10 +1050,11 @@ Do not implement guessed `signData` joining or claim end-to-end Almas registrati
 - The dispatch crosswalk workflow's YAML path-filter newline bug was corrected; run `43868190188` passed all jobs.
 
 ### Next tasks
-1. Inspect artifact for run `43868705082` and resolve the two indexed objects and `T7zPlugin` vtable slots.
-2. Inspect artifact for run `43868531786` to continue service XML class lookup and response writer tracing.
-3. Connect the concrete `EditWordDocument` class resolution to the VMT slot and `PerformMethod` body.
-4. Trace the post-Word archive result into the `invoke` HTTP response. Keep timer-driven `OnControlerNotify` separate from close-time registration.
+1. Inspect the latest archive-method workflow artifact for the exact stream class behind global `0x0062F800` and the remaining password callback path.
+2. Trace the concrete `TEditWordDocument.PerformMethod` body at `0x005EE82C` through `TWordViwer.LoadDocument`, field updates, and the archive source file.
+3. Connect the `.easz` archive output from `OnControlerNotify` to the service invoke response and determine whether it is the close-time commit payload.
+4. Trace the final HTTP response serialization/ContentText assignment; do not treat init/heartbeat WriteContent calls as proof of the invoke response.
+5. Keep timer-driven `OnControlerNotify`, Word BeforeSave, and the Almas apply-on-close action as separate events until their data flow is linked.
 
 
 ### Service artifact analysis correction
@@ -1088,3 +1089,10 @@ Do not implement guessed `signData` joining or claim end-to-end Almas registrati
 - Interface `+0x18` → `T7zOutArchive.SaveToStream` (`0x454668`): saves to base path + `.easz`.
 - Interface `+0x28` → `0x4547E8`: despite TD32 label `SetProgressCallback`, body stores the input string in field `+0x38`, identified by the T7zOutArchive field table as `FPassword`. Therefore `mW@Tlogs43end_+` is the archive password assigned in this path. The separate `SetPassword` at `0x4547DC` is a no-op.
 - Remaining: resolve global `0x62F800` to exact stream class; trace the callback that consumes FPassword; then capture a synthetic runtime archive if possible. Do not claim the archive has been validated at runtime.
+
+
+### Confirmed service-to-BPL dispatch correction
+- The prior caution that the `TEmwatMethod.Invoke` helper was not the runtime dispatcher is superseded by the public wrapper distinction.
+- Service parser extracts `method@class` and `param@name`, resolves `GetClass("T"+className)`, constructs the class, and calls VMT slot `+0x0C`.
+- `TEmwatMethod` VMT slot `+0x0C` → `0x0046C9E0` shared wrapper; wrapper calls inner XML/dictionary helper `0x0046C82C` then subclass `PerformMethod` at VMT slot `+0x10`.
+- The service-side class lookup and dispatch chain is fully documented in `docs/EMWAT-SERVICE-EXECUTABLE-ANALYSIS.md`; the remaining response serialization and close-time commit link are still open.
