@@ -91,3 +91,20 @@ This directly explains why the local HTTP request remains pending during Word ed
 Artifacts: wait-mechanism run `43874638245` / artifact `14229716255`; request-lifecycle run `43873354906` / artifact `14229047092`; response-writer run `43872534265` / artifact `14228851062`.
 
 Correction to the earlier checkpoint: the 200-iteration block is a repeating ~1-second maintenance cycle, not a maximum 1-second wait. The loop continues until the close callback clears the state field.
+
+
+## Follow-up: Word automation type signatures (verified from the downloaded TD32 artifact)
+
+A further pass over the full class-procedure index found a much more decisive signal than the earlier executable strings: EMWAT's compiled method signatures explicitly reference the Word type library interfaces `Wordxp._Document`, `Wordxp.Fields`, `Wordxp.Field`, and Word application event callback signatures. Relevant routines include `FillField`, `FillImageField`, `FillMSWFields`, `FillPrintDocFields`, `WordAppDocumentBeforeClose`, `WordAppDocumentBeforeSave`, `WordAppNewDocument`, `WordAppWindowActivate`, `WordAppDocumentBeforePrint`, and `QuitWord`.
+
+This means Windows file-association changes cannot substitute LibreOffice for the Word object model. A drop-in replacement would need to satisfy the actual Word automation interfaces and event contracts, or EMWAT would need its Word-dependent code path replaced by another backend.
+
+The complete procedure index and evidence boundary are recorded in `docs/WORD-AUTOMATION-SURFACE-2026-11-16.md`.
+
+## Additional parallel workflow commits
+
+- `a5dee4d9345017ce37fa1621e681aaa23e8c7581`: added lifecycle, field-mapping, and save/print trace jobs.
+- `d420c63b41203dd27c336352776e40049c7a1153`: included Word controller constructor/destructor targets.
+- `2dd31ccd7438a4c6c6eca232aab1f5b1e5a41bcd`: added the Word automation interface-surface document.
+
+The connected GitHub workflow-run lookup returned no runs for these commits at verification time. The workflows are committed but their newly requested artifacts are not yet available; no pass result is claimed.
