@@ -19,6 +19,9 @@
 
 ## پیشرفت اجرایی جدید — 2026-11-16
 
+- **تعیین هویت slot مربوط به Controller Notify:** wrapper `TWordDocument.Get_Content` در `0x0042BDF8` از COM slot `+0xDC` استفاده می‌کند؛ بنابراین فراخوانی `OnControlerNotify` به `+0xDC` مسیر Content سند است، نه Saved getter/setter. مقدار `-1` که در آن call ارسال می‌شود هنوز معنای دقیقش مشخص نیست. wrapperهای Saved نیز قطعی‌اند: `Get_Saved`=`+0xD4` و `Set_Saved`=`+0xD8`.
+- **CI تکمیلی Close/Content:** run شماره 43814460258 موفق شد و artifact شماره 14201473774 را تولید کرد.
+
 - **parser اختصاصی DOCPROPERTY:** تابع `extract_docproperty_identifier` به decoder اضافه شد و رفتار native `FindFieldInActivefields` را با حساسیت به حروف، جداکننده دو فاصله و محدودیت ۲۵۵ کاراکتر بازسازی می‌کند. تست‌های edge-case از جمله triple-space و field ناقص اضافه شدند.
 - **CI پایتون پس از parser:** run شماره 43814423443 سبز شد: ۹۴ تست اجرا، ۹۳ پاس و یک skip اختیاری UNO.
 
