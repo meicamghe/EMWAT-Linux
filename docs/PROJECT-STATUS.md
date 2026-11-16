@@ -2192,8 +2192,12 @@ Import Table در `EmwatService.exe` شامل `LoadPackage`، `UnloadPackage`، 
 - `ParseMethod` کلاس را با `GetClass` resolve و با `TObject.Create` نمونه‌سازی می‌کند.
 - سپس سرویس slot مجازی `VMT+0x0C` را فراخوانی می‌کند.
 - در BPL، این slot در `TEmwatMethod` به `Finalization` در `0x0046C9E0` می‌رسد و آن تابع `TEmwatMethod.Invoke` در `0x0046C82C` را صدا می‌زند.
-- بنابراین زنجیره service→BPL تا ورود به `Invoke` اثبات شده است. اتصال نهایی `Invoke` به override مجازی `PerformMethod` در slot `+0x10` در batch بعدی تکمیل می‌شود.
+- بنابراین زنجیره service→BPL تا ورود به `Invoke` اثبات شده است. تابع `Finalization` پس از `Invoke`، slot مجازی `+0x10` را فراخوانی می‌کند؛ در VMT کلاس `TEditWordDocument` این slot به `0x005EE82C` می‌رسد و آن تابع `LoadDocument` را اجرا می‌کند.
 
 ## نتیجه CI پل Python — 2026-11-16
 
 پس از تغییر مستندات dispatcher برای تطبیق با prefix واقعی Delphi، workflow `python-bridge.yml` با موفقیت اجرا شد: **107 تست موفق، 2 تست اختیاری skip**؛ run `43953680591`.
+
+## تکمیل زنجیره dispatch تا LoadDocument — 2026-11-16
+
+`Finalization` ابتدا `Invoke` را در `0x0046CA67` اجرا می‌کند و سپس در `0x0046CA88` از VMT slot `+0x10`، `PerformMethod` کلاس فرزند را فراخوانی می‌کند. در VMT `TEditWordDocument`، این slot به `0x005EE82C` می‌رسد؛ بدنه آن `TWordViwer.LoadDocument` در `0x004B7724` را فراخوانی می‌کند. بنابراین زنجیره از HTTP/XML سرویس تا شروع Word automation در BPL مشخص شده است.
