@@ -646,7 +646,7 @@ The service call at `0x00470EF6` is `call dword ptr [object.VMT+0x0C]`. The BPL 
 
 `EmwatService.ParseMethod` → `GetClass` → `TObject.Create` → object VMT slot `+0x0C` → `TEmwatMethod.Finalization` (`0x0046C9E0`) → `TEmwatMethod.Invoke` (`0x0046C82C`).
 
-The remaining detail is to expand `Invoke` beyond its first internal RET and document its indirect call to the subclass `PerformMethod` slot `+0x10`, which is overridden by `TEditWordDocument.PerformMethod` (`0x005EE82C`). The object-creation and cross-module Invoke entry are no longer open questions.
+The full `Invoke` range (`0x0046C82C–0x0046C9DD`) is now decoded. `Invoke` processes the `TMethodInfo`/parameter data but does not itself call `PerformMethod`. The subsequent virtual call is in the enclosing `TEmwatMethod.Finalization` wrapper at `0x0046CA88`, through the object's VMT slot `+0x10`. For the `TEditWordDocument` VMT (`0x005ED764`), slot `+0x10` points to `0x005EE82C` (TD32 procedure symbol `TScanDocument.PerformMethod`), which calls `TWordViwer.LoadDocument` (`0x004B7724`). Thus the complete chain is service → VMT+0x0C Finalization → Invoke → VMT+0x10 PerformMethod → LoadDocument; the `Invoke`/`PerformMethod` distinction is now explicit.
 
 ## Full Invoke body trace added
 
@@ -663,3 +663,11 @@ The `TMainForm.FormCreate` trace (`0x0047CCD8`) creates the `TIdHTTPServer` comp
 ## Indy HTTP event callback wrapper identified
 
 `TMainForm.FormCreate` installs a method pointer on the `TIdHTTPServer` instance: code `0x0047DF64`, data `TMainForm`. The callback at `0x0047DF64` inspects the request/event argument at `[EDX+4]` against the form's state at `+0x420` and constants `0x16`/`0x11`; on matching cases it calls `0x0047DF84`. This establishes `0x0047DF64` as the actual server event callback wrapper, not the published `IdHTTPServerCommandGet` method itself. The next helper `0x0047DF84` is now traced to see whether it routes to `IdHTTPServerCommandGet` (`0x0047BF30`) or a related command handler.
+
+## Finalization wrapper calls Invoke and then PerformMethod
+
+The full `TEmwatMethod.Finalization` trace (`0x0046C9E0–0x0046CC98`) shows the exact order:
+- `0x0046CA67`: direct call to `TEmwatMethod.Invoke` (`0x0046C82C`) with the request metadata object.
+- `0x0046CA88`: indirect call through `[object.VMT+0x10]`, passing the same request metadata and context.
+
+The full `Invoke` body (`0x0046C82C–0x0046C9DD`) handles the parameter data and collection enumeration; it does not itself call `PerformMethod`. The `+0x10` call is in `Finalization`, after `Invoke` returns. For the BPL VMT named `TEditWordDocument` at `0x005ED764`, slot `+0x10` points to `0x005EE82C`; its TD32 procedure name is `TScanDocument.PerformMethod` (a symbol/class-name mismatch worth preserving), and that implementation calls `TWordViwer.LoadDocument` at `0x004B7724`. This closes the full service-to-document-load dispatch path.
