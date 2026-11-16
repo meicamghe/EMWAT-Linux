@@ -437,4 +437,8 @@ The new `generic-dictionary-symbols.md` inventory reveals that the single/twin d
 - `TDictionary<UnicodeString,TXmlWordConfigTwinField>.Add` at `0x004D6894`; `AddOrSetValue` at `0x004D6A98`.
 - Runtime `TDictionary<UnicodeString,TDocumentCProperty>.Add` at `0x004D3B38`; `AddOrSetValue` at `0x004D3D3C`.
 
-The expanded workflow now traces these methods and their direct callers, along with `0x00441DD4` (the generated XML-field helper called by `AddXmlWordConfigFieldsToDic`). This should identify where descriptor maps are actually populated; no caller mapping is claimed yet.
+The expanded workflow now traces these methods and their direct callers, along with `0x00441DD4` (which is actually `TWordApplication.ScreenRefresh`, called by `AddXmlWordConfigFieldsToDic`). This should identify where descriptor maps are actually populated; no caller mapping is claimed yet.
+
+## Correction: AddXmlWordConfigFieldsToDic body and ScreenRefresh identity
+
+The trace of `0x00441DD4` identifies it as `TWordApplication.ScreenRefresh`, not a generated XML-field helper. In `AddXmlWordConfigFieldsToDic` (`0x004D1148`), the routine clears/releases several viewer-owned collections and dictionaries (`+0x64`, `+0x68`, `+0x6C`), calls ScreenRefresh through the Word Application wrapper, emits refresh/clear/success diagnostics, and resets viewer flags. Its TD32 symbol name therefore does not prove that it populates the single/twin descriptor dictionaries. The actual Add/SetItem methods and their direct callers are being traced separately.
