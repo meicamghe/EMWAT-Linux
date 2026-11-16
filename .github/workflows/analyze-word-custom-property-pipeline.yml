@@ -8,6 +8,7 @@ on:
       - 'tools/trace_td32_callers.py'
       - 'tools/trace_pe_target.py'
       - 'tools/scan_pe_pointer_refs.py'
+      - 'tools/list_td32_symbols.py'
   workflow_dispatch:
 
 permissions:
@@ -55,6 +56,11 @@ jobs:
           status=0
           for pid in "${pids[@]}"; do wait "$pid" || status=1; done
           exit "$status"
+      - name: Index all related TD32 class methods
+        run: |
+          python tools/list_td32_symbols.py analysis-input/EmwatMethods.bpl1 \
+            TDocumentCProperty TXmlWordConfigField TXmlWordConfigTwinField \
+            > word-custom-property-pipeline/td32-related-symbols.md
       - name: Decode field-name rules and custom-property delimiters
         run: |
           python tools/decode_pe_strings.py analysis-input/EmwatMethods.bpl1 \
