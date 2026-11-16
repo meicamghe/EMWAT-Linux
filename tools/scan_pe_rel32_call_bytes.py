@@ -33,7 +33,6 @@ def main() -> None:
             continue
         code = section.get_data()
         base_va = pe.OPTIONAL_HEADER.ImageBase + section.VirtualAddress
-        raw_base = section.PointerToRawData
         name = section.Name.rstrip(bytes([0])).decode("ascii", "replace")
         for offset in range(max(0, len(code) - 4)):
             if code[offset] != 0xE8:
