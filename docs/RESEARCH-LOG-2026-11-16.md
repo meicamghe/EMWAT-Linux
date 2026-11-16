@@ -619,3 +619,14 @@ The reachable `GetClass` path stores the returned class pointer in `EBX`, tests 
 ## BPL published-method RTTI tables queued for dispatch crosswalk
 
 The BPL VMT inventory shows `TEmwatMethod` at `0x0046ABFC` and `TEditWordDocument` at `0x005ED764`. The former's class-name-adjacent RTTI bytes include the published method name `Invoke`, while the subclass VMT slot `+0x10` points to `TEditWordDocument.PerformMethod` (`0x005EE82C`). The service-side `GetClass`/class-creation chain needs to be matched to this BPL class/method metadata. The Word workflow now runs the enhanced VMT inspector on both class VMTs to decode their full published method tables, including code addresses, and to confirm whether `Invoke` is a published method or a normal virtual slot.
+
+## ParseMethod constructs request class and performs indirect virtual call
+
+The class-validation block (`14269340064`) reveals the next part of the request path:
+1. `GetClass` returns a class reference in `EBX`.
+2. A helper at `0x004010B8` obtains a class-related string/value, which is compared against literal `TUpgradeEmwat` at `0x00471128`; the result is stored as a Boolean at `TMethodInfo+0x04`.
+3. The class is instantiated through helper `0x004010D8`; the returned object pointer is stored in `EBX`.
+4. The service stores the `TMethodInfo` pointer at `[object+0x04]`.
+5. It loads the parsed parameter dictionary from `[TMethodInfo+0x08]` and makes an indirect virtual call through `[object.VMT+0x0C]` at `0x00470EF6`, passing the request context and dictionary.
+
+This is the first concrete class-instance → virtual-dispatch edge in the service path and is the strongest candidate for the BPL `Invoke` bridge. The slot identity is not yet asserted: the current BPL VMT dump labels `TEmwatMethod+0x0C` as `Finalization`, while `TEmwatMethod.Invoke` is at `0x0046C82C` and `PerformMethod` is a separate virtual slot at `+0x10`. The enhanced BPL method-table/VMT trace and service helper traces must resolve whether the service object uses an interface-adjusted VMT, a wrapper class, or another slot mapping before calling this `Invoke`.
