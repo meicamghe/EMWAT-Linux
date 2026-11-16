@@ -1785,3 +1785,19 @@ The BPL export/API analysis resolves the earlier naming ambiguity. The public TE
 
 - Controller ownership workflow `43821043328` completed successfully (artifact `14204701301`). It separates `TEDPController.Notify` / print-handler cleanup from the main viewer `OnControlerNotify` path; no unsupported event equivalence was inferred.
 - Print-handler/controller wiring workflow `43821379564` and image/text-field workflow `43821526090` were launched as separate jobs and were still in progress at the last check. Their results are not yet included in the confirmed findings.
+
+
+### Real UNO → EditWordDocument handler → wire response verified — 2026-11-16
+
+- Added a live integration test that constructs a captured-format `<emwat><method class="EditWordDocument">` request, parses `wordConfig`/`wordBody`, opens the DOCX through real LibreOffice UNO, auto-closes the test document, and runs the actual `EditWordDocumentService`/handler response path.
+- The test validates HTTP-layer result status/content type and the exact successful `response-word` envelope, including `mimetype=application/msword`, `encryption=base64`, and a decoded legacy CFB `.doc` payload.
+- Python bridge run `43821716274`: **102 tests run, 100 passed, 2 optional integration tests skipped**.
+- LibreOffice UNO run `43821716306`: **11/11 passed**, including the new real UNO → service → handler → response test and the legacy CFB `.doc` reopen test.
+- This verifies the success path through the native bridge composition layers. It does not prove the user-facing close-choice behavior, exact No/Cancel envelope, or fidelity against an original Almas template.
+
+### Controller and image-field traces — 2026-11-16
+
+- Print-handler/controller workflow `43821379564` succeeded (artifact `14204039496`). `IEDPController` is implemented by `TEDPController` (IID `34959712-4691-4b92-ae62-c740dc955895`); its interface table maps `+0x0C` to `SetPrintThread`, `+0x10` to `SetOnNotify`, and `+0x14` to `Finalization`. The `TEmwatDocPrintHandler` methods are in `frmWordPrintOptionUnit` and include separate Rec/CC and selected-receiver processing; this remains distinct from the main editor's BeforeSave registration path.
+- The controller trace confirms `TEDPController.Notify` calls `TEmwatDocPrintHandler.GetDocFieldName` with its `+0x1C` member. No direct call to `TWordViwer.OnControlerNotify` was established from that method.
+- Image/text-field workflow `43821526090` succeeded (artifact `14204287692`). `FillImageField` branches on XML-field attributes and calls Word field/document COM interfaces; `AddImagesToDoc` delegates caption/font work to `GetCaptionItemFont`. The precise image anchor/field mapping is still not known because no original Almas template is available.
+- Both workflows are analysis-only; their output is evidence for the next mapping stage, not proof of a complete image/signature implementation.
