@@ -538,7 +538,7 @@ This appears to be a generic-method symbol/implementation mapping mismatch in th
 
 ## Import thunk caller tracing added
 
-The raw IAT pointer-reference results locate import-jump thunks rather than their high-level callsites. For each imported API, the thunk entry is four bytes before the IAT operand match (e.g. `GetClass` IAT `0x00487B9C` is referenced by a thunk at `0x00402352`; `LoadPackage` IAT `0x00487680` by `0x00402172`; `ClassCreate` IAT `0x00487410` by `0x00401156`). The service workflow now traces these thunk entries and scans for rel32 CALLs to them, which should reveal the actual class/package API callsites instead of merely reporting the IAT reference.
+The raw IAT pointer-reference results locate import-jump stubs rather than their high-level callsites. Each stub begins with a two-byte `mov eax,eax` prefix, followed by `jmp dword ptr [IAT]`; the IAT operand match is four bytes after the stub start, while the actual jump instruction (and rel32 CALL target) is two bytes before the operand. Example: `LoadPackage` IAT `0x00487680` is jumped through `0x00402174` (stub start `0x00402172`), and `GetClass` IAT `0x00487B9C` through `0x00402354` (stub start `0x00402352`). Follow-up trace of `0x0047E0EC` confirms a direct CALL at `0x0047E15F` to `0x00402174`, proving the package-load gate invokes `LoadPackage`. The service workflow now targets the actual jump-instruction addresses for CALL-site scanning of `GetClass`, `ClassCreate`, `ClassDestroy`, `LoadPackage`, `GetProcAddress`, and `StartExe`.
 
 ## Descriptor dictionary VMT/method pointer scan added
 
@@ -551,3 +551,7 @@ The import-thunk trace confirms that service import wrappers are `mov eax,eax; j
 ## IAT thunk scan result and next pointer-xref layer
 
 The absolute IAT scanner (`14266043661`) finds only the expected `JMP [IAT]` stubs for `LoadPackage`, `GetClass`, `ClassCreate`, `ClassDestroy`, `GetProcAddress`, and `StartExe`; it finds no direct `CALL [IAT]` sites. The rel32 scan also found no direct CALLs to the thunk entries. This indicates the API references may be mediated by stored function pointers, runtime package tables, or other indirect dispatch. The service workflow now additionally scans raw pointer references to the thunk code addresses themselves, to locate registration tables or callback fields before deciding the imports are unused.
+
+### Confirmed LoadPackage callsite
+
+The service trace at `0x0047E0EC` executes `call 0x00402174` at `0x0047E15F`. The target is the `jmp dword ptr [0x00487680]` thunk for imported `LoadPackage`. The helper constructs the package path/name around literal `EmwatMethods.bpl`, invokes this loader, stores the returned module pointer, and logs either `Unable to load "EmwatMethods.bpl".` or `"EmwatMethods.bpl" loaded.` This closes the actual package-loading edge. The class-resolution side (`GetClass`/`ClassCreate`) remains to be traced at their corrected jump-instruction targets.
