@@ -2131,3 +2131,10 @@ Workflow تحلیل Word گسترش یافت تا helper مرکزی درج تص�
 - مقادیر alignment: `right`، `center`، `left`، `top`، `middle`، `bottom`.
 - سبک‌های caption: `bold`، `italic`، `underline`، `strikeout`.
 - اجرای Workflow `43889057276` هر سه job را موفق تمام کرد و artifactهای field mapping و save/print تولید شدند.
+
+
+## مدل‌سازی descriptorهای single و twin در Python — 2026-11-16
+
+تابع `build_word_custom_property_field_maps()` و مدل‌های `SingleWordFieldDescriptor` / `TwinWordFieldDescriptor` به `word_fields.py` اضافه شدند. این تابع از نام Custom Document Propertyها دو مجموعه جدا می‌سازد و index صفرمبنا را مطابق حلقه native حفظ می‌کند.
+
+- Python CI اجرا `43890539219`: **۱۰۷ تست موفق، ۲ skip اختیاری**.
