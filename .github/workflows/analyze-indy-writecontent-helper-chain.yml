@@ -37,7 +37,7 @@ jobs:
         shell: bash
         run: |
           pids=()
-          for target in 004612F4 00460764 004609EC 0045E2FC 00458174 00458148 0044612F4; do
+          for target in 004612F4 00460764 004609EC 0045E2FC 00458174 00458148 0044D380 0044E734; do
             (
               set -e
               python tools/trace_pe_target.py indy-writecontent-helpers/EmwatService.exe 0x$target indy-writecontent-helpers/target-$target.md 3200 ret
