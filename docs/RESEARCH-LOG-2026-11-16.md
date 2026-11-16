@@ -452,3 +452,12 @@ The same service PE exposes `TDictionary<System.AnsiString,System.AnsiString>` V
 ## Service PE symbol-list limitation
 
 The first service dictionary-symbol workflow attempt (`43893061863`) failed because `EmwatService.exe` has no TD32 debug signature; `list_td32_symbols.py` cannot be used on this PE. Removed that step in commit `a626848729948f448dc345b57490a92c2d473d00`. Service-side dictionary identity will be established through RTTI/VMT pointer references and static caller/dataflow traces, not TD32 symbol names. The BPL remains TD32-symbolized and continues to use the separate generic-dictionary symbol workflow.
+
+## Runtime custom-property map dataflow found
+
+Caller scans from the expanded field artifact resolve the `viewer + 0x64` runtime map:
+- `FillImageField` calls `TDictionary<UnicodeString,TDocumentCProperty>.SetItem` (`0x004D34B0`) at `0x004BC45E`.
+- `FillImageField` and `FillPrintDocFields` call `ContainsValue` (`0x004D3DF8`); `FillPrintDocFields` has six direct sites.
+- `FillPrintDocFields` calls `Remove` (`0x004D3B78`) at four sites, and `FillPrintOptionForm` calls it once.
+
+This establishes that the runtime custom-property map is populated/updated from the image-field path and then checked/consumed during print processing. The single/twin descriptor maps at `+0x68/+0x6C` remain separate: `AddCustomDocPropertiesToDic` calls their `Remove` methods, while direct call scans show no callers yet for their generic `Add`/`AddOrSetValue` methods. The next workflow batch now traces their `SetItem`, `TryGetValue`, `ContainsKey`, and `Clear` methods to locate population.
