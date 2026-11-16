@@ -513,3 +513,15 @@ The service interface inventory identifies `TMainForm` at VMT `0x0047B284`, inst
 ## Service PE import inventory added
 
 Added `tools/list_pe_imports.py` and wired it into the service dispatch workflow. It records every imported symbol with its exact IAT VA. This will allow checking whether the service uses Delphi class/package resolution APIs or whether dispatch is mediated through a package callback/VMT rather than a direct static import. The import inventory itself is descriptive; no API semantics are inferred until the actual import list is available.
+
+## Delphi package/class factory imports found in EmwatService.exe
+
+Artifact `14265623608` includes the service PE import inventory. Relevant imports include:
+- `LoadPackage` at IAT `0x00487680` and `UnloadPackage` at `0x0048767C`.
+- `StartExe` at IAT `0x004873E0`.
+- `GetClass` at IAT `0x00487B9C`.
+- `ClassCreate` at IAT `0x00487410` and `ClassDestroy` at `0x0048740C`.
+- `TObject.InheritsFrom`, `ClassParent`, and `ClassName` helpers.
+- `GetProcAddress` at IAT `0x0048753C` and `0x004875CC`.
+
+This is strong evidence that the service can load the BPL and resolve/create Delphi classes dynamically. It does not by itself prove which XML attribute becomes the class name or which object receives `TEmwatMethod.Invoke`. The service workflow now scans all pointer references to these IAT slots to recover the actual callsites and surrounding dispatch logic.
