@@ -274,3 +274,23 @@ The service artifact was renamed to `package-loader-full.md` and confirms `0x004
 The Linux POST bridge was updated to emit the recovered legacy `Access-Control-Allow-Headers: *` and singular `Access-Control-Allow-Method: *` headers while retaining the project's allowlisted Origin policy as a deliberate security hardening. A temporary strict `invoke` query validator was removed because the native trace confirms the client-generated nonce but does not establish server-side numeric validation. The transport keeps the query opaque. Final Python bridge run `43883570154` passed: 104 tests, 2 optional skips. Relevant commits: `7cf67752672f7787983e05677fd50a5909434a1c`, `cdf434e688e73d227dcad77dd3a586e3b23d8329`, `e858f14d0dbcf52ca7496ef43354160aa4c337a8`.
 
 The LibreOffice backend contract was corrected to reflect the existing Python/UNO prototype and prior verification (Python 96 tests with one skip; UNO integration 8/8 on a synthetic DOCX/DOCPROPERTY fixture), while explicitly distinguishing those component tests from full Almas end-to-end compatibility. Contract update commit: `02b3d4fe9133be0d08b3fb98b5f1cf0c9887a028`.
+
+
+## Follow-up — exact parameter-record layout and Word event-sink correction
+
+The service artifact `14233736412` was re-opened and the parser helper chain was traced through `0x0046A620`, `0x0046A570`, and `0x0046A7A4`.
+
+For a `param` token, `0x00470B38` extracts the `name` attribute into the EDX-side string and passes the parser token's text value through the ECX-side string. `0x0046A620` computes the name hash; `0x0046A570` probes the internal collection for the key/insertion position. The append helper stores a 12-byte record as:
+- slot 0: computed hash;
+- slot 1: parameter name;
+- slot 2: parameter text value.
+
+The append helper then calls the collection's virtual methods at offsets `+0x08` and `+0x0C` with the two strings. This resolves the prior unknown record schema at the structural level. The exact collection class implementation and subsequent bridge into the BPL `TDictionary<AnsiString,AnsiString>` remain to be proven; do not conflate this service-side parser collection with the BPL dictionary until that dispatch is traced.
+
+The Word controller-close artifact `14234120250` also resolves the event registration more precisely:
+- `OnTmrAutoSave` writes `WordAppDocumentBeforeSave` (`0x004CD154`), `WordAppNewDocument` (`0x004CD54C`), and `WordAppWindowActivate` (`0x004CD9C0`) into the event-sink callback record.
+- It installs `WordAppDocumentBeforePrintBGPrint` (`0x004CE030`) or alternate callback `0x004D00AC` based on viewer flag `+0x3C`.
+- The TD32-named `WordAppDocumentBeforeClose` (`0x004CCBBC`) has only one direct caller in the current scan: `FillImgFldsForPrint` at `0x004CCF8F`. Its body calls `GetXmlFieldInfo`; it is not installed by the observed event-sink registration block. Treat the name as a symbol label, not proof of an actual close event hookup.
+- `SilentSaveEmwatDoc` is called from `GetDocFieldName` on the `Hidden_Customizable` special-field path. It builds two temporary string lists, invokes `0x004AEBBC`, sets viewer flag `+0x44C`, and conditionally calls `TWrapRecord.LineCount`. The latter's only direct caller is this routine. Exact list semantics and serialization remain open.
+
+These corrections are recorded in `docs/WORD-AUTOMATION-SURFACE-2026-11-16.md`.
