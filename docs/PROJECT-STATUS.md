@@ -17,6 +17,7 @@
 - **CI جدید:** Python bridge run `43812324657` با 87 تست (یک skip اختیاری UNO) سبز است؛ UNO run `43811929904` نیز 8/8 تست را پاس کرده است. اجرای helper pipeline `43812127854` هم موفق بوده است.
 - **تکمیل lookup مقدار Custom Property:** helper pipeline run `43812565648` موفق شد؛ `0x004D3DF8` برابر `TDictionary<UnicodeString,TDocumentCProperty>.ContainsValue` و `0x004D34B0` برابر `SetItem` است. `0x004D1B30` نیز `ShowRecAndCcOptionForm` و `0x0045644C` تابع `FindWindowExtd` است؛ نقش دقیق آن در special-caseها هنوز باز است.
 - **نوشتن Custom Document Property در Writer:** ماژول `writer_properties.py` فقط property موجود با نام دقیق را به‌روزرسانی می‌کند؛ property ناشناخته را ایجاد نمی‌کند و مقدار قبلی را نمی‌خواند. تست UNO واقعی این عملیات را روی fixture ساختگی تأیید کرد.
+- **فهرست نمادهای TD32:** run `43813303321` موفق شد و 611 procedure مرتبط با `TDocumentCProperty` و single/twin field classes را index کرد؛ `SetFieldValue` در `0x004BFDB0` و `GetXmlFieldInfo` در `0x004BFC18` برای trace دقیق‌تر مشخص شدند.
 - **CI نهایی این مرحله:** Python run `43813400123` با 91 تست (یک skip اختیاری UNO) سبز است؛ UNO run `43813378877` نیز 8/8 تست را پاس کرده است.
 - **اجرای مهندسی معکوس فیلدها:** run `43811074616` با موفقیت تمام شد و artifact شامل ۴۱ فایل disassembly/callsite/strings دریافت و بررسی شد. مسیر custom document properties و نقش شرطی `SilentSaveEmwatDoc` مستند شد.
 
