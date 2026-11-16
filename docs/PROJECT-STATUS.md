@@ -2123,3 +2123,11 @@ Workflow تحلیل Word گسترش یافت تا helper مرکزی درج تص�
 
 - Python CI اجرا `43889681823`: **۱۰۵ تست موفق، ۲ skip اختیاری**.
 - helper امضای business نیز با regex دقیق و case-sensitive باینری پیاده‌سازی شده است.
+
+
+## تکمیل شاخه MIME و alignment — 2026-11-16
+
+- مقدار MIME شاخه متن در `FillTextField` دقیقاً `text/plain` است؛ فیلد بدون interface یا با MIME غیر از `text/plain` به `FillImageField` می‌رود.
+- مقادیر alignment: `right`، `center`، `left`، `top`، `middle`، `bottom`.
+- سبک‌های caption: `bold`، `italic`، `underline`، `strikeout`.
+- اجرای Workflow `43889057276` هر سه job را موفق تمام کرد و artifactهای field mapping و save/print تولید شدند.
