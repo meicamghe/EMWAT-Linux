@@ -114,6 +114,44 @@ class LibreOfficeIntegrationTests(unittest.TestCase):
             self.assertEqual(close_event.disposition, CloseDisposition.CLOSED)
             output = adapter.export_final_document(handle)
             self.assertTrue(output.startswith(_CFB_SIGNATURE))
+
+            # The real EMWAT request carries a legacy OLE/CFB .doc, not DOCX.
+            # Reopen the exported CFB payload to verify the actual input path.
+            roundtrip_request = EditWordDocumentRequest(
+                config=request.config,
+                document_bytes=output,
+                sign_data_text=request.sign_data_text,
+                extra_parameters=request.extra_parameters,
+            )
+            roundtrip_handle = adapter.open_document(
+                roundtrip_request,
+                on_modified=lambda: 1,
+                on_saved=lambda: None,
+            )
+            try:
+                self.assertEqual(roundtrip_handle.source_path.suffix, ".doc")
+                self.assertIn(
+                    "EMWAT integration fixture",
+                    roundtrip_handle.document.getText().getString(),
+                )
+                roundtrip_properties = (
+                    roundtrip_handle.document.getDocumentProperties()
+                    .getUserDefinedProperties()
+                )
+                self.assertEqual(
+                    roundtrip_properties.getPropertyValue("EMWATIntegrationMarker"),
+                    "updated-fixture-value",
+                )
+                roundtrip_catalog = adapter.inspect_document(roundtrip_handle)
+                self.assertIn("LetterSubject", roundtrip_catalog.bookmarks)
+                roundtrip_handle.document.close(True)
+                roundtrip_close = adapter.wait_for_close(roundtrip_handle)
+                self.assertEqual(roundtrip_close.disposition, CloseDisposition.CLOSED)
+                final_roundtrip = adapter.export_final_document(roundtrip_handle)
+                self.assertTrue(final_roundtrip.startswith(_CFB_SIGNATURE))
+            finally:
+                if roundtrip_handle.process.poll() is None:
+                    adapter._cleanup(roundtrip_handle)
         finally:
             if handle.process.poll() is None:
                 adapter._cleanup(handle)
