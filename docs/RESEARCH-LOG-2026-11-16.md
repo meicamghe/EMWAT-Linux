@@ -234,3 +234,17 @@ Additional CI refinements:
 - `4bfd627dee5b33e9a57fea5cb37cde3a6ea3ae89` and `752c5b5718684975f40487401b7094617698a39d`: add and correct the output path for decoding Word field/custom-property key constants.
 
 Runs `43882768547`, `43882896421`, and `43882925143` were observed in progress at the time of this log update. Their final conclusions/artifacts must be checked before reporting them as passed.
+
+
+## Follow-up — service package-load gate and controller/content crosswalk corrections
+
+The expanded service string trace revealed that `0x0047E0EC` is a package-load gate, not a generic route helper. It references `EmwatMethods.bpl` and logs either `Unable to load "EmwatMethods.bpl".` or `"EmwatMethods.bpl" loaded.`. The handler tests this Boolean before parsing XML. It also uses the literal `invoke` and contains CORS-like header strings, including the exact literal `Access-Control-Allow-Method:*`. See service lifecycle doc update commit `85d61cb325e00655d39ccd1fe1956dd6a6bd729b`.
+
+The controller-close artifact `14232349256` establishes:
+- `TWordDocument.Get_Content` at `0x0042BDF8` calls a Word document interface method at vtable offset `+0xDC`.
+- `0x00456DFC` is `euUnArchive` (EmailUtil), called directly from `TWordViwer.OnControlerNotify` at `0x004BB5E9`; it is not the Word content getter.
+- `TWordViwer.CostumizeRecAndCC` at `0x004D281C` is called from controller notification, field-name lookup, document protection, and option rollback; it sets/clears viewer flag `+0x5C` around a Word interface call at vtable offset `+0x2BC`.
+- `TWrapRecord.LineCount` at `0x004D2948` is called by `SilentSaveEmwatDoc` at `0x004D25F6`.
+- The save/close prompt strings include Persian choices `موافقم`, `خیر`, `انصراف`, and a result log. The callback's method name is BeforeSave while its embedded log says OnBeforeClose; do not assume event hookup semantics from that string alone.
+
+These findings are documented in `docs/WORD-AUTOMATION-SURFACE-2026-11-16.md` (commit `907907345e1211901df3ec944d7421bc72bd86a8`). The earlier association of `0x00456DFC` with content extraction is explicitly corrected.
