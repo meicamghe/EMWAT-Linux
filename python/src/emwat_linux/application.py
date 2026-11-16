@@ -39,3 +39,46 @@ def create_bridge_server(
         allowed_parent_origins=allowed_parent_origins,
         require_origin=True,
     )
+
+
+def create_libreoffice_bridge_server(
+    *,
+    allowed_origins: frozenset[str],
+    cancel_response_factory,
+    allowed_parent_origins: frozenset[str] = frozenset(),
+    office_adapter=None,
+    additional_handlers=None,
+    host: str = "127.0.0.1",
+    port: int = 1984,
+    max_request_bytes: int = 16 * 1024 * 1024,
+    max_response_bytes: int = 16 * 1024 * 1024,
+    socket_timeout_seconds: float = 10.0,
+) -> BridgeHTTPServer:
+    """Compose the captured EditWordDocument route with LibreOffice UNO.
+
+    The cancellation response remains a required injection because its exact
+    Windows wire envelope has not been captured. Additional method handlers
+    may be supplied, but cannot replace EditWordDocument.
+    """
+    from emwat_linux.editword_handler import create_editword_handler
+    from emwat_linux.editword_service import EditWordDocumentService
+    from emwat_linux.libreoffice_adapter import LibreOfficeAdapter
+
+    office = office_adapter if office_adapter is not None else LibreOfficeAdapter()
+    service = EditWordDocumentService(office)
+    edit_word_handler = create_editword_handler(
+        service,
+        cancel_response_factory=cancel_response_factory,
+    )
+    registered_handlers = dict(additional_handlers or {})
+    registered_handlers["EditWordDocument"] = edit_word_handler
+    return create_bridge_server(
+        allowed_origins=allowed_origins,
+        allowed_parent_origins=allowed_parent_origins,
+        handlers=registered_handlers,
+        host=host,
+        port=port,
+        max_request_bytes=max_request_bytes,
+        max_response_bytes=max_response_bytes,
+        socket_timeout_seconds=socket_timeout_seconds,
+    )
