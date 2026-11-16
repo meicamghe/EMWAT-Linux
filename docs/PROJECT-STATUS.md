@@ -11,6 +11,9 @@
 
 ## پیشرفت اجرایی جدید — 2026-11-16
 
+- **تکمیل decode ثابت‌های native:** در `SetFieldValue` ثابت `0x004BFEE8` برابر `urlencoded` و `0x004BFF0C` برابر `base64` شناسایی شد؛ این دو شاخه با decoder فعلی Python هم‌راستا هستند. تابع `FindFieldInActivefields` نیز token واقعی `DOCPROPERTY` و جداکننده‌های فاصله را پردازش می‌کند. شناسه ویژه `Hidden_Customizable` هم از مسیر `GetDocFieldName` به `SilentSaveEmwatDoc` می‌رسد؛ این مسیر مستقل از callback بستن سند است.
+- **تحلیل ساخت dictionaryها:** `AddXmlWordConfigFieldsToDic` با پیام‌های داخلی ورود/موفقیت تأیید شد و delimiter `†` را برای Twin IDها به‌کار می‌گیرد. `AddCustomDocPropertiesToDic` مجموعه CustomDocumentProperties ورد را enumerate می‌کند، نام‌های twin را جدا کرده و رکوردهای `TDocumentCProperty` می‌سازد. مسیر فراخوانی indirect تابع اول هنوز نیاز به تعیین دارد.
+
 - **ردیابی چرخه Close در Word:** run شماره 43813684507 موفق شد. wrapper بستن بدون آرگومان از slot `+0x4D4` و wrapper سه‌آرگومانی `OleVariant` از slot `+0x29C` استفاده می‌کند؛ callback مربوط به BeforeSave wrapper سه‌آرگومانی را پس از منطق Cancel/Prompt فراخوانی می‌کند. مسیر OnControlerNotify نیز CostumizeRecAndCC را اجرا می‌کند که به slot `+0x2BC` (PrintOutOld) می‌رسد؛ slot جداگانه `+0xDC` هنوز در حال تعیین هویت است و هیچ اتصال مستقیم به HTTP ثبت نشده.
 
 - **تفکیک قطعی دو helper فیلد:** فهرست TD32 مشخص کرد `0x004BFDB0` تابع `TWordViwer.SetFieldValue(TXmlWordConfigField, UnicodeString)` است و `0x004BC170` تابع جداگانه `FindFieldInActivefields(UnicodeString)` است. اولی شاخه‌های تبدیل/اعمال مقدار را بر اساس دو ثابت رشته‌ای بررسی می‌کند؛ دومی برای تطبیق شناسه در فهرست active fieldها استفاده می‌شود. مقادیر ثابت‌ها در pipeline بعدی decode می‌شوند.
