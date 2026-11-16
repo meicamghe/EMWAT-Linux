@@ -879,7 +879,7 @@ Run `43719180035` succeeded; artifact `14164088249` was inspected. Additional ev
 ### کارهای موازی بعدی
 
 1. بررسی دقیق قرارداد رکورد `TDocumentCProperty` و رابطه indexهای آن با collection واقعی Word CustomDocumentProperties؛ helperهای `ContainsValue` و `SetItem` اکنون شناسایی شده‌اند.
-2. تکمیل معنای `FindWindowExtd` در شاخه سه فیلد ویژه؛ فعلاً آن را date formatter فرض نکن.
+2. اعتبارسنجی رفتار معکوس‌سازی componentهای `FindWindowExtd` با مقدار واقعی مجاز/ناشناس‌سازی‌شده؛ الگوریتم slash/hyphen و reverse order اکنون از disassembly استخراج شده، اما نمونه واقعی برای تعیین قاعده locale لازم است.
 3. بررسی نقش `ShowRecAndCcOptionForm` در فراخوانی از `GetDocFieldName` و ارتباطش با Receivers/CC.
 4. پس از تکمیل این helperها، مدل Writer را به سه مقصد مستقل گسترش بده: custom properties، text-field result، و image anchors؛ mapping واقعی 180 شناسه را بدون template واقعی حدس نزن.
 5. مسیر close/XHR و پاسخ cancel هنوز end-to-end با Almas تأیید نشده است؛ از پاسخ ساختگی یا اعلام ثبت قطعی خودداری شود.
