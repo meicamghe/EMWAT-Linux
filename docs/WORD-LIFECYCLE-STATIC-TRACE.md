@@ -166,3 +166,12 @@ The dialog's exact labels and the semantics of slot `+0x29C` are not yet decoded
 - `OnControlerNotify` at `0x004BB3B0` separately reads the Word document content and creates the passworded `.easz` archive described in Run 148/149.
 
 Keep three events separate until their call/data flow is linked: timer-driven `OnTmrAutoSave`, Word `BeforeSave`/`BeforeClose`, and the controller-notify archive operation. The next run traces the full procedure ranges and the `0x004BCA88`/`0x004AEBBC` helpers.
+
+
+### LoadDocument → autosave path → archive source linkage
+
+The existing full-range `TWordViwer.LoadDocument` trace (`0x004B7724`) shows it calls `TWordViwer.OnTmrAutoSave` at `0x004B8A84` with a document path string (`0x004B7A58`). The timer routine copies that string into `TWordViwer+0xA0` (`0x004B8AE8`). Later, `OnControlerNotify` reads `TWordViwer+0xA0` and passes it as the first/source path to the `T7zOutArchive.AddFiles` operation.
+
+The same `LoadDocument` path creates a file stream from the document path through `0x004041BC` (`TFileStream.$bctr`) at `0x004B7C39`, then writes document data into it. This connects the Word document file created during `LoadDocument` to the file later packaged as the `.easd` archive entry and saved in the `.easz` archive.
+
+The exact derivation of the sibling/base path stored at `TWordViwer+0x80` is still unresolved; that field is used to create the `.easd` and `.easz` names.
