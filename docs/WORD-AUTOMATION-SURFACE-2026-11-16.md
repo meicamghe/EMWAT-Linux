@@ -336,3 +336,8 @@ The same string-decoding artifact resolves the four `TCaptionItem` text-style la
 The `FillImgFldsForPrint` routine (`0x004CCDC8`) is now traced end-to-end. It enumerates the supplied Word Fields collection, resolves each field through `FindFieldInActivefields` and `GetFieldIndexInList`, and uses `FillTextField` on specific fallback/metadata branches. For an indexed field, it consults viewer-side arrays at `+0xE8) and `+0xEC); one conditional path calls the misleadingly named `WordAppDocumentBeforeClose` routine. This routine is therefore part of print-time image-field substitution, not document-close lifecycle handling.
 
 This explains the only direct caller previously found for `WordAppDocumentBeforeClose`: `FillImgFldsForPrint` at `0x004CCF8F`. The direct call chain is `GetFieldIndexInList` → `FillImgFldsForPrint` → conditional field substitution helper.
+
+
+## Exact active-field name extraction
+
+`FindFieldInActivefields` (`0x004BC170`) is not a generic case-folding lookup. It searches the Word field code for the literal `DOCPROPERTY`; if present, it applies Delphi `Pos`/`Copy` operations using the first double-space delimiter and then the first single space in the copied segment. If the keyword is absent, it preserves the original code. The implementation and tests in `word_fields.py` now mirror the observed edge cases, including Delphi's `Pos = 0) behavior when the double-space delimiter is absent. This normalized output is the name passed to `FindFieldInActivefields` consumers and to the signature-end regex check.
