@@ -158,3 +158,12 @@ These checks validate the adapter and composition boundary. They do not establis
 - The decoder now includes extract_docproperty_identifier(), mirroring the native FindFieldInActivefields behavior: case-sensitive DOCPROPERTY recognition, extraction after the first double-space delimiter, and the legacy first-token/255-character behavior.
 - Tests cover standard DOCPROPERTY, non-DOCPROPERTY, case sensitivity, unterminated fields, and the native parser's unusual triple-space result.
 - This is a compatibility parser for the observed native behavior, not a general-purpose Word field-code parser.
+
+
+## Word Content/Save COM slot resolution — 2026-11-16
+
+- Close/response-chain workflow run **43814460258** completed successfully.
+- Artifact: **14201473774**.
+- Generated wrapper traces map Word document COM slots exactly: Get_Saved → +0xD4, Set_Saved → +0xD8, Get_Content → +0xDC.
+- OnControlerNotify's call to +0xDC is therefore the document Content member, not a Saved getter/setter. Its -1 argument remains unexplained and must not be interpreted as a registration flag.
+- This corrects the earlier assumption that +0xDC was an unidentified Saved-related call.
