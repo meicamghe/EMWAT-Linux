@@ -175,7 +175,7 @@ The service helper `0x0047E0EC` calls the imported `LoadPackage` thunk at `0x004
 
 ### GetClass is called from ParseMethod
 
-The corrected import-thunk scan identifies a rel32 CALL candidate at `0x00470E07` to the `GetClass` thunk (`0x00402354`, IAT `0x00487B9C`) within the bounded code span associated with `ParseMethod` (`0x00470D00–0x00471033`). The entry trace reaches an undecoded code/data gap before this candidate, so its exact function-boundary relationship is not yet proven. Separate bounded traces of the code island around `0x00470E07` are being added before assigning it definitively to `ParseMethod`.
+The code-island trace confirms that `ParseMethod` (`0x00470D00`) branches from `0x00470D74` to `0x00470DB2`, where it reads the XML class attribute, obtains the class-name string, and calls `GetClass` via thunk `0x00402354` at `0x00470E07`. If the returned class is null, it constructs/logs an error and exits; otherwise it proceeds into class validation and object preparation. Thus the XML parser's dynamic Delphi class-resolution edge is confirmed. The remaining block `0x00470E58–0x00470F80` is being traced to identify inheritance checks, instance creation, and final Invoke dispatch.
 
 ### ClassCreate is confirmed for TMethodInfo, not yet for the requested method class
 
