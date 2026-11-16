@@ -79,7 +79,10 @@ jobs:
             python tools/find_td32_class_procedures.py analysis-input/EmwatService.exe TMainForm TIdHTTPServer TIdHTTPResponseInfo > dispatch-crosswalk/service/service-classes.md || true
             python tools/resolve_delphi_vmt_slots.py analysis-input/EmwatService.exe dispatch-crosswalk/service/service-vmt.md || true
             python tools/trace_delphi_interfaces.py analysis-input/EmwatService.exe dispatch-crosswalk/service/service-interfaces.md || true
-            python -m py_compile tools/scan_pe_call_refs.py
+            python -m py_compile tools/scan_pe_call_refs.py tools/scan_pe_rel32_call_bytes.py
+            for address in 0x004610FC 0x0047E2D4; do
+              python tools/scan_pe_rel32_call_bytes.py analysis-input/EmwatService.exe "$address" "dispatch-crosswalk/service/${address}-rel32-call-candidates.md"
+            done
             for address in 0x0046AA70 0x00471214 0x0046ADBC 0x0046A7A4 0x0047E2D4 0x004610FC; do
               python tools/scan_pe_call_refs.py analysis-input/EmwatService.exe "$address" "dispatch-crosswalk/service/${address}-all-callrefs.md"
             done
