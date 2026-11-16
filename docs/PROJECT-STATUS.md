@@ -2178,3 +2178,7 @@ Constructor مربوط به `TWordViwer` چهار فیلد `Receivers`، `Receiv
 ## کشف APIهای بارگذاری Package و ساخت کلاس در سرویس — 2026-11-16
 
 Import Table در `EmwatService.exe` شامل `LoadPackage`، `UnloadPackage`، `StartExe`، `GetClass`، `ClassCreate`، `ClassDestroy`، `TObject.InheritsFrom`، `ClassParent`، `ClassName` و دو `GetProcAddress` است. این موضوع توانایی سرویس برای بارگذاری BPL و resolve/create کلاس Delphi در زمان اجرا را اثبات می‌کند، اما هنوز زنجیره دقیق فراخوانی `GetClass → ClassCreate → TEmwatMethod.Invoke` قطعی نشده است. به همین دلیل workflow جدید علاوه بر pointer refs، opcodeهای `FF 15` و `FF 25` مربوط به فراخوانی/پرش مستقیم به IAT را اسکن می‌کند.
+
+## بازیابی Method Table فرم اصلی سرویس — 2026-11-16
+
+از VMT کلاس `TMainForm` در `0x0047B284`، method table در `0x0047B84E` پیدا شد. تعداد entryها 17 است و ساختار هر entry شامل اندازه، آدرس کد و نام shortstring است. اولین entry دقیقاً `IdHTTPServerCommandGet` در `0x0047BF30` است؛ بنابراین هویت handler درخواست HTTP تأیید شد. `FormCreate`، `Terminate`، `Log`، `ShowMainForm`، `HideMainForm` و `FormClose` نیز در ابتدای جدول بازیابی شدند.
