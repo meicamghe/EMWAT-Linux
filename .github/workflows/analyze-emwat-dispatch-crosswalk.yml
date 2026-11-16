@@ -27,9 +27,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
+        if: hashFiles('analysis-input/EmwatService.exe') != ''
         with:
           python-version: '3.12'
       - run: pip install pefile capstone
+        if: hashFiles('analysis-input/EmwatService.exe') != ''
       - name: Trace service HTTP and XML dispatch chain
         shell: bash
         run: |
@@ -73,9 +75,11 @@ jobs:
         if: hashFiles('analysis-input/EmwatMethods.bpl1') == ''
         run: echo "::notice::Skipped binary analysis because analysis-input/EmwatMethods.bpl1 is not present in this checkout."
       - uses: actions/setup-python@v5
+        if: hashFiles('analysis-input/EmwatMethods.bpl1') != ''
         with:
           python-version: '3.12'
       - run: pip install pefile capstone
+        if: hashFiles('analysis-input/EmwatMethods.bpl1') != ''
       - name: Trace inherited method invocation and dispatch helpers
         if: hashFiles('analysis-input/EmwatMethods.bpl1') != ''
         shell: bash
@@ -121,9 +125,11 @@ jobs:
         if: hashFiles('analysis-input/EmwatMethods.bpl1') == ''
         run: echo "::notice::Skipped binary analysis because analysis-input/EmwatMethods.bpl1 is not present in this checkout."
       - uses: actions/setup-python@v5
+        if: hashFiles('analysis-input/EmwatMethods.bpl1') != ''
         with:
           python-version: '3.12'
       - run: pip install pefile capstone
+        if: hashFiles('analysis-input/EmwatMethods.bpl1') != ''
       - name: Trace controller notification and Word content getter
         if: hashFiles('analysis-input/EmwatMethods.bpl1') != ''
         shell: bash
