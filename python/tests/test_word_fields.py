@@ -6,6 +6,7 @@ from emwat_linux.word_fields import (
     WordFieldDecodeError,
     decode_optional_attributes,
     decode_word_fields,
+    extract_docproperty_identifier,
     external_parameter_bindings,
     parse_word_field_identifier,
 )
@@ -37,6 +38,20 @@ class WordFieldDecodingTests(unittest.TestCase):
             parsed = parse_word_field_identifier(malformed)
             self.assertEqual(parsed.first, malformed)
             self.assertIsNone(parsed.second)
+
+    def test_extracts_docproperty_identifier_from_word_field_code(self):
+        code = r"DOCPROPERTY  LetterSubject  \* MERGEFORMAT"
+        self.assertEqual(extract_docproperty_identifier(code), "LetterSubject")
+
+    def test_preserves_non_docproperty_or_unterminated_field_code(self):
+        code = r"MERGEFIELD  LetterSubject  \* MERGEFORMAT"
+        self.assertEqual(extract_docproperty_identifier(code), code)
+        unterminated = "DOCPROPERTY  LetterSubject"
+        self.assertEqual(extract_docproperty_identifier(unterminated), unterminated)
+
+    def test_docproperty_keyword_match_is_case_sensitive(self):
+        code = r"docproperty  LetterSubject  \* MERGEFORMAT"
+        self.assertEqual(extract_docproperty_identifier(code), code)
 
     def test_decodes_urlencoded_text_and_preserves_plain_text(self):
         config = parse(
