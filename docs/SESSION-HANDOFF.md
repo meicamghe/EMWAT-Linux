@@ -942,3 +942,31 @@ Run `43719180035` succeeded; artifact `14164088249` was inspected. Additional ev
 - `0x005EE82C` در TD32 با نام `TScanDocument.PerformMethod` دیده می‌شود و pointer reference آن در محدودهٔ VMTهای connector نیز نیازمند تطبیق دقیق است؛ نام کلاس را قطعی به TEditWordDocument نسبت نده.
 - مسیرهای باز: قرارداد و callsiteهای `TDocumentCProperty.Add/AddOrSetValue`، معنای دقیق collectionهای Rec/CC، direct `Field.Result.Text`، image anchors، template واقعی Almas و close/XHR ثبت نهایی.
 
+
+
+## Autonomous parallel checkpoint — 2026-11-16 09:50 local
+
+### Verified since previous handoff
+
+- Native Base64 field decoder path is resolved: `SetFieldValue(encryption=base64)` → `WideCharToMultiByte` → wrapper `0x004735D0` → orchestrator `0x004738CC` → decoded-length helper `0x00473608` + quartet decoder `0x00473700` (lookup table `0x00627F98`). The Linux field decoder no longer strips whitespace; standard complete quartets and one-/two-character padding are tested.
+- Python bridge workflow `43818155017`: 99 tests passed, 1 skipped.
+- `TXMLFieldType` metadata is mapped: VMT `0x004751E4`, interface offset `0x50`; typed getters/setters exist for Id, Mimetype, Encryption, Separator, Concater, ParamId, IsNew.
+- Viewer-side VMTs: `TDocumentCProperty` `0x004B05A8` / size `0x1C`; `TXmlWordConfigField` `0x004B068C` / size `0x10`; `TXmlWordConfigTwinField` `0x004B0774` / size `0x18`.
+- COM wrapper dispatch: `Get_Saved +0xD4`, `Set_Saved +0xD8`, `Get_Content +0xDC`, `Save +0x2B8`. `OnControlerNotify` uses `+0xDC`, not Save/Close.
+- Event record callbacks are BeforeSave (`0x004CD154`), conditional BeforePrint/LoadOptions (`0x004D00AC`), NewDocument (`0x004CD54C`), WindowActivate (`0x004CD9C0`). Main-editor BeforeClose registration is still unproven.
+- Controller-notify has a second paired-stream branch that prepares `.easd` and `.easz` paths and calls `euUnArchive` through the SevenZip plugin. Its relationship to recovery Delete and final Almas registration is not yet established.
+
+### Current parallel workflow snapshot
+
+- `43817445960` — Word lifecycle analysis; in progress, 18/37 top-level steps completed at snapshot.
+- `43818082486` — XML twin-field metadata/property trace; in progress, first parallel trace step running.
+- `43818434937` — controller notification dispatch trace; queued at snapshot.
+
+### Remaining critical blockers
+
+1. Resolve `TXmlWordConfigTwinField` and `TXMLFieldType` property consumption to prove `separator`/`concater` semantics.
+2. Trace `TEDPController.Notify` (`0x004D2EC8`) into `TWordViwer.OnControlerNotify` and identify the exact notification message activating paired streams.
+3. Resolve the exact main-editor close/registration request and response envelope.
+4. Obtain an anonymized representative Almas Word template; current installer archive contains no Word-family templates, so visual fidelity and field-to-bookmark mapping remain unverified.
+
+Do not implement guessed `signData` joining or claim end-to-end Almas registration until these traces/template are available.
