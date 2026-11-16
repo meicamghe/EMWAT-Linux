@@ -970,3 +970,13 @@ Run `43719180035` succeeded; artifact `14164088249` was inspected. Additional ev
 4. Obtain an anonymized representative Almas Word template; current installer archive contains no Word-family templates, so visual fidelity and field-to-bookmark mapping remain unverified.
 
 Do not implement guessed `signData` joining or claim end-to-end Almas registration until these traces/template are available.
+
+
+## Confirmed Word close lifecycle — 2026-11-16
+
+- Main editor close path is the registered `WordAppDocumentBeforeSave` callback at `0x004CD154`, not `WordAppDocumentBeforeClose` at `0x004CCBBC`.
+- Callback sets Word `Saved=False` via COM slot `+0xD8`, asks whether to register changes, then invokes the three-argument `_Document.Close` through slot `+0x29C`.
+- Dialog mapping: Yes → SaveChanges `-1`; No → SaveChanges `0`; Cancel → event Cancel `0xFFFF` and no close.
+- One-/two-/three-argument Close wrappers at `0x0042FF08`, `0x0042FF7C`, `0x0042FFF4` all dispatch to the same COM Close slot `+0x29C`.
+- This explains close-triggered registration without a manual Save click. Exact HTTP return envelope and the notification that transfers final bytes to Almas remain unresolved.
+- Evidence: lifecycle run `43817445960`, artifact `14203757393`; details in `docs/WORD-COM-INTERFACE-DISPATCH.md` Run 134.
