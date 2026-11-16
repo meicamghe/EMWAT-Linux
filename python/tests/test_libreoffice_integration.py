@@ -40,8 +40,9 @@ class LibreOfficeIntegrationTests(unittest.TestCase):
                 "word/document.xml",
                 '<?xml version="1.0" encoding="UTF-8"?>'
                 '<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">'
-                '<w:body><w:p><w:r><w:t>EMWAT integration fixture</w:t></w:r></w:p>'
-                '<w:sectPr/></w:body></w:document>',
+                '<w:body><w:p><w:bookmarkStart w:id="1" w:name="LetterSubject"/>'
+                '<w:r><w:t>EMWAT integration fixture</w:t></w:r>'
+                '<w:bookmarkEnd w:id="1"/></w:p><w:sectPr/></w:body></w:document>',
             )
 
         request = EditWordDocumentRequest(
@@ -64,6 +65,8 @@ class LibreOfficeIntegrationTests(unittest.TestCase):
             on_saved=lambda: None,
         )
         try:
+            catalog = adapter.inspect_document(handle)
+            self.assertIn("LetterSubject", catalog.bookmarks)
             handle.document.close(True)
             close_event = adapter.wait_for_close(handle)
             self.assertEqual(close_event.disposition, CloseDisposition.CLOSED)
