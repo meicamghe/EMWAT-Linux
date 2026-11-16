@@ -469,3 +469,7 @@ Added `tools/scan_pe_call_refs.py`, which disassembles all executable PE section
 ## Confirmed service parser dictionary object identity
 
 Artifact `14238566198` now closes the identity gap. `TMethodInfo` has VMT `0x0047097C` and instance size `0x10`; its constructor `0x00471214` loads the class reference at `0x004699E4`, whose pointer is the `TDictionary<System.AnsiString,System.AnsiString>` VMT `0x00469A3C`, and calls `0x0046AA70` to construct the dictionary. The dictionary pointer is stored at `TMethodInfo + 0x08`. `ParseMethod` passes this same `+0x08` pointer to `0x00470B38`; the parser's `0x0046ADBC`/`0x0046A570`/`0x0046A7A4` chain hashes, probes, and writes entries. This matches the BPL `TEmwatMethod.Invoke(TDictionary<AnsiString,AnsiString>)` contract exactly. The cross-module call to Invoke remains indirect and is still a separate unresolved dispatch edge.
+
+## Native duplicate parameter handling confirmed
+
+`0x0046ADBC` checks the result of `0x0046A570` before appending a parameter. An existing key enters the exception path through `0x0040211C` and `0x00401198`; a missing key is appended by `0x0046A7A4`. This confirms that the service's `TDictionary.Add` semantics reject duplicate parameter names instead of overwriting them. The existing Python `parse_method_call()` `duplicate_parameter` check matches this behavior.
