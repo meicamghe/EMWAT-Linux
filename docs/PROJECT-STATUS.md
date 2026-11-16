@@ -1859,3 +1859,8 @@ The BPL export/API analysis resolves the earlier naming ambiguity. The public TE
 - Parallel static analysis resolved the Indy published method names: WriteContent=0x004610FC, ServeFile=0x00460E48, SmartServeFile=0x00460FAC. WriteContent has stream, text, and fallback HTML response-body branches and omits bodies for status 100/204/304.
 - Two new CI workflows now separately trace the Word-controller close chain, service HTTP response chain, and response-writer helpers. All completed successfully.
 - Remaining critical work: implement the real three-choice LibreOffice close dialog/veto, prove the No/discard wire response, resolve the indirect caller of WriteContent, and obtain an anonymized representative Almas document template for visual/field fidelity.
+
+
+## Word timer callback path resolved — 2026-11-16
+
+The OnTmrAutoSave procedure installs OnControlerNotify as the OnTimer event of the TTimer stored at TWordViwer offset +0x7C. The helper addresses resolve through the package IAT to VCL TTimer.SetOnTimer, SetInterval, and SetEnabled. The timer interval is clamped to at least 10 seconds (0x2710 ms) and enabled. This establishes a periodic document-notification/content-read path distinct from WordAppDocumentBeforeSave, which handles the close-time registration prompt. Helper 0x00456DFC remains under analysis.

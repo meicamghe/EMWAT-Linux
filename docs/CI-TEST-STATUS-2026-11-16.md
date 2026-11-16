@@ -392,3 +392,13 @@ These checks validate the adapter and composition boundary. They do not establis
 - WriteContent checks HTTP response status codes 100, 204, and 304 before writing a body; it has separate content-stream, content-text, and fallback HTML branches. The helper chain also resolves a cleanup routine at 0x00460764 and a response-status setter at 0x004609EC.
 - Direct immediate CALL scanning did not find callsites for the published response methods; indirect/VMT dispatch remains a live possibility. This is not yet the final Almas response envelope proof.
 - One intermediate test run failed because two older coordinator tests still referenced the removed terminal close-cancel disposition. Those tests were updated to model a vetoed attempt followed by a later close; run 43830146087 is green.
+
+
+## Word autosave timer callback resolution — 2026-11-16
+
+Workflow 43830743301 succeeded; artifact 14208303183.
+
+- In TWordViwer.OnTmrAutoSave (0x004B8A84), the callback pointer 0x004BB3B0 (OnControlerNotify) is passed with the timer object at viewer offset +0x7C to helper 0x00404B94.
+- IAT resolution proves 0x00404B94 = VCL TTimer.SetOnTimer, 0x00404B8C = TTimer.SetInterval, and 0x00404B84 = TTimer.SetEnabled.
+- The same code clamps the timer interval to a minimum of 0x2710 (10,000 ms) and enables it. Therefore OnControlerNotify is the timer callback for the periodic Word-controller path, not the close-time BeforeSave callback.
+- OnControlerNotify reads current document content and calls helper 0x00456DFC; the helper's full semantic mapping remains open. Keep this periodic path separate from the explicit Yes/No/Cancel close prompt.

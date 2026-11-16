@@ -1065,3 +1065,17 @@ Source: workflow 43829491814 (both jobs succeeded), artifacts 14207688343 and 14
 - The Word-controller range 0x004BB3B0–0x004BB777 confirms a call to TWordViwer.CostumizeRecAndCC at 0x004D281C, followed by a COM call through the document interface slot +0xDC and then helper 0x00456DFC. This is the main viewer controller-notify path and remains distinct from the print-handler controller path.
 - The service crosswalk reconfirms TIdHTTPResponseInfo.WriteContent as a published method at 0x004610FC, alongside the HTTP request/response VMT methods. The response writer itself is traced in run 140.
 - The crosswalk did not yet connect the controller notification to the exact final HTTP response serialization; do not treat this as proof of the Almas registration envelope.
+
+
+## Run 141 — periodic Word controller timer callback
+
+Source: workflow 43830743301, artifact 14208303183.
+
+The complete TD32 procedure trace identifies the setup code as TWordViwer.OnTmrAutoSave (0x004B8A84). Within it:
+
+- At 0x004B9999, the code passes the TWordViwer instance and callback address 0x004BB3B0 to helper 0x00404B94, using the timer object at instance offset +0x7C.
+- IAT resolution maps 0x00404B94 to VCL TTimer.SetOnTimer.
+- Helper 0x00404B8C maps to TTimer.SetInterval; the code enforces a minimum interval of 0x2710 ms (10,000 ms).
+- Helper 0x00404B84 maps to TTimer.SetEnabled; the timer is enabled.
+
+Therefore TWordViwer.OnControlerNotify is the periodic timer callback for this path. It is not the Word BeforeSave event. Its body reads the active Word document and calls 0x00456DFC; the exact semantics of that helper and its controller-message interfaces are not yet resolved. The periodic callback must not be mistaken for the final close-time response/registration path.
