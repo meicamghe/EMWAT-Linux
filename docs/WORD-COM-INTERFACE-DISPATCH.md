@@ -985,3 +985,21 @@ Source: artifact اجرای Word event sink، run `43815900228`، artifact `1420
 بدنه‌ی `WordAppDocumentBeforeSave` در `0x004CD154` از `_Document` slot `+0xD8` استفاده می‌کند که wrapper آن `TWordDocument.Set_Saved` است؛ سپس در شاخه‌ی ادامه‌ی close، wrapper سه‌آرگومانی `TWordDocument.Close` را از slot `+0x29C` فراخوانی می‌کند. این مسیر با getter محتوای `+0xDC` در `OnControlerNotify` متفاوت است.
 
 **Confidence:** ثبت سه callback اول در event record تأییدشده؛ اتصال نهایی به COM connection point و نقش callback چهارم هنوز باز؛ فعال بودن BeforeClose در main editor اثبات‌نشده.
+
+
+## Run 132 — هویت callback چهارم event record مشخص شد
+
+Artifact اجرای callback trace (run `43816996023`, artifact `14203047153`) نام TD32 هدف `0x004D00AC` را به‌صورت `TWordViwer.LoadOptions` resolve می‌کند. رشته‌ی log در ابتدای بدنه نیز صریحاً `Document.OnBeforePrint called.` است.
+
+بنابراین نگاشت event record در `OnTmrAutoSave` اکنون چنین است:
+
+| offset در رکورد | callback | نتیجه |
+|---|---|---|
+| `+0x80` | `WordAppDocumentBeforeSave` (`0x004CD154`) | ثبت شده |
+| `+0x88` | `LoadOptions` / `Document.OnBeforePrint` (`0x004D00AC`) | ثبت شرطی با flag در `viewer+0x3C` |
+| `+0x90` | `WordAppNewDocument` (`0x004CD54C`) | ثبت شده |
+| `+0x98` | `WordAppWindowActivate` (`0x004CD9C0`) | ثبت شده |
+
+`LoadOptions` در این بدنه تنظیمات چاپ را بارگذاری/نمایش می‌دهد و رشته‌های `Word Print Dialog`، `SOFTWARE\\Emwat\\Dynamic Config` و پیام دسترسی چاپ را مصرف می‌کند؛ این callback به close/registration مربوط نیست.
+
+این تطبیق ابهام callback چهارم را برطرف می‌کند، اما نتیجه‌ی قبلی درباره‌ی `WordAppDocumentBeforeClose` تغییر نمی‌کند: در این event record هیچ assignment برای `0x004CCBBC` وجود ندارد و فعال بودن آن در main editor هنوز اثبات نشده است.
