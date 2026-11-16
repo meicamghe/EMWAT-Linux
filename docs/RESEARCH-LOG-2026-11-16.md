@@ -525,3 +525,13 @@ Artifact `14265623608` includes the service PE import inventory. Relevant import
 - `GetProcAddress` at IAT `0x0048753C` and `0x004875CC`.
 
 This is strong evidence that the service can load the BPL and resolve/create Delphi classes dynamically. It does not by itself prove which XML attribute becomes the class name or which object receives `TEmwatMethod.Invoke`. The service workflow now scans all pointer references to these IAT slots to recover the actual callsites and surrounding dispatch logic.
+
+## Caution: generic dictionary TD32 names do not match several observed bodies
+
+The latest descriptor-method artifact (`14265603782`) shows that some TD32 generic-method labels must not be treated as semantic proof without inspecting the body:
+- `0x004D4C54` is symbol-labelled `SetItem`, but its body hashes/probes the key and returns the stored value pointer from the entry; it behaves as an indexed getter in this call path.
+- `0x004D54E0` is symbol-labelled `AddOrSetValue`, but its body performs a key lookup, writes the found value pointer through an output argument, and returns a Boolean; it behaves like `TryGetValue`.
+- `0x004D559C` is symbol-labelled `ContainsValue`, but it hashes the supplied string key and returns whether the key bucket exists; it behaves like `ContainsKey`.
+- `0x004D552C` is symbol-labelled `ContainsKey`, but its body calls internal mutation helpers `0x004D4DA8` / `0x004D4D58` depending on the bucket result. Its exact semantic identity requires tracing those helpers.
+
+This appears to be a generic-method symbol/implementation mapping mismatch in this binary's TD32 metadata. Consequently, earlier statements that direct scans found no callers of the *symbol-named* Add/SetItem methods are not sufficient to conclude that no insertion occurs. The next workflow batch now traces `DoAdd` (`0x004D4D08`), `DoSetValue` (`0x004D4D58`), and `DoRemove` (`0x004D4DA8`) to establish the actual mutation behavior and call graph from machine code.
