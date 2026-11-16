@@ -980,3 +980,10 @@ Do not implement guessed `signData` joining or claim end-to-end Almas registrati
 - One-/two-/three-argument Close wrappers at `0x0042FF08`, `0x0042FF7C`, `0x0042FFF4` all dispatch to the same COM Close slot `+0x29C`.
 - This explains close-triggered registration without a manual Save click. Exact HTTP return envelope and the notification that transfers final bytes to Almas remain unresolved.
 - Evidence: lifecycle run `43817445960`, artifact `14203757393`; details in `docs/WORD-COM-INTERFACE-DISPATCH.md` Run 134.
+
+
+## XML attribute spelling caution
+
+- Native parser-side `TXMLFieldType.Set_Concator` reads the key `concator`; existing request-schema transcription currently says `concater`.
+- These are not treated as aliases. Runtime preserves raw attributes; do not normalize or implement concatenation until the raw request is rechecked.
+- `Set_Separator` reads `separator`; `Set_ParamId` reads `paramId`.
