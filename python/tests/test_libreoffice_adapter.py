@@ -8,6 +8,7 @@ from emwat_linux.libreoffice_adapter import (
     _ModifyListener,
     _file_url,
     _source_extension,
+    _stop_process,
 )
 
 
@@ -34,7 +35,47 @@ class FakeDocument:
         self.calls.append((url, [(p.Name, p.Value) for p in properties]))
 
 
+class FakeProcess:
+    def __init__(self):
+        self.returncode = None
+        self.terminated = False
+        self.killed = False
+        self.wait_calls = []
+
+    def poll(self):
+        return self.returncode
+
+    def terminate(self):
+        self.terminated = True
+
+    def kill(self):
+        self.killed = True
+
+    def wait(self, timeout=None):
+        self.wait_calls.append(timeout)
+        if not self.killed:
+            import subprocess
+            raise subprocess.TimeoutExpired("soffice", timeout)
+        self.returncode = -9
+        return self.returncode
+
+
 class LibreOfficeAdapterUnitTests(unittest.TestCase):
+    def test_stop_process_reaps_after_kill(self):
+        process = FakeProcess()
+        _stop_process(process, terminate_timeout=1, kill_timeout=2)
+        self.assertTrue(process.terminated)
+        self.assertTrue(process.killed)
+        self.assertEqual(process.wait_calls, [1, 2])
+
+    def test_stop_process_does_not_touch_exited_process(self):
+        process = FakeProcess()
+        process.returncode = 0
+        _stop_process(process, terminate_timeout=1, kill_timeout=2)
+        self.assertFalse(process.terminated)
+        self.assertFalse(process.killed)
+        self.assertEqual(process.wait_calls, [])
+
     def test_detects_legacy_word_compound_file(self):
         self.assertEqual(_source_extension(_CFB_SIGNATURE + b"payload"), ".doc")
 
