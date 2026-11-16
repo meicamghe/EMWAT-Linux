@@ -576,3 +576,7 @@ The `TMainForm` VMT method-table pointer at `VMT-0x40` is `0x0047B84E`. Its raw 
 - `FormClose` → `0x0047CCC8`.
 
 This confirms that the HTTP handler is a published `TMainForm` method, not an arbitrary code-range guess. `inspect_delphi_vmt_address.py` now decodes the full published method table (up to a bounded 512-byte read) so the remaining ten entries can be inventoried and followed.
+
+## GetClass callsite found inside ParseMethod
+
+Corrected thunk-target scan artifact `14267877222` finds one rel32 CALL candidate to the `GetClass` import jump instruction at `0x00402354`: callsite `0x00470E07`, inside `ParseMethod` (`0x00470D00`). This directly links the XML method parser to Delphi runtime class resolution. The current short trace of `ParseMethod` stops at an internal exception/finally RET before reaching `0x00470E07`; the service workflow now captures the complete bounded range `0x00470D00–0x00471033` to identify the class-name input, resulting TClass, object construction, and any subsequent method dispatch.
