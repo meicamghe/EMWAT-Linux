@@ -2145,3 +2145,7 @@ Workflow تحلیل Word گسترش یافت تا helper مرکزی درج تص�
 - `0x00403248` به `System.SysUtils.CompareText` resolve شد؛ جست‌وجوی Twin نسبت به بزرگی/کوچکی حروف حساس نیست. تابع Python نیز با `casefold()` اصلاح شد.
 - Python CI اجرا `43891288399`: **۱۰۷ تست موفق، ۲ skip اختیاری**.
 - LibreOffice UNO اجرا `43890949051`: **۱۱ تست موفق**.
+
+## مرزبندی inventory Writer و descriptorهای native — 2026-11-16
+
+در بررسی دقیق‌تر مشخص شد descriptorهای single/twin در زمان `AddCustomDocPropertiesToDic` از mapهای موجود با `TDictionary.Remove` مصرف می‌شوند؛ منبع اولیه و مرحله population این mapها هنوز قطعی نیست. بنابراین اتصال classifier به `WriterDocumentCatalog` حذف شد. catalog فقط نام Custom Document Properties را گزارش می‌کند و helper خالص Python صرفاً قانون split را طبقه‌بندی می‌کند؛ هیچ ادعایی درباره تطبیق یا اعمال خودکار فیلدها ندارد.
