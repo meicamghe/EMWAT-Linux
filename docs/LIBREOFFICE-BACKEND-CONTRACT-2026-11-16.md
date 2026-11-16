@@ -218,3 +218,7 @@ The current `LibreOfficeAdapter.open_document()` opens the incoming DOC/ DOCX pa
 This distinction is now stated directly in `OfficeAdapter.open_document` and `LibreOfficeAdapter.open_document` docstrings (commits `1bb703728ab1728969a752de62c87ca40cc81b26` and `f7673bf32d83fec0cca2905abbd6a0762aca6c3f`). The request parser and field decoder can preserve/decode text and Base64 image payloads, but there is not yet an automatic Writer field/image mutation pipeline.
 
 Do not describe the current prototype as filling the letter template. The next implementation gate is to recover the native field resolver and map its outputs to Writer anchors, then implement and test text and image mutation as separate operations. In parallel, recover the actual caption/image pipeline (`GetCaptionItems`, `GetImageResolution`, `EmbedTextToImage`) and the print-field labels before implementing those behaviors.
+
+## 10. Writer custom-property inventory update
+
+`WriterDocumentCatalog` now exposes `custom_property_field_maps`, built from the UNO custom-property enumeration order. It separates single names from non-empty dagger (`†`) pairs and preserves zero-based enumeration indices. This is an inventory/classification layer only: it does not mutate document fields, consume descriptor maps with the native `TDictionary.Remove` behavior, split twin values, or apply image/signature data. Those remain separate implementation gates.
