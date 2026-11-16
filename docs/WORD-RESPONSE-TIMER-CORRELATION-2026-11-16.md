@@ -42,7 +42,8 @@ This is a periodic local archive/recovery path. It is not, on current evidence, 
 
 ## 4. Keep the Word events distinct
 
-- `WordAppDocumentBeforeSave` at `0x004CD154` is registered in the Word application event record at viewer offset `+0x80`.
+- The callback pointer written at Word application event-record offset `+0x80` is `0x004CD154`, whose TD32 symbol is `WordAppDocumentBeforeSave`.
+- **Event identity is under recheck:** the first diagnostic string inside `0x004CD154` is `Document.OnBeforeClose Called.`, and its control flow displays the Persian register-changes prompt before calling the three-argument Word `Document.Close` wrapper. The method's TD32 name therefore cannot, by itself, prove that the event-record slot is the COM `DocumentBeforeSave` DISPID.
 - `WordAppDocumentBeforeClose` at `0x004CCBBC` is a separate TD32 procedure; no active event registration reference was found in the analyzed range.
 - The timer-driven `OnControlerNotify` at `0x004BB3B0` is separate from both Word events.
 - The registered BeforeSave handler has a Yes/No/Cancel path and invokes Word Close wrappers. The `Set_Saved` wrapper correction is documented in `docs/WORD-FIELD-SILENT-SAVE-ANALYSIS.md`.
@@ -85,3 +86,10 @@ No document contents, Base64 bodies, cookies, or authorization values are includ
 The separate `TEDPController.Notify` method at `0x004D2EC8` is not the timer callback. Its body checks a stored callback at object offset `+0x18`, calls `TEmwatDocPrintHandler.GetDocFieldName` at `0x004A8F78`, and clears the temporary interface/reference. Its VMT has a `SetOnNotify` property setter and `SetPrintThread` setter. Direct immediate CALL xrefs to `Notify` are absent, consistent with event/VMT invocation. The method belongs to the print-handler controller and is a separate control path from `TWordViwer.OnControlerNotify`.
 
 Evidence: controller-callback-ownership run `43873363849`, artifact `14229520023`, including `procedure-004D2EC8.md`, `controller-symbols.md`, and `timer/OnTmrAutoSave-timer-registration.md`.
+
+
+## 9. BeforeSave / BeforeClose identity discrepancy
+
+The native callback at `0x004CD154` is named `WordAppDocumentBeforeSave` in TD32, but its first log string is `Document.OnBeforeClose Called.`. Its prompt text is Persian: “محتويات اين سند تغيير كرده است. آيا مايل به ثبت تغييرات مي‌باشيد؟” (“The contents of this document have changed. Do you want to register the changes?”). The Yes/No branches call the three-argument `Document.Close` wrapper with SaveChanges True/False; Cancel sets the event Cancel flag. This is close/registration behavior, but the COM event DISPID corresponding to event-record offset `+0x80` has not yet been proven.
+
+A new event-dispatch workflow is tracing the generated Word event method table at `0x00627B74` and its callback dispatch thunks to determine whether the callback is actually bound to DocumentBeforeClose or DocumentBeforeSave. Until that completes, use the neutral label “registered close/save decision callback at 0x004CD154” rather than asserting the COM event identity.
