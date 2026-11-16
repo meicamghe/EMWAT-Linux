@@ -100,7 +100,10 @@ jobs:
         shell: bash
         run: |
           mkdir -p word-automation/fields
-          python -m py_compile tools/scan_pe_call_refs.py
+          python -m py_compile tools/scan_pe_call_refs.py tools/scan_pe_rel32_call_bytes.py
+          for address in 0x004D1148 0x004D52DC 0x004D54E0 0x004D6894 0x004D6A98; do
+            python tools/scan_pe_rel32_call_bytes.py analysis-input/EmwatMethods.bpl1 "$address" "word-automation/fields/${address}-rel32-call-candidates.md"
+          done
           python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x004BC170 word-automation/fields/field-config-string-normalizer.md
           python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004BC170 word-automation/fields/field-config-string-normalizer-callers.md
           python tools/decode_pe_strings.py analysis-input/EmwatMethods.bpl1 0x004BC23C 0x004BC260 0x004BC274 0x004D0BD0 0x004D0BF0 0x004D0C18 0x004D0C3C 0x004D0C5C 0x004D0C60 0x004D0C70 0x004D0CC8 > word-automation/fields/field-config-and-viewer-constructor-strings.md
