@@ -1698,3 +1698,10 @@ The BPL export/API analysis resolves the earlier naming ambiguity. The public TE
 - این تابع پنج بار `SetFieldValue` را صدا می‌زند و collectionهای موازی viewer را پردازش می‌کند. اتصال دقیق هر collection به فیلد نهایی و معنای payloadها هنوز نیازمند config واقعی/نمونهٔ بی‌خطر است.
 - Python run `43816293635` سبز است: **99 تست، 98 پاس و 1 تست اختیاری skip**. آزمون URL-encoding اکنون رفتار native یعنی `+` به فاصله و `%2B` به علامت جمع را پوشش می‌دهد.
 
+
+
+### شاخهٔ دوم SevenZip در Controller Notify — 2026-11-16
+
+- مسیر `TWordViwer.OnControlerNotify` علاوه بر خواندن Word `Content`، شاخه‌ای جداگانه دارد که دو stream می‌سازد، دو مسیر با پسوندهای `.easd` و `.easz` آماده می‌کند و آن‌ها را به `euUnArchive` می‌دهد.
+- `euUnArchive` یک `T7zPlugin` می‌سازد و وارد مسیر archive-facing SevenZip می‌شود؛ کلاس `T7zOutArchive` در همان BPL متدهای AddStream و SaveToFile دارد. جهت دقیق عملیات و اینکه این مسیر همان recovery Delete است هنوز قطعی نیست.
+- این شاخه به‌عنوان «paired stream/archive workflow» ثبت شد؛ هنوز آن را با ثبت نهایی نامه در Almas یکی نمی‌دانیم.
