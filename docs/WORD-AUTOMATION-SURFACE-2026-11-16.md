@@ -266,3 +266,17 @@ A closer read of the existing TD32 trace narrows the next image-field work:
 - The final helper path also reaches `0x004C19C0) through `AddImagesToDoc`; this helper is now included as a first-class trace target in the Word field-analysis workflow, together with `0x004BC170) and the branch-string constants at `0x004BC6D4) through `0x004BC910).
 
 Workflow expansion commit: `367e4aa58514029278624c65837059f13807394a`. The next run's artifact is required before treating the helper or branch strings as decoded evidence.
+
+
+## GetDocFieldName caller-chain detail
+
+The TD32 body for `GetDocFieldName` (`0x004BB81C`) gives a useful ordering constraint:
+
+1. It reads viewer field `+0x48) and passes it to helper `0x004D1808`.
+2. It invokes `FillPrintDocFields` (`0x004CB638`) with the active document/field context and viewer collection at `+0xA4).
+3. It then iterates the entries in viewer collection `+0xA4) and calls helper `0x004C0550` for each entry.
+4. The special `Hidden_Customizable` comparison follows; on that branch it calls `SilentSaveEmwatDoc` (`0x004D23D8`).
+
+This confirms print-field preparation happens before the per-entry resolver loop in this routine. It also identifies `0x004C0550` as the next field-resolution target (the current trace does not yet prove its TD32 symbolic name). The workflow now traces `0x004C0550` and the separately named `GetFieldIndexInList` (`0x004CB1B4`) to establish whether they share lookup or collection semantics.
+
+Workflow trace additions: commit `e5933a10905c5edb6075767aa4d25be800698b11`.
