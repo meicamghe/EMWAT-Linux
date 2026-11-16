@@ -97,7 +97,12 @@ class DocumentSession:
             self.state = DocumentState.FAILED
 
     def discard(self) -> None:
-        """Close without returning edited bytes (the native Word No choice)."""
+        """Close without returning edited bytes after an explicit discard outcome.
+
+        Do not infer discard merely from a BeforeSave cancellation: the recovered
+        native event sink proves a BeforeSave callback, not a separate
+        DocumentBeforeClose callback or a complete close/discard decision map.
+        """
         with self._lock:
             if self.state not in (DocumentState.OPENED, DocumentState.DIRTY):
                 raise InvalidTransition(f"cannot discard a session in state {self.state.value}")
