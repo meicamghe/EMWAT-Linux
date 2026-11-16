@@ -1265,3 +1265,34 @@ This establishes that the Windows editor does not merely search bookmarks: it ac
 4. Do not map any of the 180 request field IDs to a Writer element by name alone until a real anonymized template is available.
 5. The installer archive inventory run 43810767154 found no Word-family template files, so template-level validation remains blocked on a representative Almas letter/template fixture.
 
+
+
+## Run 126 — تکمیل مسیر Custom Document Properties و تشخیص نوع فیلد (2026-11-16)
+
+Artifact اجرای `43811074616` (موفق؛ 41 فایل trace/disassembly) بررسی شد. این مرحله چند مرز مهم را دقیق‌تر کرد:
+
+### تشخیص متن در برابر تصویر
+
+- `TWordViwer.FillTextField` در `0x004BC980–0x004BCA87`، خودش متن را در Word نمی‌نویسد.
+- این متد metadata فیلد XML را از interface slot `+0xB0` می‌خواند و MIME type را با `text/plain` مقایسه می‌کند.
+- در صورت نبود metadata مناسب یا غیر `text/plain` بودن MIME type، مسیر را به `FillImageField` در `0x004BC30C` واگذار می‌کند.
+- بنابراین نام FillTextField نباید به‌عنوان اثبات setter متنی تفسیر شود؛ این متد در این مسیر نقش dispatch/نوع‌سنجی متن در برابر تصویر دارد. نوشتن نهایی متن در مسیرهای دیگر باید جداگانه ردیابی شود.
+
+### استخراج Custom Document Properties
+
+- `TWordViwer.AddCustomDocPropertiesToDic` در `0x004D1454–0x004D1807` از مسیر `LoadDocument` فراخوانی می‌شود (callsite: `0x004B7994`).
+- تابع یک collection از custom document properties را پیمایش می‌کند، نام propertyها را از رشته‌های هر عضو استخراج/تفکیک می‌کند و رکوردهای داخلی را به دو مجموعه در offsetهای viewer `+0x68` و `+0x6C` اضافه می‌کند.
+- جزئیات دقیق قالب نام/مقدار و معنای همه فیلدهای رکورد هنوز به helperهای `0x004D531C` و `0x004D68D4` وابسته است؛ تا trace آن helperها کامل نشود، delimiter و قرارداد نهایی dictionary را قطعی اعلام نمی‌کنیم.
+- این مسیر مستقل از bookmark inventory است. پس catalog لینوکس اکنون باید نام Custom Document Properties را نیز، بدون خواندن مقدارشان، فهرست کند.
+
+### نقش GetDocFieldName در lifecycle
+
+- `GetDocFieldName` در `0x004BB81C–0x004BC16F` روی مجموعه فیلدهای سند گردش می‌کند و برای هر عضو `GetDocFieldIndex` را فراخوانی می‌کند.
+- در همین مسیر، اگر نام/شرط مشخصی در بررسی رشته‌ای برقرار باشد، `SilentSaveEmwatDoc` در `0x004D23D8` فراخوانی می‌شود؛ بنابراین silent-save یک fallback شرطی در منطق شناسایی فیلد است، نه اثبات یک callback عمومی برای هر بار بستن سند.
+- این یافته با نتیجه قبلی سازگار است: مسیر نهایی ثبت سند به lifecycle و پاسخ XHR بلندمدت مرتبط است، اما هنوز نباید silent-save را معادل ثبت نهایی در Almas دانست.
+
+### پیامد برای Writer
+
+- catalog ساختاری اکنون نام‌های Custom Document Properties را کنار bookmark، named range، text field، section، table، frame و graphic object ثبت می‌کند.
+- فقط نام propertyها خوانده می‌شوند؛ هیچ مقدار property، متن سند یا presentation فیلد در گزارش inventory خوانده نمی‌شود.
+- تست UNO واقعی یک custom property ساختگی به سند اضافه می‌کند و حضور نام آن را در catalog بررسی می‌کند. این تست، قابلیت inventory را تأیید می‌کند، نه mapping نهایی 180 فیلد EMWAT به قالب واقعی نامه.
