@@ -86,3 +86,14 @@ The `requested-types` section asks for `mimetype="application/msword"`.
 - Artifact: `14161075867`
 - Reported `wordConfig` decoded size: 10,250 bytes.
 - Reported `wordBody` decoded size: 872,960 bytes.
+
+
+## 7. Twin-field identifier convention
+
+The Word field-processing disassembly confirms that the Unicode character `†` (U+2020 DAGGER) is a structural separator in field/property identifiers:
+
+- A name with two non-empty sides, such as `SignOfSenderStart†SignOfSenderEnd`, is represented internally as a `TXmlWordConfigTwinField`.
+- The first dagger is the split point; the right side retains any later dagger characters.
+- Names without the delimiter, or with an empty left/right side, follow the single-field path (`TXmlWordConfigField`).
+- This identifier delimiter is distinct from the `separator="&"` and `concater="\\n"` attributes on the external `signData` parameter. It does not establish the concatenation semantics of signData.
+- Python helper: `parse_word_field_identifier`; tests cover single, twin, multiple delimiters, and empty-side fallbacks.
