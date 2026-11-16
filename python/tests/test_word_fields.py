@@ -8,6 +8,7 @@ from emwat_linux.word_fields import (
     decode_word_fields,
     extract_docproperty_identifier,
     external_parameter_bindings,
+    is_native_business_signature_end,
     parse_word_field_identifier,
 )
 
@@ -38,6 +39,15 @@ class WordFieldDecodingTests(unittest.TestCase):
             parsed = parse_word_field_identifier(malformed)
             self.assertEqual(parsed.first, malformed)
             self.assertIsNone(parsed.second)
+
+    def test_matches_native_business_signature_end_pattern(self):
+        for field_name in ("signSenderEnd", "signSenderEnd0", "signSenderEnd12", "signEnd29"):
+            with self.subTest(field_name=field_name):
+                self.assertTrue(is_native_business_signature_end(field_name))
+
+        for field_name in ("SignSenderEnd", "xsignSenderEnd", "signSenderStart", "signSenderEnd123", ""):
+            with self.subTest(field_name=field_name):
+                self.assertFalse(is_native_business_signature_end(field_name))
 
     def test_extracts_docproperty_identifier_from_word_field_code(self):
         code = r"DOCPROPERTY  LetterSubject  \* MERGEFORMAT"
