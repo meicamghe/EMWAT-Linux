@@ -51,6 +51,24 @@ class FakeField:
         )()
 
 
+class FakeUserDefinedProperties:
+    def getPropertySetInfo(self):
+        return type("PropertyInfo", (), {
+            "getProperties": lambda _self: [
+                type("Property", (), {"Name": "EMWATLetterNumber"})(),
+                type("Property", (), {"Name": "EMWATSubject"})(),
+            ]
+        })()
+
+    def getPropertyValue(self, _name):
+        raise AssertionError("custom property values must not be read")
+
+
+class FakeDocumentProperties:
+    def getUserDefinedProperties(self):
+        return FakeUserDefinedProperties()
+
+
 class FakeDocument:
     def getBookmarks(self):
         return FakeContainer(["LetterSubject", "LetterNumber"])
@@ -76,6 +94,9 @@ class FakeDocument:
     def getTextFields(self):
         return FakeFields()
 
+    def getDocumentProperties(self):
+        return FakeDocumentProperties()
+
 
 class WriterInspectorTests(unittest.TestCase):
     def test_returns_sorted_structural_metadata_without_document_text(self):
@@ -90,6 +111,10 @@ class WriterInspectorTests(unittest.TestCase):
             "com.sun.star.text.TextField.DateTime",
         )
         self.assertEqual(catalog.text_fields[0].property_names, ("IsDate", "IsFixed"))
+        self.assertEqual(
+            catalog.custom_document_properties,
+            ("EMWATLetterNumber", "EMWATSubject"),
+        )
 
 
 if __name__ == "__main__":
