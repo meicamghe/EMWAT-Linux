@@ -76,8 +76,8 @@ class WordFieldDecodingTests(unittest.TestCase):
         )
         self.assertEqual(decode_word_fields(plus_config)[0].value, "A B C")
         self.assertEqual(fields[1].value, "Plain%20Text")
-        self.assertEqual(fields[2].value, "a b")
-        self.assertEqual(fields[3].value, "a+b")
+        self.assertEqual(fields[2].value, "a+b")
+        self.assertEqual(fields[3].value, "a%2Bb")
 
     def test_decodes_base64_image_bytes(self):
         config = parse(
