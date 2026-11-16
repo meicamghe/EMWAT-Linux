@@ -1,6 +1,15 @@
 # وضعیت پروژه EMWAT-Linux
 آخرین به‌روزرسانی: 2026-11-16
 
+## تکمیل مسیر DOCPROPERTY در Writer — 2026-11-16
+
+- Python CI run `43815297715` سبز شد: **96 تست پاس** و یک تست اختیاری UNO skip.
+- UNO integration run `43815162036` سبز شد: **8/8 تست**. Fixture واقعی DOCX دارای `docProps/custom.xml` و complex `DOCPROPERTY` field بود؛ property موجود به‌روزرسانی شد، Writer text fields refresh شدند و متن نمایشی مقدار جدید را نشان داد.
+- `writer_fields.py` تابع `refresh_writer_text_fields` را اضافه کرد تا پس از batch تغییر propertyها، فیلدهای Writer یک‌بار refresh شوند.
+- `writer_inspector.py` اکنون برای service نوع `com.sun.star.text.TextField.DocInfo.Custom` فقط property name فیلد را inventory می‌کند؛ مقدار فیلد یا presentation خوانده نمی‌شود.
+- `word_fields.py` در URL decode از `unquote_plus` استفاده می‌کند؛ trace native در `0x00455314` مسیر جداگانهٔ `+` را دارد و تست `A+B%20C → A B C` اضافه شده است.
+- این نتیجه مسیر custom property → DOCPROPERTY field result را در Writer تأیید می‌کند، اما مسیر مستقیم Word `Field.Result.Text` و mapping کامل 180 شناسه هنوز باز هستند.
+
 ## به‌روزرسانی تست و parser فیلدها — 2026-11-16
 
 - Python CI run `43814423443` موفق شد: **94 تست پاس** و یک تست اختیاری UNO skip.
