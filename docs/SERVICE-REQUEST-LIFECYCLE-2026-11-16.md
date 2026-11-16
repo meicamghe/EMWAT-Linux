@@ -191,8 +191,12 @@ The helper at `0x004010B8` is `TObject.ClassName` (IAT `0x00487460`); the helper
 
 ### Confirmed service → BPL Invoke bridge
 
-The service calls the created object's VMT slot `+0x0C` at `0x00470EF6`. For BPL class `TEmwatMethod` (VMT `0x0046ABFC`), this slot points to `TEmwatMethod.Finalization` at `0x0046C9E0`; the direct-caller trace proves that routine calls `TEmwatMethod.Invoke` at `0x0046CA67` (`0x0046C82C`). The confirmed dispatch chain is therefore `ParseMethod → GetClass → TObject.Create → VMT[+0x0C] → TEmwatMethod.Finalization → TEmwatMethod.Invoke`. The remaining trace target is the indirect `Invoke → PerformMethod` edge at the subclass VMT slot `+0x10`.
+The service calls the created object's VMT slot `+0x0C` at `0x00470EF6`. For BPL class `TEmwatMethod` (VMT `0x0046ABFC`), this slot points to `TEmwatMethod.Finalization` at `0x0046C9E0`; the direct-caller trace proves that routine calls `TEmwatMethod.Invoke` at `0x0046CA67` (`0x0046C82C`). The confirmed dispatch chain is therefore `ParseMethod → GetClass → TObject.Create → VMT[+0x0C] → TEmwatMethod.Finalization → TEmwatMethod.Invoke`. The complete `Finalization` trace shows that it calls `Invoke` at `0x0046CA67`, then makes the indirect call through the object's VMT slot `+0x10` at `0x0046CA88`. The `Invoke` body processes request parameters; the subsequent `PerformMethod` dispatch is in `Finalization`, not inside `Invoke`.
 
 ### XML class attribute → Delphi class name transformation
 
 `ParseMethod` reads the XML `class` attribute, prefixes the literal `T` (`0x004710E0`) using helper `0x00401310`, then passes the resulting name to `GetClass` at `0x00470E07`. Therefore `<method class="EditWordDocument">` resolves the Delphi class `TEditWordDocument` (BPL VMT `0x005ED764`). The subsequent `TObject.ClassName` check compares the resolved class name against `TUpgradeEmwat` for the special-case flag.
+
+### Complete PerformMethod dispatch and document-load chain
+
+`TEmwatMethod.Finalization` calls `TEmwatMethod.Invoke` at `0x0046CA67`, then calls the created object's VMT slot `+0x10` at `0x0046CA88`. `Invoke` handles the request parameter dictionary; it is the following virtual slot that dispatches to the subclass method. In the `TEditWordDocument` VMT at `0x005ED764`, slot `+0x10` points to `0x005EE82C` (TD32 symbol `TScanDocument.PerformMethod`). That implementation calls `TWordViwer.LoadDocument` at `0x004B7724`. The service-to-Word automation execution path is therefore now traced end-to-end at the dispatch boundary.
