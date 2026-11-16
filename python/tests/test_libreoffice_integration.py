@@ -9,8 +9,6 @@ from emwat_linux.editword_request import EditWordDocumentRequest
 from emwat_linux.libreoffice_adapter import LibreOfficeAdapter, _CFB_SIGNATURE
 from emwat_linux.office_adapter import CloseDisposition
 from emwat_linux.word_config import WordDocumentConfig
-from emwat_linux.writer_properties import set_custom_document_property
-from emwat_linux.writer_fields import refresh_writer_text_fields
 
 
 @unittest.skipUnless(
@@ -88,16 +86,14 @@ class LibreOfficeIntegrationTests(unittest.TestCase):
                 user_properties.getPropertyValue("EMWATIntegrationMarker"),
                 "initial-fixture-value",
             )
-            set_custom_document_property(
-                handle.document,
-                "EMWATIntegrationMarker",
-                "updated-fixture-value",
+            adapter.apply_custom_property_updates(
+                handle,
+                {"EMWATIntegrationMarker": "updated-fixture-value"},
             )
             self.assertEqual(
                 user_properties.getPropertyValue("EMWATIntegrationMarker"),
                 "updated-fixture-value",
             )
-            refresh_writer_text_fields(handle.document)
             self.assertIn(
                 "updated-fixture-value",
                 handle.document.getText().getString(),
