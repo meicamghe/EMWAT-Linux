@@ -186,3 +186,23 @@ Python bridge workflow run `43720329600` completed successfully with 66 tests. T
 
 
 - Follow-up review fixed the cancellation branch too: office callbacks are now detached immediately after `wait_for_close`, before checking whether the result is `CLOSED` or `CANCELLED`. Late callbacks after cancellation are covered by a regression test. CI run `43722805637` passed **71 tests**.
+
+
+### LibreOffice UNO adapter — 2026-11-16
+
+A first concrete UNO-backed office adapter is now present at `python/src/emwat_linux/libreoffice_adapter.py`:
+
+- Launches a separate LibreOffice process and private user profile per document session, with a dedicated loopback UNO socket.
+- Recognizes the observed OLE Compound File Word payload as legacy `.doc`, and also recognizes ZIP-based `.docx` input.
+- Opens the document visibly for normal use; a headless mode exists only for automated integration testing.
+- Registers document modification, save-completion, and close listeners.
+- On the UNO close callback, writes a separate `MS Word 97` snapshot without changing the source document URL; after the close notification, the coordinator can return those bytes through the already-tested response serializer.
+- Keeps the original request's field configuration and signData opaque. No EMWAT field-to-Writer mapping is claimed yet.
+
+A dedicated `.github/workflows/libreoffice-integration.yml` installs LibreOffice Writer and distro `python3-uno`, then runs a real generated-DOCX → UNO open → close → legacy-DOC export roundtrip. The Python bridge CI is green on commit `4ddaae179675f1800961da2181ebb8262490cb5f`; the real UNO integration run is still pending at the time of this note.
+
+Known limitations:
+- This verifies the LibreOffice document-engine boundary, not Almas Gam end-to-end registration.
+- The Windows-specific EMWAT field mapping, sign insertion, image layout, and exact cancellation response remain unresolved.
+- Close-listener snapshot behavior must pass the live UNO integration job before this adapter is considered verified.
+- The adapter currently expects the system Python interpreter to have the distro `python3-uno` module available.
