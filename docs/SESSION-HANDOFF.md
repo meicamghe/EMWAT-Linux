@@ -1054,3 +1054,11 @@ Do not implement guessed `signData` joining or claim end-to-end Almas registrati
 2. Inspect artifact for run `43868531786` to continue service XML class lookup and response writer tracing.
 3. Connect the concrete `EditWordDocument` class resolution to the VMT slot and `PerformMethod` body.
 4. Trace the post-Word archive result into the `invoke` HTTP response. Keep timer-driven `OnControlerNotify` separate from close-time registration.
+
+
+### Service artifact analysis correction
+- The preserved artifact `emwat-mainform-invoke-handler` downloaded successfully from prior run `43831365563`; it contains `EmwatService.exe`.
+- The first deep service workflow `43868531786` failed because this EXE has no TD32 debug signature. It is not a missing file and not a bad download.
+- Service workflow was corrected to use PE disassembly, raw pointer-reference scans, VA context inspection, and string decoding only. It no longer invokes TD32-dependent scripts for the service EXE.
+- Corrected run `43868823284` was queued at this checkpoint; inspect its job and artifact before reporting success.
+- Keep the EXE out of the public repository; use the preserved workflow artifact as the CI input.
