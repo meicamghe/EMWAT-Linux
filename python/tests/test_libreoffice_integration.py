@@ -10,6 +10,7 @@ from emwat_linux.libreoffice_adapter import LibreOfficeAdapter, _CFB_SIGNATURE
 from emwat_linux.office_adapter import CloseDisposition
 from emwat_linux.word_config import WordDocumentConfig
 from emwat_linux.writer_properties import set_custom_document_property
+from emwat_linux.writer_fields import refresh_writer_text_fields
 
 
 @unittest.skipUnless(
@@ -96,7 +97,7 @@ class LibreOfficeIntegrationTests(unittest.TestCase):
                 user_properties.getPropertyValue("EMWATIntegrationMarker"),
                 "updated-fixture-value",
             )
-            handle.document.getTextFields().refresh()
+            refresh_writer_text_fields(handle.document)
             self.assertIn(
                 "updated-fixture-value",
                 handle.document.getText().getString(),
@@ -104,6 +105,14 @@ class LibreOfficeIntegrationTests(unittest.TestCase):
             catalog = adapter.inspect_document(handle)
             self.assertIn("LetterSubject", catalog.bookmarks)
             self.assertIn("EMWATIntegrationMarker", catalog.custom_document_properties)
+            self.assertIn(
+                "EMWATIntegrationMarker",
+                tuple(
+                    field.custom_property_name
+                    for field in catalog.text_fields
+                    if field.custom_property_name is not None
+                ),
+            )
             handle.document.close(True)
             close_event = adapter.wait_for_close(handle)
             self.assertEqual(close_event.disposition, CloseDisposition.CLOSED)
