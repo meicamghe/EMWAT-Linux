@@ -142,3 +142,19 @@ The latest PE-only trace independently confirms the outer request envelope:
 Evidence: `EmwatService.exe` addresses `0x00470A58`, `0x00470B38`, constants `0x00470B1C` (`emwat`), `0x00470B30` (`version`), `0x00470CBC` (`method`), `0x00470CD0` (`class`), `0x00470CE4` (`param`), and `0x00470CF8` (`name`); artifact `14227870162`.
 
 The parser's three-field internal record is still not fully semantically named, and the class string has not yet been connected to the concrete BPL VMT call.
+
+
+## EditWordDocument.PerformMethod parameter contract — confirmed
+
+The concrete `TEditWordDocument.PerformMethod` at `0x005EE82C` reads these dictionary keys:
+
+| Key | Observed behavior |
+|---|---|
+| `wordConfig` | Required; converted to a string and passed to `TWordViwer.LoadDocument` as the XML configuration. Missing value raises `Requset XML is not valid (wordConfig parameter is null)`. |
+| `wordBody` | Converted to a string and passed to `LoadDocument`; `LoadDocument` extracts `DocFileName`, creates a local file with `TFileStream(fmCreate)`, and writes the document data. |
+| `letterImages` | Retrieved and forwarded to `LoadDocument`; exact type and full use still open. |
+| `signData` | Retrieved and forwarded to `LoadDocument`; exact type and full use still open. |
+
+`PerformMethod` calls `CoInitialize`, invokes `LoadDocument` with these four values plus the `TEmwatInvokeParam` pointer and an output string, stores the returned string as its method result, sets `TEmwatInvokeParam.bResultSet = 1`, then calls `CoUninitialize`.
+
+`LoadDocument` calls `OnTmrAutoSave` with the local document path. The timer routine stores that path in `TWordViwer+0xA0`; `OnControlerNotify` later uses it as the source file for the `.easd` member in the password-protected `.easz` archive. See `docs/WORD-LIFECYCLE-STATIC-TRACE.md` Run 151.
