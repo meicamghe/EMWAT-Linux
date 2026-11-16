@@ -2174,3 +2174,7 @@ Workflow تحلیل Word گسترش یافت تا helper مرکزی درج تص�
 ## کشف فیلدهای Option Form گیرنده و رونوشت — 2026-11-16
 
 Constructor مربوط به `TWordViwer` چهار فیلد `Receivers`، `ReceiverDeps`، `ccReceivers` و `ccReceiverDeps` را برای option form مقداردهی می‌کند. سپس برای هر گزینه `field index`، نام، `xmlfidx` و `isInDoc` را log می‌کند. این مسیر، UI/metadata اختصاصی گیرنده و رونوشت را تأیید می‌کند؛ منطق کامل انتخاب گیرنده و serialization آن هنوز باز است.
+
+## کشف APIهای بارگذاری Package و ساخت کلاس در سرویس — 2026-11-16
+
+Import Table در `EmwatService.exe` شامل `LoadPackage`، `UnloadPackage`، `StartExe`، `GetClass`، `ClassCreate`، `ClassDestroy`، `TObject.InheritsFrom`، `ClassParent`، `ClassName` و دو `GetProcAddress` است. این موضوع توانایی سرویس برای بارگذاری BPL و resolve/create کلاس Delphi در زمان اجرا را اثبات می‌کند، اما هنوز زنجیره دقیق فراخوانی `GetClass → ClassCreate → TEmwatMethod.Invoke` قطعی نشده است. به همین دلیل workflow جدید علاوه بر pointer refs، opcodeهای `FF 15` و `FF 25` مربوط به فراخوانی/پرش مستقیم به IAT را اسکن می‌کند.
