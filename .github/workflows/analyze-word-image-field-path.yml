@@ -28,7 +28,7 @@ jobs:
         shell: bash
         run: |
           mkdir -p word-image-field-path
-          targets=(004BC30C 004BC980 004C0410 004C19C0 004C2B20 004C2DE0 004C436C 004CFC74 004D08B4)
+          targets=(004BC2C4 004BC30C 004BC980 004C0410 004C19C0 004C2B20 004C2DE0 004C436C 004CFC74 004D08B4 004D34B0 004D3DF8)
           pids=()
           for target in "${targets[@]}"; do
             (
@@ -46,7 +46,7 @@ jobs:
         shell: bash
         run: |
           pids=()
-          for spec in "004BC30C 2200" "004BC980 600" "004C0410 700" "004C19C0 5200" "004C2B20 1000" "004C2DE0 500" "004C436C 1000" "004CFC74 1300" "004D08B4 1400"; do
+          for spec in "004BC2C4 500" "004BC30C 2400" "004BC980 600" "004C0410 700" "004C19C0 5200" "004C2B20 1000" "004C2DE0 500" "004C436C 1000" "004CFC74 1300" "004D08B4 1400" "004D34B0 1400" "004D3DF8 1400"; do
             (
               set -e
               set -- $spec
@@ -65,7 +65,11 @@ jobs:
       - name: Decode image-field and caption constants
         run: |
           python tools/decode_pe_strings.py analysis-input/EmwatMethods.bpl1 \
-            0x004BC23C 0x004BC260 0x004BC274 0x004BFEE8 0x004BFF0C \
+            0x004BC23C 0x004BC260 0x004BC274 0x004BC6D4 0x004BC710 0x004BC748 \
+            0x004BC76C 0x004BC78C 0x004BC7B4 0x004BC7D8 0x004BC7F8 0x004BC804 \
+            0x004BC82C 0x004BC8A8 0x004BC910 0x004BC938 0x004BC95C \
+            0x004BFEE8 0x004BFF0C 0x004C04DC 0x004C0510 0x004C052C \
+            0x004C2E70 0x004C2E88 0x004C2EA4 0x004C2EBC 0x004C2ED0 0x004C2EEC \
             0x004C0410 0x004C2DE0 0x004C436C 0x004CFC74 \
             > word-image-field-path/image-field-strings.md
       - uses: actions/upload-artifact@v4
