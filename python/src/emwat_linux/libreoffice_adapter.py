@@ -198,15 +198,19 @@ class LibreOfficeAdapter:
         process_factory: Callable[..., subprocess.Popen[bytes]] = subprocess.Popen,
         uno_module: object | None = None,
         headless: bool = False,
+        close_timeout_seconds: float | None = None,
     ) -> None:
         if connect_timeout_seconds <= 0 or poll_interval_seconds <= 0:
             raise ValueError("connection and polling timeouts must be positive")
+        if close_timeout_seconds is not None and close_timeout_seconds <= 0:
+            raise ValueError("close timeout must be positive when configured")
         self._soffice_path = soffice_path
         self._connect_timeout = connect_timeout_seconds
         self._poll_interval = poll_interval_seconds
         self._process_factory = process_factory
         self._uno = uno_module
         self._headless = headless
+        self._close_timeout = close_timeout_seconds
 
     def _uno_runtime(self) -> object:
         if self._uno is None:
@@ -360,9 +364,18 @@ class LibreOfficeAdapter:
     def wait_for_close(self, handle: object) -> OfficeCloseEvent:
         if not isinstance(handle, _OfficeHandle):
             raise TypeError("invalid_libreoffice_handle")
+        deadline = (
+            time.monotonic() + self._close_timeout
+            if self._close_timeout is not None
+            else None
+        )
         while not handle.closed.wait(self._poll_interval):
             if handle.process.poll() is not None:
+                self._cleanup(handle)
                 raise RuntimeError("libreoffice_exited_without_document_close")
+            if deadline is not None and time.monotonic() >= deadline:
+                self._cleanup(handle)
+                raise RuntimeError("libreoffice_close_timeout")
         if not handle.close_listener.snapshot_ready.wait(self._connect_timeout):
             self._cleanup(handle)
             raise RuntimeError("libreoffice_final_snapshot_timeout")
