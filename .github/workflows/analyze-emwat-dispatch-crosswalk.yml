@@ -76,6 +76,12 @@ jobs:
               python tools/trace_td32_callers.py analysis-input/EmwatService.exe "$address" "dispatch-crosswalk/service/$name-callers.md" || true
             done
             python tools/trace_pe_range.py analysis-input/EmwatService.exe 0x0047BF30 0x0047C341 dispatch-crosswalk/service/mainform-request-handler-full.md
+            for range in "0x0045EA80 0x0045EC20" "0x0045F780 0x0045F940" "0x00470E80 0x00471020" "0x0047C180 0x0047C300" "0x0047D8C0 0x0047D980" "0x0047DB00 0x0047DBD0" "0x0047DD40 0x0047DE10"; do
+              set -- $range
+              name=${1#0x}
+              python tools/trace_pe_range.py analysis-input/EmwatService.exe "$1" "$2" "dispatch-crosswalk/service/callsite-context-$name.md"
+            done
+            python tools/scan_pe_pointer_refs.py analysis-input/EmwatService.exe 0x004610FC dispatch-crosswalk/service/postparse-helper-pointer-refs.md || true
             python tools/find_td32_class_procedures.py analysis-input/EmwatService.exe TMainForm TIdHTTPServer TIdHTTPResponseInfo > dispatch-crosswalk/service/service-classes.md || true
             python tools/resolve_delphi_vmt_slots.py analysis-input/EmwatService.exe dispatch-crosswalk/service/service-vmt.md || true
             python tools/trace_delphi_interfaces.py analysis-input/EmwatService.exe dispatch-crosswalk/service/service-interfaces.md || true
