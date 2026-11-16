@@ -1,10 +1,12 @@
+import base64
 import http.client
 import socket
 import threading
 import unittest
 
-from emwat_linux.application import create_bridge_server
+from emwat_linux.application import create_bridge_server, create_libreoffice_bridge_server
 from emwat_linux.bridge import BridgeResponse
+from emwat_linux.office_adapter import CloseDisposition, OfficeCloseEvent
 
 
 class ApplicationCompositionTests(unittest.TestCase):
@@ -103,6 +105,70 @@ class ApplicationCompositionTests(unittest.TestCase):
                 self.assertEqual(response.status, expected)
                 response.read()
                 conn.close()
+        finally:
+            server.shutdown()
+            server.server_close()
+            thread.join(timeout=2)
+
+
+    def test_libreoffice_factory_connects_editword_handler_and_fake_office(self):
+        class FakeOffice:
+            def __init__(self):
+                self.request = None
+
+            def open_document(self, request, *, on_modified, on_saved):
+                self.request = request
+                return object()
+
+            def wait_for_close(self, handle):
+                return OfficeCloseEvent(CloseDisposition.CLOSED)
+
+            def export_final_document(self, handle):
+                return bytes.fromhex("d0cf11e0a1b11ae1") + b"final-word-doc"
+
+        office = FakeOffice()
+        port = self.free_port()
+        local_origin = f"http://127.0.0.1:{port}"
+        server = create_libreoffice_bridge_server(
+            allowed_origins=frozenset({local_origin}),
+            allowed_parent_origins=frozenset({"https://office.example"}),
+            office_adapter=office,
+            cancel_response_factory=lambda _result, _request: BridgeResponse(
+                b"cancelled", content_type="text/plain", status=409
+            ),
+            port=port,
+        )
+        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+        try:
+            config = base64.b64encode(b"<word-document/>").decode("ascii")
+            document = base64.b64encode(
+                bytes.fromhex("d0cf11e0a1b11ae1") + b"input-word-doc"
+            ).decode("ascii")
+            body = (
+                '<emwat version="1.0"><method class="EditWordDocument">'
+                f'<param name="wordConfig">{config}</param>'
+                f'<param name="wordBody">{document}</param>'
+                '<param name="signData"></param>'
+                '</method></emwat>'
+            ).encode("utf-8")
+            conn = http.client.HTTPConnection("127.0.0.1", port, timeout=3)
+            conn.request(
+                "POST",
+                "/?invoke=local-nonce",
+                body=body,
+                headers={
+                    "Content-Type": "text/plain;charset=UTF-8",
+                    "Origin": local_origin,
+                },
+            )
+            response = conn.getresponse()
+            payload = response.read()
+            self.assertEqual(response.status, 200)
+            self.assertIn(b'<response-word status="success">', payload)
+            self.assertIn(b"application/msword", payload)
+            self.assertEqual(office.request.document_bytes[:8], bytes.fromhex("d0cf11e0a1b11ae1"))
+            conn.close()
         finally:
             server.shutdown()
             server.server_close()
