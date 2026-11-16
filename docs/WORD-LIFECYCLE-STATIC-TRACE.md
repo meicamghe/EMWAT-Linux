@@ -16,9 +16,15 @@ TD32 identifies:
 - The routine calls helper `0x0046DE84`, then `0x0046E324` twice in the loop, and `0x0046E3CC` as the loop test.
 - It performs indirect virtual calls through object VMT offsets `+0xB0`, `+0xC8`, `+0xCC`, `+0x68`, and `+0x54`.
 
-The shape is consistent with iterating a dictionary-like parameter collection and forwarding key/value data through virtual/interface-backed objects. The exact helper names, XML node creation semantics, and final call target remain unresolved until the helper procedures and indirect dispatch are traced together.
+The helper traces refine the loop:
+- `0x0046E324` is TD32-named `TDictionary<AnsiString,AnsiString>.TPairEnumerator.DoGetCurrent`; its body reads the current pair's two string fields from the dictionary's internal pair storage.
+- `0x0046E3CC` is associated with the `TPairEnumerator.MoveNext` RTTI entry in the enumerator VMT. Its TD32 decorated symbol says `TList<TPair>.GetCapacity`, which conflicts with the RTTI/method-table evidence; use the RTTI association as the stronger label and retain the mismatch.
+- `0x0046DE84` has a TD32 symbol label `TEnumerable<AnsiString>.ToArrayImpl` and calls helper `0x0046E384`; its precise role in this particular Invoke path still needs a class/constructor cross-check.
+- `0x0046DC8C` is `TDictionary<AnsiString,AnsiString>.AddOrSetValue`, confirmed separately in the same BPL.
 
-A direct TD32 caller scan finds one direct call to `TEmwatMethod.Invoke`, from unit finalization at `0x0046CA67`. This is not evidence of the runtime request caller: the production call is likely indirect or outside the TD32-bounded code paths searched by the direct-CALL-only tool. Do not treat the caller scan as a complete call graph.
+Thus the body definitely walks key/value pairs. It also makes virtual calls on XML-related objects, consistent with an XML parameter-building/serialization path; the exact output element and response role still require the enclosing caller chain.
+
+A direct TD32 caller scan finds one direct call to `TEmwatMethod.Invoke`, from unit finalization at `0x0046CA67`; a separate raw-pointer scan finds no exact static pointer references to `0x0046C82C`. Therefore the runtime role of this method is still unresolved. Do not call it the request dispatcher merely because its name is `Invoke`; it may instead be a generic XML/dictionary conversion method used elsewhere.
 
 ## 2. Concrete method classes
 
@@ -35,6 +41,18 @@ TD32 class procedure inventory confirms the following concrete methods derive fr
 - `TCompareWordDocument`
 
 The class RTTI/VMT analysis independently identifies VMT candidates for `TEmwatMethod`, `TEditWordDocument`, and `TScanDocument`. Their interface tables are null in the examined output; that does not rule out virtual method dispatch through their VMTs.
+
+
+## 2A. Concrete PerformMethod VMT evidence and symbol mismatch
+
+The prior slot analysis gives a more direct link between the edit request parameters and the Word loader:
+
+- `TEditWordDocument` VMT is `0x005ED764`; its `+0x10` entry contains `0x005EE82C`.
+- The routine at `0x005EE82C` reads parameter keys `wordConfig`, `wordBody`, `letterImages`, and `signData`; it checks that `wordConfig` is present and then reaches `TWordViwer.LoadDocument` at `0x004B7724`.
+- The same routine's TD32 decorated symbol is `TScanDocument.PerformMethod`, not `TEditWordDocument.PerformMethod`.
+- `TScanDocument` VMT `0x005ED884` has `+0x10 = 0x005EEB48`; TD32 labels the routine at `0x005EEB48` as `TFaxDocument.PerformMethod`.
+
+This is a real class/VMT/TD32-symbol discrepancy, not something to silently rename. The strongest grounded statement is: the `TEditWordDocument` VMT's `+0x10` method pointer targets the `0x005EE82C` routine, and that routine contains the edit-document parameter keys and calls the Word loader; TD32 labels it `TScanDocument.PerformMethod`. Resolve the class-registration table and neighboring VMTs before assigning a final source-level class name.
 
 ## 3. Edit and scan entrypoints
 
