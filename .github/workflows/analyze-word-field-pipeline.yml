@@ -1,0 +1,51 @@
+name: Analyze EMWAT Word field pipeline
+on:
+  push:
+    paths:
+      - '.github/workflows/analyze-word-field-pipeline.yml'
+      - 'analysis-input/EmwatMethods.bpl1'
+      - 'tools/trace_td32_procedure.py'
+      - 'tools/trace_td32_callers.py'
+      - 'tools/trace_pe_target.py'
+      - 'tools/decode_pe_strings.py'
+      - 'tools/scan_pe_pointer_refs.py'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  word-field-pipeline:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install pefile capstone
+      - name: Trace XML field ingestion and Word field enumeration
+        run: |
+          mkdir -p word-field-pipeline
+          for target in 004BC2C4 004BC30C 004BC980 004C009C 004C0550 004BFC18 004BCA88 004D1148 004D1454 004BB81C 004C19C0; do
+            python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x$target word-field-pipeline/procedure-$target.md
+            python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x$target word-field-pipeline/callers-$target.md
+            python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 0x$target word-field-pipeline/pointer-refs-$target.md
+          done
+      - name: Extend field, image, and config ingestion disassembly
+        run: |
+          for spec in "004BC30C 1000" "004C009C 600" "004C0550 1400" "004D1148 800" "004D1454 800" "004BB81C 1200" "004C19C0 1200"; do
+            set -- $spec
+            python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x$1 word-field-pipeline/extended-$1.md $2 ret
+          done
+      - name: Decode field-processing constants and labels
+        run: |
+          python tools/decode_pe_strings.py analysis-input/EmwatMethods.bpl1 \
+            0x004BC6D4 0x004BC710 0x004BC748 0x004BC76C 0x004BC78C \
+            0x004BC7B4 0x004BC7D8 0x004BC7F8 0x004BC804 0x004BC82C \
+            0x004BC8A8 0x004BC910 0x004BCA70 0x004BF9A0 \
+            0x004C10A0 0x004C10DC 0x004D1148 0x004D1454 \
+            > word-field-pipeline/field-processing-strings.md
+      - uses: actions/upload-artifact@v4
+        with:
+          name: emwat-word-field-pipeline
+          path: word-field-pipeline/
