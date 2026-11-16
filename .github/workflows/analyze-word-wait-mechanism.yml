@@ -114,6 +114,24 @@ jobs:
                   rows.append("")
           pathlib.Path("wait-mechanism-analysis/imported-wait-apis.md").write_text("\n".join(rows) + "\n", encoding="utf-8")
           PY
+      - name: Trace exact wait thunk entries and Word OpenDoc routine
+        shell: bash
+        run: |
+          mkdir -p wait-mechanism-analysis/exact-thunks
+          for target in 004028D0 00402900 00403438 00404224 00404F04; do
+            python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x$target wait-mechanism-analysis/exact-thunks/thunk-$target.md 160 ret
+            python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x$target wait-mechanism-analysis/exact-thunks/thunk-$target-callers.md
+            python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 0x$target wait-mechanism-analysis/exact-thunks/thunk-$target-pointer-refs.md
+          done
+          python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x004028C0 0x00402920 wait-mechanism-analysis/exact-thunks/kernel32-wait-sleep-thunk-table.md
+          python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x00404EF0 0x00404F20 wait-mechanism-analysis/exact-thunks/vcl-processmessages-thunk.md
+          python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x004B7430 wait-mechanism-analysis/exact-thunks/Wordviewer-OpenDoc.md
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004B7430 wait-mechanism-analysis/exact-thunks/Wordviewer-OpenDoc-callers.md
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004B7430 wait-mechanism-analysis/exact-thunks/Wordviewer-OpenDoc-full.md 2400 ret
+          python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x004B7430 0x004B7724 wait-mechanism-analysis/exact-thunks/Wordviewer-OpenDoc-range.md
+          for target in 004B9AE8 004B9C87 004B9F1C 004BA2DF; do
+            python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x$target wait-mechanism-analysis/exact-thunks/OnTmrAutoSave-$target.md 1200 ret
+          done
       - name: Scan imported wait and message API references
         run: |
           mkdir -p wait-mechanism-analysis/import-references
