@@ -71,6 +71,8 @@ class WordFieldDecodingTests(unittest.TestCase):
         fields = decode_word_fields(config)
         self.assertEqual(fields[0].value, b"")
         self.assertEqual(fields[0].external_parameter, "signData")
+        self.assertEqual(fields[0].identifier.first, "SignsStart")
+        self.assertEqual(fields[0].identifier.second, "SignsEnd")
         self.assertEqual(external_parameter_bindings(fields), fields)
 
     def test_decodes_optional_attribute_using_nested_encoding(self):
