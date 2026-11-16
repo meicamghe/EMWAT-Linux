@@ -25,7 +25,7 @@ jobs:
       - name: Trace recovery and SevenZip callback implementations
         run: |
           mkdir -p recovery-callback-contracts/procedures recovery-callback-contracts/typeinfo recovery-callback-contracts/interfaces
-          for target in 0044A998 004563A8 004565DC 004555D8 0045574C 00456F00 00453860 004532E4 0045375C 00452FDC 00453534 00453480 004531D4 0045392C 00453B84 00453A54 004531EC 00453744; do
+          for target in 0044A998 004563A8 004565DC 004555D8 0045574C 00456F00 00456B78 005EB828 005EBDA8 005EC580 00453860 004532E4 0045375C 00452FDC 00453534 00453480 004531D4 0045392C 00453B84 00453A54 004531EC 00453744; do
             python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x$target recovery-callback-contracts/procedures/$target.md
             python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x$target recovery-callback-contracts/procedures/$target-callers.md
           done
@@ -39,7 +39,7 @@ jobs:
           python tools/trace_delphi_interfaces.py analysis-input/EmwatMethods.bpl1 recovery-callback-contracts/interfaces/all-delphi-interfaces.md
       - name: Trace recovery form call chain and archive path arguments
         run: |
-          for target in 005EB828 00456F00 0044A998 004563A8 004565DC 004555D8 0045574C; do
+          for target in 005EB828 005EBDA8 005EC580 00456B78 00456F00 0044A998 004563A8 004565DC 004555D8 0045574C; do
             python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x$target recovery-callback-contracts/procedures/$target-all-callers.md
           done
       - name: Resolve non-TD32 interface slot targets and password prompt strings
