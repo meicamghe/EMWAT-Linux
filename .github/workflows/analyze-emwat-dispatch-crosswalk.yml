@@ -78,6 +78,10 @@ jobs:
             python tools/find_td32_class_procedures.py analysis-input/EmwatService.exe TMainForm TIdHTTPServer TIdHTTPResponseInfo > dispatch-crosswalk/service/service-classes.md || true
             python tools/resolve_delphi_vmt_slots.py analysis-input/EmwatService.exe dispatch-crosswalk/service/service-vmt.md || true
             python tools/trace_delphi_interfaces.py analysis-input/EmwatService.exe dispatch-crosswalk/service/service-interfaces.md || true
+            python tools/trace_pe_range.py analysis-input/EmwatService.exe 0x0046A500 0x0046AE30 dispatch-crosswalk/service/parser-token-collection-full.md
+            python tools/trace_pe_range.py analysis-input/EmwatService.exe 0x00470B38 0x00470CA3 dispatch-crosswalk/service/xml-token-loop-full.md
+            python tools/trace_pe_range.py analysis-input/EmwatService.exe 0x0047E0EC 0x0047E218 dispatch-crosswalk/service/route-helper-full.md
+            python tools/decode_pe_strings.py analysis-input/EmwatService.exe 0x00470CBC 0x00470CD0 0x00470CE4 0x00470CF8 0x00471050 0x0047E218 0x0047E248 0x0047E29C 0x0047C360 0x0047C37C 0x0047C3BC 0x0047C404 0x0047C450 0x0047C498 > dispatch-crosswalk/service/route-parser-strings.md
           fi
       - uses: actions/upload-artifact@v4
         with:
