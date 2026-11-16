@@ -131,3 +131,13 @@ These checks validate the adapter and composition boundary. They do not establis
 - Added `tools/list_td32_symbols.py`, which enumerates TD32 procedures matching class/type fragments and reports their PE virtual addresses and procedure sizes.
 - The artifact indexed 611 procedures containing `TDocumentCProperty`, `TXmlWordConfigField`, or `TXmlWordConfigTwinField` in their TD32 symbol names.
 - This index surfaced `TWordViwer.SetFieldValue` at `0x004BFDB0`, `GetXmlFieldInfo` at `0x004BFC18`, and typed dictionary `Add` / `AddOrSetValue` helpers for the single and twin field maps. A focused follow-up trace has been queued in the custom-property workflow.
+
+
+
+## Word close/response-chain reverse-engineering — 2026-11-16
+
+- Workflow run **43813684507** completed successfully.
+- Artifact: **14200889822** (emwat-word-close-response-chain).
+- The artifact traces both generated Word Close wrappers: no-argument Close dispatches through _Document byte offset +0x4D4; three-OleVariant Close dispatches through +0x29C. The BeforeSave callback uses the three-argument wrapper after its Cancel/prompt logic.
+- OnControlerNotify calls CostumizeRecAndCC, which invokes _Document slot +0x2BC (PrintOutOld on the generated wrapper mapping), then calls a separate _Document slot +0xDC with -1. The +0xDC meaning and HTTP/registration connection are not yet established.
+- A follow-up workflow revision adds Get_Saved and Set_Saved wrapper traces to resolve the +0xDC slot mapping.
