@@ -955,3 +955,33 @@ WordAppDocumentBeforeClose at 0x004CCBBC has one direct bounded caller in the cu
 ### Evidence boundary
 
 The event-sink wiring explains how the BeforeSave callback is reached from Word automation. It does not prove that the callback itself posts the final document to Almas. The exact response-word HTTP handoff and registration trigger remain separate unresolved protocol steps.
+
+
+## Run 130 — ردیابی رکوردهای event sink و جایگاه BeforeClose
+
+Source: artifact اجرای Word event sink، run `43815900228`، artifact `14202173024`.
+
+### ثبت callbackها در مسیر OnTmrAutoSave
+
+در بدنه‌ی `TWordViwer.OnTmrAutoSave` (procedure از `0x004B8A84`)، بلوک `0x004B8C60–0x004B8D10` روی شیء event/controller در `viewer+0x44` رکوردهای callback را مقداردهی می‌کند:
+
+- offset `+0x80` ← `WordAppDocumentBeforeSave` در `0x004CD154`.
+- offset `+0x90` ← `WordAppNewDocument` در `0x004CD54C`.
+- offset `+0x98` ← `WordAppWindowActivate` در `0x004CD9C0`.
+- offset `+0x88` ← callback در `0x004D00AC`، با شرط flag در `viewer+0x3C`.
+
+این شواهد ثبت callback در event record را ثابت می‌کند؛ اما نام/معنای callback چهارم و اینکه این رکورد دقیقاً در کدام مرحله به connection point ورد متصل می‌شود، هنوز باید با trace چرخه‌ی WordApplication تکمیل شود.
+
+### وضعیت BeforeClose
+
+- pointer scan آدرس `0x004CCBBC` هیچ reference مستقیمی در داده/کد پیدا نکرد.
+- bounded direct-call scan تنها caller مستقیم آن را `FillImgFldsForPrint` در `0x004CCF8F` نشان می‌دهد.
+- در بلوک event-record assignment بالا، هیچ فیلدی به `0x004CCBBC` تنظیم نشده است.
+
+بنابراین هنوز مدرکی نداریم که `WordAppDocumentBeforeClose` callback فعال main editor باشد. وجود بدنه‌ی callback به‌تنهایی برای فرض ثبت آن کافی نیست. مسیر اصلی BeforeSave به‌صورت مجزا در event record ثبت شده است.
+
+### ارتباط با BeforeSave
+
+بدنه‌ی `WordAppDocumentBeforeSave` در `0x004CD154` از `_Document` slot `+0xD8` استفاده می‌کند که wrapper آن `TWordDocument.Set_Saved` است؛ سپس در شاخه‌ی ادامه‌ی close، wrapper سه‌آرگومانی `TWordDocument.Close` را از slot `+0x29C` فراخوانی می‌کند. این مسیر با getter محتوای `+0xDC` در `OnControlerNotify` متفاوت است.
+
+**Confidence:** ثبت سه callback اول در event record تأییدشده؛ اتصال نهایی به COM connection point و نقش callback چهارم هنوز باز؛ فعال بودن BeforeClose در main editor اثبات‌نشده.
