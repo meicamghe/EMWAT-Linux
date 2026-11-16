@@ -541,3 +541,22 @@ The parser worker at `0x00470B38` uses `0x4670A8` to retrieve named XML values a
 The MainForm handler (`0x0047BF30`) directly calls `WriteContent` (`0x004610FC`) for the init and heartbeat branches. In the currently traced invoke branch, it calls the package loader, XML parser, and package unloader; no direct call to `WriteContent` is visible in that branch. Do not reuse the init/heartbeat response path as proof of the invoke response envelope.
 
 The unresolved bridge is now narrower: how the parsed XML method/class/param records trigger a concrete BPL method (including the `TEditWordDocument` VMT slot) and how that method's result becomes the HTTP response text returned by the JavaScript bridge. Package loading alone does not prove that invocation occurs.
+
+
+### Version value confirmed by the root validator
+
+The follow-up string decode from service workflow run `43869331847`, artifact `14227870162`, resolves:
+- `0x00470B1C` → `emwat`
+- `0x00470B30` → `version`
+
+The validator at `0x00470A58` searches for the `emwat` root element, reads its `version` attribute, converts it to a numeric value, and compares it to exactly `1`. The accepted envelope is therefore statically supported as:
+
+```xml
+<emwat version="1">
+  <method class="...">
+    <param name="...">...</param>
+  </method>
+</emwat>
+```
+
+This confirms the numeric version value, not just the attribute's existence. The class-to-method invocation bridge and the exact response envelope remain open.
