@@ -240,3 +240,17 @@ The full trace of `SilentSaveEmwatDoc` (`0x004D23D8`) confirms it is called dire
 The exact meaning of the two temporary lists, the COM slot `+0x13C`, and the final serialized record representation remain unresolved. Do not map these to response fields until the helper and caller data are traced.
 
 Evidence: Word controller-close artifact `14234120250`, run `43883105610`.
+
+
+## Field lookup and image-dispatch crosswalk — artifact 14232259712
+
+The expanded field-mapping artifact adds important caller context to the Word-field procedures:
+
+- `FillPrintDocFields` (`0x004CB638`) has two direct callers in the TD32-bounded scan: `GetDocFieldName` at `0x004BB8AE` and `GetFieldIndexInList` at `0x004CB338`. In the `GetDocFieldName` call, the viewer passes the active document reference and its collection at `+0xA4`. Therefore, although the routine name and BeforePrint callback establish a print-related role, its work is also reached during field-name/index lookup. Do not implement it only as a handler that runs after the user clicks Print.
+- `AddImagesToDoc` (`0x004C0410`) is called directly from `GetDocFieldIndex` at `0x004C0A5D`. It checks a field-collection string and, on the matching branch, delegates the actual operation to helper `0x004C19C0`, passing the Word Fields collection, the current field metadata, and associated arguments. The core helper `0x004C19C0` remains a required trace target; the wrapper alone does not establish final image placement or image encoding.
+- `FillImageField` (`0x004BC30C`) has two direct callers from `FillTextField` (`0x004BC9CB` and `0x004BCA10`). It conditionally calls `FindWindowExtd` (`0x0045644C`) when viewer flag `+0xF0` is set and one of three field metadata strings is missing. It also examines the Word Field object's type/code and follows separate branches for special field-code patterns. This confirms that the image-named helper participates in the field-fill pipeline, but the unresolved code strings and downstream COM slots prevent a reliable semantic mapping yet.
+- `FillField` (`0x004BC2C4`) is a short collection-append helper: it appends the supplied field interface to the viewer collection at `+0x60`. It does not itself perform the visible Word field mutation.
+
+Implementation consequence: keep three distinct layers in the Linux backend—field/config inventory, Word/Writer field mutation, and document-level image insertion. Do not collapse `AddImagesToDoc`, `FillImageField`, and `FillField` into one generic image setter.
+
+Evidence: `emwat-word-field-mapping`, run `43882925143`, artifact `14232259712`.
