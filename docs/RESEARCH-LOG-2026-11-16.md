@@ -580,3 +580,26 @@ This confirms that the HTTP handler is a published `TMainForm` method, not an ar
 ## GetClass callsite found inside ParseMethod
 
 Corrected thunk-target scan artifact `14267877222` finds one rel32 CALL candidate to the `GetClass` import jump instruction at `0x00402354`: callsite `0x00470E07`, inside `ParseMethod` (`0x00470D00`). This directly links the XML method parser to Delphi runtime class resolution. The current short trace of `ParseMethod` stops at an internal exception/finally RET before reaching `0x00470E07`; the service workflow now captures the complete bounded range `0x00470D00–0x00471033` to identify the class-name input, resulting TClass, object construction, and any subsequent method dispatch.
+
+### Full TMainForm published method inventory recovered
+
+The expanded VMT inspector output (`14266199135`) decodes all 17 published methods in `TMainForm`:
+- `IdHTTPServerCommandGet` → `0x0047BF30`
+- `FormCreate` → `0x0047CCD8`
+- `Terminate` → `0x0047E3EC`
+- `Log` → `0x0047D2C8`
+- `ShowMainForm` → `0x0047DF4C`
+- `HideMainForm` → `0x0047DF58`
+- `FormClose` → `0x0047CCC8`
+- `Write2Reg` → `0x0047E68C`
+- `LoadQuickConfig` → `0x0047E7E4`
+- `ClearLog` → `0x0047CCB0`
+- `FormShow` → `0x0047D0DC`
+- `mniSettingClick` → `0x0047D870`
+- `mniRestartClick` → `0x0047D864`
+- `SendLogsMenuItemClick` → `0x0047DAB4`
+- `ShowLastEditedDocsMenuItemClick` → `0x0047DCF8`
+- `tmrCheckCrashTimer` → `0x0047E474`
+- `IdHTTPServerException` → `0x0047CA44`
+
+The service workflow now traces `FormCreate`, `FormClose`, `Terminate`, `LoadQuickConfig`, and `IdHTTPServerException` in addition to the already traced request handler and package loader.
