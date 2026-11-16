@@ -122,3 +122,12 @@ These checks validate the adapter and composition boundary. They do not establis
 - The custom-property reverse-engineering artifact is **14201306994**. It completed successfully; the next pipeline revision expands the trace to shared field lookup, XML-config ingestion, and custom-property population helpers.
 - Intermediate commits during concurrent implementation produced temporary red Python runs because tests landed before the matching DecodedWordField field. The subsequent code commit 0099717df9db0c10c94a9bb7deda184375c2ff58 fixed the mismatch and the latest Python run is green.
 - These tests validate the strict existing-property update adapter and decoder structure, not the mapping of all 180 EMWAT fields or a real Almas Gam letter template.
+
+
+## TD32 class-method symbol index — 2026-11-16
+
+- Helper analysis run: **43813303321 — success**.
+- Artifact: **14201306994**.
+- Added `tools/list_td32_symbols.py`, which enumerates TD32 procedures matching class/type fragments and reports their PE virtual addresses and procedure sizes.
+- The artifact indexed 611 procedures containing `TDocumentCProperty`, `TXmlWordConfigField`, or `TXmlWordConfigTwinField` in their TD32 symbol names.
+- This index surfaced `TWordViwer.SetFieldValue` at `0x004BFDB0`, `GetXmlFieldInfo` at `0x004BFC18`, and typed dictionary `Add` / `AddOrSetValue` helpers for the single and twin field maps. A focused follow-up trace has been queued in the custom-property workflow.
