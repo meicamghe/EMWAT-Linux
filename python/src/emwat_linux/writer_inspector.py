@@ -13,6 +13,8 @@ from dataclasses import dataclass
 class WriterTextFieldInfo:
     implementation_name: str
     property_names: tuple[str, ...]
+    supported_services: tuple[str, ...] = ()
+    custom_property_name: str | None = None
 
 
 @dataclass(frozen=True)
@@ -72,10 +74,22 @@ def _text_fields(document: object) -> tuple[WriterTextFieldInfo, ...]:
             )
         except Exception:
             properties = ()
+        try:
+            services = tuple(sorted(str(item) for item in field.getSupportedServiceNames()))
+        except Exception:
+            services = ()
+        custom_property_name = None
+        if "com.sun.star.text.TextField.DocInfo.Custom" in services:
+            try:
+                custom_property_name = str(field.getPropertyValue("Name"))
+            except Exception:
+                custom_property_name = None
         result.append(
             WriterTextFieldInfo(
                 implementation_name=implementation,
                 property_names=properties,
+                supported_services=services,
+                custom_property_name=custom_property_name,
             )
         )
     return tuple(result)
