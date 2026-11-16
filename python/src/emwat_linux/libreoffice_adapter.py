@@ -59,7 +59,7 @@ def _uno_listener_proxy(
 ) -> object:
     """Wrap a Python delegate in a real PyUNO interface implementation."""
     unohelper = importlib.import_module("unohelper")
-    interface = uno_module.getTypeByName(interface_name)
+    interface = uno_module.getClass(interface_name)
 
     def initialize(self: object) -> None:
         unohelper.Base.__init__(self)
