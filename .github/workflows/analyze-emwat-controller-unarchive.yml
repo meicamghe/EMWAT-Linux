@@ -8,6 +8,10 @@ on:
       - 'tools/trace_td32_procedure.py'
       - 'tools/trace_td32_callers.py'
       - 'tools/decode_pe_strings.py'
+      - 'tools/find_td32_class_procedures.py'
+      - 'tools/resolve_delphi_vmt_slots.py'
+      - 'tools/trace_delphi_interfaces.py'
+      - 'tools/trace_td32_immediate_refs.py'
   workflow_dispatch:
 
 permissions:
@@ -26,13 +30,17 @@ jobs:
         shell: bash
         run: |
           mkdir -p controller-unarchive
-          for address in 0x00456DFC 0x00452C10 0x004563A8; do
+          for address in 0x00456DFC 0x00452C10 0x004563A8 0x0040414C 0x004543C4 0x00401368; do
             name=${address#0x}
             python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 "$address" "controller-unarchive/$name.md" 3000 ret
             python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 "$address" "controller-unarchive/$name-td32.md" || true
             python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 "$address" "controller-unarchive/$name-callers.md" || true
           done
           python tools/decode_pe_strings.py analysis-input/EmwatMethods.bpl1 0x004BB754 0x004BB76C 0x00456EE0 > controller-unarchive/controller-notify-strings.md
+          python tools/find_td32_class_procedures.py analysis-input/EmwatMethods.bpl1 T7zPlugin T7zInArchive T7zOutArchive T7zArchive > controller-unarchive/sevenzip-classes.md
+          python tools/resolve_delphi_vmt_slots.py analysis-input/EmwatMethods.bpl1 controller-unarchive/sevenzip-vmt.md
+          python tools/trace_delphi_interfaces.py analysis-input/EmwatMethods.bpl1 controller-unarchive/sevenzip-interfaces.md
+          python tools/trace_td32_immediate_refs.py analysis-input/EmwatMethods.bpl1 0x00452C10 controller-unarchive/T7zPlugin-constructor-refs.md
       - uses: actions/upload-artifact@v4
         with:
           name: emwat-controller-content-unpack
