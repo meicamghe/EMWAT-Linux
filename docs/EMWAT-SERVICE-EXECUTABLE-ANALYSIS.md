@@ -102,7 +102,7 @@ The parser:
 - reads that element's `class` attribute and stores it in `TMethodInfo.ClassName` at object offset `+4`;
 - traverses `param` elements, reads each `name` attribute and value, and adds them to the `Params` dictionary at object offset `+8).
 
-The service PE's `TMethodInfo` class has VMT `0x0047097C` and instance size `0x10`. Its constructor is at `0x00471214` and initializes the internal `TDictionary<AnsiString, AnsiString>` used for parameters.
+The service PE's `TMethodInfo` class has VMT `0x0047097C` and instance size `0x10`. Its constructor is at `0x00471214`; it loads the dictionary class reference at `0x004699E4` (VMT `0x00469A3C`, typeinfo `0x0046A054`, class name `TDictionary<System.AnsiString,System.AnsiString>`), constructs it via `0x0046AA70`, and stores the dictionary pointer at `TMethodInfo + 0x08`. `ParseMethod` passes that exact pointer to the XML parameter parser.
 
 ### Class resolution and invocation
 
