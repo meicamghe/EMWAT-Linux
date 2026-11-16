@@ -1,0 +1,74 @@
+name: Analyze EMWAT Word image and text field paths
+on:
+  push:
+    paths:
+      - '.github/workflows/analyze-word-image-field-path.yml'
+      - 'analysis-input/EmwatMethods.bpl1'
+      - 'tools/trace_td32_procedure.py'
+      - 'tools/trace_td32_callers.py'
+      - 'tools/trace_pe_target.py'
+      - 'tools/scan_pe_pointer_refs.py'
+      - 'tools/list_td32_symbols.py'
+      - 'tools/decode_pe_strings.py'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  word-image-field-path:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install pefile capstone
+      - name: Trace Word image and text field procedures in parallel
+        shell: bash
+        run: |
+          mkdir -p word-image-field-path
+          targets=(004BC30C 004BC980 004C0410 004C19C0 004C2B20 004C2DE0 004C436C 004CFC74 004D08B4)
+          pids=()
+          for target in "${targets[@]}"; do
+            (
+              set -e
+              python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x$target word-image-field-path/procedure-$target.md
+              python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x$target word-image-field-path/callers-$target.md
+              python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 0x$target word-image-field-path/pointer-refs-$target.md
+            ) &
+            pids+=("$!")
+          done
+          status=0
+          for pid in "${pids[@]}"; do wait "$pid" || status=1; done
+          exit "$status"
+      - name: Extend image insertion and caption processing disassembly
+        shell: bash
+        run: |
+          pids=()
+          for spec in "004BC30C 2200" "004BC980 600" "004C0410 700" "004C19C0 5200" "004C2B20 1000" "004C2DE0 500" "004C436C 1000" "004CFC74 1300" "004D08B4 1400"; do
+            (
+              set -e
+              set -- $spec
+              python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x$1 word-image-field-path/extended-$1.md $2 ret
+            ) &
+            pids+=("$!")
+          done
+          status=0
+          for pid in "${pids[@]}"; do wait "$pid" || status=1; done
+          exit "$status"
+      - name: Index image, caption, and document field symbols
+        run: |
+          python tools/list_td32_symbols.py analysis-input/EmwatMethods.bpl1 \
+            TWordViwer TXmlWordConfigField TXmlWordConfigTwinField TCaptionItem TEmwatFieldType \
+            > word-image-field-path/image-field-symbols.md
+      - name: Decode image-field and caption constants
+        run: |
+          python tools/decode_pe_strings.py analysis-input/EmwatMethods.bpl1 \
+            0x004BC23C 0x004BC260 0x004BC274 0x004BFEE8 0x004BFF0C \
+            0x004C0410 0x004C2DE0 0x004C436C 0x004CFC74 \
+            > word-image-field-path/image-field-strings.md
+      - uses: actions/upload-artifact@v4
+        with:
+          name: emwat-word-image-field-path
+          path: word-image-field-path/
