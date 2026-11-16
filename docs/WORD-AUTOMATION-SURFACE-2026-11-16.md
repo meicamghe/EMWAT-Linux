@@ -182,3 +182,37 @@ The minimum LibreOffice backend now has additional statically confirmed responsi
 5. apply a dedicated print-field transformation before printing.
 
 No exact LibreOffice UNO mapping is asserted yet. Bookmarks, Writer fields, user-defined properties, and document event listeners remain candidate primitives pending decoded field keys and sanitized templates.
+
+
+## Controller-close crosswalk — additional findings
+
+Run `43882768547` produced `emwat-word-controller-close-crosswalk` (artifact `14232349256`), which was downloaded and inspected.
+
+### BeforeSave decision prompt
+
+The string decode confirms the callback's prompt labels are Persian:
+- `موافقم`
+- `خیر`
+- `انصراف`
+
+It also logs `Save msgBox triggered. result: %d`, `Document.OnBeforeClose Called.`, and `Document.OnBeforeClose succeed.`. The callback can set the event's Cancel argument to `0xFFFF` when the decision result is `2`. Another branch distinguishes result `6`. The exact semantic mapping of every result and whether this callback is wired to BeforeSave, BeforeClose, or both still requires event-sink hookup evidence; the TD32 method name remains `WordAppDocumentBeforeSave`, while its embedded log text says `OnBeforeClose`.
+
+### Custom record/content-control state
+
+`TWordViwer.CostumizeRecAndCC` at `0x004D281C` is called from:
+- `OnControlerNotify` at `0x004BB506`;
+- `GetDocFieldName` at `0x004BBC2D`;
+- `ProtectDocument` at `0x004C9F00` and `0x004C9F7B`;
+- `RollBackOriginalOptions` at `0x004CAAC5`.
+
+It sets viewer flag `+0x5C`, calls a Word document interface method at vtable offset `+0x2BC`, and clears `+0x5C` on exit. The routine name and callsites establish that this customization path participates in field-name lookup, protection, rollback, and controller notifications. The exact COM method semantics behind vtable offset `+0x2BC` remain unresolved.
+
+### Content getter and archive helper correction
+
+The wrapper `TWordDocument.Get_Content` at `0x0042BDF8` calls the Word document interface at vtable offset `+0xDC` and returns its result through the wrapper. This is the Word content-getter path.
+
+Important correction: helper `0x00456DFC`, previously treated as a post-content helper, is actually `euUnArchive` in module `EmailUtil`. Its only direct TD32 caller found is `TWordViwer.OnControlerNotify` at `0x004BB5E9`. It is an archive/unarchive utility called from controller notification handling, not a direct caller of `TWordDocument.Get_Content`. The earlier association between `0x00456DFC` and content extraction should be discarded.
+
+### Silent save line-count helper
+
+`TWrapRecord.LineCount` at `0x004D2948` is called by `TWordViwer.SilentSaveEmwatDoc` at `0x004D25F6`. It iterates several viewer-held range/record collections and composes line-count-related values. The exact output representation and relationship to the response payload remain open.
