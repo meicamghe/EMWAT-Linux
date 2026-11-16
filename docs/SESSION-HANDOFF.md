@@ -6,7 +6,7 @@ This is the concise continuity entry point for future sessions. Detailed reverse
 
 ## Latest verified implementation progress — 2026-11-16
 
-- **Saved-slot correction:** generated Word wrappers map Get_Saved to _Document +0xD4 and Set_Saved to +0xD8. WordAppDocumentBeforeSave uses +0xD8, so do not describe that instruction as reading Saved; its assigned OleVariant value and prompt condition remain unresolved. OnControlerNotify uses +0xDC, now mapped to TWordDocument.Get_Content (0x0042BDF8); the supplied -1 argument remains unexplained.
+- **Saved-slot correction:** generated Word wrappers map Get_Saved to _Document +0xD4 and Set_Saved to +0xD8. WordAppDocumentBeforeSave uses +0xD8, so do not describe that instruction as reading Saved; its assigned OleVariant value and prompt condition remain unresolved. OnControlerNotify uses +0xDC, mapped to TWordDocument.Get_Content (0x0042BDF8); the supplied -1 argument remains unexplained. The same handler logs AutoSave execution, builds .easd/.easz paths and calls euUnArchive, confirming a local archive/recovery path distinct from Almas registration.
 
 - Real LibreOffice UNO adapter added: per-document process/profile/socket isolation; DOC/CFB and DOCX input detection; document modification/save/close listeners; close-time Word 97 snapshot.
 - writer_properties.py adds a strict custom-property update operation: it requires an exact existing property name, does not create unknown properties, and never reads the current value. The real UNO fixture now creates and updates a synthetic custom property before close/export.
