@@ -176,7 +176,7 @@ jobs:
         shell: bash
         run: |
           pids=()
-          for spec in "0045E85C 2200" "0045E464 1400" "00438874 1000" "0043898C 1000" "004389D4 1000" "00438AE0 1200" "00439184 1000" "0041E8A4 1200" "0041E910 1200" "0041E970 1200" "0040AED8 1200"; do
+          for spec in "0045E85C 2200" "0045E464 1400" "00438874 1000" "0043898C 1000" "004389D4 1000" "00438AE0 1200" "00439184 1000" "0041E8A4 1200" "0041E910 1200" "0041E970 1200" "0040AED8 1200" "00438A2C 2600" "0045E03C 1200" "004391B0 1200"; do
             (
               set -e
               set -- $spec
@@ -188,6 +188,12 @@ jobs:
           status=0
           for pid in "${pids[@]}"; do wait "$pid" || status=1; done
           exit "$status"
+      - name: Decode request-handler dispatch strings
+        run: |
+          python tools/decode_pe_strings.py service-http-analysis/EmwatService.exe \
+            0x00459B84 0x0045E4DC 0x0047C61B 0x0045AFC1 \
+            0x0045B044 0x0045BEAF 0x0045C35F 0x0045C166 \
+            > service-http-analysis/http-handler-strings.md
       - uses: actions/upload-artifact@v4
         with:
           name: emwat-service-http-response-analysis
