@@ -1233,3 +1233,35 @@ The request body completes at approximately 0.002154 s from capture start; the f
 **Updated confidence:** the captured `EditWordDocument` response does return a Base64-encoded Word document with MIME type `application/msword`, and that returned container differs from the submitted `wordBody` in the intact captured prefix. This materially strengthens the close/finalization return-path model. It still does not prove that every session uses the same timing or that the response is emitted exclusively by a specific Word event.
 
 Detailed measurements, limitations, and reproducibility are in [PCAP-EDITWORD-DOCUMENT-ROUNDTRIP.md](PCAP-EDITWORD-DOCUMENT-ROUNDTRIP.md).
+
+
+## Run 125 — Word Fields collection and XML field helpers (2026-11-16 review)
+
+Artifact emwat-word-lifecycle-analysis from run 43722990611 was re-opened to separate the editor's Word Fields path from the print-handler path.
+
+### Word Fields enumeration
+
+- TWordViwer.GetDocFieldIndex occupies 0x004C0550–0x004C1793 (0x1244 bytes).
+- It obtains the Word document's Fields collection and reads its count through an interface call at slot +0x28.
+- It enumerates entries through the collection's item accessor at slot +0x38, then reads field metadata and calls FindFieldInActivefields (0x004BC170) to match the Word-side field against the viewer's active-field list.
+- The routine calls FillTextField (0x004BC980) and FillMSWFields (0x004C009C) as part of this resolution/collection process.
+- FillMSWFields is called three times from GetDocFieldIndex and once from GetCaptionItemFont. It builds internal collections at viewer offsets +0xE8 and +0xEC, storing strings, flags, and associated field metadata. Exact record semantics remain unresolved.
+
+This establishes that the Windows editor does not merely search bookmarks: it actively enumerates Word's Fields collection and builds a metadata/index representation. The Linux Writer compatibility layer must therefore inventory and eventually map Writer text fields as well as bookmarks, named ranges, content controls, and image anchors.
+
+### Text/image helper separation
+
+- TWordViwer.FillField (0x004BC2C4, 70 bytes) appends a string to an internal dynamic array at viewer offset +0x60. Its short body does not itself perform a Word COM field insertion.
+- TWordViwer.FillTextField (0x004BC980, 264 bytes) reads values through an XML field interface (slot +0xB0) and conditionally delegates to FillImageField. It is used by GetXmlFieldInfo, GetDocFieldIndex, and FillImgFldsForPrint; it should not be interpreted as a simple one-line Word text setter.
+- TWordViwer.FillImageField (0x004BC30C, 1,652 bytes) checks viewer/document state and XML-field attributes, then interacts with Word Field and image-related interfaces. The full image payload insertion and formatting semantics are not yet completely resolved.
+- TWordViwer.FillMSWFields (0x004C009C, 592 bytes) is a field-metadata collection builder, not the same routine as the print handler's TEmwatDocPrintHandler.FillField.
+- The separate print-handler FillField at 0x004A5F68 normalizes a string and writes it to its print-flow target; do not reuse that implementation as the editor's field-mapping contract.
+
+### Linux implementation consequences
+
+1. Keep WriterDocumentCatalog.text_fields as a first-class inventory; bookmark-only mapping would be incomplete.
+2. Keep text and image field adapters separate.
+3. Treat FillMSWFields' internal arrays as unresolved metadata until their element layout and call arguments are mapped.
+4. Do not map any of the 180 request field IDs to a Writer element by name alone until a real anonymized template is available.
+5. The installer archive inventory run 43810767154 found no Word-family template files, so template-level validation remains blocked on a representative Almas letter/template fixture.
+
