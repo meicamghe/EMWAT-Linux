@@ -560,3 +560,25 @@ The validator at `0x00470A58` searches for the `emwat` root element, reads its `
 ```
 
 This confirms the numeric version value, not just the attribute's existence. The class-to-method invocation bridge and the exact response envelope remain open.
+
+## EditWordDocument response writer and timer correlation — 2026-11-16 (supersedes earlier open-response notes)
+
+The response path is now traced beyond the service's MainForm invoke branch. The absence of a direct `WriteContent` call in MainForm's invoke branch is expected: for a successful non-empty `EditWordDocument` result, the BPL-side `TWordViwer.LoadDocument` branch writes the response itself.
+
+At `0x004B7F9C–0x004B7FD8`, `LoadDocument` obtains `AResponseInfo` from `TEmwatInvokeParam+0x0C`, assigns the generated XML to `AResponseInfo.ContentText` at object offset `+0xBC`, calls `TIdHTTPResponseInfo.WriteContent` through BPL thunk `0x0040448C`, and sets `bResultSet` at record offset `+0x05`. The generic service dispatcher then skips its fallback output-string writer. `TEditWordDocument.PerformMethod` copies the helper's output string to the method result and sets `bUnloadPkg`; it does not set `bResultSet` itself.
+
+The captured EditWordDocument HTTP response is HTTP 200 and has this metadata-only shape:
+
+```xml
+<response-word status="success">
+  <return-types>
+    <type mimetype="application/msword" encryption="base64">…</type>
+  </return-types>
+</response-word>
+```
+
+The Base64 payload decodes to a rewritten legacy OLE Compound File document. The capture is incomplete by 17 four-byte TCP sequence gaps (68 response payload bytes; estimated 51 decoded bytes), so a full response hash/equality claim is not made. The first response byte arrives about 54.558 seconds after the request body completes; the exact event/wait that releases the long-lived request remains unresolved.
+
+The separate local auto-save path is now better classified: `OnTmrAutoSave` installs `TWordViwer.OnControlerNotify` as the `TTimer.OnTimer` callback on the timer at viewer offset `+0x7C`, clamps its interval at viewer offset `+0x88` to at least 10,000 ms, and enables it. `OnControlerNotify` reads Word Content via slot `+0xDC` and creates local `.easd`/`.easz` archive paths. This periodic archive path is not proven to be the final Almas registration POST. `TEDPController.Notify` is a separate print-handler callback.
+
+Evidence and full trace details: `docs/WORD-RESPONSE-TIMER-CORRELATION-2026-11-16.md`, `docs/PCAP-EDITWORD-DOCUMENT-ROUNDTRIP.md`, and `docs/WORD-LIFECYCLE-STATIC-TRACE.md` Run 152.
