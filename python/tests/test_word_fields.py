@@ -90,6 +90,12 @@ class WordFieldDecodingTests(unittest.TestCase):
         self.assertEqual(field.value, bytes.fromhex("01020304"))
         self.assertEqual(field.mimetype, "image/png")
 
+        unpadded_quartet = parse(
+            '<word-document><fields><field id="raw" encryption="base64">AQID</field>'
+            '</fields></word-document>'
+        )
+        self.assertEqual(decode_word_fields(unpadded_quartet)[0].value, b"\\x01\\x02\\x03")
+
     def test_preserves_external_parameter_binding_without_guessing_concatenation(self):
         config = parse(
             '<word-document><fields>'
@@ -121,6 +127,7 @@ class WordFieldDecodingTests(unittest.TestCase):
         cases = (
             '<word-document><fields><field id="x" encryption="rot13">abc</field></fields></word-document>',
             '<word-document><fields><field id="x" encryption="base64">not-base64!</field></fields></word-document>',
+            '<word-document><fields><field id="x" encryption="base64">AQID BA==</field></fields></word-document>',
             '<word-document><fields><field id="x" encryption="urlencoded">bad%ZZ</field></fields></word-document>',
         )
         for xml in cases:
