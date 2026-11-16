@@ -11,6 +11,8 @@
 
 ## پیشرفت اجرایی جدید — 2026-11-16
 
+- **ردیابی چرخه Close در Word:** run شماره 43813684507 موفق شد. wrapper بستن بدون آرگومان از slot `+0x4D4` و wrapper سه‌آرگومانی `OleVariant` از slot `+0x29C` استفاده می‌کند؛ callback مربوط به BeforeSave wrapper سه‌آرگومانی را پس از منطق Cancel/Prompt فراخوانی می‌کند. مسیر OnControlerNotify نیز CostumizeRecAndCC را اجرا می‌کند که به slot `+0x2BC` (PrintOutOld) می‌رسد؛ slot جداگانه `+0xDC` هنوز در حال تعیین هویت است و هیچ اتصال مستقیم به HTTP ثبت نشده.
+
 - **تفکیک قطعی دو helper فیلد:** فهرست TD32 مشخص کرد `0x004BFDB0` تابع `TWordViwer.SetFieldValue(TXmlWordConfigField, UnicodeString)` است و `0x004BC170` تابع جداگانه `FindFieldInActivefields(UnicodeString)` است. اولی شاخه‌های تبدیل/اعمال مقدار را بر اساس دو ثابت رشته‌ای بررسی می‌کند؛ دومی برای تطبیق شناسه در فهرست active fieldها استفاده می‌شود. مقادیر ثابت‌ها در pipeline بعدی decode می‌شوند.
 - **مسیر ساخت dictionaryها:** `0x004D1148` نام `AddXmlWordConfigFieldsToDic` و `0x004D1454` نام `AddCustomDocPropertiesToDic` دارد؛ دومی مستقیماً از `LoadDocument` فراخوانی می‌شود. برای اولی در scan فعلی CALL مستقیم پیدا نشد و مسیر فراخوانی indirect هنوز باز است.
 
