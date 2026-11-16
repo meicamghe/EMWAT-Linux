@@ -2162,3 +2162,11 @@ Workflow تحلیل Word گسترش یافت تا helper مرکزی درج تص�
 - Constructor از class reference `0x004699E4`، که به VMT `TDictionary<AnsiString,AnsiString>` در `0x00469A3C` اشاره می‌کند، برای ساخت دیکشنری با helper `0x0046AA70` استفاده می‌کند.
 - pointer دیکشنری در `TMethodInfo+0x08` ذخیره می‌شود و `ParseMethod` همان pointer را به XML parser می‌دهد.
 - بنابراین نوع پارامترهای سرویس با ورودی `TEmwatMethod.Invoke` در BPL یکسان است. فقط dispatch نهایی و غیرمستقیم بین سرویس و BPL هنوز نیاز به اثبات دارد.
+
+## تفکیک descriptorهای XML و داده‌های CustomDocumentProperties — 2026-11-16
+
+- دیکشنری `viewer+0x68` برای `TXmlWordConfigField` و `viewer+0x6C` برای `TXmlWordConfigTwinField` است.
+- `GetXmlFieldInfo` ابتدا descriptor تک‌فیلدی را بررسی می‌کند و در صورت نیاز به مسیر twin می‌رود؛ ساختارهای خروجی شامل index و یک یا دو نام/کلید فیلد هستند.
+- helper `0x004BC170` در مسیرهای XML field، twin fill، index lookup، print و image-print تکرار می‌شود و نقش نرمال‌سازی/تقسیم رشته ورودی را دارد؛ جزئیات delimiter پس از artifact جدید قطعی می‌شود.
+- `AddCustomDocPropertiesToDic` نام propertyهای Word را با `†` تفکیک می‌کند، رکورد single/twin می‌سازد و کلید متناظر را از descriptor map حذف می‌کند؛ بنابراین این تابع مرحله تطبیق/مصرف descriptor است، نه اثبات ساخت اولیه دیکشنری.
+- مسیر پرشدن اولیه descriptor mapها هنوز باز است. workflow جدید، constructorهای enumerable، Add/AddOrSetValue، helper نرمال‌سازی و ثابت‌های رشته‌ای آن‌ها را ردیابی می‌کند.
