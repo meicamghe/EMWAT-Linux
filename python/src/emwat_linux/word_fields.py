@@ -99,7 +99,9 @@ def _decode_value(text: str, encoding: str | None, *, field_id: str) -> str | by
             raise WordFieldDecodeError(f"field_url_decode_failed:{field_id}") from exc
     if normalized == "base64":
         try:
-            # The native 7-Zip/Base64 decoder consumes fixed four-byte groups\n            # through a strict lookup table; whitespace is not normalized.\n            return base64.b64decode(text.encode("ascii"), validate=True)
+            # The native 7-Zip/Base64 decoder consumes fixed four-byte groups
+            # through a strict lookup table; whitespace is not normalized.
+            return base64.b64decode(text.encode("ascii"), validate=True)
         except (UnicodeEncodeError, binascii.Error, ValueError) as exc:
             raise WordFieldDecodeError(f"field_base64_decode_failed:{field_id}") from exc
     raise WordFieldDecodeError(f"unsupported_field_encoding:{field_id}:{normalized}")
