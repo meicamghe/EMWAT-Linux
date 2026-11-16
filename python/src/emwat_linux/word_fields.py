@@ -74,10 +74,12 @@ class WordCustomPropertyFieldMaps:
 def build_word_custom_property_field_maps(
     property_names: Sequence[str],
 ) -> WordCustomPropertyFieldMaps:
-    """Mirror AddCustomDocPropertiesToDic's ordered single/twin inventory.
+    """Classify an ordered sequence of identifiers into single/twin buckets.
 
-    Native enumeration starts at index zero. Only a non-empty pair around the
-    first dagger becomes a twin descriptor; malformed/empty sides stay single.
+    Indices are zero-based. Only a non-empty pair around the first dagger
+    becomes a twin descriptor; malformed/empty sides stay single. This helper
+    models the native split rule only, not the unresolved source-map population
+    or TDictionary.Remove consumption performed by the binary.
     """
     singles: list[SingleWordFieldDescriptor] = []
     twins: list[TwinWordFieldDescriptor] = []
