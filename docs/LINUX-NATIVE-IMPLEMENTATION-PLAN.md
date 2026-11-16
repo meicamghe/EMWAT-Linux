@@ -214,3 +214,13 @@ Known limitations:
 - The test installed LibreOffice Writer + `python3-uno`, launched an isolated headless Writer process over a private loopback UNO socket, opened a generated DOCX fixture, closed it through UNO, and verified the close listener produced a legacy Word CFB `.doc` snapshot.
 - Python bridge run: `43810188517` — **success**.
 - This is a real engine roundtrip, not a fake adapter test. It does not yet prove fidelity for the captured EMWAT template, Persian fields, embedded images, signData, or Almas registration.
+
+
+### Field decoding and Writer structure inventory — 2026-11-16
+
+- `python/src/emwat_linux/word_fields.py` now decodes each field using its own declared `encryption`: URL-encoded values become UTF-8 text, Base64 values become bytes, and fields without an encoding remain unchanged.
+- Optional-attribute content is decoded using its nested content metadata. Unknown encodings fail closed.
+- Fields declaring `paramId` (including the observed external `signData` binding) are identified separately. The code deliberately does not split/concatenate signData until the `separator` / `concater` semantics are validated.
+- `python/src/emwat_linux/writer_inspector.py` inventories Writer bookmarks, named ranges, sections, tables, frames, graphic objects, document indexes, and text-field implementation/property metadata. It does not read or log letter text or field values.
+- The adapter exposes this inventory through `LibreOfficeAdapter.inspect_document(handle)`. The live UNO test now checks a bookmark imported from a DOCX fixture.
+- The inventory is groundwork for mapping the 180 known EMWAT field IDs to actual template structures. No field-to-bookmark mapping is hard-coded yet; the original template's structure still needs to be inspected.
