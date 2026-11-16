@@ -987,3 +987,43 @@ Do not implement guessed `signData` joining or claim end-to-end Almas registrati
 - Native parser-side `TXMLFieldType.Set_Concator` reads the key `concator`; existing request-schema transcription currently says `concater`.
 - These are not treated as aliases. Runtime preserves raw attributes; do not normalize or implement concatenation until the raw request is rechecked.
 - `Set_Separator` reads `separator`; `Set_ParamId` reads `paramId`.
+
+
+## Autonomous continuation checkpoint — 2026-11-16 12:xx
+
+### Repository and current scope
+- Continue only EMWAT reverse engineering in `meicamghe/EMWAT-Linux`.
+- Do not switch to or mix in the separate Winux workstream.
+- Current latest analysis note: `docs/WORD-LIFECYCLE-STATIC-TRACE.md`; project status has the latest summary.
+
+### Newly checked artifacts
+- Re-opened artifact `14208369288` from successful run `43832553168` (BPL Invoke/VMT analysis).
+- Re-opened artifact `14203757393` (large Word lifecycle, class-method, VMT, controller, and AutoSave trace collection).
+- Re-opened artifact `14205656649` (service HTTP response and Indy VMT trace collection).
+- Re-opened artifact `14206405476` (Word COM event-sink and close decision evidence).
+
+### Important findings and corrections
+1. `TEmwatMethod.Invoke` (`0x0046C82C`) walks dictionary key/value pairs. `0x0046E324` is `TPairEnumerator.DoGetCurrent`; `0x0046E3CC` maps to `TPairEnumerator.MoveNext` in VMT RTTI despite a conflicting TD32 decorated label. Raw pointer search found no static reference to `0x0046C82C`; its runtime role is still unresolved. Do not assume it is the request dispatcher.
+2. `TEditWordDocument` VMT `0x005ED764` slot `+0x10` points to `0x005EE82C`. This routine reads `wordConfig`, `wordBody`, `letterImages`, `signData`, validates `wordConfig`, and calls `TWordViwer.LoadDocument` at `0x004B7724`. TD32 decorates the target as `TScanDocument.PerformMethod`. `TScanDocument` VMT slot `+0x10` points to `0x005EEB48`, which TD32 decorates as `TFaxDocument.PerformMethod`. Preserve this VMT/symbol mismatch; resolve class registration before renaming.
+3. The main editor close behavior is already resolved in earlier artifacts: registered callback is `WordAppDocumentBeforeSave` at `0x004CD154`, with Yes → Close(SaveChanges=True), No → Close(SaveChanges=False), Cancel → event Cancel and leave the document open. `WordAppDocumentBeforeClose` at `0x004CCBBC` is not the main editor close callback.
+4. The periodic `OnTmrAutoSave` path sets `OnControlerNotify` as a timer callback and enforces a minimum interval of 10 seconds. Keep this separate from the close-time registration prompt.
+5. Service HTTP handler/Indy response writer work is already substantially mapped in existing artifacts. The current public `analysis-input/` directory does not contain `EmwatService.exe`, so a fresh service PE trace cannot run from this checkout unless an authorized analysis copy is added.
+
+### New work committed
+- Added `.github/workflows/analyze-emwat-dispatch-crosswalk.yml` with parallel service/BPL/Word jobs; service job now reports missing input cleanly.
+- Expanded target lists to cover dispatch helpers, Word lifecycle callbacks, field mapping, and SilentSave.
+- Added `docs/WORD-LIFECYCLE-STATIC-TRACE.md` and linked it from README.
+- Updated `docs/PROJECT-STATUS.md`.
+- Latest known commits at checkpoint: `bfc6654ca90e3ddf4edda9e0dc0edb07635f4bd5` (status update; latest of the above batch).
+
+### Do not claim
+- Do not claim the newly expanded workflow has passed; its run/artifacts have not yet been verified.
+- Do not claim the full service-parser → concrete class → PerformMethod → HTTP response chain is closed.
+- Do not infer the exact meaning of the final invoke response or Almas persistence from HTTP 200 alone.
+
+### Next work, in order
+1. Resolve XML `class="EditWordDocument"` to the concrete Delphi class/VMT and the `+0x10` method slot; inspect class registration tables, class-name lookup, and RTTI invocation in the BPL and service traces.
+2. Trace the request-side method factory/dispatch helper into the VMT call. Keep `TEmwatMethod.Invoke` separate until its runtime caller and role are proven.
+3. Connect `TWordViwer.OnControlerNotify` → `Get_Content` → helper `0x00456DFC` to the long-lived HTTP invoke response writer, without assuming that every timer tick is a final registration response.
+4. Compare the close-time response payload with the request `wordConfig` and the opaque document bytes, using only synthetic or anonymized data.
+5. Update the docs and Python bridge only when the dispatch and response contract is evidenced.
