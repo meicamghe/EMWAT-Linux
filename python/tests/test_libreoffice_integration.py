@@ -1,9 +1,16 @@
 """Optional real LibreOffice UNO integration test (enabled in dedicated CI)."""
+import base64
 import io
 import os
 import shutil
 import unittest
 import zipfile
+import xml.etree.ElementTree as ET
+
+from emwat_linux.bridge import BridgeRequest, BridgeResponse
+from emwat_linux.editword_handler import create_editword_handler
+from emwat_linux.editword_service import EditWordDocumentService
+from emwat_linux.protocol import WORD_RESPONSE_CONTENT_TYPE, parse_method_call
 
 from emwat_linux.editword_request import EditWordDocumentRequest
 from emwat_linux.libreoffice_adapter import LibreOfficeAdapter, _CFB_SIGNATURE
@@ -17,6 +24,84 @@ from emwat_linux.word_config import WordDocumentConfig
     "LibreOffice integration dependencies are not installed",
 )
 class LibreOfficeIntegrationTests(unittest.TestCase):
+    def test_real_uno_document_flows_through_editword_response_handler(self):
+        class AutoClosingAdapter(LibreOfficeAdapter):
+            def wait_for_close(self, handle):
+                handle.document.close(True)
+                return super().wait_for_close(handle)
+
+        archive = io.BytesIO()
+        with zipfile.ZipFile(archive, "w", zipfile.ZIP_DEFLATED) as docx:
+            docx.writestr(
+                "[Content_Types].xml",
+                '<?xml version="1.0" encoding="UTF-8"?>'
+                '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'
+                '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>'
+                '<Default Extension="xml" ContentType="application/xml"/>'
+                '<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>'
+                '</Types>',
+            )
+            docx.writestr(
+                "_rels/.rels",
+                '<?xml version="1.0" encoding="UTF-8"?>'
+                '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+                '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>'
+                '</Relationships>',
+            )
+            docx.writestr(
+                "word/document.xml",
+                '<?xml version="1.0" encoding="UTF-8"?>'
+                '<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">'
+                '<w:body><w:p><w:r><w:t>EMWAT handler integration</w:t></w:r></w:p>'
+                '<w:sectPr/></w:body></w:document>',
+            )
+
+        config = base64.b64encode(
+            b'<word-document status="edit"><fields/></word-document>'
+        ).decode("ascii")
+        body = base64.b64encode(archive.getvalue()).decode("ascii")
+        call_xml = (
+            '<emwat version="1.0"><method class="EditWordDocument">'
+            f'<param name="wordConfig">{config}</param>'
+            f'<param name="wordBody">{body}</param>'
+            '<param name="signData"></param>'
+            '</method></emwat>'
+        ).encode("utf-8")
+        call = parse_method_call(call_xml)
+        bridge_request = BridgeRequest(
+            path="/",
+            query="invoke=integration-nonce",
+            content_type="text/xml",
+            origin="https://almas.example.test",
+            body=call_xml,
+        )
+
+        adapter = AutoClosingAdapter(
+            headless=True,
+            connect_timeout_seconds=30,
+            close_timeout_seconds=10,
+        )
+        service = EditWordDocumentService(adapter)
+        handler = create_editword_handler(
+            service,
+            cancel_response_factory=lambda _result, _request: BridgeResponse(
+                b"cancelled", content_type="text/plain", status=409
+            ),
+        )
+        response = handler(call, bridge_request)
+        self.assertEqual(response.status, 200)
+        self.assertEqual(response.content_type, WORD_RESPONSE_CONTENT_TYPE)
+
+        root = ET.fromstring(response.body)
+        self.assertEqual(root.tag, "response-word")
+        self.assertEqual(root.attrib.get("status"), "success")
+        result_type = root.find("./return-types/type")
+        self.assertIsNotNone(result_type)
+        self.assertEqual(result_type.attrib.get("mimetype"), "application/msword")
+        self.assertEqual(result_type.attrib.get("encryption"), "base64")
+        returned_document = base64.b64decode(result_type.text or "", validate=True)
+        self.assertTrue(returned_document.startswith(_CFB_SIGNATURE))
+
     def test_open_close_and_export_docx_as_legacy_word(self):
         archive = io.BytesIO()
         with zipfile.ZipFile(archive, "w", zipfile.ZIP_DEFLATED) as docx:
