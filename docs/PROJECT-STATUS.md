@@ -1869,3 +1869,8 @@ The OnTmrAutoSave procedure installs OnControlerNotify as the OnTimer event of t
 ## MainForm HTTP entrypoint mapped — 2026-11-16
 
 The service RTTI resolves TMainForm.IdHTTPServerCommandGet to 0x0047BF30. It reads the invoke query parameter and routes that branch through the package/request helper at 0x0047E0EC. Separate init and heartbeat routes are present: init returns the embedded HTML/JavaScript bootstrap with CORS headers, and heartbeat returns a small response. The init/heartbeat branches directly set TIdHTTPResponseInfo.ContentText (+0xBC) and call WriteContent (0x004610FC). This confirms ContentText is +0xBC and ContentStream is +0xB8. The exact invoke-branch response payload remains unresolved.
+
+
+## Invoke XML parser mapped — 2026-11-16
+
+The MainForm invoke route reaches ParseMethod (0x00470D00) and parser worker 0x00470B38. The parser recognizes the XML root emwat with version, then method/class/param elements and the param name attribute. Token dispatch is in 0x0046ADBC; 0x0046A7A4 appends three-value records to an internal collection. The exact mapping from these records into the BPL TEmwatMethod.Invoke dictionary and the final invoke response remains under analysis.

@@ -101,3 +101,14 @@ The Word field-processing disassembly confirms that the Unicode character `†` 
 
 
 > **Binary parser spelling note (2026-11-16):** The native `TXMLFieldType.Set_Concator` method reads the XML attribute key `concator` (not `concater`) via `TXMLNode.GetAttributeNodes`. The currently transcribed capture line above uses `concater`. No alias is proven; preserve the raw spelling and verify against the original request before normalizing. The Python parser currently preserves both as raw attributes and does not interpret either.
+
+
+## Invoke request parser trace — 2026-11-16
+
+Source: workflow 43832144163, artifact 14209690263.
+
+- TMainForm.IdHTTPServerCommandGet (0x0047BF30) routes the invoke query branch through ParseMethod wrapper 0x00470D00.
+- 0x00470D00 calls parser worker 0x00470B38 and contains exception text references for "Calling ParseMethod exception" and "XML is not valid".
+- The parser recognizes root tag "emwat", its "version" attribute, and child tags "method", "class", and "param"; the "param" child uses the "name" attribute.
+- Parser token helper 0x0046ADBC compares the token names and routes recognized elements. Helper 0x0046A7A4 appends a three-value record to the parser's dynamic collection (three adjacent string/value slots); exact semantic names for all three record fields remain unconfirmed.
+- This is the service-side XML parsing stage. The BPL-side TEmwatMethod.Invoke dictionary contract is known separately; the conversion/link from these parser records to the BPL invocation and the exact response payload still need proof.

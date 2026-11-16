@@ -414,3 +414,14 @@ Source: workflow 43831365563, artifact 14208144442.
 - The init branch assigns the response text to TIdHTTPResponseInfo.ContentText at object offset +0xBC and directly calls WriteContent at 0x004610FC from 0x0047C237. The heartbeat branch checks parameter heartbeat and also calls WriteContent at 0x0047C2A9.
 - This direct callsite confirms the field layout: ContentText is +0xBC; ContentStream is +0xB8. Earlier draft notes that reversed these fields have been corrected.
 - Evidence boundary: the generic HTTP response writer is now directly tied to the MainForm handler for init/heartbeat. The invoke branch's plugin result serialization and exact close-time Almas response envelope remain the next target.
+
+
+## Invoke request parser trace — 2026-11-16
+
+Source: workflow 43832144163, artifact 14209690263.
+
+- TMainForm.IdHTTPServerCommandGet (0x0047BF30) routes the invoke query branch through ParseMethod wrapper 0x00470D00.
+- 0x00470D00 calls parser worker 0x00470B38 and contains exception text references for "Calling ParseMethod exception" and "XML is not valid".
+- The parser recognizes root tag "emwat", its "version" attribute, and child tags "method", "class", and "param"; the "param" child uses the "name" attribute.
+- Parser token helper 0x0046ADBC compares the token names and routes recognized elements. Helper 0x0046A7A4 appends a three-value record to the parser's dynamic collection (three adjacent string/value slots); exact semantic names for all three record fields remain unconfirmed.
+- This is the service-side XML parsing stage. The BPL-side TEmwatMethod.Invoke dictionary contract is known separately; the conversion/link from these parser records to the BPL invocation and the exact response payload still need proof.
