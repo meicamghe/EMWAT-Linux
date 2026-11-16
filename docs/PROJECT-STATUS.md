@@ -12,6 +12,8 @@
 - **مقصدهای واقعی مقداردهی Word:** trace `FillImageField` نشان داد مقدار فیلد می‌تواند در `CustomDocumentProperties[index]` یا `Field.Result.Text` نوشته شود؛ مسیر Field.Result.Text وضعیت قفل فیلد را هم بررسی می‌کند. این دو مقصد در مدل Linux باید جدا بمانند.
 - **CI جدید:** Python bridge run `43812324657` با 87 تست (یک skip اختیاری UNO) سبز است؛ UNO run `43811929904` نیز 8/8 تست را پاس کرده است. اجرای helper pipeline `43812127854` هم موفق بوده است.
 - **تکمیل lookup مقدار Custom Property:** helper pipeline run `43812565648` موفق شد؛ `0x004D3DF8` برابر `TDictionary<UnicodeString,TDocumentCProperty>.ContainsValue` و `0x004D34B0` برابر `SetItem` است. `0x004D1B30` نیز `ShowRecAndCcOptionForm` و `0x0045644C` تابع `FindWindowExtd` است؛ نقش دقیق آن در special-caseها هنوز باز است.
+- **نوشتن Custom Document Property در Writer:** ماژول `writer_properties.py` فقط property موجود با نام دقیق را به‌روزرسانی می‌کند؛ property ناشناخته را ایجاد نمی‌کند و مقدار قبلی را نمی‌خواند. تست UNO واقعی این عملیات را روی fixture ساختگی تأیید کرد.
+- **CI نهایی این مرحله:** Python run `43813400123` با 91 تست (یک skip اختیاری UNO) سبز است؛ UNO run `43813378877` نیز 8/8 تست را پاس کرده است.
 - **اجرای مهندسی معکوس فیلدها:** run `43811074616` با موفقیت تمام شد و artifact شامل ۴۱ فایل disassembly/callsite/strings دریافت و بررسی شد. مسیر custom document properties و نقش شرطی `SilentSaveEmwatDoc` مستند شد.
 
 - **LibreOffice UNO واقعی:** ماژول python/src/emwat_linux/libreoffice_adapter.py اضافه شده است. برای هر سند یک process و profile مستقل LibreOffice و یک socket محلی UNO ساخته می‌شود؛ ورودی DOC/CFB و DOCX شناخته می‌شود؛ listenerهای تغییر، Save و Close ثبت می‌شوند؛ هنگام Close یک snapshot با فیلتر Word 97 به فایل DOC جداگانه نوشته می‌شود.
