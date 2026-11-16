@@ -559,3 +559,7 @@ The service trace at `0x0047E0EC` executes `call 0x00402174` at `0x0047E15F`. Th
 ## TMainForm published-method RTTI table inspection
 
 Extended `tools/inspect_delphi_vmt_address.py` to expose Delphi VMT method-table and field-table pointers (`VMT-0x40` and `VMT-0x44`) and emit bounded raw-byte/ASCII views of those tables. The service workflow now compiles the inspector and runs it on `TMainForm` VMT `0x0047B284`. This is intended to recover published event/method names and code addresses despite the service PE lacking TD32 symbols; table layout will be decoded only after validating the raw structure.
+
+### Corrected rel32 thunk target offset
+
+The first rel32 scan targeted the start of each import stub (`mov eax,eax`) and therefore missed calls that enter two bytes later at the actual `jmp [IAT]` instruction. The service workflow now scans the corrected targets: `ClassCreate 0x00401158`, `ClassDestroy 0x00401160`, `StartExe 0x004011B8`, `GetProcAddress 0x00401464/0x00401D7C`, `LoadPackage 0x00402174`, and `GetClass 0x00402354`. `LoadPackage` at `0x00402174` is already independently confirmed from `0x0047E15F`.
