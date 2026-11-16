@@ -27,10 +27,11 @@ def sample_request():
 
 
 class FakeOffice:
-    def __init__(self, *, close=CloseDisposition.CLOSED, output=b"final-document", save=False):
+    def __init__(self, *, close=CloseDisposition.CLOSED, output=b"final-document", save=False, veto_close_attempts=0):
         self.close = close
         self.output = output
         self.save = save
+        self.veto_close_attempts = veto_close_attempts
         self.calls = []
         self.on_modified = None
         self.on_saved = None
@@ -49,6 +50,9 @@ class FakeOffice:
         self.on_modified()
         if self.save:
             self.on_saved()
+        # The adapter consumes vetoed close attempts and waits for a later choice.
+        for _ in range(self.veto_close_attempts):
+            self.calls.append(("close_attempt_vetoed", handle))
         return OfficeCloseEvent(self.close)
 
     def export_final_document(self, handle):
@@ -84,14 +88,14 @@ class DocumentCoordinatorTests(unittest.TestCase):
             ["open", "wait_for_close", "export_final_document"],
         )
 
-    def test_cancel_does_not_export_document(self):
-        office = FakeOffice(close=CloseDisposition.CANCELLED)
+    def test_discard_does_not_export_document(self):
+        office = FakeOffice(close=CloseDisposition.DISCARDED)
         result = DocumentCoordinator(office).run(
-            session_id="local-session-2", request=sample_request()
+            session_id="local-session-discarded", request=sample_request()
         )
         self.assertFalse(result.returned)
         self.assertIsNone(result.payload)
-        self.assertEqual(result.session.state, DocumentState.CANCELLED)
+        self.assertEqual(result.session.state, DocumentState.DISCARDED)
         self.assertEqual([call[0] for call in office.calls], ["open", "wait_for_close"])
 
 
@@ -118,18 +122,19 @@ class DocumentCoordinatorTests(unittest.TestCase):
         self.assertIsNone(result.session.saved_revision)
 
 
-    def test_late_engine_callbacks_are_ignored_after_cancel(self):
-        office = FakeOffice(close=CloseDisposition.CANCELLED)
+    def test_vetoed_close_attempt_keeps_session_open_until_later_close(self):
+        office = FakeOffice(veto_close_attempts=1)
         result = DocumentCoordinator(office).run(
-            session_id="local-session-cancelled-callback", request=sample_request()
+            session_id="local-session-vetoed-close", request=sample_request()
         )
-        self.assertEqual(result.session.state, DocumentState.CANCELLED)
+        self.assertEqual(result.session.state, DocumentState.RETURNED)
+        self.assertEqual(result.payload, b"final-document")
         self.assertEqual(result.session.revision, 1)
         self.assertIsNone(result.session.saved_revision)
-        self.assertEqual(office.on_modified(), 1)
-        office.on_saved()
-        self.assertEqual(result.session.revision, 1)
-        self.assertIsNone(result.session.saved_revision)
+        self.assertEqual(
+            [call[0] for call in office.calls],
+            ["open", "wait_for_close", "close_attempt_vetoed", "export_final_document"],
+        )
 
     def test_adapter_failure_is_sanitized(self):
         class BrokenOffice(FakeOffice):
