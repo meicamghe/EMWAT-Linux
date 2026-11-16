@@ -1128,3 +1128,23 @@ The helper name, the `T7zPlugin` constructor, the two extensions, and the paired
 The new artifact confirms that the periodic controller-notify path performs a SevenZip-backed transformation after `Get_Content`; it does **not** yet connect the transformed object to the invoke HTTP response or prove that every timer tick is a close-time registration. The next trace batch targets `0x0040414C`, `0x004543C4`, and the `T7zPlugin` VMT/methods to resolve the two object types and the archive operations.
 
 Evidence boundary: static TD32 disassembly and direct-call scan; no runtime payload capture was added.
+
+
+## Run 146 — SevenZip interface-slot cross-check (correction to password hypothesis)
+
+Source: controller-unarchive workflow `43869120325`, artifact `14227121005`.
+
+Exact VMT inspection confirms:
+- `T7zPlugin` VMT: `0x00451E08`, instance size `0x18`, destructor at `0x00452C64`.
+- `T7zOutArchive` VMT: `0x00452A40`, instance size `0x4C`, interface table at `0x00452984`, three interface entries.
+- `T7zPlugin.$bctr` at `0x00452C10` uses the `T7zOutArchive` class reference at `0x004529E8`, calls `0x004543C4` (TD32 label `T7zOutArchive.CryptoGetTextPassword2`), adjusts the returned object pointer by `+0x44`, and stores that interface pointer for the caller.
+- The interface at object offset `+0x44` has IID `baa9d5dc-9ff4-4382-9bfd-ec9065bd0125` and VTable `0x0045294C`.
+
+The interface thunk table maps the slots used by `euUnArchive` as follows:
+- interface slot `+0x10` → thunk `0x00452899` → `T7zOutArchive.AddFiles` at `0x00453F34`;
+- interface slot `+0x18` → thunk `0x004528AD` → `T7zOutArchive.SaveToStream` at `0x00454668`;
+- interface slot `+0x28` → thunk `0x004528D5` → `T7zOutArchive.SetProgressCallback` at `0x004547E8`.
+
+**Correction:** the earlier hypothesis that the literal `mW@Tlogs43end_+` is directly passed to `SetPassword` is not supported by this interface mapping. The mapped slot is `SetProgressCallback`; the literal's role remains unknown. `T7zOutArchive.SetPassword` exists at `0x004547DC`, but it is not the target of the observed `+0x28` call through this interface.
+
+There are still signature/argument-shape mismatches to resolve: `euUnArchive` passes two TStringList values through slot `+0x10`, and a `.easz` UnicodeString through slot `+0x18`, while TD32 labels the targets `AddFiles` and `SaveToStream`. The helper may be using a wrapper/interface layer with additional semantics, or the current interface-to-method association may need further verification. Do not rename `euUnArchive` as an archive writer or extractor yet. Trace the three target method bodies and the `T7zPlugin` factory path before assigning archive direction or password semantics.
