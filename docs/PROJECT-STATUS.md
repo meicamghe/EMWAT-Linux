@@ -2047,3 +2047,12 @@ Artifact `14227611377` resolves the earlier interface-signature uncertainty:
 ### وضعیت واقعی
 
 پروژه اکنون parser/bridge/dispatcher، چرخه session، adapter مربوط به LibreOffice و بخش‌هایی از field/property pipeline را دارد. تست‌های قبلی Python و UNO نیز در fixtureهای مشخص موفق بوده‌اند. با این حال، سازگاری کامل end-to-end با سامانه عملیاتی Almas، همه فیلدهای 180+گانه، تصاویر/امضاها، چاپ واقعی و همه حالت‌های cancel/discard هنوز تأیید نشده است.
+
+
+## اصلاح مهم در event sink ورد و Parser سرویس — 2026-11-16
+
+- اسکن کامل TD32 نشان داد `OnTmrAutoSave` این callbackها را در event-sink ثبت می‌کند: `WordAppDocumentBeforeSave`، `WordAppNewDocument`، `WordAppWindowActivate` و `WordAppDocumentBeforePrintBGPrint` (یا callback جایگزین `0x004D00AC` بر اساس flag داخلی).
+- با وجود نام TD32 تابع `WordAppDocumentBeforeClose` در آدرس `0x004CCBBC`، تنها فراخوان مستقیم آن در اسکن فعلی از `FillImgFldsForPrint` است؛ این تابع به `GetXmlFieldInfo` می‌رسد و در بلوک event-sink ثبت نشده است. بنابراین نباید آن را رویداد واقعی Close فرض کرد.
+- `SilentSaveEmwatDoc` از مسیر `GetDocFieldName` و فیلد ویژه `Hidden_Customizable` فراخوانی می‌شود؛ دو TStringList موقت می‌سازد، helper `0x004AEBBC` را صدا می‌زند و در شرایطی `TWrapRecord.LineCount` را اجرا می‌کند. معنای دقیق خروجی این ساختار هنوز قطعی نیست.
+- رکورد Parser برای هر `param` اکنون در سطح ساختار decode شده است: slot صفر hash نام، slot یک نام پارامتر و slot دو مقدار متنی. اتصال نهایی این collection به دیکشنری BPL هنوز نیازمند trace dispatch است.
+- شواهد: service artifact `14233736412` و Word artifact `14234120250`، هر دو از run `43883105610`.
