@@ -175,4 +175,4 @@ The service helper `0x0047E0EC` calls the imported `LoadPackage` thunk at `0x004
 
 ### GetClass is called from ParseMethod
 
-The corrected import-thunk scan identifies a direct CALL at `0x00470E07` to the `GetClass` thunk (`0x00402354`, IAT `0x00487B9C`) inside `ParseMethod` (`0x00470D00`). This proves the XML parser reaches Delphi runtime class resolution. The full `ParseMethod` body (`0x00470D00–0x00471033`) is now traced to establish the exact class-name argument and the following instance-creation/Invoke sequence.
+The corrected import-thunk scan identifies a rel32 CALL candidate at `0x00470E07` to the `GetClass` thunk (`0x00402354`, IAT `0x00487B9C`) within the bounded code span associated with `ParseMethod` (`0x00470D00–0x00471033`). The entry trace reaches an undecoded code/data gap before this candidate, so its exact function-boundary relationship is not yet proven. Separate bounded traces of the code island around `0x00470E07` are being added before assigning it definitively to `ParseMethod`.
