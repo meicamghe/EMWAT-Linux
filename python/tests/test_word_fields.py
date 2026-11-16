@@ -60,6 +60,8 @@ class WordFieldDecodingTests(unittest.TestCase):
             '<word-document><fields>'
             '<field id="LetterSubject" encryption="urlencoded">سلام%20دنیا</field>'
             '<field id="LetterProducerName">Plain%20Text</field>'
+            '<field id="PlusSpace">a+b</field>'
+            '<field id="LiteralPlus">a%2Bb</field>'
             '</fields></word-document>'
         )
         fields = decode_word_fields(config)
@@ -74,6 +76,8 @@ class WordFieldDecodingTests(unittest.TestCase):
         )
         self.assertEqual(decode_word_fields(plus_config)[0].value, "A B C")
         self.assertEqual(fields[1].value, "Plain%20Text")
+        self.assertEqual(fields[2].value, "a b")
+        self.assertEqual(fields[3].value, "a+b")
 
     def test_decodes_base64_image_bytes(self):
         config = parse(
