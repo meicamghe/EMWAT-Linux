@@ -151,13 +151,14 @@ def find_native_twin_field_index(
     """Find a twin-field partner using the native one-based Word Fields scan.
 
     FillTwinFields starts at start_index, extracts each Word Field.Code through
-    FindFieldInActivefields, and returns the first matching one-based index.
-    Native code returns zero when no matching partner is found.
+    FindFieldInActivefields, compares names with RTL CompareText (case-insensitive),
+    and returns the first matching one-based index. Native code returns zero
+    when no matching partner is found.
     """
     if start_index < 1:
         raise ValueError("start_index must be one-based and positive")
     for index in range(start_index, len(field_codes) + 1):
-        if extract_docproperty_identifier(field_codes[index - 1]) == target_identifier:
+        if extract_docproperty_identifier(field_codes[index - 1]).casefold() == target_identifier.casefold():
             return index
     return 0
 
