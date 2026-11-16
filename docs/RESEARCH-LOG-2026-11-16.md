@@ -563,3 +563,16 @@ Extended `tools/inspect_delphi_vmt_address.py` to expose Delphi VMT method-table
 ### Corrected rel32 thunk target offset
 
 The first rel32 scan targeted the start of each import stub (`mov eax,eax`) and therefore missed calls that enter two bytes later at the actual `jmp [IAT]` instruction. The service workflow now scans the corrected targets: `ClassCreate 0x00401158`, `ClassDestroy 0x00401160`, `StartExe 0x004011B8`, `GetProcAddress 0x00401464/0x00401D7C`, `LoadPackage 0x00402174`, and `GetClass 0x00402354`. `LoadPackage` at `0x00402174` is already independently confirmed from `0x0047E15F`.
+
+## TMainForm published method table partially decoded
+
+The `TMainForm` VMT method-table pointer at `VMT-0x40` is `0x0047B84E`. Its raw layout is confirmed as a 16-bit entry count followed by repeated `{uint16 entry_size, uint32 code_address, shortstring method_name}` records. The table count is 17. The first seven entries recovered from the initial 128-byte sample are:
+- `IdHTTPServerCommandGet` → `0x0047BF30` (the complete HTTP handler traced earlier).
+- `FormCreate` → `0x0047CCD8`.
+- `Terminate` → `0x0047E3EC`.
+- `Log` → `0x0047D2C8`.
+- `ShowMainForm` → `0x0047DF4C`.
+- `HideMainForm` → `0x0047DF58`.
+- `FormClose` → `0x0047CCC8`.
+
+This confirms that the HTTP handler is a published `TMainForm` method, not an arbitrary code-range guess. `inspect_delphi_vmt_address.py` now decodes the full published method table (up to a bounded 512-byte read) so the remaining ten entries can be inventoried and followed.
