@@ -75,3 +75,19 @@ The workflow commit is confirmed on `main`. At the time this note was written, t
 ## Evidence discipline
 
 Use explicit labels: user-observed, statically confirmed, runtime-confirmed, inferred, or unknown. A workflow being committed is not the same as it having run successfully. A trace artifact is not runtime confirmation. Never include customer document contents, signature payloads, tokens, cookies, or unredacted traces in the public repository.
+
+## Update — close-driven HTTP response release identified
+
+The central request-lifecycle wait is no longer unknown:
+
+- `TWordViwer.LoadDocument` calls `OnTmrAutoSave` synchronously at `0x004B7A58`.
+- `OnTmrAutoSave` loops at `0x004B9AE8`: `kernel32!Sleep(5)` → `TApplication.ProcessMessages` → test viewer field `+0x58`.
+- While `+0x58` is nonzero, the loop repeats. Every 200 iterations it performs a maintenance/check block (`0x00445B10`, `0x00455108`) and starts another cycle. The 200 × 5 ms cycle is not a total timeout.
+- The close/registration callback at `0x004CD154` calls Word `Document.Close` and clears viewer `+0x58` at `0x004CD31C`.
+- The wait then exits; `LoadDocument` continues to the successful response branch at `0x004B7F31`, writes `response-word` through Indy `WriteContent`, and sets `bResultSet`.
+
+This directly explains why the local HTTP request remains pending during Word editing and why the returned document arrives after the close/registration path. The ~54.558-second PCAP delay is consistent with that wait. Formal COM event identity for `0x004CD154` and the initial setter of viewer `+0x58` are still being resolved.
+
+Artifacts: wait-mechanism run `43874638245` / artifact `14229716255`; request-lifecycle run `43873354906` / artifact `14229047092`; response-writer run `43872534265` / artifact `14228851062`.
+
+Correction to the earlier checkpoint: the 200-iteration block is a repeating ~1-second maintenance cycle, not a maximum 1-second wait. The loop continues until the close callback clears the state field.
