@@ -65,8 +65,11 @@ class LibreOfficeIntegrationTests(unittest.TestCase):
             on_saved=lambda: None,
         )
         try:
+            user_properties = handle.document.getDocumentProperties().getUserDefinedProperties()
+            user_properties.addProperty("EMWATIntegrationMarker", 0, "do-not-read-this-value")
             catalog = adapter.inspect_document(handle)
             self.assertIn("LetterSubject", catalog.bookmarks)
+            self.assertIn("EMWATIntegrationMarker", catalog.custom_document_properties)
             handle.document.close(True)
             close_event = adapter.wait_for_close(handle)
             self.assertEqual(close_event.disposition, CloseDisposition.CLOSED)
