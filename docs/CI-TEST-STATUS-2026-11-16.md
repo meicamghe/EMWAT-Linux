@@ -150,3 +150,11 @@ These checks validate the adapter and composition boundary. They do not establis
 - Traced `TWordViwer.OnControlerNotify` at `0x004BB3B0`, `TScanDocument.PerformMethod` at `0x005EE82C`, and `TWordViwer.LoadDocument` at `0x004B7724`.
 - Controller notification invokes `CostumizeRecAndCC`, then passes `-1` and the document interface to COM vtable slot `+0xDC`; this is a candidate finalize/close action, but the exact method is being compared with generated Word `Close` and `Save` wrappers.
 - This does not yet prove the final Almas POST/response payload.
+
+
+## Native DOCPROPERTY identifier parsing — 2026-11-16
+
+- Latest Python bridge run **43814423443** completed successfully: **94 tests run, 93 passed, 1 optional UNO test skipped**.
+- The decoder now includes extract_docproperty_identifier(), mirroring the native FindFieldInActivefields behavior: case-sensitive DOCPROPERTY recognition, extraction after the first double-space delimiter, and the legacy first-token/255-character behavior.
+- Tests cover standard DOCPROPERTY, non-DOCPROPERTY, case sensitivity, unterminated fields, and the native parser's unusual triple-space result.
+- This is a compatibility parser for the observed native behavior, not a general-purpose Word field-code parser.
