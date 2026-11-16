@@ -1070,3 +1070,10 @@ Do not implement guessed `signData` joining or claim end-to-end Almas registrati
 - Therefore do not call `mW@Tlogs43end_+` a confirmed password; it is passed to SetProgressCallback through the observed interface. `SetPassword` exists separately at `0x4547DC`, but is not the mapped target.
 - `euUnArchive` passes two TStringList values to AddFiles and a `.easz` UnicodeString to SaveToStream; these do not obviously match the TD32 signatures. The archive direction and exact argument types remain unresolved. Next inspect target method bodies and the wrapper/factory.
 - Expanded archive workflow run `43869599848` was queued for those method-body traces at the last check.
+
+
+### Invoke bridge and XML version contract
+- Service artifact `14226099734` confirms the embedded init script POSTs `message.data` to `http://127.0.0.1:$V{myport}?invoke=<random nonce>` and relays `responseText` to the parent frame.
+- Service strings and parser traces confirm root `emwat`, attribute `version`, exact numeric version `1`, child `method`, attribute `class`, child `param`, and attribute `name`.
+- `0x0047E0EC` is BPL package load; `0x0047E2D4` is package unload. They bracket `ParseMethod`; neither is the concrete method dispatcher.
+- The exact request schema is updated in `docs/EDITWORD-REQUEST-SCHEMA.md`; HTTP bridge details are in `docs/HTTP-LOCAL-API-ANALYSIS.md`.
