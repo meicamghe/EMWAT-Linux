@@ -1907,3 +1907,35 @@ The BPL VMT scan establishes that TEditWordDocument inherits TEmwatMethod; TScan
 ### Immediate unresolved target
 
 Resolve the class-registration/dispatch bridge that maps the incoming XML `method class="EditWordDocument"` to the concrete class/VMT and its `PerformMethod` slot. In parallel, determine whether `TEmwatMethod.Invoke` is an XML response builder or another helper, and connect the service's invoke branch to the selected method and final response writer.
+
+
+## Controller archive pipeline and VMT cross-check — 2026-11-16
+
+### Verified successful analysis runs
+- Dispatch crosswalk run `43867641761`: all three jobs completed successfully. Artifacts: BPL `14225499151`, Word lifecycle `14226866454`, service missing-input note `14226172178`. The service job succeeded by explicitly skipping PE tracing because the binary was absent from the checkout; it did not analyze the service.
+- Expanded VMT run `43868190188`: all three jobs completed successfully. BPL artifact `14225224443` includes exact-address VMT inspection for `TEmwatMethod`, `TEditWordDocument`, `TScanDocument`, `TWordViwer`, and `TEDPController`.
+- Controller unpack run `43868321797`: job completed successfully, artifact `14226342809`.
+
+### Corrected VMT conclusions
+- `TEmwatMethod` VMT `0x0046ABFC` slot `+0x10` points to `0x00401068`, not `TEmwatMethod.Invoke` at `0x0046C82C`. Combined with the zero raw-pointer-reference scan and the sole direct unit-finalization caller, this is further evidence that `Invoke` should not be assumed to be the request-time virtual dispatcher.
+- `TEditWordDocument` VMT `0x005ED764` slot `+0x10` points to `0x005EE82C`; TD32 labels that procedure `TScanDocument.PerformMethod`.
+- `TScanDocument` VMT `0x005ED884` slot `+0x10` points to `0x005EEB48`; TD32 labels that procedure `TFaxDocument.PerformMethod`.
+- These are confirmed pointer/name mismatches. Keep the VMT pointer, TD32 decorated name, parameter strings, and request class mapping as separate evidence fields; do not silently relabel the methods.
+
+### Controller content and archive processing
+- `TWordViwer.OnControlerNotify` obtains Word content via the `_Document` COM interface slot `+0xDC`, then calls `Emwatutils.euUnArchive` at `0x00456DFC`.
+- `0x004563A8` is `FixDirectionInFarsiNumericMode`; it is not an object/list constructor. It transforms the base path at `TWordViwer+0x80`.
+- The decoded suffixes are `.easd` (`0x004BB754`) and `.easz` (`0x004BB76C`). The `.easd` path is passed through an object method; the `.easz` path is passed to `euUnArchive`.
+- `0x00452C10` is the `T7zPlugin` constructor. `euUnArchive` passes the hardcoded string `mW@Tlogs43end_+` to plugin vtable slot `+0x28`, iterates paired entries from two indexed objects through slot `+0x10`, then passes the `.easz` path through slot `+0x18`.
+- This strongly establishes a SevenZip-backed archive/sidecar processing path after Word content retrieval. The exact class types for the two indexed objects and the names/semantics of plugin slots `+0x28`, `+0x10`, and `+0x18` remain unresolved. Treat the hardcoded string as a likely password, not a confirmed password property, until the plugin VMT methods are mapped.
+- Detailed write-up: `docs/WORD-COM-INTERFACE-DISPATCH.md`, Run 144.
+
+### New focused pipelines
+- `.github/workflows/analyze-emwat-controller-unarchive.yml` now has an expanded run that traces `0x0040414C`, `0x004543C4`, SevenZip class procedures, VMT slots, and interface tables. Run 2 is queued at this checkpoint.
+- `.github/workflows/analyze-emwat-service-dispatch.yml` downloads the preserved `emwat-mainform-invoke-handler` artifact from run `43831365563` and traces the service parser/dispatch/response chain without committing the EXE into the public repository. Run 1 is queued at this checkpoint.
+
+### Next highest-value tasks
+1. Resolve `T7zPlugin` vtable slot methods and the class/type of the two paired indexed objects.
+2. Determine whether `.easd` is a sidecar/data stream and `.easz` the archive target, using only static traces and synthetic content.
+3. Use the preserved service artifact to close the XML `class` lookup → concrete class/VMT `PerformMethod` → result/response path.
+4. Connect the archive output to the `invoke` HTTP response; do not equate periodic controller timer notifications with final Almas registration.
