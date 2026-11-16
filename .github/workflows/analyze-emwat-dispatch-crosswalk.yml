@@ -2,6 +2,7 @@ name: Analyze EMWAT service and BPL dispatch crosswalk
 on:
   push:
     paths:
+      - 'EMWAT_Extracted.zip'
       - '.github/workflows/analyze-emwat-dispatch-crosswalk.yml'
       - 'analysis-input/EmwatService.exe'
       - 'analysis-input/EmwatMethods.bpl1'
@@ -26,6 +27,23 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Extract authorized EMWAT analysis binaries
+        if: hashFiles('EMWAT_Extracted.zip') != ''
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          from zipfile import ZipFile
+          archive = Path("EMWAT_Extracted.zip")
+          out = Path("analysis-input")
+          out.mkdir(exist_ok=True)
+          wanted = {"EmwatMethods.bpl1", "EmwatService.exe", "EmwatAgent.exe"}
+          with ZipFile(archive) as zf:
+              found = {Path(name).name: name for name in zf.namelist() if Path(name).name in wanted}
+              for basename in sorted(wanted & found.keys()):
+                  (out / basename).write_bytes(zf.read(found[basename]))
+                  print(f"Extracted {basename}: {(out / basename).stat().st_size} bytes")
+          PY
       - uses: actions/setup-python@v5
         if: hashFiles('analysis-input/EmwatService.exe') != ''
         with:
@@ -71,6 +89,23 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Extract authorized EMWAT analysis binaries
+        if: hashFiles('EMWAT_Extracted.zip') != ''
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          from zipfile import ZipFile
+          archive = Path("EMWAT_Extracted.zip")
+          out = Path("analysis-input")
+          out.mkdir(exist_ok=True)
+          wanted = {"EmwatMethods.bpl1", "EmwatService.exe", "EmwatAgent.exe"}
+          with ZipFile(archive) as zf:
+              found = {Path(name).name: name for name in zf.namelist() if Path(name).name in wanted}
+              for basename in sorted(wanted & found.keys()):
+                  (out / basename).write_bytes(zf.read(found[basename]))
+                  print(f"Extracted {basename}: {(out / basename).stat().st_size} bytes")
+          PY
       - name: Report missing analysis input
         if: hashFiles('analysis-input/EmwatMethods.bpl1') == ''
         run: echo "::notice::Skipped binary analysis because analysis-input/EmwatMethods.bpl1 is not present in this checkout."
@@ -121,6 +156,23 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Extract authorized EMWAT analysis binaries
+        if: hashFiles('EMWAT_Extracted.zip') != ''
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          from zipfile import ZipFile
+          archive = Path("EMWAT_Extracted.zip")
+          out = Path("analysis-input")
+          out.mkdir(exist_ok=True)
+          wanted = {"EmwatMethods.bpl1", "EmwatService.exe", "EmwatAgent.exe"}
+          with ZipFile(archive) as zf:
+              found = {Path(name).name: name for name in zf.namelist() if Path(name).name in wanted}
+              for basename in sorted(wanted & found.keys()):
+                  (out / basename).write_bytes(zf.read(found[basename]))
+                  print(f"Extracted {basename}: {(out / basename).stat().st_size} bytes")
+          PY
       - name: Report missing analysis input
         if: hashFiles('analysis-input/EmwatMethods.bpl1') == ''
         run: echo "::notice::Skipped binary analysis because analysis-input/EmwatMethods.bpl1 is not present in this checkout."
