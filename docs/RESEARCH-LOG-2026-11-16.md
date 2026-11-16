@@ -442,3 +442,9 @@ The expanded workflow now traces these methods and their direct callers, along w
 ## Correction: AddXmlWordConfigFieldsToDic body and ScreenRefresh identity
 
 The trace of `0x00441DD4` identifies it as `TWordApplication.ScreenRefresh`, not a generated XML-field helper. In `AddXmlWordConfigFieldsToDic` (`0x004D1148`), the routine clears/releases several viewer-owned collections and dictionaries (`+0x64`, `+0x68`, `+0x6C`), calls ScreenRefresh through the Word Application wrapper, emits refresh/clear/success diagnostics, and resets viewer flags. Its TD32 symbol name therefore does not prove that it populates the single/twin descriptor dictionaries. The actual Add/SetItem methods and their direct callers are being traced separately.
+
+## Service parser: dictionary layout cross-check
+
+Re-opened service artifact `14233736412`. `ParseMethod` (`0x00470D00`) constructs an object using class reference at `0x00470924` via `0x00471214`, then passes that object to XML parser `0x00470B38`. The parser helper chain computes the parameter-name hash (`0x0046A620`), probes the bucket table (`0x0046A570`), and appends a three-slot entry at `0x0046A7A4`: hash, key/name, value/text. The object layout uses entries pointer at `+0x04`, count at `+0x08`, comparer at `+0x0C`, and capacity at `+0x10`.
+
+The same service PE exposes `TDictionary<System.AnsiString,System.AnsiString>` VMT `0x00469A3C` (typeinfo `0x0046A054`). The parser entry layout and object field offsets strongly match this dictionary implementation, but the class reference at `0x00470924` has not yet been directly linked to that VMT. Expanded service workflow now traces `0x00471214`, the hash/probe helpers, the dictionary VMT pointer references, and the full TD32 `TDictionary` symbol list to prove the object identity and Add method chain.
