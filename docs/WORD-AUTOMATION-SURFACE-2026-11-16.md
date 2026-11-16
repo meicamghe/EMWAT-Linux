@@ -254,3 +254,15 @@ The expanded field-mapping artifact adds important caller context to the Word-fi
 Implementation consequence: keep three distinct layers in the Linux backend—field/config inventory, Word/Writer field mutation, and document-level image insertion. Do not collapse `AddImagesToDoc`, `FillImageField`, and `FillField` into one generic image setter.
 
 Evidence: `emwat-word-field-mapping`, run `43882925143`, artifact `14232259712`.
+
+
+## Image-field branch analysis — additional trace targets queued
+
+A closer read of the existing TD32 trace narrows the next image-field work:
+
+- `AddImagesToDoc` (`0x004C0410`) obtains a string-valued property from the supplied `IXMLFieldType` interface through vtable offset `+0xB0`, normalizes/copies it, and compares it against a constant at `0x004C0510`. Only the non-equal branch calls `0x004C19C0`. The literal at `0x004C0510` and the core helper's semantics are not yet decoded; no field-type label is assigned here.
+- The helper call at `0x004C048C` receives the current Word Fields interface, the XML field object, the caller's field metadata, and additional string/record arguments. This is a document-level path distinct from `FillImageField`.
+- `FillImageField` (`0x004BC30C`) has two major branches. When viewer flag `+0xF0) is set, it checks three metadata strings before invoking `FindWindowExtd` (`0x0045644C`). In the later branch it inspects a field/index-related value and conditionally uses Word Fields/Field COM calls, including vtable offsets `+0x40), `+0x20), `+0x2EC), and `+0x2F0). These offsets are intentionally left unmapped until the imported WordXP interface method order is established; guessing their names would risk implementing the wrong operation.
+- The final helper path also reaches `0x004C19C0) through `AddImagesToDoc`; this helper is now included as a first-class trace target in the Word field-analysis workflow, together with `0x004BC170) and the branch-string constants at `0x004BC6D4) through `0x004BC910).
+
+Workflow expansion commit: `367e4aa58514029278624c65837059f13807394a`. The next run's artifact is required before treating the helper or branch strings as decoded evidence.
