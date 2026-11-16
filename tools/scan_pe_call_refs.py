@@ -34,7 +34,7 @@ def main():
         code = section.get_data()
         if not code:
             continue
-        section_name = section.Name.rstrip(b"\\0").decode("ascii", "replace")
+        section_name = section.Name.rstrip(b"\0").decode("ascii", "replace")
         base_va = pe.OPTIONAL_HEADER.ImageBase + section.VirtualAddress
         instructions = list(decoder.disasm(code, base_va))
         for index, instruction in enumerate(instructions):
@@ -47,7 +47,7 @@ def main():
                 continue
             lo = max(0, index - context_size)
             hi = min(len(instructions), index + context_size + 1)
-            context = "\\n".join(
+            context = "\n".join(
                 f"  {item.address:08X}  {item.mnemonic:<8} {item.op_str}"
                 for item in instructions[lo:hi]
             )
