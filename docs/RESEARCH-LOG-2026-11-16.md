@@ -421,3 +421,7 @@ The expanded helper trace corrects the earlier interpretation:
 - `0x00403248` is RTL `System.SysUtils.CompareText`; therefore `FillTwinFields` uses case-insensitive comparison. Updated `find_native_twin_field_index()` to compare with `casefold()` and added mixed-case coverage.
 
 Post-change CI: Python bridge run `43891288399`: 107 tests passed, 2 optional skips. LibreOffice UNO run `43890949051`: 11 tests passed.
+
+## Descriptor dictionary population trace queued
+
+Expanded the archive-backed Word analysis workflow to enumerate all TD32 symbols for `TXmlWordConfigField`, `TXmlWordConfigTwinField`, `TDocumentCProperty`, and `TDictionary`. The goal is to locate the actual Add/SetItem/population methods that precede the confirmed `Remove` consumption calls at `0x004D531C` and `0x004D68D4`. The next workflow run will include `field-descriptor-symbols.md` and `generic-dictionary-symbols.md`; no insertion method is claimed until those symbols are reviewed.
