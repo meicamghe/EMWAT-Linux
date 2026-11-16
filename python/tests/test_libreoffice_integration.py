@@ -28,6 +28,7 @@ class LibreOfficeIntegrationTests(unittest.TestCase):
                 '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>'
                 '<Default Extension="xml" ContentType="application/xml"/>'
                 '<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>'
+                '<Override PartName="/docProps/custom.xml" ContentType="application/vnd.openxmlformats-officedocument.custom-properties+xml"/>'
                 '</Types>',
             )
             docx.writestr(
@@ -35,6 +36,7 @@ class LibreOfficeIntegrationTests(unittest.TestCase):
                 '<?xml version="1.0" encoding="UTF-8"?>'
                 '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
                 '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>'
+                '<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/custom-properties" Target="docProps/custom.xml"/>'
                 '</Relationships>',
             )
             docx.writestr(
@@ -43,7 +45,21 @@ class LibreOfficeIntegrationTests(unittest.TestCase):
                 '<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">'
                 '<w:body><w:p><w:bookmarkStart w:id="1" w:name="LetterSubject"/>'
                 '<w:r><w:t>EMWAT integration fixture</w:t></w:r>'
-                '<w:bookmarkEnd w:id="1"/></w:p><w:sectPr/></w:body></w:document>',
+                '<w:bookmarkEnd w:id="1"/></w:p>'
+                '<w:p><w:r><w:fldChar w:fldCharType="begin"/></w:r>'
+                '<w:r><w:instrText xml:space="preserve"> DOCPROPERTY  EMWATIntegrationMarker  \\* MERGEFORMAT </w:instrText></w:r>'
+                '<w:r><w:fldChar w:fldCharType="separate"/></w:r>'
+                '<w:r><w:t>initial-fixture-value</w:t></w:r>'
+                '<w:r><w:fldChar w:fldCharType="end"/></w:r></w:p>'
+                '<w:sectPr/></w:body></w:document>',
+            )
+            docx.writestr(
+                "docProps/custom.xml",
+                '<?xml version="1.0" encoding="UTF-8"?>'
+                '<Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/custom-properties" '
+                'xmlns:vt="http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes">'
+                '<property fmtid="{D5CDD505-2E9C-101B-9397-08002B2CF9AE}" pid="2" name="EMWATIntegrationMarker">'
+                '<vt:lpwstr>initial-fixture-value</vt:lpwstr></property></Properties>',
             )
 
         request = EditWordDocumentRequest(
@@ -76,6 +92,11 @@ class LibreOfficeIntegrationTests(unittest.TestCase):
             self.assertEqual(
                 user_properties.getPropertyValue("EMWATIntegrationMarker"),
                 "updated-fixture-value",
+            )
+            handle.document.getTextFields().refresh()
+            self.assertIn(
+                "updated-fixture-value",
+                handle.document.getText().getString(),
             )
             catalog = adapter.inspect_document(handle)
             self.assertIn("LetterSubject", catalog.bookmarks)
