@@ -64,10 +64,17 @@ class _ModifyListener:
 class _DocumentCloseListener:
     """Snapshot the current document from UNO's close callback."""
 
-    def __init__(self, document: object, output_url: str, on_closed: Callable[[], None]) -> None:
+    def __init__(
+        self,
+        document: object,
+        output_url: str,
+        on_closed: Callable[[], None],
+        uno_module: object,
+    ) -> None:
         self._document = document
         self._output_url = output_url
         self._on_closed = on_closed
+        self._uno = uno_module
         self.snapshot_error: Exception | None = None
         self.snapshot_ready = Event()
 
@@ -95,12 +102,9 @@ class _DocumentCloseListener:
     def disposing(self, _event: object) -> None:
         self._on_closed()
 
-    @staticmethod
-    def _property(name: str, value: object) -> object:
-        # UNO PropertyValue is constructed by the runtime module at attachment.
+    def _property(self, name: str, value: object) -> object:
         try:
-            uno = importlib.import_module("uno")
-            prop = uno.createUnoStruct("com.sun.star.beans.PropertyValue")
+            prop = self._uno.createUnoStruct("com.sun.star.beans.PropertyValue")
             prop.Name = name
             prop.Value = value
             return prop
@@ -249,20 +253,19 @@ class LibreOfficeAdapter:
                 document,
                 _file_url(output_path),
                 handle.mark_closed,
+                uno,
             )
             handle.close_listener = close_listener
-            document.addModifyListener(_ModifyListener(on_modified))
+            modify_listener = _ModifyListener(on_modified)
+            document.addModifyListener(modify_listener)
             document.addCloseListener(close_listener)
             # Keep strong references: PyUNO listeners must outlive their registrations.
-            handle.modify_listener = document  # document owns the listener registration
+            handle.modify_listener = modify_listener
             handle.desktop = desktop
             handle.output_path = output_path
             handle.source_path = source_path
             handle.profile_path = profile_path
             handle.context = context
-            handle.closed = close_listener._on_closed.__self__.closed if hasattr(
-                close_listener._on_closed, "__self__"
-            ) else handle.closed
             return handle
         except Exception:
             if process is not None and process.poll() is None:
@@ -287,10 +290,15 @@ class LibreOfficeAdapter:
         while not handle.closed.wait(self._poll_interval):
             if handle.process.poll() is not None:
                 raise RuntimeError("libreoffice_exited_without_document_close")
+        if not handle.close_listener.snapshot_ready.wait(self._connect_timeout):
+            self._cleanup(handle)
+            raise RuntimeError("libreoffice_final_snapshot_timeout")
         if handle.close_listener.snapshot_error is not None:
-            raise RuntimeError("libreoffice_final_snapshot_failed") from handle.close_listener.snapshot_error
-        handle.close_listener.snapshot_ready.wait(self._connect_timeout)
+            error = handle.close_listener.snapshot_error
+            self._cleanup(handle)
+            raise RuntimeError("libreoffice_final_snapshot_failed") from error
         if not (handle.work_dir / "final.doc").is_file():
+            self._cleanup(handle)
             raise RuntimeError("libreoffice_final_document_missing")
         return OfficeCloseEvent(CloseDisposition.CLOSED)
 
