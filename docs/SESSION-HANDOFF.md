@@ -1099,3 +1099,10 @@ Do not implement guessed `signData` joining or claim end-to-end Almas registrati
 
 
 - Run 5 artifact `14227002967` confirms `0x004041BC` is the `rtl230.bpl!TFileStream.$bctr(UnicodeString, Word)` thunk. `SaveToStream` constructs the file stream from `.easz` using `0xFF00` (`fmCreate`) and passes it to `SetCompleted` (`0x004546C4`). Thus `.easz` is a real file output, created/truncated by the archive path.
+
+
+### Word event lifecycle targets
+- `OnTmrAutoSave` (`0x004B8A84`) registers WordApp callbacks: BeforeSave `0x004CD154`, NewDocument `0x004CD54C`, WindowActivate `0x004CD9C0`, BeforePrintBGPrint `0x004CE030`/`0x004D00AC`.
+- `WordAppDocumentBeforeSave` can set Cancel=-1 when viewer state is not ready and can show a three-choice dialog for an unsaved document. One choice cancels. Do not assume this is the Almas commit event.
+- `WordAppDocumentBeforeClose` (`0x004CCBBC`) calls `0x004BCA88`; `SilentSaveEmwatDoc` (`0x004D23D8`) builds two TStringLists and calls `0x004AEBBC`. These are key next targets.
+- A complete-range rerun is in progress to trace OnTmrAutoSave, OnControlerNotify, BeforeClose, BeforeSave, SilentSaveEmwatDoc, and the two helpers. See `docs/WORD-LIFECYCLE-STATIC-TRACE.md` Run 150.
