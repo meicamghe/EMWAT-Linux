@@ -263,3 +263,12 @@ These checks validate the adapter and composition boundary. They do not establis
 - Both UNO runs: **8/8 tests passed**.
 - The integration now calls LibreOfficeAdapter.apply_custom_property_updates() rather than invoking property mutation and field refresh separately. The adapter validates exact existing property names, applies the batch, then refreshes Writer text fields once.
 - The UNO fixture confirms the imported DOCPROPERTY display updates to the new custom-property value and the document exports to legacy DOC/CFB.
+
+
+## Word Application event-sink wiring — 2026-11-16
+
+- Workflow run **43815900228** completed successfully.
+- Artifact: **14202173024**.
+- TWordApplication.ConnectTo connects the Word Application event interface. The callback record contains explicit registrations for WordAppDocumentBeforeSave, WordAppNewDocument, and WordAppWindowActivate.
+- WordAppDocumentBeforeClose is not in the observed callback record; its only direct bounded caller remains FillImgFldsForPrint.
+- This establishes how BeforeSave is wired into Word automation, but not the final Almas HTTP registration handoff.
