@@ -56,7 +56,7 @@ jobs:
       - name: Index related connector and Word classes
         run: |
           python tools/list_td32_symbols.py analysis-input/EmwatMethods.bpl1 \
-            TEditWordDocument TEmwatMethod TWordViwer TWordDocument \
+            TEditWordDocument TScanDocument TEmwatMethod TWordViwer TWordDocument \
             > word-close-response-chain/related-td32-symbols.md
       - name: Decode PerformMethod and controller-notify string constants
         run: |
@@ -66,6 +66,13 @@ jobs:
             0x004BB6CC 0x004BB754 0x004BB76C \
             0x004D2865 0x004D28B1 \
             > word-close-response-chain/close-and-controller-strings.md
+      - name: Resolve PerformMethod VMT ownership and references
+        shell: bash
+        run: |
+          python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 0x005EE82C \
+            > word-close-response-chain/pointer-refs-005EE82C.md
+          python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 0x005ED764 \
+            > word-close-response-chain/pointer-refs-005ED764.md
       - uses: actions/upload-artifact@v4
         with:
           name: emwat-word-close-response-chain
