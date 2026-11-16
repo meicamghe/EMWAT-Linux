@@ -44,6 +44,19 @@ def parse_word_field_identifier(field_id: str) -> WordFieldIdentifier:
     return WordFieldIdentifier(first=field_id)
 
 
+_NATIVE_BUSINESS_SIGNATURE_END = re.compile(r"^sign.*end[0-2]?[0-9]?$")
+
+
+def is_native_business_signature_end(field_name: str) -> bool:
+    """Match the exact signature-end exclusion used by GetDocFieldIndex.
+
+    Native code calls System.RegularExpressions.TRegEx.IsMatch with the
+    case-sensitive pattern ^sign.*end[0-2]?[0-9]?$. Matching active-field
+    names are logged as skipped by business logic. Pass the resolved active
+    field name; do not assume every XML field ID is identical.
+    """
+    return _NATIVE_BUSINESS_SIGNATURE_END.fullmatch(field_name) is not None
+
 def extract_docproperty_identifier(field_code: str) -> str:
     """Mirror EMWAT's DOCPROPERTY field-code extraction.
 
