@@ -299,9 +299,9 @@ This provides the first connected mapping pipeline from Word Field enumeration t
 ### Caption and bitmap helpers
 
 The same artifact cross-checks these symbols and call relationships:
-- `GetCaptionItemFont` (`0x004C19C0`) is called only by `AddImagesToDoc` in the current direct-call scan. It calls `GetXmlFieldInfo`, `SetFieldValue` (two observed sites), `EmbedTextToImage` (`0x004C436C`), `FillMSWFields`, and `GetXmlFieldInfo` again. It is therefore a substantial caption/image-field processing routine despite its symbol name; it is not safe to reduce it to a simple font getter.
+- `GetCaptionItemFont` (`0x004C19C0`) is called only by `AddImagesToDoc` in the current direct-call scan. Despite the symbol name, its body is the substantial image-generation/insertion path: it calls `GetXmlFieldInfo`, `SetFieldValue` (two observed sites), `EmbedTextToImage` (`0x004C436C`), and `FillMSWFields`; it logs `AddImageToDoc method called`, loads/unloads `igLzw32s.Dll`, processes `signData` and `signText`, validates image files, creates an image list, and logs `AddImageToDoc succeed`. The routine therefore cannot be reduced to a font getter; its body is responsible for image and signature processing.
 - `GetCaptionItems` (`0x004C2B20`) is called by `ResizeBitmapCanvas` and `ProcessWords`. It builds/returns a `TCaptionItem` object from a record and several parsed values.
-- `GetImageResolution` (`0x004C2DE0`) is called by `StrToAlign` at six sites. Its body compares an input string against six constants and returns enum-like values 1 through 6 (or 0 for no match). Do not assume it is a DPI/pixel-resolution parser from the symbol name alone.
+- `GetImageResolution` (`0x004C2DE0`) is called by `StrToAlign` at six sites. Its body compares an input string against six constants and returns enum-like values 1 through 6 (or 0 for no match). The six literal labels are queued for decoding; do not assume it is a DPI/pixel-resolution parser from the symbol name alone.
 - `EmbedTextToImage` (`0x004C436C`) is called from `GetCaptionItemFont`; it parses numeric image/caption parameters, converts dimensions through floating-point unit scaling, and invokes helper routines `0x004AFF10` and `0x004AFEB8`. Exact units and final rendering side effects remain open.
 
 Workflow evidence: field-mapping job succeeded in run `43886492031`, artifact `14233429328`. The companion save-print job in that run failed only because its decoder output directory was wrong; this was corrected separately and a new run was queued.
@@ -314,3 +314,15 @@ The save/print artifact from run `43887016674` confirms the string constant at `
 Do not treat this as a generic field rewrite rule yet: the surrounding helper calls `0x004D3DF8`, `0x004D34B0`, and `0x004D3B78` still need their full traces to determine how custom property fields are selected and stored.
 
 Artifact: `emwat-word-save-print`, run `43887016674`, artifact `14234129463`.
+
+
+### Field resolver and image-path string evidence
+
+The expanded decoder also resolves important strings used by `GetDocFieldIndex` and `FillImageField`:
+
+- `GetDocFieldIndex` checks a regex-like field-name pattern `^sign.*end[0-2]?[0-9]?$` and emits distinct skip reasons for business rules, exceptions, and repeated processing.
+- It logs whether a field's XML value is a single value or a multi-value set, logs twin-field matches, and has a `SignsArea` special case.
+- A missing twin field triggers an abort path; the decoded Persian prompt says the field was not found and the document will close while discarding changes. A separate branch aborts if the GAM document is protected with an invalid password.
+- `FillImageField` includes special metadata keys `LetterRegistrationDate`, `LetterRegistrationNo`, `ProduceDate`, `Receivers`, `ReceiverDeps`, `ccReceivers`, and `ccReceiverDeps`. Its diagnostics distinguish values stored in `CustomDocumentProperties` from values stored in `Field.Result.Text`, and it checks whether a field is locked.
+
+These are concrete special cases to preserve in the Linux resolver; they are not generic assumptions that all fields map to custom properties. Evidence: `emwat-word-save-print` run `43887016674`, artifact `14234129463`.
