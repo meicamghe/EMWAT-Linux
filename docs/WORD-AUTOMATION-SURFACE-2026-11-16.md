@@ -353,3 +353,14 @@ The completed string decoder identifies the discriminator at `0x004BCA70` as `te
 `FillTwinFields` (`0x004C02EC`) scans the Word Fields collection from the caller-supplied one-based start index to `Fields.Count). For each item it reads `Field.Code`, normalizes it through `FindFieldInActivefields`, and compares the result to the requested twin identifier. It returns the first matching one-based field index or `0` when no match exists. `GetDocFieldIndex` uses this return value to detect a missing twin and enter its abort/close-without-changes path.
 
 The Python mirror is `find_native_twin_field_index()` in `python/src/emwat_linux/word_fields.py`; its test suite covers one-based indexing, start offsets, no-match behavior, and invalid zero-based starts.
+
+
+## Correction: descriptor dictionaries are consumed with Remove; twin comparison uses CompareText
+
+The helper symbols at `0x004D531C` and `0x004D68D4` are not insertion methods:
+- `0x004D531C` is `TDictionary<UnicodeString,TXmlWordConfigField>.Remove`.
+- `0x004D68D4` is `TDictionary<UnicodeString,TXmlWordConfigTwinField>.Remove`.
+
+`AddCustomDocPropertiesToDic` calls these methods while enumerating Word custom properties. It therefore consumes/returns matching descriptors from the single/twin maps at viewer offsets `+0x68` and `+0x6C`; the exact object lifetime and subsequent use of the returned descriptor remain open. Do not describe these call sites as adding descriptors. The separate runtime map at viewer `+0x64` is the `TDictionary<UnicodeString,TDocumentCProperty>` map with its own SetItem/ContainsValue/Remove methods.
+
+The comparison helper `0x00403248` resolves to RTL `System.SysUtils.CompareText`. Consequently, `FillTwinFields` compares the normalized Word field identifier case-insensitively. The Python `find_native_twin_field_index()` now mirrors this with `casefold()`; the signature-end regular-expression branch remains separately case-sensitive.
