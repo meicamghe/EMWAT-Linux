@@ -1,0 +1,40 @@
+name: Analyze EMWAT controller content unpacking
+on:
+  push:
+    paths:
+      - '.github/workflows/analyze-emwat-controller-unarchive.yml'
+      - 'analysis-input/EmwatMethods.bpl1'
+      - 'tools/trace_pe_target.py'
+      - 'tools/trace_td32_procedure.py'
+      - 'tools/trace_td32_callers.py'
+      - 'tools/decode_pe_strings.py'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  controller-content-unpack:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install pefile capstone
+      - name: Trace content unpacking helpers and callsites
+        shell: bash
+        run: |
+          mkdir -p controller-unarchive
+          for address in 0x00456DFC 0x00452C10 0x004563A8; do
+            name=${address#0x}
+            python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 "$address" "controller-unarchive/$name.md" 3000 ret
+            python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 "$address" "controller-unarchive/$name-td32.md" || true
+            python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 "$address" "controller-unarchive/$name-callers.md" || true
+          done
+          python tools/decode_pe_strings.py analysis-input/EmwatMethods.bpl1 0x004BB754 0x004BB76C 0x00456EE0 > controller-unarchive/controller-notify-strings.md
+      - uses: actions/upload-artifact@v4
+        with:
+          name: emwat-controller-content-unpack
+          path: controller-unarchive/
+          if-no-files-found: error
