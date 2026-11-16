@@ -89,6 +89,7 @@ class WordFieldDecodingTests(unittest.TestCase):
         field = decode_word_fields(config)[0]
         self.assertEqual(field.value, bytes.fromhex("01020304"))
         self.assertEqual(field.mimetype, "image/png")
+        self.assertTrue(field.is_image)
 
         unpadded_quartet = parse(
             '<word-document><fields><field id="raw" encryption="base64">AQID</field>'
