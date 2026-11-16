@@ -194,3 +194,9 @@ jobs:
           name: emwat-word-save-print
           path: word-automation/save-print/
           if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        if: hashFiles('analysis-input/EmwatMethods.bpl1') != ''
+        with:
+          name: emwat-word-dispatch-rtti
+          path: word-automation/dispatch/
+          if-no-files-found: error
