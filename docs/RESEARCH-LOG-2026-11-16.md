@@ -376,3 +376,13 @@ The `AddCustomDocPropertiesToDic` trace at `0x004D1454` plus VMT sizes resolves 
 - `viewer + 0x64`: separate runtime custom-property map, whose TD32 methods are `TDictionary<System.UnicodeString,TDocumentCProperty>.SetItem` (`0x004D34B0`), `ContainsValue` (`0x004D3DF8`), and `Remove` (`0x004D3B78`).
 
 Do not flatten these into one string dictionary in the Linux port. The native implementation distinguishes XML single-field descriptors, XML twin-field descriptors, and runtime custom-property objects.
+
+
+## Correction: native DOCPROPERTY extraction edge case
+
+The newly recovered `FindFieldInActivefields` body confirms the implementation uses `TRegEx.IsMatch` for the signature pattern and performs the DOCPROPERTY extraction with Delphi `Pos` and `Copy`:
+1. If `DOCPROPERTY` is absent, preserve the original field code.
+2. Otherwise copy 255 characters starting at `Pos("  ") + 2` (Delphi 1-based); if the double-space delimiter is absent, `Pos` returns zero and the copy begins at character 2.
+3. If the copied segment contains a single space, truncate before it; if not, return the copied segment unchanged.
+
+This exposed a mismatch in the previous Python helper: it returned the original field code when the copied segment had no trailing space. Corrected `extract_docproperty_identifier()` and updated edge-case tests. CI runs `43889650755` and `43889681823` were started for the code and test commits; results are pending.
