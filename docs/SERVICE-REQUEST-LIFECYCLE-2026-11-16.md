@@ -56,3 +56,46 @@ The parser helper `0x0046A7A4` adds a three-value record to an internal collecti
 2. Trace `0x00470D00` and its worker through the three-value parser record into method-class construction.
 3. Decode the string constants used by the handler and finalizer.
 4. Correlate the service finalizer with the BPL long-lived Word wait and actual HTTP response writer.
+
+
+## New binary-backed parser trace — 2026-11-16
+
+The archive-driven CI run extracted `EmwatService.exe` (679,936 bytes) and produced artifact `emwat-service-dispatch-crosswalk` (run `43882629052`, artifact `14232189125`). The service job completed successfully after optional TD32 metadata probes were made non-fatal.
+
+New static observations from the artifact:
+
+### XML parser worker: `0x00470B38`
+
+- Creates/initializes a parser-related object through global factory and helper calls.
+- Repeatedly queries parser state and branches on token-kind bytes at object offset `+0x40`.
+- One branch handles token kind `5`, obtains a value from an object at offset `+0x54` using helper `0x004670A8`, then assigns the result into the caller's structure.
+- Another branch handles token kind `8`, obtains a value through the same object region, and calls `0x0046ADBC` with the parser context and two string-like arguments.
+- This confirms a token-driven parser loop and two distinct token handling paths. The numeric token meanings and the exact strings are not yet established.
+
+### Token-record append helper: `0x0046A7A4`
+
+The helper computes `index * 3`, then writes into a table at 12-byte record intervals:
+- first 32-bit slot receives the incoming `EDX` value;
+- second slot is assigned from stack argument `[EBP+0x0C]` via helper `0x00401220`;
+- third slot is assigned from stack argument `[EBP+0x08]` via the same helper;
+- the collection count at `[EBX+8]` is incremented.
+
+This establishes the physical three-slot record layout. The semantic names/types of the three values remain unresolved; do not label them as name/value/type until corroborated by token constants or runtime fixtures.
+
+### Parser record caller: `0x0046ADBC`
+
+The caller grows/obtains a record index, retrieves parser state, and passes the index plus two string-like arguments to `0x0046A7A4`. This links the token parser worker to the three-slot collection append operation.
+
+### Handler and route helper
+
+The fresh `0x0047BF30` trace confirms:
+- the handler calls `0x0047E0EC` at `0x0047C08D`;
+- a false return follows a separate error/logging path;
+- a true return calls XML parser wrapper `0x00470D00` at `0x0047C0C5`;
+- the handler then reaches finalizer helper `0x0047E2D4`.
+
+The route helper `0x0047E0EC` reads an object pointer from `self+0x428` and invokes its first virtual slot. Its identity and semantic role are still unknown.
+
+### CI correction
+
+The first archive-backed service run failed only after writing the six requested address traces: optional class/VMT/interface metadata probes returned non-zero because the service PE did not expose the expected TD32 signature. Commit `ce79705a41d97baf90a8b19219a1eb606fe02290` makes those optional probes non-fatal. The follow-up service job in run `43882629052` completed successfully and uploaded the artifact above.
