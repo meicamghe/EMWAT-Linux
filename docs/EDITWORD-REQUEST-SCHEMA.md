@@ -74,10 +74,11 @@ The `requested-types` section asks for `mimetype="application/msword"`.
 1. Keep `wordConfig` parsing separate from the outer method envelope. It is a second XML document carried as Base64 text.
 2. Preserve unknown field IDs and attributes; the 180-field sample is not a complete schema guarantee.
 3. Treat each field's `encryption`, `mimetype`, `paramId`, `separator`, and `concater` attributes as per-field transformation metadata. Do not globally URL-decode or Base64-decode every field.
-4. Model signer arrays with indexed slots, but preserve original IDs and order when serializing.
-5. Keep document bytes opaque until the office-engine adapter has loaded/saved them. The captured `wordBody` is legacy DOC/CFB, not OOXML ZIP.
-6. Respect per-request permissions such as `allowPrint`; do not hard-code the captured permission values as global defaults.
-7. Do not log field values, `tokenizedReceivers`, signature data, or document contents.
+4. Parse the observed U+2020 dagger delimiter into an optional two-part Twin Field identifier while preserving the original raw ID and field order. Empty-side identifiers remain single IDs, matching the observed native branch.
+5. Model signer arrays with indexed slots, but preserve original IDs and order when serializing.
+6. Keep document bytes opaque until the office-engine adapter has loaded/saved them. The captured `wordBody` is legacy DOC/CFB, not OOXML ZIP.
+7. Respect per-request permissions such as `allowPrint`; do not hard-code the captured permission values as global defaults.
+8. Do not log field values, `tokenizedReceivers`, signature data, or document contents.
 
 ## 6. Reproducibility
 
