@@ -28,6 +28,8 @@
 
 ## پیشرفت اجرایی جدید — 2026-11-16
 
+- **تست end-to-end متد Adapter:** `LibreOfficeAdapter.apply_custom_property_updates()` اکنون در fixture واقعی فراخوانی می‌شود؛ دو run UNO شماره 43815561042 و 43815592590 هر دو ۸/۸ پاس شدند. Python run `43815578467` نیز ۹۹ تست را پاس کرد (۹۸ پاس و یک skip). مسیر DOCPROPERTY به‌روزرسانی property، refresh فیلد و export DOC/CFB در تست واقعی تأیید شد.
+
 - **همسان‌سازی URL decoder با native:** ثابت `0x00455454` برابر یک فاصله است؛ helper native در `urlencoded` مقدار `+` را به space و `%2B` را به `+` تبدیل می‌کند. decoder پایتون به `unquote_plus` تغییر کرد و تست هر دو حالت اضافه شد. helper نهایی تبدیل Base64 به Unicode در `0x004738CC` هنوز باید بررسی شود؛ مسیر تصویر همچنان باید bytes خام را حفظ کند.
 
 - **عملیات batch برای propertyها:** `writer_properties.set_custom_document_properties` قبل از هر تغییر، تمام نام‌های دقیق را validate می‌کند و اگر property ناشناخته باشد هیچ بخشی از batch اعمال نمی‌شود؛ مقدارهای غیرمتنی هم رد می‌شوند. `LibreOfficeAdapter.apply_custom_property_updates` این batch را اعمال و پس از آن Writer fieldها را یک‌بار refresh می‌کند. Python run `43815578467` سبز شد: ۹۹ تست، ۹۸ پاس و یک skip اختیاری. تست UNO مخصوص متد جدید هنوز در حال اجراست.
