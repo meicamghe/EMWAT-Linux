@@ -364,3 +364,15 @@ These checks validate the adapter and composition boundary. They do not establis
 
 - `IEDPController`/`TEDPController` interface slots and print-handler methods are now indexed; the print option unit is kept separate from the main editor close-registration path.
 - `FillImageField` and `AddImagesToDoc` call paths are mapped at the procedure level, but actual Almas image anchors and field IDs remain template-dependent.
+
+
+## Image field storage and service executable trace — 2026-11-16
+
+| Workflow | Run ID | Result |
+|---|---:|---|
+| Word image/text field analysis | 43822121391 | success — artifact `14204378458` |
+| Service HTTP executable scan | 43822306144 | success — artifact `14204299947` |
+
+- Native `FillImageField` explicitly distinguishes `CustomDocumentProperties[index]` from `Field.Result.Text` storage and reports locked/twin-field paths. The Python decoder now exposes a tested `is_image` flag based on `mimetype` beginning with `image/`.
+- Image/caption alignment values were decoded, but mapping these to actual template anchors still requires an anonymized Almas DOC/DOCX.
+- The service executable is PE32 and includes Indy HTTP response RTTI and `invoke=` strings, but no TD32 symbol data. The service workflow now has an additional VMT-resolution pass to map the Indy response/server classes.
