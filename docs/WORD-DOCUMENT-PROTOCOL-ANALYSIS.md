@@ -1463,3 +1463,18 @@ Artifact from the custom-property pipeline (run `43816922782`, artifact `1420350
 The Linux implementation already decodes Base64 to bytes, but Python's `base64.b64decode(validate=True)` is stricter about malformed padding/characters than the native routine's final-quartet path appears to be. Do not weaken validation based on malformed-input behavior without a real captured field example. Next tests should cover standard padded Base64, unpadded input, invalid alphabet, whitespace, and the observed period/delimiter case. This trace does not change the field-to-Writer mapping or prove how `signData` is concatenated.
 
 **Evidence:** `SetFieldValue` at `0x004BFDB0`, helpers `0x00455108`, `0x004735D0`, `0x004738CC`, `0x00473608`, `0x00473700`; artifact `14203500487`.
+
+
+## Run 133 — مدل نوع‌های XML و twin-field از VMT/TD32
+
+The lifecycle artifact for run `43815900208` includes the following verified class/interface metadata:
+
+- `TXMLFieldType`: VMT `0x004751E4`, instance size `0x5C`, interface table `0x00475168`, interface VTable `0x00475084`, interface offset `0x50`, IID `cbe7001d-902b-4edd-80a7-048e49c6bbd6`.
+- TD32 symbols identify property accessors on this type: `Get_Id` (`0x00478444`), `Get_Mimetype` (`0x00478568`), `Get_Encryption` (`0x004786A4`), `Get_Separator` (`0x004787F0`), `Get_Concator` (`0x0047893C`), `Get_ParamId` (`0x00478A84`), and `Get_IsNew` (`0x00478BC8`), with corresponding setters.
+- `TDocumentCProperty`: VMT `0x004B05A8`, instance size `0x1C`.
+- `TXmlWordConfigField`: VMT `0x004B068C`, instance size `0x10`.
+- `TXmlWordConfigTwinField`: VMT `0x004B0774`, instance size `0x18`.
+
+This establishes that `separator`, `concater`, and `paramId` are first-class typed properties on the XML field model, not merely arbitrary strings found in a sample. It does **not** yet establish how the Word viewer consumes them or whether `concater` is a prefix/suffix, join delimiter, or field-specific formatting token. A new targeted run traces the getter/setter bodies and inspects the three viewer-side VMT layouts before any Linux behavior is implemented.
+
+Evidence: `Word-interface-tables.md`, `Word-close-symbol-inventory.md`, lifecycle run `43815900208`, artifact `14202811972`.
