@@ -47,9 +47,13 @@ class OfficeAdapter(Protocol):
     def wait_for_close(self, handle: object) -> OfficeCloseEvent:
         """Wait until the document is actually closed or discarded.
 
-        A native close-prompt Cancel vetoes only that close attempt. The adapter
+        A close veto reported by the office engine is non-terminal: the adapter
         must keep the document/session alive and continue waiting for a later
-        close attempt; it must not return a terminal close event for that choice.
+        close attempt. Do not infer a distinct native BeforeClose event from the
+        BeforeSave callback's Cancel argument: the recovered Word event-sink
+        registration installs BeforeSave, while the TD32-named
+        WordAppDocumentBeforeClose routine is not installed in that registration
+        block and has a direct caller in the print-field path.
         """
 
     def export_final_document(self, handle: object) -> bytes:
