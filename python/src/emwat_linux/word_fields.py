@@ -9,7 +9,7 @@ import base64
 import binascii
 import re
 from dataclasses import dataclass
-from typing import Mapping
+from typing import Mapping, Sequence
 from urllib.parse import unquote_plus
 
 from emwat_linux.word_config import WordDocumentConfig
@@ -78,6 +78,26 @@ def extract_docproperty_identifier(field_code: str) -> str:
     if next_space < 0:
         return segment
     return segment[:next_space]
+
+
+def find_native_twin_field_index(
+    field_codes: Sequence[str],
+    target_identifier: str,
+    *,
+    start_index: int = 1,
+) -> int:
+    """Find a twin-field partner using the native one-based Word Fields scan.
+
+    FillTwinFields starts at start_index, extracts each Word Field.Code through
+    FindFieldInActivefields, and returns the first matching one-based index.
+    Native code returns zero when no matching partner is found.
+    """
+    if start_index < 1:
+        raise ValueError("start_index must be one-based and positive")
+    for index in range(start_index, len(field_codes) + 1):
+        if extract_docproperty_identifier(field_codes[index - 1]) == target_identifier:
+            return index
+    return 0
 
 
 @dataclass(frozen=True)
