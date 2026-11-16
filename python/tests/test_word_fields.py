@@ -55,11 +55,19 @@ class WordFieldDecodingTests(unittest.TestCase):
         triple_space = "DOCPROPERTY    LetterSubject  \\* MERGEFORMAT"
         self.assertEqual(extract_docproperty_identifier(triple_space), "")
 
-    def test_preserves_non_docproperty_or_unterminated_field_code(self):
+    def test_preserves_non_docproperty_and_matches_native_unterminated_copy(self):
         code = r"MERGEFIELD  LetterSubject  \* MERGEFORMAT"
         self.assertEqual(extract_docproperty_identifier(code), code)
+
+        # Native Copy(..., Pos("  ") + 2, 255) leaves the copied identifier
+        # intact when there is no following single space.
         unterminated = "DOCPROPERTY  LetterSubject"
-        self.assertEqual(extract_docproperty_identifier(unterminated), unterminated)
+        self.assertEqual(extract_docproperty_identifier(unterminated), "LetterSubject")
+
+        # Delphi Pos returns 0 when the double-space delimiter is absent;
+        # the native Copy then starts at character 2.
+        missing_double_space = "DOCPROPERTY LetterSubject"
+        self.assertEqual(extract_docproperty_identifier(missing_double_space), "OCPROPERTY")
 
     def test_docproperty_keyword_match_is_case_sensitive(self):
         code = r"docproperty  LetterSubject  \* MERGEFORMAT"
