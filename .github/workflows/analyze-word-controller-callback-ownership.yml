@@ -57,6 +57,14 @@ jobs:
           status=0
           for pid in "${pids[@]}"; do wait "$pid" || status=1; done
           exit "$status"
+      - name: Trace timer registration and callback owner
+        run: |
+          mkdir -p word-controller-callback-ownership/timer
+          python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x004B9900 0x004B9A80 word-controller-callback-ownership/timer/OnTmrAutoSave-timer-registration.md
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004B999A word-controller-callback-ownership/timer/OnControlerNotify-registration-site.md 1800 ret
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004D2EC8 word-controller-callback-ownership/timer/TEDPController-Notify.md 1800 ret
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004D2EC8 word-controller-callback-ownership/timer/TEDPController-Notify-callers.md
+          python tools/trace_td32_immediate_refs.py analysis-input/EmwatMethods.bpl1 0x004D2EC8 word-controller-callback-ownership/timer/TEDPController-Notify-immediate-refs.md
       - name: Index controller and viewer symbols
         run: |
           python tools/list_td32_symbols.py analysis-input/EmwatMethods.bpl1 \
