@@ -57,6 +57,7 @@ def is_native_business_signature_end(field_name: str) -> bool:
     """
     return _NATIVE_BUSINESS_SIGNATURE_END.fullmatch(field_name) is not None
 
+
 def extract_docproperty_identifier(field_code: str) -> str:
     """Mirror EMWAT's DOCPROPERTY field-code extraction.
 
