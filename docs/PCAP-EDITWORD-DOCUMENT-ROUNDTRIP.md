@@ -113,3 +113,17 @@ The metadata-only analyzer for `tcp-payloads.txt` (network-capture workflow run 
 - HTTP 200 response, XML root/status `response-word / success`, returned MIME/encryption `application/msword / base64`, response Base64 text length 1,166,680, decoded prefix again `d0cf11e0a1b11ae1`.
 
 This is a useful independent metadata cross-check for the PCAP round-trip report. The Wireshark text export has frame order but no TCP sequence column; it is not used for byte-perfect reassembly or full-document comparison. Sequence-gap accounting and the incomplete-response caveat remain governed by the PCAP/Scapy analysis above.
+
+## Static explanation for the delayed response — 2026-11-16
+
+The approximately 54.558-second gap between the final request-body byte and the first HTTP response byte is now explained by the BPL control flow:
+
+- `TWordViwer.LoadDocument` calls `OnTmrAutoSave` synchronously at `0x004B7A58`.
+- `OnTmrAutoSave` loops at `0x004B9AE8`: `Sleep(5)`, `TApplication.ProcessMessages`, then tests viewer field `+0x58`.
+- While viewer `+0x58` remains nonzero, it continues polling. Every 200 iterations it performs a maintenance/check block and repeats; 200 iterations is not a total one-second timeout.
+- The registered close/registration callback at `0x004CD154` invokes Word `Document.Close` and clears viewer `+0x58` at `0x004CD31C`.
+- The loop exits; `LoadDocument` then writes the `response-word` XML through Indy `TIdHTTPResponseInfo.WriteContent` and sets `bResultSet`.
+
+This makes the captured delay consistent with the period during which the Word document remains open. The callback's formal COM event DISPID and the initial nonzero setter for viewer `+0x58` remain under investigation. The periodic `.easz` archive remains a separate local recovery path until its relation to the returned DOC is proven.
+
+See `docs/WORD-RESPONSE-TIMER-CORRELATION-2026-11-16.md` and `docs/WORD-LIFECYCLE-STATIC-TRACE.md` Run 153 for the full static trace references.
