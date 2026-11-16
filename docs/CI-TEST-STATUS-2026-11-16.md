@@ -340,3 +340,27 @@ These checks validate the adapter and composition boundary. They do not establis
 - The live UNO integration now performs DOCX → legacy CFB `.doc` export, then reopens that `.doc` as the incoming document and exports it again.
 - The second pass verifies imported document text, the `LetterSubject` bookmark, and the updated custom document property.
 - This closes an important engine-boundary gap because the captured EMWAT request uses legacy DOC/CFB. It still uses a synthetic fixture; original Almas template fidelity and interactive close-choice semantics remain unverified.
+
+
+## Real UNO service/handler response integration — 2026-11-16
+
+| Workflow | Run ID | Result |
+|---|---:|---|
+| Python bridge transport | 43821716274 | success — 102 tests, 100 passed, 2 optional integration tests skipped |
+| LibreOffice UNO integration | 43821716306 | success — 11/11 passed |
+
+- New live test covers captured-format `EditWordDocument` request parsing → real LibreOffice UNO document open/close → service/handler → serialized `response-word` response.
+- It verifies `application/msword`, Base64 encoding, and a returned legacy CFB `.doc` payload.
+- The same test suite also verifies reopening a generated CFB `.doc` request, retaining its text, bookmark, and custom document property.
+- This is synthetic-fixture integration; no original Almas template or Yes/No/Cancel parity has been tested.
+
+## Parallel reverse-engineering workflow results — 2026-11-16
+
+| Workflow | Run ID | Result |
+|---|---:|---|
+| Controller callback ownership | 43821043328 | success — artifact `14204701301` |
+| Print-handler/controller wiring | 43821379564 | success — artifact `14204039496` |
+| Image/text-field path | 43821526090 | success — artifact `14204287692` |
+
+- `IEDPController`/`TEDPController` interface slots and print-handler methods are now indexed; the print option unit is kept separate from the main editor close-registration path.
+- `FillImageField` and `AddImagesToDoc` call paths are mapped at the procedure level, but actual Almas image anchors and field IDs remain template-dependent.
