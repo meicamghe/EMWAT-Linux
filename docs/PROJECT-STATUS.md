@@ -15,8 +15,8 @@
 - Python CI run `43814423443` موفق شد: **94 تست پاس** و یک تست اختیاری UNO skip.
 - `word_fields.py` اکنون `extract_docproperty_identifier` را برای استخراج شناسه از Word field codeهای `DOCPROPERTY` دارد؛ رفتار فاصله‌گذاری و fallback مطابق trace بومی تست شده است.
 - دو شاخهٔ واقعی `SetFieldValue` از ثابت‌ها decode شدند: `urlencoded` و `base64`؛ مقادیر دیگر مستقیم به setter می‌رسند.
-- helperهای زیرین decode هنوز در workflow run `43814583673` در حال بررسی‌اند؛ به‌خصوص رفتار دقیق علامت `+` در URL-encoding هنوز قطعی اعلام نمی‌شود.
-- runهای close-response و custom-property helper نیز برای تکمیل traceهای VMT و helperهای تبدیل در حال اجرا هستند؛ تا دریافت artifact نهایی نتیجه‌ای به آن‌ها نسبت داده نمی‌شود.
+- helperهای decode در workflow run `43814583673` و artifact `14201588063` بررسی شدند: `0x00455314` درصدهای `%HH` را decode می‌کند و `+` را به فاصله تبدیل می‌کند؛ Python با `unquote_plus` و تست `A+B%20C → A B C` هم‌راستا شد.
+- custom-property helper run `43815255639` موفق شد و artifact `14201569927` را تولید کرد؛ workflow بعدی `43815667035` رشته‌های Rec/CC را هم decode می‌کند. close-response VMT/interface trace run `43815434200` هنوز در حال اجراست.
 
 ## به‌روزرسانی تأییدشده — 2026-11-16 (مرحله موازی بعدی)
 
