@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import base64
 import binascii
+import re
 from dataclasses import dataclass
 from typing import Mapping
 from urllib.parse import unquote
@@ -42,6 +43,8 @@ def _decode_value(text: str, encoding: str | None, *, field_id: str) -> str | by
     if not normalized:
         return text
     if normalized == "urlencoded":
+        if re.search(r"%(?![0-9A-Fa-f]{2})", text):
+            raise WordFieldDecodeError(f"field_url_decode_failed:{field_id}")
         try:
             return unquote(text, encoding="utf-8", errors="strict")
         except (UnicodeDecodeError, ValueError) as exc:
