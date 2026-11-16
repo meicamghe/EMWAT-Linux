@@ -1,0 +1,76 @@
+name: Analyze EMWAT controller callback ownership
+on:
+  push:
+    paths:
+      - '.github/workflows/analyze-word-controller-callback-ownership.yml'
+      - 'analysis-input/EmwatMethods.bpl1'
+      - 'tools/trace_td32_procedure.py'
+      - 'tools/trace_td32_callers.py'
+      - 'tools/trace_pe_target.py'
+      - 'tools/scan_pe_pointer_refs.py'
+      - 'tools/list_td32_symbols.py'
+      - 'tools/decode_pe_strings.py'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  controller-callback-ownership:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install pefile capstone
+      - name: Trace controller, viewer, and print-handler methods in parallel
+        shell: bash
+        run: |
+          mkdir -p word-controller-callback-ownership
+          targets=(004D2EC8 004D2F2C 004D2F44 004D2F60 004D08B4 004D0D24 004B8A84 004BB3B0 004A8F78 005EE82C 004B7724 004BB81C)
+          pids=()
+          for target in "${targets[@]}"; do
+            (
+              set -e
+              python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x$target word-controller-callback-ownership/procedure-$target.md
+              python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x$target word-controller-callback-ownership/callers-$target.md
+              python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 0x$target word-controller-callback-ownership/pointer-refs-$target.md
+            ) &
+            pids+=("$!")
+          done
+          status=0
+          for pid in "${pids[@]}"; do wait "$pid" || status=1; done
+          exit "$status"
+      - name: Extend disassembly across viewer initialization and controller dispatch
+        shell: bash
+        run: |
+          pids=()
+          for spec in "004B7724 5600" "004B8A84 12000" "004BB3B0 1400" "004D08B4 1600" "004D0D24 1400" "004D2EC8 700" "004D2F2C 400" "004D2F44 400" "004D2F60 700" "004A8F78 500" "005EE82C 1200" "004BB81C 2600"; do
+            (
+              set -e
+              set -- $spec
+              python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x$1 word-controller-callback-ownership/extended-$1.md $2 ret
+            ) &
+            pids+=("$!")
+          done
+          status=0
+          for pid in "${pids[@]}"; do wait "$pid" || status=1; done
+          exit "$status"
+      - name: Index controller and viewer symbols
+        run: |
+          python tools/list_td32_symbols.py analysis-input/EmwatMethods.bpl1 \
+            TEDPController TEmwatDocPrintHandler TWordViwer TScanDocument TEditWordDocument \
+            > word-controller-callback-ownership/controller-symbols.md
+      - name: Decode controller and lifecycle strings
+        run: |
+          python tools/decode_pe_strings.py analysis-input/EmwatMethods.bpl1 \
+            0x004B81E4 0x004B8220 0x004B8238 0x004B862C \
+            0x004D1704 0x004D1768 0x004D1778 0x004D13F0 0x004D1384 \
+            0x004D21D4 0x004D2228 0x004D225C 0x004D226C \
+            0x004D22B8 0x004D2304 0x004D2350 0x004D239C \
+            > word-controller-callback-ownership/controller-strings.md
+      - uses: actions/upload-artifact@v4
+        with:
+          name: emwat-word-controller-callback-ownership
+          path: word-controller-callback-ownership/
