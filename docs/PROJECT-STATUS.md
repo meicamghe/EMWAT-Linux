@@ -19,6 +19,8 @@
 
 ## پیشرفت اجرایی جدید — 2026-11-16
 
+- **تفکیک AutoSave محلی از ثبت نامه:** artifact run `43814607589` نشان داد `OnControlerNotify` رشته `AutoSave. EmwatAutoSaveDOC.Execute called.` را دارد، دو مسیر را از state داخلی می‌سازد، پسوندهای `.easd` و `.easz` را اضافه می‌کند و به `euUnArchive` می‌دهد. بنابراین این handler در مسیر آرشیو/بازیابی محلی نقش دارد؛ هیچ POST یا ثبت نهایی در الماس از آن اثبات نشده است. `TWordDocument.Save` نیز slot `+0x2B8` را صدا می‌زند و direct CALL xref در scan فعلی ندارد.
+
 - **تعیین هویت slot مربوط به Controller Notify:** wrapper `TWordDocument.Get_Content` در `0x0042BDF8` از COM slot `+0xDC` استفاده می‌کند؛ بنابراین فراخوانی `OnControlerNotify` به `+0xDC` مسیر Content سند است، نه Saved getter/setter. مقدار `-1` که در آن call ارسال می‌شود هنوز معنای دقیقش مشخص نیست. wrapperهای Saved نیز قطعی‌اند: `Get_Saved`=`+0xD4` و `Set_Saved`=`+0xD8`.
 - **CI تکمیلی Close/Content:** run شماره 43814460258 موفق شد و artifact شماره 14201473774 را تولید کرد.
 
