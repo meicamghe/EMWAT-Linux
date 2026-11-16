@@ -1,0 +1,51 @@
+name: Analyze EMWAT Word custom-property helpers
+on:
+  push:
+    paths:
+      - '.github/workflows/analyze-word-custom-property-pipeline.yml'
+      - 'analysis-input/EmwatMethods.bpl1'
+      - 'tools/trace_td32_procedure.py'
+      - 'tools/trace_td32_callers.py'
+      - 'tools/trace_pe_target.py'
+      - 'tools/scan_pe_pointer_refs.py'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  custom-property-pipeline:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install pefile capstone
+      - name: Trace custom-property, field-name, and silent-save helpers in parallel
+        shell: bash
+        run: |
+          mkdir -p word-custom-property-pipeline
+          printf '%s\n' 004D531C 004D68D4 004D1808 004CB638 004D3F24 004D4528 004D45CC 004D23D8 > /tmp/targets
+          while read -r target; do
+            (
+              python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x$target word-custom-property-pipeline/procedure-$target.md
+              python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x$target word-custom-property-pipeline/callers-$target.md
+              python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 0x$target word-custom-property-pipeline/pointer-refs-$target.md
+            ) &
+          done < /tmp/targets
+          wait
+      - name: Extend helper disassembly around field and dictionary operations
+        shell: bash
+        run: |
+          for spec in "004D531C 900" "004D68D4 900" "004D1808 700" "004D23D8 1200" "004CB638 700" "004D3F24 700" "004D4528 700" "004D45CC 500"; do
+            (
+              set -- $spec
+              python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x$1 word-custom-property-pipeline/extended-$1.md $2 ret
+            ) &
+          done
+          wait
+      - uses: actions/upload-artifact@v4
+        with:
+          name: emwat-word-custom-property-pipeline
+          path: word-custom-property-pipeline/
