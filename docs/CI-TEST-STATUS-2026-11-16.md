@@ -249,3 +249,17 @@ These checks validate the adapter and composition boundary. They do not establis
 - Follow-up analysis run **43815667035** adds string decoding for the `ShowRecAndCcOptionForm` constants at `0x004D21D4–0x004D239C`; its result is pending.
 - The native URL decoder at `0x00455314` scans percent escapes and maps plus to a space; this is now matched by Python `unquote_plus` and covered by a test.
 
+
+
+## Adapter-level custom-property batch round-trip — 2026-11-16
+
+| Workflow | Run ID | Commit | Result |
+|---|---:|---|---|
+| Python bridge transport | 43815578467 | adf239d6ae2375f8c31c81ab420a02e20dc4e1db | success |
+| LibreOffice UNO integration | 43815561042 | 82c437067c58ef64eca6c1b1e2745cd2a9ff97df | success |
+| LibreOffice UNO integration | 43815592590 | 2ab9657e3d458be50c00177125c6c9b6824b7607 | success |
+
+- Python: **99 tests run, 98 passed, 1 optional UNO test skipped**.
+- Both UNO runs: **8/8 tests passed**.
+- The integration now calls LibreOfficeAdapter.apply_custom_property_updates() rather than invoking property mutation and field refresh separately. The adapter validates exact existing property names, applies the batch, then refreshes Writer text fields once.
+- The UNO fixture confirms the imported DOCPROPERTY display updates to the new custom-property value and the document exports to legacy DOC/CFB.
