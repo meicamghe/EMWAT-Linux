@@ -2,7 +2,7 @@
 
 The inspector intentionally excludes document text, field values, images, and
 custom-property values. It is designed to map EMWAT field IDs to Writer
-bookmarks, named ranges, text fields, sections, tables, and graphic objects.
+bookmarks, named ranges, text fields, custom-property names, sections, tables, and graphic objects.
 """
 from __future__ import annotations
 
