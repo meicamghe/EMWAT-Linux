@@ -13,6 +13,7 @@ on:
       - 'tools/trace_delphi_interfaces.py'
       - 'tools/inspect_delphi_vmt_address.py'
       - 'tools/trace_td32_immediate_refs.py'
+      - 'tools/scan_pe_pointer_refs.py'
   workflow_dispatch:
 
 permissions:
@@ -90,6 +91,11 @@ jobs:
           done
           python tools/trace_td32_immediate_refs.py analysis-input/EmwatMethods.bpl1 0x005EE82C dispatch-crosswalk/bpl/editword-method-immediate-refs.md
           python tools/trace_td32_immediate_refs.py analysis-input/EmwatMethods.bpl1 0x005EEB48 dispatch-crosswalk/bpl/scandoc-method-immediate-refs.md
+          for address in 0x0046ABFC 0x005ED764 0x005ED884 0x005ED99C 0x005EDAB4 0x005EDBD4 0x005EDCF4 0x005EDE0C 0x005EDF24 0x005EE04C; do
+            name=${address#0x}
+            python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 "$address" "dispatch-crosswalk/bpl/vmt-$name-pointer-refs.md"
+            python tools/trace_td32_immediate_refs.py analysis-input/EmwatMethods.bpl1 "$address" "dispatch-crosswalk/bpl/vmt-$name-immediate-refs.md"
+          done
       - uses: actions/upload-artifact@v4
         with:
           name: emwat-bpl-dispatch-crosswalk
