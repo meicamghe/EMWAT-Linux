@@ -111,11 +111,6 @@ def _custom_document_property_names_in_order(document: object) -> tuple[str, ...
         return ()
 
 
-def _custom_document_property_names(document: object) -> tuple[str, ...]:
-    """Return sorted custom-property names only; never retrieve property values."""
-    return tuple(sorted(_custom_document_property_names_in_order(document)))
-
-
 def inspect_writer_document(document: object) -> WriterDocumentCatalog:
     """Return structural names and text-field metadata without document values."""
     property_names_in_order = _custom_document_property_names_in_order(document)
