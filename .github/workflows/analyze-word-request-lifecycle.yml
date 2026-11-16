@@ -60,6 +60,19 @@ jobs:
           done
           python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004B7724 request-lifecycle-analysis/loaddocument/LoadDocument-direct-callers.md
           python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004B7F9C request-lifecycle-analysis/loaddocument/LoadDocument-response-writer-callers.md
+      - name: Trace response XML builder and returned document payload
+        shell: bash
+        run: |
+          mkdir -p request-lifecycle-analysis/response-builder
+          for target in 00468198 00468150 004011B8 004011B0 00401260 00401370 00401398 00402B6C; do
+            python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x$target request-lifecycle-analysis/response-builder/target-$target.md 1400 ret
+            python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x$target request-lifecycle-analysis/response-builder/procedure-$target.md || true
+            python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x$target request-lifecycle-analysis/response-builder/callers-$target.md || true
+          done
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004B7F74 request-lifecycle-analysis/response-builder/LoadDocument-response-constructor-callsite.md 500 ret
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004B7F83 request-lifecycle-analysis/response-builder/LoadDocument-response-write-tail.md 500 ret
+          python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x004B7F31 0x004B7FD8 request-lifecycle-analysis/response-builder/LoadDocument-response-builder-range.md
+          python tools/decode_pe_strings.py analysis-input/EmwatMethods.bpl1 0x004B88FC 0x004B8978 0x004B89B8 0x004B89FC 0x004B8A50 > request-lifecycle-analysis/response-builder/response-builder-strings.md
       - name: Resolve LoadDocument and OnTmrAutoSave helper behavior
         run: |
           mkdir -p request-lifecycle-analysis/remaining-helpers
