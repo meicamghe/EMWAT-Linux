@@ -639,3 +639,11 @@ The service helper traces (`14266694185`) resolve the three calls in `ParseMetho
 - `0x004010D8` is the import thunk for `TObject.Create` (IAT `0x00487450`). It constructs an instance of the class returned by `GetClass`.
 
 Thus the class-name validation and object-construction sequence is confirmed, not inferred. The subsequent VMT `+0x0C` call remains the final dispatch slot to map to the BPL method.
+
+## Service-to-BPL dispatch edge closed through TEmwatMethod VMT
+
+The service call at `0x00470EF6` is `call dword ptr [object.VMT+0x0C]`. The BPL VMT for `TEmwatMethod` (`0x0046ABFC`) has slot `+0x0C = 0x0046C9E0`, TD32-labelled `@Emwatmethod@Finalization$qqrv`. The TD32 direct-caller artifact for `TEmwatMethod.Invoke` (`0x0046C82C`) shows that this `Finalization` routine calls `Invoke` at `0x0046CA67`. Therefore the cross-module chain is now proven:
+
+`EmwatService.ParseMethod` → `GetClass` → `TObject.Create` → object VMT slot `+0x0C` → `TEmwatMethod.Finalization` (`0x0046C9E0`) → `TEmwatMethod.Invoke` (`0x0046C82C`).
+
+The remaining detail is to expand `Invoke` beyond its first internal RET and document its indirect call to the subclass `PerformMethod` slot `+0x10`, which is overridden by `TEditWordDocument.PerformMethod` (`0x005EE82C`). The object-creation and cross-module Invoke entry are no longer open questions.
