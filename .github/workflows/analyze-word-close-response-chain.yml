@@ -73,6 +73,10 @@ jobs:
             word-close-response-chain/pointer-refs-005EE82C.md
           python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 0x005ED764 \
             word-close-response-chain/pointer-refs-005ED764.md
+          for target in 0042BD34 0042BD94 0042BDF8 0042BE50 0042BEB0 0042BF10; do
+            python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 0x$target \
+              word-close-response-chain/pointer-refs-$target.md
+          done
       - uses: actions/upload-artifact@v4
         with:
           name: emwat-word-close-response-chain
