@@ -12,6 +12,7 @@ on:
       - 'tools/resolve_delphi_vmt_slots.py'
       - 'tools/trace_delphi_interfaces.py'
       - 'tools/trace_td32_immediate_refs.py'
+      - 'tools/inspect_delphi_vmt_address.py'
   workflow_dispatch:
 
 permissions:
@@ -41,6 +42,9 @@ jobs:
           python tools/resolve_delphi_vmt_slots.py analysis-input/EmwatMethods.bpl1 controller-unarchive/sevenzip-vmt.md
           python tools/trace_delphi_interfaces.py analysis-input/EmwatMethods.bpl1 controller-unarchive/sevenzip-interfaces.md
           python tools/trace_td32_immediate_refs.py analysis-input/EmwatMethods.bpl1 0x00452C10 controller-unarchive/T7zPlugin-constructor-refs.md
+          python tools/inspect_delphi_vmt_address.py analysis-input/EmwatMethods.bpl1 0x00451E08 controller-unarchive/vmt-T7zPlugin.md
+          python tools/inspect_delphi_vmt_address.py analysis-input/EmwatMethods.bpl1 0x004525B0 controller-unarchive/vmt-T7zInArchive.md
+          python tools/inspect_delphi_vmt_address.py analysis-input/EmwatMethods.bpl1 0x00452A40 controller-unarchive/vmt-T7zOutArchive.md
       - uses: actions/upload-artifact@v4
         with:
           name: emwat-controller-content-unpack
