@@ -99,3 +99,26 @@ The route helper `0x0047E0EC` reads an object pointer from `self+0x428` and invo
 ### CI correction
 
 The first archive-backed service run failed only after writing the six requested address traces: optional class/VMT/interface metadata probes returned non-zero because the service PE did not expose the expected TD32 signature. Commit `ce79705a41d97baf90a8b19219a1eb606fe02290` makes those optional probes non-fatal. The follow-up service job in run `43882629052` completed successfully and uploaded the artifact above.
+
+
+## Important correction — 0x0047E0EC is a BPL package loader gate, not a generic route validator
+
+The extended archive-backed trace decoded the constants used by `0x0047E0EC`. It passes the literal package name `EmwatMethods.bpl` to helper `0x00401308`, then tests the result of helper `0x00402174`. Its two branches log:
+- `Unable to load "EmwatMethods.bpl".`
+- `"EmwatMethods.bpl" loaded.`
+
+The routine returns a Boolean to its caller. Therefore the earlier neutral label “route helper” was misleading: the strongest supported interpretation is that this is a package-load/check gate for `EmwatMethods.bpl`, not endpoint selection or authentication.
+
+The MainForm handler's call at `0x0047C08D` is now understood as:
+1. prepare/check that the `EmwatMethods.bpl` package is loaded;
+2. if the check fails, take the error/logging branch;
+3. if it succeeds, call the XML parser at `0x00470D00`.
+
+The same string decode found:
+- `invoke` at `0x0047C360`, passed to a request-object virtual method in the handler;
+- `Emwat method called from ` at `0x0047C37C`;
+- response-header-like literals `Access-Control-Allow-Origin:*`, `Access-Control-Allow-Headers:*`, and the exact singular spelling `Access-Control-Allow-Method:*`.
+
+This is strong evidence for an `invoke` command/route token and CORS-related response headers. The precise HTTP verb, full URL path, header-setting API, and status/body contract remain unresolved. Do not normalize the singular `Allow-Method` literal to the standards spelling in compatibility code unless runtime capture proves the original behavior is different.
+
+The updated parser/loader artifact is `emwat-service-parser-followup`, run `43882768547`, artifact `14233102935`. Its bounded traces also confirm the XML parser compares the literal child names `method`, `class`, `param`, and `name`.
