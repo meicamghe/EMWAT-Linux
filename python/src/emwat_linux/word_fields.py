@@ -58,7 +58,7 @@ def extract_docproperty_identifier(field_code: str) -> str:
         return field_code
     separator = field_code.find("  ")
     # Delphi Pos returns 0 when absent; Copy(..., Pos + 2, ...) is 1-based.
-    start = separator + 1 if separator >= 0 else 1
+    start = separator + 2
     segment = field_code[start : start + 255]
     next_space = segment.find(" ")
     if next_space < 0:
