@@ -1,0 +1,55 @@
+name: Analyze Indy WriteContent helper chain
+on:
+  push:
+    paths:
+      - '.github/workflows/analyze-indy-writecontent-helper-chain.yml'
+      - 'EMWAT_Extracted.zip'
+      - 'tools/trace_pe_target.py'
+      - 'tools/scan_pe_pointer_refs.py'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  writecontent-helper-chain:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install pefile capstone
+      - name: Extract EmwatService
+        run: |
+          python - <<'PY'
+          import pathlib, zipfile
+          archive = zipfile.ZipFile("EMWAT_Extracted.zip")
+          matches = [n for n in archive.namelist() if pathlib.PurePosixPath(n).name.lower() == "emwatservice.exe"]
+          if not matches:
+              raise SystemExit("EmwatService.exe not found")
+          target = pathlib.Path("indy-writecontent-helpers/EmwatService.exe")
+          target.parent.mkdir(parents=True, exist_ok=True)
+          target.write_bytes(archive.read(matches[0]))
+          print(f"Extracted {matches[0]} ({target.stat().st_size} bytes)")
+          PY
+      - name: Trace WriteContent and SmartServeFile helper calls
+        shell: bash
+        run: |
+          pids=()
+          for target in 004612F4 00460764 004609EC 0045E2FC 00458174 00458148 0044612F4; do
+            (
+              set -e
+              python tools/trace_pe_target.py indy-writecontent-helpers/EmwatService.exe 0x$target indy-writecontent-helpers/target-$target.md 3200 ret
+              python tools/scan_pe_pointer_refs.py indy-writecontent-helpers/EmwatService.exe 0x$target indy-writecontent-helpers/refs-$target.md
+            ) &
+            pids+=("$!")
+          done
+          status=0
+          for pid in "${pids[@]}"; do wait "$pid" || status=1; done
+          exit "$status"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: emwat-indy-writecontent-helper-chain
+          path: indy-writecontent-helpers/
+          if-no-files-found: error
