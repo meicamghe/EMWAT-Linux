@@ -364,3 +364,12 @@ The helper symbols at `0x004D531C` and `0x004D68D4` are not insertion methods:
 `AddCustomDocPropertiesToDic` calls these methods while enumerating Word custom properties. It therefore consumes/returns matching descriptors from the single/twin maps at viewer offsets `+0x68` and `+0x6C`; the exact object lifetime and subsequent use of the returned descriptor remain open. Do not describe these call sites as adding descriptors. The separate runtime map at viewer `+0x64` is the `TDictionary<UnicodeString,TDocumentCProperty>` map with its own SetItem/ContainsValue/Remove methods.
 
 The comparison helper `0x00403248` resolves to RTL `System.SysUtils.CompareText`. Consequently, `FillTwinFields` compares the normalized Word field identifier case-insensitively. The Python `find_native_twin_field_index()` now mirrors this with `casefold()`; the signature-end regular-expression branch remains separately case-sensitive.
+
+## Runtime custom-property map: image-fill to print consumption
+
+The runtime dictionary at viewer `+0x64` (`TDictionary<UnicodeString,TDocumentCProperty>`) has a concrete caller chain:
+- `FillImageField` updates it through `SetItem` (`0x004D34B0`) at `0x004BC45E`.
+- `FillImageField` and `FillPrintDocFields` query it through `ContainsValue` (`0x004D3DF8`).
+- `FillPrintDocFields` removes entries through `Remove` (`0x004D3B78`) at four sites; `FillPrintOptionForm` removes entries at one site.
+
+This separates the runtime custom-property values from the single/twin XML descriptor maps at viewer `+0x68/+0x6C`, which `AddCustomDocPropertiesToDic` accesses through their own Remove methods. The runtime map therefore participates in the image-field and print-value lifecycle, not merely in static field inventory.
