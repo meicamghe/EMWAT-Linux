@@ -246,7 +246,7 @@ These checks validate the adapter and composition boundary. They do not establis
 ## Rec/CC field-name trace expansion — 2026-11-16
 
 - Custom-property helper run **43815255639** succeeded; artifact **14201569927** also confirmed the literal XML-config names `Receivers`, `ReceiverDeps`, `ccReceivers`, and `ccReceiverDeps`.
-- Follow-up analysis run **43815667035** adds string decoding for the `ShowRecAndCcOptionForm` constants at `0x004D21D4–0x004D239C`; its result is pending.
+- Follow-up analysis run **43816241948** succeeded; artifact **14201844295** decoded the `FillPrintOptionForm` constants at `0x004D21D4–0x004D239C`, including `tokenizedReceivers` and U+2020 delimiter.
 - The native URL decoder at `0x00455314` scans percent escapes and maps plus to a space; this is now matched by Python `unquote_plus` and covered by a test.
 
 
@@ -272,3 +272,17 @@ These checks validate the adapter and composition boundary. They do not establis
 - TWordApplication.ConnectTo connects the Word Application event interface. The callback record contains explicit registrations for WordAppDocumentBeforeSave, WordAppNewDocument, and WordAppWindowActivate.
 - WordAppDocumentBeforeClose is not in the observed callback record; its only direct bounded caller remains FillImgFldsForPrint.
 - This establishes how BeforeSave is wired into Word automation, but not the final Almas HTTP registration handoff.
+
+
+## URL decode parity and Rec/CC pipeline — 2026-11-16
+
+| Workflow | Run ID | Artifact | Result |
+|---|---:|---:|---|
+| Python bridge transport | 43816293635 | — | success |
+| Word custom-property helpers | 43816241948 | 14201844295 | success |
+
+- Python: **99 tests run, 98 passed, 1 optional UNO-only test skipped**.
+- URL decoder parity: native `0x00455314` converts `%HH` escapes and maps literal `+` to a space (`0x00455454)); encoded `%2B` remains a literal plus. Python `unquote_plus` and the test cases now match.
+- `0x004D1B30` is `FillPrintOptionForm`, confirmed by its start/success log strings. It reads optional key `tokenizedReceivers`, uses U+2020 as its separator, and processes the config keys `Receivers`, `ReceiverDeps`, `ccReceivers`, and `ccReceiverDeps`.
+- Exact per-list semantics and mapping to final recipient/CC UI fields remain unresolved; do not infer values from the field names alone.
+
