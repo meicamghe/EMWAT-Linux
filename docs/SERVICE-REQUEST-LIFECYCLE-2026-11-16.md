@@ -176,3 +176,7 @@ The service helper `0x0047E0EC` calls the imported `LoadPackage` thunk at `0x004
 ### GetClass is called from ParseMethod
 
 The corrected import-thunk scan identifies a rel32 CALL candidate at `0x00470E07` to the `GetClass` thunk (`0x00402354`, IAT `0x00487B9C`) within the bounded code span associated with `ParseMethod` (`0x00470D00–0x00471033`). The entry trace reaches an undecoded code/data gap before this candidate, so its exact function-boundary relationship is not yet proven. Separate bounded traces of the code island around `0x00470E07` are being added before assigning it definitively to `ParseMethod`.
+
+### ClassCreate is confirmed for TMethodInfo, not yet for the requested method class
+
+The `ClassCreate` thunk call at `0x00471220` is inside `TMethodInfo`'s constructor (`0x00471214`). It allocates the parser metadata object; the constructor then creates its `TDictionary<AnsiString,AnsiString>` at `0x00471232` and stores it at offset `+0x08`. This does not yet prove how the class named in the XML request is instantiated. The separate `GetClass` candidate at `0x00470E07` is being validated through a disassembly of the code island around that address.
