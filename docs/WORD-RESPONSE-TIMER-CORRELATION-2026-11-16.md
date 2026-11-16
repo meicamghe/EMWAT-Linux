@@ -109,3 +109,7 @@ The request/response delay is now explained by a synchronous state-wait loop ins
 This provides a direct static explanation for why the HTTP invoke remains open while Word is being used and why the response arrives after the close/registration path. The observed ~54.558-second PCAP delay is consistent with that wait duration. The formal COM event identity for the callback and the initial setter of viewer `+0x58` are still being resolved.
 
 Evidence: request-lifecycle artifact `14229047092` (notably `LoadDocument-complete-range.md`, `target-004B999A.md`, and `BeforeSave-control-flow.md`); wait-mechanism artifact `14229716255` (`OnTmrAutoSave-004B9AE8.md`, exact Sleep thunk); controller ownership artifact `14229520023`.
+
+### WaitForSingleObject false lead excluded
+
+The exact thunk/caller scan shows the only direct `WaitForSingleObject` call in this BPL is from `GraphicCompression.FireEvent` (`0x00607240–0x0060786B`), a separate GraphicCompression worker/event pump. It is not in the `TWordViwer` request lifecycle and should not be treated as the Word-close wait. The Word request wait is the `Sleep(5)` + `ProcessMessages` loop inside `OnTmrAutoSave` that polls viewer `+0x58`.
