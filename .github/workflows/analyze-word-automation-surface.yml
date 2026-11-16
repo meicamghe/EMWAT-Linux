@@ -20,6 +20,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Report missing analysis input
+        if: hashFiles('analysis-input/EmwatMethods.bpl1') == ''
+        run: echo "::notice::Skipped binary analysis because analysis-input/EmwatMethods.bpl1 is not present in this checkout."
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
@@ -46,6 +49,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Report missing analysis input
+        if: hashFiles('analysis-input/EmwatMethods.bpl1') == ''
+        run: echo "::notice::Skipped binary analysis because analysis-input/EmwatMethods.bpl1 is not present in this checkout."
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
@@ -72,6 +78,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Report missing analysis input
+        if: hashFiles('analysis-input/EmwatMethods.bpl1') == ''
+        run: echo "::notice::Skipped binary analysis because analysis-input/EmwatMethods.bpl1 is not present in this checkout."
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
