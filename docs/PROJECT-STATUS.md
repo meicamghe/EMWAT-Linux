@@ -1811,3 +1811,12 @@ The BPL export/API analysis resolves the earlier naming ambiguity. The public TE
 - The `EmwatService.exe` scan run `43822306144` succeeded (artifact `14204299947`). It is PE32 (ImageBase `0x00400000`, entry `0x00481C30`) and contains Indy HTTP response RTTI strings (`TIdHTTPResponseInfo`, `ContentText`, `WriteContent`) plus the `invoke=` script token. It has no usable TD32 symbols; this scan alone does not identify the final HTTP handler.
 - The service-analysis workflow was extended with a Delphi VMT scan for Indy HTTP server/response classes. The updated run is pending; no VMT slot result is claimed yet.
 - Added `DecodedWordField.is_image`, based strictly on the preserved MIME prefix `image/`, with tests. This is metadata classification only; it does not insert image content or guess a Writer anchor.
+
+
+### HTTP server VMT and print-handler symbol correction — 2026-11-16
+
+- The service executable VMT scan found `TIdHTTPServer` at `0x00461CFC` (instance size `0x1BC`). Its virtual slot `+0x74` targets `0x0045E85C`; that method calls through response/request-related interface slots `+0xDC` and `+0x108`, then dispatches to `0x00438A2C`.
+- No VMT candidate passed validation for `TIdHTTPResponseInfo` or `TIdHTTPRequestInfo`; these may be interface/record metadata rather than normal Delphi classes. The response-info method chain is not yet resolved.
+- A follow-up service trace now disassembles `0x00438A2C`, `0x0045E03C`, `0x004391B0`, and decodes the relevant dispatch strings. Run is pending.
+- Print-handler review corrected a misleading TD32 label: `0x004A5014` is called by `IsCustomField` and its callers test AL as a Boolean. It is not evidence of a `TEmwatDocPrintHandler` constructor. The class's print-option `SetCCValueForMain` calls `ForgotMe`; this path remains separate from main editor registration.
+- `GetImageResolution` (`0x004C2DE0`) explicitly maps `right/center/left/top/middle/bottom` to enum values `1..6`. `EmbedTextToImage` is a separate image/caption rendering helper; the exact template anchors remain unknown.
