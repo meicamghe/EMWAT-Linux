@@ -894,3 +894,15 @@ The meaning of the +0xDC interface slot and the exact controller message that re
 
 - Confirmed: the two Close wrapper dispatch slots; BeforeSave calls the three-argument Close wrapper; OnControlerNotify calls CostumizeRecAndCC and a document-interface slot +0xDC; CostumizeRecAndCC uses slot +0x2BC.
 - Not confirmed: the business meaning of the +0xDC call; the exact message/event that invokes OnControlerNotify; any direct causal link from these methods to the close-time HTTP response or Almas registration.
+
+
+### Saved property slot mapping correction
+
+The follow-up wrapper traces (run 43814055308, artifact 14200974814) resolve the adjacent Word document property slots:
+
+- TWordDocument.Get_Saved at 0x0042BD34 dispatches through _Document byte offset +0xD4.
+- TWordDocument.Set_Saved at 0x0042BD94 dispatches through _Document byte offset +0xD8.
+
+Therefore, the direct call at 0x004CD1F5 inside WordAppDocumentBeforeSave, which uses _Document slot +0xD8, maps to the generated Set_Saved wrapper—not Get_Saved. The earlier interpretation of that instruction as reading Document.Saved is not supported and is withdrawn. The callback's local OleVariant setup and the value it supplies to Set_Saved need a separate trace before assigning business meaning.
+
+The OnControlerNotify call at 0x004BB514 uses slot +0xDC, which is neither Get_Saved nor Set_Saved. A follow-up now traces the adjacent Get_Content wrapper at 0x0042BDF8 to identify whether +0xDC corresponds to that member or another interface method. Until that trace is reviewed, +0xDC remains unresolved.
