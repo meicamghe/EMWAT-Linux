@@ -312,3 +312,10 @@ These checks validate the adapter and composition boundary. They do not establis
 - Added native Base64 compatibility coverage: valid padded quartets with one and two `=`, unpadded complete quartet, invalid alphabet, incomplete quartet, and whitespace rejection.
 - Field decoder now preserves whitespace as invalid Base64 rather than stripping it. This is distinct from outer `wordConfig` Base64 parsing, which still accepts XML whitespace.
 - Previous historical 86-test snapshot remains recorded above; this 99-test result supersedes it for the current branch.
+
+
+## Latest LibreOffice lifecycle checkpoint — 2026-11-16
+
+- Python bridge transport `43818676999`: **101 passed, 1 skipped**.
+- LibreOffice UNO integration `43818676967`: **10 passed**; includes process cleanup tests and a real headless UNO DOCX → legacy .doc close/export roundtrip.
+- Process cleanup now reaps after forced termination and skips already-exited processes.
