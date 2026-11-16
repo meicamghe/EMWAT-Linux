@@ -199,10 +199,18 @@ A first concrete UNO-backed office adapter is now present at `python/src/emwat_l
 - On the UNO close callback, writes a separate `MS Word 97` snapshot without changing the source document URL; after the close notification, the coordinator can return those bytes through the already-tested response serializer.
 - Keeps the original request's field configuration and signData opaque. No EMWAT field-to-Writer mapping is claimed yet.
 
-A dedicated `.github/workflows/libreoffice-integration.yml` installs LibreOffice Writer and distro `python3-uno`, then runs a real generated-DOCX → UNO open → close → legacy-DOC export roundtrip. The Python bridge CI is green on commit `4ddaae179675f1800961da2181ebb8262490cb5f`; the real UNO integration run is still pending at the time of this note.
+A dedicated `.github/workflows/libreoffice-integration.yml` installs LibreOffice Writer and distro `python3-uno`, then runs a real generated-DOCX → UNO open → close → legacy-DOC export roundtrip. **Verified:** integration run `43810188525` passed all 8 adapter tests, including the real LibreOffice roundtrip. The Python bridge workflow also passed on the same implementation commit `63ae7210110720535f8b02ca27d91542a9efc972`.
 
 Known limitations:
 - This verifies the LibreOffice document-engine boundary, not Almas Gam end-to-end registration.
 - The Windows-specific EMWAT field mapping, sign insertion, image layout, and exact cancellation response remain unresolved.
-- Close-listener snapshot behavior must pass the live UNO integration job before this adapter is considered verified.
+- Close-listener snapshot behavior passed the current live UNO integration fixture. It still needs validation against an actual captured EMWAT `.doc` payload and interactive desktop close/save/cancel flows.
 - The adapter currently expects the system Python interpreter to have the distro `python3-uno` module available.
+
+
+### Live UNO verification checkpoint — 2026-11-16
+
+- LibreOffice integration run: `43810188525` — **success**, 8 tests passed.
+- The test installed LibreOffice Writer + `python3-uno`, launched an isolated headless Writer process over a private loopback UNO socket, opened a generated DOCX fixture, closed it through UNO, and verified the close listener produced a legacy Word CFB `.doc` snapshot.
+- Python bridge run: `43810188517` — **success**.
+- This is a real engine roundtrip, not a fake adapter test. It does not yet prove fidelity for the captured EMWAT template, Persian fields, embedded images, signData, or Almas registration.
