@@ -96,3 +96,31 @@ The constructor is now a high-priority trace target, but its actual COM activati
 2. Trace `AddXmlWordConfigFieldsToDic` and `AddCustomDocPropertiesToDic` together to derive the exact metadata returned from the Word document.
 3. Trace the complete `OnTmrAutoSave` and `OnControlerNotify` bodies independently and correlate their state changes with the close-triggered HTTP response.
 4. Only after the exact Word methods and event contracts are enumerated, define the LibreOffice bridge compatibility surface.
+
+
+## Functional map from the TD32 class index
+
+The class-procedure index allows the Word-facing implementation to be divided into independently testable contracts. This is a symbol-level map, not yet a full behavioral trace.
+
+| Subsystem | Procedures / addresses | What can be established |
+|---|---|---|
+| Document lifecycle | `LoadDocument` `0x004B7724`; `PrepareDocument` `0x004BB77C`; constructor `0x004D08B4`; destructor `0x004D0D24`; `QuitWord` `0x004CDB54` | Dedicated load, prepare, construction, teardown and Word-quit routines exist |
+| Request/config field mapping | `GetXmlFieldInfo` `0x004BCA88`; overload `0x004BFC18`; `GetDocFieldName` `0x004BB81C`; `FindFieldInActivefields` `0x004BC170`; `AddFieldInActivefields` `0x004BC278` | XML field definitions are resolved and tracked in an active-fields collection |
+| Document field mutation | `FillField` `0x004BC2C4`; `FillImageField` `0x004BC30C`; `GetFieldValue` `0x004BFD38`; `SetFieldValue` `0x004BFDB0`; `FillMSWFields` `0x004C009C`; `AddImagesToDoc` `0x004C0410` | The implementation has distinct text/value and image-field paths and explicitly consumes Word `_Document`, `Field` and `Fields` interfaces |
+| Content and custom metadata | `AddXmlWordConfigFieldsToDic` `0x004D1148`; `AddCustomDocPropertiesToDic` `0x004D1454` | Two distinct document-to-dictionary extraction routines are present; exact key names and serialization remain unknown |
+| Save and close callbacks | `WordAppDocumentBeforeSave` `0x004CD154`; `WordAppDocumentBeforeClose` `0x004CCBBC`; `SilentSaveEmwatDoc` `0x004D23D8`; `OnTmrAutoSave` `0x004B8A84`; `OnControlerNotify` `0x004BB3B0` | Save events, close events, silent save, timer-driven waiting and controller notification are separate code paths |
+| Print pipeline | `PreparePrintDocument` `0x004CB108`; `CollectFieldsSets` `0x004CB5E4`; `FillPrintDocFields` `0x004CB638`; `PrintWithGamPrintOptions` `0x004C5E04`; `BGPrintWithGamPrintOptions` `0x004C5FF8`; print event callbacks `0x004CDC2C`, `0x004CE030` | Print preparation, field substitution, foreground/background print and Word print callbacks have dedicated routines |
+| Document formatting/protection | `ProtectDocument` `0x004C9EA8`; `SaveOriginalOptions` `0x004C5CDC`; `RollBackOriginalOptions` `0x004CA4B0`; `SetDocCaption` `0x004C5D68` | EMWAT also manages document protection and temporary document options; these behaviors must not be omitted from a replacement |
+
+### Consequence for a LibreOffice-compatible backend
+
+A viable replacement is not just “open the DOCX in LibreOffice.” At minimum, the compatibility boundary must account for:
+1. document open/create/close and lifecycle state;
+2. mapping EMWAT XML field definitions to document bookmarks/content controls/fields or another stable anchor;
+3. text and image insertion plus field-value readback;
+4. custom document properties and EMWAT metadata round-trip;
+5. save/close notifications and the delayed HTTP response contract;
+6. print preparation, print-specific field substitutions, and background-print behavior;
+7. protection and restoration of document options.
+
+This is a requirements inventory derived from compiled symbols and signatures. The exact Word calls, field-name conventions, and serialized response values still require disassembly/runtime capture before implementing the backend.
