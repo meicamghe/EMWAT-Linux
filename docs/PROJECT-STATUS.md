@@ -1345,7 +1345,7 @@ Added `python/src/emwat_linux/application.py` with `create_bridge_server(...)`. 
 
 - Run #92 (43597403349) موفق بود؛ artifact 14114738491 بررسی شد.
 - `LoadDocument` پس از خواندن فایل واسط، `TWordViwer.OnTmrAutoSave` را در 0x004B7A58 فراخوانی می‌کند. این یک anchor جدید برای تحلیل چرخه پس از بارگذاری Word است؛ هنوز callback بستن سند یا مسیر HTTP response بودن آن اثبات نشده است.
-- `TWordViwer.AddCustomDocPropertiesToDic` در 0x004D1454 نیز مستقیماً در LoadDocument فراخوانی می‌شود و داده‌های Custom Document Properties را به ساختار dictionary مانند منتقل می‌کند.
+- `TWordViwer.AddCustomDocPropertiesToDic` در 0x004D1454 مستقیماً از LoadDocument فراخوانی می‌شود؛ این تابع CustomDocumentProperties را enumerate می‌کند و descriptorهای متناظر را از mapهای single/twin با Remove مصرف می‌کند، نه اینکه آن mapها را در همین مسیر populate کند.
 - مسیر مستقل تصاویر/TIFF شناسایی شد: `CreateImageFile` فایل‌های مجزا را با `PrintWordDoc` و `TFileStream(fmCreate).Write` می‌سازد. `CreateTIFF.SeparteImages` نیز در ماژول چاپ/TIFF موجود است، اما caller مستقیم در محدوده اسکن‌شده پیدا نشد.
 - هنوز هیچ قرارداد close-time POST یا payload نهایی HTTP از این run به دست نیامده است. این مسیرهای چاپ/TIFF را نباید با upload یا پاسخ اصلی EMWAT یکی دانست.
 - بعدی: تحلیل بدنه کامل OnTmrAutoSave، callbackها و timer/VMT؛ سپس registration/callerهای مسیر TIFF/Print و بررسی اینکه آیا این مسیرها به Word editor اصلی متصل‌اند.
