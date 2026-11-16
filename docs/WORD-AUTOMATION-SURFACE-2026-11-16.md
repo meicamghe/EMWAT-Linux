@@ -145,11 +145,11 @@ The exact mapping of each XML interface getter to the internal field-model prope
 
 `TWordViwer.FillMSWFields` at `0x004C009C` explicitly accepts `Wordxp.Fields`. Its trace iterates the Word Fields collection and calls per-field virtual methods. This establishes a distinct pass over Word's native field collection, separate from XML field parsing.
 
-`TWordViwer.SetFieldValue` at `0x004BFDB0` accepts a `TXmlWordConfigField` and UnicodeString value. It branches on comparisons against two string constants at `0x004BFEE8` and `0x004BFF0C`, then uses different conversion/assignment helper paths. The key strings are being decoded in the next CI pass; do not yet label the branches as specific Word field types.
+`TWordViwer.SetFieldValue` at `0x004BFDB0` accepts a `TXmlWordConfigField` and UnicodeString value. It branches on the decoded labels `urlencoded` (`0x004BFEE8`) and `base64` (`0x004BFF0C`), then uses different conversion/assignment helper paths. Other labels are passed through without this decoding. These are per-field encoding labels, not Word field types.
 
 ### Custom document properties
 
-`TWordViwer.AddCustomDocPropertiesToDic` at `0x004D1454` obtains the Word document's custom-properties collection through the document interface, iterates its entries, and extracts property values. It searches for a delimiter constant, splits selected property strings into two parts, and routes the results into two internal collections stored through viewer fields at offsets `+0x6C` and `+0x68`. The exact delimiter and meaning of the two collections remain unresolved pending string decoding and helper cross-reference.
+`TWordViwer.AddCustomDocPropertiesToDic` at `0x004D1454` obtains the Word document's custom-properties collection through the document interface, iterates its entries, and extracts property values. It searches for the exact delimiter `†` (U+2020 DAGGER; constant at `0x004D1768`), splits selected property strings into two parts, and routes the results into two internal collections stored through viewer fields at offsets `+0x6C` and `+0x68`. The delimiter matches the already recovered Twin Field identifier convention; the exact meaning of the two destination collections remains unresolved.
 
 This is a significant compatibility requirement: the Linux backend must preserve EMWAT custom-property extraction and round-trip behavior, not only visible document text.
 
@@ -164,7 +164,7 @@ This is a significant compatibility requirement: the Linux backend must preserve
 - reaches a Word document operation through vtable offset `+0x29C`;
 - clears viewer state field `+0x58` near the end of the callback.
 
-The exact prompt labels and meaning of each decision code are not yet decoded. The callback is evidence of a real BeforeSave cancellation/decision contract, so the Linux lifecycle coordinator must not assume every save request is unconditional.
+The prompt labels are decoded in the controller-close crosswalk below; the meaning of every decision code and exact event-sink hookup remains bounded by the evidence described there. The callback is evidence of a real BeforeSave cancellation/decision contract, so the Linux lifecycle coordinator must not assume every save request is unconditional.
 
 ### Print-field transformation
 
