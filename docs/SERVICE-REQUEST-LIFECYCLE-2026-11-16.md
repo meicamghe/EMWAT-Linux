@@ -172,3 +172,7 @@ The `TMainForm` request handler at `0x0047BF30` calls `ParseMethod` (`0x00470D00
 ### Confirmed runtime package-load edge
 
 The service helper `0x0047E0EC` calls the imported `LoadPackage` thunk at `0x00402174` from callsite `0x0047E15F`. That thunk jumps through IAT `0x00487680`. The helper builds the package path/name containing `EmwatMethods.bpl`, stores the returned module pointer, and logs the exact load success/failure messages. Thus the service's BPL load gate is confirmed at the machine-code callsite level. The later class-resolution/instance-creation edge is still under analysis.
+
+### GetClass is called from ParseMethod
+
+The corrected import-thunk scan identifies a direct CALL at `0x00470E07` to the `GetClass` thunk (`0x00402354`, IAT `0x00487B9C`) inside `ParseMethod` (`0x00470D00`). This proves the XML parser reaches Delphi runtime class resolution. The full `ParseMethod` body (`0x00470D00–0x00471033`) is now traced to establish the exact class-name argument and the following instance-creation/Invoke sequence.
