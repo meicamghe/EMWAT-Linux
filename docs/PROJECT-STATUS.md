@@ -1740,3 +1740,12 @@ The BPL export/API analysis resolves the earlier naming ambiguity. The public TE
 - Python bridge workflow `43818676999`: 101 tests passed, 1 skipped.
 - LibreOffice UNO integration workflow `43818676967`: 10 tests passed, including a live DOCX open/close/export to legacy Word format.
 - This is lifecycle hardening only; it does not change EMWAT field mapping, cancellation protocol, or Almas registration semantics.
+
+
+### رفع ابهام چرخهٔ بستن Word — 2026-11-16
+
+- مسیر اصلی اکنون مشخص است: callback ثبت‌شده `WordAppDocumentBeforeSave` در `0x004CD154` است، نه `WordAppDocumentBeforeClose`.
+- callback ابتدا `Saved=False` را از COM slot `+0xD8` تنظیم می‌کند، سپس prompt ثبت تغییرات را نشان می‌دهد.
+- Yes → آرگومان اول `_Document.Close` برابر `-1`؛ No → برابر `0`؛ Cancel → فیلد Cancel رویداد برابر `0xFFFF` و سند باز می‌ماند.
+- برای Yes/No از overload سه‌آرگومانی `TWordDocument.Close` و COM slot `+0x29C` استفاده می‌شود؛ overloadهای 1/2/3 آرگومان همگی به همین slot ختم می‌شوند.
+- این یافته رفتار مشاهده‌شدهٔ کاربر را توضیح می‌دهد: بستن Word بدون فشردن Save هم می‌تواند ثبت را آغاز کند. اما POST/response نهایی Almas هنوز اثبات نشده است.
