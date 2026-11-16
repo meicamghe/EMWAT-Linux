@@ -2149,3 +2149,9 @@ Workflow تحلیل Word گسترش یافت تا helper مرکزی درج تص�
 ## مرزبندی inventory Writer و descriptorهای native — 2026-11-16
 
 در بررسی دقیق‌تر مشخص شد descriptorهای single/twin در زمان `AddCustomDocPropertiesToDic` از mapهای موجود با `TDictionary.Remove` مصرف می‌شوند؛ منبع اولیه و مرحله population این mapها هنوز قطعی نیست. بنابراین اتصال classifier به `WriterDocumentCatalog` حذف شد. catalog فقط نام Custom Document Properties را گزارش می‌کند و helper خالص Python صرفاً قانون split را طبقه‌بندی می‌کند؛ هیچ ادعایی درباره تطبیق یا اعمال خودکار فیلدها ندارد.
+
+## اتصال runtime Custom Property به مسیر تصویر و چاپ — 2026-11-16
+
+- `FillImageField` دیکشنری runtime در `viewer+0x64` را با `TDictionary<UnicodeString,TDocumentCProperty>.SetItem` به‌روزرسانی می‌کند.
+- `FillImageField` و `FillPrintDocFields` از `ContainsValue` استفاده می‌کنند؛ `FillPrintDocFields` و `FillPrintOptionForm` در مسیرهای مشخص `Remove` را اجرا می‌کنند.
+- این دیکشنری runtime از descriptorهای single/twin در `viewer+0x68/+0x6C` جداست. trace روش‌های `SetItem/TryGetValue/Clear` برای دو map descriptor در batch بعدی اضافه شده است.
