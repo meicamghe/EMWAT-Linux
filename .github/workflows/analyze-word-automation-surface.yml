@@ -110,6 +110,9 @@ jobs:
           python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004D54E0 word-automation/fields/field-map-addorset-callers.md
           python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004D6894 word-automation/fields/twin-field-map-add-callers.md
           python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004D6A98 word-automation/fields/twin-field-map-addorset-callers.md
+          python tools/scan_pe_call_refs.py analysis-input/EmwatMethods.bpl1 0x004D1148 word-automation/fields/add-xml-word-config-fields-all-callrefs.md
+          python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 0x004D1148 word-automation/fields/add-xml-word-config-fields-pointer-refs.md || true
+          python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 0x004D1454 word-automation/fields/add-custom-doc-properties-pointer-refs.md || true
           for address in 0x004D4C54 0x004D52DC 0x004D54E0 0x004D4D58 0x004D620C 0x004D6894 0x004D6A98 0x004D6310 0x004D5048 0x004D5100 0x004D6600 0x004D66B8; do
             python tools/scan_pe_call_refs.py analysis-input/EmwatMethods.bpl1 "$address" "word-automation/fields/${address}-all-callrefs.md"
           done
