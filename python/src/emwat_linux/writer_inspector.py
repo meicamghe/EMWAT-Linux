@@ -12,7 +12,6 @@ from dataclasses import dataclass
 @dataclass(frozen=True)
 class WriterTextFieldInfo:
     implementation_name: str
-    presentation: str
     property_names: tuple[str, ...]
 
 
@@ -67,10 +66,6 @@ def _text_fields(document: object) -> tuple[WriterTextFieldInfo, ...]:
         except Exception:
             implementation = type(field).__name__
         try:
-            presentation = str(field.getPresentation(False))
-        except Exception:
-            presentation = ""
-        try:
             properties = tuple(
                 sorted(str(item.Name) for item in field.getPropertySetInfo().getProperties())
             )
@@ -79,7 +74,6 @@ def _text_fields(document: object) -> tuple[WriterTextFieldInfo, ...]:
         result.append(
             WriterTextFieldInfo(
                 implementation_name=implementation,
-                presentation=presentation,
                 property_names=properties,
             )
         )
