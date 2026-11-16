@@ -113,7 +113,7 @@ jobs:
               encoding="utf-8",
           )
           PY
-      - name: Trace generated event-dispatch thunks and identify callback DISPIDs
+      - name: Decode generated Word event metadata strings
         shell: bash
         run: |
           mkdir -p event-sink-analysis/event-dispatch
@@ -121,14 +121,13 @@ jobs:
           import pathlib, re, subprocess, sys
           source = pathlib.Path("event-sink-analysis/server-metadata/event-map-627B74-expanded.md").read_text(encoding="utf-8")
           targets = sorted(set(re.findall(r"^0x[0-9A-Fa-f]{8}: (0044[0-9A-Fa-f]{4}) ->", source, re.M)))
-          out = pathlib.Path("event-sink-analysis/event-dispatch")
-          index = ["# Generated Word event-dispatch thunk traces", ""]
-          for target in targets:
-              subprocess.run([sys.executable, "tools/trace_pe_target.py", "analysis-input/EmwatMethods.bpl1", "0x" + target, str(out / f"pe-{target}.md"), "400", "ret"], check=True)
-              subprocess.run([sys.executable, "tools/trace_td32_procedure.py", "analysis-input/EmwatMethods.bpl1", "0x" + target, str(out / f"td32-{target}.md")], check=False)
-              subprocess.run([sys.executable, "tools/trace_td32_callers.py", "analysis-input/EmwatMethods.bpl1", "0x" + target, str(out / f"callers-{target}.md")], check=False)
-              index.append(f"- 0x{target}")
-          (out / "index.md").write_text("\n".join(index) + "\n", encoding="utf-8")
+          command = [sys.executable, "tools/decode_pe_strings.py", "analysis-input/EmwatMethods.bpl1"] + ["0x" + target for target in targets]
+          with pathlib.Path("event-sink-analysis/event-dispatch/event-metadata-strings.md").open("w", encoding="utf-8") as output:
+              subprocess.run(command, check=True, stdout=output, text=True)
+          pathlib.Path("event-sink-analysis/event-dispatch/index.md").write_text(
+              "# Generated Word event metadata string targets\n\n" + "\n".join(f"- 0x{x}" for x in targets) + "\n",
+              encoding="utf-8",
+          )
           PY
       - name: Decode native BeforeSave prompt text and button labels
         run: |
