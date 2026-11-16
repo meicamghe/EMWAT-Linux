@@ -2081,3 +2081,8 @@ Workflow تحلیل Word گسترش یافت تا helper مرکزی درج تص�
 - خطای مسیر خروجی decoder در Workflow اصلاح شد. اجرای `43886833015` هر سه job تحلیل lifecycle، field mapping و save/print را با موفقیت تمام کرد.
 - CI کد: Python bridge اجرا `43886698595` با ۱۰۴ تست موفق و ۲ skip اختیاری؛ LibreOffice UNO اجرا `43886698714` با ۱۱ تست موفق.
 - مستند تفصیلی: `docs/WORD-AUTOMATION-SURFACE-2026-11-16.md`. اجرای جدید برای decode رشته‌های دقیق branchها با run `43887016674` در صف/حال اجراست.
+
+
+## نکته جدید در مسیر چاپ — 2026-11-16
+
+در trace تابع `FillPrintDocFields` رشته خاص `EMBED Equation` در آدرس `0x004CCB0C` decode شد و یک شاخه جداگانه برای آن وجود دارد. مسیر دیگر این تابع با کلیدهای `CustomDocumentProperties` و `count` کار می‌کند؛ decode دقیق شروع بایتی این دو رشته در اجرای بعدی Workflow انجام می‌شود. برای تعیین رفتار نهایی، trace توابع `0x004D3DF8`، `0x004D34B0` و `0x004D3B78` در حال اضافه شدن است.
