@@ -167,3 +167,17 @@ These checks validate the adapter and composition boundary. They do not establis
 - Generated wrapper traces map Word document COM slots exactly: Get_Saved → +0xD4, Set_Saved → +0xD8, Get_Content → +0xDC.
 - OnControlerNotify's call to +0xDC is therefore the document Content member, not a Saved getter/setter. Its -1 argument remains unexplained and must not be interpreted as a registration flag.
 - This corrects the earlier assumption that +0xDC was an unidentified Saved-related call.
+
+
+## Word close-slot and field-code extraction checkpoint — 2026-11-16
+
+| Workflow | Run ID | Result |
+|---|---:|---|
+| Python bridge transport | 43814423443 | success — 94 tests, 1 optional skip |
+| Word close/response chain | 43814460258 | success |
+| Word close/response chain (wrapper comparison) | 43814449282 | success |
+
+- Generated wrapper trace confirms `TWordDocument.Get_Content` at `0x0042BDF8` uses COM slot `+0xDC`; the controller-notify call is a Content getter, not a Close/Save call.
+- `TWordDocument.Get_Saved` uses `+0xD4`, `Set_Saved` uses `+0xD8`, `Save` uses `+0x2B8`, and the generated `Close` overloads use `+0x29C`.
+- `OnControlerNotify` emits the explicit AutoSave log and works with local `.easd/.easz` recovery paths. This is separate from the user-visible Almas registration operation until the final HTTP exchange is captured.
+- The native field-name parser uses the case-sensitive `DOCPROPERTY` keyword and two-space delimiter; Python tests now cover the legacy Copy offset and fallback behavior.
