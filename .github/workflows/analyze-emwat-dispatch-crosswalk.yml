@@ -75,6 +75,9 @@ jobs:
               python tools/trace_td32_procedure.py analysis-input/EmwatService.exe "$address" "dispatch-crosswalk/service/$name-td32.md" || true
               python tools/trace_td32_callers.py analysis-input/EmwatService.exe "$address" "dispatch-crosswalk/service/$name-callers.md" || true
             done
+            python tools/inspect_delphi_vmt_address.py analysis-input/EmwatService.exe 0x0047B284 dispatch-crosswalk/service/mainform-vmt.md || true
+            python tools/scan_pe_pointer_refs.py analysis-input/EmwatService.exe 0x0047B284 dispatch-crosswalk/service/mainform-vmt-pointer-refs.md || true
+            python tools/scan_pe_pointer_refs.py analysis-input/EmwatService.exe 0x0047BF0C dispatch-crosswalk/service/mainform-classinfo-pointer-refs.md || true
             python tools/trace_pe_range.py analysis-input/EmwatService.exe 0x0047BF30 0x0047C341 dispatch-crosswalk/service/mainform-request-handler-full.md
             for range in "0x0045EA80 0x0045EC20" "0x0045F780 0x0045F940" "0x00470E80 0x00471020" "0x0047C180 0x0047C300" "0x0047D8C0 0x0047D980" "0x0047DB00 0x0047DBD0" "0x0047DD40 0x0047DE10"; do
               set -- $range
