@@ -61,12 +61,12 @@ def is_native_business_signature_end(field_name: str) -> bool:
 def extract_docproperty_identifier(field_code: str) -> str:
     """Mirror EMWAT's DOCPROPERTY field-code extraction.
 
-    The native helper first searches case-sensitively for DOCPROPERTY.
-    It then copies up to 255 characters after the first double-space token
-    and, when that copied segment contains a further space, returns the first
-    token. If either search branch does not match, it preserves the input.
-    This intentionally mirrors the observed legacy parser rather than
-    normalizing arbitrary Word field-code syntax.
+    The native helper searches case-sensitively for DOCPROPERTY. If absent,
+    it preserves the input. Otherwise it copies up to 255 characters starting
+    two characters after the first double-space position (or from character 2
+    when that delimiter is absent), then truncates at the first single space
+    if present. If no single space exists, it returns the copied segment.
+    This intentionally preserves the native parser's odd edge cases.
     """
     if "DOCPROPERTY" not in field_code:
         return field_code
@@ -76,7 +76,7 @@ def extract_docproperty_identifier(field_code: str) -> str:
     segment = field_code[start : start + 255]
     next_space = segment.find(" ")
     if next_space < 0:
-        return field_code
+        return segment
     return segment[:next_space]
 
 
