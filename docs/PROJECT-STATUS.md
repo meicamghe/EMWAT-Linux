@@ -2182,3 +2182,7 @@ Import Table در `EmwatService.exe` شامل `LoadPackage`، `UnloadPackage`، 
 ## بازیابی Method Table فرم اصلی سرویس — 2026-11-16
 
 از VMT کلاس `TMainForm` در `0x0047B284`، method table در `0x0047B84E` پیدا شد. تعداد entryها 17 است و ساختار هر entry شامل اندازه، آدرس کد و نام shortstring است. اولین entry دقیقاً `IdHTTPServerCommandGet` در `0x0047BF30` است؛ بنابراین هویت handler درخواست HTTP تأیید شد. `FormCreate`، `Terminate`، `Log`، `ShowMainForm`، `HideMainForm` و `FormClose` نیز در ابتدای جدول بازیابی شدند.
+
+## فهرست کامل ۱۷ متد منتشرشده TMainForm — 2026-11-16
+
+جدول RTTI فرم اصلی ۱۷ متد را تأیید کرد. علاوه بر `IdHTTPServerCommandGet` در `0x0047BF30`، متد `IdHTTPServerException` در `0x0047CA44`، `FormCreate` در `0x0047CCD8`، `FormClose` در `0x0047CCC8`، `Terminate` در `0x0047E3EC` و `LoadQuickConfig` در `0x0047E7E4` بازیابی شدند. workflow اکنون مسیرهای startup/shutdown و HTTP exception را نیز trace می‌کند.
