@@ -233,3 +233,11 @@ These checks validate the adapter and composition boundary. They do not establis
 - The temporary red Python runs at 43815149109, 43815162148, and 43815235425 were caused by a fake Writer field lacking the UNO `getSupportedServiceNames` API; the fixture was corrected, and run 43815297715 is green.
 - These checks prove the synthetic DOCX/Writer custom-property path, not the original Almas template, all direct Word Field.Result.Text semantics, or live Almas close-time registration.
 
+
+
+## Batched Writer property application API — 2026-11-16
+
+- Python bridge run **43815578467** passed: **99 tests run, 98 passed, 1 optional UNO test skipped**.
+- writer_properties.py now validates every exact custom-property name before applying a batch, rejects non-text values, and avoids partial mutation when any property name is unknown.
+- LibreOfficeAdapter.apply_custom_property_updates() now exposes the production operation: apply a verified mapping of existing custom properties, then refresh Writer text fields once.
+- The live UNO integration run for this adapter-level operation is still in progress at the time of this update; no UNO result is claimed yet.
