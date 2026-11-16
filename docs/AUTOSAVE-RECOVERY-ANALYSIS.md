@@ -10,7 +10,7 @@ The TD32 trace of `TWordViwer.OnControlerNotify` at `0x004BB3B0–0x004BB777` an
 - The handler checks its internal state and the controller notification structure before entering the main branch.
 - It toggles internal flags at viewer offsets `+0x79` and `+0x5E`.
 - It calls `TWordViwer.CostumizeRecAndCC` at `0x004D281C`.
-- It passes `-1` and the document interface stored at viewer `+0x48` to COM vtable slot `+0xDC`. The generated wrapper at `0x0042BDF8` identifies this slot as `TWordDocument.Get_Content`; this is a Content-range getter, not `Close` or `Save`.
+- It passes `-1` and the document interface stored at viewer `+0x48` to COM vtable slot `+0xDC`. The generated wrapper at `0x0042BDF8` identifies this slot as `TWordDocument.Get_Content`; this retrieves the document Content range and is not `Close` or `Save`.
 - It subsequently processes path values through `FixDirectionInFarsiNumericMode` at `0x004563A8` and `euUnArchive` at `0x00456DFC`.
 
 ## Recovery file extensions
@@ -43,3 +43,16 @@ The AutoSave/recovery handler and the final Almas correspondence registration mu
 2. Validate the exact string transform in `FixDirectionInFarsiNumericMode` at `0x004563A8`.
 3. Trace the AutoSave callback's surrounding controller message and data source; the COM slot `+0xDC` is already mapped to `Get_Content`.
 4. Continue searching for the final POST/response after the Word editor closes; do not infer the Almas registration payload from local AutoSave artifacts.
+
+
+## Separation from the actual Word close callback
+
+Generated Word wrapper traces map the relevant COM slots:
+
+- `TWordDocument.Get_Saved` at `0x0042BD34` → `_Document` slot `+0xD4`.
+- `TWordDocument.Set_Saved` at `0x0042BD94` → `_Document` slot `+0xD8`.
+- `TWordDocument.Get_Content` at `0x0042BDF8` → `_Document` slot `+0xDC`.
+- `TWordDocument.Save` at `0x004309A4` → slot `+0x2B8`.
+- `TWordDocument.Close` overloads at `0x0042FF08` / `0x0042FF7C` / `0x0042FFF4` → slot `+0x29C`.
+
+Therefore the `+0xDC` call inside `OnControlerNotify` is definitively a Content getter. It must not be reported as closing or saving the document. The separate `WordAppDocumentBeforeSave` callback at `0x004CD154` is the path that contains the user prompt and the COM Close dispatch; keep its lifecycle analysis separate from this local AutoSave/recovery routine.
