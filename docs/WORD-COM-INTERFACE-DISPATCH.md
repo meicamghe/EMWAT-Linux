@@ -1035,3 +1035,24 @@ TD32 procedure traces show the one-, two-, and three-argument `TWordDocument.Clo
 This explains why closing Word can register/return a document even when the user did not press the Word Save button: the registered BeforeSave handler asks whether to register changes and then explicitly closes the Word document with SaveChanges True/False. Cancel vetoes the close. This is a much stronger lifecycle proof than the earlier BeforeClose hypothesis.
 
 It still does **not** identify the exact HTTP POST/response envelope used to return the resulting document to Almas. The controller-notify/Get_Content and paired `.easd/.easz` paths remain under analysis; do not conflate COM Close with the final local HTTP response.
+
+
+## Run 136 — exact BeforeSave prompt and three-way close decision
+
+Artifact: event-sink run `43824067943`, artifact `14206405476`.
+
+The native Persian dialog strings were decoded from the active `WordAppDocumentBeforeSave` callback:
+
+- Title: `ام وات`
+- Message: `محتويات اين سند تغيير كرده است. آيا مايل به ثبت تغييرات مي‌باشيد؟`
+- Buttons: `موافقم`, `خیر`, `انصراف`
+
+The already-traced callback maps the choices to Word COM as follows:
+
+| User choice | Native behavior |
+|---|---|
+| موافقم | `_Document.Close(SaveChanges=True)` |
+| خیر | `_Document.Close(SaveChanges=False)` |
+| انصراف | Set event `Cancel=0xFFFF`; keep the document open |
+
+This is the exact native user-facing choice contract. It does not yet establish the HTTP envelope returned for the No/discard path. The Python lifecycle now has a distinct `DISCARDED` terminal state so it cannot be confused with Cancel or successful registration; the LibreOffice UI prompt and wire response remain separate implementation tasks.

@@ -17,6 +17,7 @@ class DocumentState(str, Enum):
     DIRTY = "dirty"
     FINALIZING = "finalizing"
     RETURNED = "returned"
+    DISCARDED = "discarded"
     FAILED = "failed"
     CANCELLED = "cancelled"
 
@@ -95,10 +96,17 @@ class DocumentSession:
             self.failure_reason = reason.strip() or "unspecified_failure"
             self.state = DocumentState.FAILED
 
+    def discard(self) -> None:
+        """Close without returning edited bytes (the native Word No choice)."""
+        with self._lock:
+            if self.state not in (DocumentState.OPENED, DocumentState.DIRTY):
+                raise InvalidTransition(f"cannot discard a session in state {self.state.value}")
+            self.state = DocumentState.DISCARDED
+
     def cancel(self) -> None:
         with self._lock:
             if self.state in (DocumentState.FINALIZING, DocumentState.RETURNED,
-                              DocumentState.FAILED, DocumentState.CANCELLED):
+                              DocumentState.DISCARDED, DocumentState.FAILED, DocumentState.CANCELLED):
                 raise InvalidTransition(f"cannot cancel a session in state {self.state.value}")
             self.state = DocumentState.CANCELLED
 

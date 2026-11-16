@@ -1840,3 +1840,12 @@ The BPL export/API analysis resolves the earlier naming ambiguity. The public TE
 - It invokes `_Document.Close` through the COM vtable at `+0x29C`, passing the SaveChanges choice, then clears the active document reference. A guard failure also sets Cancel and leaves the document open.
 - `TWordViwer.WordAppDocumentBeforeClose` (`0x004CCBBC`) is still a separate path: its only direct caller is `FillImgFldsForPrint`; it is not the main editor close-registration callback.
 - A follow-up CI job was added to decode the exact native Persian prompt and button strings from the BeforeSave handler. The new event-sink workflow run is pending.
+
+
+## همسان‌سازی مدل چرخه سند با سه‌گزینه‌ای بستن Word — 2026-11-16
+
+- تحلیل event-sink در run `43824067943` و artifact `14206405476` متن واقعی پنجره را استخراج کرد: عنوان «ام وات»، پیام «محتويات اين سند تغيير كرده است. آيا مايل به ثبت تغييرات مي‌باشيد؟» و گزینه‌های «موافقم»، «خیر»، «انصراف».
+- نگاشت native از بدنه BeforeSave تأیید می‌کند: موافقم → `Close(SaveChanges=True)`؛ خیر → `Close(SaveChanges=False)`؛ انصراف → `Cancel=0xFFFF` و سند باز می‌ماند.
+- مدل دامنه اکنون سه نتیجه را از هم جدا می‌کند: `CLOSED` (مسیر ثبت/بازگشت)، `DISCARDED` (بستن بدون بازگشت payload)، و `CANCELLED` (لغو بستن). coordinator در حالت discard هیچ export یا payload موفقی تولید نمی‌کند.
+- تست مستقل مسیر discard اضافه شد. این تغییر فقط قرارداد داخلی و state machine را آماده کرده است؛ انتخاب‌گر گرافیکی LibreOffice و پاسخ HTTP دقیق برای گزینه «خیر» هنوز پیاده‌سازی/اثبات نشده‌اند و عمداً حدس زده نشده‌اند.
+- تحلیل موازی سرویس HTTP در run `43823657154` (artifact `14205656649`) مسیر VMT سرور Indy را تا handler داخلی `0x0045E85C` و dispatch بعدی `0x00438A2C` محدود کرده است؛ مرحله بعد، resolve کردن این زنجیره به متد واقعی درخواست و writer پاسخ است.

@@ -15,6 +15,7 @@ from emwat_linux.editword_request import EditWordDocumentRequest
 
 class CloseDisposition(str, Enum):
     CLOSED = "closed"
+    DISCARDED = "discarded"
     CANCELLED = "cancelled"
 
 

@@ -57,6 +57,16 @@ class EditWordDocumentServiceTests(unittest.TestCase):
         self.assertEqual(result.payload, b"synthetic-final-doc")
         self.assertEqual(office.export_count, 1)
 
+    def test_discarded_session_has_no_success_payload(self):
+        office = FakeOffice(CloseDisposition.DISCARDED)
+        service = EditWordDocumentService(
+            office, session_id_factory=lambda: "discarded-session"
+        )
+        result = service.process(make_call())
+        self.assertEqual(result.session.state, DocumentState.DISCARDED)
+        self.assertIsNone(result.payload)
+        self.assertEqual(office.export_count, 0)
+
     def test_cancelled_session_has_no_success_payload(self):
         office = FakeOffice(CloseDisposition.CANCELLED)
         service = EditWordDocumentService(

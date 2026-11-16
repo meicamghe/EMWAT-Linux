@@ -81,6 +81,10 @@ class DocumentCoordinator:
                 session.cancel()
                 return DocumentRunResult(session=session, payload=None)
 
+            if close_event.disposition is CloseDisposition.DISCARDED:
+                session.discard()
+                return DocumentRunResult(session=session, payload=None)
+
             if close_event.disposition is not CloseDisposition.CLOSED:
                 raise RuntimeError("office_adapter_returned_invalid_close_event")
 
