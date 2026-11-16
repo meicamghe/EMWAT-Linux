@@ -347,3 +347,15 @@ CI after the Python adapter docstring clarification:
 - Python bridge run `43886698595`: 104 tests passed, 2 optional skips.
 - LibreOffice UNO run `43886698714`: 11 tests passed.
 These tests validate existing isolated behaviors, not full EMWAT field/image parity.
+
+
+## Typed custom-property dictionary and print-image helper — artifact 14235092844
+
+New TD32 symbols:
+- `0x004D34B0`: `TDictionary<System.UnicodeString,TDocumentCProperty>.SetItem`.
+- `0x004D3DF8`: `TDictionary<System.UnicodeString,TDocumentCProperty>.ContainsValue`.
+- `0x004D3B78`: `TDictionary<System.UnicodeString,TDocumentCProperty>.Remove`.
+
+These helpers establish that print/document-property handling uses a typed dictionary of `TDocumentCProperty` objects, not a plain string-to-string map. `TDocumentCProperty` instance size is `0x1C`; its internal payload fields remain to be decoded.
+
+The routine at `0x004CCDC8` is `FillImgFldsForPrint`, called directly from `GetFieldIndexInList` at `0x004CB361`. It calls TD32-named `WordAppDocumentBeforeClose` (`0x004CCBBC`) only on a conditional print/image-field branch at `0x004CCF8F`. This reinforces that the symbol name does not represent a registered close event.
