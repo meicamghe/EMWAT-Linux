@@ -108,3 +108,17 @@ The complete procedure index and evidence boundary are recorded in `docs/WORD-AU
 - `2dd31ccd7438a4c6c6eca232aab1f5b1e5a41bcd`: added the Word automation interface-surface document.
 
 The connected GitHub workflow-run lookup returned no runs for these commits at verification time. The workflows are committed but their newly requested artifacts are not yet available; no pass result is claimed.
+
+
+## Follow-up — LoadDocument lifecycle and metadata cross-links
+
+A second cross-check against the extracted `TWordViwer.LoadDocument` TD32 disassembly confirms:
+
+- `LoadDocument` directly calls `TWordViwer.$bdtr` at `0x004D0D24` (`0x424` bytes) at `0x004B78E9`.
+- `LoadDocument` directly calls `AddCustomDocPropertiesToDic` at `0x004D1454` at `0x004B7994`.
+- `LoadDocument` directly calls `OnTmrAutoSave` at `0x004B8A84` at `0x004B7A58`, then branches on the returned Boolean at `0x004B7A5F–0x004B7A61`.
+- The TD32 class index identifies `TWordViwer.$bctr` at `0x004D08B4` (size `0x470`), `$bdtr` at `0x004D0D24` (size `0x424`), `AddXmlWordConfigFieldsToDic` at `0x004D1148` (size `0x30C`), and `AddCustomDocPropertiesToDic` at `0x004D1454` (size `0x3B4`).
+
+Interpretation boundary: the destructor call and metadata-collection call are direct static evidence. They do not independently prove COM shutdown order, property names, or the final XML/HTTP response schema. Constructor activation and event hookup remain open until the constructor body is inspected.
+
+The Word automation surface document was updated in commit `6e650578c35f372ebbdff7aa11960a5308446b9e`.
