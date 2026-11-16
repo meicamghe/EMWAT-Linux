@@ -111,7 +111,7 @@ Source: workflow 43832144163, artifact 14209690263.
 - 0x00470D00 calls parser worker 0x00470B38 and contains exception text references for "Calling ParseMethod exception" and "XML is not valid".
 - The parser recognizes root tag "emwat", its "version" attribute, and child tags "method", "class", and "param"; the "param" child uses the "name" attribute.
 - Parser token helper 0x0046ADBC compares the token names and routes recognized elements. Helper 0x0046A7A4 appends a three-value record to the parser's dynamic collection (three adjacent string/value slots); exact semantic names for all three record fields remain unconfirmed.
-- This is the service-side XML parsing stage. The BPL-side TEmwatMethod.Invoke dictionary contract is known separately; the conversion/link from these parser records to the BPL invocation and the exact response payload still need proof.
+- This is the service-side XML parsing stage. The full service analysis in `docs/EMWAT-SERVICE-EXECUTABLE-ANALYSIS.md` resolves the next steps: the parser fills `TMethodInfo.ClassName` and its `Params` dictionary; the dispatcher prefixes the class name with `T`, calls `System.Classes.GetClass`, constructs the class instance, and invokes VMT slot `+0x0C`. The exact response payload remains open.
 
 
 ## BPL class hierarchy and Invoke contract — 2026-11-16
@@ -121,7 +121,11 @@ Source: workflow 43832553168, artifact 14208369288.
 - TD32 identifies TEmwatMethod.Invoke at 0x0046C82C with parameter type TDictionary<AnsiString,AnsiString>.
 - The Delphi VMT/interface scan resolves TEmwatMethod VMT method-table base at 0x0046ABFC. TEditWordDocument VMT is 0x005ED764 and its parent pointer resolves to the TEmwatMethod VMT header start (0x0046ABA4 = 0x0046ABFC - 0x58). This establishes TEditWordDocument inherits TEmwatMethod.
 - TScanDocument, TFaxDocument, TGetEmwatVersion, TSetEmwatVersion, TUpgradeEmwat, TImageEdition, TEditExcelWorkBook, and TCompareWordDocument also point to the same TEmwatMethod parent header.
-- TEmwatMethod.Invoke iterates the dictionary's key/value enumerator and dispatches each entry through an instance virtual/interface slot. Direct TD32 caller scan finds only one direct call in unit finalization; the service's runtime invocation is therefore not yet a proven direct callsite and likely uses RTTI/dynamic dispatch. This must be resolved before claiming the complete request-to-class call chain.
+- The public virtual `TEmwatMethod.Invoke` wrapper is at `0x0046C9E0` (VMT slot `+0x0C`; TD32 misleadingly labels it `Finalization`). It calls the inner dictionary/XML helper at `0x0046C82C`, then dispatches the concrete subclass through VMT slot `+0x10` (callsite `0x0046CA88`).
+- The inner helper `0x0046C82C` walks the dictionary's key/value pairs and builds XML parameter nodes; it is not itself the subclass dispatcher. Its XML node builder uses `TXMLEmwatType`, `TXMLMethodType`, and `TXMLParamType`.
+- `TEmwatMethod` VMT slot `+0x10` is the abstract/error stub `0x00401068`; the concrete subclasses override this slot.
+- `TEditWordDocument` VMT slot `+0x10` points to `0x005EE82C`; TD32 decorates this routine as `TScanDocument.PerformMethod`. `TScanDocument` VMT slot `+0x10` points to `0x005EEB48`, TD32 decorates it as `TFaxDocument.PerformMethod`. Preserve these VMT-owner/TD32-name discrepancies.
+- The service-side `GetClass("T"+className)` and VMT `+0x0C` invocation path are now confirmed; the remaining unknown is the exact response serialization and how the method result/Word archive is returned to the browser.
 
 
 ## Service parser confirmation — version 1
