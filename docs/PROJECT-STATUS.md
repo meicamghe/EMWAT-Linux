@@ -1712,3 +1712,9 @@ The BPL export/API analysis resolves the earlier naming ambiguity. The public TE
 - مسیر `encryption=base64` در `SetFieldValue` به helper بومی `0x00473700` ختم می‌شود: جدول ۶۴کاراکتری در `0x00627F98`، decode چهارتایی، مدیریت padding و رد lookup نامعتبر تأیید شد.
 - `0x00473608` طول خروجی را با توجه به padding انتهایی محاسبه می‌کند؛ `0x00402908` نیز thunk تابع Windows `WideCharToMultiByte` است.
 - decoder پایتون فعلی سخت‌گیرانه‌تر از مسیر باینری به‌نظر می‌رسد؛ فعلاً validation را شل نمی‌کنیم و تست‌های سازگاری برای Base64 معتبر/نامعتبر و delimiter نقطه‌ای اضافه/بررسی می‌شوند.
+
+
+### تعیین callback چاپ در event sink — 2026-11-16
+
+- آدرس `0x004D00AC` که به‌صورت شرطی در رکورد event ثبت می‌شد، به `TWordViwer.LoadOptions` تعلق دارد؛ log ابتدای تابع صریحاً `Document.OnBeforePrint called.` را نشان می‌دهد.
+- بنابراین event record شامل BeforeSave، BeforePrint، NewDocument و WindowActivate است. این یافته callback چهارم را از مسیر close جدا می‌کند؛ برای BeforeClose همچنان registration اثبات نشده است.
