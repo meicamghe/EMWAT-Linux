@@ -85,3 +85,11 @@ These checks validate the adapter and composition boundary. They do not establis
 - Reverse-engineering artifacts confirmed the twin-field delimiter as Unicode dagger `†` (U+2020). The new `parse_word_field_identifier` helper splits only the first delimiter and treats empty-side forms as single identifiers.
 - The custom-property analysis pipeline produced and uploaded its artifact; it traced the custom-property dictionaries, field-name enumeration, and conditional SilentSave path.
 - These checks still do not validate the complete Almas letter template or final server-side registration against a live Almas environment.
+
+
+## Word custom-property value helper checkpoint — 2026-11-16
+
+- Helper analysis run: **43812565648 — success**.
+- Artifact: **14200962076**.
+- `FillImageField` helper lookup confirms `TDictionary<UnicodeString,TDocumentCProperty>.ContainsValue` and `SetItem` are invoked on the custom-property dictionary.
+- The same artifact identifies `0x004D1B30` as `ShowRecAndCcOptionForm` and `0x0045644C` as `FindWindowExtd`; their complete semantic roles remain under analysis.
