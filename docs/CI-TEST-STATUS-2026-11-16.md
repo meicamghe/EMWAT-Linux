@@ -106,3 +106,19 @@ These checks validate the adapter and composition boundary. They do not establis
 - UNO integration: **8/8 tests passed**.
 - Added `writer_properties.py`: updates only an existing user-defined property by exact name; unknown properties fail instead of being implicitly created. The setter does not read the current property value.
 - Real UNO fixture adds a synthetic custom property, updates it through the new adapter, verifies the fixture value, and confirms the structural catalog still reports the property name.
+
+
+
+## Twin-field decode and Writer custom-property update — 2026-11-16
+
+| Workflow | Run ID | Commit | Result |
+|---|---:|---|---|
+| Python bridge transport | 43813400123 | 0099717df9db0c10c94a9bb7deda184375c2ff58 | success |
+| LibreOffice UNO integration | 43813378877 | 0749b11f55cc86244601da14a4d89da9febef168 | success |
+| Word custom-property helper analysis | 43813303321 | 6024f9ffa14dd75885215929bdcda80de9eb9071 | success |
+
+- Python bridge suite: **91 tests run, 90 passed, 1 optional UNO test skipped**. DecodedWordField now exposes both the original field_id and parsed single/twin identifier.
+- Live LibreOffice integration: **8 tests passed**. The synthetic DOCX fixture adds a custom property, updates that existing property through writer_properties.set_custom_document_property, verifies the value in the test, inventories its name without value access, then closes and exports to legacy DOC/CFB.
+- The custom-property reverse-engineering artifact is **14201306994**. It completed successfully; the next pipeline revision expands the trace to shared field lookup, XML-config ingestion, and custom-property population helpers.
+- Intermediate commits during concurrent implementation produced temporary red Python runs because tests landed before the matching DecodedWordField field. The subsequent code commit 0099717df9db0c10c94a9bb7deda184375c2ff58 fixed the mismatch and the latest Python run is green.
+- These tests validate the strict existing-property update adapter and decoder structure, not the mapping of all 180 EMWAT fields or a real Almas Gam letter template.
