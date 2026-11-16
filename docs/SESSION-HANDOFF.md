@@ -1106,3 +1106,6 @@ Do not implement guessed `signData` joining or claim end-to-end Almas registrati
 - `WordAppDocumentBeforeSave` can set Cancel=-1 when viewer state is not ready and can show a three-choice dialog for an unsaved document. One choice cancels. Do not assume this is the Almas commit event.
 - `WordAppDocumentBeforeClose` (`0x004CCBBC`) calls `0x004BCA88`; `SilentSaveEmwatDoc` (`0x004D23D8`) builds two TStringLists and calls `0x004AEBBC`. These are key next targets.
 - A complete-range rerun is in progress to trace OnTmrAutoSave, OnControlerNotify, BeforeClose, BeforeSave, SilentSaveEmwatDoc, and the two helpers. See `docs/WORD-LIFECYCLE-STATIC-TRACE.md` Run 150.
+
+
+- `LoadDocument` calls `OnTmrAutoSave` with the document path at `0x004B7A58`; `OnTmrAutoSave` stores it at `TWordViwer+0xA0` (`0x004B8AE8`). `OnControlerNotify` later reads that field as the source path passed to `T7zOutArchive.AddFiles`. `LoadDocument` creates a `TFileStream` for the same path and writes document data. This links the file generated during Word document setup to the `.easd` archive entry inside `.easz`. Viewer field `+0x80` (base path) still needs mapping.
