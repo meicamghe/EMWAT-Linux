@@ -157,7 +157,7 @@ jobs:
           python tools/find_td32_class_procedures.py analysis-input/EmwatMethods.bpl1 TWordViwer TEmwatMethod TScanDocument > word-automation/save-print/word-class-procedures.md
           python tools/resolve_delphi_vmt_slots.py analysis-input/EmwatMethods.bpl1 word-automation/save-print/word-vmt.md
           python tools/trace_delphi_interfaces.py analysis-input/EmwatMethods.bpl1 word-automation/save-print/word-interfaces.md
-          python tools/decode_pe_strings.py analysis-input/EmwatMethods.bpl1 0x004BFEE8 0x004BFF0C 0x004D1704 0x004D1768 0x004D1778 > word-automation/fields/field-and-property-keys.md
+          python tools/decode_pe_strings.py analysis-input/EmwatMethods.bpl1 0x004BFEE8 0x004BFF0C 0x004D1704 0x004D1768 0x004D1778 > word-automation/save-print/field-and-property-keys.md
       - uses: actions/upload-artifact@v4
         if: hashFiles('analysis-input/EmwatMethods.bpl1') != ''
         with:
