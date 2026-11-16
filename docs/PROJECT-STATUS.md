@@ -1801,3 +1801,13 @@ The BPL export/API analysis resolves the earlier naming ambiguity. The public TE
 - The controller trace confirms `TEDPController.Notify` calls `TEmwatDocPrintHandler.GetDocFieldName` with its `+0x1C` member. No direct call to `TWordViwer.OnControlerNotify` was established from that method.
 - Image/text-field workflow `43821526090` succeeded (artifact `14204287692`). `FillImageField` branches on XML-field attributes and calls Word field/document COM interfaces; `AddImagesToDoc` delegates caption/font work to `GetCaptionItemFont`. The precise image anchor/field mapping is still not known because no original Almas template is available.
 - Both workflows are analysis-only; their output is evidence for the next mapping stage, not proof of a complete image/signature implementation.
+
+
+### Word image-field storage branches and service PE checkpoint — 2026-11-16
+
+- Image-field trace run `43822121391` succeeded (artifact `14204378458`). `FillImageField` contains two explicit storage/log branches: a mapped field value is stored in `CustomDocumentProperties[index]`; otherwise the value is written to `Field.Result.Text`. It also checks a document-field lock state and has explicit twin-filling start/end diagnostics.
+- The same routine checks special field names `LetterRegistrationDate`, `LetterRegistrationNo`, `ProduceDate`, `Receivers`, `ReceiverDeps`, `ccReceivers`, and `ccReceiverDeps`; these are recorded as observed special cases, not assumed to be image IDs.
+- `AddImagesToDoc` delegates to `GetCaptionItemFont`; caption/image positioning constants include `right`, `center`, `left`, `top`, `middle`, and `bottom`. Exact field-to-anchor mapping remains template-dependent.
+- The `EmwatService.exe` scan run `43822306144` succeeded (artifact `14204299947`). It is PE32 (ImageBase `0x00400000`, entry `0x00481C30`) and contains Indy HTTP response RTTI strings (`TIdHTTPResponseInfo`, `ContentText`, `WriteContent`) plus the `invoke=` script token. It has no usable TD32 symbols; this scan alone does not identify the final HTTP handler.
+- The service-analysis workflow was extended with a Delphi VMT scan for Indy HTTP server/response classes. The updated run is pending; no VMT slot result is claimed yet.
+- Added `DecodedWordField.is_image`, based strictly on the preserved MIME prefix `image/`, with tests. This is metadata classification only; it does not insert image content or guess a Writer anchor.
