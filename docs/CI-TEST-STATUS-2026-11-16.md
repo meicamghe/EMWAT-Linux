@@ -319,3 +319,12 @@ These checks validate the adapter and composition boundary. They do not establis
 - Python bridge transport `43818676999`: **101 passed, 1 skipped**.
 - LibreOffice UNO integration `43818676967`: **10 passed**; includes process cleanup tests and a real headless UNO DOCX → legacy .doc close/export roundtrip.
 - Process cleanup now reaps after forced termination and skips already-exited processes.
+
+
+## Latest XML attribute preservation and controller trace — 2026-11-16
+
+- Python bridge run `43820250444` completed successfully: **101 tests run, 100 passed, 1 optional UNO test skipped**.
+- Tests verify preservation of the literal XML attribute key/value, including the backslash-n sequence; the implementation does not normalize `concater` to `concator` or infer concatenation behavior.
+- Native parser-side evidence identifies `concator` as the incoming XML key. The captured schema transcription's `concater` spelling remains a documented discrepancy until the raw request is checked.
+- Controller-init trace run `43820125640` succeeded (artifact `14204196789`). Its controller `Notify` method calls `TEmwatDocPrintHandler.GetDocFieldName`, not the main viewer's `OnControlerNotify`; the two paths remain separate pending further pointer analysis.
+- The current LibreOffice UNO success covers the document roundtrip only. Interactive Yes/No/Cancel equivalence and exact Almas response handling remain unverified.
