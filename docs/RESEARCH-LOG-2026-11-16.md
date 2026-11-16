@@ -630,3 +630,12 @@ The class-validation block (`14269340064`) reveals the next part of the request 
 5. It loads the parsed parameter dictionary from `[TMethodInfo+0x08]` and makes an indirect virtual call through `[object.VMT+0x0C]` at `0x00470EF6`, passing the request context and dictionary.
 
 This is the first concrete class-instance → virtual-dispatch edge in the service path and is the strongest candidate for the BPL `Invoke` bridge. The slot identity is not yet asserted: the current BPL VMT dump labels `TEmwatMethod+0x0C` as `Finalization`, while `TEmwatMethod.Invoke` is at `0x0046C82C` and `PerformMethod` is a separate virtual slot at `+0x10`. The enhanced BPL method-table/VMT trace and service helper traces must resolve whether the service object uses an interface-adjusted VMT, a wrapper class, or another slot mapping before calling this `Invoke`.
+
+### Service class-validation helpers resolved
+
+The service helper traces (`14266694185`) resolve the three calls in `ParseMethod`:
+- `0x004010B8` is the import thunk for `TObject.ClassName` (IAT `0x00487460`). It obtains the selected class's name.
+- `0x00401320` is the import thunk for `System.UStrEqual` (IAT `0x0048732C`). It compares the returned class name against literal `TUpgradeEmwat` at `0x00471128`, and the equality result is stored at `TMethodInfo+0x04`.
+- `0x004010D8` is the import thunk for `TObject.Create` (IAT `0x00487450`). It constructs an instance of the class returned by `GetClass`.
+
+Thus the class-name validation and object-construction sequence is confirmed, not inferred. The subsequent VMT `+0x0C` call remains the final dispatch slot to map to the BPL method.
