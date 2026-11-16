@@ -108,6 +108,17 @@ class WordFieldDecodingTests(unittest.TestCase):
         self.assertEqual(field.value, bytes.fromhex("01020304"))
         self.assertEqual(field.mimetype, "image/png")
         self.assertTrue(field.is_image)
+        self.assertFalse(field.uses_native_text_field_path)
+
+        text_config = parse(
+            '<word-document><fields><field id="Text" mimetype="text/plain">body</field>'
+            '<field id="Other" mimetype="application/pdf">data</field>'
+            '<field id="NoMime">data</field></fields></word-document>'
+        )
+        text_fields = decode_word_fields(text_config)
+        self.assertTrue(text_fields[0].uses_native_text_field_path)
+        self.assertFalse(text_fields[1].uses_native_text_field_path)
+        self.assertFalse(text_fields[2].uses_native_text_field_path)
 
         unpadded_quartet = parse(
             '<word-document><fields><field id="raw" encryption="base64">AQID</field>'
