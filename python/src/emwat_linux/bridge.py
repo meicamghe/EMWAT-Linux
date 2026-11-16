@@ -164,7 +164,7 @@ class BridgeHTTPServer:
                     self._send(404, b"", "text/plain; charset=utf-8")
                     return
                 # The embedded Windows bridge emits POST /?invoke=<random 1-5 digit ID>.
-                if not re.fullmatch(r"invoke=\\d{1,5}", parsed.query):
+                if not re.fullmatch(r"invoke=\d{1,5}", parsed.query):
                     self._send(404, b"", "text/plain; charset=utf-8")
                     return
                 if self.headers.get("Transfer-Encoding"):
