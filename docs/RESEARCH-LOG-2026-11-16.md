@@ -173,3 +173,14 @@ Important design decisions:
 - Compare semantic document output and response behavior rather than requiring binary DOCX package equality.
 
 This is a design/test contract, not an implemented or runtime-verified Linux replacement. The exact HTTP route/response schema, BPL method dispatch, field-name mapping, and print semantics remain open.
+
+
+## Follow-up — avoid unnecessary CI setup when binaries are absent
+
+The two analysis workflows were tightened so `actions/setup-python` and the `pefile`/`capstone` installation run only when their corresponding binary input exists. This avoids consuming runner time and dependency-install work on a checkout that only needs to report missing inputs.
+
+Commits:
+- Word automation workflow: `b8e36f71b91533398d629dcb97a1cf36e5167537`
+- Service/BPL dispatch workflow: `1312ed0d42db82063e9202f7f0459b1e272f2f13`
+
+The trace and artifact-upload guards remain in place. This change has been committed, but no new Actions run has been verified; it is not a test-pass claim.
