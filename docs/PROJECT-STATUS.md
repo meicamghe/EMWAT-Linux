@@ -1666,3 +1666,11 @@ The BPL export/API analysis resolves the earlier naming ambiguity. The public TE
 - `PrepareOperation` شاخه‌های متفاوتی بر اساس `Self+0x3C`، callback/context در `Self+0x50/+0x54` و رشته‌ی `Self+0x58` دارد. نگاشت قطعی فیلدها به نام propertyها و مقصد واقعی فایل خروجی هنوز در حال بررسی است.
 - مستندات به‌روزشده: `docs/RECOVERY-STORE-ANALYSIS.md` بخش‌های ۲۴ و ۲۵؛ commit `f81be2be436a1ec042ee77c15f79611c4997a89d` و commit قبلی callback IID `9cd603b96648220b84c878eb3782b36dd3e02cc4`.
 - workflow مستقل callback-contracts شماره ۳ برای disassembly هدف‌های غیر-TD32 و decode رشته‌های prompt در صف اجراست.
+
+
+## همگام‌سازی موازی — 2026-11-16 (صبح)
+
+- چهار شاخهٔ تحلیل مستقل از commit `cfdb4c0c` به‌طور هم‌زمان در حال اجرا هستند: recovery/SevenZip، Word lifecycle، Word event sink و close/response chain. تا زمان تکمیل و بررسی artifactها، هیچ نتیجه‌ای از آن‌ها قطعی گزارش نمی‌شود.
+- Artifact close/response chain run `43815879141` بررسی شد: wrapperهای `TWordDocument` نگاشت `Get_Saved → slot +0xD4`، `Set_Saved → +0xD8`، `Get_Content → +0xDC` و `Save → +0x2B8` را تأیید می‌کنند. بنابراین slot `+0xDC` در `OnControlerNotify` با Save/Close یکی نیست؛ قرارداد آرگومان `-1` و payload خروجی همچنان باز است.
+- Python bridge run `43816121607` پس از اصلاح fixture مربوط به encoding با موفقیت کامل شد. خطا از انتظار اشتباه تست برای decode کردن فیلد plain بدون `encryption=urlencoded` بود؛ رفتار decoder دست‌نخورده ماند.
+- چهار workflow قدیمی Python/UNO/asset inventory همچنان سبز هستند: 86 تست Python، 8 تست UNO و صفر template Word در آرشیو نصب‌کننده. این نتایج به‌تنهایی صحت end-to-end با Almas را ثابت نمی‌کنند.
