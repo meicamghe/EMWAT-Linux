@@ -224,3 +224,10 @@ Known limitations:
 - `python/src/emwat_linux/writer_inspector.py` inventories Writer bookmarks, named ranges, sections, tables, frames, graphic objects, document indexes, and text-field implementation/property metadata. It does not read or log letter text or field values.
 - The adapter exposes this inventory through `LibreOfficeAdapter.inspect_document(handle)`. The live UNO test now checks a bookmark imported from a DOCX fixture.
 - The inventory is groundwork for mapping the 180 known EMWAT field IDs to actual template structures. No field-to-bookmark mapping is hard-coded yet; the original template's structure still needs to be inspected.
+
+
+### Packaged installer asset check — 2026-11-16
+
+The metadata-only inventory workflow `43810767154` inspected the tracked `EMWAT_Extracted.zip` and found no Word-family files (`.doc`, `.docx`, `.dot`, `.dotx`, `.dotm`, or `.rtf`). Consequently, the original EMWAT Word template is not available in the current extracted installer archive.
+
+The Windows binary analysis indicates that the original application actively enumerates the Word `Fields` collection, resolves XML field metadata, and has separate text/image field paths. The Linux mapping therefore must inspect more than bookmarks: Writer text fields, named ranges, bookmarks, content controls imported from OOXML, frames, and graphics all remain candidates. The current Writer inspector inventories these structures, but a representative anonymized Almas letter/template is still required to establish the actual mapping and visual fidelity.
