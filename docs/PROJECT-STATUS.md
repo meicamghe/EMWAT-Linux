@@ -2070,3 +2070,14 @@ Artifact `14227611377` resolves the earlier interface-signature uncertainty:
 ## تحلیل تکمیلی تصویر و فیلدهای چاپ — کار در صف CI
 
 Workflow تحلیل Word گسترش یافت تا helper مرکزی درج تصویر `0x004C19C0)، resolver فیلد `0x004BC170)، رشته‌های شاخه‌های `FillImageField` و رشته‌های شرطی `FillPrintDocFields` را decode کند. تغییرات در commitهای `367e4aa58514029278624c65837059f13807394a` و `c159c69141da56ea1bba0c8d829e4839febaf135` ثبت شده‌اند. خروجی این batch هنوز باید از GitHub Actions دریافت و بررسی شود؛ تا آن زمان helper و برچسب‌های شرطی را ناشناخته نگه می‌داریم.
+
+
+## تکمیل تحلیل GetDocFieldIndex و بازبینی CI — 2026-11-16
+
+- تابع `0x004C0550` با سمبل TD32 به‌صورت قطعی `TWordViwer.GetDocFieldIndex` شناسایی شد.
+- زنجیره تطبیق فیلد: Word Fields → `FindFieldInActivefields` → `GetXmlFieldInfo` → شاخه‌های `FillMSWFields` و `SetFieldValue`؛ مسیر متن از `FillTextField` و شاخه تصویر/کپشن از `AddImagesToDoc` ادامه پیدا می‌کند.
+- `GetCaptionItemFont` از مسیر `AddImagesToDoc` فراخوانی می‌شود و خودش `GetXmlFieldInfo`، `SetFieldValue`، `EmbedTextToImage` و `FillMSWFields` را اجرا می‌کند.
+- `GetCaptionItems` از `ResizeBitmapCanvas` و `ProcessWords` فراخوانی می‌شود. `GetImageResolution` در مسیر `StrToAlign` به‌عنوان تبدیل رشته به مقدار enum با شش حالت دیده شده؛ نام سمبل به‌تنهایی معنای DPI را ثابت نمی‌کند.
+- خطای مسیر خروجی decoder در Workflow اصلاح شد. اجرای `43886833015` هر سه job تحلیل lifecycle، field mapping و save/print را با موفقیت تمام کرد.
+- CI کد: Python bridge اجرا `43886698595` با ۱۰۴ تست موفق و ۲ skip اختیاری؛ LibreOffice UNO اجرا `43886698714` با ۱۱ تست موفق.
+- مستند تفصیلی: `docs/WORD-AUTOMATION-SURFACE-2026-11-16.md`. اجرای جدید برای decode رشته‌های دقیق branchها با run `43887016674` در صف/حال اجراست.
