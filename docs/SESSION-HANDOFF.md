@@ -918,3 +918,13 @@ Run `43719180035` succeeded; artifact `14164088249` was inspected. Additional ev
 - Twin record: index در `+4`، شناسه اول در `+8` و شناسه دوم در `+0xC`. تابع counterpart طرف مقابل را برمی‌گرداند.
 - در صورت عدم تطبیق، index برابر `-1` و flag موفقیت false می‌ماند.
 - هدف بعدی trace کردن `SetFieldValue` در `0x004BFDB0` و callsiteهای dictionary Add/AddOrSetValue است تا قرارداد value/index نهایی روشن شود.
+
+
+### Controller Notify و مسیر finalize سند
+
+- Run `43813684507` موفق شد؛ artifact `14200889822`.
+- `TWordViwer.OnControlerNotify` در `0x004BB3B0` پس از اعتبارسنجی state/message، `CostumizeRecAndCC` را اجرا می‌کند، سپس `-1` را همراه document interface به COM slot `+0xDC` می‌دهد و flagها را reset می‌کند.
+- بعد از آن دو مقدار از مسیر `FixDirectionInFarsiNumericMode` و `0x00456DFC` عبور می‌کنند.
+- `0x005EE82C` در TD32 با نام `TScanDocument.PerformMethod` آمده و `LoadDocument` در `0x004B7724` را فراخوانی می‌کند؛ نام procedure را به‌جای برچسب قبلی TEditWordDocument در مستندات استفاده کن.
+- COM slot `+0xDC` هنوز با wrapperهای `TWordDocument.Close` و `Save` تطبیق داده نشده. دو workflow جدید برای مقایسه slotها و decode رشته‌های controller/PerformMethod در حال اجرا هستند: `43814055308` و `43814083027`.
+- ثبت نهایی Almas و payload شبکه هنوز اثبات نشده؛ صرفاً این controller-notify sequence با finalize/close-side سازگار است.
