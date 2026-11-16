@@ -2,6 +2,7 @@ import unittest
 
 from emwat_linux.writer_properties import (
     WriterPropertyUpdateError,
+    set_custom_document_properties,
     set_custom_document_property,
 )
 
@@ -61,6 +62,34 @@ class WriterPropertyUpdateTests(unittest.TestCase):
     def test_rejects_empty_property_name(self):
         with self.assertRaisesRegex(ValueError, "custom_property_name_required"):
             set_custom_document_property(FakeDocument(), "", "value")
+
+    def test_batch_validates_all_names_before_mutating(self):
+        document = FakeDocument()
+        with self.assertRaisesRegex(KeyError, "custom_property_not_found"):
+            set_custom_document_properties(
+                document,
+                {"LetterSubject": "new", "UnknownField": "value"},
+            )
+        self.assertEqual(
+            document.properties.getPropertyValue("LetterSubject"),
+            "old",
+        )
+        self.assertNotIn("UnknownField", document.properties.values)
+
+    def test_batch_updates_multiple_existing_properties(self):
+        document = FakeDocument()
+        document.properties.values["LetterNumber"] = "old-number"
+        document.properties.info = FakePropertyInfo(document.properties.values)
+        set_custom_document_properties(
+            document,
+            {"LetterSubject": "new", "LetterNumber": "42"},
+        )
+        self.assertEqual(document.properties.values["LetterSubject"], "new")
+        self.assertEqual(document.properties.values["LetterNumber"], "42")
+
+    def test_batch_rejects_non_text_values(self):
+        with self.assertRaisesRegex(TypeError, "custom_property_value_must_be_text"):
+            set_custom_document_properties(FakeDocument(), {"LetterSubject": b"binary"})
 
     def test_wraps_unexpected_uno_update_errors(self):
         class BrokenProperties(FakeUserProperties):
