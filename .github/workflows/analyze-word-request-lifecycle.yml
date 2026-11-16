@@ -65,6 +65,13 @@ jobs:
           mkdir -p request-lifecycle-analysis/remaining-helpers
           python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x004B8A84 0x004BA058 request-lifecycle-analysis/remaining-helpers/OnTmrAutoSave-main-range.md
           python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x004B8F30 0x004BA058 request-lifecycle-analysis/remaining-helpers/OnTmrAutoSave-late-range.md
+          python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x004B9900 0x004B9A80 request-lifecycle-analysis/remaining-helpers/OnTmrAutoSave-timer-registration.md
+          for target in 004B999A 004BA058 004D2EC8 004BB3B0; do
+            python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x$target request-lifecycle-analysis/remaining-helpers/target-$target.md 1800 ret
+            python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x$target request-lifecycle-analysis/remaining-helpers/procedure-$target.md || true
+            python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x$target request-lifecycle-analysis/remaining-helpers/callers-$target.md || true
+          done
+          python tools/decode_pe_strings.py analysis-input/EmwatMethods.bpl1 0x004BB6CC 0x004BB754 0x004BB76C > request-lifecycle-analysis/remaining-helpers/controller-notify-strings.md
           for target in 00468150 00468198 004735C4 00403248 004032A8 00403368 00404F04 004A0148; do
             python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x$target request-lifecycle-analysis/remaining-helpers/procedure-$target.md
             python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x$target request-lifecycle-analysis/remaining-helpers/callers-$target.md
