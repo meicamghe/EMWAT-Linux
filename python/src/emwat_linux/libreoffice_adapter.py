@@ -21,6 +21,7 @@ from typing import Callable
 
 from emwat_linux.editword_request import EditWordDocumentRequest
 from emwat_linux.office_adapter import CloseDisposition, OfficeCloseEvent
+from emwat_linux.writer_inspector import WriterDocumentCatalog, inspect_writer_document
 
 
 _CFB_SIGNATURE = bytes.fromhex("D0CF11E0A1B11AE1")
@@ -357,6 +358,12 @@ class LibreOfficeAdapter:
         prop.Name = name
         prop.Value = value
         return prop
+
+    def inspect_document(self, handle: object) -> WriterDocumentCatalog:
+        """Inventory Writer structure without exposing document text or values."""
+        if not isinstance(handle, _OfficeHandle):
+            raise TypeError("invalid_libreoffice_handle")
+        return inspect_writer_document(handle.document)
 
     def wait_for_close(self, handle: object) -> OfficeCloseEvent:
         if not isinstance(handle, _OfficeHandle):
