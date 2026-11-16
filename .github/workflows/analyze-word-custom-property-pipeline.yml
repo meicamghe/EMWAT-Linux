@@ -55,6 +55,13 @@ jobs:
           status=0
           for pid in "${pids[@]}"; do wait "$pid" || status=1; done
           exit "$status"
+      - name: Decode field-name rules and custom-property delimiters
+        run: |
+          python tools/decode_pe_strings.py analysis-input/EmwatMethods.bpl1 \
+            0x004D1704 0x004D1768 0x004D1778 0x004D13F0 0x004D1384 \
+            0x004BBE24 0x004BBE58 0x004BBE9C 0x004BBEE8 \
+            0x004BBF1C 0x004BBF6C 0x004BC08C 0x004BC0C0 \
+            > word-custom-property-pipeline/field-name-and-property-strings.md
       - uses: actions/upload-artifact@v4
         with:
           name: emwat-word-custom-property-pipeline
