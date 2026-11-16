@@ -3,6 +3,10 @@
 
 ## پیشرفت اجرایی جدید — 2026-11-16
 
+- **Writer Custom Property update adapter:** ماژول writer_properties.py فقط property موجود با نام دقیق و تأییدشده را به‌روزرسانی می‌کند؛ property ناشناخته را ایجاد نمی‌کند و مقدار قبلی را نمی‌خواند. تست UNO واقعی نیز یک property آزمایشی را اضافه و از طریق همین adapter به‌روزرسانی کرد و سپس سند را بست و DOC/CFB خروجی گرفت.
+- **تأیید پس از ادغام Twin Field:** run پایتون 43813400123 موفق شد: ۹۱ تست اجرا، ۹۰ پاس و یک skip اختیاری UNO. run یکپارچه LibreOffice شماره 43813378877 نیز ۸/۸ تست را پاس کرد. تحلیل custom-property run 43813303321 نیز موفق و artifact آن 14201306994 است.
+- **تحلیل موازی بعدی:** pipeline جدید در commit 0f5622a گسترش یافت تا 0x004BFDB0، 0x004BC170، 0x004D08B4، 0x004D1148، 0x004D1454 و 0x004D3B78 را در کنار مسیرهای قبلی ردیابی کند؛ run 43813533418 در صف اجراست و هنوز نتیجه‌ای برای آن ادعا نمی‌شود.
+
 - **یکپارچه‌سازی Twin Field در مدل decode:** شناسه‌های فیلد اکنون هنگام decode نیز به ساختار single/twin تبدیل می‌شوند؛ شناسه خام اصلی حفظ شده و دو سمت Twin جداگانه در دسترس adapter قرار می‌گیرد. این تغییر صرفاً مدل‌سازی شناسه است و هیچ mapping حدسی به bookmark یا Writer range انجام نمی‌دهد.
 - **تحلیل مسیر Custom Properties:** artifact شماره 14200962076 (run 43812565648) مسیر dictionary سفارشی را عمیق‌تر کرد. helperهای ContainsValue و SetItem در مسیر FillImageField/FillPrintDocFields به کار می‌روند؛ 0x004D1B30 در TD32 به ShowRecAndCcOptionForm نام‌گذاری شده و از GetDocFieldName فراخوانی می‌شود. FindWindowExtd در 0x0045644C از مسیر FillImageField استفاده می‌شود. این توابع هنوز به‌تنهایی معنای wire یا نگاشت همه ۱۸۰ فیلد را تعیین نمی‌کنند.
 
