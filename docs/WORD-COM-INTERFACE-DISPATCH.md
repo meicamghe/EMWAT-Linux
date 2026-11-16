@@ -1091,3 +1091,13 @@ Source: workflow 43831365563, artifact 14208144442.
 - The init branch assigns the response text to TIdHTTPResponseInfo.ContentText at object offset +0xBC and directly calls WriteContent at 0x004610FC from 0x0047C237. The heartbeat branch checks parameter heartbeat and also calls WriteContent at 0x0047C2A9.
 - This direct callsite confirms the field layout: ContentText is +0xBC; ContentStream is +0xB8. Earlier draft notes that reversed these fields have been corrected.
 - Evidence boundary: the generic HTTP response writer is now directly tied to the MainForm handler for init/heartbeat. The invoke branch's plugin result serialization and exact close-time Almas response envelope remain the next target.
+
+
+## BPL class hierarchy and Invoke contract — 2026-11-16
+
+Source: workflow 43832553168, artifact 14208369288.
+
+- TD32 identifies TEmwatMethod.Invoke at 0x0046C82C with parameter type TDictionary<AnsiString,AnsiString>.
+- The Delphi VMT/interface scan resolves TEmwatMethod VMT method-table base at 0x0046ABFC. TEditWordDocument VMT is 0x005ED764 and its parent pointer resolves to the TEmwatMethod VMT header start (0x0046ABA4 = 0x0046ABFC - 0x58). This establishes TEditWordDocument inherits TEmwatMethod.
+- TScanDocument, TFaxDocument, TGetEmwatVersion, TSetEmwatVersion, TUpgradeEmwat, TImageEdition, TEditExcelWorkBook, and TCompareWordDocument also point to the same TEmwatMethod parent header.
+- TEmwatMethod.Invoke iterates the dictionary's key/value enumerator and dispatches each entry through an instance virtual/interface slot. Direct TD32 caller scan finds only one direct call in unit finalization; the service's runtime invocation is therefore not yet a proven direct callsite and likely uses RTTI/dynamic dispatch. This must be resolved before claiming the complete request-to-class call chain.

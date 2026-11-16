@@ -1874,3 +1874,8 @@ The service RTTI resolves TMainForm.IdHTTPServerCommandGet to 0x0047BF30. It rea
 ## Invoke XML parser mapped — 2026-11-16
 
 The MainForm invoke route reaches ParseMethod (0x00470D00) and parser worker 0x00470B38. The parser recognizes the XML root emwat with version, then method/class/param elements and the param name attribute. Token dispatch is in 0x0046ADBC; 0x0046A7A4 appends three-value records to an internal collection. The exact mapping from these records into the BPL TEmwatMethod.Invoke dictionary and the final invoke response remains under analysis.
+
+
+## BPL method class hierarchy resolved — 2026-11-16
+
+The BPL VMT scan establishes that TEditWordDocument inherits TEmwatMethod; TScanDocument, TFaxDocument, TGetEmwatVersion, TSetEmwatVersion, TUpgradeEmwat, TImageEdition, TEditExcelWorkBook, and TCompareWordDocument share that same base. TEmwatMethod.Invoke (0x0046C82C) accepts TDictionary<AnsiString,AnsiString> and iterates key/value pairs. Its request-time caller remains indirect/unresolved; the only direct TD32 caller found is a unit-finalization path.

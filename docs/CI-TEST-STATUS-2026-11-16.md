@@ -425,3 +425,13 @@ Source: workflow 43832144163, artifact 14209690263.
 - The parser recognizes root tag "emwat", its "version" attribute, and child tags "method", "class", and "param"; the "param" child uses the "name" attribute.
 - Parser token helper 0x0046ADBC compares the token names and routes recognized elements. Helper 0x0046A7A4 appends a three-value record to the parser's dynamic collection (three adjacent string/value slots); exact semantic names for all three record fields remain unconfirmed.
 - This is the service-side XML parsing stage. The BPL-side TEmwatMethod.Invoke dictionary contract is known separately; the conversion/link from these parser records to the BPL invocation and the exact response payload still need proof.
+
+
+## BPL class hierarchy and Invoke contract — 2026-11-16
+
+Source: workflow 43832553168, artifact 14208369288.
+
+- TD32 identifies TEmwatMethod.Invoke at 0x0046C82C with parameter type TDictionary<AnsiString,AnsiString>.
+- The Delphi VMT/interface scan resolves TEmwatMethod VMT method-table base at 0x0046ABFC. TEditWordDocument VMT is 0x005ED764 and its parent pointer resolves to the TEmwatMethod VMT header start (0x0046ABA4 = 0x0046ABFC - 0x58). This establishes TEditWordDocument inherits TEmwatMethod.
+- TScanDocument, TFaxDocument, TGetEmwatVersion, TSetEmwatVersion, TUpgradeEmwat, TImageEdition, TEditExcelWorkBook, and TCompareWordDocument also point to the same TEmwatMethod parent header.
+- TEmwatMethod.Invoke iterates the dictionary's key/value enumerator and dispatches each entry through an instance virtual/interface slot. Direct TD32 caller scan finds only one direct call in unit finalization; the service's runtime invocation is therefore not yet a proven direct callsite and likely uses RTTI/dynamic dispatch. This must be resolved before claiming the complete request-to-class call chain.
