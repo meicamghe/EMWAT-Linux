@@ -188,3 +188,7 @@ After `GetClass`, the service compares a class-related value with `TUpgradeEmwat
 ### Class-name validation and object construction helpers resolved
 
 The helper at `0x004010B8` is `TObject.ClassName` (IAT `0x00487460`); the helper at `0x00401320` is `System.UStrEqual` (IAT `0x0048732C`); and the helper at `0x004010D8` is `TObject.Create` (IAT `0x00487450`). `ParseMethod` therefore obtains the resolved class name, compares it with `TUpgradeEmwat`, stores the Boolean result at `TMethodInfo+0x04`, and creates the selected class instance with `TObject.Create`. The later VMT `+0x0C` call still needs its exact BPL method-slot identity.
+
+### Confirmed service → BPL Invoke bridge
+
+The service calls the created object's VMT slot `+0x0C` at `0x00470EF6`. For BPL class `TEmwatMethod` (VMT `0x0046ABFC`), this slot points to `TEmwatMethod.Finalization` at `0x0046C9E0`; the direct-caller trace proves that routine calls `TEmwatMethod.Invoke` at `0x0046CA67` (`0x0046C82C`). The confirmed dispatch chain is therefore `ParseMethod → GetClass → TObject.Create → VMT[+0x0C] → TEmwatMethod.Finalization → TEmwatMethod.Invoke`. The remaining trace target is the indirect `Invoke → PerformMethod` edge at the subclass VMT slot `+0x10`.
