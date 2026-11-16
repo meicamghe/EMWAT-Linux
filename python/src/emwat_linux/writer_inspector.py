@@ -25,6 +25,7 @@ class WriterDocumentCatalog:
     graphic_objects: tuple[str, ...]
     document_indexes: tuple[str, ...]
     text_fields: tuple[WriterTextFieldInfo, ...]
+    custom_document_properties: tuple[str, ...]
 
 
 def _element_names(container: object) -> tuple[str, ...]:
@@ -80,6 +81,16 @@ def _text_fields(document: object) -> tuple[WriterTextFieldInfo, ...]:
     return tuple(result)
 
 
+def _custom_document_property_names(document: object) -> tuple[str, ...]:
+    """Return custom-property names only; never retrieve property values."""
+    try:
+        properties = document.getDocumentProperties().getUserDefinedProperties()
+        info = properties.getPropertySetInfo()
+        return tuple(sorted(str(item.Name) for item in info.getProperties()))
+    except Exception:
+        return ()
+
+
 def inspect_writer_document(document: object) -> WriterDocumentCatalog:
     """Return structural names and text-field metadata without document values."""
     return WriterDocumentCatalog(
@@ -91,6 +102,7 @@ def inspect_writer_document(document: object) -> WriterDocumentCatalog:
         graphic_objects=_container_names(document, "getGraphicObjects"),
         document_indexes=_container_names(document, "getDocumentIndexes"),
         text_fields=_text_fields(document),
+        custom_document_properties=_custom_document_property_names(document),
     )
 
 
