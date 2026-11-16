@@ -163,4 +163,4 @@ Artifact: `emwat-service-dispatch-crosswalk`, run `43883105610`, artifact `14233
 
 ### Duplicate parameter behavior
 
-The parser's dictionary insertion helper `0x0046ADBC` probes the hash table before appending. If the key already exists (`0x0046A570` returns a non-negative bucket index), it enters the duplicate-key exception path (`0x00402 11C` / `0x00401198`) instead of treating the second value as an overwrite. The Python envelope parser's `duplicate_parameter` rejection therefore matches the native Add semantics; it must not be changed to last-value-wins behavior.
+The parser's dictionary insertion helper `0x0046ADBC` probes the hash table before appending. If the key already exists (`0x0046A570` returns a non-negative bucket index), it enters the duplicate-key exception path (`0x0040211C` / `0x00401198`) instead of treating the second value as an overwrite. The Python envelope parser's `duplicate_parameter` rejection therefore matches the native Add semantics; it must not be changed to last-value-wins behavior.
