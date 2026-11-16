@@ -41,6 +41,35 @@ def _unused_loopback_port() -> int:
         return int(sock.getsockname()[1])
 
 
+def _stop_process(
+    process: subprocess.Popen[bytes],
+    *,
+    terminate_timeout: float,
+    kill_timeout: float,
+) -> None:
+    """Stop a child process and always attempt to reap it after SIGKILL."""
+    if process.poll() is not None:
+        return
+    try:
+        process.terminate()
+    except ProcessLookupError:
+        return
+    try:
+        process.wait(timeout=terminate_timeout)
+        return
+    except subprocess.TimeoutExpired:
+        pass
+    try:
+        process.kill()
+    except ProcessLookupError:
+        pass
+    try:
+        process.wait(timeout=kill_timeout)
+    except subprocess.TimeoutExpired:
+        # The OS still owns the process; don't block bridge shutdown forever.
+        return
+
+
 def _source_extension(data: bytes) -> str:
     """Recognize the two common Word containers; retain .doc fallback for CFB."""
     if data.startswith(_CFB_SIGNATURE):
@@ -345,12 +374,8 @@ class LibreOfficeAdapter:
             handle.context = context
             return handle
         except Exception:
-            if process is not None and process.poll() is None:
-                process.terminate()
-                try:
-                    process.wait(timeout=3)
-                except subprocess.TimeoutExpired:
-                    process.kill()
+            if process is not None:
+                _stop_process(process, terminate_timeout=3, kill_timeout=2)
             shutil.rmtree(work_dir, ignore_errors=True)
             raise
 
@@ -428,13 +453,7 @@ class LibreOfficeAdapter:
 
     def _cleanup(self, handle: _OfficeHandle) -> None:
         process = handle.process
-        if process.poll() is None:
-            process.terminate()
-            try:
-                process.wait(timeout=5)
-            except subprocess.TimeoutExpired:
-                process.kill()
-                process.wait(timeout=2)
+        _stop_process(process, terminate_timeout=5, kill_timeout=2)
         shutil.rmtree(handle.work_dir, ignore_errors=True)
 
 
