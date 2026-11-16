@@ -1003,3 +1003,35 @@ Artifact اجرای callback trace (run `43816996023`, artifact `14203047153`) �
 `LoadOptions` در این بدنه تنظیمات چاپ را بارگذاری/نمایش می‌دهد و رشته‌های `Word Print Dialog`، `SOFTWARE\\Emwat\\Dynamic Config` و پیام دسترسی چاپ را مصرف می‌کند؛ این callback به close/registration مربوط نیست.
 
 این تطبیق ابهام callback چهارم را برطرف می‌کند، اما نتیجه‌ی قبلی درباره‌ی `WordAppDocumentBeforeClose` تغییر نمی‌کند: در این event record هیچ assignment برای `0x004CCBBC` وجود ندارد و فعال بودن آن در main editor هنوز اثبات نشده است.
+
+
+## Run 134 — main Word close/save lifecycle resolved
+
+Artifact: Word lifecycle run `43817445960`, artifact `14203757393`.
+
+### Active callback is BeforeSave, not BeforeClose
+
+- The event record from `OnTmrAutoSave` registers `WordAppDocumentBeforeSave` at `0x004CD154`.
+- The main editor's `WordAppDocumentBeforeClose` at `0x004CCBBC` still has no proven event-record assignment and only the separate print-handler caller. It is not the demonstrated main close path.
+
+### Exact user-choice → COM Close flow
+
+In `TWordViwer.WordAppDocumentBeforeSave` (`0x004CD154`):
+
+1. It verifies that the event's document matches `viewer+0x48` and that the viewer state permits handling.
+2. It calls `TWordDocument.Set_Saved` through COM slot `+0xD8` with a false/zero value, marking the Word document as not saved.
+3. It displays the registration prompt. The dialog result is then mapped as follows:
+   - Yes (`MessageDlg` result 6): the first `OleVariant` passed to Close is set to `-1` (True / SaveChanges).
+   - No: the first `OleVariant` remains `0` (False / do not save changes).
+   - Cancel (`MessageDlg` result 2): it sets the Word event's `Cancel` field to `0xFFFF` and exits without closing the document.
+4. For Yes/No, it invokes the three-argument `TWordDocument.Close` overload through COM slot `+0x29C`; the other two `OleVariant` arguments are initialized but left empty. It then clears the active document pointer and updates viewer close state.
+
+### Overload verification
+
+TD32 procedure traces show the one-, two-, and three-argument `TWordDocument.Close` wrappers at `0x0042FF08`, `0x0042FF7C`, and `0x0042FFF4`. All resolve through `0x0042ABA0` to the underlying Word document interface and dispatch slot `+0x29C`. The main BeforeSave callback uses the three-argument form, matching Word's `_Document.Close(SaveChanges, OriginalFormat, RouteDocument)` signature.
+
+### What this proves — and what it does not
+
+This explains why closing Word can register/return a document even when the user did not press the Word Save button: the registered BeforeSave handler asks whether to register changes and then explicitly closes the Word document with SaveChanges True/False. Cancel vetoes the close. This is a much stronger lifecycle proof than the earlier BeforeClose hypothesis.
+
+It still does **not** identify the exact HTTP POST/response envelope used to return the resulting document to Almas. The controller-notify/Get_Content and paired `.easd/.easz` paths remain under analysis; do not conflate COM Close with the final local HTTP response.
