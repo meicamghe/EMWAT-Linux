@@ -28,6 +28,8 @@
 
 ## پیشرفت اجرایی جدید — 2026-11-16
 
+- **تحلیل SevenZip مسیر بازیابی:** run `43815900302` مشخص کرد `euUnArchive` مسیر extraction و `euResetMemory` مسیر ساخت archive است؛ این دو نباید یکی فرض شوند. `euResetMemory` فقط از Finalization و Delete فراخوانی مستقیم دارد. مهم‌تر اینکه `T7zOutArchive.SetPassword` در `0x004547DC` یک stub بدون عملیات است؛ پس رشته‌ای که به آن داده می‌شود رمزگذاری خروجی را ثابت نمی‌کند. `T7zInArchive.SetPassword` پیاده‌سازی واقعی دارد، اما direct CALL xref ندارد و فراخوانی indirect هنوز بررسی می‌شود.
+
 - **تست URL decode نهایی:** `urlencoded` اکنون رفتار native را دارد: `+` به فاصله و `%2B` به علامت `+` تبدیل می‌شود. تست‌های اصلاح‌شده در Python run `43816293635` سبز شدند (۹۹ تست، ۹۸ پاس و یک skip اختیاری). مسیر Base64 متنی از مسیر bytes تصاویر جدا نگه داشته شده تا trace زیرلایه encoding کامل شود.
 
 - **کشف مسیر واقعی Event Sink ورد:** run `43815900228` موفق شد. `TWordApplication.ConnectTo` از مسیر COM event interface متصل می‌شود و رکورد callbackها در `OnTmrAutoSave` شامل `WordAppDocumentBeforeSave`، `WordAppNewDocument` و `WordAppWindowActivate` است. بنابراین BeforeSave به‌صورت صریح در event sink نصب شده؛ `WordAppDocumentBeforeClose` در این رکورد نیست و direct caller آن فعلاً فقط مسیر FillImgFldsForPrint است. این اتصال هنوز به‌تنهایی POST نهایی به الماس را اثبات نمی‌کند.
