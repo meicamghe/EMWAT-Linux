@@ -50,7 +50,8 @@ def main():
       "Instance size":readva(vmt+VMT_INSTANCESIZE),
       "Parent VMT":readva(vmt+VMT_PARENT),
     }
-    lines=["# Delphi VMT address inspection","",f"- VMT VA: 0x{vmt:08X}","",f"- TD32 symbols: {"available" if hit else "not present; addresses shown without symbol labels"}",""]
+    td32_status = "available" if hit else "not present; addresses shown without symbol labels"
+    lines=["# Delphi VMT address inspection","",f"- VMT VA: 0x{vmt:08X}","",f"- TD32 symbols: {td32_status}",""]
     for k,val in fields.items():
         if val is None: lines.append(f"- {k}: unmapped")
         elif k=="Instance size": lines.append(f"- {k}: 0x{val:X}")
