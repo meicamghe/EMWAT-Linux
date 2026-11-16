@@ -13,8 +13,11 @@ MethodHandler = Callable[[MethodCall, BridgeRequest], BridgeResponse]
 class XMLMethodDispatcher:
     """Dispatch only methods explicitly registered by the application.
 
-    Unknown methods are rejected; XML class names are never imported or
-    resolved dynamically. No success-shaped XML response is fabricated.
+    The native Delphi service prefixes the XML class value with T before
+    calling GetClass (for example, EditWordDocument becomes
+    TEditWordDocument). Winux keeps the original XML value as its allowlisted
+    registry key and never performs unrestricted runtime class resolution.
+    No success-shaped XML response is fabricated.
     """
 
     def __init__(self, *, max_payload_bytes: int = 16 * 1024 * 1024) -> None:
