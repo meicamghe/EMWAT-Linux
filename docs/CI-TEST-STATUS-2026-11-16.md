@@ -49,3 +49,15 @@ Runs `43736828611`, `43736860267`, and `43736828559` failed because their requir
 - Field decoder tests cover URL-encoded text, Base64 image bytes, plain-text preservation, optional attributes, and opaque external signData binding.
 
 These checks validate the adapter and composition boundary. They do not establish compatibility with the original Almas Gam Word template, all 180 field IDs, or the live close/cancel/registration workflow.
+
+
+## Writer structure inspection checkpoint — 2026-11-16
+
+| Workflow | Run ID | Commit | Result |
+|---|---:|---|---|
+| LibreOffice UNO integration | 43810592239 | 83e15a565a3d83f0be4b1f758d8f92f3bd61f3e5 | success |
+| Python bridge transport | 43810584813 | d6693b806ec0a4dcb956ba3a6a2f840b6654c4af | success |
+
+- UNO integration remains **8/8 passed**. The DOCX fixture now includes a bookmark named LetterSubject; the adapter inventories it through UNO before closing and exporting.
+- Python bridge suite is now **86/86 passed** (the optional live UNO test is skipped in this suite and executed by the dedicated integration workflow).
+- writer_inspector.py reports structural metadata only and does not read document text or field values.
