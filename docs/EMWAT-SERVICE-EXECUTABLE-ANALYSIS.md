@@ -398,3 +398,7 @@ The PE import table confirms that `EmwatService.exe` imports `LoadPackage`, `Unl
 ## TMainForm published event/method table
 
 The VMT at `0x0047B284` points to a Delphi published method table at `0x0047B84E` (`VMT-0x40`). The table begins with a 16-bit count of 17, followed by records containing entry size, code address, and shortstring method name. The first entry is `IdHTTPServerCommandGet` at `0x0047BF30`, proving the HTTP request handler's class/method identity. Other recovered entries include `FormCreate`, `Terminate`, `Log`, `ShowMainForm`, `HideMainForm`, and `FormClose`. The VMT inspector now decodes the full table for the next pass.
+
+### Complete TMainForm published methods
+
+The method table contains 17 published methods, including the HTTP request handler (`IdHTTPServerCommandGet` at `0x0047BF30`) and HTTP exception handler (`IdHTTPServerException` at `0x0047CA44`), plus `FormCreate`, `FormClose`, `Terminate`, `LoadQuickConfig`, `Log`, and UI/timer handlers. The next analysis pass traces the startup, shutdown, and HTTP exception methods to recover server initialization and failure behavior.
