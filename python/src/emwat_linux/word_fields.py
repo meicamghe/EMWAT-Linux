@@ -47,6 +47,7 @@ def parse_word_field_identifier(field_id: str) -> WordFieldIdentifier:
 @dataclass(frozen=True)
 class DecodedWordField:
     field_id: str
+    identifier: WordFieldIdentifier
     value: str | bytes
     mimetype: str | None
     encoding: str | None
@@ -93,6 +94,7 @@ def decode_word_fields(config: WordDocumentConfig) -> tuple[DecodedWordField, ..
         decoded.append(
             DecodedWordField(
                 field_id=field.field_id,
+                identifier=parse_word_field_identifier(field.field_id),
                 value=value,
                 mimetype=attrs.get("mimetype"),
                 encoding=encoding,
