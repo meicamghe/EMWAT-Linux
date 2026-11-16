@@ -216,3 +216,27 @@ Important correction: helper `0x00456DFC`, previously treated as a post-content 
 ### Silent save line-count helper
 
 `TWrapRecord.LineCount` at `0x004D2948` is called by `TWordViwer.SilentSaveEmwatDoc` at `0x004D25F6`. It iterates several viewer-held range/record collections and composes line-count-related values. The exact output representation and relationship to the response payload remain open.
+
+
+## Event-sink and close-name correction — artifact 14234120250
+
+A full TD32 trace of `OnTmrAutoSave` (`0x004B8A84`) resolves the event callback registration more precisely. The routine installs callback targets into the Word event-sink record:
+
+- `0x004CD154` — `WordAppDocumentBeforeSave`;
+- `0x004CD54C` — `WordAppNewDocument`;
+- `0x004CD9C0` — `WordAppWindowActivate`;
+- `0x004CE030` — `WordAppDocumentBeforePrintBGPrint`, or alternate target `0x004D00AC` depending on viewer flag `+0x3C`.
+
+The callback pointers are written at record offsets `+0x80`, `+0x90`, `+0x98`, and `+0x88` respectively, with the associated viewer object pointer stored in the neighboring fields. This is direct event-sink registration evidence for BeforeSave, NewDocument, WindowActivate, and the selected print-background callback.
+
+**Important correction:** TD32 names `0x004CCBBC` `WordAppDocumentBeforeClose`, but the direct-call scan finds only one direct caller: `TWordViwer.FillImgFldsForPrint` at `0x004CCF8F`. The function's body obtains indexed values from viewer-held collections and calls `GetXmlFieldInfo` (`0x004BCA88`). It is therefore not established as a registered Word DocumentBeforeClose event callback. Its name alone must not be used to implement a close event in LibreOffice. The observed event-sink registration block does not install `0x004CCBBC`.
+
+The BeforeSave callback remains a separate, confirmed event path. It checks active-document identity, calls pre-save helper `0x004CB108`, may set the COM Cancel argument to `0xFFFF`, and uses the three-choice prompt path. Its embedded diagnostic strings mention `OnBeforeClose`, but those strings do not override the TD32 method identity or prove a separate close event.
+
+### Silent-save and line-count boundary
+
+The full trace of `SilentSaveEmwatDoc` (`0x004D23D8`) confirms it is called directly from `GetDocFieldName` (`0x004BBA86`) when the special `Hidden_Customizable` field path is selected. It constructs two temporary string-list objects, gathers values from viewer collections, calls helper `0x004AEBBC`, sets viewer flag `+0x44C`, and conditionally calls `TWrapRecord.LineCount` (`0x004D2948`). The latter has only this direct caller in the current TD32 scan. This is a field-lookup-triggered silent-save/record-building path; it is not proof of an HTTP response writer or a Word close callback.
+
+The exact meaning of the two temporary lists, the COM slot `+0x13C`, and the final serialized record representation remain unresolved. Do not map these to response fields until the helper and caller data are traced.
+
+Evidence: Word controller-close artifact `14234120250`, run `43883105610`.
