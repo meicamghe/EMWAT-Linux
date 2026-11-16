@@ -28,7 +28,7 @@ class FakeEnumeration:
 
 class FakeFields:
     def createEnumeration(self):
-        return FakeEnumeration([FakeField()])
+        return FakeEnumeration([FakeField(), FakeCustomPropertyField()])
 
 
 class FakeField:
@@ -46,6 +46,34 @@ class FakeField:
                 "getProperties": lambda _self: [
                     type("Property", (), {"Name": "IsDate"})(),
                     type("Property", (), {"Name": "IsFixed"})(),
+                ]
+            },
+        )()
+
+
+class FakeCustomPropertyField:
+    def getImplementationName(self):
+        return "com.sun.star.comp.Writer.SwXTextField"
+
+    def getSupportedServiceNames(self):
+        return ("com.sun.star.text.TextField.DocInfo.Custom",)
+
+    def getPropertyValue(self, name):
+        if name != "Name":
+            raise AssertionError("only custom field names may be read")
+        return "EMWATIntegrationMarker"
+
+    def getPresentation(self, _show_command):
+        raise AssertionError("field values must not be read by the inspector")
+
+    def getPropertySetInfo(self):
+        return type(
+            "PropertyInfo",
+            (),
+            {
+                "getProperties": lambda _self: [
+                    type("Property", (), {"Name": "Name"})(),
+                    type("Property", (), {"Name": "CurrentPresentation"})(),
                 ]
             },
         )()
@@ -105,12 +133,21 @@ class WriterInspectorTests(unittest.TestCase):
         self.assertEqual(catalog.named_ranges, ("NamedRangeA",))
         self.assertEqual(catalog.text_tables, ("Table1",))
         self.assertEqual(catalog.graphic_objects, ("Image1",))
-        self.assertEqual(len(catalog.text_fields), 1)
+        self.assertEqual(len(catalog.text_fields), 2)
         self.assertEqual(
             catalog.text_fields[0].implementation_name,
             "com.sun.star.text.TextField.DateTime",
         )
         self.assertEqual(catalog.text_fields[0].property_names, ("IsDate", "IsFixed"))
+        self.assertEqual(
+            catalog.text_fields[0].supported_services,
+            ("com.sun.star.text.TextField.DateTime",),
+        )
+        self.assertIsNone(catalog.text_fields[0].custom_property_name)
+        self.assertEqual(
+            catalog.text_fields[1].custom_property_name,
+            "EMWATIntegrationMarker",
+        )
         self.assertEqual(
             catalog.custom_document_properties,
             ("EMWATLetterNumber", "EMWATSubject"),
