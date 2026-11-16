@@ -10,7 +10,7 @@ import binascii
 import re
 from dataclasses import dataclass
 from typing import Mapping
-from urllib.parse import unquote_plus
+from urllib.parse import unquote_plus_plus
 
 from emwat_linux.word_config import WordDocumentConfig
 
