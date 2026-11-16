@@ -2170,3 +2170,7 @@ Workflow تحلیل Word گسترش یافت تا helper مرکزی درج تص�
 - helper `0x004BC170` در مسیرهای XML field، twin fill، index lookup، print و image-print تکرار می‌شود و نقش نرمال‌سازی/تقسیم رشته ورودی را دارد؛ جزئیات delimiter پس از artifact جدید قطعی می‌شود.
 - `AddCustomDocPropertiesToDic` نام propertyهای Word را با `†` تفکیک می‌کند، رکورد single/twin می‌سازد و کلید متناظر را از descriptor map حذف می‌کند؛ بنابراین این تابع مرحله تطبیق/مصرف descriptor است، نه اثبات ساخت اولیه دیکشنری.
 - مسیر پرشدن اولیه descriptor mapها هنوز باز است. workflow جدید، constructorهای enumerable، Add/AddOrSetValue، helper نرمال‌سازی و ثابت‌های رشته‌ای آن‌ها را ردیابی می‌کند.
+
+## کشف فیلدهای Option Form گیرنده و رونوشت — 2026-11-16
+
+Constructor مربوط به `TWordViwer` چهار فیلد `Receivers`، `ReceiverDeps`، `ccReceivers` و `ccReceiverDeps` را برای option form مقداردهی می‌کند. سپس برای هر گزینه `field index`، نام، `xmlfidx` و `isInDoc` را log می‌کند. این مسیر، UI/metadata اختصاصی گیرنده و رونوشت را تأیید می‌کند؛ منطق کامل انتخاب گیرنده و serialization آن هنوز باز است.
