@@ -2065,3 +2065,8 @@ Artifact `14227611377` resolves the earlier interface-signature uncertainty:
 - `FillImageField` از دو شاخه `FillTextField` فراخوانی می‌شود و در وضعیت خاص از `FindWindowExtd` استفاده می‌کند.
 - `FillField` فقط field interface را به collection داخلی اضافه می‌کند و عملیات نهایی تغییر متن/تصویر نیست.
 - مستند شواهد: `docs/WORD-AUTOMATION-SURFACE-2026-11-16.md` و artifact شماره `14232259712`.
+
+
+## تحلیل تکمیلی تصویر و فیلدهای چاپ — کار در صف CI
+
+Workflow تحلیل Word گسترش یافت تا helper مرکزی درج تصویر `0x004C19C0)، resolver فیلد `0x004BC170)، رشته‌های شاخه‌های `FillImageField` و رشته‌های شرطی `FillPrintDocFields` را decode کند. تغییرات در commitهای `367e4aa58514029278624c65837059f13807394a` و `c159c69141da56ea1bba0c8d829e4839febaf135` ثبت شده‌اند. خروجی این batch هنوز باید از GitHub Actions دریافت و بررسی شود؛ تا آن زمان helper و برچسب‌های شرطی را ناشناخته نگه می‌داریم.
