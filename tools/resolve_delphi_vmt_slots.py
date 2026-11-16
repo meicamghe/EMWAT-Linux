@@ -10,7 +10,7 @@ TARGET_CLASSES = (
     "TGearImgProc", "TfrmScanError", "TImageProcessor",
     "TResultImage", "TMultiPageImage", "TSetOfMultiPageImages",
     "TSetOfSinglePageImages", "TProcessResult", "TScanCommand",
-    "TEmwatMethod", "TEditWordDocument", "TWordViwer", "TEDPController",
+    "TEmwatMethod", "TEditWordDocument", "TScanDocument", "TWordViwer", "TEDPController",
     "TEmwatDocPrintHandler", "TWordDocument", "TWordFields", "TWordField",
     "TWordFieldCollection", "T7zArchive", "T7zPlugin", "T7zInArchive", "T7zOutArchive",
 )
