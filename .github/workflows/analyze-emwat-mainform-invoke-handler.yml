@@ -38,13 +38,14 @@ jobs:
         shell: bash
         run: |
           mkdir -p mainform-invoke
-          for target in 0047BF30 0047CCD8 0047D2C8 0047CA88 00477098 00477190 0047E0EC 0047E2D4 0047E7E4 00470D00; do
+          for target in 0047BF30 0047CCD8 0047D2C8 0047CA88 00477098 00477190 0047E0EC 0047E2D4 0047E7E4 00470D00 00470B38 00471214 00471050 00470924; do
             python tools/trace_pe_target.py mainform-invoke/EmwatService.exe 0x$target mainform-invoke/target-$target.md 7000 ret
             python tools/scan_pe_pointer_refs.py mainform-invoke/EmwatService.exe 0x$target mainform-invoke/refs-$target.md
           done
           python tools/trace_pe_range.py mainform-invoke/EmwatService.exe 0x0047B820 0x0047B8D0 mainform-invoke/mainform-method-table.md
           python tools/trace_pe_range.py mainform-invoke/EmwatService.exe 0x0047BA70 0x0047BB90 mainform-invoke/mainform-commandget-rtti.md
           python tools/trace_pe_range.py mainform-invoke/EmwatService.exe 0x0047C0E5 0x0047C341 mainform-invoke/commandget-finally-and-response-tail.md
+          python tools/trace_pe_range.py mainform-invoke/EmwatService.exe 0x00470D00 0x00471040 mainform-invoke/method-dispatcher-full-range.md
       - uses: actions/upload-artifact@v4
         with:
           name: emwat-mainform-invoke-handler
