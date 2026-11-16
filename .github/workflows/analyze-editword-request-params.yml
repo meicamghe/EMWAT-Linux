@@ -17,11 +17,15 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - run: pip install scapy
       - name: Extract redacted request parameter structure
         run: |
           mkdir -p editword-param-analysis
-          python tools/extract_editword_request_params.py emwat.pcapng --client-port 61189 --output-dir editword-param-analysis > editword-param-analysis/request-parameter-structure.md
+          if [ ! -f emwat.pcapng ]; then
+            printf '%s\n' 'SKIPPED: emwat.pcapng is a private capture and is not present in this checkout. Supply the capture locally to run this analysis.' > editword-param-analysis/request-parameter-structure.md
+          else
+            pip install scapy
+            python tools/extract_editword_request_params.py emwat.pcapng --client-port 61189 --output-dir editword-param-analysis > editword-param-analysis/request-parameter-structure.md
+          fi
           cat editword-param-analysis/request-parameter-structure.md
       - uses: actions/upload-artifact@v4
         with:
