@@ -1148,3 +1148,16 @@ The interface thunk table maps the slots used by `euUnArchive` as follows:
 **Correction:** the earlier hypothesis that the literal `mW@Tlogs43end_+` is directly passed to `SetPassword` is not supported by this interface mapping. The mapped slot is `SetProgressCallback`; the literal's role remains unknown. `T7zOutArchive.SetPassword` exists at `0x004547DC`, but it is not the target of the observed `+0x28` call through this interface.
 
 There are still signature/argument-shape mismatches to resolve: `euUnArchive` passes two TStringList values through slot `+0x10`, and a `.easz` UnicodeString through slot `+0x18`, while TD32 labels the targets `AddFiles` and `SaveToStream`. The helper may be using a wrapper/interface layer with additional semantics, or the current interface-to-method association may need further verification. Do not rename `euUnArchive` as an archive writer or extractor yet. Trace the three target method bodies and the `T7zPlugin` factory path before assigning archive direction or password semantics.
+
+
+### Run 147 — the two indexed inputs are TStringList instances
+
+Artifact `14226742624` identifies `0x0040414C` as an import thunk to `rtl230.bpl!TStringList.$bctr`. Therefore the two objects created in `OnControlerNotify` are `TStringList` instances, not arbitrary indexed interfaces.
+
+The observed sequence is:
+- first list receives the string from `TWordViwer+0xA0`;
+- second list receives the direction-normalized `TWordViwer+0x80` path with `.easd` appended;
+- `euUnArchive` reads both lists by matching index and passes each pair to the returned `T7zOutArchive` interface;
+- it then passes the `.easz` path to interface slot `+0x18`.
+
+This strengthens the archive-packaging interpretation, but the interface target bodies and the parameter-type mismatch still prevent a final claim about whether the method writes, transforms, or extracts the archive.
