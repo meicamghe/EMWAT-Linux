@@ -2086,3 +2086,13 @@ Workflow تحلیل Word گسترش یافت تا helper مرکزی درج تص�
 ## نکته جدید در مسیر چاپ — 2026-11-16
 
 در trace تابع `FillPrintDocFields` رشته خاص `EMBED Equation` در آدرس `0x004CCB0C` decode شد و یک شاخه جداگانه برای آن وجود دارد. مسیر دیگر این تابع با کلیدهای `CustomDocumentProperties` و `count` کار می‌کند؛ decode دقیق شروع بایتی این دو رشته در اجرای بعدی Workflow انجام می‌شود. برای تعیین رفتار نهایی، trace توابع `0x004D3DF8`، `0x004D34B0` و `0x004D3B78` در حال اضافه شدن است.
+
+
+## جزئیات تازه مسیر امضا و تصویر — 2026-11-16
+
+- تابع TD32 با نام `GetCaptionItemFont` در آدرس `0x004C19C0` از مسیر `AddImagesToDoc` فراخوانی می‌شود، اما بدنه آن عملاً پردازش تصویر/امضا را انجام می‌دهد: `signData` و `signText` را بررسی می‌کند، `igLzw32s.Dll` را بارگذاری می‌کند، فایل‌های تصویر را اعتبارسنجی می‌کند، image list می‌سازد و پیام موفقیت `AddImageToDoc succeed` دارد.
+- کلیدهای خاص فیلد در `FillImageField`: `LetterRegistrationDate`، `LetterRegistrationNo`، `ProduceDate`، `Receivers`، `ReceiverDeps`، `ccReceivers` و `ccReceiverDeps`.
+- همین تابع بین ذخیره مقدار در `CustomDocumentProperties` و `Field.Result.Text` تفاوت می‌گذارد و وضعیت قفل بودن فیلد را بررسی می‌کند.
+- `GetDocFieldIndex` الگوی نام فیلدهای امضا، فیلدهای twin، موارد skip شده و خطای نبود twin را مدیریت می‌کند. در نبود twin، مسیر abort و بستن سند بدون نگه‌داشتن تغییرات وجود دارد.
+- برچسب‌های شش حالت تابع `GetImageResolution` هنوز در صف decode هستند؛ از نام تابع درباره DPI یا pixel resolution نتیجه‌گیری نمی‌کنیم.
+- مستند تفصیلی: `docs/WORD-AUTOMATION-SURFACE-2026-11-16.md`.
