@@ -543,3 +543,7 @@ The raw IAT pointer-reference results locate import-jump thunks rather than thei
 ## Descriptor dictionary VMT/method pointer scan added
 
 Because direct-call scans cannot resolve VMT/interface calls, the Word workflow now scans raw pointer references to the descriptor dictionary's `DoAdd`, `DoSetValue`, `DoRemove`, `Add`, `AddOrSetValue`, `ContainsKey`/`ContainsValue`-labelled methods, and twin-map Add/AddOrSetValue methods. These matches will be reviewed as candidate method-table/data references, not assumed callsites. This complements the direct rel32 byte scan and TD32 procedure traces.
+
+## Absolute IAT CALL/JMP scanner added for Delphi runtime imports
+
+The import-thunk trace confirms that service import wrappers are `mov eax,eax; jmp dword ptr [IAT]` stubs, and no rel32 CALL candidates target those wrapper addresses. Delphi-generated code can instead issue `FF 15 <IAT>` directly. Added `tools/scan_pe_ff15_iat_refs.py` to scan executable bytes for absolute indirect CALL (`FF 15`) and JMP (`FF 25`) references to each imported IAT slot. The service workflow now scans `LoadPackage`, `GetClass`, `ClassCreate`, `ClassDestroy`, `GetProcAddress`, and `StartExe` this way. This should recover the real callsites that a rel32 scan cannot see.
