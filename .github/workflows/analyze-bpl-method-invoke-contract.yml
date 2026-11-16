@@ -1,0 +1,41 @@
+name: Analyze BPL method invoke contract
+on:
+  push:
+    paths:
+      - '.github/workflows/analyze-bpl-method-invoke-contract.yml'
+      - 'analysis-input/EmwatMethods.bpl1'
+      - 'tools/trace_pe_target.py'
+      - 'tools/trace_td32_procedure.py'
+      - 'tools/trace_td32_callers.py'
+      - 'tools/scan_pe_pointer_refs.py'
+      - 'tools/find_td32_class_procedures.py'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  bpl-method-invoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install pefile capstone
+      - name: Trace BPL method invocation and Word entrypoints
+        shell: bash
+        run: |
+          mkdir -p bpl-method-invoke
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x0046C82C bpl-method-invoke/TEmwatMethod-Invoke.md 6000 ret
+          python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x0046C82C bpl-method-invoke/TEmwatMethod-Invoke-TD32.md
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x0046C82C bpl-method-invoke/TEmwatMethod-Invoke-callers.md
+          python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 0x0046C82C bpl-method-invoke/TEmwatMethod-Invoke-pointer-refs.md
+          python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x004B7724 bpl-method-invoke/TWordViwer-LoadDocument.md
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004B7724 bpl-method-invoke/TWordViwer-LoadDocument-callers.md
+          python tools/find_td32_class_procedures.py analysis-input/EmwatMethods.bpl1 TEmwatMethod TEditWordDocument TWordViwer TWordViewer > bpl-method-invoke/method-class-procedures.md
+      - uses: actions/upload-artifact@v4
+        with:
+          name: emwat-bpl-method-invoke-contract
+          path: bpl-method-invoke/
+          if-no-files-found: error
