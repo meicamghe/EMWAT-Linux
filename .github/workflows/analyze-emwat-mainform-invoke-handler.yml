@@ -38,7 +38,7 @@ jobs:
         shell: bash
         run: |
           mkdir -p mainform-invoke
-          for target in 0047BF30 0047CCD8 0047D2C8; do
+          for target in 0047BF30 0047CCD8 0047D2C8 0047CA88 00477098 00477190 0047E0EC 0047E2D4 0047E7E4; do
             python tools/trace_pe_target.py mainform-invoke/EmwatService.exe 0x$target mainform-invoke/target-$target.md 7000 ret
             python tools/scan_pe_pointer_refs.py mainform-invoke/EmwatService.exe 0x$target mainform-invoke/refs-$target.md
           done
