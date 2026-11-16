@@ -329,3 +329,10 @@ These are concrete special cases to preserve in the Linux resolver; they are not
 
 
 The same string-decoding artifact resolves the four `TCaptionItem` text-style labels as `bold`, `italic`, `underline`, and `strikeout`. The `GetCaptionItems` routine parses these style switches while constructing caption-item metadata. The alignment enum labels are `right`, `center`, `left`, `top`, `middle`, and `bottom`; these correspond to the six branches in `GetImageResolution` when called by `StrToAlign`.
+
+
+## Print-time image field dispatch
+
+The `FillImgFldsForPrint` routine (`0x004CCDC8`) is now traced end-to-end. It enumerates the supplied Word Fields collection, resolves each field through `FindFieldInActivefields` and `GetFieldIndexInList`, and uses `FillTextField` on specific fallback/metadata branches. For an indexed field, it consults viewer-side arrays at `+0xE8) and `+0xEC); one conditional path calls the misleadingly named `WordAppDocumentBeforeClose` routine. This routine is therefore part of print-time image-field substitution, not document-close lifecycle handling.
+
+This explains the only direct caller previously found for `WordAppDocumentBeforeClose`: `FillImgFldsForPrint` at `0x004CCF8F`. The direct call chain is `GetFieldIndexInList` → `FillImgFldsForPrint` → conditional field substitution helper.
