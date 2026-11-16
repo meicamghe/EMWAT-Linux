@@ -1996,3 +1996,6 @@ Artifact `14227611377` resolves the earlier interface-signature uncertainty:
 - `WordAppDocumentBeforeSave` checks active-document identity and viewer state; if not ready it sets Word's Cancel output to `-1`. For a dirty document it can show a three-choice dialog, and one choice cancels. The exact labels and downstream method semantics are pending.
 - `WordAppDocumentBeforeClose` (`0x004CCBBC`) calls helper `0x004BCA88`; `SilentSaveEmwatDoc` (`0x004D23D8`) builds two TStringLists and calls `0x004AEBBC`. These are the next close/commit targets.
 - Keep BeforeSave, BeforeClose, timer-side autosave, and `OnControlerNotify` archive creation distinct until the full-range traces link them. See Run 150 in `docs/WORD-LIFECYCLE-STATIC-TRACE.md`.
+
+
+- `TWordViwer.LoadDocument` calls `OnTmrAutoSave` with the document path (`0x004B7A58`); the timer handler stores it in viewer field `+0xA0` (`0x004B8AE8`). `OnControlerNotify` later reads `+0xA0` as the source file for `T7zOutArchive.AddFiles`. `LoadDocument` also creates a `TFileStream` for that path and writes document data. Thus the file created during document loading is the source later packaged as the `.easd` entry inside `.easz`. The sibling/base path at viewer field `+0x80` remains to be mapped.
