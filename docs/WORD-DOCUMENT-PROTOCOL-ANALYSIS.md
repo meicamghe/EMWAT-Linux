@@ -1378,3 +1378,28 @@ Trace کامل `0x004BFC18` (285 بایت) اکنون قرارداد lookup را
 - این تابع از `GetDocFieldIndex` سه بار، از `GetCaptionItemFont` دو بار و از `ShowRecAndCcOptionForm` پنج بار فراخوانی مستقیم دارد.
 - بدنه آن ورودی رشته‌ای را با دو ثابت داخلی در `0x004BFEE8` و `0x004BFF0C` مقایسه می‌کند و برای دو حالت، مسیر تبدیل جداگانه دارد؛ در حالت دیگر مقدار را مستقیم کپی می‌کند.
 - چون این تابع در مسیرهای اصلی، caption و Rec/CC مشترک است، تبدیل value در آن فقط مختص body fieldها نیست. معنای دقیق دو ثابت و تبدیل‌هایشان در workflow بعدی decode می‌شود؛ تا آن زمان نوع تبدیل را حدس نمی‌زنیم.
+
+
+## Run 128 — مسیر Controller Notify و فراخوانی COM در پایان کار
+
+Artifact اجرای `43813684507` با موفقیت تولید شد.
+
+### OnControlerNotify
+
+- `TWordViwer.OnControlerNotify` در `0x004BB3B0–0x004BB777` یک مسیر notification جدا از callbackهای عمومی Word است.
+- اگر state داخلی `viewer+0x58` فعال باشد، پیام controller را از طریق interface موجود در `viewer+0x44` می‌خواند و فقط پس از عبور از شرط طول/ساختار پیام وارد مسیر اصلی می‌شود.
+- سپس flagهای `viewer+0x79` و `viewer+0x5E` را تغییر می‌دهد، `CostumizeRecAndCC` در `0x004D281C` را اجرا می‌کند و مقدار `-1` را همراه document interface در `viewer+0x48` به COM method slot `+0xDC` می‌دهد.
+- پس از برگشت، flagها reset می‌شوند و دو مقدار از `viewer+0x80` از مسیر `FixDirectionInFarsiNumericMode` و helper `0x00456DFC` عبور می‌کنند.
+- این یک مسیر واقعی controller-triggered برای finalize/close-side document work است؛ اما slot `+0xDC` هنوز با wrapperهای `TWordDocument.Close` و `Save` تطبیق داده نشده، پس فعلاً آن را «COM action با آرگومان -1» ثبت می‌کنیم، نه ثبت قطعی Almas.
+
+### Method dispatch و LoadDocument
+
+- TD32 نام متد `0x005EE82C` را `TScanDocument.PerformMethod` نشان می‌دهد؛ این نام دقیق‌تر از برچسب قبلی `TEditWordDocument` است. ممکن است runtime object از کلاس مشتق‌شده باشد، اما نام procedure در debug symbols همین است.
+- این متد dictionary پارامترهای درخواست را می‌خواند، `TWordViwer.LoadDocument` در `0x004B7724` را فراخوانی می‌کند، نتیجه را به خروجی برمی‌گرداند و flag داخلی را set می‌کند.
+- `LoadDocument` در مسیر initialization، `AddCustomDocPropertiesToDic` را فراخوانی می‌کند و سپس Word document و collections آن را آماده می‌سازد.
+- کلیدهای دقیق dictionary در این متد با decode string constants تکمیل می‌شوند؛ workflow close-response جدید اکنون آن رشته‌ها را استخراج می‌کند.
+
+### وضعیت اثبات
+
+- هنوز مدرک قطعی از POST/response نهایی Almas در لحظه بستن سند نداریم.
+- تأیید کاربر که ثبت در Almas بعد از بستن Word رخ می‌دهد، با این controller-notify path سازگار است؛ اما به‌تنهایی payload و ترتیب دقیق شبکه را ثابت نمی‌کند.
