@@ -251,3 +251,14 @@ The earlier roadmap sections above are historical snapshots. The following compo
 5. **Deployment wiring:** the composition root is available, but production Origin allowlists, explicit cancellation response policy, and a real user-facing close-decision policy still need to be configured and tested.
 
 A new parallel workflow, `.github/workflows/analyze-word-controller-callback-ownership.yml`, is now tracing the viewer constructor/destructor, timer callbacks, controller dispatch, and print-handler ownership (run `43821043328` was in progress at the last check).
+
+
+## Live service pipeline and image/controller trace checkpoint — 2026-11-16
+
+- The live integration now covers the actual success route through `parse_method_call` → `parse_editword_request` → `EditWordDocumentService` → real LibreOffice UNO → `create_editword_handler` → `response-word` serialization. Python run `43821716274` passed (102 tests, 100 passed, 2 optional integration tests skipped); UNO run `43821716306` passed 11/11.
+- The integration test verifies that the returned response contains `mimetype=application/msword`, `encryption=base64`, and a valid legacy CFB `.doc` signature. A separate second pass reopens a generated CFB `.doc` and checks its text, bookmark, and custom document property.
+- Controller trace run `43821043328`, print-handler trace run `43821379564`, and image/text-field trace run `43821526090` all succeeded. `IEDPController` is implemented by `TEDPController`; its interface slots are indexed as `SetPrintThread`, `SetOnNotify`, and `Finalization`. The print option handler remains a separate code path and is not treated as the main editor's registration event.
+- `FillImageField` and `AddImagesToDoc` are now traced at procedure level. Their Word COM operations and caption/font handling are known, but the actual image anchors and mapping to Almas config fields remain template-dependent.
+- A follow-up image analysis run was queued after adding the exact image-field attribute/log string addresses and helper procedures `0x004D34B0` and `0x004D3DF8`. Its artifact is pending; no result is claimed yet.
+
+The implementation is now verified through the success response envelope, but the product is **not yet production-ready**. The remaining release blockers remain: (1) interactive Yes/No/Cancel parity and verified No/Cancel wire responses, (2) representative anonymized Almas template and mapping of all 180 fields/twin fields/image anchors, (3) proven `signData` separator/concator semantics, and (4) end-to-end confirmation that the Almas UI accepts the returned DOC and registers it after Word/Writer closes.
