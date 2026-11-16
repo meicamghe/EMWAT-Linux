@@ -2061,7 +2061,7 @@ Artifact `14227611377` resolves the earlier interface-signature uncertainty:
 ## تکمیل crosswalk فیلد و تصویر Word — 2026-11-16
 
 - `FillPrintDocFields` فقط به رویداد Print محدود نیست؛ callerهای مستقیم آن `GetDocFieldName` و `GetFieldIndexInList` هستند و در مسیر جست‌وجوی نام/اندیس فیلد هم اجرا می‌شود.
-- `AddImagesToDoc` از `GetDocFieldIndex` فراخوانی می‌شود و helper مرکزی `0x004C19C0` را اجرا می‌کند؛ خود helper مرکزی هنوز باید disassemble و تحلیل شود.
+- `AddImagesToDoc` از `GetDocFieldIndex` فراخوانی می‌شود و تابع `GetCaptionItemFont` در `0x004C19C0` را فراخوانی می‌کند؛ این تابع مربوط به فونت کپشن است و helper درج تصویر محسوب نمی‌شود.
 - `FillImageField` از دو شاخه `FillTextField` فراخوانی می‌شود و در وضعیت خاص از `FindWindowExtd` استفاده می‌کند.
 - `FillField` فقط field interface را به collection داخلی اضافه می‌کند و عملیات نهایی تغییر متن/تصویر نیست.
 - مستند شواهد: `docs/WORD-AUTOMATION-SURFACE-2026-11-16.md` و artifact شماره `14232259712`.
