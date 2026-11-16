@@ -175,3 +175,24 @@ The existing full-range `TWordViwer.LoadDocument` trace (`0x004B7724`) shows it 
 The same `LoadDocument` path creates a file stream from the document path through `0x004041BC` (`TFileStream.$bctr`) at `0x004B7C39`, then writes document data into it. This connects the Word document file created during `LoadDocument` to the file later packaged as the `.easd` archive entry and saved in the `.easz` archive.
 
 The exact derivation of the sibling/base path stored at `TWordViwer+0x80` is still unresolved; that field is used to create the `.easd` and `.easz` names.
+
+
+## Run 151 — EditWordDocument request parameters and local document creation
+
+Source: BPL dispatch crosswalk artifact `14227558684`.
+
+`TEditWordDocument.PerformMethod` at `0x005EE82C` reads four named values from the request dictionary:
+- `wordConfig` (`0x005EE9F4`); missing value raises `Requset XML is not valid (wordConfig parameter is null)`;
+- `wordBody` (`0x005EEA88`);
+- `letterImages` (`0x005EEAA0`);
+- `signData` (`0x005EEABC`).
+
+It initializes COM on the calling thread (`CoInitialize`, logged as `CoInitializing thread`), calls `TWordViwer.LoadDocument` at `0x004B7724` with these values plus the `TEmwatInvokeParam` pointer and an output string, copies the returned string into the method result, sets `TEmwatInvokeParam.bResultSet` to `1`, then calls `CoUninitialize` (logged as `CoUnInitializing thread. ok.`).
+
+The `LoadDocument` trace resolves the initial file stage:
+- It extracts a `DocFileName` from the `wordBody` payload; an empty name triggers `DocFileName can not be null.`
+- It creates a `TFileStream` for that path with `fmCreate` (`0xFF00`) and writes the document data, then logs `Word document file created.`
+- It parses `wordConfig` as XML, accesses the `word-document` node, reads Word Calling Mode/configuration, and logs `ConfigXML data loaded.`
+- It calls `OnTmrAutoSave` with the document path; that routine stores the path in `TWordViwer+0xA0`, which `OnControlerNotify` later packages as the `.easd` archive entry.
+
+This establishes that `wordBody` carries the local document-file payload/metadata, while `wordConfig` carries the XML configuration used to open and configure it in Word. `letterImages` and `signData` are forwarded into the viewer; their precise runtime types and all downstream uses remain to be traced. The method result string and `bResultSet` are now explicit response candidates, but their final mapping to the HTTP response body is still open.
