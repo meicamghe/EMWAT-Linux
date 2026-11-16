@@ -187,7 +187,7 @@ Source: BPL dispatch crosswalk artifact `14227558684`.
 - `letterImages` (`0x005EEAA0`);
 - `signData` (`0x005EEABC`).
 
-It initializes COM on the calling thread (`CoInitialize`, logged as `CoInitializing thread`), calls `TWordViwer.LoadDocument` at `0x004B7724` with these values plus the `TEmwatInvokeParam` pointer and an output string, copies the returned string into the method result, sets `TEmwatInvokeParam.bResultSet` to `1`, then calls `CoUninitialize` (logged as `CoUnInitializing thread. ok.`).
+It initializes COM on the calling thread (`CoInitialize`, logged as `CoInitializing thread`), calls `TWordViwer.LoadDocument` at `0x004B7724` with these values plus the `TEmwatInvokeParam` pointer and an output string, copies the returned string into the method result, sets `bUnloadPkg` at record offset `+0x04`, then calls `CoUninitialize` (logged as `CoUnInitializing thread. ok.`). The `bResultSet` flag is set inside the non-empty response branch of `LoadDocument`, after assigning `AResponseInfo.ContentText` and calling Indy `WriteContent`.
 
 The `LoadDocument` trace resolves the initial file stage:
 - It extracts a `DocFileName` from the `wordBody` payload; an empty name triggers `DocFileName can not be null.`
@@ -195,4 +195,15 @@ The `LoadDocument` trace resolves the initial file stage:
 - It parses `wordConfig` as XML, accesses the `word-document` node, reads Word Calling Mode/configuration, and logs `ConfigXML data loaded.`
 - It calls `OnTmrAutoSave` with the document path; that routine stores the path in `TWordViwer+0xA0`, which `OnControlerNotify` later packages as the `.easd` archive entry.
 
-This establishes that `wordBody` carries the local document-file payload/metadata, while `wordConfig` carries the XML configuration used to open and configure it in Word. `letterImages` and `signData` are forwarded into the viewer; their precise runtime types and all downstream uses remain to be traced. The method result string and `bResultSet` are now explicit response candidates, but their final mapping to the HTTP response body is still open.
+This establishes that `wordBody` carries the local document-file payload/metadata, while `wordConfig` carries the XML configuration used to open and configure it in Word. `letterImages` and `signData` are forwarded into the viewer; their precise runtime types and all downstream uses remain to be traced. The successful non-empty `LoadDocument` response branch writes the generated XML through `AResponseInfo.ContentText` → `TIdHTTPResponseInfo.WriteContent` and sets `bResultSet`; the captured response envelope is documented in `docs/PCAP-EDITWORD-DOCUMENT-ROUNDTRIP.md`. The remaining critical gap is the wait/event that releases the long-lived invoke request and the exact relationship, if any, between local `.easz` recovery and final Almas registration.
+
+## Run 152 — response writer and periodic timer correlation — 2026-11-16
+
+Source: Word response/controller workflow run `43872534265`, artifact `14228851062`; controller ownership workflow run `43873363849`, artifact `14229520023`.
+
+- The successful `LoadDocument` response branch at `0x004B7F9C` obtains `AResponseInfo` from `TEmwatInvokeParam+0x0C`, assigns the generated XML to `ContentText` (`+0xBC`), calls Indy `TIdHTTPResponseInfo.WriteContent` via `0x0040448C`, and sets `bResultSet` at record `+0x05`.
+- The PCAP capture shows HTTP 200 with `response-word status="success"` and a Base64 `application/msword` payload. The response is a rewritten legacy OLE DOC; the capture has missing TCP payload bytes, so a full-file hash/equality comparison is not claimed.
+- `OnTmrAutoSave` installs `OnControlerNotify` as the `TTimer.OnTimer` callback on the timer stored at viewer offset `+0x7C`; the timer interval at viewer offset `+0x88` is clamped to at least 10,000 ms and the timer is enabled.
+- `OnControlerNotify` is therefore a periodic local content/archive callback, not the Word `BeforeClose` event. It reads Word Content through slot `+0xDC` and creates .easd/.easz local archive paths. It is not currently proven to submit the final Almas registration.
+- `TEDPController.Notify` at `0x004D2EC8` is a separate print-handler controller callback; it invokes `TEmwatDocPrintHandler.GetDocFieldName` and must not be conflated with `TWordViwer.OnControlerNotify`.
+- The response appears approximately 54.558 seconds after the request body completes. The exact wait/release event remains unresolved; the new wait-mechanism and request-lifecycle workflows are tracing the remaining `OnTmrAutoSave` body and helper calls.
