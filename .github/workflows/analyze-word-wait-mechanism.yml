@@ -132,6 +132,16 @@ jobs:
           for target in 004B9AE8 004B9C87 004B9F1C 004BA2DF; do
             python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x$target wait-mechanism-analysis/exact-thunks/OnTmrAutoSave-$target.md 1200 ret
           done
+      - name: Trace WaitForSingleObject caller FireEvent and event pump
+        shell: bash
+        run: |
+          mkdir -p wait-mechanism-analysis/fire-event
+          python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x00607448 wait-mechanism-analysis/fire-event/FireEvent-procedure.md
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x00607448 wait-mechanism-analysis/fire-event/FireEvent-callsite-context.md 900 ret
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x00607448 wait-mechanism-analysis/fire-event/FireEvent-target-callers.md
+          python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x005F2EE8 wait-mechanism-analysis/fire-event/elapsed-time-helper.md || true
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x005F2EE8 wait-mechanism-analysis/fire-event/elapsed-time-helper-pe.md 400 ret
+          python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 0x00607448 wait-mechanism-analysis/fire-event/FireEvent-pointer-refs.md
       - name: Scan imported wait and message API references
         run: |
           mkdir -p wait-mechanism-analysis/import-references
