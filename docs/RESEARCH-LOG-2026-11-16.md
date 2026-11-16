@@ -485,3 +485,7 @@ One important naming trap: the TD32 procedure at `0x004D1454` is definitively `T
 ## Service-to-BPL dispatch: next unresolved callsite isolated
 
 The service request handler trace at `0x0047BF30` shows a clear sequence: package-load gate `0x0047E0EC`; XML `ParseMethod` at `0x00470D00`; then a call to `0x0047E2D4` at handler site `0x0047C0E0`. `ParseMethod` constructs `TMethodInfo` and its `TDictionary<AnsiString,AnsiString>` as already documented. The role of `0x0047E2D4` is not yet proven; it is now the primary target for resolving the remaining service-to-BPL dispatch edge. The service workflow traces this target and scans the whole PE for direct call references, while keeping the current claim conservative: parser dictionary identity is confirmed; the final dispatch receiver/ABI is not.
+
+## Recipient/CC option-form field identifiers recovered
+
+The latest field-mapping artifact (`14265228751`) decodes the `TWordViwer.$bctr` constants at `0x004D0BD0`, `0x004D0BF0`, `0x004D0C18`, and `0x004D0C3C` as `Receivers`, `ReceiverDeps`, `ccReceivers`, and `ccReceiverDeps`. The constructor initializes these four option fields, then logs each created option-form entry with its field index, name, XML field index (`xmlfidx`), and `isInDoc` flag. This confirms a dedicated recipient/CC option-form metadata path; serialization/selection behavior remains open.
