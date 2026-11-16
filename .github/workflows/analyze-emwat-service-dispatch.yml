@@ -1,0 +1,58 @@
+name: Analyze EMWAT service dispatch from preserved artifact
+on:
+  push:
+    paths:
+      - '.github/workflows/analyze-emwat-service-dispatch.yml'
+      - 'tools/trace_pe_target.py'
+      - 'tools/trace_td32_procedure.py'
+      - 'tools/trace_td32_callers.py'
+      - 'tools/trace_td32_immediate_refs.py'
+      - 'tools/find_td32_class_procedures.py'
+      - 'tools/resolve_delphi_vmt_slots.py'
+      - 'tools/trace_delphi_interfaces.py'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  service-request-dispatch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Download preserved service analysis input
+        uses: actions/download-artifact@v4
+        with:
+          name: emwat-mainform-invoke-handler
+          repository: ${{ github.repository }}
+          run-id: 43831365563
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: service-input
+      - run: pip install pefile capstone
+      - name: Trace service invoke parser and response chain
+        shell: bash
+        run: |
+          mkdir -p service-dispatch
+          test -s service-input/EmwatService.exe
+          for address in 0x0047BF30 0x0047E0EC 0x0047E2D4 0x0047D2C8 0x0047CA88 0x0047CCD8 0x00470D00 0x00470B38 0x0046ADBC 0x0046A7A4 0x004610FC; do
+            name=${address#0x}
+            python tools/trace_pe_target.py service-input/EmwatService.exe "$address" "service-dispatch/$name.md" 6000 ret
+            python tools/trace_td32_procedure.py service-input/EmwatService.exe "$address" "service-dispatch/$name-td32.md" || true
+            python tools/trace_td32_callers.py service-input/EmwatService.exe "$address" "service-dispatch/$name-callers.md" || true
+          done
+          for address in 0x0047E0EC 0x00470D00 0x00470B38 0x0046A7A4 0x004610FC; do
+            name=${address#0x}
+            python tools/trace_td32_immediate_refs.py service-input/EmwatService.exe "$address" "service-dispatch/$name-immediate-refs.md"
+          done
+          python tools/find_td32_class_procedures.py service-input/EmwatService.exe TMainForm TIdHTTPServer TIdHTTPResponseInfo > service-dispatch/service-classes.md
+          python tools/resolve_delphi_vmt_slots.py service-input/EmwatService.exe service-dispatch/service-vmt.md
+          python tools/trace_delphi_interfaces.py service-input/EmwatService.exe service-dispatch/service-interfaces.md
+      - uses: actions/upload-artifact@v4
+        with:
+          name: emwat-service-dispatch-deep-trace
+          path: service-dispatch/
+          if-no-files-found: error
