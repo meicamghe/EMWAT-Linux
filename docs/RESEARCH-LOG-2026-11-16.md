@@ -222,7 +222,7 @@ New findings are documented in `docs/WORD-AUTOMATION-SURFACE-2026-11-16.md` (com
 - `GetXmlFieldInfo` at `0x004BCA88` explicitly accepts `IXMLFieldType` and UnicodeString parameters and builds an internal XML-driven field model.
 - `FillMSWFields` at `0x004C009C` accepts Word `Fields` and performs a distinct collection iteration/update pass.
 - `SetFieldValue` at `0x004BFDB0` has two separate conversion/assignment branches selected by string constants at `0x004BFEE8` and `0x004BFF0C`; the key constants are queued for decoding.
-- `AddCustomDocPropertiesToDic` at `0x004D1454` enumerates Word custom document properties, splits selected property strings using an as-yet-unknown delimiter, and stores results in two internal collections.
+- `AddCustomDocPropertiesToDic` at `0x004D1454` enumerates Word custom document properties, splits selected property names at U+2020, and calls `TDictionary.Remove` on the single/twin descriptor maps (`viewer+0x68` / `viewer+0x6C`) to consume matching descriptors. The separate runtime custom-property map at `viewer+0x64` is a `TDictionary<UnicodeString,TDocumentCProperty>`.
 - `WordAppDocumentBeforeSave` at `0x004CD154` can set its 16-bit Cancel argument to `0xFFFF`, calls a pre-save helper, performs a Word document operation through vtable offset `+0x29C`, and clears viewer state `+0x58`.
 - `FillPrintDocFields` at `0x004CB638` is a separate 5,508-byte Word document/Fields transformation pass.
 
@@ -371,8 +371,8 @@ Added `is_native_business_signature_end()` in `python/src/emwat_linux/word_field
 ## Three separate native field/custom-property maps
 
 The `AddCustomDocPropertiesToDic` trace at `0x004D1454` plus VMT sizes resolves three distinct viewer-owned structures:
-- `viewer + 0x68`: single-field descriptors. Constructs `TXmlWordConfigField` (instance size `0x10`), stores property index at `+0x04) and identifier at `+0x08), then inserts via `0x004D531C`.
-- `viewer + 0x6C`: twin-field descriptors. On U+2020 (`†`) split, constructs `TXmlWordConfigTwinField` (instance size `0x18`), stores index at `+0x04), left/right identifiers at `+0x08)/`+0x0C), and associated property/interface data at `+0x10); inserts via `0x004D68D4`.
+- `viewer + 0x68`: single-field descriptor map (`TDictionary<UnicodeString,TXmlWordConfigField>`). `AddCustomDocPropertiesToDic` calls its `Remove` method at `0x004D531C` with the property identifier, consuming/returning a matching descriptor rather than inserting one at this call site.
+- `viewer + 0x6C`: twin-field descriptor map (`TDictionary<UnicodeString,TXmlWordConfigTwinField>`). On U+2020 (`†`) split, the routine calls its `Remove` method at `0x004D68D4` using the split key. The exact lifetime/ownership of the returned descriptor still needs tracing.
 - `viewer + 0x64`: separate runtime custom-property map, whose TD32 methods are `TDictionary<System.UnicodeString,TDocumentCProperty>.SetItem` (`0x004D34B0`), `ContainsValue` (`0x004D3DF8`), and `Remove` (`0x004D3B78`).
 
 Do not flatten these into one string dictionary in the Linux port. The native implementation distinguishes XML single-field descriptors, XML twin-field descriptors, and runtime custom-property objects.
@@ -409,4 +409,4 @@ Added `find_native_twin_field_index()` to `word_fields.py` with one-based indexi
 
 ## Native custom-property field map builder implemented
 
-Added `SingleWordFieldDescriptor`, `TwinWordFieldDescriptor`, `WordCustomPropertyFieldMaps`, and `build_word_custom_property_field_maps()` in `word_fields.py`. It mirrors `AddCustomDocPropertiesToDic` enumeration from index zero, routes only non-empty first-dagger pairs to the twin map, and keeps malformed/empty-side names in the single map. Tests verify indices and separation. Python CI run `43890539219`: 107 tests passed, 2 optional skips.
+Added `SingleWordFieldDescriptor`, `TwinWordFieldDescriptor`, `WordCustomPropertyFieldMaps`, and `build_word_custom_property_field_maps()` in `word_fields.py`. This is a Linux-side inventory classifier using the native zero-based enumeration and first-dagger split rules; it does not yet reproduce the native `TDictionary.Remove` consumption/lifetime behavior. Tests verify indices and separation. Python CI run `43890539219`: 107 tests passed, 2 optional skips.
