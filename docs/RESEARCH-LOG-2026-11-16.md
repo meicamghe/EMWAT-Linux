@@ -547,3 +547,7 @@ Because direct-call scans cannot resolve VMT/interface calls, the Word workflow 
 ## Absolute IAT CALL/JMP scanner added for Delphi runtime imports
 
 The import-thunk trace confirms that service import wrappers are `mov eax,eax; jmp dword ptr [IAT]` stubs, and no rel32 CALL candidates target those wrapper addresses. Delphi-generated code can instead issue `FF 15 <IAT>` directly. Added `tools/scan_pe_ff15_iat_refs.py` to scan executable bytes for absolute indirect CALL (`FF 15`) and JMP (`FF 25`) references to each imported IAT slot. The service workflow now scans `LoadPackage`, `GetClass`, `ClassCreate`, `ClassDestroy`, `GetProcAddress`, and `StartExe` this way. This should recover the real callsites that a rel32 scan cannot see.
+
+## IAT thunk scan result and next pointer-xref layer
+
+The absolute IAT scanner (`14266043661`) finds only the expected `JMP [IAT]` stubs for `LoadPackage`, `GetClass`, `ClassCreate`, `ClassDestroy`, `GetProcAddress`, and `StartExe`; it finds no direct `CALL [IAT]` sites. The rel32 scan also found no direct CALLs to the thunk entries. This indicates the API references may be mediated by stored function pointers, runtime package tables, or other indirect dispatch. The service workflow now additionally scans raw pointer references to the thunk code addresses themselves, to locate registration tables or callback fields before deciding the imports are unused.
