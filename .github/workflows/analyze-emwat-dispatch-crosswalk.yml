@@ -29,15 +29,31 @@ jobs:
         shell: bash
         run: |
           mkdir -p dispatch-crosswalk/service
-          for address in 0x0047BF30 0x0047E0EC 0x00470D00 0x00470B38 0x0046ADBC 0x0046A7A4; do
-            name=${address#0x}
-            python tools/trace_pe_target.py analysis-input/EmwatService.exe "$address" "dispatch-crosswalk/service/$name.md" 5000 ret
-            python tools/trace_td32_procedure.py analysis-input/EmwatService.exe "$address" "dispatch-crosswalk/service/$name-td32.md" || true
-            python tools/trace_td32_callers.py analysis-input/EmwatService.exe "$address" "dispatch-crosswalk/service/$name-callers.md" || true
-          done
-          python tools/find_td32_class_procedures.py analysis-input/EmwatService.exe TMainForm TIdHTTPServer TIdHTTPResponseInfo > dispatch-crosswalk/service/service-classes.md
-          python tools/resolve_delphi_vmt_slots.py analysis-input/EmwatService.exe dispatch-crosswalk/service/service-vmt.md
-          python tools/trace_delphi_interfaces.py analysis-input/EmwatService.exe dispatch-crosswalk/service/service-interfaces.md
+          if [ ! -f analysis-input/EmwatService.exe ]; then
+            cat > dispatch-crosswalk/service/INPUT-NOT-PRESENT.md <<'EOF'
+          # Service PE trace not run
+
+          `analysis-input/EmwatService.exe` is not present in the public repository at this revision.
+          The service addresses below are leads from earlier analysis notes, not newly verified traces:
+          - 0x0047BF30 — MainForm HTTP command handler
+          - 0x0047E0EC — invoke-route helper
+          - 0x00470D00 / 0x00470B38 — XML ParseMethod wrapper/worker
+          - 0x0046ADBC / 0x0046A7A4 — token dispatch/parser-record collection
+
+          No service executable has been added or inferred. Add a sanitized, authorized analysis copy to `analysis-input/EmwatService.exe` before enabling this trace.
+          EOF
+            echo "EmwatService.exe absent; service trace intentionally skipped."
+          else
+            for address in 0x0047BF30 0x0047E0EC 0x00470D00 0x00470B38 0x0046ADBC 0x0046A7A4; do
+              name=${address#0x}
+              python tools/trace_pe_target.py analysis-input/EmwatService.exe "$address" "dispatch-crosswalk/service/$name.md" 5000 ret
+              python tools/trace_td32_procedure.py analysis-input/EmwatService.exe "$address" "dispatch-crosswalk/service/$name-td32.md" || true
+              python tools/trace_td32_callers.py analysis-input/EmwatService.exe "$address" "dispatch-crosswalk/service/$name-callers.md" || true
+            done
+            python tools/find_td32_class_procedures.py analysis-input/EmwatService.exe TMainForm TIdHTTPServer TIdHTTPResponseInfo > dispatch-crosswalk/service/service-classes.md
+            python tools/resolve_delphi_vmt_slots.py analysis-input/EmwatService.exe dispatch-crosswalk/service/service-vmt.md
+            python tools/trace_delphi_interfaces.py analysis-input/EmwatService.exe dispatch-crosswalk/service/service-interfaces.md
+          fi
       - uses: actions/upload-artifact@v4
         with:
           name: emwat-service-dispatch-crosswalk
