@@ -341,3 +341,8 @@ This explains the only direct caller previously found for `WordAppDocumentBefore
 ## Exact active-field name extraction
 
 `FindFieldInActivefields` (`0x004BC170`) is not a generic case-folding lookup. It searches the Word field code for the literal `DOCPROPERTY`; if present, it applies Delphi `Pos`/`Copy` operations using the first double-space delimiter and then the first single space in the copied segment. If the keyword is absent, it preserves the original code. The implementation and tests in `word_fields.py` now mirror the observed edge cases, including Delphi's `Pos = 0) behavior when the double-space delimiter is absent. This normalized output is the name passed to `FindFieldInActivefields` consumers and to the signature-end regex check.
+
+
+## Text-versus-image MIME dispatch
+
+The completed string decoder identifies the discriminator at `0x004BCA70` as `text/plain`. In `FillTextField` (`0x004BC980`), the native code delegates to `FillImageField` when the XML field interface is absent, the MIME property is absent, or its value does not match `text/plain`. Thus `text/plain` is the ordinary text-field path; other declared MIME types enter the alternate field/image path. This provides a concrete branch condition for the Linux resolver.
