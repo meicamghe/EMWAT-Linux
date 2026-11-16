@@ -98,3 +98,6 @@ The Word field-processing disassembly confirms that the Unicode character `†` 
 - Names without the delimiter, or with an empty left/right side, follow the single-field path (`TXmlWordConfigField`).
 - This identifier delimiter is distinct from the `separator="&"` and `concater="\\n"` attributes on the external `signData` parameter. It does not establish the concatenation semantics of signData.
 - Python helper: `parse_word_field_identifier`; tests cover single, twin, multiple delimiters, and empty-side fallbacks.
+
+
+> **Binary parser spelling note (2026-11-16):** The native `TXMLFieldType.Set_Concator` method reads the XML attribute key `concator` (not `concater`) via `TXMLNode.GetAttributeNodes`. The currently transcribed capture line above uses `concater`. No alias is proven; preserve the raw spelling and verify against the original request before normalizing. The Python parser currently preserves both as raw attributes and does not interpret either.
