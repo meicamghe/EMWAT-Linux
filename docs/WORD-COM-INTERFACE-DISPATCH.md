@@ -905,4 +905,19 @@ The follow-up wrapper traces (run 43814055308, artifact 14200974814) resolve the
 
 Therefore, the direct call at 0x004CD1F5 inside WordAppDocumentBeforeSave, which uses _Document slot +0xD8, maps to the generated Set_Saved wrapper—not Get_Saved. The earlier interpretation of that instruction as reading Document.Saved is not supported and is withdrawn. The callback's local OleVariant setup and the value it supplies to Set_Saved need a separate trace before assigning business meaning.
 
-The OnControlerNotify call at 0x004BB514 uses slot +0xDC, which is neither Get_Saved nor Set_Saved. A follow-up now traces the adjacent Get_Content wrapper at 0x0042BDF8 to identify whether +0xDC corresponds to that member or another interface method. Until that trace is reviewed, +0xDC remains unresolved.
+The OnControlerNotify call at 0x004BB514 uses slot +0xDC. The follow-up trace resolves TWordDocument.Get_Content at 0x0042BDF8 to the same slot +0xDC. Thus the controller path is calling the Word document Content member, not a Saved getter/setter. OnControlerNotify supplies -1 in the argument position; the precise meaning of that value in this call context remains unresolved.
+
+
+### Content slot mapping resolved
+
+The Get_Content wrapper at 0x0042BDF8 dispatches through _Document byte offset +0xDC. This matches the call in OnControlerNotify at 0x004BB514. The three adjacent property slots are now mapped:
+
+| Wrapper | Address | _Document slot |
+|---|---:|---:|
+| Get_Saved | 0x0042BD34 | +0xD4 |
+| Set_Saved | 0x0042BD94 | +0xD8 |
+| Get_Content | 0x0042BDF8 | +0xDC |
+
+The OnControlerNotify call passes -1 before invoking +0xDC. The generated wrapper's hidden result/argument handling means the business meaning of this -1 still needs to be traced; do not infer that it is a SaveChanges flag or a registration signal.
+
+Evidence: close/response-chain run 43814460258, artifact 14201473774.
