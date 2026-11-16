@@ -1705,3 +1705,10 @@ The BPL export/API analysis resolves the earlier naming ambiguity. The public TE
 - مسیر `TWordViwer.OnControlerNotify` علاوه بر خواندن Word `Content`، شاخه‌ای جداگانه دارد که دو stream می‌سازد، دو مسیر با پسوندهای `.easd` و `.easz` آماده می‌کند و آن‌ها را به `euUnArchive` می‌دهد.
 - `euUnArchive` یک `T7zPlugin` می‌سازد و وارد مسیر archive-facing SevenZip می‌شود؛ کلاس `T7zOutArchive` در همان BPL متدهای AddStream و SaveToFile دارد. جهت دقیق عملیات و اینکه این مسیر همان recovery Delete است هنوز قطعی نیست.
 - این شاخه به‌عنوان «paired stream/archive workflow» ثبت شد؛ هنوز آن را با ثبت نهایی نامه در Almas یکی نمی‌دانیم.
+
+
+### تکمیل مسیر رمزگشایی Base64 فیلدهای Word — 2026-11-16
+
+- مسیر `encryption=base64` در `SetFieldValue` به helper بومی `0x00473700` ختم می‌شود: جدول ۶۴کاراکتری در `0x00627F98`، decode چهارتایی، مدیریت padding و رد lookup نامعتبر تأیید شد.
+- `0x00473608` طول خروجی را با توجه به padding انتهایی محاسبه می‌کند؛ `0x00402908` نیز thunk تابع Windows `WideCharToMultiByte` است.
+- decoder پایتون فعلی سخت‌گیرانه‌تر از مسیر باینری به‌نظر می‌رسد؛ فعلاً validation را شل نمی‌کنیم و تست‌های سازگاری برای Base64 معتبر/نامعتبر و delimiter نقطه‌ای اضافه/بررسی می‌شوند.
