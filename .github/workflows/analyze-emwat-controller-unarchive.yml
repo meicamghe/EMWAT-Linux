@@ -46,7 +46,7 @@ jobs:
           python tools/inspect_delphi_vmt_address.py analysis-input/EmwatMethods.bpl1 0x00451E08 controller-unarchive/vmt-T7zPlugin.md
           python tools/inspect_delphi_vmt_address.py analysis-input/EmwatMethods.bpl1 0x004525B0 controller-unarchive/vmt-T7zInArchive.md
           python tools/inspect_delphi_vmt_address.py analysis-input/EmwatMethods.bpl1 0x00452A40 controller-unarchive/vmt-T7zOutArchive.md
-          for address in 0x00453EF8 0x00453F34 0x00454284 0x004544D8 0x00454644 0x00454668 0x004547DC 0x004547E8 0x00454800 0x004543B0; do
+          for address in 0x00453EF8 0x00453F34 0x00454284 0x004544D8 0x00454644 0x00454668 0x004547DC 0x004547E8 0x00454800 0x004543B0 0x004546C4 0x004041BC 0x004032C0 0x004032B0 0x0040472C; do
             name=${address#0x}
             python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 "$address" "controller-unarchive/$name.md" 3000 ret
             python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 "$address" "controller-unarchive/$name-td32.md" || true
