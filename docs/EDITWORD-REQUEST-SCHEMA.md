@@ -111,7 +111,7 @@ Source: workflow 43832144163, artifact 14209690263.
 - 0x00470D00 calls parser worker 0x00470B38 and contains exception text references for "Calling ParseMethod exception" and "XML is not valid".
 - The parser recognizes root tag "emwat", its "version" attribute, and child tags "method", "class", and "param"; the "param" child uses the "name" attribute.
 - Parser token helper 0x0046ADBC compares the token names and routes recognized elements. Helper 0x0046A7A4 appends a three-value record to the parser's dynamic collection (three adjacent string/value slots); exact semantic names for all three record fields remain unconfirmed.
-- This is the service-side XML parsing stage. The full service analysis in `docs/EMWAT-SERVICE-EXECUTABLE-ANALYSIS.md` resolves the next steps: the parser fills `TMethodInfo.ClassName` and its `Params` dictionary; the dispatcher prefixes the class name with `T`, calls `System.Classes.GetClass`, constructs the class instance, and invokes VMT slot `+0x0C`. The exact response payload remains open.
+- This is the service-side XML parsing stage. The full service analysis in `docs/EMWAT-SERVICE-EXECUTABLE-ANALYSIS.md` resolves the next steps: the parser fills `TMethodInfo.ClassName` and its `Params` dictionary; the dispatcher prefixes the class name with `T`, calls `System.Classes.GetClass`, constructs the class instance, and invokes VMT slot `+0x0C`. The successful DOC response envelope is now confirmed by the captured round-trip below; exact XML construction internals and other output formats remain open.
 
 
 ## BPL class hierarchy and Invoke contract — 2026-11-16
@@ -125,7 +125,7 @@ Source: workflow 43832553168, artifact 14208369288.
 - The inner helper `0x0046C82C` walks the dictionary's key/value pairs and builds XML parameter nodes; it is not itself the subclass dispatcher. Its XML node builder uses `TXMLEmwatType`, `TXMLMethodType`, and `TXMLParamType`.
 - `TEmwatMethod` VMT slot `+0x10` is the abstract/error stub `0x00401068`; the concrete subclasses override this slot.
 - `TEditWordDocument` VMT slot `+0x10` points to `0x005EE82C`; TD32 decorates this routine as `TScanDocument.PerformMethod`. `TScanDocument` VMT slot `+0x10` points to `0x005EEB48`, TD32 decorates it as `TFaxDocument.PerformMethod`. Preserve these VMT-owner/TD32-name discrepancies.
-- The service-side `GetClass("T"+className)` and VMT `+0x0C` invocation path are now confirmed; the remaining unknown is the exact response serialization and how the method result/Word archive is returned to the browser.
+- The service-side `GetClass("T"+className)` and VMT `+0x0C` invocation path are confirmed. The successful `LoadDocument` response-writing branch is also mapped below. Remaining unknowns are the internal XML construction details, the event/wait that holds the invoke request open, and whether the local `.easz` recovery archive has any role in the close-time Almas commit.
 
 
 ## Service parser confirmation — version 1
@@ -160,3 +160,30 @@ The concrete `TEditWordDocument.PerformMethod` at `0x005EE82C` reads these dicti
 The non-empty-result branch inside `LoadDocument` is the component that handles the HTTP response: it obtains `AResponseInfo` from `TEmwatInvokeParam` offset `+0x0C`, assigns the generated XML string to `ContentText` (`+0xBC`), calls `TIdHTTPResponseInfo.WriteContent` through BPL import thunk `0x0040448C`, and then sets `bResultSet` at record offset `+0x05`. The service dispatcher consequently skips its fallback response branch for this successful path.
 
 `LoadDocument` calls `OnTmrAutoSave` with the local document path. The timer routine stores that path in `TWordViwer+0xA0`; `OnControlerNotify` later uses it as the source file for the `.easd` member in the password-protected `.easz` archive. This archive path is a separate static finding and is not, by itself, proof that the close-time Almas registration/commit is complete. See `docs/EMWAT-SERVICE-EXECUTABLE-ANALYSIS.md` and `docs/WORD-LIFECYCLE-STATIC-TRACE.md`.
+
+
+## 8. Captured EditWordDocument response and static HTTP writer — 2026-11-16
+
+The PCAP round-trip report `docs/PCAP-EDITWORD-DOCUMENT-ROUNDTRIP.md` records the successful HTTP response:
+
+```xml
+<response-word status="success">
+  <return-types>
+    <type mimetype="application/msword" encryption="base64">…</type>
+  </return-types>
+</response-word>
+```
+
+The response is HTTP 200 with `Content-Type: text/html; charset=ISO-8859-1`. The decoded `type` payload is a legacy OLE Compound File document, not a status-only acknowledgement. The response capture has TCP sequence gaps, so its complete bytes/hash and full binary diff are not verified.
+
+The BPL response branch at `0x004B7F9C–0x004B7FD8`:
+1. obtains `AResponseInfo` from `TEmwatInvokeParam+0x0C`;
+2. assigns the generated XML string to `AResponseInfo.ContentText` at object offset `+0xBC`;
+3. calls `TIdHTTPResponseInfo.WriteContent` through `0x0040448C`;
+4. sets `bResultSet` at record offset `+0x05`.
+
+Thus the successful non-empty EditWordDocument result writes the HTTP response from the BPL path; the generic service dispatcher skips its fallback writer. `TEditWordDocument.PerformMethod` copies the helper output to the method result and sets `bUnloadPkg`, but it does not itself set `bResultSet`.
+
+The capture shows the first response byte arriving about 54.558 seconds after the request body completes. The exact Word/COM/wait event that releases this long-lived invoke remains unresolved. The periodic `.easz` archive path is separate until its data flow is linked to the HTTP response.
+
+Evidence: response/controller workflow run `43872534265`, artifact `14228851062`; captured response report and static response path documented in `docs/WORD-RESPONSE-TIMER-CORRELATION-2026-11-16.md`.
