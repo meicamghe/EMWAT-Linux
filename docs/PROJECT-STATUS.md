@@ -1886,3 +1886,24 @@ The BPL VMT scan establishes that TEditWordDocument inherits TEmwatMethod; TScan
 - BPL method invoke/VMT workflow 43832553168 completed successfully (artifact 14208369288).
 - Confirmed inheritance: TEditWordDocument derives from TEmwatMethod; the common base is also used by the other method classes listed in docs/EDITWORD-REQUEST-SCHEMA.md.
 - TEmwatMethod.Invoke accepts TDictionary<AnsiString,AnsiString> and iterates key/value entries. The service's runtime call into this inherited method is still an indirect/RTTI dispatch target, not a proven direct callsite.
+
+
+## Dispatch crosswalk review and Word VMT discrepancy — 2026-11-16
+
+- Re-inspected the successful BPL artifact from run `43832553168` / artifact `14208369288`, including the complete TD32 procedure and VMT/interface outputs.
+- `TEmwatMethod.Invoke` (`0x0046C82C`) walks dictionary key/value pairs. `0x0046E324` is identified as `TPairEnumerator.DoGetCurrent`; `0x0046E3CC` is associated with `TPairEnumerator.MoveNext` in RTTI/VMT metadata even though its TD32 decorated name says `TList<TPair>.GetCapacity`. Preserve this naming conflict in analysis.
+- A raw pointer scan found no exact static references to `0x0046C82C`, and the only direct TD32 caller found is unit finalization. Its runtime role is still unresolved; do not label it the request dispatcher based on its name.
+- `TEditWordDocument` VMT `0x005ED764` has `+0x10 = 0x005EE82C`. That target reads `wordConfig`, `wordBody`, `letterImages`, and `signData`, validates `wordConfig`, and reaches `TWordViwer.LoadDocument` (`0x004B7724`). TD32 decorates the same target as `TScanDocument.PerformMethod`. `TScanDocument` VMT `0x005ED884` has `+0x10 = 0x005EEB48`, while TD32 labels that target `TFaxDocument.PerformMethod`. This VMT/TD32 class-name mismatch is now documented; no source-level rename is asserted.
+- New reference: `docs/WORD-LIFECYCLE-STATIC-TRACE.md`.
+
+### New analysis workflow status
+
+- Added `.github/workflows/analyze-emwat-dispatch-crosswalk.yml` with separate service, BPL-dispatch, and Word-lifecycle jobs.
+- The public repository's `analysis-input/` currently contains `EmwatMethods.bpl1` and resource binaries, but not `EmwatService.exe`. The service job now writes an explicit missing-input report and skips that trace rather than failing or implying that service disassembly ran.
+- Expanded BPL and Word traces include the Invoke helpers, AutoSave, controller notification, BeforeClose/BeforeSave, document callbacks, SilentSave, and field/configuration routines.
+- Commits: workflow `1a3f17f99a892d157b792c4090b90b5bbbd5d140`; static trace `84de233435f61cb7b79758b7ad86f6f91b7f774f`; README link `3838964260a87a641b5fe06f254f23c78abc9e68`.
+- The newly expanded workflow run and artifacts have not yet been independently verified. Do not report those jobs as passed until their run outputs are inspected.
+
+### Immediate unresolved target
+
+Resolve the class-registration/dispatch bridge that maps the incoming XML `method class="EditWordDocument"` to the concrete class/VMT and its `PerformMethod` slot. In parallel, determine whether `TEmwatMethod.Invoke` is an XML response builder or another helper, and connect the service's invoke branch to the selected method and final response writer.
