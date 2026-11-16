@@ -884,3 +884,13 @@ Run `43719180035` succeeded; artifact `14164088249` was inspected. Additional ev
 3. بررسی نقش `ShowRecAndCcOptionForm` در فراخوانی از `GetDocFieldName` و ارتباطش با Receivers/CC.
 4. پس از تکمیل این helperها، مدل Writer را به سه مقصد مستقل گسترش بده: custom properties، text-field result، و image anchors؛ mapping واقعی 180 شناسه را بدون template واقعی حدس نزن.
 5. مسیر close/XHR و پاسخ cancel هنوز end-to-end با Almas تأیید نشده است؛ از پاسخ ساختگی یا اعلام ثبت قطعی خودداری شود.
+
+
+### تکمیل مقصد Custom Document Property در Writer
+
+- ماژول `python/src/emwat_linux/writer_properties.py` اضافه شد.
+- `set_custom_document_property(document, property_name, value)` فقط property موجود را با نام دقیق به‌روزرسانی می‌کند؛ اگر نام وجود نداشته باشد `KeyError` می‌دهد و property جدید ایجاد نمی‌کند.
+- تابع مقدار قبلی property را نمی‌خواند؛ catalog همچنان فقط نام‌ها را inventory می‌کند.
+- تست UNO واقعی روی property ساختگی نشان داد Writer property را به‌روزرسانی می‌کند.
+- CI پس از این تغییر: Python run `43813400123` = 91 تست سبز (یک skip اختیاری)، UNO run `43813378877` = 8/8 سبز.
+- یک workflow برای index کردن تمام TD32 symbolهای `TDocumentCProperty` و `TXmlWordConfigField/TwinField` اضافه شده است. نسخه نخست script خطای آرگومان TD32 داشت؛ اصلاح شد و اجرای جدید در حال بررسی است. خطاهای قدیمی `43813052058` و `43813063493` مربوط به نسخه‌های پیش از اصلاح هستند و نباید به‌عنوان وضعیت نهایی تلقی شوند.
