@@ -24,7 +24,7 @@ jobs:
         shell: bash
         run: |
           mkdir -p word-close-response-chain
-          printf '%s\n' 0042FEB0 0042FFF4 004BB3B0 004D281C 0046C82C 005EE82C 004B7F9C 004B7724 004CD154 > /tmp/targets
+          printf '%s\n' 0042FEB0 0042FFF4 0042BD34 0042BD94 004BB3B0 004D281C 0046C82C 005EE82C 004B7F9C 004B7724 004CD154 > /tmp/targets
           pids=()
           while read -r target; do
             (
@@ -41,7 +41,7 @@ jobs:
         shell: bash
         run: |
           pids=()
-          for spec in "0042FEB0 500" "0042FFF4 500" "004BB3B0 900" "004D281C 500" "0046C82C 700" "005EE82C 1000" "004B7F9C 700" "004B7724 900" "004CD154 600"; do
+          for spec in "0042FEB0 500" "0042FFF4 500" "0042BD34 320" "0042BD94 320" "004BB3B0 900" "004D281C 500" "0046C82C 700" "005EE82C 1000" "004B7F9C 700" "004B7724 900" "004CD154 600"; do
             (
               set -e
               set -- $spec
