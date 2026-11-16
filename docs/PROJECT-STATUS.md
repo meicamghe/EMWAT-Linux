@@ -2186,3 +2186,10 @@ Import Table در `EmwatService.exe` شامل `LoadPackage`، `UnloadPackage`، 
 ## فهرست کامل ۱۷ متد منتشرشده TMainForm — 2026-11-16
 
 جدول RTTI فرم اصلی ۱۷ متد را تأیید کرد. علاوه بر `IdHTTPServerCommandGet` در `0x0047BF30`، متد `IdHTTPServerException` در `0x0047CA44`، `FormCreate` در `0x0047CCD8`، `FormClose` در `0x0047CCC8`، `Terminate` در `0x0047E3EC` و `LoadQuickConfig` در `0x0047E7E4` بازیابی شدند. workflow اکنون مسیرهای startup/shutdown و HTTP exception را نیز trace می‌کند.
+
+## اتصال قطعی EmwatService به BPL و Invoke — 2026-11-16
+
+- `ParseMethod` کلاس را با `GetClass` resolve و با `TObject.Create` نمونه‌سازی می‌کند.
+- سپس سرویس slot مجازی `VMT+0x0C` را فراخوانی می‌کند.
+- در BPL، این slot در `TEmwatMethod` به `Finalization` در `0x0046C9E0` می‌رسد و آن تابع `TEmwatMethod.Invoke` در `0x0046C82C` را صدا می‌زند.
+- بنابراین زنجیره service→BPL تا ورود به `Invoke` اثبات شده است. اتصال نهایی `Invoke` به override مجازی `PerformMethod` در slot `+0x10` در batch بعدی تکمیل می‌شود.
