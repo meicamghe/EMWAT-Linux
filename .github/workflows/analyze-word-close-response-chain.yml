@@ -9,6 +9,7 @@ on:
       - 'tools/trace_td32_callers.py'
       - 'tools/trace_pe_target.py'
       - 'tools/list_td32_symbols.py'
+      - 'tools/decode_pe_strings.py'
 permissions:
   contents: read
 jobs:
@@ -57,6 +58,14 @@ jobs:
           python tools/list_td32_symbols.py analysis-input/EmwatMethods.bpl1 \
             TEditWordDocument TEmwatMethod TWordViwer TWordDocument \
             > word-close-response-chain/related-td32-symbols.md
+      - name: Decode PerformMethod and controller-notify string constants
+        run: |
+          python tools/decode_pe_strings.py analysis-input/EmwatMethods.bpl1 \
+            0x005EE9F4 0x005EEA0C 0x005EEA88 0x005EEAA0 \
+            0x005EEABC 0x005EEAD4 0x005EEB0C \
+            0x004BB6CC 0x004BB754 0x004BB76C \
+            0x004D2865 0x004D28B1 \
+            > word-close-response-chain/close-and-controller-strings.md
       - uses: actions/upload-artifact@v4
         with:
           name: emwat-word-close-response-chain
