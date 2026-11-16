@@ -1062,3 +1062,11 @@ Do not implement guessed `signData` joining or claim end-to-end Almas registrati
 - Service workflow was corrected to use PE disassembly, raw pointer-reference scans, VA context inspection, and string decoding only. It no longer invokes TD32-dependent scripts for the service EXE.
 - Corrected run `43868823284` was queued at this checkpoint; inspect its job and artifact before reporting success.
 - Keep the EXE out of the public repository; use the preserved workflow artifact as the CI input.
+
+
+### SevenZip interface correction
+- Exact VMT inspection shows `T7zPlugin.$bctr` obtains an interface pointer at `T7zOutArchive` object offset `+0x44`, IID `baa9d5dc-9ff4-4382-9bfd-ec9065bd0125`.
+- Through this interface: `+0x10 → AddFiles (0x453F34)`, `+0x18 → SaveToStream (0x454668)`, `+0x28 → SetProgressCallback (0x4547E8)`.
+- Therefore do not call `mW@Tlogs43end_+` a confirmed password; it is passed to SetProgressCallback through the observed interface. `SetPassword` exists separately at `0x4547DC`, but is not the mapped target.
+- `euUnArchive` passes two TStringList values to AddFiles and a `.easz` UnicodeString to SaveToStream; these do not obviously match the TD32 signatures. The archive direction and exact argument types remain unresolved. Next inspect target method bodies and the wrapper/factory.
+- Expanded archive workflow run `43869599848` was queued for those method-body traces at the last check.
