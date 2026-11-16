@@ -1281,7 +1281,7 @@ Artifact اجرای `43811074616` (موفق؛ 41 فایل trace/disassembly) ب�
 ### استخراج Custom Document Properties
 
 - `TWordViwer.AddCustomDocPropertiesToDic` در `0x004D1454–0x004D1807` از مسیر `LoadDocument` فراخوانی می‌شود (callsite: `0x004B7994`).
-- تابع یک collection از custom document properties را پیمایش می‌کند، نام propertyها را از رشته‌های هر عضو استخراج/تفکیک می‌کند و رکوردهای داخلی را به دو مجموعه در offsetهای viewer `+0x68` و `+0x6C` اضافه می‌کند.
+- تابع یک collection از custom document properties را پیمایش می‌کند، نام propertyها را از رشته‌های هر عضو استخراج/تفکیک می‌کند و رکوردهای single/twin را برای دو dictionary در offsetهای viewer `+0x68` و `+0x6C` آماده می‌کند. trace بعدی نشان داد callهای مستقیم این تابع به helperهای generic `Remove` می‌رسند؛ مسیر درج نهایی هنوز جداگانه باید ردیابی شود.
 - جزئیات دقیق قالب نام/مقدار و معنای همه فیلدهای رکورد هنوز به helperهای `0x004D531C` و `0x004D68D4` وابسته است؛ تا trace آن helperها کامل نشود، delimiter و قرارداد نهایی dictionary را قطعی اعلام نمی‌کنیم.
 - این مسیر مستقل از bookmark inventory است. پس catalog لینوکس اکنون باید نام Custom Document Properties را نیز، بدون خواندن مقدارشان، فهرست کند.
 
