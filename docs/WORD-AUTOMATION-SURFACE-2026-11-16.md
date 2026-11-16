@@ -346,3 +346,10 @@ This explains the only direct caller previously found for `WordAppDocumentBefore
 ## Text-versus-image MIME dispatch
 
 The completed string decoder identifies the discriminator at `0x004BCA70` as `text/plain`. In `FillTextField` (`0x004BC980`), the native code delegates to `FillImageField` when the XML field interface is absent, the MIME property is absent, or its value does not match `text/plain`. Thus `text/plain` is the ordinary text-field path; other declared MIME types enter the alternate field/image path. This provides a concrete branch condition for the Linux resolver.
+
+
+## Twin-field lookup algorithm
+
+`FillTwinFields` (`0x004C02EC`) scans the Word Fields collection from the caller-supplied one-based start index to `Fields.Count). For each item it reads `Field.Code`, normalizes it through `FindFieldInActivefields`, and compares the result to the requested twin identifier. It returns the first matching one-based field index or `0` when no match exists. `GetDocFieldIndex` uses this return value to detect a missing twin and enter its abort/close-without-changes path.
+
+The Python mirror is `find_native_twin_field_index()` in `python/src/emwat_linux/word_fields.py`; its test suite covers one-based indexing, start offsets, no-match behavior, and invalid zero-based starts.
