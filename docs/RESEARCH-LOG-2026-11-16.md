@@ -248,3 +248,29 @@ The controller-close artifact `14232349256` establishes:
 - The save/close prompt strings include Persian choices `موافقم`, `خیر`, `انصراف`, and a result log. The callback's method name is BeforeSave while its embedded log says OnBeforeClose; do not assume event hookup semantics from that string alone.
 
 These findings are documented in `docs/WORD-AUTOMATION-SURFACE-2026-11-16.md` (commit `907907345e1211901df3ec944d7421bc72bd86a8`). The earlier association of `0x00456DFC` with content extraction is explicitly corrected.
+
+
+## Final archive-backed analysis and transport compatibility pass
+
+All three archive-backed analysis jobs completed successfully in service run `43883105610`:
+- `bpl-method-dispatch` — artifact `14232698133`;
+- `service-request-dispatch` — artifact `14233736412`;
+- `word-controller-close` — artifact `14234120250`.
+
+The complete Word surface workflow also passed in run `43882925143`:
+- `word-lifecycle` — artifact `14232038748`;
+- `word-save-print` — artifact `14232159665`;
+- `word-field-mapping` — artifact `14232259712`.
+
+The field/property constant artifact confirms:
+- `0x004BFEE8` = `urlencoded`;
+- `0x004BFF0C` = `base64`;
+- `0x004D1768` = `†` (U+2020 DAGGER), the delimiter used by the custom-property split path.
+
+The Word surface report was updated in commit `aa8d8f61b48214a4811402217be0d0844bf3b559`. It now resolves the earlier pending labels/delimiter.
+
+The service artifact was renamed to `package-loader-full.md` and confirms `0x0047E0EC` loads/checks `EmwatMethods.bpl`; it is not an authentication or route-selection helper. Exact parser child-name literals and CORS header spellings are recorded in the service lifecycle report.
+
+The Linux POST bridge was updated to emit the recovered legacy `Access-Control-Allow-Headers: *` and singular `Access-Control-Allow-Method: *` headers while retaining the project's allowlisted Origin policy as a deliberate security hardening. A temporary strict `invoke` query validator was removed because the native trace confirms the client-generated nonce but does not establish server-side numeric validation. The transport keeps the query opaque. Final Python bridge run `43883570154` passed: 104 tests, 2 optional skips. Relevant commits: `7cf67752672f7787983e05677fd50a5909434a1c`, `cdf434e688e73d227dcad77dd3a586e3b23d8329`, `e858f14d0dbcf52ca7496ef43354160aa4c337a8`.
+
+The LibreOffice backend contract was corrected to reflect the existing Python/UNO prototype and prior verification (Python 96 tests with one skip; UNO integration 8/8 on a synthetic DOCX/DOCPROPERTY fixture), while explicitly distinguishing those component tests from full Almas end-to-end compatibility. Contract update commit: `02b3d4fe9133be0d08b3fb98b5f1cf0c9887a028`.
