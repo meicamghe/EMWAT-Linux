@@ -306,3 +306,12 @@ Re-opened Word field-mapping artifact `14232259712` and checked direct caller sc
 - `FillField` (`0x004BC2C4`) only appends a field interface to viewer collection `+0x60`; it is not the actual visible field mutation routine.
 
 These findings are documented in `docs/WORD-AUTOMATION-SURFACE-2026-11-16.md` (commit `0715b91c997375fe0f5062f695f9d826b86f72ea`). Keep field inventory, field mutation, and document-level image insertion as separate backend layers.
+
+
+## Lifecycle contract hardening after event-sink correction
+
+The Python adapter/state-machine documentation previously described a native “close-prompt Cancel” and native Word “No” choice as if a separate BeforeClose event had been established. That wording was too strong. The binary evidence confirms the BeforeSave event sink and its Cancel argument, but does not prove that `WordAppDocumentBeforeClose` is registered or fully decode all save/no/cancel outcomes. Updated:
+- `python/src/emwat_linux/office_adapter.py`: a close veto is terminal only when the office engine reports an actual close-veto event; do not infer a BeforeClose event from BeforeSave.Cancel.
+- `python/src/emwat_linux/sessions.py`: `discard()` now documents an explicit discard outcome and warns that BeforeSave cancellation alone is not proof of discard.
+
+These are contract/documentation corrections; runtime state transitions are unchanged. Commits: `4511d9722bf46dca8c4d3e6c2379346051c117b9`, `1f29002809a6e7170ea3f251fe45fa6a8424df6b`.
