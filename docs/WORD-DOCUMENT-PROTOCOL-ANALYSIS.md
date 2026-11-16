@@ -1320,3 +1320,15 @@ Artifact جدید `43812127854` delimiter ثابت در `0x004D1768` را به�
 ### دو نام ثابت در مسیر GetDocFieldName
 
 Decode رشته‌های ثابت نشان داد مقایسه‌های این مسیر شامل `RtlDate` و `Hidden_Customizable` هستند. در نتیجه، فراخوانی `SilentSaveEmwatDoc` در `GetDocFieldName` باید همچنان یک شاخه شرطی مرتبط با این نام‌ها تلقی شود؛ نام‌ها به‌تنهایی قرارداد ثبت یا ذخیره‌سازی Almas را ثابت نمی‌کنند.
+
+
+### تکمیل مسیر نوشتن مقدار فیلد در Word
+
+بازخوانی disassembly کامل `FillImageField` در `0x004BC30C` نشان داد نام این تابع گمراه‌کننده است و مسیر فقط درج تصویر نیست:
+
+- در صورت فعال بودن flag داخلی `viewer+0xF0`، سه نام ویژه `LetterRegistrationDate`، `LetterRegistrationNo` و `ProduceDate` وارد مسیر آماده‌سازی/اصلاح مقدار می‌شوند.
+- تابع ابتدا dictionary فیلدهای XML را بررسی می‌کند؛ log صریح آن می‌گوید مقدار یک فیلد می‌تواند در `CustomDocumentProperties[index]` ذخیره شود.
+- مسیر جایگزین، مقدار را در ناحیه `Field.Result.Text` می‌نویسد؛ log صریح `field value stored on Field.Result.Text area.` این مقصد را تأیید می‌کند.
+- پس از نوشتن در مسیر Field.Result.Text، کد وضعیت قفل فیلد را بررسی می‌کند و log `field locked.` دارد.
+- در نتیجه، مدل مقصد فیلد در پیاده‌سازی Linux نباید فقط یک Writer text field باشد: دست‌کم مسیر Custom Document Property، مسیر نتیجه Text Field، و مسیر تصویر باید جداگانه قابل نمایش/آزمایش باشند.
+- `FillTextField` همچنان نقش تشخیص metadata/MIME و dispatch را دارد؛ اما `FillImageField` در عمل بخشی از منطق عمومی مقداردهی فیلد را هم اجرا می‌کند. mapping هر 180 شناسه به مقصد مشخص همچنان به template واقعی و تکمیل trace وابسته است.
