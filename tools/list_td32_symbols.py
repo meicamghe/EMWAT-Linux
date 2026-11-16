@@ -23,7 +23,7 @@ def main() -> None:
     if not hit:
         raise SystemExit("TD32 debug signature not found")
     base, end, directory, _ = hit
-    _, names, modules, procedures = parse_td32(blob, base, end)
+    _, names, modules, procedures = parse_td32(blob, base, end, directory)
     image_base = pe.OPTIONAL_HEADER.ImageBase
 
     rows: list[tuple[int, int, str, int, int, str]] = []
