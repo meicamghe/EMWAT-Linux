@@ -10,8 +10,8 @@ The TD32 trace of `TWordViwer.OnControlerNotify` at `0x004BB3B0–0x004BB777` an
 - The handler checks its internal state and the controller notification structure before entering the main branch.
 - It toggles internal flags at viewer offsets `+0x79` and `+0x5E`.
 - It calls `TWordViwer.CostumizeRecAndCC` at `0x004D281C`.
-- It passes `-1` and the document interface stored at viewer `+0x48` to COM vtable slot `+0xDC`. The exact method represented by this slot is not yet proven.
-- It subsequently processes two path values through `FixDirectionInFarsiNumericMode` at `0x004563A8` and helper `0x00456DFC`.
+- It passes `-1` and the document interface stored at viewer `+0x48` to COM vtable slot `+0xDC`. The generated wrapper at `0x0042BDF8` identifies this slot as `TWordDocument.Get_Content`; this is a Content-range getter, not `Close` or `Save`.
+- It subsequently processes path values through `FixDirectionInFarsiNumericMode` at `0x004563A8` and `euUnArchive` at `0x00456DFC`.
 
 ## Recovery file extensions
 
@@ -20,7 +20,7 @@ String decoding confirms:
 - `0x004BB754`: `.easd`
 - `0x004BB76C`: `.easz`
 
-This matches the previously identified recovery subsystem that enumerates `*.easz` archives and extracts temporary `.easd` documents. The helper `0x00456DFC` is the next target to determine whether it creates, packages, renames, or registers these paths.
+This matches the previously identified recovery subsystem that enumerates `*.easz` archives and extracts temporary `.easd` documents. The helper `0x00456DFC` is named `Emwatutils.euUnArchive`; its disassembly iterates archive entries and extracts them to the supplied destination. It is an extraction path, not an archive-creation routine.
 
 ## Method request dictionary
 
@@ -39,7 +39,7 @@ The AutoSave/recovery handler and the final Almas correspondence registration mu
 
 ## Next trace targets
 
-1. `0x00456DFC` — two-path helper used after the controller-triggered COM action.
-2. `0x004563A8` — Farsi numeric/direction transform applied to the path values.
-3. Compare COM slot `+0xDC` with generated `TWordDocument.Close` and `TWordDocument.Save` wrappers.
+1. Trace the callers and archive-entry contract of `euUnArchive` at `0x00456DFC` to determine which of `.easz` and `.easd` is source versus destination.
+2. Validate the exact string transform in `FixDirectionInFarsiNumericMode` at `0x004563A8`.
+3. Trace the AutoSave callback's surrounding controller message and data source; the COM slot `+0xDC` is already mapped to `Get_Content`.
 4. Continue searching for the final POST/response after the Word editor closes; do not infer the Almas registration payload from local AutoSave artifacts.
