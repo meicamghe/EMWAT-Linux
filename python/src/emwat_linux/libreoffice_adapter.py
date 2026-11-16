@@ -50,6 +50,37 @@ def _source_extension(data: bytes) -> str:
     raise ValueError("unsupported_word_document_container")
 
 
+def _uno_listener_proxy(
+    delegate: object,
+    *,
+    interface_module: str,
+    interface_name: str,
+    methods: tuple[str, ...],
+) -> object:
+    """Wrap a Python delegate in a real PyUNO interface implementation."""
+    unohelper = importlib.import_module("unohelper")
+    interface = getattr(importlib.import_module(interface_module), interface_name)
+
+    def initialize(self: object) -> None:
+        unohelper.Base.__init__(self)
+        self._delegate = delegate
+
+    namespace: dict[str, object] = {"__init__": initialize}
+    for method_name in methods:
+        def make_dispatch(name: str) -> Callable[..., object]:
+            def dispatch(self: object, *args: object) -> object:
+                return getattr(self._delegate, name)(*args)
+            return dispatch
+        namespace[method_name] = make_dispatch(method_name)
+
+    proxy_type = type(
+        f"EMWAT_{interface_name}_Proxy",
+        (unohelper.Base, interface),
+        namespace,
+    )
+    return proxy_type()
+
+
 class _ModifyListener:
     def __init__(self, callback: Callable[[], int]) -> None:
         self._callback = callback
@@ -276,12 +307,33 @@ class LibreOfficeAdapter:
             handle.close_listener = close_listener
             modify_listener = _ModifyListener(on_modified)
             save_listener = _DocumentEventListener(on_saved)
-            document.addModifyListener(modify_listener)
-            document.addDocumentEventListener(save_listener)
-            document.addCloseListener(close_listener)
+            modify_proxy = _uno_listener_proxy(
+                modify_listener,
+                interface_module="com.sun.star.util",
+                interface_name="XModifyListener",
+                methods=("modified", "disposing"),
+            )
+            save_proxy = _uno_listener_proxy(
+                save_listener,
+                interface_module="com.sun.star.document",
+                interface_name="XDocumentEventListener",
+                methods=("documentEventOccured", "disposing"),
+            )
+            close_proxy = _uno_listener_proxy(
+                close_listener,
+                interface_module="com.sun.star.util",
+                interface_name="XCloseListener",
+                methods=("queryClosing", "notifyClosing", "notifyClosed", "disposing"),
+            )
+            document.addModifyListener(modify_proxy)
+            document.addDocumentEventListener(save_proxy)
+            document.addCloseListener(close_proxy)
             # Keep strong references: PyUNO listeners must outlive their registrations.
             handle.modify_listener = modify_listener
+            handle.modify_proxy = modify_proxy
             handle.save_listener = save_listener
+            handle.save_proxy = save_proxy
+            handle.close_proxy = close_proxy
             handle.desktop = desktop
             handle.output_path = output_path
             handle.source_path = source_path
