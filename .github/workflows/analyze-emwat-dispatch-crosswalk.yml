@@ -100,7 +100,7 @@ jobs:
             for address in 0x00401156 0x00401158 0x0040115E 0x00401160 0x004011B6 0x004011B8 0x00401462 0x00401464 0x00401D7A 0x00401D7C 0x00402172 0x00402174 0x00402352 0x00402354; do
               python tools/scan_pe_pointer_refs.py analysis-input/EmwatService.exe "$address" "dispatch-crosswalk/service/thunk-${address}-pointer-refs.md" || true
             done
-            for address in 0x004610FC 0x0047E2D4 0x00401156 0x0040115E 0x004011B6 0x00401462 0x00401D7A 0x00402172 0x00402352; do
+            for address in 0x004610FC 0x0047E2D4 0x00401158 0x00401160 0x004011B8 0x00401464 0x00401D7C 0x00402174 0x00402354; do
               python tools/scan_pe_rel32_call_bytes.py analysis-input/EmwatService.exe "$address" "dispatch-crosswalk/service/${address}-rel32-call-candidates.md"
             done
             for address in 0x0046AA70 0x00471214 0x0046ADBC 0x0046A7A4 0x0047E2D4 0x004610FC; do
