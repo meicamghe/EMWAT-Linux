@@ -149,7 +149,7 @@ The exact mapping of each XML interface getter to the internal field-model prope
 
 ### Custom document properties
 
-`TWordViwer.AddCustomDocPropertiesToDic` at `0x004D1454` obtains the Word document's custom-properties collection through the document interface, iterates its entries, and extracts property values. It searches for the exact delimiter `†` (U+2020 DAGGER; constant at `0x004D1768`), splits selected property strings into two parts, and routes the results into two internal collections stored through viewer fields at offsets `+0x6C` and `+0x68`. The delimiter matches the already recovered Twin Field identifier convention; the exact meaning of the two destination collections remains unresolved.
+`TWordViwer.AddCustomDocPropertiesToDic` at `0x004D1454` obtains Word's `CustomDocumentProperties` collection and iterates its entries. It splits each selected property name at `†` (U+2020 DAGGER; constant at `0x004D1768`), constructs a single/twin descriptor-shaped record, then calls `TDictionary.Remove` on the corresponding pre-existing descriptor map at viewer `+0x68` or `+0x6C`. This is a reconciliation/consumption pass, not map population. The routine's embedded diagnostics misleadingly use the `AddXmlWordConfigFieldsToDic` label; the TD32 symbol and body identify it as `AddCustomDocPropertiesToDic`.
 
 This is a significant compatibility requirement: the Linux backend must preserve EMWAT custom-property extraction and round-trip behavior, not only visible document text.
 
