@@ -1,6 +1,14 @@
 # وضعیت پروژه EMWAT-Linux
 آخرین به‌روزرسانی: 2026-11-16
 
+## به‌روزرسانی تست و parser فیلدها — 2026-11-16
+
+- Python CI run `43814423443` موفق شد: **94 تست پاس** و یک تست اختیاری UNO skip.
+- `word_fields.py` اکنون `extract_docproperty_identifier` را برای استخراج شناسه از Word field codeهای `DOCPROPERTY` دارد؛ رفتار فاصله‌گذاری و fallback مطابق trace بومی تست شده است.
+- دو شاخهٔ واقعی `SetFieldValue` از ثابت‌ها decode شدند: `urlencoded` و `base64`؛ مقادیر دیگر مستقیم به setter می‌رسند.
+- helperهای زیرین decode هنوز در workflow run `43814583673` در حال بررسی‌اند؛ به‌خصوص رفتار دقیق علامت `+` در URL-encoding هنوز قطعی اعلام نمی‌شود.
+- runهای close-response و custom-property helper نیز برای تکمیل traceهای VMT و helperهای تبدیل در حال اجرا هستند؛ تا دریافت artifact نهایی نتیجه‌ای به آن‌ها نسبت داده نمی‌شود.
+
 ## به‌روزرسانی تأییدشده — 2026-11-16 (مرحله موازی بعدی)
 
 - پل Python در run `43813400123` موفق است: **91 تست پاس** و یک تست اختیاری UNO skip شده است.
