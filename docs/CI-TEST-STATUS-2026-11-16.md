@@ -203,3 +203,17 @@ These checks validate the adapter and composition boundary. They do not establis
 - Python: **94 tests run, 93 passed, 1 optional UNO test skipped**.
 - LibreOffice UNO: **8 tests passed**, including the real Writer open/close/export path and strict existing custom-property update.
 - The custom-property helper pipeline run 43814583673 is still in progress; no result is claimed for it here.
+
+
+## Imported DOCPROPERTY field refresh integration — 2026-11-16
+
+| Workflow | Run ID | Commit | Result |
+|---|---:|---|---|
+| Python bridge transport | 43815297715 | c4292b8100d57545f300e2a285bbdf1b8e143a7e | success |
+| LibreOffice UNO integration | 43815162036 | 2ebb2564f3d5320ac33bd8b299845f7611437875 | success |
+
+- Python suite: **96 tests run, 95 passed, 1 optional UNO test skipped**.
+- LibreOffice UNO suite: **8/8 passed**.
+- The synthetic DOCX now contains an actual Word DOCPROPERTY field instruction bound to a custom document property. The integration test opens it in Writer, updates the existing custom property, calls refresh_writer_text_fields(), and confirms the rendered document text contains the updated property value before exporting back to legacy DOC/CFB.
+- Writer inspector now identifies fields using the DocInfo.Custom service and returns the custom-property Name without reading field presentation or property values. This preserves the metadata-only privacy boundary.
+- This proves the basic DOCPROPERTY → custom-property → refresh flow in the synthetic fixture. It does not prove all 180 EMWAT fields or real Almas template fidelity.
