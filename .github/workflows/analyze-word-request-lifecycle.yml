@@ -11,6 +11,7 @@ on:
       - 'tools/trace_pe_range.py'
       - 'tools/trace_pe_target.py'
       - 'tools/decode_pe_strings.py'
+      - 'tools/scan_td32_class_field_refs.py'
 permissions:
   contents: read
 jobs:
@@ -88,6 +89,16 @@ jobs:
           for target in 00468150 00468198 004735C4 00403248 004032A8 00403368 00404F04 004A0148; do
             python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x$target request-lifecycle-analysis/remaining-helpers/procedure-$target.md
             python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x$target request-lifecycle-analysis/remaining-helpers/callers-$target.md
+          done
+      - name: Resolve TWordViwer state field ownership and close release
+        shell: bash
+        run: |
+          mkdir -p request-lifecycle-analysis/viewer-state
+          python tools/scan_td32_class_field_refs.py analysis-input/EmwatMethods.bpl1 TWordViwer request-lifecycle-analysis/viewer-state/TWordViwer-field-offsets.md --offsets 0x58 0x5E 0x5F 0x7C 0x80 0x88 0x90 0x98 0xA0 0xEC
+          for target in 004D08B4 004D0D24 00445B10 00455108 004B9AE8 004B9B38 004CD154 004CD2FF 004CD31C; do
+            python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x$target request-lifecycle-analysis/viewer-state/procedure-$target.md || true
+            python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x$target request-lifecycle-analysis/viewer-state/target-$target.md 1600 ret
+            python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x$target request-lifecycle-analysis/viewer-state/callers-$target.md || true
           done
       - uses: actions/upload-artifact@v4
         with:
