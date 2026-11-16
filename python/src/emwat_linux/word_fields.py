@@ -44,6 +44,68 @@ def parse_word_field_identifier(field_id: str) -> WordFieldIdentifier:
     return WordFieldIdentifier(first=field_id)
 
 
+@dataclass(frozen=True)
+class SingleWordFieldDescriptor:
+    """Native TXmlWordConfigField entry for one custom-property identifier."""
+
+    index: int
+    property_name: str
+    field_name: str
+
+
+@dataclass(frozen=True)
+class TwinWordFieldDescriptor:
+    """Native TXmlWordConfigTwinField entry for a dagger-separated pair."""
+
+    index: int
+    property_name: str
+    first_field_name: str
+    second_field_name: str
+
+
+@dataclass(frozen=True)
+class WordCustomPropertyFieldMaps:
+    """Separate single/twin descriptor collections built from property names."""
+
+    singles: tuple[SingleWordFieldDescriptor, ...]
+    twins: tuple[TwinWordFieldDescriptor, ...]
+
+
+def build_word_custom_property_field_maps(
+    property_names: Sequence[str],
+) -> WordCustomPropertyFieldMaps:
+    """Mirror AddCustomDocPropertiesToDic's ordered single/twin inventory.
+
+    Native enumeration starts at index zero. Only a non-empty pair around the
+    first dagger becomes a twin descriptor; malformed/empty sides stay single.
+    """
+    singles: list[SingleWordFieldDescriptor] = []
+    twins: list[TwinWordFieldDescriptor] = []
+    for index, property_name in enumerate(property_names):
+        identifier = parse_word_field_identifier(property_name)
+        if identifier.is_twin:
+            twins.append(
+                TwinWordFieldDescriptor(
+                    index=index,
+                    property_name=property_name,
+                    first_field_name=identifier.first,
+                    second_field_name=identifier.second or "",
+                )
+            )
+        else:
+            singles.append(
+                SingleWordFieldDescriptor(
+                    index=index,
+                    property_name=property_name,
+                    field_name=property_name,
+                )
+            )
+    return WordCustomPropertyFieldMaps(
+        singles=tuple(singles),
+        twins=tuple(twins),
+    )
+
+
 _NATIVE_BUSINESS_SIGNATURE_END = re.compile(r"^sign.*end[0-2]?[0-9]?$")
 
 
