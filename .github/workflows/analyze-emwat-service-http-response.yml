@@ -58,6 +58,10 @@ jobs:
               b"TIdHTTPResponseInfo", b"heartbeat", b"TickTack", b"invoke=",
               b"wordConfig", b"wordBody", b"signData", b"application/msword",
               b"Request XML is not valid", b"Request Doc is Empty",
+              b"OnCommandGet", b"OnCommandOther", b"OnCommandPost", b"OnCommandHead",
+              b"TIdHTTPServer", b"TIdCustomHTTPServer", b"TIdHTTPRequestInfo",
+              b"TIdHTTPResponseInfo", b"TIdContext", b"DefaultPort", b"Heartbeat",
+              b"TEmwatService", b"TService", b"CommandGet", b"CommandOther",
           ]
           text_sections = [s for s in pe.sections if b".text" in s.Name]
           md = Cs(CS_ARCH_X86, CS_MODE_32)
