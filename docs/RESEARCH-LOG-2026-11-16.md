@@ -410,3 +410,14 @@ Added `find_native_twin_field_index()` to `word_fields.py` with one-based indexi
 ## Native custom-property field map builder implemented
 
 Added `SingleWordFieldDescriptor`, `TwinWordFieldDescriptor`, `WordCustomPropertyFieldMaps`, and `build_word_custom_property_field_maps()` in `word_fields.py`. This is a Linux-side inventory classifier using the native zero-based enumeration and first-dagger split rules; it does not yet reproduce the native `TDictionary.Remove` consumption/lifetime behavior. Tests verify indices and separation. Python CI run `43890539219`: 107 tests passed, 2 optional skips.
+
+
+## Correction: generic dictionary helpers and twin comparison semantics
+
+The expanded helper trace corrects the earlier interpretation:
+- `0x004D531C` is `TDictionary<UnicodeString,TXmlWordConfigField>.Remove`.
+- `0x004D68D4` is `TDictionary<UnicodeString,TXmlWordConfigTwinField>.Remove`.
+- `AddCustomDocPropertiesToDic` uses these to consume/return matching descriptors from viewer maps `+0x68` and `+0x6C`; these call sites do not insert new descriptors.
+- `0x00403248` is RTL `System.SysUtils.CompareText`; therefore `FillTwinFields` uses case-insensitive comparison. Updated `find_native_twin_field_index()` to compare with `casefold()` and added mixed-case coverage.
+
+Post-change CI: Python bridge run `43891288399`: 107 tests passed, 2 optional skips. LibreOffice UNO run `43890949051`: 11 tests passed.
