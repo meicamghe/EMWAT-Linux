@@ -2138,3 +2138,10 @@ Workflow تحلیل Word گسترش یافت تا helper مرکزی درج تص�
 تابع `build_word_custom_property_field_maps()` و مدل‌های `SingleWordFieldDescriptor` / `TwinWordFieldDescriptor` به `word_fields.py` اضافه شدند. این تابع از نام Custom Document Propertyها دو مجموعه جدا می‌سازد و index صفرمبنا را مطابق حلقه native حفظ می‌کند.
 
 - Python CI اجرا `43890539219`: **۱۰۷ تست موفق، ۲ skip اختیاری**.
+
+## اصلاح semantics دیکشنری و مقایسه Twin — 2026-11-16
+
+- `0x004D531C` و `0x004D68D4` هر دو متد `TDictionary.Remove` هستند؛ مسیر `AddCustomDocPropertiesToDic` descriptorهای موجود را از mapهای single/twin مصرف می‌کند، نه اینکه در این نقاط اضافه کند.
+- `0x00403248` به `System.SysUtils.CompareText` resolve شد؛ جست‌وجوی Twin نسبت به بزرگی/کوچکی حروف حساس نیست. تابع Python نیز با `casefold()` اصلاح شد.
+- Python CI اجرا `43891288399`: **۱۰۷ تست موفق، ۲ skip اختیاری**.
+- LibreOffice UNO اجرا `43890949051`: **۱۱ تست موفق**.
