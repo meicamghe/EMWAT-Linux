@@ -28,8 +28,13 @@ jobs:
         shell: bash
         run: |
           mkdir -p controller-notify-dispatch
+          python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x004B8A84 controller-notify-dispatch/OnTmrAutoSave-full.md
           python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x004B9900 0x004B9A80 controller-notify-dispatch/notify-registration-context.md
           python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x004BB3B0 0x004BB777 controller-notify-dispatch/OnControlerNotify.md
+          for target in 00404B94 00404B8C 00404B84; do
+            python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x$target controller-notify-dispatch/helper-$target.md 1800 ret
+            python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 0x$target controller-notify-dispatch/helper-refs-$target.md
+          done
           python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 0x004BB3B0 controller-notify-dispatch/OnControlerNotify-pointer-refs.md
           python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004BB3B0 controller-notify-dispatch/OnControlerNotify-callers.md
           python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004B999A controller-notify-dispatch/registration-callers.md
