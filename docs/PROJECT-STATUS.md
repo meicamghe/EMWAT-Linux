@@ -1684,3 +1684,13 @@ The BPL export/API analysis resolves the earlier naming ambiguity. The public TE
 - برای `WordAppDocumentBeforeClose` در `0x004CCBBC` نه pointer reference مستقیم پیدا شد و نه assignment در event-record block؛ تنها caller مستقیم bounded آن `FillImgFldsForPrint` است. پس فعال بودن آن به‌عنوان main-editor event هنوز اثبات نشده.
 - مستندات COM dispatch با این تفکیک به‌روزرسانی شد؛ اتصال event recordها به COM connection point و نام callback چهارم همچنان در شاخهٔ Word lifecycle دنبال می‌شود.
 - Python bridge run `43816293635` پس از اصلاح دو انتظار plus/escaped-plus موفق شد؛ این run وضعیت سبز فعلی تست‌های Python را تأیید می‌کند.
+
+## تکمیل trace مسیر Rec/CC — 2026-11-16
+
+- Word custom-property helper run `43816241948` موفق شد؛ artifact `14201844295` رشته‌های کلیدی `FillPrintOptionForm` را decode کرد.
+- `0x004D1B30` با logهای `FillPrintOptionForm method called/succeed` شناخته شد؛ نام موقت `ShowRecAndCcOptionForm` کنار گذاشته شد.
+- کلید `tokenizedReceivers` و delimiter برابر U+2020 (`†`) تأیید شدند.
+- چهار شناسهٔ config literal نیز تأیید شدند: `Receivers`، `ReceiverDeps`، `ccReceivers` و `ccReceiverDeps`.
+- این تابع پنج بار `SetFieldValue` را صدا می‌زند و collectionهای موازی viewer را پردازش می‌کند. اتصال دقیق هر collection به فیلد نهایی و معنای payloadها هنوز نیازمند config واقعی/نمونهٔ بی‌خطر است.
+- Python run `43816293635` سبز است: **99 تست، 98 پاس و 1 تست اختیاری skip**. آزمون URL-encoding اکنون رفتار native یعنی `+` به فاصله و `%2B` به علامت جمع را پوشش می‌دهد.
+
