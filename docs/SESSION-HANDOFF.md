@@ -878,8 +878,8 @@ Run `43719180035` succeeded; artifact `14164088249` was inspected. Additional ev
 
 ### کارهای موازی بعدی
 
-1. trace کردن `0x004D3DF8` و `0x004D34B0` برای مشخص کردن lookup مقصد Custom Document Properties و Field metadata.
-2. trace کردن `0x0045644C` برای سه فیلد تاریخ/شماره ویژه.
-3. بررسی `0x004D1B30` و مسیر ساخت field-name array.
-4. پس از تکمیل helperها، مدل Writer را به سه مقصد مستقل گسترش بده: custom properties، text-field result، و image anchors؛ mapping واقعی 180 شناسه را بدون template واقعی حدس نزن.
+1. بررسی دقیق قرارداد رکورد `TDocumentCProperty` و رابطه indexهای آن با collection واقعی Word CustomDocumentProperties؛ helperهای `ContainsValue` و `SetItem` اکنون شناسایی شده‌اند.
+2. تکمیل معنای `FindWindowExtd` در شاخه سه فیلد ویژه؛ فعلاً آن را date formatter فرض نکن.
+3. بررسی نقش `ShowRecAndCcOptionForm` در فراخوانی از `GetDocFieldName` و ارتباطش با Receivers/CC.
+4. پس از تکمیل این helperها، مدل Writer را به سه مقصد مستقل گسترش بده: custom properties، text-field result، و image anchors؛ mapping واقعی 180 شناسه را بدون template واقعی حدس نزن.
 5. مسیر close/XHR و پاسخ cancel هنوز end-to-end با Almas تأیید نشده است؛ از پاسخ ساختگی یا اعلام ثبت قطعی خودداری شود.
