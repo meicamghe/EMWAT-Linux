@@ -75,7 +75,7 @@ def main():
         ]
     lines += [f"- Total direct CALL references: {len(rows)}", ""]
     out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text("\\n".join(lines), encoding="utf-8")
+    out.write_text("\n".join(lines), encoding="utf-8")
     print(f"Wrote {out}; direct call references={len(rows)}")
 
 
