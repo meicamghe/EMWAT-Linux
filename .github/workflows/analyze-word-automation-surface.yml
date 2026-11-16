@@ -101,6 +101,15 @@ jobs:
         run: |
           mkdir -p word-automation/fields
           python -m py_compile tools/scan_pe_call_refs.py
+          python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x004BC170 word-automation/fields/field-config-string-normalizer.md
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004BC170 word-automation/fields/field-config-string-normalizer-callers.md
+          python tools/decode_pe_strings.py analysis-input/EmwatMethods.bpl1 0x004BC23C 0x004BC260 0x004BC274 0x004D0BD0 0x004D0BF0 0x004D0C18 0x004D0C3C 0x004D0C5C 0x004D0C60 0x004D0C70 0x004D0CC8 > word-automation/fields/field-config-and-viewer-constructor-strings.md
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004D5048 word-automation/fields/field-map-constructor-from-enumerable-callers.md
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004D5100 word-automation/fields/field-map-constructor-from-enumerable-overload-callers.md
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004D52DC word-automation/fields/field-map-add-callers.md
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004D54E0 word-automation/fields/field-map-addorset-callers.md
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004D6894 word-automation/fields/twin-field-map-add-callers.md
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004D6A98 word-automation/fields/twin-field-map-addorset-callers.md
           for address in 0x004D4C54 0x004D52DC 0x004D54E0 0x004D4D58 0x004D620C 0x004D6894 0x004D6A98 0x004D6310 0x004D5048 0x004D5100 0x004D6600 0x004D66B8; do
             python tools/scan_pe_call_refs.py analysis-input/EmwatMethods.bpl1 "$address" "word-automation/fields/${address}-all-callrefs.md"
           done
