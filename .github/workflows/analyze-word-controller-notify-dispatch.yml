@@ -1,0 +1,43 @@
+name: Analyze Word controller notify dispatch
+on:
+  push:
+    paths:
+      - '.github/workflows/analyze-word-controller-notify-dispatch.yml'
+      - 'analysis-input/EmwatMethods.bpl1'
+      - 'tools/trace_pe_range.py'
+      - 'tools/trace_pe_target.py'
+      - 'tools/trace_td32_callers.py'
+      - 'tools/scan_pe_pointer_refs.py'
+      - 'tools/find_td32_class_procedures.py'
+      - 'tools/resolve_delphi_vmt_slots.py'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  controller-notify-dispatch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install pefile capstone
+      - name: Resolve controller notify registration and caller context
+        shell: bash
+        run: |
+          mkdir -p controller-notify-dispatch
+          python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x004B9900 0x004B9A80 controller-notify-dispatch/notify-registration-context.md
+          python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x004BB3B0 0x004BB777 controller-notify-dispatch/OnControlerNotify.md
+          python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 0x004BB3B0 controller-notify-dispatch/OnControlerNotify-pointer-refs.md
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004BB3B0 controller-notify-dispatch/OnControlerNotify-callers.md
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004B999A controller-notify-dispatch/registration-callers.md
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004B999A controller-notify-dispatch/registration-target.md 1800 ret
+          python tools/find_td32_class_procedures.py analysis-input/EmwatMethods.bpl1 TWordViwer TWordViewer TWordDocument TEditWordDocument > controller-notify-dispatch/word-class-procedures.md
+          python tools/resolve_delphi_vmt_slots.py analysis-input/EmwatMethods.bpl1 controller-notify-dispatch/word-vmt-slots.md
+      - uses: actions/upload-artifact@v4
+        with:
+          name: emwat-word-controller-notify-dispatch
+          path: controller-notify-dispatch/
+          if-no-files-found: error
