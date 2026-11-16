@@ -105,6 +105,8 @@ class BridgeHTTPServerTests(unittest.TestCase):
         self.assertEqual(status, 200)
         self.assertEqual(body, b"<reply/>")
         self.assertEqual(headers.get("Access-Control-Allow-Origin"), "https://office.example")
+        self.assertEqual(headers.get("Access-Control-Allow-Headers"), "*")
+        self.assertEqual(headers.get("Access-Control-Allow-Method"), "*")
         self.assertEqual(self.seen[0].body, payload)
         self.assertEqual(self.seen[0].query, "invoke=12345")
         self.assertEqual(self.seen[0].origin, "https://office.example")
@@ -166,20 +168,20 @@ class BridgeHTTPServerTests(unittest.TestCase):
         self.thread.start()
         self.host, self.port = self.server.address
         status, body, _ = self.request(
-            "POST", "/", b"x", {"Origin": "https://office.example"}
+            "POST", "/?invoke=12345", b"x", {"Origin": "https://office.example"}
         )
         self.assertEqual(status, 500)
         self.assertEqual(body, b"internal_bridge_error")
 
     def test_missing_origin_is_rejected_by_default(self):
-        status, body, _ = self.request("POST", "/", b"x")
+        status, body, _ = self.request("POST", "/?invoke=12345", b"x")
         self.assertEqual(status, 403)
         self.assertEqual(body, b"origin_required")
         self.assertEqual(self.seen, [])
 
     def test_unlisted_origin_is_rejected(self):
         status, body, _ = self.request(
-            "POST", "/", b"x", {"Origin": "https://attacker.example"}
+            "POST", "/?invoke=12345", b"x", {"Origin": "https://attacker.example"}
         )
         self.assertEqual(status, 403)
         self.assertEqual(body, b"origin_not_allowed")
@@ -198,6 +200,7 @@ class BridgeHTTPServerTests(unittest.TestCase):
 
     def test_unknown_route_and_method_are_rejected(self):
         self.assertEqual(self.request("POST", "/other", b"x")[0], 404)
+        self.assertEqual(self.request("POST", "/?other=12345", b"x")[0], 404)
         self.assertEqual(self.request("PUT", "/", b"x")[0], 405)
 
     def test_handler_failure_is_sanitized(self):
@@ -215,7 +218,7 @@ class BridgeHTTPServerTests(unittest.TestCase):
         self.thread.start()
         self.host, self.port = self.server.address
         status, body, _ = self.request(
-            "POST", "/", b"x", {"Origin": "https://office.example"}
+            "POST", "/?invoke=12345", b"x", {"Origin": "https://office.example"}
         )
         self.assertEqual(status, 500)
         self.assertEqual(body, b"internal_bridge_error")
