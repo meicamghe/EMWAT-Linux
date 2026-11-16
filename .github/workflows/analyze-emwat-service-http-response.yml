@@ -1,0 +1,106 @@
+name: Analyze EMWAT service HTTP response path
+on:
+  push:
+    paths:
+      - 'EMWAT_Extracted.zip'
+      - '.github/workflows/analyze-emwat-service-http-response.yml'
+      - 'tools/trace_pe_target.py'
+      - 'tools/list_td32_symbols.py'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  service-http-response:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install pefile capstone
+      - name: Extract and inspect the local service executable
+        shell: bash
+        run: |
+          python - <<'PY'
+          import pathlib, zipfile
+          archive = zipfile.ZipFile("EMWAT_Extracted.zip")
+          matches = [n for n in archive.namelist() if pathlib.PurePosixPath(n).name.lower() == "emwatservice.exe"]
+          if not matches:
+              raise SystemExit("EmwatService.exe not found in EMWAT_Extracted.zip")
+          target = pathlib.Path("service-http-analysis/EmwatService.exe")
+          target.parent.mkdir(parents=True, exist_ok=True)
+          target.write_bytes(archive.read(matches[0]))
+          print(f"Extracted service binary metadata: {matches[0]}, {target.stat().st_size} bytes")
+          PY
+      - name: Find HTTP response and EditWordDocument string references
+        run: |
+          python - <<'PY'
+          import pathlib, re, struct
+          import pefile
+          from capstone import Cs, CS_ARCH_X86, CS_MODE_32
+          path = pathlib.Path("service-http-analysis/EmwatService.exe")
+          pe = pefile.PE(str(path), fast_load=False)
+          out = []
+          out.append(f"ImageBase: 0x{pe.OPTIONAL_HEADER.ImageBase:08X}")
+          out.append(f"EntryPoint: 0x{pe.OPTIONAL_HEADER.ImageBase + pe.OPTIONAL_HEADER.AddressOfEntryPoint:08X}")
+          out.append("## Sections")
+          for s in pe.sections:
+              out.append(f"- {s.Name.rstrip(bytes([0])).decode(errors='replace')}: RVA=0x{s.VirtualAddress:X} VA=0x{pe.OPTIONAL_HEADER.ImageBase+s.VirtualAddress:X} raw={s.SizeOfRawData} virtual={s.Misc_VirtualSize}")
+          out.append("## Imports")
+          for entry in getattr(pe, "DIRECTORY_ENTRY_IMPORT", []):
+              for imp in entry.imports:
+                  name = imp.name.decode(errors="replace") if imp.name else f"ordinal_{imp.ordinal}"
+                  out.append(f"- {entry.dll.decode(errors='replace')}!{name}")
+          needles = [
+              b"EditWordDocument", b"response-word", b"ContentText", b"WriteContent",
+              b"TIdHTTPResponseInfo", b"heartbeat", b"TickTack", b"invoke=",
+              b"wordConfig", b"wordBody", b"signData", b"application/msword",
+              b"Request XML is not valid", b"Request Doc is Empty",
+          ]
+          text_sections = [s for s in pe.sections if b".text" in s.Name]
+          md = Cs(CS_ARCH_X86, CS_MODE_32)
+          out.append("## Protocol strings and absolute code references")
+          for needle in needles:
+              found = []
+              for sec in pe.sections:
+                  data = sec.get_data()
+                  start = 0
+                  while True:
+                      pos = data.find(needle, start)
+                      if pos < 0: break
+                      va = pe.OPTIONAL_HEADER.ImageBase + sec.VirtualAddress + pos
+                      found.append((sec, pos, va))
+                      start = pos + 1
+              out.append(f"### {needle.decode(errors='replace')}: {len(found)} occurrence(s)")
+              for sec, pos, va in found[:12]:
+                  out.append(f"- string VA=0x{va:08X} section={sec.Name.rstrip(bytes([0])).decode(errors='replace')} offset=0x{pos:X}")
+                  ptr = struct.pack("<I", va)
+                  for code_sec in text_sections:
+                      code = code_sec.get_data()
+                      xrefs = []
+                      at = 0
+                      while True:
+                          hit = code.find(ptr, at)
+                          if hit < 0: break
+                          xrefs.append(hit); at = hit + 1
+                      for hit in xrefs[:8]:
+                          base = max(0, hit - 48)
+                          end = min(len(code), hit + 80)
+                          start_va = pe.OPTIONAL_HEADER.ImageBase + code_sec.VirtualAddress + base
+                          out.append(f"  - xref at VA=0x{pe.OPTIONAL_HEADER.ImageBase+code_sec.VirtualAddress+hit:08X}")
+                          for ins in md.disasm(code[base:end], start_va):
+                              out.append(f"    {ins.address:08X}: {ins.mnemonic} {ins.op_str}")
+          pathlib.Path("service-http-analysis/service-http-response-trace.md").write_text("\n".join(out), encoding="utf-8")
+          PY
+      - name: Attempt TD32 symbol indexing when debug records are present
+        shell: bash
+        run: |
+          python tools/list_td32_symbols.py service-http-analysis/EmwatService.exe \
+            TIdHTTPResponseInfo TIdHTTPServer TEditWordDocument TScanDocument \
+            > service-http-analysis/service-td32-symbols.md || true
+      - uses: actions/upload-artifact@v4
+        with:
+          name: emwat-service-http-response-analysis
+          path: service-http-analysis/*.md
