@@ -93,3 +93,16 @@ These checks validate the adapter and composition boundary. They do not establis
 - Artifact: **14200962076**.
 - `FillImageField` helper lookup confirms `TDictionary<UnicodeString,TDocumentCProperty>.ContainsValue` and `SetItem` are invoked on the custom-property dictionary.
 - The same artifact identifies `0x004D1B30` as `ShowRecAndCcOptionForm` and `0x0045644C` as `FindWindowExtd`; their complete semantic roles remain under analysis.
+
+
+## Writer custom-property write adapter — 2026-11-16
+
+| Workflow | Run ID | Commit | Result |
+|---|---:|---|---|
+| Python bridge transport | 43813400123 | 0099717df9db0c10c94a9bb7deda184375c2ff58 | success |
+| LibreOffice UNO integration | 43813378877 | 0749b11f55cc86244601da14a4d89da9febef168 | success |
+
+- Python suite: **91 tests passed**, one optional UNO-only test skipped.
+- UNO integration: **8/8 tests passed**.
+- Added `writer_properties.py`: updates only an existing user-defined property by exact name; unknown properties fail instead of being implicitly created. The setter does not read the current property value.
+- Real UNO fixture adds a synthetic custom property, updates it through the new adapter, verifies the fixture value, and confirms the structural catalog still reports the property name.
