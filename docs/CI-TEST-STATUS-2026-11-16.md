@@ -69,3 +69,19 @@ These checks validate the adapter and composition boundary. They do not establis
 - Artifact: 14200411503 (metadata-only Word asset inventory).
 - The tracked EMWAT_Extracted.zip contains **zero files with Word-family extensions** (.doc, .docx, .dot, .dotx, .dotm, .rtf).
 - Therefore the installer extraction currently available in the repository cannot supply a representative Word template for field-to-Writer mapping. The live UNO tests remain synthetic fixtures; they must not be described as full template compatibility.
+
+
+## Twin-field and Custom Document Properties checkpoint — 2026-11-16
+
+| Workflow | Run ID | Commit | Result |
+|---|---:|---|---|
+| Python bridge transport | 43812324657 | 739bfb7bc9043f81898e2226f80050ce75ab22dd | success |
+| LibreOffice UNO integration | 43811929904 | 92462de2caf66cc79b373da91f02077c49b1ae5d | success |
+| Word custom-property helper analysis | 43812127854 | 1bfc8a94f3029e0c88dc72aa426e56f07e465043 | success |
+| Word field pipeline analysis | 43811074616 | 8a49f1c9b357bd319d67b6c84bf8f57562e842ce | success |
+
+- Python bridge suite: **87 tests passed**, one optional UNO-only test skipped.
+- Live LibreOffice integration: **8/8 tests passed**. The fixture adds a synthetic UserDefinedProperty and verifies that the Writer catalog reports its name without retrieving its value.
+- Reverse-engineering artifacts confirmed the twin-field delimiter as Unicode dagger `†` (U+2020). The new `parse_word_field_identifier` helper splits only the first delimiter and treats empty-side forms as single identifiers.
+- The custom-property analysis pipeline produced and uploaded its artifact; it traced the custom-property dictionaries, field-name enumeration, and conditional SilentSave path.
+- These checks still do not validate the complete Almas letter template or final server-side registration against a live Almas environment.
