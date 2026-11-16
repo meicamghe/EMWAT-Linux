@@ -204,3 +204,33 @@ Runs triggered by those workflow commits:
 The service workflow was corrected in commit `ce79705a41d97baf90a8b19219a1eb606fe02290` so those optional metadata probes no longer fail the whole job. Follow-up execution has not yet been verified complete.
 
 The first run log confirms extraction of all three binaries with the exact sizes above. This is current-run confirmation that CI can consume the archive, not merely an inventory-file assertion.
+
+
+## Archive-backed analysis completed — Word procedures and service parser
+
+The archive extraction change was validated by GitHub Actions run `43882530570`: all three jobs completed successfully:
+- `word-lifecycle`
+- `word-field-mapping`
+- `word-save-print`
+
+Artifacts downloaded and inspected:
+- `14232038437` — `emwat-word-lifecycle`
+- `14231224902` — `emwat-word-field-mapping`
+- `14231834659` — `emwat-word-save-print`
+
+New findings are documented in `docs/WORD-AUTOMATION-SURFACE-2026-11-16.md` (commit `f82996959e60440fcb590b3ead9f1609db8b8ee7`):
+- `GetXmlFieldInfo` at `0x004BCA88` explicitly accepts `IXMLFieldType` and UnicodeString parameters and builds an internal XML-driven field model.
+- `FillMSWFields` at `0x004C009C` accepts Word `Fields` and performs a distinct collection iteration/update pass.
+- `SetFieldValue` at `0x004BFDB0` has two separate conversion/assignment branches selected by string constants at `0x004BFEE8` and `0x004BFF0C`; the key constants are queued for decoding.
+- `AddCustomDocPropertiesToDic` at `0x004D1454` enumerates Word custom document properties, splits selected property strings using an as-yet-unknown delimiter, and stores results in two internal collections.
+- `WordAppDocumentBeforeSave` at `0x004CD154` can set its 16-bit Cancel argument to `0xFFFF`, calls a pre-save helper, performs a Word document operation through vtable offset `+0x29C`, and clears viewer state `+0x58`.
+- `FillPrintDocFields` at `0x004CB638` is a separate 5,508-byte Word document/Fields transformation pass.
+
+The archive-backed service job in run `43882629052` completed successfully after the optional metadata-probe correction and uploaded `14232189125`. Its extracted trace shows a token-driven XML parser and a 12-byte-stride three-slot record table; the record slot semantics remain open. See `docs/SERVICE-REQUEST-LIFECYCLE-2026-11-16.md` (commit `c00cf511fcb053cbf3240c6826160cf03fba427b`).
+
+Additional CI refinements:
+- `ce79705a41d97baf90a8b19219a1eb606fe02290`: optional service TD32/VMT/interface probes no longer fail a job when metadata is unavailable.
+- `ab98d4a70efdf9fbea206f87b12b6b039f12d554`: add full-range parser/token/route traces and decode service parser/route string constants.
+- `4bfd627dee5b33e9a57fea5cb37cde3a6ea3ae89` and `752c5b5718684975f40487401b7094617698a39d`: add and correct the output path for decoding Word field/custom-property key constants.
+
+Runs `43882768547`, `43882896421`, and `43882925143` were observed in progress at the time of this log update. Their final conclusions/artifacts must be checked before reporting them as passed.
