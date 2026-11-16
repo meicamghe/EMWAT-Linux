@@ -7,10 +7,10 @@ This is the concise continuity entry point for future sessions. Detailed reverse
 ## Latest verified implementation progress — 2026-11-16
 
 - Real LibreOffice UNO adapter added: per-document process/profile/socket isolation; DOC/CFB and DOCX input detection; document modification/save/close listeners; close-time Word 97 snapshot.
-- Real UNO integration workflow run 43810188525 passed 8/8 tests, including a generated DOCX opened and closed through LibreOffice and exported as a legacy Word CFB file.
-- Python bridge workflow run 43810428599 passed 85 tests. The single skip is the optional UNO integration test, which runs separately.
+- Real UNO integration workflow run 43810592239 passed 8/8 tests, including a generated DOCX opened and closed through LibreOffice, a bookmark inspected through UNO, and export as a legacy Word CFB file.
+- Python bridge workflow run 43810584813 passed 86 tests. The single skip is the optional UNO integration test, which runs separately.
 - application.py now has create_libreoffice_bridge_server to compose EditWordDocument → service → office adapter. Cancellation response remains an injected policy because the Windows cancellation envelope is not yet known.
-- word_fields.py decodes each field according to its own encryption attribute. URL-encoded text and Base64 image values are decoded independently; plain text remains unchanged. External signData bindings remain opaque until separator/concater semantics are confirmed.
+- word_fields.py decodes each field according to its own encryption attribute. writer_inspector.py and LibreOfficeAdapter.inspect_document inventory Writer bookmarks, named ranges, sections, tables, frames, graphic objects, indexes, and text-field metadata without reading letter content. URL-encoded text and Base64 image values are decoded independently; plain text remains unchanged. External signData bindings remain opaque until separator/concater semantics are confirmed.
 - Not yet complete: mapping the 180 EMWAT fields into the real Writer template; signer/image insertion; applying permissions/settings; close-cancel behavior; and end-to-end registration with Almas Gam.
 - Next engineering focus: inspect Writer document structures (bookmarks, named ranges, text fields, sections and images) and correlate them with the recovered EMWAT field IDs, then validate against an anonymized real DOC/CFB fixture. Do not claim template compatibility until this passes.
 
