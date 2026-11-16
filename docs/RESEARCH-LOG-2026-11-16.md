@@ -671,3 +671,7 @@ The full `TEmwatMethod.Finalization` trace (`0x0046C9E0–0x0046CC98`) shows the
 - `0x0046CA88`: indirect call through `[object.VMT+0x10]`, passing the same request metadata and context.
 
 The full `Invoke` body (`0x0046C82C–0x0046C9DD`) handles the parameter data and collection enumeration; it does not itself call `PerformMethod`. The `+0x10` call is in `Finalization`, after `Invoke` returns. For the BPL VMT named `TEditWordDocument` at `0x005ED764`, slot `+0x10` points to `0x005EE82C`; its TD32 procedure name is `TScanDocument.PerformMethod` (a symbol/class-name mismatch worth preserving), and that implementation calls `TWordViwer.LoadDocument` at `0x004B7724`. This closes the full service-to-document-load dispatch path.
+
+### TD32 sizes for dispatch wrapper and Invoke
+
+The BPL TD32 trace (`14269626143`) confirms `TEmwatMethod.Finalization` spans `0x0046C9E0–0x0046CDF7` (size `0x418`), while `TEmwatMethod.Invoke` spans `0x0046C82C–0x0046C9DD` (size `0x1B1`). The full Finalization workflow range has been extended to the exact TD32 end address `0x0046CDF7`; the earlier `0x0046CC98` range omitted its exception/finally tail, though it already contained the key Invoke and PerformMethod calls.
