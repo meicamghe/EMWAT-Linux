@@ -1,0 +1,91 @@
+name: Analyze Indy HTTP response write methods
+on:
+  push:
+    paths:
+      - '.github/workflows/analyze-indy-response-write-methods.yml'
+      - 'EMWAT_Extracted.zip'
+      - 'tools/trace_pe_target.py'
+      - 'tools/scan_pe_pointer_refs.py'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  response-write-methods:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install pefile capstone
+      - name: Extract EmwatService
+        run: |
+          python - <<'PY'
+          import pathlib, zipfile
+          archive = zipfile.ZipFile("EMWAT_Extracted.zip")
+          matches = [n for n in archive.namelist() if pathlib.PurePosixPath(n).name.lower() == "emwatservice.exe"]
+          if not matches:
+              raise SystemExit("EmwatService.exe not found")
+          target = pathlib.Path("indy-response-write/EmwatService.exe")
+          target.parent.mkdir(parents=True, exist_ok=True)
+          target.write_bytes(archive.read(matches[0]))
+          print(f"Extracted {matches[0]} ({target.stat().st_size} bytes)")
+          PY
+      - name: Trace response body and file-serving methods
+        shell: bash
+        run: |
+          pids=()
+          for target in 004610FC 00460E48 00460FAC 00460840 0045E85C 00438A2C; do
+            (
+              set -e
+              python tools/trace_pe_target.py indy-response-write/EmwatService.exe 0x$target indy-response-write/target-$target.md 4200 ret
+              python tools/scan_pe_pointer_refs.py indy-response-write/EmwatService.exe 0x$target indy-response-write/refs-$target.md
+            ) &
+            pids+=("$!")
+          done
+          status=0
+          for pid in "${pids[@]}"; do wait "$pid" || status=1; done
+          exit "$status"
+      - name: Resolve direct callsites for response writers
+        run: |
+          python - <<'PY'
+          import pathlib, struct
+          import pefile
+          from capstone import Cs, CS_ARCH_X86, CS_MODE_32, CS_GRP_CALL, CS_OP_IMM
+          path = pathlib.Path("indy-response-write/EmwatService.exe")
+          pe = pefile.PE(str(path), fast_load=False)
+          image = pe.OPTIONAL_HEADER.ImageBase
+          targets = {
+              0x004610FC: "WriteContent",
+              0x00460E48: "ServeFile",
+              0x00460FAC: "SmartServeFile",
+              0x00460840: "ResponseInfo_method_00460840",
+          }
+          md = Cs(CS_ARCH_X86, CS_MODE_32)
+          md.detail = True
+          out = ["# Direct callsite inventory for Indy response methods", ""]
+          for target, name in targets.items():
+              out += [f"## {name} — 0x{target:08X}", ""]
+              found = []
+              for section in pe.sections:
+                  if b".text" not in section.Name:
+                      continue
+                  code = section.get_data()
+                  base = image + section.VirtualAddress
+                  for ins in md.disasm(code, base):
+                      if ins.group(CS_GRP_CALL) and ins.operands and ins.operands[0].type == CS_OP_IMM and ins.operands[0].imm == target:
+                          found.append(ins.address)
+              if not found:
+                  out.append("- No direct immediate CALL found; indirect VMT/interface calls may still reach this method.")
+              for address in found:
+                  out.append(f"- Direct CALL at 0x{address:08X}")
+              out.append("")
+          pathlib.Path("indy-response-write/direct-callsites.md").write_text("\n".join(out), encoding="utf-8")
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: emwat-indy-response-write-methods
+          path: indy-response-write/
+          if-no-files-found: error
