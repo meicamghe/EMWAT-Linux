@@ -1370,3 +1370,11 @@ Trace کامل `0x004BFC18` (285 بایت) اکنون قرارداد lookup را
 - اگر هیچ‌کدام پیدا نشود، index همان `-1` و flag false باقی می‌ماند.
 
 این رفتار نشان می‌دهد delimiter `†` فقط یک رشته تزئینی نیست: دو شناسه را به یک رکورد twin با index مشترک و counterpart متقابل تبدیل می‌کند. پیاده‌سازی Python فعلی parsing این شناسه را انجام می‌دهد؛ مرحله بعد باید semantics خروجی index/counterpart را در مدل field-binding نگه دارد.
+
+
+### نقش SetFieldValue در پردازش فیلدها
+
+- TD32 نام `0x004BFDB0` را `TWordViwer.SetFieldValue(TXmlWordConfigField, UnicodeString)` مشخص می‌کند.
+- این تابع از `GetDocFieldIndex` سه بار، از `GetCaptionItemFont` دو بار و از `ShowRecAndCcOptionForm` پنج بار فراخوانی مستقیم دارد.
+- بدنه آن ورودی رشته‌ای را با دو ثابت داخلی در `0x004BFEE8` و `0x004BFF0C` مقایسه می‌کند و برای دو حالت، مسیر تبدیل جداگانه دارد؛ در حالت دیگر مقدار را مستقیم کپی می‌کند.
+- چون این تابع در مسیرهای اصلی، caption و Rec/CC مشترک است، تبدیل value در آن فقط مختص body fieldها نیست. معنای دقیق دو ثابت و تبدیل‌هایشان در workflow بعدی decode می‌شود؛ تا آن زمان نوع تبدیل را حدس نمی‌زنیم.
