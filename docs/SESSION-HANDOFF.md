@@ -1109,3 +1109,10 @@ Do not implement guessed `signData` joining or claim end-to-end Almas registrati
 
 
 - `LoadDocument` calls `OnTmrAutoSave` with the document path at `0x004B7A58`; `OnTmrAutoSave` stores it at `TWordViwer+0xA0` (`0x004B8AE8`). `OnControlerNotify` later reads that field as the source path passed to `T7zOutArchive.AddFiles`. `LoadDocument` creates a `TFileStream` for the same path and writes document data. This links the file generated during Word document setup to the `.easd` archive entry inside `.easz`. Viewer field `+0x80` (base path) still needs mapping.
+
+
+### EditWordDocument request/response path
+- Concrete method `TEditWordDocument.PerformMethod` reads `wordConfig` (required), `wordBody`, `letterImages`, `signData`; missing `wordConfig` throws the explicit XML-invalid error.
+- It wraps `TWordViwer.LoadDocument` in `CoInitialize`/`CoUninitialize`, passes the `TEmwatInvokeParam` pointer and output string, stores the returned method result, and sets `bResultSet=1`.
+- `LoadDocument` extracts `DocFileName` from `wordBody`, writes document data to a local `TFileStream(fmCreate)`, parses `wordConfig` XML, then calls `OnTmrAutoSave` with that file path. The path is stored in viewer `+0xA0` and later packaged as `.easd` inside `.easz`.
+- Next priority: determine how the returned string and `bResultSet` become the actual HTTP response body, and trace the full `wordConfig`/`letterImages`/`signData` handling.
