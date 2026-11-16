@@ -148,3 +148,14 @@ Commits:
 - Dispatch missing-input notice: `663c55ec26a243b3c77a009772933433be542761`
 
 Evidence boundary: the file-path 404 is confirmed against the connected repository's default branch. It does not prove that no private/local copy exists elsewhere. No new Actions run or artifact has been verified after these changes.
+
+
+## Follow-up — service handler to XML parser control-flow checkpoint
+
+The locally retained service trace artifact `14208144442` was cross-read against the earlier parser findings. The MainForm handler at `0x0047BF30` calls route helper `0x0047E0EC`; on a true return it calls XML ParseMethod wrapper `0x00470D00` at `0x0047C0C5`; on false it takes a separate error/logging branch. The handler then reaches finalizer helper `0x0047E2D4`.
+
+The route helper reads an object pointer from `self + 0x428`, invokes its first virtual method, and returns a Boolean based on an output value. The object's class and method meaning are not resolved. The finalizer conditionally logs, invokes a helper on the supplied value, and clears it; its exact exception/ownership semantics remain open.
+
+A focused checkpoint was added at `docs/SERVICE-REQUEST-LIFECYCLE-2026-11-16.md` (commit `de3276f4ec1a4ac0801cb2c476f273b7c6bec614`).
+
+This is a static disassembly cross-reference only. It does not establish the exact HTTP route, the virtual object's semantic role, or the XML response contract.
