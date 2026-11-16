@@ -1161,3 +1161,20 @@ The observed sequence is:
 - it then passes the `.easz` path to interface slot `+0x18`.
 
 This strengthens the archive-packaging interpretation, but the interface target bodies and the parameter-type mismatch still prevent a final claim about whether the method writes, transforms, or extracts the archive.
+
+
+## Run 148 — euUnArchive is a passworded archive-writer path
+
+Source: controller-unarchive workflow run `43869599848`, artifact `14227611377`.
+
+The target method bodies resolve the earlier signature mismatch:
+
+1. The `T7zPlugin` factory returns an interface pointer to a `T7zOutArchive` object at offset `+0x44`.
+2. `euUnArchive` calls interface slot `+0x28`, which reaches `0x004547E8`. Although TD32 decorates this procedure as `SetProgressCallback`, its body assigns the incoming UnicodeString to object field `+0x38`. The T7zOutArchive field table identifies `+0x38` as `FPassword`. Therefore the literal `mW@Tlogs43end_+` is the archive password value used by this path. The separately named `SetPassword` at `0x004547DC` is a no-op stub.
+3. Interface slot `+0x10` reaches `T7zOutArchive.AddFiles` at `0x00453F34`. Its body checks the first string as a source file path, reads its file attributes, and stores the first and second strings into a batch item before adding that item to the archive batch list.
+4. The caller supplies the first TStringList value (from `TWordViwer+0xA0`) as the source path and the second list value (base path + `.easd`) as the archive entry name.
+5. Interface slot `+0x18` reaches `T7zOutArchive.SaveToStream` at `0x00454668`. Its body constructs a stream object using the supplied UnicodeString path and then calls the archive save routine. The supplied path is base path + `.easz`.
+
+This establishes the direction much more strongly: despite its helper name, `euUnArchive` is assembling a password-protected 7z output archive from file entries and saving it to the `.easz` path. The `.easd` value is used as the archive entry name for the source file path held at `TWordViwer+0xA0`.
+
+Remaining verification: resolve the class pointer at `0x0062F800` used by `SaveToStream` to name the exact stream class, and trace the password callback path that consumes `FPassword`. The static evidence now supports the password and archive-writing interpretation; runtime archive bytes have not yet been captured.
