@@ -655,3 +655,7 @@ The TD32 procedure size for `TEmwatMethod.Invoke` at `0x0046C82C` is `0x1B1`, en
 ### XML class attribute is prefixed with `T` before GetClass
 
 The `ParseMethod` code island at `0x00470DF4–0x00470E07` resolves the exact class-name transformation: it reads the XML `class` attribute, loads the one-character string literal `T` at `0x004710E0`, concatenates it with the supplied class name through helper `0x00401310`, then passes the resulting string to `GetClass` at `0x00470E07`. Thus XML `class="EditWordDocument"` resolves Delphi class `TEditWordDocument`; this matches the BPL VMT at `0x005ED764`. The special comparison against `TUpgradeEmwat` is performed on the resolved class's actual `ClassName`, not the raw XML attribute.
+
+## FormCreate wires the HTTP server event callback
+
+The `TMainForm.FormCreate` trace (`0x0047CCD8`) creates the `TIdHTTPServer` component and stores it at `TMainForm+0x428`. It then writes a Delphi method pointer into the server object: code address `0x0047DF64` at server offset `+0x120`, and the `TMainForm` instance pointer at `+0x124`. This indicates the actual Indy `OnCommandGet` event callback is `0x0047DF64`; the published method `IdHTTPServerCommandGet` at `0x0047BF30` may be called by this wrapper or represent a separate entry. The service workflow now traces `0x0047DF64` to resolve the exact callback chain. `IdHTTPServerException` at `0x0047CA44` is a small wrapper that calls helper `0x0047D5A4`; that helper is also now traced to identify HTTP error handling.
