@@ -46,7 +46,7 @@ The parser helper `0x0046A7A4` adds a three-value record to the collection. The 
 
 The caller at `0x00470B38` extracts the `name` attribute and parser text separately, computes the name hash, probes the collection, then passes the hash/name/value triple to the append helper. The append helper stores the three values at a 12-byte stride and invokes the collection's virtual methods at offsets `+0x08` and `+0x0C` with the name and value.
 
-The service image also contains TD32/VMT metadata for `TDictionary<System.AnsiString,System.AnsiString>` (VMT `0x00469A3C`, typeinfo `0x0046A054`). This is consistent with the known BPL `TEmwatMethod.Invoke` parameter type, but the current static trace has not yet linked the parser context's `+0x08` field directly to that exact VMT. Keep the structural record schema confirmed and the object-identity/dataflow link open.
+The parser object identity is now directly proven. `ParseMethod` constructs `TMethodInfo` (VMT `0x0047097C`, instance size `0x10`) through constructor `0x00471214`. That constructor loads the dictionary class reference at `0x004699E4` (the class-reference slot for VMT `0x00469A3C`) and calls `0x0046AA70` to create `TDictionary<System.AnsiString,System.AnsiString>` (typeinfo `0x0046A054`), storing the dictionary pointer at `TMethodInfo + 0x08`. The XML parser receives that exact `+0x08` pointer and populates it through the hash/probe/entry helpers. This is the same key/value type accepted by BPL `TEmwatMethod.Invoke`; the remaining open item is the exact indirect cross-module dispatch call, not dictionary identity.
 
 ## What this trace does not establish
 
@@ -157,6 +157,6 @@ The expanded parser-token trace resolves the prior three-slot ambiguity. In `0x0
 
 The collection append helper also calls its virtual methods at `+0x08` and `+0x0C` with the key and value strings. This is strong evidence that the three-slot structure is a hash-table entry representation, not an arbitrary XML token tuple.
 
-The service PE's type metadata includes `TDictionary<System.AnsiString,System.AnsiString>` at VMT `0x00469A3C` (typeinfo `0x0046A054`). The exact pointer/dataflow connection from parser context field `+0x08` to this VMT has not yet been directly proven. The service-side collection and BPL Invoke dictionary contract are therefore structurally aligned, but their identity link remains a follow-up target.
+The expanded VMT/constructor trace now proves the exact link: `TMethodInfo` (`0x0047097C`) constructs `TDictionary<System.AnsiString,System.AnsiString>` using class reference `0x004699E4` → VMT `0x00469A3C`, stores it at `TMethodInfo + 0x08`, and `ParseMethod` passes that dictionary to the XML parser. The BPL `TEmwatMethod.Invoke` signature accepts the same string-to-string dictionary type. Only the final indirect cross-module dispatch edge remains unresolved.
 
 Artifact: `emwat-service-dispatch-crosswalk`, run `43883105610`, artifact `14233736412`.
