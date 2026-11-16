@@ -60,8 +60,8 @@ class WordFieldDecodingTests(unittest.TestCase):
             '<word-document><fields>'
             '<field id="LetterSubject" encryption="urlencoded">سلام%20دنیا</field>'
             '<field id="LetterProducerName">Plain%20Text</field>'
-            '<field id="PlusSpace">a+b</field>'
-            '<field id="LiteralPlus">a%2Bb</field>'
+            '<field id="PlusSpace" encryption="urlencoded">a+b</field>'
+            '<field id="LiteralPlus" encryption="urlencoded">a%2Bb</field>'
             '</fields></word-document>'
         )
         fields = decode_word_fields(config)
