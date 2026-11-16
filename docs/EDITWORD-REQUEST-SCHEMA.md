@@ -122,3 +122,19 @@ Source: workflow 43832553168, artifact 14208369288.
 - The Delphi VMT/interface scan resolves TEmwatMethod VMT method-table base at 0x0046ABFC. TEditWordDocument VMT is 0x005ED764 and its parent pointer resolves to the TEmwatMethod VMT header start (0x0046ABA4 = 0x0046ABFC - 0x58). This establishes TEditWordDocument inherits TEmwatMethod.
 - TScanDocument, TFaxDocument, TGetEmwatVersion, TSetEmwatVersion, TUpgradeEmwat, TImageEdition, TEditExcelWorkBook, and TCompareWordDocument also point to the same TEmwatMethod parent header.
 - TEmwatMethod.Invoke iterates the dictionary's key/value enumerator and dispatches each entry through an instance virtual/interface slot. Direct TD32 caller scan finds only one direct call in unit finalization; the service's runtime invocation is therefore not yet a proven direct callsite and likely uses RTTI/dynamic dispatch. This must be resolved before claiming the complete request-to-class call chain.
+
+
+## Service parser confirmation — version 1
+
+The latest PE-only trace independently confirms the outer request envelope:
+- root element: `emwat`;
+- root attribute: `version`;
+- accepted numeric value: exactly `1`;
+- child element: `method`;
+- method attribute: `class`;
+- child elements: `param`;
+- parameter attribute: `name`.
+
+Evidence: `EmwatService.exe` addresses `0x00470A58`, `0x00470B38`, constants `0x00470B1C` (`emwat`), `0x00470B30` (`version`), `0x00470CBC` (`method`), `0x00470CD0` (`class`), `0x00470CE4` (`param`), and `0x00470CF8` (`name`); artifact `14227870162`.
+
+The parser's three-field internal record is still not fully semantically named, and the class string has not yet been connected to the concrete BPL VMT call.
