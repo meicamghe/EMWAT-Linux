@@ -75,6 +75,7 @@ jobs:
               python tools/trace_td32_procedure.py analysis-input/EmwatService.exe "$address" "dispatch-crosswalk/service/$name-td32.md" || true
               python tools/trace_td32_callers.py analysis-input/EmwatService.exe "$address" "dispatch-crosswalk/service/$name-callers.md" || true
             done
+            python -m py_compile tools/inspect_delphi_vmt_address.py
             python tools/inspect_delphi_vmt_address.py analysis-input/EmwatService.exe 0x0047B284 dispatch-crosswalk/service/mainform-vmt.md || true
             python tools/scan_pe_pointer_refs.py analysis-input/EmwatService.exe 0x0047B284 dispatch-crosswalk/service/mainform-vmt-pointer-refs.md || true
             python tools/scan_pe_pointer_refs.py analysis-input/EmwatService.exe 0x0047BF0C dispatch-crosswalk/service/mainform-classinfo-pointer-refs.md || true
