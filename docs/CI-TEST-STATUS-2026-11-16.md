@@ -304,3 +304,11 @@ These checks validate the adapter and composition boundary. They do not establis
 - T7zOutArchive.SetPassword at 0x004547DC is a no-op stub. The output archive password argument is therefore not proof of encryption.
 - T7zInArchive.SetPassword is implemented but has no direct bounded CALL xref; indirect invocation remains possible.
 - Keep .easd/.easz roles and any archive password unresolved until caller and callback data flow is complete.
+
+
+## Latest verified checkpoint — 2026-11-16
+
+- Python bridge transport: workflow `43818155017` — **99 tests passed, 1 skipped**.
+- Added native Base64 compatibility coverage: valid padded quartets with one and two `=`, unpadded complete quartet, invalid alphabet, incomplete quartet, and whitespace rejection.
+- Field decoder now preserves whitespace as invalid Base64 rather than stripping it. This is distinct from outer `wordConfig` Base64 parsing, which still accepts XML whitespace.
+- Previous historical 86-test snapshot remains recorded above; this 99-test result supersedes it for the current branch.
