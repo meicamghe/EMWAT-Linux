@@ -540,7 +540,7 @@ The parser worker at `0x00470B38` uses `0x4670A8` to retrieve named XML values a
 
 The MainForm handler (`0x0047BF30`) directly calls `WriteContent` (`0x004610FC`) for the init and heartbeat branches. In the currently traced invoke branch, it calls the package loader, XML parser, and package unloader; no direct call to `WriteContent` is visible in that branch. Do not reuse the init/heartbeat response path as proof of the invoke response envelope.
 
-The unresolved bridge is now narrower: how the parsed XML method/class/param records trigger a concrete BPL method (including the `TEditWordDocument` VMT slot) and how that method's result becomes the HTTP response text returned by the JavaScript bridge. Package loading alone does not prove that invocation occurs.
+The service-to-BPL class invocation chain is now statically confirmed in `docs/EMWAT-SERVICE-EXECUTABLE-ANALYSIS.md`: it builds `T`+className, calls `GetClass`, constructs the instance, invokes VMT slot `+0x0C` (`TEmwatMethod` wrapper `0x0046C9E0`), then the wrapper calls the concrete subclass slot `+0x10`. For `EditWordDocument`, that target is `0x005EE82C`. The remaining bridge is the result/response path: how the concrete method's output and any archive data become the HTTP response text returned by the JavaScript bridge. The absence of a direct `WriteContent` call in the currently traced invoke branch means the init/heartbeat response writer must not be assumed to be the invoke response.
 
 
 ### Version value confirmed by the root validator
