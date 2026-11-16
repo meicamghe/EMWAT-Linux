@@ -217,3 +217,19 @@ These checks validate the adapter and composition boundary. They do not establis
 - The synthetic DOCX now contains an actual Word DOCPROPERTY field instruction bound to a custom document property. The integration test opens it in Writer, updates the existing custom property, calls refresh_writer_text_fields(), and confirms the rendered document text contains the updated property value before exporting back to legacy DOC/CFB.
 - Writer inspector now identifies fields using the DocInfo.Custom service and returns the custom-property Name without reading field presentation or property values. This preserves the metadata-only privacy boundary.
 - This proves the basic DOCPROPERTY → custom-property → refresh flow in the synthetic fixture. It does not prove all 180 EMWAT fields or real Almas template fidelity.
+
+
+## DOCPROPERTY field roundtrip and parser parity — 2026-11-16
+
+| Workflow | Run ID | Commit | Result |
+|---|---:|---|---|
+| Python bridge transport | 43815297715 | c4292b8100d57545f300e2a285bbdf1b8e143a7e | success |
+| LibreOffice UNO integration | 43815162036 | 2ebb2564f3d5320ac33bd8b299845f7611437875 | success |
+
+- Python suite: **96 tests run, 95 passed, 1 optional UNO-only test skipped**.
+- UNO integration: **8/8 tests passed**. The DOCX fixture contains a custom property in `docProps/custom.xml` and a complex Word `DOCPROPERTY` field. The test updates the existing property, refreshes Writer text fields, and verifies that the displayed field result changes to the new value.
+- `writer_fields.py` exposes `refresh_writer_text_fields`; `writer_inspector.py` inventories custom field names only for `com.sun.star.text.TextField.DocInfo.Custom`, without reading field presentations or document text.
+- `word_fields.py` now mirrors the legacy DOCPROPERTY token extraction and uses `unquote_plus` for URL-encoded values. The native URL decoder trace at `0x00455314` has a dedicated plus-character branch; its replacement string constant is included in the next analysis artifact.
+- The temporary red Python runs at 43815149109, 43815162148, and 43815235425 were caused by a fake Writer field lacking the UNO `getSupportedServiceNames` API; the fixture was corrected, and run 43815297715 is green.
+- These checks prove the synthetic DOCX/Writer custom-property path, not the original Almas template, all direct Word Field.Result.Text semantics, or live Almas close-time registration.
+
