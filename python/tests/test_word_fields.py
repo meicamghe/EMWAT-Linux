@@ -7,6 +7,7 @@ from emwat_linux.word_fields import (
     decode_optional_attributes,
     decode_word_fields,
     external_parameter_bindings,
+    parse_word_field_identifier,
 )
 
 
@@ -16,6 +17,27 @@ def parse(xml: str):
 
 
 class WordFieldDecodingTests(unittest.TestCase):
+    def test_parses_single_and_twin_field_identifiers_using_dagger(self):
+        single = parse_word_field_identifier("LetterSubject")
+        self.assertEqual(single.first, "LetterSubject")
+        self.assertIsNone(single.second)
+        self.assertFalse(single.is_twin)
+
+        twin = parse_word_field_identifier("SignsStart†SignsEnd")
+        self.assertEqual(twin.first, "SignsStart")
+        self.assertEqual(twin.second, "SignsEnd")
+        self.assertTrue(twin.is_twin)
+
+        multiple = parse_word_field_identifier("A†B†C")
+        self.assertEqual(multiple.first, "A")
+        self.assertEqual(multiple.second, "B†C")
+        self.assertTrue(multiple.is_twin)
+
+        for malformed in ("†Tail", "Head†"):
+            parsed = parse_word_field_identifier(malformed)
+            self.assertEqual(parsed.first, malformed)
+            self.assertIsNone(parsed.second)
+
     def test_decodes_urlencoded_text_and_preserves_plain_text(self):
         config = parse(
             '<word-document><fields>'
