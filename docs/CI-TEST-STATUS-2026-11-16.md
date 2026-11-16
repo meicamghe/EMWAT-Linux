@@ -61,3 +61,11 @@ These checks validate the adapter and composition boundary. They do not establis
 - UNO integration remains **8/8 passed**. The DOCX fixture now includes a bookmark named LetterSubject; the adapter inventories it through UNO before closing and exporting.
 - Python bridge suite is now **86/86 passed** (the optional live UNO test is skipped in this suite and executed by the dedicated integration workflow).
 - writer_inspector.py reports structural metadata only and does not read document text or field values.
+
+
+## Packaged template asset check — 2026-11-16
+
+- Inventory workflow run: 43810767154 — success.
+- Artifact: 14200411503 (metadata-only Word asset inventory).
+- The tracked EMWAT_Extracted.zip contains **zero files with Word-family extensions** (.doc, .docx, .dot, .dotx, .dotm, .rtf).
+- Therefore the installer extraction currently available in the repository cannot supply a representative Word template for field-to-Writer mapping. The live UNO tests remain synthetic fixtures; they must not be described as full template compatibility.
