@@ -909,3 +909,12 @@ Run `43719180035` succeeded; artifact `14164088249` was inspected. Additional ev
   - `0x004D52DC` / `0x004D54E0` — single-field dictionary `Add` / `AddOrSetValue`
   - `0x004D6894` / `0x004D6A98` — twin-field dictionary `Add` / `AddOrSetValue`
 - Focused helper workflow now traces these addresses in parallel; run IDs `43813533418` and `43813557802` were created while expanding the target set. Verify the newest run before reporting its outcome.
+
+
+### قرارداد دقیق GetXmlFieldInfo
+
+- `0x004BFC18` ابتدا dictionary single در viewer `+0x68` را lookup می‌کند؛ در صورت نبود، dictionary twin در `+0x6C` را lookup می‌کند.
+- Single record: index در `+4` و field ID در `+8`.
+- Twin record: index در `+4`، شناسه اول در `+8` و شناسه دوم در `+0xC`. تابع counterpart طرف مقابل را برمی‌گرداند.
+- در صورت عدم تطبیق، index برابر `-1` و flag موفقیت false می‌ماند.
+- هدف بعدی trace کردن `SetFieldValue` در `0x004BFDB0` و callsiteهای dictionary Add/AddOrSetValue است تا قرارداد value/index نهایی روشن شود.
