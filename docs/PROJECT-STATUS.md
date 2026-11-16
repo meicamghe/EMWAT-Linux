@@ -1969,3 +1969,15 @@ The exact VMT/COM-interface inspection supersedes the earlier tentative password
 
 
 - Additional confirmation from artifact `14226742624`: helper `0x0040414C` is an import thunk to `rtl230.bpl!TStringList.$bctr`. The two indexed inputs to `euUnArchive` are therefore TStringList instances. The first receives `TWordViwer+0xA0`; the second receives the direction-normalized `TWordViwer+0x80` path with `.easd` appended. They are iterated in lockstep and passed to the `T7zOutArchive` interface.
+
+
+### Archive direction and password now resolved statically — 2026-11-16
+
+Artifact `14227611377` resolves the earlier interface-signature uncertainty:
+- `T7zOutArchive.AddFiles` at `0x00453F34` receives the source file path and archive-entry name; it verifies the source file and creates a batch entry.
+- `T7zOutArchive.SaveToStream` at `0x00454668` constructs a stream from the supplied output path and invokes the archive save routine.
+- The interface slot `+0x28` reaches `0x004547E8`; although TD32 calls it `SetProgressCallback`, the procedure writes the input UnicodeString to object field `+0x38`, which the T7zOutArchive field table identifies as `FPassword`. The separate `SetPassword` at `0x004547DC` is a no-op.
+- Therefore the literal `mW@Tlogs43end_+` is the password assigned to `FPassword` in this archive path.
+- `euUnArchive` is assembling a password-protected 7z output archive: source path from `TWordViwer+0xA0`, archive member name from the base path + `.easd`, output archive path from the base path + `.easz`.
+- Exact stream class behind global `0x0062F800` and the password callback consumption path remain to be confirmed. No runtime archive file has yet been captured.
+- Full evidence: Run 148 in `docs/WORD-COM-INTERFACE-DISPATCH.md`.
