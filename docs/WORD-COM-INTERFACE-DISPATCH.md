@@ -859,3 +859,38 @@ Word event-sink follow-up run `43723423283` (artifact `14165491351`) resolved th
 - `0x00401420` and `0x00401430` remain external/import thunks not resolved to a file-backed implementation in this package; do not assign them a semantic name from these traces alone.
 
 The missing step is now narrower: trace the generated event-sink/connection-point registration path that consumes the server data and connects the `WordAppDocumentBeforeSave`/`WordAppDocumentBeforeClose` handlers. The new lifecycle run is still tracing controller field assignments and callback registration.
+
+
+
+## Close-wrapper and controller-notify cross-check — 2026-11-16
+
+Source: close/response-chain workflow run 43813684507, artifact 14200889822.
+
+### Word document Close wrappers
+
+TD32 resolves two distinct generated Word wrapper methods:
+
+- 0x0042FEB0 — TWordDocument.Close() with no arguments. It dispatches through the current Word _Document interface at byte offset +0x4D4.
+- 0x0042FFF4 — TWordDocument.Close(OleVariant, OleVariant, OleVariant). It dispatches through the same _Document interface at byte offset +0x29C.
+
+The Word BeforeSave callback at 0x004CD154 uses the three-argument Close wrapper after its Cancel/prompt logic. Do not collapse this into SaveAs or a direct HTTP call: the callback controls the Word document close decision, while the HTTP response writer is a separate path still to be connected.
+
+### Controller notification and recipient/CC customization
+
+The TD32 procedure at 0x004BB3B0 is TWordViwer.OnControlerNotify(TCtrlMsgs). It has no direct bounded CALL xrefs in the current scan, consistent with indirect message/event dispatch but not proof of a particular invocation.
+
+Within its body it:
+1. checks viewer state and controller-related data;
+2. temporarily changes viewer state byte +0x5E;
+3. calls 0x004D281C, named TWordViwer.CostumizeRecAndCC;
+4. calls the current Word _Document interface at byte offset +0xDC with -1;
+5. restores viewer state and continues controller-message handling.
+
+CostumizeRecAndCC at 0x004D281C calls the Word _Document interface at byte offset +0x2BC on its guarded paths. The generated Wordxp wrapper maps this slot to PrintOutOld(). This is a Word automation/controller path, not evidence of a local HTTP POST or of the final Almas registration trigger.
+
+The meaning of the +0xDC interface slot and the exact controller message that reaches OnControlerNotify remain open. A follow-up trace now includes the generated Get_Saved and Set_Saved wrappers at 0x0042BD34 and 0x0042BD94 to resolve the slot mapping directly.
+
+### Evidence boundary
+
+- Confirmed: the two Close wrapper dispatch slots; BeforeSave calls the three-argument Close wrapper; OnControlerNotify calls CostumizeRecAndCC and a document-interface slot +0xDC; CostumizeRecAndCC uses slot +0x2BC.
+- Not confirmed: the business meaning of the +0xDC call; the exact message/event that invokes OnControlerNotify; any direct causal link from these methods to the close-time HTTP response or Almas registration.
