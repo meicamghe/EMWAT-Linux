@@ -129,3 +129,22 @@ The Word automation surface document was updated in commit `6e650578c35f372ebbdf
 The TD32 class procedure index was reorganized into functional groups in `docs/WORD-AUTOMATION-SURFACE-2026-11-16.md`: lifecycle, XML/config field mapping, document field mutation, custom metadata extraction, save/close callbacks, print pipeline, and formatting/protection. This establishes the minimum scope of a LibreOffice-compatible backend beyond opening DOCX files. It remains a symbol/signature-derived requirements inventory; exact Word calls and serialization details are not yet proven.
 
 Documentation commit: `7f5f7340c514c43c47171539292ad53beaa5b678`.
+
+
+## Follow-up — CI input preflight correction (2026-11-16)
+
+A repository-content check for `analysis-input/EmwatMethods.bpl1` returned HTTP 404 on the default branch. The current public checkout therefore does not expose the BPL file at the path assumed by the Word-analysis jobs. This explains why committing a workflow is not sufficient evidence that its binary-analysis commands can run.
+
+Corrective changes:
+- `.github/workflows/analyze-word-automation-surface.yml`: all three trace steps now have a step-level `hashFiles(...)` guard; each job emits a visible GitHub Actions notice when the BPL input is absent; artifact upload is conditional on the input being present.
+- `.github/workflows/analyze-emwat-dispatch-crosswalk.yml`: the BPL method-dispatch and Word-controller jobs use the same guarded behavior. The service job already had a missing-input guard for `EmwatService.exe`.
+
+The guards are step-level (not job-level) so the jobs can report the missing input instead of disappearing as unexplained skipped jobs. This is a workflow robustness fix only; it does not supply the binary or generate new disassembly.
+
+Commits:
+- Word workflow guard: `a3ac41be0201e45e05004067ebbdc966347c0eef`
+- Word missing-input notice: `e26bfcdde20528e1bbf8fe0196aea627a3f186f7`
+- Dispatch workflow guard: `7f9211b7a2825b55baadc3f0f58d5b0a1036bb89`
+- Dispatch missing-input notice: `663c55ec26a243b3c77a009772933433be542761`
+
+Evidence boundary: the file-path 404 is confirmed against the connected repository's default branch. It does not prove that no private/local copy exists elsewhere. No new Actions run or artifact has been verified after these changes.
