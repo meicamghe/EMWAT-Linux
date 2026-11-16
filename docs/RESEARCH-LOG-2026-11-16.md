@@ -603,3 +603,7 @@ The expanded VMT inspector output (`14266199135`) decodes all 17 published metho
 - `IdHTTPServerException` → `0x0047CA44`
 
 The service workflow now traces `FormCreate`, `FormClose`, `Terminate`, `LoadQuickConfig`, and `IdHTTPServerException` in addition to the already traced request handler and package loader.
+
+### ClassCreate callsite belongs to TMethodInfo construction
+
+The corrected rel32 scan found a `ClassCreate` thunk call at `0x00471220`, but the surrounding trace (`0x00471214`) proves this is the Delphi constructor prologue for `TMethodInfo` (`0x0047097C`): when the constructor flag is set, it calls `ClassCreate` via thunk `0x00401158`, then creates the `TDictionary<AnsiString,AnsiString>` at `0x00471232` and stores it at `TMethodInfo+0x08`. This is allocation of the parser's metadata object, not proof of creation of the XML-selected method class. The `GetClass` candidate at `0x00470E07` remains a separate path to validate.
