@@ -373,3 +373,14 @@ The runtime dictionary at viewer `+0x64` (`TDictionary<UnicodeString,TDocumentCP
 - `FillPrintDocFields` removes entries through `Remove` (`0x004D3B78`) at four sites; `FillPrintOptionForm` removes entries at one site.
 
 This separates the runtime custom-property values from the single/twin XML descriptor maps at viewer `+0x68/+0x6C`, which `AddCustomDocPropertiesToDic` accesses through their own Remove methods. The runtime map therefore participates in the image-field and print-value lifecycle, not merely in static field inventory.
+
+## Descriptor dictionaries: normalized field lookup and paired-property records
+
+The 2026-11-16 field-mapping artifact adds a concrete call graph around the two descriptor maps:
+
+- `viewer + 0x68` is `TDictionary<UnicodeString,TXmlWordConfigField>`; `viewer + 0x6C` is `TDictionary<UnicodeString,TXmlWordConfigTwinField>`.
+- `TWordViwer.GetXmlFieldInfo` (`0x004BFC18`) first checks the single-field map and retrieves its descriptor; if that path does not match, it checks the twin-field map and retrieves the paired descriptor. The returned records expose an integer field/index at `+0x04`; the single descriptor also exposes a string at `+0x08`, while the twin descriptor exposes strings at `+0x08`, `+0x0C`, and another string slot at `+0x10` used by the custom-property path.
+- The string normalizer/splitter `0x004BC170` is called repeatedly from the XML-field `GetXmlFieldInfo` overload, `FillTwinFields`, `GetDocFieldIndex`, `FillPrintDocFields`, `FillImgFldsForPrint`, and the viewer constructor. It splits/transforms incoming field/property names before downstream comparisons; exact delimiter semantics remain to be validated from the new decoded constants.
+- `AddCustomDocPropertiesToDic` (`0x004D1454`) enumerates Word custom document properties, splits the property name on `†` (U+2020), constructs a single or twin descriptor-shaped record, and removes the matching key from the corresponding descriptor map (`+0x68` or `+0x6C`). This is consistent with consuming matched descriptors during reconciliation; it is not evidence that this routine populates the maps.
+
+The actual initial population path for the two descriptor maps remains open. Direct caller scans of their generic `Add`/`AddOrSetValue` methods did not identify a direct static callsite; the next trace batch now checks enumerable constructors, map insertion callers, and the normalizer's constant strings. Do not equate these XML descriptor maps with the separate runtime `TDocumentCProperty` map at `viewer + 0x64`.
