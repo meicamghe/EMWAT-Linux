@@ -11,6 +11,10 @@ from collections.abc import Mapping
 
 from emwat_linux.bridge import BridgeHTTPServer
 from emwat_linux.dispatcher import MethodHandler, XMLMethodDispatcher
+from emwat_linux.bridge import BridgeRequest, BridgeResponse
+from emwat_linux.document_coordinator import DocumentRunResult
+from emwat_linux.office_adapter import OfficeAdapter
+from typing import Callable
 
 
 def create_bridge_server(
@@ -44,10 +48,10 @@ def create_bridge_server(
 def create_libreoffice_bridge_server(
     *,
     allowed_origins: frozenset[str],
-    cancel_response_factory,
+    cancel_response_factory: Callable[[DocumentRunResult, BridgeRequest], BridgeResponse],
     allowed_parent_origins: frozenset[str] = frozenset(),
-    office_adapter=None,
-    additional_handlers=None,
+    office_adapter: OfficeAdapter | None = None,
+    additional_handlers: Mapping[str, MethodHandler] | None = None,
     host: str = "127.0.0.1",
     port: int = 1984,
     max_request_bytes: int = 16 * 1024 * 1024,
