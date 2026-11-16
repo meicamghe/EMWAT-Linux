@@ -44,6 +44,7 @@ jobs:
           done
           python tools/trace_pe_range.py mainform-invoke/EmwatService.exe 0x0047B820 0x0047B8D0 mainform-invoke/mainform-method-table.md
           python tools/trace_pe_range.py mainform-invoke/EmwatService.exe 0x0047BA70 0x0047BB90 mainform-invoke/mainform-commandget-rtti.md
+          python tools/trace_pe_range.py mainform-invoke/EmwatService.exe 0x0047C0E5 0x0047C341 mainform-invoke/commandget-finally-and-response-tail.md
       - uses: actions/upload-artifact@v4
         with:
           name: emwat-mainform-invoke-handler
