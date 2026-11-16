@@ -7,6 +7,7 @@ on:
       - 'tools/scan_pe_pointer_refs.py'
       - 'tools/inspect_pe_va.py'
       - 'tools/decode_pe_strings.py'
+      - 'tools/trace_pe_range.py'
   workflow_dispatch:
 
 permissions:
@@ -35,14 +36,17 @@ jobs:
         run: |
           mkdir -p service-dispatch
           test -s service-input/EmwatService.exe
-          for address in 0x0047BF30 0x0047E0EC 0x0047E2D4 0x0047D2C8 0x0047CA88 0x0047CCD8 0x00470D00 0x00470B38 0x0046ADBC 0x0046A7A4 0x004610FC; do
+          for address in 0x0047BF30 0x0047E0EC 0x0047E2D4 0x0047D2C8 0x0047CA88 0x0047CCD8 0x00470D00 0x00470B38 0x0046ADBC 0x0046A7A4 0x004610FC 0x004670A8 0x00471214 0x00463F54 0x00464310 0x0046440C 0x00464444 0x00470A58 0x0046A544 0x0046A620 0x0046A570; do
             name=${address#0x}
             python tools/trace_pe_target.py service-input/EmwatService.exe "$address" "service-dispatch/$name.md" 6000 ret
             python tools/scan_pe_pointer_refs.py service-input/EmwatService.exe "$address" "service-dispatch/$name-pointer-refs.md"
           done
           python tools/inspect_pe_va.py service-input/EmwatService.exe 0x0047BF30 > service-dispatch/commandget-vmt-context.md
           python tools/inspect_pe_va.py service-input/EmwatService.exe 0x0047E0EC > service-dispatch/invoke-route-context.md
-          python tools/decode_pe_strings.py service-input/EmwatService.exe 0x0047C360 > service-dispatch/invoke-parameter-string.md
+          python tools/trace_pe_range.py service-input/EmwatService.exe 0x0047C0E5 0x0047C341 service-dispatch/commandget-response-tail.md
+          python tools/trace_pe_range.py service-input/EmwatService.exe 0x0047E0EC 0x0047E218 service-dispatch/invoke-route-full-range.md
+          python tools/trace_pe_range.py service-input/EmwatService.exe 0x00470B38 0x00470C80 service-dispatch/xml-parser-full-range.md
+          python tools/decode_pe_strings.py service-input/EmwatService.exe 0x0047C360 0x0047C37C 0x0047C3BC 0x0047C404 0x0047C450 0x0047C498 0x0047C534 0x0047C54C 0x0047C59C 0x0047C984 0x0047C9A4 0x0047C9C8 0x0047C9F0 0x0047CA10 0x0047CA30 0x0047E218 0x0047E248 0x0047E29C 0x0047E384 0x0047E3C8 0x00471050 0x00470CBC 0x00470CD0 0x00470CE4 0x00470CF8 0x0047D478 0x0047D4A0 0x0047D4DC 0x0047CC18 0x0047CC3C 0x0047CC54 0x0047CC6C 0x0047CC90 > service-dispatch/service-string-constants.md
       - uses: actions/upload-artifact@v4
         with:
           name: emwat-service-dispatch-deep-trace
