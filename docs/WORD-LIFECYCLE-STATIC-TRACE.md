@@ -123,3 +123,18 @@ The expanded workflow now traces, in parallel:
 3. XML field extraction, dictionary conversion, field value get/set, Word field fill, and image insertion procedures.
 
 The service executable is not currently present in `analysis-input/`. The service branch of the workflow now emits an explicit missing-input report rather than failing or fabricating a service trace. The HTTP service call chain therefore remains an open dependency until an authorized analysis copy is available.
+
+
+## Run 149 — corrected public Invoke wrapper and concrete VMT dispatch
+
+The exact-address VMT artifact `14225224443` must be read together with the existing service dispatcher trace. It confirms the previously documented wrapper/helper distinction:
+
+- `TEmwatMethod` VMT `0x0046ABFC` slot `+0x0C` points to `0x0046C9E0`. TD32 labels this routine `Emwatmethod.Finalization`, but the service dispatcher and VMT layout identify it as the shared public virtual `TEmwatMethod.Invoke` wrapper.
+- `TEmwatMethod` VMT slot `+0x10` points to `0x00401068`, the abstract/error stub. This is **not** the concrete method dispatch slot.
+- The wrapper at `0x0046C9E0` calls the inner dictionary/XML helper at `0x0046C82C` (callsite `0x0046CA67`), then calls the instance's subclass VMT slot `+0x10` (callsite `0x0046CA88`).
+- `TEditWordDocument` VMT `0x005ED764` has parent pointer `0x0046ABA4`, which is the `TEmwatMethod` VMT header self-pointer. Its slot `+0x10` points to `0x005EE82C`.
+- `TScanDocument` VMT `0x005ED884` has the same `TEmwatMethod` parent and slot `+0x10` points to `0x005EEB48`.
+
+Thus the class inheritance and BPL virtual dispatch are confirmed. The TD32 procedure-name discrepancy remains: `0x005EE82C` is decorated as `TScanDocument.PerformMethod`, although it is the `TEditWordDocument` VMT target; `0x005EEB48` is decorated as `TFaxDocument.PerformMethod`, although it is the `TScanDocument` VMT target. Keep the VMT owner and TD32 symbol separate.
+
+The service-side `GetClass("T"+className)` resolution and the VMT `+0x0C` call are documented in `docs/EMWAT-SERVICE-EXECUTABLE-ANALYSIS.md`. The remaining open work is not the existence of the dispatch chain; it is the complete `PerformMethod` behavior, the returned XML/HTTP response, and the connection between the periodic controller archive and the close-time commit.
