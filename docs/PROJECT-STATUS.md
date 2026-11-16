@@ -1718,3 +1718,10 @@ The BPL export/API analysis resolves the earlier naming ambiguity. The public TE
 
 - آدرس `0x004D00AC` که به‌صورت شرطی در رکورد event ثبت می‌شد، به `TWordViwer.LoadOptions` تعلق دارد؛ log ابتدای تابع صریحاً `Document.OnBeforePrint called.` را نشان می‌دهد.
 - بنابراین event record شامل BeforeSave، BeforePrint، NewDocument و WindowActivate است. این یافته callback چهارم را از مسیر close جدا می‌کند؛ برای BeforeClose همچنان registration اثبات نشده است.
+
+
+### Python Base64 compatibility checkpoint — 2026-11-16
+
+- Run `43818155017` passed: 99 tests, 1 skipped. Tests now cover padded Base64 with one and two padding characters, unpadded complete quartets, invalid alphabet, incomplete quartet, and whitespace rejection.
+- Decoder no longer strips whitespace before Base64 decoding, matching the native lookup-table path where whitespace is not normalized. The separate outer `wordConfig` XML Base64 parser still has its own whitespace handling and was not changed.
+- Current test suite is green after this compatibility change; earlier failures in runs `43817515071`, `43817520122`, and `43817688638` were transient implementation/test-literal issues and are superseded by the green run.
