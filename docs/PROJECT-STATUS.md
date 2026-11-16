@@ -1846,6 +1846,7 @@ The BPL export/API analysis resolves the earlier naming ambiguity. The public TE
 
 - تحلیل event-sink در run `43824067943` و artifact `14206405476` متن واقعی پنجره را استخراج کرد: عنوان «ام وات»، پیام «محتويات اين سند تغيير كرده است. آيا مايل به ثبت تغييرات مي‌باشيد؟» و گزینه‌های «موافقم»، «خیر»، «انصراف».
 - نگاشت native از بدنه BeforeSave تأیید می‌کند: موافقم → `Close(SaveChanges=True)`؛ خیر → `Close(SaveChanges=False)`؛ انصراف → `Cancel=0xFFFF` و سند باز می‌ماند.
-- مدل دامنه اکنون سه نتیجه را از هم جدا می‌کند: `CLOSED` (مسیر ثبت/بازگشت)، `DISCARDED` (بستن بدون بازگشت payload)، و `CANCELLED` (لغو بستن). coordinator در حالت discard هیچ export یا payload موفقی تولید نمی‌کند.
-- تست مستقل مسیر discard اضافه شد. این تغییر فقط قرارداد داخلی و state machine را آماده کرده است؛ انتخاب‌گر گرافیکی LibreOffice و پاسخ HTTP دقیق برای گزینه «خیر» هنوز پیاده‌سازی/اثبات نشده‌اند و عمداً حدس زده نشده‌اند.
+- مدل دامنه دو نتیجه واقعی پایان سند را جدا می‌کند: `CLOSED` (مسیر ثبت/بازگشت) و `DISCARDED` (بستن بدون بازگشت payload). coordinator در حالت discard هیچ export یا payload موفقی تولید نمی‌کند.
+- اصلاح مهم lifecycle: گزینه «انصراف» پایان session نیست؛ فقط همان close attempt را veto می‌کند و سند باز می‌ماند. بنابراین adapter باید در `wait_for_close` منتظر تلاش بعدی بماند و هرگز آن را به‌عنوان terminal `CANCELLED` برنگرداند. `DocumentState.CANCELLED` برای لغو صریح خود session در سطح برنامه باقی می‌ماند، نه برای دکمه Cancel پنجره Word.
+- تست‌ها اکنون ثابت می‌کنند close attempt لغوشده مانع close نهایی بعدی نمی‌شود و مسیر discard بدون export می‌ماند. انتخاب‌گر گرافیکی LibreOffice و پاسخ HTTP دقیق برای گزینه «خیر» هنوز پیاده‌سازی/اثبات نشده‌اند و عمداً حدس زده نشده‌اند.
 - تحلیل موازی سرویس HTTP در run `43823657154` (artifact `14205656649`) مسیر VMT سرور Indy را تا handler داخلی `0x0045E85C` و dispatch بعدی `0x00438A2C` محدود کرده است؛ مرحله بعد، resolve کردن این زنجیره به متد واقعی درخواست و writer پاسخ است.

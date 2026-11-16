@@ -16,7 +16,6 @@ from emwat_linux.editword_request import EditWordDocumentRequest
 class CloseDisposition(str, Enum):
     CLOSED = "closed"
     DISCARDED = "discarded"
-    CANCELLED = "cancelled"
 
 
 @dataclass(frozen=True)
@@ -46,7 +45,12 @@ class OfficeAdapter(Protocol):
         """Open the supplied document and apply supported config fields."""
 
     def wait_for_close(self, handle: object) -> OfficeCloseEvent:
-        """Wait until the user closes or cancels the editing session."""
+        """Wait until the document is actually closed or discarded.
+
+        A native close-prompt Cancel vetoes only that close attempt. The adapter
+        must keep the document/session alive and continue waiting for a later
+        close attempt; it must not return a terminal close event for that choice.
+        """
 
     def export_final_document(self, handle: object) -> bytes:
         """Return final document bytes after close, including unsaved edits."""

@@ -77,10 +77,6 @@ class DocumentCoordinator:
             with callbacks_lock:
                 callbacks_active = False
 
-            if close_event.disposition is CloseDisposition.CANCELLED:
-                session.cancel()
-                return DocumentRunResult(session=session, payload=None)
-
             if close_event.disposition is CloseDisposition.DISCARDED:
                 session.discard()
                 return DocumentRunResult(session=session, payload=None)

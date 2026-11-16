@@ -25,6 +25,7 @@ class FakeOffice:
         self.disposition = disposition
         self.opened_bytes = None
         self.export_count = 0
+        self.cancel_attempts = 0
         self.on_modified = None
 
     def open_document(self, request, *, on_modified, on_saved):
@@ -36,6 +37,8 @@ class FakeOffice:
 
     def wait_for_close(self, handle):
         self.on_modified()
+        # A Cancel choice vetoes one close attempt; the adapter keeps waiting.
+        self.cancel_attempts += 1
         return OfficeCloseEvent(self.disposition)
 
     def export_final_document(self, handle):
@@ -67,15 +70,16 @@ class EditWordDocumentServiceTests(unittest.TestCase):
         self.assertIsNone(result.payload)
         self.assertEqual(office.export_count, 0)
 
-    def test_cancelled_session_has_no_success_payload(self):
-        office = FakeOffice(CloseDisposition.CANCELLED)
+    def test_cancelled_close_attempt_does_not_end_the_document_session(self):
+        office = FakeOffice()
         service = EditWordDocumentService(
-            office, session_id_factory=lambda: "cancelled-session"
+            office, session_id_factory=lambda: "close-attempt-cancelled"
         )
         result = service.process(make_call())
-        self.assertEqual(result.session.state, DocumentState.CANCELLED)
-        self.assertIsNone(result.payload)
-        self.assertEqual(office.export_count, 0)
+        self.assertEqual(result.session.state, DocumentState.RETURNED)
+        self.assertEqual(result.payload, b"synthetic-final-doc")
+        self.assertEqual(office.cancel_attempts, 1)
+        self.assertEqual(office.export_count, 1)
 
     def test_invalid_method_is_rejected_before_opening_office(self):
         office = FakeOffice()
