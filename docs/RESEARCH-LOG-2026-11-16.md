@@ -429,3 +429,12 @@ Expanded the archive-backed Word analysis workflow to enumerate all TD32 symbols
 ## Conservative boundary for Writer descriptor mapping
 
 A trial integration that classified Writer custom-property names into single/twin maps was removed after reviewing the native dataflow: `AddCustomDocPropertiesToDic` calls `TDictionary.Remove` on pre-existing descriptor maps, so the source/population stage of those maps is not yet proven to be the Writer document's custom-property enumeration. `WriterDocumentCatalog` therefore remains metadata-only and reports custom-property names without attaching the descriptor classifier. `build_word_custom_property_field_maps()` remains a pure split-rule utility, not a claim of full native map construction.
+
+## Dictionary Add/SetItem methods found; call-site tracing queued
+
+The new `generic-dictionary-symbols.md` inventory reveals that the single/twin descriptor dictionaries do have insertion methods, separate from the previously traced `Remove` methods:
+- `TDictionary<UnicodeString,TXmlWordConfigField>.Add` at `0x004D52DC`; `AddOrSetValue` at `0x004D54E0`.
+- `TDictionary<UnicodeString,TXmlWordConfigTwinField>.Add` at `0x004D6894`; `AddOrSetValue` at `0x004D6A98`.
+- Runtime `TDictionary<UnicodeString,TDocumentCProperty>.Add` at `0x004D3B38`; `AddOrSetValue` at `0x004D3D3C`.
+
+The expanded workflow now traces these methods and their direct callers, along with `0x00441DD4` (the generated XML-field helper called by `AddXmlWordConfigFieldsToDic`). This should identify where descriptor maps are actually populated; no caller mapping is claimed yet.
