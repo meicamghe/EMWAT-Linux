@@ -172,6 +172,22 @@ jobs:
               out.append("")
           pathlib.Path("service-http-analysis/indy-http-vmt.md").write_text("\n".join(out), encoding="utf-8")
           PY
+      - name: Trace HTTP server virtual methods and pointer references
+        shell: bash
+        run: |
+          pids=()
+          for spec in "0045E85C 2200" "0045E464 1400" "00438874 1000" "0043898C 1000" "004389D4 1000" "00438AE0 1200" "00439184 1000" "0041E8A4 1200" "0041E910 1200" "0041E970 1200" "0040AED8 1200"; do
+            (
+              set -e
+              set -- $spec
+              python tools/trace_pe_target.py service-http-analysis/EmwatService.exe 0x$1 service-http-analysis/method-$1.md $2 ret
+              python tools/scan_pe_pointer_refs.py service-http-analysis/EmwatService.exe 0x$1 service-http-analysis/refs-$1.md
+            ) &
+            pids+=("$!")
+          done
+          status=0
+          for pid in "${pids[@]}"; do wait "$pid" || status=1; done
+          exit "$status"
       - uses: actions/upload-artifact@v4
         with:
           name: emwat-service-http-response-analysis
