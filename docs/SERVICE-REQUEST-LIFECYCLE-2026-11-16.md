@@ -168,3 +168,7 @@ The parser's dictionary insertion helper `0x0046ADBC` probes the hash table befo
 ### Remaining service-to-BPL dispatch callsite
 
 The `TMainForm` request handler at `0x0047BF30` calls `ParseMethod` (`0x00470D00`) after the package-load gate. The helper at `0x0047E2D4`, reached from the handler's cleanup/finally path, is an exception-reporting and object-release helper, not the BPL dispatch: it logs through `0x0047D2C8`, calls `0x0040217C` on a referenced object, and clears the pointer slot. The actual dispatch edge remains unresolved. The service workflow now traces the complete MainForm handler range `0x0047BF30–0x0047C341` to find the callsite beyond the first internal RET.
+
+### Confirmed runtime package-load edge
+
+The service helper `0x0047E0EC` calls the imported `LoadPackage` thunk at `0x00402174` from callsite `0x0047E15F`. That thunk jumps through IAT `0x00487680`. The helper builds the package path/name containing `EmwatMethods.bpl`, stores the returned module pointer, and logs the exact load success/failure messages. Thus the service's BPL load gate is confirmed at the machine-code callsite level. The later class-resolution/instance-creation edge is still under analysis.
