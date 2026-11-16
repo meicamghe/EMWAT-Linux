@@ -47,7 +47,7 @@ class WordFieldDecodingTests(unittest.TestCase):
             '</fields></word-document>'
         )
         fields = decode_word_fields(config)
-        self.assertEqual(fields[0].value, "")
+        self.assertEqual(fields[0].value, b"")
         self.assertEqual(fields[0].external_parameter, "signData")
         self.assertEqual(external_parameter_bindings(fields), fields)
 
