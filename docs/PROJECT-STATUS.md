@@ -1732,3 +1732,11 @@ The BPL export/API analysis resolves the earlier naming ambiguity. The public TE
 - VMT/TD32 اطلاعات `TXMLFieldType` را تثبیت کرد: interface با offset `0x50` و propertyهای واقعی `Id`, `Mimetype`, `Encryption`, `Separator`, `Concater`, `ParamId`, `IsNew`.
 - مدل viewer جداگانه شامل `TXmlWordConfigField` با اندازهٔ instance برابر `0x10` و `TXmlWordConfigTwinField` با اندازهٔ `0x18` است؛ `TDocumentCProperty` نیز type مستقل دارد.
 - معنی عملیاتی separator/concater هنوز مشخص نیست؛ workflow جدید getter/setterها و VMT این کلاس‌ها را بررسی می‌کند تا قبل از پیاده‌سازی، join behavior حدس زده نشود.
+
+
+### LibreOffice process lifecycle hardening — 2026-11-16
+
+- Added a shared child-process shutdown helper. Both failed-open cleanup and normal handle cleanup now attempt `wait()` after `kill()`, avoiding an unreaped soffice child/zombie; already-exited processes are left untouched.
+- Python bridge workflow `43818676999`: 101 tests passed, 1 skipped.
+- LibreOffice UNO integration workflow `43818676967`: 10 tests passed, including a live DOCX open/close/export to legacy Word format.
+- This is lifecycle hardening only; it does not change EMWAT field mapping, cancellation protocol, or Almas registration semantics.
