@@ -179,7 +179,10 @@ jobs:
             python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 "$address" "word-automation/save-print/$name-callers.md" || true
           done
           python tools/find_td32_class_procedures.py analysis-input/EmwatMethods.bpl1 TWordViwer TEmwatMethod TScanDocument TDocumentCProperty TXmlWordConfigField TXmlWordConfigTwinField > word-automation/save-print/word-class-procedures.md
+          python -m py_compile tools/inspect_delphi_vmt_address.py
           python tools/inspect_delphi_vmt_address.py analysis-input/EmwatMethods.bpl1 0x004B05A8 word-automation/fields/document-property-vmt.md || true
+          python tools/inspect_delphi_vmt_address.py analysis-input/EmwatMethods.bpl1 0x0046ABFC word-automation/dispatch/emwat-method-vmt-method-table.md || true
+          python tools/inspect_delphi_vmt_address.py analysis-input/EmwatMethods.bpl1 0x005ED764 word-automation/dispatch/edit-word-document-vmt-method-table.md || true
           python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 0x004B05A8 word-automation/fields/document-property-vmt-pointer-refs.md || true
           python tools/resolve_delphi_vmt_slots.py analysis-input/EmwatMethods.bpl1 word-automation/save-print/word-vmt.md
           python tools/trace_delphi_interfaces.py analysis-input/EmwatMethods.bpl1 word-automation/save-print/word-interfaces.md
