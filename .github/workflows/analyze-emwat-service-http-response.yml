@@ -194,6 +194,10 @@ jobs:
             0x00459B84 0x0045E4DC 0x0047C61B 0x0045AFC1 \
             0x0045B044 0x0045BEAF 0x0045C35F 0x0045C166 \
             > service-http-analysis/http-handler-strings.md
+      - name: Trace Delphi interface tables for HTTP server classes
+        run: |
+          python tools/trace_delphi_interfaces.py service-http-analysis/EmwatService.exe \
+            service-http-analysis/service-http-interfaces.md
       - uses: actions/upload-artifact@v4
         with:
           name: emwat-service-http-response-analysis
