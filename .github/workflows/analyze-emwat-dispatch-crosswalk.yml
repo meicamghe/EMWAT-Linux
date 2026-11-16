@@ -78,6 +78,7 @@ jobs:
             python tools/find_td32_class_procedures.py analysis-input/EmwatService.exe TMainForm TIdHTTPServer TIdHTTPResponseInfo > dispatch-crosswalk/service/service-classes.md || true
             python tools/resolve_delphi_vmt_slots.py analysis-input/EmwatService.exe dispatch-crosswalk/service/service-vmt.md || true
             python tools/trace_delphi_interfaces.py analysis-input/EmwatService.exe dispatch-crosswalk/service/service-interfaces.md || true
+            python tools/list_td32_symbols.py analysis-input/EmwatService.exe TDictionary > dispatch-crosswalk/service/service-dictionary-symbols.md
             python tools/trace_pe_range.py analysis-input/EmwatService.exe 0x0046A500 0x0046AE30 dispatch-crosswalk/service/parser-token-collection-full.md
             python tools/trace_pe_range.py analysis-input/EmwatService.exe 0x00470B38 0x00470CA3 dispatch-crosswalk/service/xml-token-loop-full.md
             python tools/trace_pe_range.py analysis-input/EmwatService.exe 0x0047E0EC 0x0047E218 dispatch-crosswalk/service/package-loader-full.md
