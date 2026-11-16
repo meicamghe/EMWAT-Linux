@@ -190,3 +190,16 @@ These checks validate the adapter and composition boundary. They do not establis
 - OnControlerNotify logs an auto-save execution message, constructs .easd and .easz paths from viewer state, applies Farsi-direction normalization, and passes them to euUnArchive.
 - This confirms a local auto-save/archive workflow. It does not prove a POST to Almas or the final response-word registration trigger.
 - TWordDocument.Save at 0x004309A4 dispatches through _Document slot +0x2B8; no direct bounded CALL xref was found.
+
+
+## Latest repository-wide verification after concurrent integration — 2026-11-16
+
+| Workflow | Run ID | Commit | Result |
+|---|---:|---|---|
+| Python bridge transport | 43814937717 | c8d756adbab824999156c72dfa41f566316282c7 | success |
+| LibreOffice UNO integration | 43814937834 | c8d756adbab824999156c72dfa41f566316282c7 | success |
+| Word close/response-chain analysis | 43814822927 | 6165d9f324c92f21f7a777b85ed943cf2fb8195e | success |
+
+- Python: **94 tests run, 93 passed, 1 optional UNO test skipped**.
+- LibreOffice UNO: **8 tests passed**, including the real Writer open/close/export path and strict existing custom-property update.
+- The custom-property helper pipeline run 43814583673 is still in progress; no result is claimed for it here.
