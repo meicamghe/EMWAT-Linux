@@ -184,3 +184,7 @@ The `ClassCreate` thunk call at `0x00471220` is inside `TMethodInfo`'s construct
 ### Dynamic class construction and virtual dispatch edge
 
 After `GetClass`, the service compares a class-related value with `TUpgradeEmwat`, creates the selected class instance through helper `0x004010D8`, stores the `TMethodInfo` pointer at object offset `+0x04`, then loads the parsed parameter dictionary from `TMethodInfo+0x08` and calls the object's VMT slot `+0x0C` indirectly at `0x00470EF6`. This establishes the service's dynamic class-instance dispatch path. The target slot is the leading candidate for the BPL Invoke bridge, but its exact identity is not yet proven: the current `TEmwatMethod` VMT dump shows `+0x0C` as `Finalization`, while `Invoke` is at `0x0046C82C` and `PerformMethod` is a separate virtual slot at `+0x10`. The BPL method table and service class/interface mapping are being cross-checked before naming this slot `Invoke`.
+
+### Class-name validation and object construction helpers resolved
+
+The helper at `0x004010B8` is `TObject.ClassName` (IAT `0x00487460`); the helper at `0x00401320` is `System.UStrEqual` (IAT `0x0048732C`); and the helper at `0x004010D8` is `TObject.Create` (IAT `0x00487450`). `ParseMethod` therefore obtains the resolved class name, compares it with `TUpgradeEmwat`, stores the Boolean result at `TMethodInfo+0x04`, and creates the selected class instance with `TObject.Create`. The later VMT `+0x0C` call still needs its exact BPL method-slot identity.
