@@ -159,3 +159,17 @@ The route helper reads an object pointer from `self + 0x428`, invokes its first 
 A focused checkpoint was added at `docs/SERVICE-REQUEST-LIFECYCLE-2026-11-16.md` (commit `de3276f4ec1a4ac0801cb2c476f273b7c6bec614`).
 
 This is a static disassembly cross-reference only. It does not establish the exact HTTP route, the virtual object's semantic role, or the XML response contract.
+
+
+## Follow-up — LibreOffice replacement contract and parity test plan
+
+Added `docs/LIBREOFFICE-BACKEND-CONTRACT-2026-11-16.md` to turn the recovered Word/HTTP lifecycle into an implementation boundary. It separates the loopback compatibility service, XML parser, method registry, office adapter, document-field mapping, and lifecycle coordinator. It also defines layered parser/dispatcher/UNO/lifecycle/end-to-end tests and explicit evidence needed before claiming parity.
+
+Important design decisions:
+- Do not treat default file associations as a COM replacement.
+- Keep UNO behind a backend-neutral adapter and test protocol logic with a fake office backend.
+- Model the pending HTTP request as an event-driven document session; do not reproduce the original message-pumping busy wait.
+- Treat bookmarks, Writer fields, and custom properties as candidate mappings only until the original Word field rules and sanitized templates are available.
+- Compare semantic document output and response behavior rather than requiring binary DOCX package equality.
+
+This is a design/test contract, not an implemented or runtime-verified Linux replacement. The exact HTTP route/response schema, BPL method dispatch, field-name mapping, and print semantics remain open.
