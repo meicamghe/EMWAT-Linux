@@ -2056,3 +2056,12 @@ Artifact `14227611377` resolves the earlier interface-signature uncertainty:
 - `SilentSaveEmwatDoc` از مسیر `GetDocFieldName` و فیلد ویژه `Hidden_Customizable` فراخوانی می‌شود؛ دو TStringList موقت می‌سازد، helper `0x004AEBBC` را صدا می‌زند و در شرایطی `TWrapRecord.LineCount` را اجرا می‌کند. معنای دقیق خروجی این ساختار هنوز قطعی نیست.
 - رکورد Parser برای هر `param` اکنون در سطح ساختار decode شده است: slot صفر hash نام، slot یک نام پارامتر و slot دو مقدار متنی. اتصال نهایی این collection به دیکشنری BPL هنوز نیازمند trace dispatch است.
 - شواهد: service artifact `14233736412` و Word artifact `14234120250`، هر دو از run `43883105610`.
+
+
+## تکمیل crosswalk فیلد و تصویر Word — 2026-11-16
+
+- `FillPrintDocFields` فقط به رویداد Print محدود نیست؛ callerهای مستقیم آن `GetDocFieldName` و `GetFieldIndexInList` هستند و در مسیر جست‌وجوی نام/اندیس فیلد هم اجرا می‌شود.
+- `AddImagesToDoc` از `GetDocFieldIndex` فراخوانی می‌شود و helper مرکزی `0x004C19C0` را اجرا می‌کند؛ خود helper مرکزی هنوز باید disassemble و تحلیل شود.
+- `FillImageField` از دو شاخه `FillTextField` فراخوانی می‌شود و در وضعیت خاص از `FindWindowExtd` استفاده می‌کند.
+- `FillField` فقط field interface را به collection داخلی اضافه می‌کند و عملیات نهایی تغییر متن/تصویر نیست.
+- مستند شواهد: `docs/WORD-AUTOMATION-SURFACE-2026-11-16.md` و artifact شماره `14232259712`.
