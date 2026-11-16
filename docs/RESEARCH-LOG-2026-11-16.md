@@ -659,3 +659,7 @@ The `ParseMethod` code island at `0x00470DF4–0x00470E07` resolves the exact cl
 ## FormCreate wires the HTTP server event callback
 
 The `TMainForm.FormCreate` trace (`0x0047CCD8`) creates the `TIdHTTPServer` component and stores it at `TMainForm+0x428`. It then writes a Delphi method pointer into the server object: code address `0x0047DF64` at server offset `+0x120`, and the `TMainForm` instance pointer at `+0x124`. This indicates the actual Indy `OnCommandGet` event callback is `0x0047DF64`; the published method `IdHTTPServerCommandGet` at `0x0047BF30` may be called by this wrapper or represent a separate entry. The service workflow now traces `0x0047DF64` to resolve the exact callback chain. `IdHTTPServerException` at `0x0047CA44` is a small wrapper that calls helper `0x0047D5A4`; that helper is also now traced to identify HTTP error handling.
+
+## Indy HTTP event callback wrapper identified
+
+`TMainForm.FormCreate` installs a method pointer on the `TIdHTTPServer` instance: code `0x0047DF64`, data `TMainForm`. The callback at `0x0047DF64` inspects the request/event argument at `[EDX+4]` against the form's state at `+0x420` and constants `0x16`/`0x11`; on matching cases it calls `0x0047DF84`. This establishes `0x0047DF64` as the actual server event callback wrapper, not the published `IdHTTPServerCommandGet` method itself. The next helper `0x0047DF84` is now traced to see whether it routes to `IdHTTPServerCommandGet` (`0x0047BF30`) or a related command handler.
