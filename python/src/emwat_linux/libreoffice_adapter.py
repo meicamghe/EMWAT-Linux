@@ -21,7 +21,9 @@ from typing import Callable
 
 from emwat_linux.editword_request import EditWordDocumentRequest
 from emwat_linux.office_adapter import CloseDisposition, OfficeCloseEvent
+from emwat_linux.writer_fields import refresh_writer_text_fields
 from emwat_linux.writer_inspector import WriterDocumentCatalog, inspect_writer_document
+from emwat_linux.writer_properties import set_custom_document_properties
 
 
 _CFB_SIGNATURE = bytes.fromhex("D0CF11E0A1B11AE1")
@@ -364,6 +366,23 @@ class LibreOfficeAdapter:
         if not isinstance(handle, _OfficeHandle):
             raise TypeError("invalid_libreoffice_handle")
         return inspect_writer_document(handle.document)
+
+    def apply_custom_property_updates(
+        self,
+        handle: object,
+        updates: object,
+    ) -> None:
+        """Apply verified existing custom-property values and refresh fields once.
+
+        The caller owns the EMWAT-field-to-property mapping. This adapter only
+        applies exact names already present in the document and refreshes
+        imported DOCPROPERTY results after the batch succeeds.
+        """
+        if not isinstance(handle, _OfficeHandle):
+            raise TypeError("invalid_libreoffice_handle")
+        set_custom_document_properties(handle.document, updates)
+        if updates:
+            refresh_writer_text_fields(handle.document)
 
     def wait_for_close(self, handle: object) -> OfficeCloseEvent:
         if not isinstance(handle, _OfficeHandle):
