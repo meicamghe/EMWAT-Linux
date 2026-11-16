@@ -19,8 +19,13 @@ jobs:
       - name: Analyze HTTP metadata without exposing document contents
         run: |
           mkdir -p network-analysis
-          python tools/analyze_tcp_payloads.py tcp-payloads.txt network-analysis/summary.md
-          test -s network-analysis/summary.md
+          if [ ! -f tcp-payloads.txt ]; then
+            printf '%s\n' 'SKIPPED: tcp-payloads.txt is a private capture export and is not present in this checkout.' > network-analysis/summary.md
+          else
+            python tools/analyze_tcp_payloads.py tcp-payloads.txt network-analysis/summary.md
+            test -s network-analysis/summary.md
+          fi
+          cat network-analysis/summary.md
       - uses: actions/upload-artifact@v4
         with:
           name: emwat-network-capture-metadata
