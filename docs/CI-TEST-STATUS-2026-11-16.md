@@ -286,3 +286,11 @@ These checks validate the adapter and composition boundary. They do not establis
 - `0x004D1B30` is `FillPrintOptionForm`, confirmed by its start/success log strings. It reads optional key `tokenizedReceivers`, uses U+2020 as its separator, and processes the config keys `Receivers`, `ReceiverDeps`, `ccReceivers`, and `ccReceiverDeps`.
 - Exact per-list semantics and mapping to final recipient/CC UI fields remain unresolved; do not infer values from the field names alone.
 
+
+
+## URL-encoded plus semantics parity — 2026-11-16
+
+- Native helper 0x00455314 explicitly maps a literal plus to the one-character string at 0x00455454; that string decodes to a space. Percent-encoded %2B still becomes a literal plus.
+- word_fields.py now uses urllib.parse.unquote_plus and tests both cases with encryption="urlencoded".
+- Python bridge run **43816293635** passed: **99 tests run, 98 passed, 1 optional UNO test skipped**.
+- Base64 text conversion is still distinct from image-byte decoding. Native SetFieldValue decodes Base64 bytes and passes them through 0x004735D0 → 0x004738CC; the lower-level encoding-selection helpers 0x00473608 and 0x00473700 are being traced before changing Python's base64 value representation.
