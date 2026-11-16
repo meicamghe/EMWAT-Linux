@@ -42,7 +42,12 @@ class OfficeAdapter(Protocol):
         on_modified: Callable[[], int],
         on_saved: Callable[[], None],
     ) -> object:
-        """Open the supplied document and apply supported config fields."""
+        """Open the source document and attach lifecycle listeners.
+
+        EMWAT field/config application is a separate mapping step. The adapter
+        must not guess mappings from field IDs before the native resolver and
+        image/print paths have been recovered.
+        """
 
     def wait_for_close(self, handle: object) -> OfficeCloseEvent:
         """Wait until the document is actually closed or discarded.
