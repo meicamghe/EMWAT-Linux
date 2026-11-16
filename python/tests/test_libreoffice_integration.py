@@ -57,7 +57,7 @@ class LibreOfficeIntegrationTests(unittest.TestCase):
             sign_data_text="",
             extra_parameters={},
         )
-        adapter = LibreOfficeAdapter(headless=True, connect_timeout_seconds=30)
+        adapter = LibreOfficeAdapter(headless=True, connect_timeout_seconds=30, close_timeout_seconds=10)
         handle = adapter.open_document(
             request,
             on_modified=lambda: 1,
