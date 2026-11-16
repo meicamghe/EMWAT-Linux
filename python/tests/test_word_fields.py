@@ -64,6 +64,15 @@ class WordFieldDecodingTests(unittest.TestCase):
         )
         fields = decode_word_fields(config)
         self.assertEqual(fields[0].value, "سلام دنیا")
+        self.assertEqual(
+            extract_docproperty_identifier("DOCPROPERTY  A  \\* MERGEFORMAT"),
+            "A",
+        )
+        plus_config = parse(
+            '<word-document><fields><field id="PlusEncoded" encryption="urlencoded">'
+            'A+B%20C</field></fields></word-document>'
+        )
+        self.assertEqual(decode_word_fields(plus_config)[0].value, "A B C")
         self.assertEqual(fields[1].value, "Plain%20Text")
 
     def test_decodes_base64_image_bytes(self):
