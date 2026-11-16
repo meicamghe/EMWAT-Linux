@@ -124,3 +124,61 @@ A viable replacement is not just “open the DOCX in LibreOffice.” At minimum,
 7. protection and restoration of document options.
 
 This is a requirements inventory derived from compiled symbols and signatures. The exact Word calls, field-name conventions, and serialized response values still require disassembly/runtime capture before implementing the backend.
+
+
+## Archive-backed procedure traces — 2026-11-16
+
+The current archive-backed Word analysis run `43882530570` produced three artifacts:
+- `emwat-word-lifecycle` — artifact `14232038437`
+- `emwat-word-save-print` — artifact `14231834659`
+- `emwat-word-field-mapping` — artifact `14231224902`
+
+The artifacts were downloaded and inspected. These are static PE/TD32 traces from the committed `EmwatMethods.bpl1`, not runtime tests.
+
+### XML field metadata extraction
+
+`TWordViwer.GetXmlFieldInfo` at `0x004BCA88` is a 12,688-byte procedure whose TD32 signature explicitly accepts `IXMLFieldType` plus multiple UnicodeString parameters. It uses the XML field interface to retrieve multiple values and iterates the resulting field collection. This confirms that EMWAT translates XML field definitions into an internal field model; it is not merely replacing arbitrary document text.
+
+The exact mapping of each XML interface getter to the internal field-model property is not yet decoded. The procedure's extensive interface calls should be cross-referenced with the `Wordconfigrequestxml` type information and string constants before assigning semantic names.
+
+### Word Fields collection update
+
+`TWordViwer.FillMSWFields` at `0x004C009C` explicitly accepts `Wordxp.Fields`. Its trace iterates the Word Fields collection and calls per-field virtual methods. This establishes a distinct pass over Word's native field collection, separate from XML field parsing.
+
+`TWordViwer.SetFieldValue` at `0x004BFDB0` accepts a `TXmlWordConfigField` and UnicodeString value. It branches on comparisons against two string constants at `0x004BFEE8` and `0x004BFF0C`, then uses different conversion/assignment helper paths. The key strings are being decoded in the next CI pass; do not yet label the branches as specific Word field types.
+
+### Custom document properties
+
+`TWordViwer.AddCustomDocPropertiesToDic` at `0x004D1454` obtains the Word document's custom-properties collection through the document interface, iterates its entries, and extracts property values. It searches for a delimiter constant, splits selected property strings into two parts, and routes the results into two internal collections stored through viewer fields at offsets `+0x6C` and `+0x68`. The exact delimiter and meaning of the two collections remain unresolved pending string decoding and helper cross-reference.
+
+This is a significant compatibility requirement: the Linux backend must preserve EMWAT custom-property extraction and round-trip behavior, not only visible document text.
+
+### BeforeSave event behavior
+
+`WordAppDocumentBeforeSave` at `0x004CD154` is a 1,016-byte procedure with a TD32 signature containing the Word `_Document` interface and an event argument. The trace:
+- verifies the callback's document against the viewer's active document reference;
+- calls pre-save helper `0x004CB108`;
+- consults viewer state flags at offsets `+0x5E` and `+0x5F`;
+- calls Word document interface methods and can set the event's 16-bit cancel flag to `0xFFFF` in specific branches;
+- performs a prompt/decision path through helper `0x0044ABE4`;
+- reaches a Word document operation through vtable offset `+0x29C`;
+- clears viewer state field `+0x58` near the end of the callback.
+
+The exact prompt labels and meaning of each decision code are not yet decoded. The callback is evidence of a real BeforeSave cancellation/decision contract, so the Linux lifecycle coordinator must not assume every save request is unconditional.
+
+### Print-field transformation
+
+`TWordViwer.FillPrintDocFields` at `0x004CB638` is a 5,508-byte procedure with a TD32 signature accepting both Word `_Document` and `Wordxp.Fields`. It iterates field-related collections and performs repeated per-field processing, including helper calls that resolve metadata and mutate values. This confirms print preparation is a separate transformation pass over Word fields, not just a generic call to PrintOut.
+
+The exact substitutions, field codes, and output values still need the remainder of the trace and constant decoding. The print path must remain a separate backend capability.
+
+### Current implementation implications
+
+The minimum LibreOffice backend now has additional statically confirmed responsibilities:
+1. parse `IXMLFieldType`-derived configuration into a structured internal field model;
+2. separately enumerate and update Writer document fields/anchors;
+3. preserve custom document properties, including EMWAT's internal split/collection behavior;
+4. implement BeforeSave cancellation/decision semantics and active-document state transitions;
+5. apply a dedicated print-field transformation before printing.
+
+No exact LibreOffice UNO mapping is asserted yet. Bookmarks, Writer fields, user-defined properties, and document event listeners remain candidate primitives pending decoded field keys and sanitized templates.
