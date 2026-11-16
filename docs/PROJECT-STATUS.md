@@ -2105,3 +2105,13 @@ Workflow تحلیل Word گسترش یافت تا helper مرکزی درج تص�
 - تابع `is_native_business_signature_end()` به `word_fields.py` اضافه شد. فعلاً فقط روی نام فیلد resolve‌شده قابل استفاده است؛ به‌صورت خودکار روی XML field ID اعمال نشده تا تفاوت این دو بدون مدرک فرض نشود.
 - تست اولیه به‌علت استفاده از `End` با حروف بزرگ شکست خورد؛ تست‌ها با الگوی دقیق lowercase اصلاح شدند.
 - Python bridge run `43888658420`: **۱۰۵ تست موفق، ۲ skip اختیاری**.
+
+
+## تفکیک سه ساختار فیلد و Custom Property — 2026-11-16
+
+ردیابی `AddCustomDocPropertiesToDic` سه ساختار مجزا را مشخص کرد:
+- `viewer + 0x68`: descriptorهای فیلد تکی از نوع `TXmlWordConfigField`.
+- `viewer + 0x6C`: descriptorهای twin از نوع `TXmlWordConfigTwinField` که دو شناسه جداشده با `†` را نگه می‌دارند.
+- `viewer + 0x64`: دیکشنری runtime جداگانه از نوع `TDictionary<UnicodeString,TDocumentCProperty>`.
+
+در نسخه لینوکس این سه ساختار نباید به یک دیکشنری تخت تبدیل شوند. جزئیات و offsetها در `docs/RESEARCH-LOG-2026-11-16.md` ثبت شده‌اند.
