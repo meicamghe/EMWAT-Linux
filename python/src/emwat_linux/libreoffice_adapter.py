@@ -75,7 +75,6 @@ class _DocumentCloseListener:
         self._output_url = output_url
         self._on_closed = on_closed
         self._uno = uno_module
-        self._headless = headless
         self.snapshot_error: Exception | None = None
         self.snapshot_ready = Event()
 
@@ -176,6 +175,7 @@ class LibreOfficeAdapter:
         self._poll_interval = poll_interval_seconds
         self._process_factory = process_factory
         self._uno = uno_module
+        self._headless = headless
 
     def _uno_runtime(self) -> object:
         if self._uno is None:
