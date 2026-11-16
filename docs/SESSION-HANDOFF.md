@@ -895,3 +895,17 @@ Run `43719180035` succeeded; artifact `14164088249` was inspected. Additional ev
 - تست UNO واقعی روی property ساختگی نشان داد Writer property را به‌روزرسانی می‌کند.
 - CI پس از این تغییر: Python run `43813400123` = 91 تست سبز (یک skip اختیاری)، UNO run `43813378877` = 8/8 سبز.
 - یک workflow برای index کردن تمام TD32 symbolهای `TDocumentCProperty` و `TXmlWordConfigField/TwinField` اضافه شده است. نسخه نخست script خطای آرگومان TD32 داشت؛ اصلاح شد و اجرای جدید در حال بررسی است. خطاهای قدیمی `43813052058` و `43813063493` مربوط به نسخه‌های پیش از اصلاح هستند و نباید به‌عنوان وضعیت نهایی تلقی شوند.
+
+
+### TD32 symbol inventory
+
+- Run `43813303321` completed successfully; artifact `14201306994` indexes 611 procedures whose symbols mention `TDocumentCProperty`, `TXmlWordConfigField`, or `TXmlWordConfigTwinField`.
+- New utility `tools/list_td32_symbols.py` produces the index with VA, size, module, and symbol name.
+- High-value next procedures now identified:
+  - `0x004BFDB0` — `TWordViwer.SetFieldValue`
+  - `0x004BFC18` — `TWordViwer.GetXmlFieldInfo`
+  - `0x004D3B38` — `TDictionary<UnicodeString,TDocumentCProperty>.Add`
+  - `0x004D3D2C` / `0x004D3D3C` — `TryGetValue` / `AddOrSetValue` for document custom properties
+  - `0x004D52DC` / `0x004D54E0` — single-field dictionary `Add` / `AddOrSetValue`
+  - `0x004D6894` / `0x004D6A98` — twin-field dictionary `Add` / `AddOrSetValue`
+- Focused helper workflow now traces these addresses in parallel; run IDs `43813533418` and `43813557802` were created while expanding the target set. Verify the newest run before reporting its outcome.
