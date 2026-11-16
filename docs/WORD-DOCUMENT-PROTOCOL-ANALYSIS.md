@@ -1445,3 +1445,21 @@ TD32 برای wrapperهای کلاس `TWordDocument` این نام‌ها و ب�
 3. این مسیر را با HTTP response writer و long-lived XHR تطبیق بده؛ بدون نسبت‌دادن قطعی آن به registration تا وقتی payload یا call chain کامل شود.
 
 **Artifact:** `emwat-word-close-response-chain`, run `43815879141`, artifact `14202387719`.
+
+
+## Run 131 — native Base64 field decoder resolved
+
+Artifact from the custom-property pipeline (run `43816922782`, artifact `14203500487`) resolves the core native Base64 decode helpers used by `TWordViwer.SetFieldValue`:
+
+- In the `encryption=base64` branch, `SetFieldValue` converts the Unicode field value to a wide string, calls `0x00455108`, then calls `0x004735D0`.
+- `0x00402908` is an import thunk to Windows `WideCharToMultiByte`. In this callsite, the code-page argument is zero (CP_ACP); Base64 characters are ASCII, so this conversion normally preserves the alphabet bytes.
+- `0x004735D0` is a wrapper that calls `0x004738CC`.
+- `0x00473608` computes decoded output length from Base64 quartet length and terminal `=` padding (subtracts two bytes for a second-to-last `=`, otherwise one for a final `=`; non-multiple-of-four lengths yield zero).
+- `0x00473700` is the actual quartet decoder. It uses a 64-entry lookup table at `0x00627F98`, rejects lookup values of `0xFF`, emits one/two/three bytes according to final padding, and returns a success Boolean.
+- `0x004738CC` orchestrates output sizing/allocation and invokes the length and decode helpers. It also searches for a literal period (`0x2E`) in the input path; the purpose of that delimiter handling still needs a separate trace.
+
+### Compatibility implication
+
+The Linux implementation already decodes Base64 to bytes, but Python's `base64.b64decode(validate=True)` is stricter about malformed padding/characters than the native routine's final-quartet path appears to be. Do not weaken validation based on malformed-input behavior without a real captured field example. Next tests should cover standard padded Base64, unpadded input, invalid alphabet, whitespace, and the observed period/delimiter case. This trace does not change the field-to-Writer mapping or prove how `signData` is concatenated.
+
+**Evidence:** `SetFieldValue` at `0x004BFDB0`, helpers `0x00455108`, `0x004735D0`, `0x004738CC`, `0x00473608`, `0x00473700`; artifact `14203500487`.
