@@ -1676,3 +1676,11 @@ The BPL export/API analysis resolves the earlier naming ambiguity. The public TE
 - Artifact close/response chain run `43815879141` بررسی شد: wrapperهای `TWordDocument` نگاشت `Get_Saved → slot +0xD4`، `Set_Saved → +0xD8`، `Get_Content → +0xDC` و `Save → +0x2B8` را تأیید می‌کنند. بنابراین slot `+0xDC` در `OnControlerNotify` با Save/Close یکی نیست؛ قرارداد آرگومان `-1` و payload خروجی همچنان باز است.
 - Python bridge run `43816121607` پس از اصلاح fixture مربوط به encoding با موفقیت کامل شد. خطا از انتظار اشتباه تست برای decode کردن فیلد plain بدون `encryption=urlencoded` بود؛ رفتار decoder دست‌نخورده ماند.
 - چهار workflow قدیمی Python/UNO/asset inventory همچنان سبز هستند: 86 تست Python، 8 تست UNO و صفر template Word در آرشیو نصب‌کننده. این نتایج به‌تنهایی صحت end-to-end با Almas را ثابت نمی‌کنند.
+
+
+### تکمیل شاخهٔ event sink — 2026-11-16
+
+- Event sink artifact run `43815900228` بررسی شد. در مسیر `OnTmrAutoSave`، event recordهای `+0x80/+0x90/+0x98` به‌ترتیب به callbackهای BeforeSave، NewDocument و WindowActivate متصل می‌شوند؛ `+0x88` نیز به callback `0x004D00AC` به‌صورت شرطی اشاره می‌کند.
+- برای `WordAppDocumentBeforeClose` در `0x004CCBBC` نه pointer reference مستقیم پیدا شد و نه assignment در event-record block؛ تنها caller مستقیم bounded آن `FillImgFldsForPrint` است. پس فعال بودن آن به‌عنوان main-editor event هنوز اثبات نشده.
+- مستندات COM dispatch با این تفکیک به‌روزرسانی شد؛ اتصال event recordها به COM connection point و نام callback چهارم همچنان در شاخهٔ Word lifecycle دنبال می‌شود.
+- Python bridge run `43816293635` پس از اصلاح دو انتظار plus/escaped-plus موفق شد؛ این run وضعیت سبز فعلی تست‌های Python را تأیید می‌کند.
