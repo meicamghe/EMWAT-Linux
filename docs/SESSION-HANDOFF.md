@@ -1077,3 +1077,6 @@ Do not implement guessed `signData` joining or claim end-to-end Almas registrati
 - Service strings and parser traces confirm root `emwat`, attribute `version`, exact numeric version `1`, child `method`, attribute `class`, child `param`, and attribute `name`.
 - `0x0047E0EC` is BPL package load; `0x0047E2D4` is package unload. They bracket `ParseMethod`; neither is the concrete method dispatcher.
 - The exact request schema is updated in `docs/EDITWORD-REQUEST-SCHEMA.md`; HTTP bridge details are in `docs/HTTP-LOCAL-API-ANALYSIS.md`.
+
+
+- Artifact `14226742624` confirms `0x0040414C` is the `rtl230.bpl!TStringList.$bctr` import thunk. Both objects passed into `euUnArchive` are TStringList instances. First list receives `TWordViwer+0xA0`; second receives the direction-normalized `TWordViwer+0x80` path with `.easd` appended. The pairwise list loop passes entries to the `T7zOutArchive` interface, then sends the `.easz` path through slot `+0x18`.
