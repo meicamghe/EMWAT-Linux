@@ -1725,3 +1725,10 @@ The BPL export/API analysis resolves the earlier naming ambiguity. The public TE
 - Run `43818155017` passed: 99 tests, 1 skipped. Tests now cover padded Base64 with one and two padding characters, unpadded complete quartets, invalid alphabet, incomplete quartet, and whitespace rejection.
 - Decoder no longer strips whitespace before Base64 decoding, matching the native lookup-table path where whitespace is not normalized. The separate outer `wordConfig` XML Base64 parser still has its own whitespace handling and was not changed.
 - Current test suite is green after this compatibility change; earlier failures in runs `43817515071`, `43817520122`, and `43817688638` were transient implementation/test-literal issues and are superseded by the green run.
+
+
+### ساختار XML field model — 2026-11-16
+
+- VMT/TD32 اطلاعات `TXMLFieldType` را تثبیت کرد: interface با offset `0x50` و propertyهای واقعی `Id`, `Mimetype`, `Encryption`, `Separator`, `Concater`, `ParamId`, `IsNew`.
+- مدل viewer جداگانه شامل `TXmlWordConfigField` با اندازهٔ instance برابر `0x10` و `TXmlWordConfigTwinField` با اندازهٔ `0x18` است؛ `TDocumentCProperty` نیز type مستقل دارد.
+- معنی عملیاتی separator/concater هنوز مشخص نیست؛ workflow جدید getter/setterها و VMT این کلاس‌ها را بررسی می‌کند تا قبل از پیاده‌سازی، join behavior حدس زده نشود.
