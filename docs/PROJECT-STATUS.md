@@ -1988,3 +1988,11 @@ Artifact `14227611377` resolves the earlier interface-signature uncertainty:
 
 
 - Run 5 artifact `14227002967` resolves the final stream detail: `0x004041BC` is the IAT thunk to `rtl230.bpl!TFileStream.$bctr(UnicodeString, Word)`. `T7zOutArchive.SaveToStream` passes the `.easz` path to it with mode `0xFF00` (`fmCreate`), then passes the resulting stream to `T7zOutArchive.SetCompleted` at `0x004546C4`. The archive output is therefore a real file created/truncated at the `.easz` path.
+
+
+### Word save/close event wiring — 2026-11-16
+
+- `OnTmrAutoSave` (`0x004B8A84`) registers WordApp callbacks: BeforeSave `0x004CD154`, NewDocument `0x004CD54C`, WindowActivate `0x004CD9C0`, and BeforePrintBGPrint `0x004CE030` or alternate `0x004D00AC`.
+- `WordAppDocumentBeforeSave` checks active-document identity and viewer state; if not ready it sets Word's Cancel output to `-1`. For a dirty document it can show a three-choice dialog, and one choice cancels. The exact labels and downstream method semantics are pending.
+- `WordAppDocumentBeforeClose` (`0x004CCBBC`) calls helper `0x004BCA88`; `SilentSaveEmwatDoc` (`0x004D23D8`) builds two TStringLists and calls `0x004AEBBC`. These are the next close/commit targets.
+- Keep BeforeSave, BeforeClose, timer-side autosave, and `OnControlerNotify` archive creation distinct until the full-range traces link them. See Run 150 in `docs/WORD-LIFECYCLE-STATIC-TRACE.md`.
