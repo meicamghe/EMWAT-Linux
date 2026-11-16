@@ -406,3 +406,18 @@ A generated-wrapper cross-check changes how the BeforeSave callback's COM call m
 Therefore the call at 0x004CD1F5 is mapped to Set_Saved, not Get_Saved. Any earlier statement that this instruction reads Document.Saved is withdrawn. The callback still contains the Yes/No/Cancel prompt and the three-argument Close dispatch, but the value supplied to Set_Saved and the exact condition that selects the prompt require additional tracing.
 
 Evidence: close/response-chain run 43814055308, artifact 14200974814. A follow-up traces Get_Content at 0x0042BDF8 to resolve the adjacent +0xDC slot used by OnControlerNotify.
+
+
+## 7. OnControlerNotify is a local auto-save/archive path — 2026-11-16
+
+The expanded close/controller workflow (run 43814607589, artifact 14202031457) provides a more complete picture of TWordViwer.OnControlerNotify at 0x004BB3B0:
+
+- The procedure contains the diagnostic string “AutoSave. EmwatAutoSaveDOC.Execute called.”
+- It obtains two path-like values from viewer state at offsets +0x80 and +0xA0, applies FixDirectionInFarsiNumericMode (0x004563A8), and appends the observed extensions .easd and .easz.
+- It passes the resulting path values to euUnArchive (0x00456DFC).
+- euUnArchive iterates archive entries and writes them through a stream-like destination. This is a local archive-processing path; the exact archive payload semantics and encryption/password handling remain separate questions.
+- Before that archive path, OnControlerNotify calls CostumizeRecAndCC and invokes the Word document Content member at slot +0xDC with -1. The generated wrapper maps +0xDC to Get_Content; the -1 argument's meaning remains unresolved.
+
+This is direct evidence that OnControlerNotify participates in EMWAT's local auto-save/archive workflow. It is **not** evidence that this method posts the final letter to Almas or constructs the response-word HTTP envelope. Keep local .easd/.easz recovery distinct from the captured EditWordDocument request/response round-trip.
+
+The same artifact identifies TWordDocument.Save at 0x004309A4, which dispatches through _Document slot +0x2B8. No direct bounded CALL xref was found; the method may be reached through an interface/VMT path. The close wrappers remain separate: no-argument Close uses +0x4D4 and the OleVariant overloads use +0x29C.
