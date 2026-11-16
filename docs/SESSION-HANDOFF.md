@@ -1096,3 +1096,6 @@ Do not implement guessed `signData` joining or claim end-to-end Almas registrati
 - Service parser extracts `method@class` and `param@name`, resolves `GetClass("T"+className)`, constructs the class, and calls VMT slot `+0x0C`.
 - `TEmwatMethod` VMT slot `+0x0C` → `0x0046C9E0` shared wrapper; wrapper calls inner XML/dictionary helper `0x0046C82C` then subclass `PerformMethod` at VMT slot `+0x10`.
 - The service-side class lookup and dispatch chain is fully documented in `docs/EMWAT-SERVICE-EXECUTABLE-ANALYSIS.md`; the remaining response serialization and close-time commit link are still open.
+
+
+- Run 5 artifact `14227002967` confirms `0x004041BC` is the `rtl230.bpl!TFileStream.$bctr(UnicodeString, Word)` thunk. `SaveToStream` constructs the file stream from `.easz` using `0xFF00` (`fmCreate`) and passes it to `SetCompleted` (`0x004546C4`). Thus `.easz` is a real file output, created/truncated by the archive path.
