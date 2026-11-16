@@ -19,6 +19,9 @@
 
 ## پیشرفت اجرایی جدید — 2026-11-16
 
+- **یکپارچه‌سازی واقعی DOCPROPERTY در LibreOffice:** fixture DOCX اکنون یک Word field واقعی با دستور `DOCPROPERTY EMWATIntegrationMarker` و Custom Document Property متناظر دارد. تست UNO مقدار property را تغییر می‌دهد، `refresh_writer_text_fields()` را اجرا می‌کند و ثابت می‌کند متن نمایشی سند مقدار جدید را گرفته است؛ سپس سند به DOC/CFB صادر می‌شود. Inspector نیز service نوع `DocInfo.Custom` و نام property را بدون خواندن presentation یا مقدارها ثبت می‌کند.
+- **CI پس از ادغام DOCPROPERTY:** Python run `43815297715` سبز شد (۹۶ تست، ۹۵ پاس، یک skip اختیاری) و UNO run `43815162036` نیز ۸/۸ تست را پاس کرد.
+
 - **تأیید نهایی روی HEAD جدید:** Python run `43814937717` سبز شد (۹۴ تست، ۹۳ پاس و یک skip اختیاری) و LibreOffice UNO run `43814937834` نیز ۸/۸ تست را پاس کرد. تحلیل Close/response run `43814822927` هم موفق است. pipeline گسترده Custom Property با run `43814583673` هنوز در حال اجراست و نتیجه‌اش باز اعلام نمی‌شود.
 
 - **تفکیک AutoSave محلی از ثبت نامه:** artifact run `43814607589` نشان داد `OnControlerNotify` رشته `AutoSave. EmwatAutoSaveDOC.Execute called.` را دارد، دو مسیر را از state داخلی می‌سازد، پسوندهای `.easd` و `.easz` را اضافه می‌کند و به `euUnArchive` می‌دهد. بنابراین این handler در مسیر آرشیو/بازیابی محلی نقش دارد؛ هیچ POST یا ثبت نهایی در الماس از آن اثبات نشده است. `TWordDocument.Save` نیز slot `+0x2B8` را صدا می‌زند و direct CALL xref در scan فعلی ندارد.
