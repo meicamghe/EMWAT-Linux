@@ -1408,3 +1408,32 @@ Artifact اجرای `43813684507` با موفقیت تولید شد.
 
 - هنوز مدرک قطعی از POST/response نهایی Almas در لحظه بستن سند نداریم.
 - تأیید کاربر که ثبت در Almas بعد از بستن Word رخ می‌دهد، با این controller-notify path سازگار است؛ اما به‌تنهایی payload و ترتیب دقیق شبکه را ثابت نمی‌کند.
+
+
+## Run 129 — تطبیق slotهای TWordDocument با مسیر Controller Notify
+
+Artifact اجرای close/response chain به شناسه `43815879141` با موفقیت بررسی شد.
+
+### نگاشت wrapperهای COM
+
+TD32 برای wrapperهای کلاس `TWordDocument` این نام‌ها و بدنه‌ها را مشخص می‌کند:
+
+- `0x0042BD34` — `TWordDocument.Get_Saved`؛ dispatch به interface slot `+0xD4`.
+- `0x0042BD94` — `TWordDocument.Set_Saved`؛ dispatch به interface slot `+0xD8`.
+- `0x0042BDF8` — `TWordDocument.Get_Content`؛ dispatch به interface slot `+0xDC`.
+- `0x004309A4` — `TWordDocument.Save`؛ dispatch به interface slot `+0x2B8`.
+
+### نتیجه برای OnControlerNotify
+
+- فراخوانی قبلی `viewer+0x48` با slot `+0xDC` اکنون در سطح wrapper به `TWordDocument.Get_Content` تطبیق داده می‌شود؛ بنابراین آن را نباید `Save` یا `Close` نام‌گذاری کرد.
+- `Save` یک slot مستقل در `+0x2B8` دارد. این تفکیک، فرض قبلی مبنی بر اینکه slot `+0xDC` همان Save/Close است را رد می‌کند.
+- در callsite مربوط به `OnControlerNotify` مقدار `-1` روی stack پیش از dispatch قرار می‌گیرد. قرارداد دقیق این آرگومان و اینکه getter مسیر COM مقدار content را به چه buffer/ساختاری برمی‌گرداند، هنوز باید با امضای interface و helper `0x0042ABA0` تطبیق داده شود.
+- پس از این تطبیق، مسیر controller به‌عنوان «خواندن/دریافت محتوای سند در جریان notification» ثبت می‌شود؛ اما این به‌تنهایی اثبات نمی‌کند که پاسخ HTTP نهایی یا ثبت Almas همین‌جا ساخته می‌شود.
+
+### اقدام بعدی
+
+1. امضای interface و helper `0x0042ABA0` را برای تعیین آرگومان `-1` و buffer خروجی resolve کن.
+2. مقدار برگشتی `Get_Content` را در ادامه‌ی `OnControlerNotify` تا helperهای جهت‌دهی/serialization دنبال کن.
+3. این مسیر را با HTTP response writer و long-lived XHR تطبیق بده؛ بدون نسبت‌دادن قطعی آن به registration تا وقتی payload یا call chain کامل شود.
+
+**Artifact:** `emwat-word-close-response-chain`, run `43815879141`, artifact `14202387719`.
