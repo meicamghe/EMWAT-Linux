@@ -386,3 +386,15 @@ The newly recovered `FindFieldInActivefields` body confirms the implementation u
 3. If the copied segment contains a single space, truncate before it; if not, return the copied segment unchanged.
 
 This exposed a mismatch in the previous Python helper: it returned the original field code when the copied segment had no trailing space. Corrected `extract_docproperty_identifier()` and updated edge-case tests. CI runs `43889650755` and `43889681823` were started for the code and test commits; results are pending.
+
+
+## Completed field normalization / MIME branch trace batch
+
+Run `43889057276` completed all three jobs successfully (lifecycle, field mapping, save/print). The save/print artifact `14236156376` resolves:
+- `FindFieldInActivefields` delimiters: `DOCPROPERTY`, double-space, single-space. This directly supports the corrected Python extractor.
+- `FillTextField` MIME discriminator: `text/plain`. When the field XML interface is absent or its MIME type is not `text/plain`, the native helper delegates to `FillImageField`.
+- `GetCaptionItems` style labels: `bold`, `italic`, `underline`, `strikeout`.
+- `GetImageResolution` alignment labels: `right`, `center`, `left`, `top`, `middle`, `bottom`.
+- Image/signature path strings include `signData`, `signText`, `igLzw32s.Dll`, `MakeImageList`, and `AddImageToDoc succeed`.
+
+The field-mapping artifact `14236151592` includes the expanded `GetDocFieldIndex`, `FillTwinFields`, `FillTextField`, and regex-thunk traces. All jobs in this run succeeded.
