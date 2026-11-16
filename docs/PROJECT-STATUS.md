@@ -1999,3 +1999,11 @@ Artifact `14227611377` resolves the earlier interface-signature uncertainty:
 
 
 - `TWordViwer.LoadDocument` calls `OnTmrAutoSave` with the document path (`0x004B7A58`); the timer handler stores it in viewer field `+0xA0` (`0x004B8AE8`). `OnControlerNotify` later reads `+0xA0` as the source file for `T7zOutArchive.AddFiles`. `LoadDocument` also creates a `TFileStream` for that path and writes document data. Thus the file created during document loading is the source later packaged as the `.easd` entry inside `.easz`. The sibling/base path at viewer field `+0x80` remains to be mapped.
+
+
+### EditWordDocument payload and result contract — 2026-11-16
+
+- `TEditWordDocument.PerformMethod` reads `wordConfig` (required), `wordBody`, `letterImages`, and `signData`. `wordConfig` missing triggers `Requset XML is not valid (wordConfig parameter is null)`.
+- It calls `CoInitialize`, passes the four values plus `TEmwatInvokeParam` and an output string to `TWordViwer.LoadDocument`, stores the returned string as method result, sets `bResultSet=1`, and calls `CoUninitialize`.
+- `LoadDocument` extracts `DocFileName` from `wordBody`, creates a local file via `TFileStream(fmCreate)` and writes document data, parses `wordConfig` XML, then calls `OnTmrAutoSave` with the document path. This path becomes `TWordViwer+0xA0` and is later archived as `.easd` inside `.easz`.
+- The final mapping of the method result/bResultSet to the HTTP response is still the key unresolved protocol boundary. Full details: `docs/WORD-LIFECYCLE-STATIC-TRACE.md` Run 151.
