@@ -81,7 +81,6 @@ jobs:
             python tools/inspect_delphi_vmt_address.py analysis-input/EmwatService.exe 0x00469A3C dispatch-crosswalk/service/ansi-string-dictionary-vmt.md || true
             python tools/scan_pe_pointer_refs.py analysis-input/EmwatService.exe 0x00469A3C dispatch-crosswalk/service/ansi-string-dictionary-vmt-pointer-refs.md || true
             python tools/scan_pe_pointer_refs.py analysis-input/EmwatService.exe 0x00470924 dispatch-crosswalk/service/ansi-string-dictionary-class-ref-pointer-refs.md || true
-            python tools/list_td32_symbols.py analysis-input/EmwatService.exe TDictionary > dispatch-crosswalk/service/service-dictionary-symbols.md
             python tools/trace_pe_range.py analysis-input/EmwatService.exe 0x0046A500 0x0046AE30 dispatch-crosswalk/service/parser-token-collection-full.md
             python tools/trace_pe_range.py analysis-input/EmwatService.exe 0x00470B38 0x00470CA3 dispatch-crosswalk/service/xml-token-loop-full.md
             python tools/trace_pe_range.py analysis-input/EmwatService.exe 0x0047E0EC 0x0047E218 dispatch-crosswalk/service/package-loader-full.md
