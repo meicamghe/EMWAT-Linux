@@ -10,7 +10,6 @@ are intentionally not guessed here. Those mappings require verified fixtures.
 from __future__ import annotations
 
 import importlib
-import os
 from pathlib import Path
 import shutil
 import socket
@@ -19,9 +18,7 @@ import tempfile
 from threading import Event
 import time
 from typing import Callable
-from urllib.parse import quote
 
-from emwat_linux.document_coordinator import OfficeCoordinationError
 from emwat_linux.editword_request import EditWordDocumentRequest
 from emwat_linux.office_adapter import CloseDisposition, OfficeCloseEvent
 
@@ -165,7 +162,7 @@ class _OfficeHandle:
         *,
         process: subprocess.Popen[bytes],
         document: object,
-        close_listener: _DocumentCloseListener,
+        close_listener: _DocumentCloseListener | None,
         work_dir: Path,
     ) -> None:
         self.process = process
@@ -376,6 +373,9 @@ class LibreOfficeAdapter:
             if deadline is not None and time.monotonic() >= deadline:
                 self._cleanup(handle)
                 raise RuntimeError("libreoffice_close_timeout")
+        if handle.close_listener is None:
+            self._cleanup(handle)
+            raise RuntimeError("libreoffice_close_listener_missing")
         if not handle.close_listener.snapshot_ready.wait(self._connect_timeout):
             self._cleanup(handle)
             raise RuntimeError("libreoffice_final_snapshot_timeout")
