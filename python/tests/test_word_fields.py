@@ -94,7 +94,7 @@ class WordFieldDecodingTests(unittest.TestCase):
             '<word-document><fields><field id="raw" encryption="base64">AQID</field>'
             '</fields></word-document>'
         )
-        self.assertEqual(decode_word_fields(unpadded_quartet)[0].value, b"\\x01\\x02\\x03")
+        self.assertEqual(decode_word_fields(unpadded_quartet)[0].value, b"\x01\x02\x03")
 
     def test_preserves_external_parameter_binding_without_guessing_concatenation(self):
         config = parse(
