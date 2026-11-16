@@ -28,6 +28,8 @@
 
 ## پیشرفت اجرایی جدید — 2026-11-16
 
+- **تست URL decode نهایی:** `urlencoded` اکنون رفتار native را دارد: `+` به فاصله و `%2B` به علامت `+` تبدیل می‌شود. تست‌های اصلاح‌شده در Python run `43816293635` سبز شدند (۹۹ تست، ۹۸ پاس و یک skip اختیاری). مسیر Base64 متنی از مسیر bytes تصاویر جدا نگه داشته شده تا trace زیرلایه encoding کامل شود.
+
 - **کشف مسیر واقعی Event Sink ورد:** run `43815900228` موفق شد. `TWordApplication.ConnectTo` از مسیر COM event interface متصل می‌شود و رکورد callbackها در `OnTmrAutoSave` شامل `WordAppDocumentBeforeSave`، `WordAppNewDocument` و `WordAppWindowActivate` است. بنابراین BeforeSave به‌صورت صریح در event sink نصب شده؛ `WordAppDocumentBeforeClose` در این رکورد نیست و direct caller آن فعلاً فقط مسیر FillImgFldsForPrint است. این اتصال هنوز به‌تنهایی POST نهایی به الماس را اثبات نمی‌کند.
 
 - **تست end-to-end متد Adapter:** `LibreOfficeAdapter.apply_custom_property_updates()` اکنون در fixture واقعی فراخوانی می‌شود؛ دو run UNO شماره 43815561042 و 43815592590 هر دو ۸/۸ پاس شدند. Python run `43815578467` نیز ۹۹ تست را پاس کرد (۹۸ پاس و یک skip). مسیر DOCPROPERTY به‌روزرسانی property، refresh فیلد و export DOC/CFB در تست واقعی تأیید شد.
