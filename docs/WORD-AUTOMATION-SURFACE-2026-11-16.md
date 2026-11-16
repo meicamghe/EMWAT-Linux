@@ -280,3 +280,28 @@ The TD32 body for `GetDocFieldName` (`0x004BB81C`) gives a useful ordering const
 This confirms print-field preparation happens before the per-entry resolver loop in this routine. It also identifies `0x004C0550` as the next field-resolution target (the current trace does not yet prove its TD32 symbolic name). The workflow now traces `0x004C0550` and the separately named `GetFieldIndexInList` (`0x004CB1B4`) to establish whether they share lookup or collection semantics.
 
 Workflow trace additions: commit `e5933a10905c5edb6075767aa4d25be800698b11`.
+
+
+## Confirmed GetDocFieldIndex and caption/image sub-pipeline — artifact 14233429328
+
+The expanded field-mapping artifact from run `43886492031` resolves `0x004C0550` as `TWordViwer.GetDocFieldIndex` (procedure range `0x004C0550–0x004C1793`). Its direct caller is `GetDocFieldName` at `0x004BBB2B`. This is the per-configured-field resolver, not an anonymous helper.
+
+The trace establishes this order within `GetDocFieldIndex`:
+- Enumerates the Word `Fields` collection and obtains per-field data through its COM interface.
+- Calls `FindFieldInActivefields` (`0x004BC170`) on the extracted field name.
+- Calls `GetXmlFieldInfo` (`0x004BFC18`) to retrieve the matching XML field metadata.
+- Uses `FillMSWFields` (`0x004C009C`) in several branches and `SetFieldValue` (`0x004BFDB0`) in multiple branches.
+- Calls `AddImagesToDoc` (`0x004C0410`) at `0x004C0A5D` in the image/caption branch.
+- Uses `FillTextField` (`0x004BC980`) on multiple paths and returns a Boolean result to the caller.
+
+This provides the first connected mapping pipeline from Word Field enumeration through active-field filtering, XML metadata resolution, text/property updates, and the separate image/caption branch. The exact semantics of every branch and the string constants are still being decoded; the implementation must preserve this order rather than simply mapping config IDs to bookmarks or properties.
+
+### Caption and bitmap helpers
+
+The same artifact cross-checks these symbols and call relationships:
+- `GetCaptionItemFont` (`0x004C19C0`) is called only by `AddImagesToDoc` in the current direct-call scan. It calls `GetXmlFieldInfo`, `SetFieldValue` (two observed sites), `EmbedTextToImage` (`0x004C436C`), `FillMSWFields`, and `GetXmlFieldInfo` again. It is therefore a substantial caption/image-field processing routine despite its symbol name; it is not safe to reduce it to a simple font getter.
+- `GetCaptionItems` (`0x004C2B20`) is called by `ResizeBitmapCanvas` and `ProcessWords`. It builds/returns a `TCaptionItem` object from a record and several parsed values.
+- `GetImageResolution` (`0x004C2DE0`) is called by `StrToAlign` at six sites. Its body compares an input string against six constants and returns enum-like values 1 through 6 (or 0 for no match). Do not assume it is a DPI/pixel-resolution parser from the symbol name alone.
+- `EmbedTextToImage` (`0x004C436C`) is called from `GetCaptionItemFont`; it parses numeric image/caption parameters, converts dimensions through floating-point unit scaling, and invokes helper routines `0x004AFF10` and `0x004AFEB8`. Exact units and final rendering side effects remain open.
+
+Workflow evidence: field-mapping job succeeded in run `43886492031`, artifact `14233429328`. The companion save-print job in that run failed only because its decoder output directory was wrong; this was corrected separately and a new run was queued.
