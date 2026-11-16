@@ -1749,3 +1749,10 @@ The BPL export/API analysis resolves the earlier naming ambiguity. The public TE
 - Yes → آرگومان اول `_Document.Close` برابر `-1`؛ No → برابر `0`؛ Cancel → فیلد Cancel رویداد برابر `0xFFFF` و سند باز می‌ماند.
 - برای Yes/No از overload سه‌آرگومانی `TWordDocument.Close` و COM slot `+0x29C` استفاده می‌شود؛ overloadهای 1/2/3 آرگومان همگی به همین slot ختم می‌شوند.
 - این یافته رفتار مشاهده‌شدهٔ کاربر را توضیح می‌دهد: بستن Word بدون فشردن Save هم می‌تواند ثبت را آغاز کند. اما POST/response نهایی Almas هنوز اثبات نشده است.
+
+
+### XML twin-field attribute spelling — 2026-11-16
+
+- Parser-side XML methods confirm incoming keys `separator`, `concator`, and `paramId` through `TXMLNode.GetAttributeNodes`.
+- Existing schema transcription contains `concater`; this conflicts with native `concator`. No alias is proven. The runtime keeps raw attributes unchanged and does not normalize either spelling.
+- Serializer-side TD32 `Get_*` labels do not consistently match their string literals; parser-side `Set_*` methods are the reliable incoming-attribute evidence.
