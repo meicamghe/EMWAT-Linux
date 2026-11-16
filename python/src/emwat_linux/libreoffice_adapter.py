@@ -53,13 +53,13 @@ def _source_extension(data: bytes) -> str:
 def _uno_listener_proxy(
     delegate: object,
     *,
-    interface_module: str,
+    uno_module: object,
     interface_name: str,
     methods: tuple[str, ...],
 ) -> object:
     """Wrap a Python delegate in a real PyUNO interface implementation."""
     unohelper = importlib.import_module("unohelper")
-    interface = getattr(importlib.import_module(interface_module), interface_name)
+    interface = uno_module.getTypeByName(interface_name)
 
     def initialize(self: object) -> None:
         unohelper.Base.__init__(self)
@@ -309,20 +309,20 @@ class LibreOfficeAdapter:
             save_listener = _DocumentEventListener(on_saved)
             modify_proxy = _uno_listener_proxy(
                 modify_listener,
-                interface_module="com.sun.star.util",
-                interface_name="XModifyListener",
+                uno_module=uno,
+                interface_name="com.sun.star.util.XModifyListener",
                 methods=("modified", "disposing"),
             )
             save_proxy = _uno_listener_proxy(
                 save_listener,
-                interface_module="com.sun.star.document",
-                interface_name="XDocumentEventListener",
+                uno_module=uno,
+                interface_name="com.sun.star.document.XDocumentEventListener",
                 methods=("documentEventOccured", "disposing"),
             )
             close_proxy = _uno_listener_proxy(
                 close_listener,
-                interface_module="com.sun.star.util",
-                interface_name="XCloseListener",
+                uno_module=uno,
+                interface_name="com.sun.star.util.XCloseListener",
                 methods=("queryClosing", "notifyClosing", "notifyClosed", "disposing"),
             )
             document.addModifyListener(modify_proxy)
