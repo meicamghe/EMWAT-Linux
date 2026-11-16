@@ -1,0 +1,87 @@
+name: Analyze EMWAT Word finalize and HTTP response crosswalk
+on:
+  push:
+    paths:
+      - '.github/workflows/analyze-word-http-finalize-crosswalk.yml'
+      - 'analysis-input/EmwatMethods.bpl1'
+      - 'EMWAT_Extracted.zip'
+      - 'tools/trace_pe_range.py'
+      - 'tools/trace_pe_target.py'
+      - 'tools/trace_td32_callers.py'
+      - 'tools/trace_td32_procedure.py'
+      - 'tools/scan_pe_pointer_refs.py'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  word-controller-close:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install pefile capstone
+      - name: Trace main Word controller notification and close helpers
+        shell: bash
+        run: |
+          mkdir -p finalize-crosswalk/word
+          python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x004BB3B0 0x004BB777 finalize-crosswalk/word/OnControlerNotify.md
+          for target in 004BB3B0 004CD154 004D281C 00456DFC 0042ABA0 0042FFF4; do
+            python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x$target finalize-crosswalk/word/target-$target.md 2600 ret
+            python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 0x$target finalize-crosswalk/word/refs-$target.md
+          done
+          for target in 004BB3B0 004CD154 004D281C; do
+            python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x$target finalize-crosswalk/word/callers-$target.md
+          done
+          python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x004D281C finalize-crosswalk/word/CostumizeRecAndCC.md
+      - uses: actions/upload-artifact@v4
+        with:
+          name: emwat-word-controller-finalize-crosswalk
+          path: finalize-crosswalk/word/
+          if-no-files-found: error
+
+  service-http-response:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install pefile capstone
+      - name: Extract service executable
+        run: |
+          python - <<'PY'
+          import pathlib, zipfile
+          archive = zipfile.ZipFile("EMWAT_Extracted.zip")
+          matches = [n for n in archive.namelist() if pathlib.PurePosixPath(n).name.lower() == "emwatservice.exe"]
+          if not matches:
+              raise SystemExit("EmwatService.exe not found")
+          target = pathlib.Path("finalize-crosswalk/service/EmwatService.exe")
+          target.parent.mkdir(parents=True, exist_ok=True)
+          target.write_bytes(archive.read(matches[0]))
+          print(f"Extracted {matches[0]} ({target.stat().st_size} bytes)")
+          PY
+      - name: Trace request dispatch and response writing
+        shell: bash
+        run: |
+          mkdir -p finalize-crosswalk/service
+          pids=()
+          for target in 0045E85C 00438A2C 00460840 00460E48 00458FCC 004594AC 00459AB0 0045E03C; do
+            (
+              set -e
+              python tools/trace_pe_target.py finalize-crosswalk/service/EmwatService.exe 0x$target finalize-crosswalk/service/target-$target.md 3600 ret
+              python tools/scan_pe_pointer_refs.py finalize-crosswalk/service/EmwatService.exe 0x$target finalize-crosswalk/service/refs-$target.md
+            ) &
+            pids+=("$!")
+          done
+          status=0
+          for pid in "${pids[@]}"; do wait "$pid" || status=1; done
+          exit "$status"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: emwat-service-http-response-crosswalk
+          path: finalize-crosswalk/service/
+          if-no-files-found: error
