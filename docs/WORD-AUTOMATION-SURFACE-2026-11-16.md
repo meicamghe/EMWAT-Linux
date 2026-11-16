@@ -305,3 +305,12 @@ The same artifact cross-checks these symbols and call relationships:
 - `EmbedTextToImage` (`0x004C436C`) is called from `GetCaptionItemFont`; it parses numeric image/caption parameters, converts dimensions through floating-point unit scaling, and invokes helper routines `0x004AFF10` and `0x004AFEB8`. Exact units and final rendering side effects remain open.
 
 Workflow evidence: field-mapping job succeeded in run `43886492031`, artifact `14233429328`. The companion save-print job in that run failed only because its decoder output directory was wrong; this was corrected separately and a new run was queued.
+
+
+## Print-field special cases — decoded string evidence
+
+The save/print artifact from run `43887016674` confirms the string constant at `0x004CCB0C) is exactly `EMBED Equation`. `FillPrintDocFields` compares the current Word field-code string against this value before entering a separate branch. The routine also constructs/uses a property key around `CustomDocumentProperties` and `count` in the custom-property branch (the string is embedded at an unaligned address; the workflow now decodes the exact byte-aligned starts `0x004CCB45` and `0x004CCB61` to verify both labels).
+
+Do not treat this as a generic field rewrite rule yet: the surrounding helper calls `0x004D3DF8`, `0x004D34B0`, and `0x004D3B78` still need their full traces to determine how custom property fields are selected and stored.
+
+Artifact: `emwat-word-save-print`, run `43887016674`, artifact `14234129463`.
