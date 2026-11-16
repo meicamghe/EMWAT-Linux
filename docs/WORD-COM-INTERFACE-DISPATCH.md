@@ -921,3 +921,37 @@ The Get_Content wrapper at 0x0042BDF8 dispatches through _Document byte offset +
 The OnControlerNotify call passes -1 before invoking +0xDC. The generated wrapper's hidden result/argument handling means the business meaning of this -1 still needs to be traced; do not infer that it is a SaveChanges flag or a registration signal.
 
 Evidence: close/response-chain run 43814460258, artifact 14201473774.
+
+
+## Word Application event-sink registration — 2026-11-16
+
+Source: event-sink workflow run 43815900228, artifact 14202173024.
+
+### Application connection setup
+
+TD32 traces show:
+
+- TWordApplication.InitServerData at 0x0043E070 loads its COM server/type metadata from 0x00627A38 and stores the related event metadata pointer 0x00627B74.
+- TWordApplication.ConnectTo at 0x0043E0FC obtains the default Application interface through its VMT slot +0x48, then calls 0x00404FAC to connect the event interface and stores the connected interface at object offset +0x124.
+- TWordApplication.InvokeEvent at 0x0043E270 and TWordDocument.InvokeEvent at 0x0042ABF8 route event dispatch through shared helper 0x00404F8C and the generic dispatch helper 0x00401188.
+
+### Callback record assignments
+
+The bounded callback-registration code at 0x004B8C60–0x004B8D10 writes callback/data pairs into the event-record object referenced by viewer offset +0x44:
+
+| Event callback pointer | Context pointer | TD32 method |
+|---:|---:|---|
+| 0x004CD154 at record +0x80 | viewer at +0x84 | TWordViwer.WordAppDocumentBeforeSave |
+| 0x004CD54C at record +0x90 | viewer at +0x94 | TWordViwer.WordAppNewDocument |
+| 0x004CD9C0 at record +0x98 | viewer at +0x9C | TWordViwer.WordAppWindowActivate |
+| 0x004D00AC at record +0x88, conditional on viewer byte +0x3C | viewer at +0x8C | callback target not yet resolved |
+
+This confirms that WordAppDocumentBeforeSave is explicitly installed as an application event callback. The callback is not merely an unreferenced routine discovered by scanning.
+
+### BeforeClose distinction
+
+WordAppDocumentBeforeClose at 0x004CCBBC has one direct bounded caller in the current artifact: FillImgFldsForPrint at 0x004CCF8F. It is not one of the callback pointers listed in the event-record assignments above. This supports keeping the BeforeSave callback path separate from the print-only BeforeClose helper.
+
+### Evidence boundary
+
+The event-sink wiring explains how the BeforeSave callback is reached from Word automation. It does not prove that the callback itself posts the final document to Almas. The exact response-word HTTP handoff and registration trigger remain separate unresolved protocol steps.
