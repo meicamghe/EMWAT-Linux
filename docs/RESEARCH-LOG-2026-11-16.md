@@ -535,3 +535,7 @@ The latest descriptor-method artifact (`14265603782`) shows that some TD32 gener
 - `0x004D552C` is symbol-labelled `ContainsKey`, but its body calls internal mutation helpers `0x004D4DA8` / `0x004D4D58` depending on the bucket result. Its exact semantic identity requires tracing those helpers.
 
 This appears to be a generic-method symbol/implementation mapping mismatch in this binary's TD32 metadata. Consequently, earlier statements that direct scans found no callers of the *symbol-named* Add/SetItem methods are not sufficient to conclude that no insertion occurs. The next workflow batch now traces `DoAdd` (`0x004D4D08`), `DoSetValue` (`0x004D4D58`), and `DoRemove` (`0x004D4DA8`) to establish the actual mutation behavior and call graph from machine code.
+
+## Import thunk caller tracing added
+
+The raw IAT pointer-reference results locate import-jump thunks rather than their high-level callsites. For each imported API, the thunk entry is four bytes before the IAT operand match (e.g. `GetClass` IAT `0x00487B9C` is referenced by a thunk at `0x00402352`; `LoadPackage` IAT `0x00487680` by `0x00402172`; `ClassCreate` IAT `0x00487410` by `0x00401156`). The service workflow now traces these thunk entries and scans for rel32 CALLs to them, which should reveal the actual class/package API callsites instead of merely reporting the IAT reference.
