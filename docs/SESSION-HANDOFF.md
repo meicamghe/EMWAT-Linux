@@ -1,6 +1,6 @@
 # EMWAT-Linux — Project Handoff
 
-Last reviewed: 2026-11-15
+Last reviewed: 2026-11-16
 
 This is the concise continuity entry point for future sessions. Detailed reverse-engineering evidence remains in the linked analysis documents.
 
@@ -10,9 +10,10 @@ This is the concise continuity entry point for future sessions. Detailed reverse
 - Real UNO integration workflow run 43810592239 passed 8/8 tests, including a generated DOCX opened and closed through LibreOffice, a bookmark inspected through UNO, and export as a legacy Word CFB file.
 - Python bridge workflow run 43810584813 passed 86 tests. The single skip is the optional UNO integration test, which runs separately.
 - application.py now has create_libreoffice_bridge_server to compose EditWordDocument → service → office adapter. Cancellation response remains an injected policy because the Windows cancellation envelope is not yet known.
-- word_fields.py decodes each field according to its own encryption attribute. writer_inspector.py and LibreOfficeAdapter.inspect_document inventory Writer bookmarks, named ranges, sections, tables, frames, graphic objects, indexes, and text-field metadata without reading letter content. URL-encoded text and Base64 image values are decoded independently; plain text remains unchanged. External signData bindings remain opaque until separator/concater semantics are confirmed.
+- word_fields.py decodes each field according to its own encryption attribute and now exposes a parsed single/twin identifier alongside the original raw ID. The observed dagger delimiter is U+2020; this is identifier parsing only, not a template-field mapping. writer_inspector.py and LibreOfficeAdapter.inspect_document inventory Writer bookmarks, named ranges, sections, tables, frames, graphic objects, indexes, and text-field metadata without reading letter content. URL-encoded text and Base64 image values are decoded independently; plain text remains unchanged. External signData bindings remain opaque until separator/concater semantics are confirmed.
+- The latest custom-property pipeline (run 43812565648, artifact 14200962076) confirms dictionary helper use in the FillImageField/FillPrintDocFields paths; ShowRecAndCcOptionForm is called from GetDocFieldName, and FindWindowExtd is reached from FillImageField. Their full business semantics and the 180-field mapping remain unresolved.
 - Not yet complete: mapping the 180 EMWAT fields into the real Writer template; signer/image insertion; applying permissions/settings; close-cancel behavior; and end-to-end registration with Almas Gam.
-- Next engineering focus: inspect Writer document structures (bookmarks, named ranges, text fields, sections and images) and correlate them with the recovered EMWAT field IDs, then validate against an anonymized real DOC/CFB fixture. Do not claim template compatibility until this passes.
+- Next engineering focus: correlate parsed single/twin identifiers and custom-property names with Writer structures; separately trace the recipient/CC option helper and the special Hidden_Customizable field path. Validate all mappings against an anonymized real DOC/CFB fixture. Do not claim template compatibility until this passes.
 
 ## Product goal — fixed
 
