@@ -1,0 +1,67 @@
+name: Analyze EMWAT Word print-handler controller wiring
+on:
+  push:
+    paths:
+      - '.github/workflows/analyze-word-print-handler-controller.yml'
+      - 'analysis-input/EmwatMethods.bpl1'
+      - 'tools/trace_td32_procedure.py'
+      - 'tools/trace_td32_callers.py'
+      - 'tools/trace_pe_target.py'
+      - 'tools/scan_pe_pointer_refs.py'
+      - 'tools/list_td32_symbols.py'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  print-handler-controller:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install pefile capstone
+      - name: Trace print-handler lifecycle and controller calls in parallel
+        shell: bash
+        run: |
+          mkdir -p word-print-handler-controller
+          targets=(004A5014 004A5C10 004A5D78 004A5EA8 004A8E58 004A8FCC 004A90D4 004A9464 004A9884 004A9A08 004D2EC8 004D2F2C 004D2F44 004BB3B0)
+          pids=()
+          for target in "${targets[@]}"; do
+            (
+              set -e
+              python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x$target word-print-handler-controller/procedure-$target.md
+              python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x$target word-print-handler-controller/callers-$target.md
+              python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 0x$target word-print-handler-controller/pointer-refs-$target.md
+            ) &
+            pids+=("$!")
+          done
+          status=0
+          for pid in "${pids[@]}"; do wait "$pid" || status=1; done
+          exit "$status"
+      - name: Extend disassembly around constructor, event wiring, and receiver handlers
+        shell: bash
+        run: |
+          pids=()
+          for spec in "004A5014 800" "004A5C10 800" "004A5D78 700" "004A5EA8 700" "004A8E58 700" "004A8FCC 700" "004A90D4 1200" "004A9464 1200" "004A9884 700" "004A9A08 900" "004D2EC8 700" "004D2F2C 400" "004D2F44 400" "004BB3B0 1400"; do
+            (
+              set -e
+              set -- $spec
+              python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x$1 word-print-handler-controller/extended-$1.md $2 ret
+            ) &
+            pids+=("$!")
+          done
+          status=0
+          for pid in "${pids[@]}"; do wait "$pid" || status=1; done
+          exit "$status"
+      - name: Index print-handler and controller symbols
+        run: |
+          python tools/list_td32_symbols.py analysis-input/EmwatMethods.bpl1 \
+            TEmwatDocPrintHandler TEDPController IEDPController TCtrlMsgs TWordViwer \
+            > word-print-handler-controller/print-handler-symbols.md
+      - uses: actions/upload-artifact@v4
+        with:
+          name: emwat-word-print-handler-controller
+          path: word-print-handler-controller/
