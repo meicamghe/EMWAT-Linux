@@ -315,3 +315,13 @@ The Python adapter/state-machine documentation previously described a native “
 - `python/src/emwat_linux/sessions.py`: `discard()` now documents an explicit discard outcome and warns that BeforeSave cancellation alone is not proof of discard.
 
 These are contract/documentation corrections; runtime state transitions are unchanged. Commits: `4511d9722bf46dca8c4d3e6c2379346051c117b9`, `1f29002809a6e7170ea3f251fe45fa6a8424df6b`.
+
+
+## Next parallel trace batch queued — image insertion and print-field labels
+
+Expanded `.github/workflows/analyze-word-automation-surface.yml` in two passes:
+- Added TD32 procedure/caller/PE traces for `AddImagesToDoc` helper `0x004C19C0` and field resolver `0x004BC170`.
+- Added string decoding for the `FillImageField` branch constants `0x004BC6D4` through `0x004BC910`.
+- Added print-field comparison/branch string decoding for `0x004CCB0C`, `0x004CCB2C`, `0x004CCB38`, `0x004CCB44`, `0x004CCB60`, `0x004CCB6C`, `0x004CC280`, `0x004CC26C`, `0x004CC6DD`, `0x004CC6C9`, `0x004CCB84`, and `0x004CCAA7`.
+
+Workflow commits: `367e4aa58514029278624c65837059f13807394a` and `c159c69141da56ea1bba0c8d829e4839febaf135`. The run/artifact for these latest additions is not yet verified; do not report these traces as completed until the artifact is available.
