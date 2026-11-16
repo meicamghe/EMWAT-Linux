@@ -1831,3 +1831,12 @@ The BPL export/API analysis resolves the earlier naming ambiguity. The public TE
   - `TIdHTTPServer`: `0x00461CFC` (instance size `0x1BC`)
 - The earlier statement that no request/response VMT candidates existed is superseded; it was a limitation of the first scanner, not evidence that those classes were records.
 - A follow-up job now inventories the virtual method slots of all four classes to map request properties and response-writing methods. Its result is pending.
+
+
+### Native Word BeforeSave event registration and exact choice mapping — 2026-11-16
+
+- The event-record setup at `0x004B8C60–0x004B8D10` writes handler `0x004CD154` (`TWordViwer.WordAppDocumentBeforeSave`) and the viewer instance pointer into the Word event sink record (`+0x80/+0x84`). This is positive registration evidence, not just a method-name guess.
+- The native callback checks the document's `Saved` state. When the configured prompt path is active, the dialog result maps as follows: result `2` sets the COM `Cancel` flag (`0xFFFF`); result `6` closes with `SaveChanges=True`; other non-cancel results close with `SaveChanges=False`.
+- It invokes `_Document.Close` through the COM vtable at `+0x29C`, passing the SaveChanges choice, then clears the active document reference. A guard failure also sets Cancel and leaves the document open.
+- `TWordViwer.WordAppDocumentBeforeClose` (`0x004CCBBC`) is still a separate path: its only direct caller is `FillImgFldsForPrint`; it is not the main editor close-registration callback.
+- A follow-up CI job was added to decode the exact native Persian prompt and button strings from the BeforeSave handler. The new event-sink workflow run is pending.
