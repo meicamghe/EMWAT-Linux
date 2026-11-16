@@ -34,6 +34,14 @@ def cancelled_result():
     return DocumentRunResult(session=session, payload=None)
 
 
+def discarded_result():
+    session = DocumentSession("internal-session-discarded")
+    session.begin_initialization()
+    session.mark_opened()
+    session.discard()
+    return DocumentRunResult(session=session, payload=None)
+
+
 class FakeService:
     def __init__(self, result):
         self.result = result
@@ -76,6 +84,23 @@ class EditWordHandlerTests(unittest.TestCase):
         self.assertEqual(response.status, 409)
         self.assertEqual(response.body, b"capture-specific-cancel")
         self.assertEqual(observed, [(DocumentState.CANCELLED, "invoke=per-request-nonce")])
+
+    def test_discard_uses_non_success_factory_without_becoming_cancelled(self):
+        service = FakeService(discarded_result())
+        observed = []
+
+        def response_factory(result, bridge_request):
+            observed.append((result.session.state, bridge_request.query))
+            return BridgeResponse(b"capture-specific-non-success", status=409)
+
+        handler = create_editword_handler(service, cancel_response_factory=response_factory)
+        call = parse_method_call(
+            b'<emwat version="1.0"><method class="EditWordDocument"/></emwat>'
+        )
+        response = handler(call, request())
+        self.assertEqual(response.status, 409)
+        self.assertEqual(response.body, b"capture-specific-non-success")
+        self.assertEqual(observed, [(DocumentState.DISCARDED, "invoke=per-request-nonce")])
 
     def test_invalid_cancel_factory_response_is_rejected(self):
         service = FakeService(cancelled_result())

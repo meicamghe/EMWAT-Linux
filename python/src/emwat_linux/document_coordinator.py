@@ -98,6 +98,7 @@ class DocumentCoordinator:
                 callbacks_active = False
             if session.state not in (
                 DocumentState.RETURNED,
+                DocumentState.DISCARDED,
                 DocumentState.FAILED,
                 DocumentState.CANCELLED,
             ):

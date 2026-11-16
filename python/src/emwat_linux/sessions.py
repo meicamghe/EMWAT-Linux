@@ -91,7 +91,7 @@ class DocumentSession:
 
     def fail(self, reason: str) -> None:
         with self._lock:
-            if self.state in (DocumentState.RETURNED, DocumentState.FAILED, DocumentState.CANCELLED):
+            if self.state in (DocumentState.RETURNED, DocumentState.DISCARDED, DocumentState.FAILED, DocumentState.CANCELLED):
                 raise InvalidTransition(f"cannot fail a terminal session in state {self.state.value}")
             self.failure_reason = reason.strip() or "unspecified_failure"
             self.state = DocumentState.FAILED

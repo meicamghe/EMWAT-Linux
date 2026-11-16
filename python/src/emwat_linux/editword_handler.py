@@ -1,8 +1,8 @@
 """HTTP-dispatch adapter for the EditWordDocument domain service.
 
-Cancellation response semantics are deliberately injected because the
-captured successful response is known but the Windows cancellation envelope
-has not yet been recovered.
+Non-success response semantics are deliberately injected because the
+captured successful response is known but the Windows discard/cancel envelopes
+have not yet been recovered.
 """
 from __future__ import annotations
 
@@ -26,7 +26,12 @@ def create_editword_handler(
     *,
     cancel_response_factory: CancelResponseFactory,
 ) -> Callable[[MethodCall, BridgeRequest], BridgeResponse]:
-    """Create a dispatcher handler with explicit cancellation policy."""
+    """Create a dispatcher handler with explicit discard/cancel response policy.
+
+    The injected factory is called for both DISCARDED and CANCELLED sessions;
+    their distinct DocumentState values let the caller choose a verified wire
+    response without conflating "No" with "Cancel".
+    """
 
     def handle(call: MethodCall, request: BridgeRequest) -> BridgeResponse:
         result = service.process(call)
