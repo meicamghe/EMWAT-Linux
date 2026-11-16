@@ -539,3 +539,7 @@ This appears to be a generic-method symbol/implementation mapping mismatch in th
 ## Import thunk caller tracing added
 
 The raw IAT pointer-reference results locate import-jump thunks rather than their high-level callsites. For each imported API, the thunk entry is four bytes before the IAT operand match (e.g. `GetClass` IAT `0x00487B9C` is referenced by a thunk at `0x00402352`; `LoadPackage` IAT `0x00487680` by `0x00402172`; `ClassCreate` IAT `0x00487410` by `0x00401156`). The service workflow now traces these thunk entries and scans for rel32 CALLs to them, which should reveal the actual class/package API callsites instead of merely reporting the IAT reference.
+
+## Descriptor dictionary VMT/method pointer scan added
+
+Because direct-call scans cannot resolve VMT/interface calls, the Word workflow now scans raw pointer references to the descriptor dictionary's `DoAdd`, `DoSetValue`, `DoRemove`, `Add`, `AddOrSetValue`, `ContainsKey`/`ContainsValue`-labelled methods, and twin-map Add/AddOrSetValue methods. These matches will be reviewed as candidate method-table/data references, not assumed callsites. This complements the direct rel32 byte scan and TD32 procedure traces.
