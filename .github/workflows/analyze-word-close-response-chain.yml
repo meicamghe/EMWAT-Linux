@@ -81,6 +81,12 @@ jobs:
             python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 0x$target \
               word-close-response-chain/pointer-refs-$target.md
           done
+      - name: Resolve Word wrapper VMT and COM interface slots
+        run: |
+          python tools/resolve_delphi_vmt_slots.py analysis-input/EmwatMethods.bpl1 \
+            word-close-response-chain/word-vmt-slots.md
+          python tools/trace_delphi_interfaces.py analysis-input/EmwatMethods.bpl1 \
+            word-close-response-chain/word-interface-tables.md
       - uses: actions/upload-artifact@v4
         with:
           name: emwat-word-close-response-chain
