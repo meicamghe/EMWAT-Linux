@@ -461,3 +461,7 @@ Caller scans from the expanded field artifact resolve the `viewer + 0x64` runtim
 - `FillPrintDocFields` calls `Remove` (`0x004D3B78`) at four sites, and `FillPrintOptionForm` calls it once.
 
 This establishes that the runtime custom-property map is populated/updated from the image-field path and then checked/consumed during print processing. The single/twin descriptor maps at `+0x68/+0x6C` remain separate: `AddCustomDocPropertiesToDic` calls their `Remove` methods, while direct call scans show no callers yet for their generic `Add`/`AddOrSetValue` methods. The next workflow batch now traces their `SetItem`, `TryGetValue`, `ContainsKey`, and `Clear` methods to locate population.
+
+## Whole-PE direct-call scanner added
+
+Added `tools/scan_pe_call_refs.py`, which disassembles all executable PE sections and finds direct immediate CALL references without requiring TD32 procedure boundaries. It complements `trace_td32_callers.py` (symbol-bounded only) and `scan_pe_pointer_refs.py` (raw pointer bytes). The Word workflow now scans the descriptor dictionary's GetItem/SetItem/Add/AddOrSetValue/DoSetValue and enumerable-constructor addresses; the service workflow scans the dictionary constructor and parser helpers. Both workflows run `py_compile` before using the tool. This is intended to catch callsites in unsymbolized or incorrectly bounded regions.
