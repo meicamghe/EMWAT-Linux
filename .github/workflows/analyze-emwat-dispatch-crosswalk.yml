@@ -161,6 +161,7 @@ jobs:
         shell: bash
         run: |
           mkdir -p dispatch-crosswalk/bpl
+          python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x0046C82C 0x0046C9DD dispatch-crosswalk/bpl/emwatmethod-invoke-full.md
           for address in 0x0046C82C 0x0046C9E0 0x0046DE84 0x0046E324 0x0046E3CC 0x005EE82C 0x004B7724 0x004B8A84 0x004D1148 0x004BCA88 0x004BFDB0 0x004C009C 0x004CB638; do
             name=${address#0x}
             python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 "$address" "dispatch-crosswalk/bpl/$name.md" 5000 ret
