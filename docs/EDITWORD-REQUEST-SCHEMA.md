@@ -155,6 +155,8 @@ The concrete `TEditWordDocument.PerformMethod` at `0x005EE82C` reads these dicti
 | `letterImages` | Retrieved and forwarded to `LoadDocument`; exact type and full use still open. |
 | `signData` | Retrieved and forwarded to `LoadDocument`; exact type and full use still open. |
 
-`PerformMethod` calls `CoInitialize`, invokes `LoadDocument` with these four values plus the `TEmwatInvokeParam` pointer and an output string, stores the returned string as its method result, sets `TEmwatInvokeParam.bResultSet = 1`, then calls `CoUninitialize`.
+`PerformMethod` calls `CoInitialize`, invokes `LoadDocument` with these four values plus the `TEmwatInvokeParam` pointer and an output string, copies the returned string to the inherited method result, then calls `CoUninitialize`. It sets `bUnloadPkg` after the helper returns; **it does not set `bResultSet` itself**.
 
-`LoadDocument` calls `OnTmrAutoSave` with the local document path. The timer routine stores that path in `TWordViwer+0xA0`; `OnControlerNotify` later uses it as the source file for the `.easd` member in the password-protected `.easz` archive. See `docs/WORD-LIFECYCLE-STATIC-TRACE.md` Run 151.
+The non-empty-result branch inside `LoadDocument` is the component that handles the HTTP response: it obtains `AResponseInfo` from `TEmwatInvokeParam` offset `+0x0C`, assigns the generated XML string to `ContentText` (`+0xBC`), calls `TIdHTTPResponseInfo.WriteContent` through BPL import thunk `0x0040448C`, and then sets `bResultSet` at record offset `+0x05`. The service dispatcher consequently skips its fallback response branch for this successful path.
+
+`LoadDocument` calls `OnTmrAutoSave` with the local document path. The timer routine stores that path in `TWordViwer+0xA0`; `OnControlerNotify` later uses it as the source file for the `.easd` member in the password-protected `.easz` archive. This archive path is a separate static finding and is not, by itself, proof that the close-time Almas registration/commit is complete. See `docs/EMWAT-SERVICE-EXECUTABLE-ANALYSIS.md` and `docs/WORD-LIFECYCLE-STATIC-TRACE.md`.
