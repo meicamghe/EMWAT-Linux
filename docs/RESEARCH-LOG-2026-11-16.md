@@ -509,3 +509,7 @@ Artifact `14267210294` shows five E8-rel32 candidates targeting `0x004610FC`; tw
 ## TMainForm RTTI/VMT inspection added
 
 The service interface inventory identifies `TMainForm` at VMT `0x0047B284`, instance size `0x434`, with class typeinfo at `0x0047BF0C`. The HTTP handler body begins at `0x0047BF30`, immediately after the class typeinfo area. The service workflow now inspects this VMT, scans pointers to the VMT and class typeinfo, and traces the full handler/callsite windows. This should help map the handler to the form's published event/method table and distinguish request dispatch from response finalization.
+
+## Service PE import inventory added
+
+Added `tools/list_pe_imports.py` and wired it into the service dispatch workflow. It records every imported symbol with its exact IAT VA. This will allow checking whether the service uses Delphi class/package resolution APIs or whether dispatch is mediated through a package callback/VMT rather than a direct static import. The import inventory itself is descriptive; no API semantics are inferred until the actual import list is available.
