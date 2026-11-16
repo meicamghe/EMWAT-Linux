@@ -4,12 +4,9 @@ on:
     paths:
       - '.github/workflows/analyze-emwat-service-dispatch.yml'
       - 'tools/trace_pe_target.py'
-      - 'tools/trace_td32_procedure.py'
-      - 'tools/trace_td32_callers.py'
-      - 'tools/trace_td32_immediate_refs.py'
-      - 'tools/find_td32_class_procedures.py'
-      - 'tools/resolve_delphi_vmt_slots.py'
-      - 'tools/trace_delphi_interfaces.py'
+      - 'tools/scan_pe_pointer_refs.py'
+      - 'tools/inspect_pe_va.py'
+      - 'tools/decode_pe_strings.py'
   workflow_dispatch:
 
 permissions:
@@ -41,16 +38,11 @@ jobs:
           for address in 0x0047BF30 0x0047E0EC 0x0047E2D4 0x0047D2C8 0x0047CA88 0x0047CCD8 0x00470D00 0x00470B38 0x0046ADBC 0x0046A7A4 0x004610FC; do
             name=${address#0x}
             python tools/trace_pe_target.py service-input/EmwatService.exe "$address" "service-dispatch/$name.md" 6000 ret
-            python tools/trace_td32_procedure.py service-input/EmwatService.exe "$address" "service-dispatch/$name-td32.md" || true
-            python tools/trace_td32_callers.py service-input/EmwatService.exe "$address" "service-dispatch/$name-callers.md" || true
+            python tools/scan_pe_pointer_refs.py service-input/EmwatService.exe "$address" "service-dispatch/$name-pointer-refs.md"
           done
-          for address in 0x0047E0EC 0x00470D00 0x00470B38 0x0046A7A4 0x004610FC; do
-            name=${address#0x}
-            python tools/trace_td32_immediate_refs.py service-input/EmwatService.exe "$address" "service-dispatch/$name-immediate-refs.md"
-          done
-          python tools/find_td32_class_procedures.py service-input/EmwatService.exe TMainForm TIdHTTPServer TIdHTTPResponseInfo > service-dispatch/service-classes.md
-          python tools/resolve_delphi_vmt_slots.py service-input/EmwatService.exe service-dispatch/service-vmt.md
-          python tools/trace_delphi_interfaces.py service-input/EmwatService.exe service-dispatch/service-interfaces.md
+          python tools/inspect_pe_va.py service-input/EmwatService.exe 0x0047BF30 > service-dispatch/commandget-vmt-context.md
+          python tools/inspect_pe_va.py service-input/EmwatService.exe 0x0047E0EC > service-dispatch/invoke-route-context.md
+          python tools/decode_pe_strings.py service-input/EmwatService.exe 0x0047C360 > service-dispatch/invoke-parameter-string.md
       - uses: actions/upload-artifact@v4
         with:
           name: emwat-service-dispatch-deep-trace
