@@ -28,7 +28,7 @@ The expanded TD32 symbol index resolves two distinct helpers:
 - 0x004BFDB0: TWordViwer.SetFieldValue(TXmlWordConfigField, UnicodeString).
 - 0x004BC170: TWordViwer.FindFieldInActivefields(UnicodeString).
 
-SetFieldValue compares the field's encryption metadata against two decoded constants: 0x004BFEE8 is urlencoded and 0x004BFF0C is base64. The urlencoded branch transforms the input through a URL-decoding helper before returning the result; the base64 branch uses a separate binary-decoding path; unknown/other labels follow the untransformed path in this routine. Its callers include GetDocFieldIndex, GetCaptionItemFont, and ShowRecAndCcOptionForm. This confirms the two encoding labels implemented by python/src/emwat_linux/word_fields.py. The exact plus-sign behavior of the native URL decoder remains to be checked before claiming byte-for-byte parity.
+SetFieldValue compares the field's encryption metadata against two decoded constants: 0x004BFEE8 is urlencoded and 0x004BFF0C is base64. The urlencoded branch transforms the input through a URL-decoding helper before returning the result; the base64 branch uses a separate binary-decoding path; unknown/other labels follow the untransformed path in this routine. Its callers include GetDocFieldIndex, GetCaptionItemFont, and ShowRecAndCcOptionForm. This confirms the two encoding labels implemented by python/src/emwat_linux/word_fields.py. The native URL decoder's plus behavior is now confirmed by the constant at 0x00455454: a literal + becomes a space, while %2B decodes to a literal plus. Python now uses unquote_plus and tests both cases.
 
 FindFieldInActivefields is called repeatedly by GetXmlFieldInfo and from the TWordViwer constructor path at 0x004D08B4. Its implementation first looks for the literal DOCPROPERTY token (0x004BC23C), then parses the field-code text around a two-space separator (0x004BC260) and a single-space separator (0x004BC274) before checking the active-field list. This is evidence that the Word side distinguishes DOCPROPERTY fields from other field codes; the Linux Writer adapter should keep DocInfo.Custom/DOCPROPERTY-like fields separate from ordinary text and bookmarks.
 
@@ -60,7 +60,7 @@ Do not treat this helper as an image codec or as proof of a particular UI-window
 
 ## 8. Next parallel targets
 
-- Trace native URL decoding helper 0x00455314 for plus-sign and malformed-escape behavior, and trace the base64 helper path for binary/empty-value behavior.
+- Finish tracing the base64 byte-to-Unicode conversion helper at 0x004738CC and decide how the native text-field branch differs from the separate image-field byte path.
 - Resolve the indirect/VMT invocation path of AddXmlWordConfigFieldsToDic and determine whether it is invoked before or after AddCustomDocPropertiesToDic.
 - Trace the writer-side TDocumentCProperty construction and the custom-property dictionary insertion path, not just generic collection helpers.
 - Resolve the Hidden_Customizable special-field branch in GetDocFieldName and connect it to request wordConfig metadata.
