@@ -76,6 +76,11 @@ class DecodedWordField:
     external_parameter: str | None
     attributes: Mapping[str, str]
 
+    @property
+    def is_image(self) -> bool:
+        """Whether the native field metadata declares an image MIME type."""
+        return bool(self.mimetype and self.mimetype.casefold().startswith("image/"))
+
 
 @dataclass(frozen=True)
 class DecodedOptionalAttribute:
