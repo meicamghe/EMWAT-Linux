@@ -1080,3 +1080,11 @@ Do not implement guessed `signData` joining or claim end-to-end Almas registrati
 
 
 - Artifact `14226742624` confirms `0x0040414C` is the `rtl230.bpl!TStringList.$bctr` import thunk. Both objects passed into `euUnArchive` are TStringList instances. First list receives `TWordViwer+0xA0`; second receives the direction-normalized `TWordViwer+0x80` path with `.easd` appended. The pairwise list loop passes entries to the `T7zOutArchive` interface, then sends the `.easz` path through slot `+0x18`.
+
+
+### Archive path resolved (Run 148)
+- Artifact `14227611377` proves the `euUnArchive` path is building a password-protected 7z output archive, despite its helper name.
+- Interface `+0x10` → `T7zOutArchive.AddFiles` (`0x453F34`): first TStringList value is the source file path (`TWordViwer+0xA0`); second is the archive entry name (base path + `.easd`).
+- Interface `+0x18` → `T7zOutArchive.SaveToStream` (`0x454668`): saves to base path + `.easz`.
+- Interface `+0x28` → `0x4547E8`: despite TD32 label `SetProgressCallback`, body stores the input string in field `+0x38`, identified by the T7zOutArchive field table as `FPassword`. Therefore `mW@Tlogs43end_+` is the archive password assigned in this path. The separate `SetPassword` at `0x4547DC` is a no-op.
+- Remaining: resolve global `0x62F800` to exact stream class; trace the callback that consumes FPassword; then capture a synthetic runtime archive if possible. Do not claim the archive has been validated at runtime.
