@@ -192,3 +192,7 @@ Evidence: response/controller workflow run `43872534265`, artifact `14228851062`
 ### Long-lived request release chain
 
 `LoadDocument` calls `OnTmrAutoSave` synchronously at `0x004B7A58`. The latter waits while viewer field `+0x58` is nonzero, pumping messages and sleeping 5 ms per iteration. Every 200 iterations it runs a one-second maintenance/check cycle and continues. The callback at `0x004CD154` calls Word `Document.Close` and then clears viewer `+0x58` at `0x004CD31C`; this releases the wait. `LoadDocument` then writes the successful `response-word` HTTP body and sets `bResultSet`. This explains the observed ~54.558-second request-to-response delay. The field's initial nonzero setter and the callback's formal COM event DISPID remain under investigation.
+
+## Service class-name resolution — 2026-11-16
+
+The XML `<method class="EditWordDocument">` value is not passed verbatim to Delphi `GetClass`. `ParseMethod` prefixes the literal `T` and resolves `TEditWordDocument` through `System.Classes.GetClass`; this matches the BPL class VMT at `0x005ED764`. The Python dispatcher intentionally uses an explicit allowlist rather than reproducing unrestricted runtime class loading, but its registered class key should correspond to the XML value (`EditWordDocument`), with the native `T` prefix treated as an implementation detail.
