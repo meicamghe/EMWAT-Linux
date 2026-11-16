@@ -555,3 +555,7 @@ The absolute IAT scanner (`14266043661`) finds only the expected `JMP [IAT]` stu
 ### Confirmed LoadPackage callsite
 
 The service trace at `0x0047E0EC` executes `call 0x00402174` at `0x0047E15F`. The target is the `jmp dword ptr [0x00487680]` thunk for imported `LoadPackage`. The helper constructs the package path/name around literal `EmwatMethods.bpl`, invokes this loader, stores the returned module pointer, and logs either `Unable to load "EmwatMethods.bpl".` or `"EmwatMethods.bpl" loaded.` This closes the actual package-loading edge. The class-resolution side (`GetClass`/`ClassCreate`) remains to be traced at their corrected jump-instruction targets.
+
+## TMainForm published-method RTTI table inspection
+
+Extended `tools/inspect_delphi_vmt_address.py` to expose Delphi VMT method-table and field-table pointers (`VMT-0x40` and `VMT-0x44`) and emit bounded raw-byte/ASCII views of those tables. The service workflow now compiles the inspector and runs it on `TMainForm` VMT `0x0047B284`. This is intended to recover published event/method names and code addresses despite the service PE lacking TD32 symbols; table layout will be decoded only after validating the raw structure.
