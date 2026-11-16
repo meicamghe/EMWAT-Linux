@@ -36,7 +36,7 @@ class FakeField:
         return "com.sun.star.text.TextField.DateTime"
 
     def getPresentation(self, _show_command):
-        return "2026-11-16"
+        raise AssertionError("field values must not be read by the inspector")
 
     def getPropertySetInfo(self):
         return type(
