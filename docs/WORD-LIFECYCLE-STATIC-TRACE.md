@@ -210,7 +210,7 @@ Source: Word response/controller workflow run `43872534265`, artifact `142288510
 
 ### Event identity caution — 2026-11-16
 
-The callback pointer at Word event-record offset `+0x80` is `0x004CD154`. TD32 names the procedure `WordAppDocumentBeforeSave`, but its first log string is `Document.OnBeforeClose Called.` and its behavior prompts for change registration before calling the three-argument `Document.Close` wrapper. The event-record slot's actual COM DISPID (DocumentBeforeSave versus DocumentBeforeClose) is not yet mapped. Do not use the TD32 method name alone as proof of the COM event identity. A generated event-dispatch thunk trace is now running against the method table at `0x00627B74`.
+The callback pointer at Word event-record offset `+0x80` is `0x004CD154`. TD32 names the procedure `WordAppDocumentBeforeSave`, but its first log string is `Document.OnBeforeClose Called.` and its behavior prompts for change registration before calling the three-argument `Document.Close` wrapper. The event-record slot's actual COM DISPID (DocumentBeforeSave versus DocumentBeforeClose) is not yet mapped. Do not use the TD32 method name alone as proof of the COM event identity. The metadata block at `0x00627B74` has since been decoded as an error-message/resource map and auto-save interval labels, not an event DISPID table; it does not resolve the formal COM event identity.
 
 
 ## Run 153 — synchronous Word-close wait releases HTTP response — 2026-11-16
