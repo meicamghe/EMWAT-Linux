@@ -2155,3 +2155,10 @@ Workflow تحلیل Word گسترش یافت تا helper مرکزی درج تص�
 - `FillImageField` دیکشنری runtime در `viewer+0x64` را با `TDictionary<UnicodeString,TDocumentCProperty>.SetItem` به‌روزرسانی می‌کند.
 - `FillImageField` و `FillPrintDocFields` از `ContainsValue` استفاده می‌کنند؛ `FillPrintDocFields` و `FillPrintOptionForm` در مسیرهای مشخص `Remove` را اجرا می‌کنند.
 - این دیکشنری runtime از descriptorهای single/twin در `viewer+0x68/+0x6C` جداست. trace روش‌های `SetItem/TryGetValue/Clear` برای دو map descriptor در batch بعدی اضافه شده است.
+
+## اثبات هویت دیکشنری Parser سرویس — 2026-11-16
+
+- `TMethodInfo` با VMT `0x0047097C` و constructor در `0x00471214` ساخته می‌شود.
+- Constructor از class reference `0x004699E4`، که به VMT `TDictionary<AnsiString,AnsiString>` در `0x00469A3C` اشاره می‌کند، برای ساخت دیکشنری با helper `0x0046AA70` استفاده می‌کند.
+- pointer دیکشنری در `TMethodInfo+0x08` ذخیره می‌شود و `ParseMethod` همان pointer را به XML parser می‌دهد.
+- بنابراین نوع پارامترهای سرویس با ورودی `TEmwatMethod.Invoke` در BPL یکسان است. فقط dispatch نهایی و غیرمستقیم بین سرویس و BPL هنوز نیاز به اثبات دارد.
