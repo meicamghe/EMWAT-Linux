@@ -1178,3 +1178,15 @@ The target method bodies resolve the earlier signature mismatch:
 This establishes the direction much more strongly: despite its helper name, `euUnArchive` is assembling a password-protected 7z output archive from file entries and saving it to the `.easz` path. The `.easd` value is used as the archive entry name for the source file path held at `TWordViwer+0xA0`.
 
 Remaining verification: resolve the class pointer at `0x0062F800` used by `SaveToStream` to name the exact stream class, and trace the password callback path that consumes `FPassword`. The static evidence now supports the password and archive-writing interpretation; runtime archive bytes have not yet been captured.
+
+
+## Run 149 — .easz is created as a TFileStream output file
+
+Source: controller-unarchive workflow run `43870202851`, artifact `14227002967`.
+
+The remaining stream-class question is resolved:
+- `0x004041BC` is an IAT thunk to `rtl230.bpl!System.Classes.TFileStream.$bctr(UnicodeString, Word)`.
+- `T7zOutArchive.SaveToStream` at `0x00454668` passes its supplied path string to this constructor, with mode `0xFF00` (Delphi `fmCreate`), creating/truncating the output file.
+- It then passes the resulting stream to `T7zOutArchive.SetCompleted` at `0x004546C4`, which performs the archive completion path.
+
+Therefore the `.easz` path is not merely an abstract stream name: the routine creates a real file at that path and hands the file stream to the 7z output archive. This closes the static file-output side of the archive pipeline; runtime bytes and actual extraction/consumer behavior remain untested.
