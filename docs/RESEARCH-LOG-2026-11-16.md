@@ -398,3 +398,10 @@ Run `43889057276` completed all three jobs successfully (lifecycle, field mappin
 - Image/signature path strings include `signData`, `signText`, `igLzw32s.Dll`, `MakeImageList`, and `AddImageToDoc succeed`.
 
 The field-mapping artifact `14236151592` includes the expanded `GetDocFieldIndex`, `FillTwinFields`, `FillTextField`, and regex-thunk traces. All jobs in this run succeeded.
+
+
+## Twin-field lookup mirrored in Python
+
+The `FillTwinFields` routine (`0x004C02EC`) scans the Word Fields collection from a one-based starting index through the collection count, extracts each `Field.Code` using `FindFieldInActivefields`, and compares the normalized identifier to the requested twin name. It returns the first matching one-based index, or `0` when no match exists. `GetDocFieldIndex` calls this routine on the twin-field path and aborts when the required twin is absent.
+
+Added `find_native_twin_field_index()` to `word_fields.py` with one-based indexing and native zero-on-miss behavior, plus tests for start offsets, missing partners, and invalid zero-based input. Python CI run `43890223183`: 106 tests passed, 2 optional skips.
