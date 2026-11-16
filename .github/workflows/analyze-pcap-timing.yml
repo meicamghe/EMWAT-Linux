@@ -17,15 +17,18 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - run: pip install scapy
       - name: Reconstruct EditWordDocument request and response timestamps
         run: |
           mkdir -p pcap-timing-analysis
-          python tools/analyze_pcap_http_timing.py emwat.pcapng --client-port 61189 > pcap-timing-analysis/stream18-request-response-timing.md
+          if [ ! -f emwat.pcapng ]; then
+            printf '%s\n' 'SKIPPED: emwat.pcapng is a private capture and is not present in this checkout.' > pcap-timing-analysis/stream18-request-response-timing.md
+            printf '%s\n' 'SKIPPED: document comparison requires the private emwat.pcapng capture.' > pcap-timing-analysis/stream18-document-comparison.md
+          else
+            pip install scapy
+            python tools/analyze_pcap_http_timing.py emwat.pcapng --client-port 61189 > pcap-timing-analysis/stream18-request-response-timing.md
+            python tools/compare_editword_document_payloads.py emwat.pcapng --client-port 61189 > pcap-timing-analysis/stream18-document-comparison.md
+          fi
           cat pcap-timing-analysis/stream18-request-response-timing.md
-      - name: Compare captured input wordBody and response document
-        run: |
-          python tools/compare_editword_document_payloads.py emwat.pcapng --client-port 61189 > pcap-timing-analysis/stream18-document-comparison.md
           cat pcap-timing-analysis/stream18-document-comparison.md
       - uses: actions/upload-artifact@v4
         with:
