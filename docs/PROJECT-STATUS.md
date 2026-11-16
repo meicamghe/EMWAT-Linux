@@ -1966,3 +1966,6 @@ The exact VMT/COM-interface inspection supersedes the earlier tentative password
 - The service-side XML parser literals are now independently decoded: `emwat`, `version`, `method`, `class`, `param`, and `name`. The root validator parses `version` numerically and compares it to exactly `1`.
 - `0x0047E0EC` is the `EmwatMethods.bpl` package-load helper, not the concrete method dispatcher; `0x0047E2D4` unloads the package. The invoke path calls load → ParseMethod → unload. The actual concrete class invocation/result path remains open.
 - The exact XML envelope is recorded in `docs/EDITWORD-REQUEST-SCHEMA.md`; the browser bridge/package lifecycle is in `docs/HTTP-LOCAL-API-ANALYSIS.md`.
+
+
+- Additional confirmation from artifact `14226742624`: helper `0x0040414C` is an import thunk to `rtl230.bpl!TStringList.$bctr`. The two indexed inputs to `euUnArchive` are therefore TStringList instances. The first receives `TWordViwer+0xA0`; the second receives the direction-normalized `TWordViwer+0x80` path with `.easd` appended. They are iterated in lockstep and passed to the `T7zOutArchive` interface.
