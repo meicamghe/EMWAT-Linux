@@ -328,3 +328,15 @@ These checks validate the adapter and composition boundary. They do not establis
 - Native parser-side evidence identifies `concator` as the incoming XML key. The captured schema transcription's `concater` spelling remains a documented discrepancy until the raw request is checked.
 - Controller-init trace run `43820125640` succeeded (artifact `14204196789`). Its controller `Notify` method calls `TEmwatDocPrintHandler.GetDocFieldName`, not the main viewer's `OnControlerNotify`; the two paths remain separate pending further pointer analysis.
 - The current LibreOffice UNO success covers the document roundtrip only. Interactive Yes/No/Cancel equivalence and exact Almas response handling remain unverified.
+
+
+## Legacy CFB `.doc` input round-trip — 2026-11-16
+
+| Workflow | Run ID | Result |
+|---|---:|---|
+| Python bridge transport | 43821455825 | success — 101 tests, 100 passed, 1 optional UNO test skipped |
+| LibreOffice UNO integration | 43821455852 | success — 10/10 passed |
+
+- The live UNO integration now performs DOCX → legacy CFB `.doc` export, then reopens that `.doc` as the incoming document and exports it again.
+- The second pass verifies imported document text, the `LetterSubject` bookmark, and the updated custom document property.
+- This closes an important engine-boundary gap because the captured EMWAT request uses legacy DOC/CFB. It still uses a synthetic fixture; original Almas template fidelity and interactive close-choice semantics remain unverified.
