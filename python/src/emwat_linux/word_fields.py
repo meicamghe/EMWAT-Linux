@@ -12,7 +12,7 @@ from dataclasses import dataclass
 from typing import Mapping
 from urllib.parse import unquote
 
-from emwat_linux.word_config import OptionalAttribute, WordDocumentConfig, WordField
+from emwat_linux.word_config import WordDocumentConfig
 
 
 class WordFieldDecodeError(ValueError):
