@@ -25,7 +25,7 @@ The timer registration is now directly confirmed by the `OnTmrAutoSave` code and
 - `0x00404B94` resolves to `Vcl.ExtCtrls.TTimer.SetOnTimer`; the code assigns callback `0x004BB3B0` (`TWordViwer.OnControlerNotify`).
 - Viewer field `+0x88` is used as the interval. The code clamps it to at least `0x2710` (10,000 ms), calls `TTimer.SetInterval` through `0x00404B8C`, and enables the timer through `TTimer.SetEnabled` at `0x00404B84`.
 
-Therefore, the method named `OnControlerNotify` is registered as the timer's OnTimer callback, with a minimum 10-second interval. It is not the `WordAppDocumentBeforeClose` event.
+Therefore, the method named `OnControlerNotify` is registered as the timer's OnTimer callback, with a minimum 10-second interval. It is not the Word close/save callback.
 
 ## 3. What that timer callback does
 
@@ -38,12 +38,12 @@ The callback at `0x004BB3B0`:
 - derives sibling paths from viewer offset `+0x80`, appending `.easd` and `.easz`;
 - passes those paths and archive objects to `euUnArchive` at `0x00456DFC`.
 
-This is a periodic local archive/recovery path. It is not, on current evidence, the HTTP POST or the `response-word` envelope. Do not equate this archive with the final Almas document commit.
+This is a periodic local archive/recovery path. It is not itself the HTTP POST or the `response-word` envelope. Do not equate this archive with the final Almas document commit.
 
 ## 4. Keep the Word events distinct
 
 - The callback pointer written at Word application event-record offset `+0x80` is `0x004CD154`, whose TD32 symbol is `WordAppDocumentBeforeSave`.
-- **Event identity is under recheck:** the first diagnostic string inside `0x004CD154` is `Document.OnBeforeClose Called.`, and its control flow displays the Persian register-changes prompt before calling the three-argument Word `Document.Close` wrapper. The method's TD32 name therefore cannot, by itself, prove that the event-record slot is the COM `DocumentBeforeSave` DISPID.
+- **Event identity is under recheck:** the first diagnostic string inside `0x004CD154` is `Document.OnBeforeClose Called.`, and its control flow displays the Persian register-changes prompt before calling the three-argument Word `Document.Close` wrapper. After the close call, it clears viewer field `+0x58` to zero. Its TD32 name therefore cannot, by itself, prove that the event-record slot is the COM `DocumentBeforeSave` DISPID.
 - `WordAppDocumentBeforeClose` at `0x004CCBBC` is a separate TD32 procedure; no active event registration reference was found in the analyzed range.
 - The timer-driven `OnControlerNotify` at `0x004BB3B0` is separate from both Word events.
 - The registered BeforeSave handler has a Yes/No/Cancel path and invokes Word Close wrappers. The `Set_Saved` wrapper correction is documented in `docs/WORD-FIELD-SILENT-SAVE-ANALYSIS.md`.
@@ -72,8 +72,8 @@ They extend the OnTmrAutoSave body and timer registration, inspect the remaining
 
 ## 7. Remaining questions
 
-1. Which call or wait mechanism holds the original HTTP invoke open until the user finishes editing?
-2. Which exact Word event or state transition releases that wait?
+1. Where is viewer field `+0x58` first set nonzero, and what exact state/pointer does it represent?
+2. Which COM event DISPID is bound to callback field `+0x80` (formal BeforeSave versus BeforeClose identity)?
 3. Does the periodic `.easz` archive feed a separate recovery channel, or is it consumed by another part of the desktop/browser bridge?
 4. What exact response XML is produced for non-DOC, image, and DOCX workflows?
 5. Can a complete gap-free response capture be obtained for a definitive document diff?
@@ -93,3 +93,19 @@ Evidence: controller-callback-ownership run `43873363849`, artifact `14229520023
 The native callback at `0x004CD154` is named `WordAppDocumentBeforeSave` in TD32, but its first log string is `Document.OnBeforeClose Called.`. Its prompt text is Persian: “محتويات اين سند تغيير كرده است. آيا مايل به ثبت تغييرات مي‌باشيد؟” (“The contents of this document have changed. Do you want to register the changes?”). The Yes/No branches call the three-argument `Document.Close` wrapper with SaveChanges True/False; Cancel sets the event Cancel flag. This is close/registration behavior, but the COM event DISPID corresponding to event-record offset `+0x80` has not yet been proven.
 
 A new event-dispatch workflow is tracing the generated Word event method table at `0x00627B74` and its callback dispatch thunks to determine whether the callback is actually bound to DocumentBeforeClose or DocumentBeforeSave. Until that completes, use the neutral label “registered close/save decision callback at 0x004CD154” rather than asserting the COM event identity.
+
+
+## 10. Long-lived HTTP request release — confirmed static chain
+
+The request/response delay is now explained by a synchronous state-wait loop inside `TWordViwer.OnTmrAutoSave`:
+
+1. `TWordViwer.LoadDocument` calls `OnTmrAutoSave` synchronously at `0x004B7A58`.
+2. The wait loop at `0x004B9AE8` calls `kernel32!Sleep(5)`, then `TApplication.ProcessMessages`, then tests viewer field `+0x58`.
+3. While viewer `+0x58` remains nonzero, the loop repeats. Every 200 iterations (about one second) it resets the counter and runs the maintenance/check calls at `0x00445B10` and `0x00455108`, then continues waiting. **The 200-iteration cycle is not a one-second total timeout; it repeats until the state changes.**
+4. When the close/registration callback at `0x004CD154` completes the Word `Document.Close` call, it writes zero to viewer `+0x58` at `0x004CD31C`.
+5. The wait loop observes zero, disables the 10-second timer, and returns from `OnTmrAutoSave`.
+6. `LoadDocument` then follows its success branch at `0x004B7F31`, writes the `response-word` XML through Indy `WriteContent`, and sets `bResultSet`.
+
+This provides a direct static explanation for why the HTTP invoke remains open while Word is being used and why the response arrives after the close/registration path. The observed ~54.558-second PCAP delay is consistent with that wait duration. The formal COM event identity for the callback and the initial setter of viewer `+0x58` are still being resolved.
+
+Evidence: request-lifecycle artifact `14229047092` (notably `LoadDocument-complete-range.md`, `target-004B999A.md`, and `BeforeSave-control-flow.md`); wait-mechanism artifact `14229716255` (`OnTmrAutoSave-004B9AE8.md`, exact Sleep thunk); controller ownership artifact `14229520023`.
