@@ -1958,3 +1958,11 @@ The exact VMT/COM-interface inspection supersedes the earlier tentative password
 - The hardcoded literal `mW@Tlogs43end_+` is passed to slot `+0x28`; it is **not proven to be a password**. The class has a separate `SetPassword` method at `0x004547DC`, but that is not the target of this observed interface call.
 - The `TStringList` inputs and `.easz` string do not obviously match the TD32 signatures of AddFiles/SaveToStream. Keep the helper's archive direction and slot argument semantics unresolved until the target bodies and wrapper layer are traced.
 - Detailed correction: Run 146 in `docs/WORD-COM-INTERFACE-DISPATCH.md`.
+
+
+### Invoke bridge and XML version confirmation — 2026-11-16
+
+- Service PE trace run `43869039523`, artifact `14226099734`, decodes the embedded init script: it listens for parent-frame `message`, POSTs `message.data` to `http://127.0.0.1:$V{myport}?invoke=<random nonce>`, and posts the HTTP `responseText` back to the original frame source/origin.
+- The service-side XML parser literals are now independently decoded: `emwat`, `version`, `method`, `class`, `param`, and `name`. The root validator parses `version` numerically and compares it to exactly `1`.
+- `0x0047E0EC` is the `EmwatMethods.bpl` package-load helper, not the concrete method dispatcher; `0x0047E2D4` unloads the package. The invoke path calls load → ParseMethod → unload. The actual concrete class invocation/result path remains open.
+- The exact XML envelope is recorded in `docs/EDITWORD-REQUEST-SCHEMA.md`; the browser bridge/package lifecycle is in `docs/HTTP-LOCAL-API-ANALYSIS.md`.
