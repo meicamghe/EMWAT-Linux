@@ -95,6 +95,13 @@ jobs:
         run: |
           mkdir -p request-lifecycle-analysis/viewer-state
           python tools/scan_td32_class_field_refs.py analysis-input/EmwatMethods.bpl1 TWordViwer request-lifecycle-analysis/viewer-state/TWordViwer-field-offsets.md --offsets 0x58 0x5E 0x5F 0x7C 0x80 0x88 0x90 0x98 0xA0 0xEC
+          for target in 00456DFC 004563A8 00452C10 0045283F 0045285F 00452871; do
+            python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x$target request-lifecycle-analysis/viewer-state/archive-procedure-$target.md || true
+            python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x$target request-lifecycle-analysis/viewer-state/archive-target-$target.md 1200 ret
+            python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x$target request-lifecycle-analysis/viewer-state/archive-callers-$target.md || true
+          done
+          python tools/find_td32_class_procedures.py analysis-input/EmwatMethods.bpl1 T7zOutArchive T7zInArchive > request-lifecycle-analysis/viewer-state/archive-classes.md
+          python tools/resolve_delphi_vmt_slots.py analysis-input/EmwatMethods.bpl1 request-lifecycle-analysis/viewer-state/archive-vmt-slots.md
           for target in 004D08B4 004D0D24 00445B10 00455108 004B9AE8 004B9B38 004CD154 004CD2FF 004CD31C; do
             python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x$target request-lifecycle-analysis/viewer-state/procedure-$target.md || true
             python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x$target request-lifecycle-analysis/viewer-state/target-$target.md 1600 ret
