@@ -41,7 +41,7 @@ class WordFieldDecodingTests(unittest.TestCase):
             self.assertIsNone(parsed.second)
 
     def test_matches_native_business_signature_end_pattern(self):
-        for field_name in ("signSenderEnd", "signSenderEnd0", "signSenderEnd12", "signEnd29"):
+        for field_name in ("signsenderend", "signsenderend0", "signsenderend12", "signend29"):
             with self.subTest(field_name=field_name):
                 self.assertTrue(is_native_business_signature_end(field_name))
 
