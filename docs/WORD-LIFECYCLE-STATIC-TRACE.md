@@ -138,3 +138,31 @@ The exact-address VMT artifact `14225224443` must be read together with the exis
 Thus the class inheritance and BPL virtual dispatch are confirmed. The TD32 procedure-name discrepancy remains: `0x005EE82C` is decorated as `TScanDocument.PerformMethod`, although it is the `TEditWordDocument` VMT target; `0x005EEB48` is decorated as `TFaxDocument.PerformMethod`, although it is the `TScanDocument` VMT target. Keep the VMT owner and TD32 symbol separate.
 
 The service-side `GetClass("T"+className)` resolution and the VMT `+0x0C` call are documented in `docs/EMWAT-SERVICE-EXECUTABLE-ANALYSIS.md`. The remaining open work is not the existence of the dispatch chain; it is the complete `PerformMethod` behavior, the returned XML/HTTP response, and the connection between the periodic controller archive and the close-time commit.
+
+
+## Run 150 — Word event wiring and save/close checkpoints
+
+Source: Word lifecycle artifact `14226866454` (dispatch crosswalk run 6). These are static traces; the complete-range rerun is in progress.
+
+### Timer-side event registration
+
+`TWordViwer.OnTmrAutoSave` at `0x004B8A84` (procedure range `0x004B8A84–0x004BB3AF`) registers Word application event callbacks. In the decoded setup path it writes:
+- WordApp event slot `+0x80` → `TWordViwer.WordAppDocumentBeforeSave` at `0x004CD154`;
+- slot `+0x90` → `WordAppNewDocument` at `0x004CD54C`;
+- slot `+0x98` → `WordAppWindowActivate` at `0x004CD9C0`;
+- slot `+0x88` → `WordAppDocumentBeforePrintBGPrint` at `0x004CE030` (or alternate handler `0x004D00AC`, based on a viewer flag).
+The corresponding owner pointers are stored in adjacent event fields. This confirms the event wiring, not yet the full timer's repeated-save behavior; the first TD32 trace decoded only 1,159 of 10,540 procedure bytes.
+
+### BeforeSave behavior
+
+`WordAppDocumentBeforeSave` at `0x004CD154` checks that the event document matches the active document. If viewer flag `+0x5E` is clear, it sets the Word `Cancel` output to `-1` and exits. Otherwise it reads the Word document's `Saved` property through interface slot `+0xD8`. For an unsaved document and viewer flag `+0x5F`, it presents a three-choice dialog; one choice explicitly sets `Cancel=-1`. On the continuing path it changes viewer flags, calls a Word document interface method at slot `+0x29C`, clears the stored document interface, and resets state.
+
+The dialog's exact labels and the semantics of slot `+0x29C` are not yet decoded. Do not equate this callback with the Almas close-time commit until the downstream calls are traced.
+
+### BeforeClose and silent-save candidates
+
+- `WordAppDocumentBeforeClose` at `0x004CCBBC` calls helper `0x004BCA88`; this helper is now a priority target for identifying the actual close decision/commit behavior.
+- `TWordViwer.SilentSaveEmwatDoc` at `0x004D23D8` creates two `TStringList` objects, fills them from viewer collections at `+0x90/+0x94/+0x98/+0x9C`, and passes them with the archive object to helper `0x004AEBBC`. Its exact archive/commit role is not yet established.
+- `OnControlerNotify` at `0x004BB3B0` separately reads the Word document content and creates the passworded `.easz` archive described in Run 148/149.
+
+Keep three events separate until their call/data flow is linked: timer-driven `OnTmrAutoSave`, Word `BeforeSave`/`BeforeClose`, and the controller-notify archive operation. The next run traces the full procedure ranges and the `0x004BCA88`/`0x004AEBBC` helpers.
