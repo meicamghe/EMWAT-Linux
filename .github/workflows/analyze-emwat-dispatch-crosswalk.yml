@@ -69,7 +69,7 @@ jobs:
           EOF
             echo "EmwatService.exe absent; service trace intentionally skipped."
           else
-            for address in 0x0047BF30 0x0047E0EC 0x0047E2D4 0x004610FC 0x00470D00 0x00470B38 0x00471214 0x0046AA70 0x0046ADBC 0x0046A7A4 0x0046A620 0x0046A570; do
+            for address in 0x0047BF30 0x0047E0EC 0x0047E2D4 0x004610FC 0x00401156 0x0040115E 0x004011B6 0x00401462 0x00401D7A 0x00402172 0x00402352 0x00470D00 0x00470B38 0x00471214 0x0046AA70 0x0046ADBC 0x0046A7A4 0x0046A620 0x0046A570; do
               name=${address#0x}
               python tools/trace_pe_target.py analysis-input/EmwatService.exe "$address" "dispatch-crosswalk/service/$name.md" 1200 ret
               python tools/trace_td32_procedure.py analysis-input/EmwatService.exe "$address" "dispatch-crosswalk/service/$name-td32.md" || true
@@ -93,7 +93,7 @@ jobs:
               python tools/scan_pe_pointer_refs.py analysis-input/EmwatService.exe "$address" "dispatch-crosswalk/service/import-${address}-pointer-refs.md" || true
             done
             python -m py_compile tools/scan_pe_call_refs.py tools/scan_pe_rel32_call_bytes.py
-            for address in 0x004610FC 0x0047E2D4; do
+            for address in 0x004610FC 0x0047E2D4 0x00401156 0x0040115E 0x004011B6 0x00401462 0x00401D7A 0x00402172 0x00402352; do
               python tools/scan_pe_rel32_call_bytes.py analysis-input/EmwatService.exe "$address" "dispatch-crosswalk/service/${address}-rel32-call-candidates.md"
             done
             for address in 0x0046AA70 0x00471214 0x0046ADBC 0x0046A7A4 0x0047E2D4 0x004610FC; do
