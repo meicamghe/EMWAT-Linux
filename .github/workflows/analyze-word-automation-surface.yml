@@ -1,0 +1,92 @@
+name: Analyze EMWAT Word automation surface
+on:
+  push:
+    paths:
+      - '.github/workflows/analyze-word-automation-surface.yml'
+      - 'analysis-input/EmwatMethods.bpl1'
+      - 'tools/trace_pe_target.py'
+      - 'tools/trace_td32_procedure.py'
+      - 'tools/trace_td32_callers.py'
+      - 'tools/find_td32_class_procedures.py'
+      - 'tools/resolve_delphi_vmt_slots.py'
+      - 'tools/trace_delphi_interfaces.py'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  word-lifecycle:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install pefile capstone
+      - name: Trace document lifecycle, events and autosave
+        shell: bash
+        run: |
+          mkdir -p word-automation/lifecycle
+          for address in 0x004B7724 0x004B8A84 0x004BB3B0 0x004CCBBC 0x004CD154 0x004CD54C 0x004CD9C0 0x004CDB54; do
+            name=${address#0x}
+            python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 "$address" "word-automation/lifecycle/$name.md" 7000 ret
+            python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 "$address" "word-automation/lifecycle/$name-td32.md" || true
+            python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 "$address" "word-automation/lifecycle/$name-callers.md" || true
+          done
+      - uses: actions/upload-artifact@v4
+        with:
+          name: emwat-word-lifecycle
+          path: word-automation/lifecycle/
+          if-no-files-found: error
+
+  word-field-mapping:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install pefile capstone
+      - name: Trace field extraction and document mutation
+        shell: bash
+        run: |
+          mkdir -p word-automation/fields
+          for address in 0x004BB81C 0x004BC2C4 0x004BC30C 0x004BCA88 0x004BFC18 0x004BFD38 0x004BFDB0 0x004C009C 0x004C0410 0x004CB638 0x004D1148 0x004D1454; do
+            name=${address#0x}
+            python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 "$address" "word-automation/fields/$name.md" 7000 ret
+            python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 "$address" "word-automation/fields/$name-td32.md" || true
+            python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 "$address" "word-automation/fields/$name-callers.md" || true
+          done
+      - uses: actions/upload-artifact@v4
+        with:
+          name: emwat-word-field-mapping
+          path: word-automation/fields/
+          if-no-files-found: error
+
+  word-save-print:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install pefile capstone
+      - name: Trace save and print side effects
+        shell: bash
+        run: |
+          mkdir -p word-automation/save-print
+          for address in 0x004C5E04 0x004C5FF8 0x004CB108 0x004CB638 0x004CDC2C 0x004CE030 0x004D23D8; do
+            name=${address#0x}
+            python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 "$address" "word-automation/save-print/$name.md" 7000 ret
+            python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 "$address" "word-automation/save-print/$name-td32.md" || true
+            python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 "$address" "word-automation/save-print/$name-callers.md" || true
+          done
+          python tools/find_td32_class_procedures.py analysis-input/EmwatMethods.bpl1 TWordViwer TEmwatMethod TScanDocument > word-automation/save-print/word-class-procedures.md
+          python tools/resolve_delphi_vmt_slots.py analysis-input/EmwatMethods.bpl1 word-automation/save-print/word-vmt.md
+          python tools/trace_delphi_interfaces.py analysis-input/EmwatMethods.bpl1 word-automation/save-print/word-interfaces.md
+      - uses: actions/upload-artifact@v4
+        with:
+          name: emwat-word-save-print
+          path: word-automation/save-print/
+          if-no-files-found: error
