@@ -28,7 +28,7 @@ jobs:
         shell: bash
         run: |
           mkdir -p word-automation/lifecycle
-          for address in 0x004B7724 0x004B8A84 0x004BB3B0 0x004CCBBC 0x004CD154 0x004CD54C 0x004CD9C0 0x004CDB54; do
+          for address in 0x004B7724 0x004B8A84 0x004BB3B0 0x004CCBBC 0x004CD154 0x004CD54C 0x004CD9C0 0x004CDB54 0x004D08B4 0x004D0D24; do
             name=${address#0x}
             python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 "$address" "word-automation/lifecycle/$name.md" 7000 ret
             python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 "$address" "word-automation/lifecycle/$name-td32.md" || true
@@ -52,7 +52,7 @@ jobs:
         shell: bash
         run: |
           mkdir -p word-automation/fields
-          for address in 0x004BB81C 0x004BC2C4 0x004BC30C 0x004BCA88 0x004BFC18 0x004BFD38 0x004BFDB0 0x004C009C 0x004C0410 0x004CB638 0x004D1148 0x004D1454; do
+          for address in 0x004BB81C 0x004BC2C4 0x004BC30C 0x004BCA88 0x004BFC18 0x004BFD38 0x004BFDB0 0x004C009C 0x004C0410 0x004CB638 0x004D08B4 0x004D0D24 0x004D1148 0x004D1454; do
             name=${address#0x}
             python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 "$address" "word-automation/fields/$name.md" 7000 ret
             python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 "$address" "word-automation/fields/$name-td32.md" || true
