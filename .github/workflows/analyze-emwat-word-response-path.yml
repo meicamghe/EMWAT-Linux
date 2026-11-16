@@ -1,0 +1,45 @@
+name: Analyze EMWAT Word response and controller return path
+on:
+  push:
+    paths:
+      - '.github/workflows/analyze-emwat-word-response-path.yml'
+      - 'analysis-input/EmwatMethods.bpl1'
+      - 'tools/trace_pe_target.py'
+      - 'tools/trace_pe_range.py'
+      - 'tools/trace_td32_procedure.py'
+      - 'tools/trace_td32_callers.py'
+      - 'tools/scan_pe_pointer_refs.py'
+      - 'tools/decode_pe_strings.py'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  response-and-controller:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install pefile capstone
+      - name: Trace response writer and document content return
+        shell: bash
+        run: |
+          mkdir -p word-response
+          for address in 0x004B7F31 0x004B7F9C 0x004B7FBF 0x004B8A84 0x004BB3B0 0x004BB51C 0x004BB5E9 0x0042ABA0 0x0042BDF8 0x004309A4 0x0040448C 0x00456DFC; do
+            name=${address#0x}
+            python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 "$address" "word-response/$name.md" 8000 ret
+            python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 "$address" "word-response/$name-td32.md" || true
+            python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 "$address" "word-response/$name-callers.md" || true
+          done
+          python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x004B7F31 0x004B8100 word-response/load-document-response-branch.md
+          python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x004BB3B0 0x004BB6C0 word-response/controller-notify-tail.md
+          python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 0x0040448C word-response/writecontent-import-refs.md
+          python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 0x0042BDF8 word-response/get-content-wrapper-refs.md
+      - uses: actions/upload-artifact@v4
+        with:
+          name: emwat-word-response-controller-analysis
+          path: word-response/
+          if-no-files-found: error
