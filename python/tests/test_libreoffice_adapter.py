@@ -39,7 +39,7 @@ class LibreOfficeAdapterUnitTests(unittest.TestCase):
         self.assertEqual(_source_extension(_CFB_SIGNATURE + b"payload"), ".doc")
 
     def test_detects_docx_zip_container(self):
-        self.assertEqual(_source_extension(b"PK\\x03\\x04payload"), ".docx")
+        self.assertEqual(_source_extension(bytes.fromhex("504b0304") + b"payload"), ".docx")
 
     def test_rejects_unknown_document_container(self):
         with self.assertRaisesRegex(ValueError, "unsupported_word_document_container"):
