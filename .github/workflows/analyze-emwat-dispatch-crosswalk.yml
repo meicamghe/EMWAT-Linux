@@ -14,6 +14,8 @@ on:
       - 'tools/inspect_delphi_vmt_address.py'
       - 'tools/trace_td32_immediate_refs.py'
       - 'tools/scan_pe_pointer_refs.py'
+      - 'tools/trace_pe_range.py'
+      - 'tools/decode_pe_strings.py'
   workflow_dispatch:
 
 permissions:
@@ -96,6 +98,10 @@ jobs:
             python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 "$address" "dispatch-crosswalk/bpl/vmt-$name-pointer-refs.md"
             python tools/trace_td32_immediate_refs.py analysis-input/EmwatMethods.bpl1 "$address" "dispatch-crosswalk/bpl/vmt-$name-immediate-refs.md"
           done
+          python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x005EE82C 0x005EEB48 dispatch-crosswalk/bpl/editword-performmethod-full.md
+          python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x005EEB48 0x005EEDFC dispatch-crosswalk/bpl/scandoc-performmethod-full.md
+          python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x004B7724 0x004B8A84 dispatch-crosswalk/bpl/wordviewer-loaddocument-full.md
+          python tools/decode_pe_strings.py analysis-input/EmwatMethods.bpl1 0x005EE9F4 0x005EEA0C 0x005EEA88 0x005EEAA0 0x005EEABC 0x005EEAD4 0x005EEB0C 0x004B81E4 0x004B8220 0x004B8238 0x004B8280 0x004B82C4 0x004B832C 0x004B8348 0x004B8364 0x004B83A0 > dispatch-crosswalk/bpl/editword-load-document-strings.md
       - uses: actions/upload-artifact@v4
         with:
           name: emwat-bpl-dispatch-crosswalk
