@@ -294,3 +294,13 @@ These checks validate the adapter and composition boundary. They do not establis
 - word_fields.py now uses urllib.parse.unquote_plus and tests both cases with encryption="urlencoded".
 - Python bridge run **43816293635** passed: **99 tests run, 98 passed, 1 optional UNO test skipped**.
 - Base64 text conversion is still distinct from image-byte decoding. Native SetFieldValue decodes Base64 bytes and passes them through 0x004735D0 → 0x004738CC; the lower-level encoding-selection helpers 0x00473608 and 0x00473700 are being traced before changing Python's base64 value representation.
+
+
+## SevenZip recovery archive semantics — 2026-11-16
+
+- Recovery plugin workflow run **43815900302** completed successfully.
+- Artifact: **14203070675**.
+- euUnArchive is an input archive extraction path; euResetMemory creates output archives and has direct callers only in ApplicationActivities.Finalization and the recovery form Delete handler.
+- T7zOutArchive.SetPassword at 0x004547DC is a no-op stub. The output archive password argument is therefore not proof of encryption.
+- T7zInArchive.SetPassword is implemented but has no direct bounded CALL xref; indirect invocation remains possible.
+- Keep .easd/.easz roles and any archive password unresolved until caller and callback data flow is complete.
