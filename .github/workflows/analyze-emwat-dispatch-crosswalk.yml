@@ -66,7 +66,6 @@ jobs:
           if-no-files-found: error
 
   bpl-method-dispatch:
-    if: hashFiles('analysis-input/EmwatMethods.bpl1') != ''
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -75,6 +74,7 @@ jobs:
           python-version: '3.12'
       - run: pip install pefile capstone
       - name: Trace inherited method invocation and dispatch helpers
+        if: hashFiles('analysis-input/EmwatMethods.bpl1') != ''
         shell: bash
         run: |
           mkdir -p dispatch-crosswalk/bpl
@@ -104,13 +104,13 @@ jobs:
           python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x004B7724 0x004B8A84 dispatch-crosswalk/bpl/wordviewer-loaddocument-full.md
           python tools/decode_pe_strings.py analysis-input/EmwatMethods.bpl1 0x005EE9F4 0x005EEA0C 0x005EEA88 0x005EEAA0 0x005EEABC 0x005EEAD4 0x005EEB0C 0x004B81E4 0x004B8220 0x004B8238 0x004B8280 0x004B82C4 0x004B832C 0x004B8348 0x004B8364 0x004B83A0 > dispatch-crosswalk/bpl/editword-load-document-strings.md
       - uses: actions/upload-artifact@v4
+        if: hashFiles('analysis-input/EmwatMethods.bpl1') != ''
         with:
           name: emwat-bpl-dispatch-crosswalk
           path: dispatch-crosswalk/bpl/
           if-no-files-found: error
 
   word-controller-close:
-    if: hashFiles('analysis-input/EmwatMethods.bpl1') != ''
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -119,6 +119,7 @@ jobs:
           python-version: '3.12'
       - run: pip install pefile capstone
       - name: Trace controller notification and Word content getter
+        if: hashFiles('analysis-input/EmwatMethods.bpl1') != ''
         shell: bash
         run: |
           mkdir -p dispatch-crosswalk/word
@@ -135,6 +136,7 @@ jobs:
           python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x004D23D8 0x004D281C dispatch-crosswalk/word/silent-save-emwat-doc-full.md
           python tools/decode_pe_strings.py analysis-input/EmwatMethods.bpl1 0x004BA304 0x004BA350 0x004BA368 0x004BA388 0x004BA3A8 0x004BA3C8 0x004BA414 0x004BA438 0x004BA4B4 0x004BA4CC 0x004BA4F8 0x004BA508 0x004CD374 0x004CD3C0 0x004CD3DC 0x004CD3F0 0x004CD40C 0x004CD4BC 0x004CD50C 0x004D26CC 0x004D2728 0x004D2758 0x004D2794 0x004D27A4 0x004D27B4 0x004D27C4 0x004CCD98 > dispatch-crosswalk/word/lifecycle-dialog-and-timer-strings.md
       - uses: actions/upload-artifact@v4
+        if: hashFiles('analysis-input/EmwatMethods.bpl1') != ''
         with:
           name: emwat-word-controller-close-crosswalk
           path: dispatch-crosswalk/word/
