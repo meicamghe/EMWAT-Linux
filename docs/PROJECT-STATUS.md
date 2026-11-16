@@ -2007,3 +2007,43 @@ Artifact `14227611377` resolves the earlier interface-signature uncertainty:
 - It calls `CoInitialize`, passes the four values plus `TEmwatInvokeParam` and an output string to `TWordViwer.LoadDocument`, stores the returned string as method result, sets `bResultSet=1`, and calls `CoUninitialize`.
 - `LoadDocument` extracts `DocFileName` from `wordBody`, creates a local file via `TFileStream(fmCreate)` and writes document data, parses `wordConfig` XML, then calls `OnTmrAutoSave` with the document path. This path becomes `TWordViwer+0xA0` and is later archived as `.easd` inside `.easz`.
 - The final mapping of the method result/bResultSet to the HTTP response is still the key unresolved protocol boundary. Full details: `docs/WORD-LIFECYCLE-STATIC-TRACE.md` Run 151.
+
+
+## تکمیل تحلیل آرشیو اصلی EMWAT و همسان‌سازی Bridge — 2026-11-16
+
+### ورودی‌های باینری و CI
+
+- آرشیو عمومی EMWAT_Extracted.zip در مخزن موجود است؛ فایل‌های EmwatMethods.bpl1، EmwatService.exe و EmwatAgent.exe از آن در CI استخراج می‌شوند.
+- تحلیل موازی سرویس و BPL در run 43883105610 موفق شد:
+  - BPL dispatch artifact: 14232698133
+  - Service dispatch artifact: 14233736412
+  - Word controller-close artifact: 14234120250
+- تحلیل سه‌گانه Word در run 43882925143 موفق شد:
+  - lifecycle: 14232038748
+  - save/print: 14232159665
+  - field mapping: 14232259712
+
+### یافته‌های جدید سرویس
+
+- تابع 0x0047E0EC در واقع package-load gate برای EmwatMethods.bpl است، نه route/authentication helper. رشته‌های واقعی آن پیام‌های موفقیت/شکست بارگذاری BPL هستند.
+- handler پس از عبور از این gate به parser می‌رود. parser نام‌های method، class، param و name را با ثابت‌های دقیق مقایسه می‌کند.
+- helper 0x0046A7A4 رکوردهای سه‌خانه‌ای با stride دوازده بایت می‌سازد؛ معنای دقیق همه خانه‌ها هنوز باید از token callerها استخراج شود.
+- رشته‌های invoke و CORS نیز decode شدند. امضای دقیق یکی از headerها در باینری Access-Control-Allow-Method:* است (مفرد).
+
+### یافته‌های جدید Word/BPL
+
+- ثابت‌های SetFieldValue: urlencoded در 0x004BFEE8 و base64 در 0x004BFF0C.
+- ثابت 0x004D1768 برابر † (U+2020 DAGGER) است و در مسیر split کردن شناسه‌های twin در custom properties استفاده می‌شود.
+- WordAppDocumentBeforeSave دارای prompt تصمیم‌گیری و امکان set کردن Cancel به 0xFFFF است؛ رشته‌های UI شامل «موافقم»، «خیر» و «انصراف» هستند.
+- TWordDocument.Get_Content از COM vtable slot +0xDC استفاده می‌کند. تابع 0x00456DFC در حقیقت euUnArchive است و از OnControlerNotify فراخوانی می‌شود؛ این دو مسیر نباید یکی فرض شوند.
+- CostumizeRecAndCC در 0x004D281C در مسیر controller notify، field-name lookup، protection و rollback استفاده می‌شود.
+
+### تغییر Bridge و تست
+
+- Bridge برای POST پاسخ‌ها headerهای بازیابی‌شده Access-Control-Allow-Headers: * و Access-Control-Allow-Method: * را اضافه می‌کند، اما سیاست Origin allowlist پروژه حفظ شده است.
+- query مقدار invoke در لایه transport opaque باقی مانده؛ باینری client-side nonce تصادفی را ثابت می‌کند، ولی اعتبارسنجی عددی server-side از این شواهد ثابت نشده است.
+- Python bridge run 43883570154 موفق شد: **104 تست، 2 skip اختیاری**.
+
+### وضعیت واقعی
+
+پروژه اکنون parser/bridge/dispatcher، چرخه session، adapter مربوط به LibreOffice و بخش‌هایی از field/property pipeline را دارد. تست‌های قبلی Python و UNO نیز در fixtureهای مشخص موفق بوده‌اند. با این حال، سازگاری کامل end-to-end با سامانه عملیاتی Almas، همه فیلدهای 180+گانه، تصاویر/امضاها، چاپ واقعی و همه حالت‌های cancel/discard هنوز تأیید نشده است.
