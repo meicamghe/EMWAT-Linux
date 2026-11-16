@@ -330,3 +330,20 @@ Workflow commits: `367e4aa58514029278624c65837059f13807394a` and `c159c69141da56
 ## CI correction — image branch string output path
 
 The expanded analysis run `43886359961` exposed a workflow-only failure in the `word-save-print` job: the new decoder wrote to `word-automation/fields/`, which is not created in that job. The lifecycle and field-mapping jobs both succeeded; only save-print failed at the shell redirection. Corrected the decoder output to `word-automation/save-print/image-field-branch-strings.md` in commit `1cb8397930047bb6612872d463b6ced688cd323f`. A fresh workflow run `43886833015` was queued. The earlier in-progress run `43886492031` predates this path fix and is expected to retain the same save-print failure; use the new run for validation.
+
+
+## Verified expanded field/caption trace and CI rerun
+
+The field-mapping job in run `43886492031` succeeded and produced artifact `14233429328`. It resolves `0x004C0550` as `TWordViwer.GetDocFieldIndex`; its caller is `GetDocFieldName` at `0x004BBB2B`. The trace links Word Fields enumeration, `FindFieldInActivefields`, `GetXmlFieldInfo`, `FillMSWFields`, `SetFieldValue`, `FillTextField`, and the `AddImagesToDoc` branch. Caption processing is further linked: `GetCaptionItemFont` → `EmbedTextToImage`, while `GetCaptionItems` is called by `ResizeBitmapCanvas` and `ProcessWords`.
+
+The workflow-only save-print failure was corrected in commit `1cb8397930047bb6612872d463b6ced688cd323f`. The subsequent run `43886833015` completed all three jobs successfully:
+- lifecycle;
+- field mapping;
+- save/print.
+
+The expanded decoder constants were then added in commit `a74fd95dfecc4cf9d7dd42c984e966a980f9dd46`; run `43887016674` was queued/in progress at the time of this update.
+
+CI after the Python adapter docstring clarification:
+- Python bridge run `43886698595`: 104 tests passed, 2 optional skips.
+- LibreOffice UNO run `43886698714`: 11 tests passed.
+These tests validate existing isolated behaviors, not full EMWAT field/image parity.
