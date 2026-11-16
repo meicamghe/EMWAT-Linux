@@ -67,6 +67,7 @@ class WordFieldDecodingTests(unittest.TestCase):
         cases = (
             '<word-document><fields><field id="x" encryption="rot13">abc</field></fields></word-document>',
             '<word-document><fields><field id="x" encryption="base64">not-base64!</field></fields></word-document>',
+            '<word-document><fields><field id="x" encryption="urlencoded">bad%ZZ</field></fields></word-document>',
         )
         for xml in cases:
             with self.subTest(xml=xml), self.assertRaises(WordFieldDecodeError):
