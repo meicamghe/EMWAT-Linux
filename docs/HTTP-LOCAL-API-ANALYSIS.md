@@ -498,3 +498,46 @@ Source: workflow 43832144163, artifact 14209690263.
 - The parser recognizes root tag "emwat", its "version" attribute, and child tags "method", "class", and "param"; the "param" child uses the "name" attribute.
 - Parser token helper 0x0046ADBC compares the token names and routes recognized elements. Helper 0x0046A7A4 appends a three-value record to the parser's dynamic collection (three adjacent string/value slots); exact semantic names for all three record fields remain unconfirmed.
 - This is the service-side XML parsing stage. The BPL-side TEmwatMethod.Invoke dictionary contract is known separately; the conversion/link from these parser records to the BPL invocation and the exact response payload still need proof.
+
+
+## Run 145 — browser invoke bridge and package lifecycle semantics
+
+Source: PE-only service trace workflow `43869039523`, artifact `14226099734`. The preserved `EmwatService.exe` has no TD32 debug signature; this run uses PE disassembly, raw pointer scans, and decoded Delphi strings.
+
+### Browser-to-local HTTP bridge
+
+The embedded initialization script at `0x0047C59C` decodes to a JavaScript bridge that:
+- listens for a `message` event from the parent frame;
+- creates an `XMLHttpRequest`;
+- sends a `POST` to `http://127.0.0.1:$V{myport}?invoke=<nonce>`, where the nonce is a random integer;
+- sends the incoming `message.data` as the request body;
+- posts `responseText` back to the original `event.source` and `event.origin`.
+
+The script also sends an initialization marker to the parent frame. This establishes the local HTTP bridge and the request/response relay behavior statically; it does not reveal the actual request XML or response payload contents.
+
+### Corrected meaning of the package helpers
+
+The string constants in the service binary resolve the earlier helper names:
+- `0x0047E218`: `EmwatMethods.bpl`
+- `0x0047E248`: `Unable to load "EmwatMethods.bpl".`
+- `0x0047E29C`: `"EmwatMethods.bpl" loaded.`
+- `0x0047E384`: `Trying to unload package...`
+- `0x0047E3C8`: `Package unloaded.`
+
+Therefore `0x0047E0EC` is the BPL package-load helper, not the method dispatcher itself. It loads/retains the `EmwatMethods.bpl` package and reports success/failure. `0x0047E2D4` is the matching package-unload helper. The MainForm invoke branch calls the package loader, then `ParseMethod` (`0x00470D00`), then the unload helper.
+
+### XML token literals independently confirmed
+
+The service parser's literals are:
+- `0x00470CBC`: `method`
+- `0x00470CD0`: `class`
+- `0x00470CE4`: `param`
+- `0x00470CF8`: `name`
+
+The parser worker at `0x00470B38` uses `0x4670A8` to retrieve named XML values and `0x46ADBC`/`0x46A7A4` to add three-field records to its internal collection. The exact semantic label for each stored field is not yet proven. The helper at `0x00470A58` also scans for a named node and parses a numeric value; its string constants at `0x00470B1C` and `0x00470B30` still need decoding before assigning a version-field label.
+
+### Response boundary and unresolved dispatch
+
+The MainForm handler (`0x0047BF30`) directly calls `WriteContent` (`0x004610FC`) for the init and heartbeat branches. In the currently traced invoke branch, it calls the package loader, XML parser, and package unloader; no direct call to `WriteContent` is visible in that branch. Do not reuse the init/heartbeat response path as proof of the invoke response envelope.
+
+The unresolved bridge is now narrower: how the parsed XML method/class/param records trigger a concrete BPL method (including the `TEditWordDocument` VMT slot) and how that method's result becomes the HTTP response text returned by the JavaScript bridge. Package loading alone does not prove that invocation occurs.
