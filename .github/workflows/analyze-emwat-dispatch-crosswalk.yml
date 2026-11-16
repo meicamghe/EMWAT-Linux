@@ -96,6 +96,9 @@ jobs:
             for address in 0x004873E0 0x0048740C 0x00487410 0x0048753C 0x004875CC 0x00487680 0x00487B9C; do
               python tools/scan_pe_ff15_iat_refs.py analysis-input/EmwatService.exe "$address" "dispatch-crosswalk/service/${address}-ff15-iat-refs.md"
             done
+            for address in 0x00401156 0x0040115E 0x004011B6 0x00401462 0x00401D7A 0x00402172 0x00402352; do
+              python tools/scan_pe_pointer_refs.py analysis-input/EmwatService.exe "$address" "dispatch-crosswalk/service/thunk-${address}-pointer-refs.md" || true
+            done
             for address in 0x004610FC 0x0047E2D4 0x00401156 0x0040115E 0x004011B6 0x00401462 0x00401D7A 0x00402172 0x00402352; do
               python tools/scan_pe_rel32_call_bytes.py analysis-input/EmwatService.exe "$address" "dispatch-crosswalk/service/${address}-rel32-call-candidates.md"
             done
