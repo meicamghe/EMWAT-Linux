@@ -122,3 +122,23 @@ The same string decode found:
 This is strong evidence for an `invoke` command/route token and CORS-related response headers. The precise HTTP verb, full URL path, header-setting API, and status/body contract remain unresolved. Do not normalize the singular `Allow-Method` literal to the standards spelling in compatibility code unless runtime capture proves the original behavior is different.
 
 The updated parser/loader artifact is `emwat-service-parser-followup`, run `43882768547`, artifact `14233102935`. Its bounded traces also confirm the XML parser compares the literal child names `method`, `class`, `param`, and `name`.
+
+
+## Cross-reference to the already recovered end-to-end invoke contract
+
+The parser/package-loader findings above are not the whole protocol. Existing request-capture and BPL crosswalk documents provide the next stages:
+
+- The browser bridge issues `POST /?invoke=<random>`; its embedded JavaScript computes `Math.floor(Math.random() * 99999)`. The query value is therefore a per-message request nonce, not the operation identifier. The method identity is carried in the XML `method class` attribute.
+- The captured outer envelope uses `<emwat version="1.0">`, one `method` element, its `class` attribute, and `param name` children.
+- A captured `EditWordDocument` call carries `wordConfig` and `wordBody` as Base64 text, plus `signData`; the concrete BPL method also retrieves `letterImages`. The inner `wordConfig` is a second XML document, while `wordBody` is opaque legacy DOC/CFB data in the captured sample.
+- Service dispatch resolves `T` + the parsed class name through Delphi `GetClass`, constructs the class instance, and invokes the inherited `Invoke` virtual slot. The BPL `TEmwatMethod.Invoke` wrapper then dispatches the concrete subclass's `PerformMethod`.
+- The successful `EditWordDocument` response is `response-word status="success"`, with a `return-types/type` node whose `mimetype` is `application/msword` and `encryption` is `base64`. The successful response writer is reached after the close-driven document path.
+- The service contains exact CORS-like literals `Access-Control-Allow-Origin:*`, `Access-Control-Allow-Headers:*`, and `Access-Control-Allow-Method:*` (singular `Method` spelling).
+
+For full evidence and request/response capture context, see:
+- `docs/HTTP-LOCAL-API-ANALYSIS.md`
+- `docs/EDITWORD-REQUEST-SCHEMA.md`
+- `docs/EMWAT-SERVICE-EXECUTABLE-ANALYSIS.md`
+- `docs/WORD-DOCUMENT-PROTOCOL-ANALYSIS.md`
+
+The Linux bridge retains an allowlisted Origin policy as a security hardening choice; it does not blindly reproduce the Windows wildcard origin. It now emits the recovered `Access-Control-Allow-Headers` and singular `Access-Control-Allow-Method` literals on POST responses. The random invoke query remains opaque at the transport layer rather than being treated as a method name.
