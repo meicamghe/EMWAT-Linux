@@ -1948,3 +1948,13 @@ Resolve the class-registration/dispatch bridge that maps the incoming XML `metho
 - The workflow was corrected to use PE-only disassembly (`trace_pe_target.py`), raw pointer-reference scans (`scan_pe_pointer_refs.py`), VA inspection, and string decoding. TD32-only tools were removed from the service job.
 - Corrected service workflow run `43868823284` was queued at this checkpoint; its result and artifact still need inspection.
 - This preserves the service EXE as a CI artifact only; it is not committed into the public repository.
+
+
+### SevenZip interface correction — 2026-11-16
+
+The exact VMT/COM-interface inspection supersedes the earlier tentative password interpretation:
+- `T7zPlugin.$bctr` returns an interface pointer at offset `+0x44` of a `T7zOutArchive` instance; the interface IID is `baa9d5dc-9ff4-4382-9bfd-ec9065bd0125`.
+- Through that interface, `euUnArchive` slot `+0x10` maps to `T7zOutArchive.AddFiles` (`0x00453F34`), slot `+0x18` maps to `SaveToStream` (`0x00454668`), and slot `+0x28` maps to `SetProgressCallback` (`0x004547E8`).
+- The hardcoded literal `mW@Tlogs43end_+` is passed to slot `+0x28`; it is **not proven to be a password**. The class has a separate `SetPassword` method at `0x004547DC`, but that is not the target of this observed interface call.
+- The `TStringList` inputs and `.easz` string do not obviously match the TD32 signatures of AddFiles/SaveToStream. Keep the helper's archive direction and slot argument semantics unresolved until the target bodies and wrapper layer are traced.
+- Detailed correction: Run 146 in `docs/WORD-COM-INTERFACE-DISPATCH.md`.
