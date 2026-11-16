@@ -2169,7 +2169,7 @@ Workflow تحلیل Word گسترش یافت تا helper مرکزی درج تص�
 - `GetXmlFieldInfo` ابتدا descriptor تک‌فیلدی را بررسی می‌کند و در صورت نیاز به مسیر twin می‌رود؛ ساختارهای خروجی شامل index و یک یا دو نام/کلید فیلد هستند.
 - helper `0x004BC170` در مسیرهای XML field، twin fill، index lookup، print و image-print تکرار می‌شود و نقش نرمال‌سازی/تقسیم رشته ورودی را دارد؛ جزئیات delimiter پس از artifact جدید قطعی می‌شود.
 - `AddCustomDocPropertiesToDic` نام propertyهای Word را با `†` تفکیک می‌کند، رکورد single/twin می‌سازد و کلید متناظر را از descriptor map حذف می‌کند؛ بنابراین این تابع مرحله تطبیق/مصرف descriptor است، نه اثبات ساخت اولیه دیکشنری.
-- مسیر پرشدن اولیه descriptor mapها هنوز باز است. workflow جدید، constructorهای enumerable، Add/AddOrSetValue، helper نرمال‌سازی و ثابت‌های رشته‌ای آن‌ها را ردیابی می‌کند.
+- مسیر پرشدن اولیه descriptor mapها هنوز باز است. در بررسی جدید، چند نام TD32 برای generic dictionary با رفتار واقعی بدنه کد هم‌خوان نیستند (از جمله SetItem که در مسیر بررسی‌شده مقدار را می‌خواند و AddOrSetValue که مانند TryGetValue رفتار می‌کند). بنابراین نتیجه‌گیری از نام متدها یا caller scan آن‌ها کافی نیست؛ helperهای داخلی DoAdd/DoSetValue/DoRemove در batch بعدی ردیابی می‌شوند.
 
 ## کشف فیلدهای Option Form گیرنده و رونوشت — 2026-11-16
 
