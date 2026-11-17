@@ -2240,8 +2240,8 @@ workflow `python-bridge.yml` پس از تغییرات docstring و تفکیک ر
 
 - `GetClass` در `0x00470E07` نام کلاس استخراج‌شده از XML را resolve می‌کند؛ در صورت شکست، پیام `Unable to load "<class>" class.` ساخته می‌شود.
 - بعد از resolve، نام کلاس با `TUpgradeEmwat` مقایسه و نتیجه در `method-info+4` ذخیره می‌شود؛ سپس instance از طریق `TObject.$bctr` ساخته و pointer مربوط به method-info در `instance+4` قرار می‌گیرد.
-- فراخوانی غیرمستقیم بعدی در `0x00470EF6` از `[instance.VMT+0x0C]` انجام می‌شود. ارتباط دقیق این slot با `TEmwatMethod.Invoke` هنوز با RTTI/VMT مستقل باید اثبات شود؛ فعلاً آن را قطعی نام‌گذاری نکرده‌ایم.
-- پیش از `GetClass`، رشتهٔ ثابت `T` در `0x004710E0` به helper `0x00401310` داده می‌شود؛ احتمال prefix شدن نام کلاس Delphi وجود دارد، اما تا decode helper این مورد در حد فرضیهٔ قوی است.
+- فراخوانی غیرمستقیم `0x00470EF6` از `[instance.VMT+0x0C]` انجام می‌شود؛ در VMT کلاس پایه `TEmwatMethod` این slot به wrapper عمومی `Invoke` در `0x0046C9E0` می‌رسد. این wrapper helper داخلی `0x0046C82C` را اجرا می‌کند و سپس از slot `+0x10`، `PerformMethod` کلاس فرزند را فراخوانی می‌کند.
+- prefix کلاس قطعی است: ثابت `T` در `0x004710E0` و مقدار XML `class` به helper `0x00401310` داده می‌شوند؛ این thunk به `System.@UStrCat3` می‌رود و رشته `T` + نام کلاس را می‌سازد، سپس `GetClass` آن را resolve می‌کند.
 
 ## چرخه‌ی واقعی ساخت و اجرای کلاس BPL مشخص شد — 2026-11-17
 
@@ -2271,3 +2271,10 @@ workflow `python-bridge.yml` پس از تغییرات docstring و تفکیک ر
 ## اصلاح هویت destructor و initializer viewer — 2026-11-17
 
 `0x004D1148` دیگر به‌عنوان `AddXmlWordConfigFieldsToDic` ثبت نمی‌شود. VMT/RTTI آن را `TWordViwer.Destroy` نشان می‌دهند: destroy slot در `0x004B10A0` به این آدرس اشاره می‌کند و method record در `0x004B1629` نام `Destroy` دارد. routine در `0x004D0D24` که `LoadDocument` در `0x004B78E9` صدا می‌زند، برخلاف TD32 label `$bdtr`، flags و منابع viewer را initialize می‌کند و سه dictionary را در `+0x64/+0x68/+0x6C` می‌سازد. constructor helperهای تک/دو فیلدی به‌ترتیب `0x004D5C28` و `0x004D71E0` هستند؛ semantics و منبع اولیه‌ی داده‌ی آن‌ها هنوز در حال ردیابی است.
+
+## رفع ابهام نهایی dispatch سرویس به BPL — 2026-11-17
+
+- `0x00401310` thunk به `System.@UStrCat3` است؛ پس ساخت `T` + مقدار XML `class` پیش از `GetClass` اثبات شد.
+- VMT slot `+0x0C` روی instance متد BPL به wrapper `TEmwatMethod.Invoke` در `0x0046C9E0` می‌رسد. برچسب TD32 برای این wrapper (`Finalization`) گمراه‌کننده است؛ خود method-table/VMT و بدنه نشان می‌دهند این wrapper، helper داخلی `0x0046C82C` را صدا می‌زند.
+- wrapper سپس VMT slot `+0x10` را فراخوانی می‌کند؛ برای `TEditWordDocument` این slot به `0x005EE82C` می‌رسد و آن `PerformMethod`، `LoadDocument` را اجرا می‌کند.
+- مستند کامل این crosswalk در `docs/EMWAT-SERVICE-EXECUTABLE-ANALYSIS.md` ثبت شد.
