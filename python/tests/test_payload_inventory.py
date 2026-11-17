@@ -78,7 +78,7 @@ class PayloadInventoryTests(unittest.TestCase):
         self.assertEqual(len(report.optional_attributes[0].sha256), 64)
 
     def test_rejects_binary_optional_attribute_in_text_inventory(self):
-        encoded = base64.b64encode(b"\\x00\\x01").decode()
+        encoded = base64.b64encode(b"\\xff\\xfe").decode()
         xml = (
             "<word-document><optional-attributes>"
             '<attribute id="opaque"><content encryption="base64">'
