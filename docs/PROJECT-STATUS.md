@@ -2563,3 +2563,11 @@ workflow `python-bridge.yml` پس از تغییرات docstring و تفکیک ر
 - The live UNO test is committed to verify: real periodic DOC/CFB snapshot, Writer modified flag remains true, recovery does not emit the user-save callback, and normal final export removes the recovery session.
 - New TD32 field scanner/workflow targets `TWordViwer+0x58/+0x7C/+0x88/+0xA0`; the latest analysis artifact is not visible through the available Actions query.
 - Correct compare orientation `base=main`, `head=work/template-mapping-inventory`: after these two checkpoint commits the branch is **199 commits ahead, 343 behind, 61 changed files; diverged**. PR #1 remains Draft/non-mergeable; no merge/rebase/force-push.
+
+
+## اصلاح تست‌های listener و تأیید مجدد CI — 2026-11-17
+
+- دو تست مستقیم `_DocumentCloseListener` با امضای جدید سازنده همگام شدند: `snapshot_properties`، `snapshot_lock` و `recovery_stop` اکنون صریحاً به listener داده می‌شوند.
+- fixture خروجی Word 97 نیز دو `PropertyValue` واقعی و هم‌نام `FilterName=MS Word 97` و `Overwrite=True` تولید می‌کند؛ تست صرفاً از ساختار خالی fake استفاده نمی‌کند.
+- Python bridge CI روی commit `43804e76ba8fa0f2b62609c252305b9a356031b5` موفق شد: **135 تست موفق، 3 skip**؛ run `44075703317`.
+- LibreOffice UNO integration روی همان commit موفق شد: **14 تست موفق**؛ run `44075703251`.
