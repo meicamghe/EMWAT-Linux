@@ -120,7 +120,7 @@ class RecoverySnapshotStore:
         try:
             manifest = json.loads((folder / "manifest.json").read_text(encoding="utf-8"))
             document_name = manifest["document_name"]
-            if not re.fullmatch(r"document-[0-9a-f]{16}\\.(?:doc|docx)", document_name):
+            if not re.fullmatch(r"document-[0-9a-f]{16}\.(?:doc|docx)", document_name):
                 raise RecoveryStoreError("recovery_manifest_document_name_invalid")
             payload = (folder / document_name).read_bytes()
             if len(payload) != manifest["size_bytes"]:
@@ -143,7 +143,7 @@ class RecoverySnapshotStore:
             try:
                 manifest = json.loads((folder / "manifest.json").read_text(encoding="utf-8"))
                 name = manifest["document_name"]
-                if not re.fullmatch(r"document-[0-9a-f]{16}\\.(?:doc|docx)", name):
+                if not re.fullmatch(r"document-[0-9a-f]{16}\.(?:doc|docx)", name):
                     continue
                 path = folder / name
                 if not path.is_file():
