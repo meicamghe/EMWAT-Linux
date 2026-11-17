@@ -440,6 +440,7 @@ class LibreOfficeAdapter:
                     )
                     payload = temporary_path.read_bytes()
                     self._recovery_store.save_snapshot(handle.recovery_session_id, payload)
+                    handle.recovery_error = None
             except Exception as exc:
                 # A transient snapshot failure must not close or fail the live Word session.
                 handle.recovery_error = exc
