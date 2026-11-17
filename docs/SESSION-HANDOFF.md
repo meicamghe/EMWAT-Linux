@@ -1155,3 +1155,8 @@ Do not implement guessed `signData` joining or claim end-to-end Almas registrati
 
 ### HTTP request ambiguity checks
 - Duplicate Origin and Content-Type headers are rejected; init requires one Referer header. Python run #228: 120 tests passed, 3 optional skips.
+
+### Latest bridge transport increment — 2026-11-17
+- The POST bridge validates duplicate `Content-Type` headers before reading the declared request body. This rejects ambiguous metadata without consuming an attacker-controlled body first.
+- Python bridge run #229 passed on commit `5dc0c8f9db6d82dfac6ee4c2e948e6d3e34f6c51`.
+- The branch is 65 commits ahead and 343 commits behind current `main` at this handoff. PR #1 remains draft/dirty; do not merge or blindly rebase. Resolve the large divergence deliberately after reviewing the 343 mainline commits and overlapping files.
