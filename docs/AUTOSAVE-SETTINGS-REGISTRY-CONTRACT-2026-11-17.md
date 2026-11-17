@@ -65,3 +65,24 @@ The viewer's `WordAppDocumentBeforeClose` callback checks an event argument valu
 - Full `OnTmrAutoSave` tick-to-save decision and whether it saves, snapshots, or only coordinates a pending operation.
 - Exact document virtual method at slot `+0x104` in `TfrmShowAutoSaveFiles.CloseWordApp`.
 - Exact relation between the AutoSave file viewer and the main Word viewer's close event.
+
+
+## Settings-form control inventory (VMT field table + resource)
+
+The `TEmSettingForm` VMT is `0x005EA41C`, with instance size `0x3FC`. Its field table and `TEMSETTINGFORM` resource identify these controls:
+
+| Instance offset | Control | Type indicated by resource |
+|---:|---|---|
+| `+0x3C0` | `grpPrinting` | Group box |
+| `+0x3C4` | `chkThrdPrnt` | Check box |
+| `+0x3C8` | `chkDntAskForSave` | Check box |
+| `+0x3CC` | `rbAutoSave` | Radio button |
+| `+0x3D0` | `rbDontSave` | Radio button |
+| `+0x3D4` | `grpDiag` | Group box |
+| `+0x3D8` | `chkSaveIOxmls` | Check box |
+| `+0x3E0` | `cbbLogLevel` | Combo box |
+| `+0x3F4` | `cbbAutoSaveInterval` | Combo box |
+
+The VMT publishes six handlers: `chkDntAskForSaveClick`, `btnOkClick`, `CreateParams`, `FormCreate`, `btnCancelClick`, and `chkThrdPrntClick`. The resource associates the check-box and radio-button controls with their respective click handlers. This establishes the UI control inventory, but not every control's persisted value mapping.
+
+The `chkThrdPrntClick` code reads `chkDntAskForSave` state and updates the two radio controls through their component methods. Preserve these as separate UI state and do not infer that the handler name is the meaning of the two radio buttons.
