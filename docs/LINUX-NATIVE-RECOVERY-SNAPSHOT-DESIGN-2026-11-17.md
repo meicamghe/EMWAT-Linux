@@ -46,4 +46,4 @@ If a process crashes between steps 1 and 2, the previous manifest still points t
 - `python/tests/test_recovery_store.py`: CFB/DOCX recognition, owner-only permissions, integrity validation, invalid session rejection, and manifest-switch crash safety.
 - `python/tests/test_libreoffice_integration.py`: a non-UNO worker test verifies retry after a transient UNO error and persistence; the live UNO test waits for a periodic recovery snapshot, verifies the DOC/CFB signature and unchanged Writer modified flag, then verifies successful close/export removes the recovery session.
 
-Local isolated run: all five `test_recovery_store.py` unit tests passed. The new recovery-worker test and real UNO integration test are committed but have not yet been confirmed by a fresh CI run in this session.
+Local isolated run: all five `test_recovery_store.py` unit tests passed, and a separate isolated harness verified the recovery worker's transient-error retry, snapshot persistence and stop behavior. The committed recovery-worker unittest and real UNO integration test have not yet been confirmed by a fresh CI run in this session.
