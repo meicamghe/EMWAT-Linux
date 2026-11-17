@@ -305,7 +305,10 @@ class LibreOfficeIntegrationTests(unittest.TestCase):
                 ),
             )
             with handle.snapshot_lock:
+                text = handle.document.getText()
+                text.insertString(text.getEnd(), " periodic recovery dirty-state marker", False)
                 modified_before_recovery = handle.document.isModified()
+            self.assertTrue(modified_before_recovery)
             deadline = time.monotonic() + 10
             snapshots = recovery_store.list_snapshots()
             while not snapshots and time.monotonic() < deadline:
