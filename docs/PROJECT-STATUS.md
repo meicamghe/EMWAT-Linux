@@ -2309,3 +2309,7 @@ Python bridge CI در run `44030420508` موفق شد: **111 تست موفق، 2
 ## حفظ ترتیب خام Custom Propertyهای Writer — 2026-11-17
 
 `WriterDocumentCatalog` اکنون علاوه بر فهرست sorted قبلی، فیلد `custom_document_properties_in_info_order` را هم از ترتیب خام `XPropertySetInfo.getProperties()` برمی‌گرداند. این داده فقط نام‌ها را می‌خواند، نه valueها. تست FakeDocument ثابت می‌کند ترتیب خام با sorted display اشتباه گرفته نمی‌شود؛ تست UNO واقعی نیز برابری آن با sequence مستقیم API را assert می‌کند. این قدم زیرساخت مقایسه‌ی ترتیب Word/Writer را فراهم می‌کند، اما هنوز ثابت نمی‌کند UNO order همان Word CustomDocumentProperties index order است.
+
+## UNO integration پس از حفظ ترتیب خام propertyها — 2026-11-17
+
+LibreOffice UNO integration در run `44030867583` موفق شد: **11 تست** در 3.974 ثانیه. تست جدید `custom_document_properties_in_info_order` را با ترتیب مستقیم `XPropertySetInfo.getProperties()` مقایسه می‌کند و ثابت می‌کند adapter ترتیب خام API را بدون sort حفظ می‌کند؛ این هنوز معادل بودن ترتیب Writer با Word را اثبات نمی‌کند.
