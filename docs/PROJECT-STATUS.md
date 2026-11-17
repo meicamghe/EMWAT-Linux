@@ -2435,3 +2435,15 @@ workflow `python-bridge.yml` پس از تغییرات docstring و تفکیک ر
 - New event note: `docs/WORD-COM-EVENT-SINK-REGISTRATION-2026-11-17.md`. The original BPL wires Word BeforeSave, NewDocument, and WindowActivate callbacks; BeforeSave has explicit cancel branches and a Persian save-confirmation prompt. Full UNO listener parity is not implemented yet.
 - Writer inspector now derives sorted custom-property names from its unsorted UNO metadata enumeration, and the live UNO integration test asserts exact preservation of that enumeration order.
 - New Python/UNO CI runs are pending on latest code commit; existing static-analysis runs for BPL dispatch, Word callbacks/close, lifecycle surface, recovery callbacks/plugin, and controller unpack completed successfully.
+
+
+## تکمیل ردیابی AutoSave و تفکیک مسیر SilentSave — 2026-11-17
+
+- از artifact موفق lifecycle run `44053390645`، مسیر تنظیم `AutoSaveInterval` دقیق‌تر شد: handler فرم مقدار `ItemIndex` را از `cbbAutoSaveInterval` می‌خواند، DWORD جدول global pointer slot `0x0062A808` را با همان index انتخاب می‌کند و در 1000 ضرب می‌کند؛ index نامعتبر به `10000 ms` می‌رسد. مقادیر جدول و labelهای UI هنوز استخراج نشده‌اند.
+- `chkThrdPrntClick` فقط Enabled بودن دو radio control را از وضعیت Checked/Enabled کنترل `chkDntAskForSave` مشتق می‌کند؛ این handler خودش registry write ندارد.
+- `OnTmrAutoSave` در `0x004B8A84` یک direct caller شناخته‌شده در `LoadDocument` در `0x004B7A58` دارد و callback/ownerهای Word را ثبت می‌کند؛ اتصال مستقیم آن به `SilentSaveEmwatDoc` اثبات نشده است.
+- direct-call scan نشان می‌دهد `SilentSaveEmwatDoc` در `0x004D23D8` از `GetDocFieldName` در `0x004BBA86` فراخوانی می‌شود، نه از OnTmrAutoSave. این تابع چهار list مربوط به گیرنده/گزینه‌ها را بررسی می‌کند و مسیر field-list/helper را طی می‌کند؛ Word COM Save یا persistence قطعی هنوز اثبات نشده است.
+- اصلاح مدل: virtual slot `+0x104` در `CloseWordApp` روی component/list form در offset `+0x3C0` صدا زده می‌شود، نه روی Word document interface. نوع دقیق component و slot هنوز باز است.
+- سند جدید: `docs/AUTOSAVE-TIMER-AND-SILENT-SAVE-TRACE-2026-11-17.md`.
+- workflow `analyze-word-automation-surface.yml` گسترش یافت تا lookup table در `0x0062A808`، callerهای `SilentSaveEmwatDoc` و helperهای مرتبط را در artifact بعدی dump کند. نتیجهٔ این اجرای جدید هنوز بررسی نشده و هیچ مقداری از جدول حدس زده نشده است.
+- commitهای این دور: workflow `9efc8533c8029f2abca3948116af946535329c10`؛ سند `a601f56cf312ea29ce20ee4a728fb87bbb127361`.
