@@ -414,7 +414,7 @@ class LibreOfficeAdapter:
         except Exception:
             if handle is not None:
                 handle.recovery_stop.set()
-                if handle.recovery_thread is not None:
+                if handle.recovery_thread is not None and handle.recovery_thread.is_alive():
                     handle.recovery_thread.join(timeout=2)
             if process is not None:
                 _stop_process(process, terminate_timeout=3, kill_timeout=2)
