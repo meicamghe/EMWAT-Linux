@@ -274,6 +274,11 @@ jobs:
           python tools/scan_pe_call_refs.py analysis-input/EmwatMethods.bpl1 0x004BFF1C word-automation/save-print/store-field-values-for-print-callers.md 10
           python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 0x004BFF1C word-automation/save-print/store-field-values-for-print-pointer-refs.md || true
           python tools/decode_pe_strings.py analysis-input/EmwatMethods.bpl1 0x004BFF40 0x004BFF60 0x004BFF80 0x004BFFA0 0x004BFFC0 0x004BFFE0 0x004C0000 > word-automation/save-print/store-field-values-for-print-strings.md
+          python tools/scan_pe_call_refs.py analysis-input/EmwatMethods.bpl1 0x004B8A84 word-automation/save-print/on-timer-symbol-all-callrefs.md 10
+          python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 0x004B8A84 word-automation/save-print/on-timer-symbol-pointer-refs.md || true
+          python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 0x0062A808 word-automation/save-print/autosave-interval-global-slot-refs.md || true
+          python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 0x005EACB8 word-automation/save-print/autosave-interval-registry-name-refs.md || true
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004BFF1C word-automation/save-print/store-field-values-for-print-td32-callers.md || true
           for address in 0x004D23D8 0x004D2948 0x004AEA78 0x004AEBBC; do
             name=${address#0x}
             python tools/scan_pe_call_refs.py analysis-input/EmwatMethods.bpl1 "$address" "word-automation/save-print/callers-$name.md" 8
