@@ -54,14 +54,14 @@ Do not treat this helper as an image codec or as proof of a particular UI-window
 
 ## 7. Evidence and confidence
 
-- Confirmed: SetFieldValue encoding labels urlencoded/base64; FindFieldInActivefields recognizes DOCPROPERTY field codes; AddXmlWordConfigFieldsToDic logs entry/success and splits Twin IDs on U+2020; AddCustomDocPropertiesToDic enumerates CustomDocumentProperties and splits twin names; Hidden_Customizable is the special GetDocFieldName field; ShowRecAndCcOptionForm is called by GetDocFieldName; FindWindowExtd is called by FillImageField.
+- Confirmed: SetFieldValue encoding labels urlencoded/base64; FindFieldInActivefields recognizes DOCPROPERTY field codes; `AddXmlWordConfigFieldsToDic` at `0x004D1148` clears viewer-owned collections and refreshes the screen; `AddCustomDocPropertiesToDic` at `0x004D1454` enumerates `CustomDocumentProperties`, splits names at U+2020, builds single/twin descriptor-shaped records, and removes matching keys from pre-existing maps. Its embedded diagnostics misleadingly use the `AddXmlWordConfigFieldsToDic` name. Hidden_Customizable is the special GetDocFieldName field; ShowRecAndCcOptionForm is called by GetDocFieldName; FindWindowExtd is called by FillImageField.
 - Not confirmed: full semantics of recipient/CC collections; the exact field names consumed by FindWindowExtd; universal mapping of EMWAT IDs to custom properties or Field.Result.Text; exact close-time POST/response registration path.
 - Artifact: emwat-word-custom-property-pipeline, workflow run 43812565648, artifact ID 14200962076.
 
 ## 8. Next parallel targets
 
 - Finish tracing the base64 byte-to-Unicode conversion helper at 0x004738CC and decide how the native text-field branch differs from the separate image-field byte path.
-- Resolve the indirect/VMT invocation path of AddXmlWordConfigFieldsToDic and determine whether it is invoked before or after AddCustomDocPropertiesToDic.
+- Resolve initial population of the single/twin descriptor maps. The next trace batch inspects their concrete VMTs, the `Add` internal helpers, raw references to `AddXmlWordConfigFieldsToDic`, and `TWordViwer.CrateOptionFormFields` (`0x004CFC74`) as an additional candidate.
 - Trace the writer-side TDocumentCProperty construction and the custom-property dictionary insertion path, not just generic collection helpers.
 - Resolve the Hidden_Customizable special-field branch in GetDocFieldName and connect it to request wordConfig metadata.
 - Continue close/registration tracing independently; no HTTP behavior should be inferred from these document-field helpers.
