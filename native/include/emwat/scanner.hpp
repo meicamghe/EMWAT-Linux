@@ -44,6 +44,12 @@ public:
     // Captures one 8-bit grayscale or RGB frame using the device's current defaults.
     [[nodiscard]] virtual ImagePage scan_one(const std::string& device_id,
                                              const ScanOptions& options = {}) = 0;
+    // Multi-frame devices (for example ADF scanners) may return several pages.
+    // Backends without multi-frame support safely fall back to one page.
+    [[nodiscard]] virtual std::vector<ImagePage> scan_all(
+        const std::string& device_id, const ScanOptions& options = {}) {
+        return {scan_one(device_id, options)};
+    }
 };
 
 // SANE-backed discovery. Each call owns a complete SANE init/exit lifetime.
@@ -53,6 +59,8 @@ public:
     [[nodiscard]] ScannerCapabilities get_capabilities(const std::string& device_id) override;
     [[nodiscard]] ImagePage scan_one(const std::string& device_id,
                                      const ScanOptions& options = {}) override;
+    [[nodiscard]] std::vector<ImagePage> scan_all(
+        const std::string& device_id, const ScanOptions& options = {}) override;
 };
 
 } // namespace emwat
