@@ -2148,7 +2148,7 @@ Workflow تحلیل Word گسترش یافت تا helper مرکزی درج تص�
 
 ## مرزبندی inventory Writer و descriptorهای native — 2026-11-16
 
-ردیابی نهایی نشان داد `AddCustomDocPropertiesToDic` خودش descriptor mapها را از Word CustomDocumentProperties populate می‌کند. بااین‌حال `WriterDocumentCatalog` فعلاً فقط نام‌ها را به‌شکل مرتب‌شده گزارش می‌کند؛ چون ترتیب enumeration در Writer هنوز با Word تطبیق داده نشده و XML field name متناظر نیز باید از `wordConfig.fields` با همان index گرفته شود، اتصال خودکار catalog به descriptor map عمداً انجام نشده است. helper Python برای split نام‌ها باقی مانده و باید XML field name را جداگانه دریافت کند؛ این helper به‌تنهایی ادعای mapping کامل ندارد.
+ردیابی نهایی نشان داد `AddCustomDocPropertiesToDic` خودش descriptor mapها را از Word CustomDocumentProperties populate می‌کند. بااین‌حال `WriterDocumentCatalog` هم نام‌های مرتب‌شده برای نمایش و هم نام‌ها در ترتیب `PropertySetInfo` خود UNO را جداگانه گزارش می‌کند؛ این ترتیب هنوز با enumeration ورد تطبیق داده نشده و XML field name متناظر نیز باید از `wordConfig.fields` با همان index گرفته شود، پس اتصال خودکار catalog به descriptor map عمداً انجام نشده است. helper Python برای split نام‌ها باقی مانده و باید XML field name را جداگانه دریافت کند؛ این helper به‌تنهایی ادعای mapping کامل ندارد.
 
 ## اتصال runtime Custom Property به مسیر تصویر و چاپ — 2026-11-16
 
@@ -2305,3 +2305,7 @@ Artifact `14304323294` با موفقیت تولید شد. trace کامل `LoadDo
 ## CI پس از اصلاح descriptor builder — 2026-11-17
 
 Python bridge CI در run `44030420508` موفق شد: **111 تست موفق، 2 skip اختیاری** در 5.163 ثانیه. تست‌های جدید هم‌ترازی `property_names` و `xml_field_names`، رد sequenceهای ناهم‌طول و حفظ field-name به‌صورت `None` هنگام نبود XML mapping را پوشش می‌دهند.
+
+## حفظ ترتیب خام Custom Propertyهای Writer — 2026-11-17
+
+`WriterDocumentCatalog` اکنون علاوه بر فهرست sorted قبلی، فیلد `custom_document_properties_in_info_order` را هم از ترتیب خام `XPropertySetInfo.getProperties()` برمی‌گرداند. این داده فقط نام‌ها را می‌خواند، نه valueها. تست FakeDocument ثابت می‌کند ترتیب خام با sorted display اشتباه گرفته نمی‌شود؛ تست UNO واقعی نیز برابری آن با sequence مستقیم API را assert می‌کند. این قدم زیرساخت مقایسه‌ی ترتیب Word/Writer را فراهم می‌کند، اما هنوز ثابت نمی‌کند UNO order همان Word CustomDocumentProperties index order است.
