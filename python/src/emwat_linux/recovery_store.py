@@ -76,13 +76,7 @@ class RecoverySnapshotStore:
         suffix = ".doc" if document_name == "document.doc" else ".docx"
         document_name = f"document-{digest}{suffix}"
         document_path = folder / document_name
-        previous_name = None
         manifest_path = folder / "manifest.json"
-        if manifest_path.is_file():
-            try:
-                previous_name = json.loads(manifest_path.read_text(encoding="utf-8")).get("document_name")
-            except (OSError, ValueError, TypeError):
-                previous_name = None
 
         # Write a new immutable snapshot first, then atomically switch the manifest.
         # A crash between these steps leaves the previous manifest/document usable.
@@ -99,10 +93,14 @@ class RecoverySnapshotStore:
             manifest_path,
             (json.dumps(manifest, sort_keys=True, separators=(",", ":")) + "\n").encode("utf-8"),
         )
-        if isinstance(previous_name, str) and previous_name != document_name:
-            if re.fullmatch(r"document-[0-9a-f]{64}\.(?:doc|docx)", previous_name):
+        for candidate in folder.iterdir():
+            if (
+                candidate.is_file()
+                and candidate.name != document_name
+                and re.fullmatch(r"document-[0-9a-f]{64}\.(?:doc|docx)", candidate.name)
+            ):
                 try:
-                    (folder / previous_name).unlink()
+                    candidate.unlink()
                 except FileNotFoundError:
                     pass
         self._fsync_directory(folder)
