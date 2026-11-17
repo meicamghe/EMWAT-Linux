@@ -279,6 +279,13 @@ class LibreOfficeAdapter:
         on_modified: Callable[[], int],
         on_saved: Callable[[], None],
     ) -> object:
+        """Open the captured Word payload and attach isolated UNO listeners.
+
+        The parsed request config is retained on ``request`` but is not applied
+        here: EMWAT field IDs, twin-field rules, image anchors, and print-time
+        substitutions still require verified native mappings. Call the explicit
+        property-update API only with an externally verified property map.
+        """
         work_dir = Path(tempfile.mkdtemp(prefix="emwat-lo-"))
         process: subprocess.Popen[bytes] | None = None
         try:
