@@ -1,8 +1,10 @@
 """LibreOffice UNO adapter for close-driven EMWAT document sessions.
 
 This is the first concrete office-engine adapter. It opens the captured
-Word document in a visible LibreOffice instance, snapshots a Word-compatible
-copy during the document close callback, and returns those bytes after close.
+Word document in a visible LibreOffice instance, writes private periodic
+recovery snapshots while it is open, snapshots a Word-compatible final copy
+during close, and returns those bytes after close. Recovery snapshots use the
+Linux-native owner-only store, not the Windows .easz archive format.
 
 EMWAT-specific field IDs, signData, permissions, and cancellation semantics
 are intentionally not guessed here. Those mappings require verified fixtures.
@@ -418,7 +420,10 @@ class LibreOfficeAdapter:
                 _stop_process(process, terminate_timeout=3, kill_timeout=2)
             shutil.rmtree(work_dir, ignore_errors=True)
             if recovery_session_id is not None:
-                self._recovery_store.remove_session(recovery_session_id)
+                try:
+                    self._recovery_store.remove_session(recovery_session_id)
+                except Exception:
+                    pass
             raise
 
     def _recovery_loop(self, handle: _OfficeHandle) -> None:
@@ -520,7 +525,11 @@ class LibreOfficeAdapter:
             payload = output_path.read_bytes()
             if not payload.startswith(_CFB_SIGNATURE):
                 raise RuntimeError("libreoffice_export_not_legacy_word_format")
-            self._recovery_store.remove_session(handle.recovery_session_id)
+            try:
+                self._recovery_store.remove_session(handle.recovery_session_id)
+            except Exception as exc:
+                # A cleanup failure must not suppress a valid final document response.
+                handle.recovery_error = exc
             return payload
         finally:
             self._cleanup(handle)
@@ -532,8 +541,11 @@ class LibreOfficeAdapter:
         process = handle.process
         _stop_process(process, terminate_timeout=5, kill_timeout=2)
         shutil.rmtree(handle.work_dir, ignore_errors=True)
-        if not self._recovery_store.has_snapshot(handle.recovery_session_id):
-            self._recovery_store.remove_session(handle.recovery_session_id)
+        try:
+            if not self._recovery_store.has_snapshot(handle.recovery_session_id):
+                self._recovery_store.remove_session(handle.recovery_session_id)
+        except Exception as exc:
+            handle.recovery_error = exc
 
 
 __all__ = ["LibreOfficeAdapter"]
