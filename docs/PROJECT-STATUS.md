@@ -2135,7 +2135,7 @@ Workflow تحلیل Word گسترش یافت تا helper مرکزی درج تص�
 
 ## مدل‌سازی descriptorهای single و twin در Python — 2026-11-16
 
-تابع `build_word_custom_property_field_maps()` و مدل‌های `SingleWordFieldDescriptor` / `TwinWordFieldDescriptor` به `word_fields.py` اضافه شدند. این تابع از نام Custom Document Propertyها دو مجموعه جدا می‌سازد و index صفرمبنا را مطابق حلقه native حفظ می‌کند.
+تابع `build_word_custom_property_field_maps()` و مدل‌های `SingleWordFieldDescriptor` / `TwinWordFieldDescriptor` در `word_fields.py` نگه داشته شدند. تابع اکنون نام‌های ordered Custom Document Property و در صورت وجود `xml_field_names` متناظر از `wordConfig` را می‌گیرد؛ اگر XML field names ارائه نشوند، مقدار field-name را حدس نمی‌زند و `None` می‌گذارد. طول دو sequence هنگام ارائه هر دو باید برابر باشد.
 
 - Python CI اجرا `43890539219`: **۱۰۷ تست موفق، ۲ skip اختیاری**.
 
@@ -2297,3 +2297,7 @@ workflow `python-bridge.yml` پس از تغییرات docstring و تفکیک ر
 ## نتیجه‌ی منفیِ تقویت‌شده برای مسیر populate کردن descriptor mapها — 2026-11-17
 
 Artifact `14304323294` با موفقیت تولید شد. trace کامل `LoadDocument` از `0x004B7724` تا `0x004B8A84` و scan پنجاه متد `TWordViwer` برای offsets `+0x64/+0x68/+0x6C` اجرا شد. 39 reference پیدا شد؛ در کلاس viewer، نوشتن روی `+0x68/+0x6C` فقط هنگام انتساب dictionaryهای ساخته‌شده در setup (`0x004D0F98/0x004D0FB3`) دیده شد. در scan کل PE و byte-level rel32 نیز callsite مستقیمی برای helperهای insertion single/twin پیدا نشد. این نتیجه مسیر populate را هنوز قطعی نمی‌کند، چون dispatch غیرمستقیم/VMT، callback یا object خارجی ممکن است؛ اما شواهد فعلی هیچ مسیر insertion مستقیم را تأیید نمی‌کنند.
+
+## اصلاح builder descriptorها بر اساس مسیر واقعی Add — 2026-11-17
+
+`build_word_custom_property_field_maps()` به‌روزرسانی شد تا دیگر property name را به‌اشتباه معادل XML field name فرض نکند. اکنون `xml_field_names` را به‌صورت اختیاری و هم‌تراز با ترتیب property enumeration می‌پذیرد؛ در صورت نبود آن، field-name در descriptor برابر `None` می‌ماند. تست‌ها mapping با index مشترک و ردکردن sequenceهای ناهم‌طول را پوشش می‌دهند. Writer catalog فعلاً به این builder وصل نشده، چون enumeration order مرتب‌شده‌ی catalog هنوز با ترتیب Word ثابت نشده است.
