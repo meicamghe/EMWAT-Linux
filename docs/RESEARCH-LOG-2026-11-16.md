@@ -437,11 +437,13 @@ The new `generic-dictionary-symbols.md` inventory reveals that the single/twin d
 - `TDictionary<UnicodeString,TXmlWordConfigTwinField>.Add` at `0x004D6894`; `AddOrSetValue` at `0x004D6A98`.
 - Runtime `TDictionary<UnicodeString,TDocumentCProperty>.Add` at `0x004D3B38`; `AddOrSetValue` at `0x004D3D3C`.
 
-The expanded workflow now traces these methods and their direct callers, along with `0x00441DD4` (which is actually `TWordApplication.ScreenRefresh`, called by `AddXmlWordConfigFieldsToDic`). This should identify where descriptor maps are actually populated; no caller mapping is claimed yet.
+The expanded workflow traces the viewer lifecycle and `0x00441DD4` (`TWordApplication.ScreenRefresh`). Later VMT evidence reclassifies `0x004D1148` as `TWordViwer.Destroy`, not an AddXml population method; the stale diagnostic label must not be used as a procedure identity.
 
-## Correction: AddXmlWordConfigFieldsToDic body and ScreenRefresh identity
+## Reclassification: 0x004D1148 is the TWordViwer destructor
 
-The trace of `0x00441DD4` identifies it as `TWordApplication.ScreenRefresh`, not a generated XML-field helper. In `AddXmlWordConfigFieldsToDic` (`0x004D1148`), the routine clears/releases several viewer-owned collections and dictionaries (`+0x64`, `+0x68`, `+0x6C`), calls ScreenRefresh through the Word Application wrapper, emits refresh/clear/success diagnostics, and resets viewer flags. Its TD32 symbol name therefore does not prove that it populates the single/twin descriptor dictionaries. The actual Add/SetItem methods and their direct callers are being traced separately.
+The `TWordViwer` VMT candidate at `0x004B10A4` has its Delphi `vmtDestroy` slot at `VMT-0x04` (`0x004B10A0`) pointing to `0x004D1148`. A nearby RTTI method record at `0x004B1629` also names the method `Destroy`. Therefore `0x004D1148` is the viewer destructor, despite its TD32 procedure label and embedded diagnostics saying `AddXmlWordConfigFieldsToDic`. Its body frees the viewer dictionaries at `+0x64/+0x68/+0x6C`, releases other viewer resources, calls `TWordApplication.ScreenRefresh` (`0x00441DD4`), and resets state. It is not a map-population routine.
+
+`LoadDocument` calls `0x004D0D24` at `0x004B78E9`; despite the TD32 `$bdtr` label, this body initializes viewer state and allocates the three dictionaries at `+0x64/+0x68/+0x6C`. Treat `0x004D0D24` as the initialization-like path until the constructor ABI is fully confirmed.
 
 ## Service parser: dictionary layout cross-check
 
@@ -480,7 +482,7 @@ The latest Word field artifact (`14238059843`) provides a concrete lookup/reconc
 
 ### Diagnostic-string/name mismatch at the custom-property routine
 
-One important naming trap: the TD32 procedure at `0x004D1454` is definitively `TWordViwer.AddCustomDocPropertiesToDic`, and its body enumerates Word custom properties and removes matched single/twin descriptor keys. However, its log string at `0x004D1704` says `AddXmlWordConfigFieldsToDic method called.` and its success log at `0x004D1778` repeats `AddXmlWordConfigFieldsToDic succeed.` The log text is stale/misleading and must not override the procedure symbol and observed behavior. The separate routine at `0x004D1148` has the same name-like theme but its observed body clears viewer collections/maps and calls `TWordApplication.ScreenRefresh`.
+One important naming trap: `TWordViwer.AddCustomDocPropertiesToDic` at `0x004D1454` is confirmed by its TD32 symbol and body; it enumerates Word custom properties and removes matched single/twin descriptor keys. Its log string at `0x004D1704` says `AddXmlWordConfigFieldsToDic method called.` and its success log at `0x004D1778` repeats `AddXmlWordConfigFieldsToDic succeed.` The log text is stale/misleading. Separately, `0x004D1148` is the `TWordViwer.Destroy` VMT entry, and its own TD32/log label is also misleading.
 
 ## Service-to-BPL dispatch: next unresolved callsite isolated
 
@@ -678,7 +680,7 @@ The BPL TD32 trace (`14269626143`) confirms `TEmwatMethod.Finalization` spans `0
 
 ## Virtual AddXml method and map population boundary clarified
 
-The newest field artifact (`14271907043`) confirms `TWordViwer.AddXmlWordConfigFieldsToDic` at `0x004D1148` is installed in the `TWordViwer` VMT at slot `+0x2A4` (`bpl-vmt.md`, around line 6411). This explains why direct CALL scans find no caller: invocation is virtual. Its decoded body, however, does not insert descriptor entries: it clears viewer collections at `+0x64`, `+0x68`, and `+0x6C`, runs XML/interface cleanup around `+0x44`, calls `TWordApplication.ScreenRefresh` (`0x00441DD4`), and logs completion. Its method name/diagnostics therefore cannot be treated as proof of dictionary population.
+The VMT follow-up corrects the earlier interpretation: `0x004D1148` is not installed at `+0x2A4`; it is the Delphi `vmtDestroy` entry at `VMT-0x04` for the `TWordViwer` VMT candidate `0x004B10A4`. The raw reference at `0x004B10A0` points to `0x004D1148`, and the RTTI method record at `0x004B1629` names it `Destroy`. Its decoded body frees the viewer dictionaries/resources, calls `ScreenRefresh`, and emits stale `AddXmlWordConfigFieldsToDic` diagnostics. This is destructor behavior, not virtual map population.
 
 The paired `TWordViwer.AddCustomDocPropertiesToDic` (`0x004D1454`) is directly called by `LoadDocument` (`0x004B7994`). It enumerates Word custom properties, splits property names on `†`, and calls the generic dictionary `Remove` methods: single-field map `Remove` at `0x004D531C` and twin-field map `Remove` at `0x004D68D4`. This is consistent with removing descriptors matched by Word custom properties. The generic `Add` / `AddOrSetValue` implementations exist (`0x004D52DC`, `0x004D54E0`, `0x004D6894`, `0x004D6A98`), but no direct code CALL sites were found; raw pointer matches for these addresses occur in Delphi RTTI/method metadata and are not proven runtime calls. Thus the initial descriptor-map population path remains unresolved.
 
@@ -692,9 +694,9 @@ The latest BPL inventory identifies the concrete generic dictionary VMTs for the
 - `TDictionary<string,TXmlWordConfigField>` VMT `0x004B4C38`.
 - `TDictionary<string,TXmlWordConfigTwinField>` VMT `0x004B6A70`.
 
-The generic `Add`/`AddOrSetValue` implementations (`0x004D52DC`, `0x004D54E0`, `0x004D6894`, `0x004D6A98`) have no direct TD32 CALL xrefs. The `AddXmlWordConfigFieldsToDic` body (`0x004D1148`) clears/releases the viewer's `+0x64/+0x68/+0x6C` collections and emits refresh diagnostics; it does not show direct Add calls in its decoded body. `AddCustomDocPropertiesToDic` (`0x004D1454`) enumerates Word custom properties, constructs descriptor-shaped values, then calls `Remove` on the single/twin dictionaries. Thus the initial population path remains the principal open edge.
+The generic `Add`/`AddOrSetValue` implementations (`0x004D52DC`, `0x004D54E0`, `0x004D6894`, `0x004D6A98`) have no direct TD32 CALL xrefs. The viewer initializer at `0x004D0D24` allocates the `+0x64/+0x68/+0x6C` dictionaries; the VMT destructor at `0x004D1148` frees them. `AddCustomDocPropertiesToDic` (`0x004D1454`) enumerates Word custom properties, constructs descriptor-shaped values, then calls `Remove` on the single/twin dictionaries. Thus the initial population path remains the principal open edge.
 
-The next artifact batch now inspects both concrete dictionary VMTs, scans their VMT and Add-method pointer references, and decodes the two code windows containing raw references to `0x004D1148` (`0x004B1080–0x004B10D0` and `0x004B15F0–0x004B1660`). This is intended to distinguish virtual method registration/callback paths from ordinary direct calls before assigning any map-population semantics.
+The next artifact batch inspects both concrete dictionary VMTs, the `TWordViwer` destructor slot at `0x004B10A0`, the initializer's dictionary constructor calls (`0x004D4670`, `0x004D5C28`, `0x004D71E0`), and the enumerable-constructor/AddOrSetValue method-table references. This is intended to identify whether descriptor maps are populated by constructor-from-enumerable or a later method.
 
 ### Exact IAT thunk scanner replaces misaligned pointer-offset traces
 
@@ -799,3 +801,9 @@ The new batch artifact (`14302108319`) yields two important corrections:
 The insertion record layout is now decoded: `DoSetValue` writes a three-slot entry (hash, UnicodeString key, descriptor value) at 12-byte stride, increments dictionary count, and issues key/value notifications. `DoAdd` (`0x004D4D08`) is the rehash/grow insertion helper. `TDictionary.Create(IEnumerable<TPair<...>>)` at `0x004D5100` iterates a pair enumerator and calls the `AddOrSetValue` body at `0x004D552C` for each pair. This is a concrete possible population mechanism, but direct CALL scans found no caller for `0x004D5100`; its invocation/source enumerable remain unresolved.
 
 The next workflow batch therefore scans raw pointer references for the enumerable constructor (`0x004D5100`), capacity constructors (`0x004D5048`/`0x004D4FB4`), AddOrSetValue (`0x004D552C`), and the dictionary VMT/method-table targets, and traces the other constructor overload at `0x004D522E` before deciding whether the enumerable constructor is used by the viewer.
+
+## Viewer lifecycle VMT cross-check — 2026-11-17
+
+The `TWordViwer` VMT candidate at `0x004B10A4` now resolves the earlier confusing procedure labels. `VMT-0x04` at `0x004B10A0` contains `0x004D1148`, and the corresponding RTTI method record at `0x004B1629` is named `Destroy`. Thus the routine previously called `AddXmlWordConfigFieldsToDic` is actually the viewer destructor. Its cleanup of `+0x64/+0x68/+0x6C` is teardown, not population. `LoadDocument` directly calls `0x004D0D24` at `0x004B78E9`; that body initializes viewer flags and allocates the three dictionary objects. TD32's `$bdtr` label for `0x004D0D24` conflicts with the observed initialization behavior, so the current documentation uses the neutral term *initializer-like routine* until constructor ABI is fully resolved.
+
+The map constructor callsites inside `0x004D0D24` are `0x004D4670` (viewer `+0x64`), `0x004D5C28` (single descriptor map `+0x68`), and `0x004D71E0` (twin descriptor map `+0x6C`). Their overload semantics are the next target. The `CrateOptionFormFields` routine at `0x004CFC74` remains rejected as unrelated to descriptor-map population.
