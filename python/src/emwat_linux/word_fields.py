@@ -89,6 +89,14 @@ class WordCustomPropertyFieldMaps:
     singles: tuple[SingleWordFieldDescriptor, ...]
     twins: tuple[TwinWordFieldDescriptor, ...]
 
+    @property
+    def single_by_property_name(self) -> Mapping[str, SingleWordFieldDescriptor]:
+        return {item.property_name: item for item in self.singles}
+
+    @property
+    def twin_by_property_name(self) -> Mapping[str, TwinWordFieldDescriptor]:
+        return {item.property_name: item for item in self.twins}
+
 
 def build_word_custom_property_field_maps(
     property_names: Sequence[str],
@@ -114,10 +122,15 @@ def build_word_custom_property_field_maps(
 
     singles: list[SingleWordFieldDescriptor] = []
     twins: list[TwinWordFieldDescriptor] = []
+    seen_single_names: set[str] = set()
+    seen_twin_names: set[str] = set()
     for index, property_name in enumerate(property_names):
         xml_field = xml_fields[index] if xml_fields is not None else None
         identifier = parse_word_field_identifier(property_name)
         if identifier.is_twin:
+            if property_name in seen_twin_names:
+                raise ValueError(f"duplicate_twin_custom_property_name:{property_name}")
+            seen_twin_names.add(property_name)
             twins.append(
                 TwinWordFieldDescriptor(
                     index=index,
@@ -128,6 +141,9 @@ def build_word_custom_property_field_maps(
                 )
             )
         else:
+            if property_name in seen_single_names:
+                raise ValueError(f"duplicate_single_custom_property_name:{property_name}")
+            seen_single_names.add(property_name)
             singles.append(
                 SingleWordFieldDescriptor(
                     index=index,
