@@ -1,14 +1,18 @@
 import base64
 import unittest
 
-from emwat_linux.word_config import parse_word_config
+from emwat_linux.word_config import WordField, parse_word_config
 from emwat_linux.word_fields import (
     WordFieldDecodeError,
+    build_word_custom_property_field_maps,
     decode_optional_attributes,
     decode_word_fields,
     extract_docproperty_identifier,
     external_parameter_bindings,
+    find_native_twin_field_index,
+    is_native_business_signature_end,
     parse_word_field_identifier,
+    resolve_twin_field_partner,
 )
 
 
@@ -39,17 +43,131 @@ class WordFieldDecodingTests(unittest.TestCase):
             self.assertEqual(parsed.first, malformed)
             self.assertIsNone(parsed.second)
 
+    def test_builds_separate_native_single_and_twin_property_maps(self):
+        maps = build_word_custom_property_field_maps(
+            ("LetterSubject", "SignStart†SignEnd", "†Malformed", "Trailing†")
+        )
+        self.assertEqual(
+            [(item.index, item.xml_field) for item in maps.singles],
+            [(0, None), (2, None), (3, None)],
+        )
+        self.assertEqual(
+            [
+                (item.index, item.first_field_name, item.second_field_name)
+                for item in maps.twins
+            ],
+            [(1, "SignStart", "SignEnd")],
+        )
+        self.assertEqual(
+            set(maps.single_by_property_name),
+            {"LetterSubject", "†Malformed", "Trailing†"},
+        )
+        self.assertEqual(
+            set(maps.twin_by_property_name),
+            {"SignStart†SignEnd"},
+        )
+
+    def test_rejects_duplicate_keys_like_native_dictionary_add(self):
+        with self.assertRaisesRegex(ValueError, "duplicate_single_custom_property_name"):
+            build_word_custom_property_field_maps(("LetterSubject", "LetterSubject"))
+        with self.assertRaisesRegex(ValueError, "duplicate_twin_custom_property_name"):
+            build_word_custom_property_field_maps(
+                ("SignStart†SignEnd", "SignStart†SignEnd")
+            )
+
+    def test_builds_descriptors_with_matching_wordconfig_field_nodes(self):
+        config = parse(
+            "<word-document><fields>"
+            "<field id='subject' mimetype='text/plain'>subject</field>"
+            "<field id='signatories' mimetype='text/plain'>sign</field>"
+            "<field id='number' mimetype='text/plain'>number</field>"
+            "</fields></word-document>"
+        )
+        maps = build_word_custom_property_field_maps(
+            ("LetterSubject", "SignStart†SignEnd", "LetterNumber"),
+            xml_fields=config.fields,
+        )
+        self.assertEqual(
+            [(item.index, item.xml_field.field_id) for item in maps.singles],
+            [(0, "subject"), (2, "number")],
+        )
+        self.assertEqual(
+            [
+                (
+                    item.index,
+                    item.first_field_name,
+                    item.second_field_name,
+                    item.xml_field.field_id,
+                )
+                for item in maps.twins
+            ],
+            [(1, "SignStart", "SignEnd", "signatories")],
+        )
+
+    def test_rejects_misaligned_property_and_xml_field_sequences(self):
+        with self.assertRaisesRegex(ValueError, "xml_fields_must_match_property_names_length"):
+            build_word_custom_property_field_maps(
+                ("LetterSubject", "LetterNumber"),
+                xml_fields=(WordField(attributes={"id": "subject"}, text=""),),
+            )
+
+    def test_resolves_twin_partner_with_native_case_insensitive_compare(self):
+        maps = build_word_custom_property_field_maps(("SignSenderStart†SignSenderEnd",))
+        descriptor = maps.twins[0]
+        self.assertEqual(
+            resolve_twin_field_partner(descriptor, "SIGNSENDERSTART"),
+            "SignSenderEnd",
+        )
+        self.assertEqual(
+            resolve_twin_field_partner(descriptor, "signsenderend"),
+            "SignSenderStart",
+        )
+        self.assertIsNone(resolve_twin_field_partner(descriptor, "LetterSubject"))
+
+    def test_matches_native_business_signature_end_pattern(self):
+        for field_name in ("signsenderend", "signsenderend0", "signsenderend12", "signend29"):
+            with self.subTest(field_name=field_name):
+                self.assertTrue(is_native_business_signature_end(field_name))
+
+        for field_name in ("SignSenderEnd", "xsignSenderEnd", "signSenderStart", "signSenderEnd123", ""):
+            with self.subTest(field_name=field_name):
+                self.assertFalse(is_native_business_signature_end(field_name))
+
+    def test_finds_native_twin_field_by_one_based_field_code_index(self):
+        codes = (
+            r"MERGEFIELD  IgnoreThis",
+            r"DOCPROPERTY  SignSenderStart  \\* MERGEFORMAT",
+            r"DOCPROPERTY  SignSenderEnd  \\* MERGEFORMAT",
+            r"DOCPROPERTY  LetterSubject  \\* MERGEFORMAT",
+        )
+        self.assertEqual(find_native_twin_field_index(codes, "signsenderend"), 3)
+        self.assertEqual(
+            find_native_twin_field_index(codes, "SignSenderEnd", start_index=4),
+            0,
+        )
+        self.assertEqual(find_native_twin_field_index(codes, "MissingTwin"), 0)
+        with self.assertRaises(ValueError):
+            find_native_twin_field_index(codes, "SignSenderEnd", start_index=0)
+
     def test_extracts_docproperty_identifier_from_word_field_code(self):
         code = r"DOCPROPERTY  LetterSubject  \* MERGEFORMAT"
         self.assertEqual(extract_docproperty_identifier(code), "LetterSubject")
         triple_space = "DOCPROPERTY    LetterSubject  \\* MERGEFORMAT"
         self.assertEqual(extract_docproperty_identifier(triple_space), "")
 
-    def test_preserves_non_docproperty_or_unterminated_field_code(self):
+    def test_preserves_non_docproperty_and_matches_native_unterminated_copy(self):
         code = r"MERGEFIELD  LetterSubject  \* MERGEFORMAT"
         self.assertEqual(extract_docproperty_identifier(code), code)
+
+        # Native Copy(..., Pos("  ") + 2, 255) leaves the copied identifier
+        # intact when there is no following single space.
         unterminated = "DOCPROPERTY  LetterSubject"
-        self.assertEqual(extract_docproperty_identifier(unterminated), unterminated)
+        self.assertEqual(extract_docproperty_identifier(unterminated), "LetterSubject")
+
+        # Delphi Pos returns 0 when the double-space delimiter is absent;
+        # the native Copy then starts at character 2.
+        missing_double_space = "DOCPROPERTY LetterSubject"
+        self.assertEqual(extract_docproperty_identifier(missing_double_space), "OCPROPERTY")
 
     def test_docproperty_keyword_match_is_case_sensitive(self):
         code = r"docproperty  LetterSubject  \* MERGEFORMAT"
@@ -90,6 +208,17 @@ class WordFieldDecodingTests(unittest.TestCase):
         self.assertEqual(field.value, bytes.fromhex("01020304"))
         self.assertEqual(field.mimetype, "image/png")
         self.assertTrue(field.is_image)
+        self.assertFalse(field.uses_native_text_field_path)
+
+        text_config = parse(
+            '<word-document><fields><field id="Text" mimetype="text/plain">body</field>'
+            '<field id="Other" mimetype="application/pdf">data</field>'
+            '<field id="NoMime">data</field></fields></word-document>'
+        )
+        text_fields = decode_word_fields(text_config)
+        self.assertTrue(text_fields[0].uses_native_text_field_path)
+        self.assertFalse(text_fields[1].uses_native_text_field_path)
+        self.assertFalse(text_fields[2].uses_native_text_field_path)
 
         unpadded_quartet = parse(
             '<word-document><fields><field id="raw" encryption="base64">AQID</field>'
