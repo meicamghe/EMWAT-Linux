@@ -1184,3 +1184,13 @@ Do not implement guessed `signData` joining or claim end-to-end Almas registrati
 - ابزار `inspect_delphi_vmt_address.py` با قابلیت خواندن Method Table و Field Table، نمونه‌برداری از بایت‌های جدول و برچسب‌گذاری آدرس‌های رویه از TD32 همگام شد.
 - ابزار `trace_delphi_interfaces.py` با فهرست گسترده‌تر interfaceهای Word/XML و نمونه‌برداری قابل تنظیم از vtable تا 60 slot همگام شد.
 - این دو ابزار تغییر کرده‌اند و باید در اجرای بعدی تحلیل روی BPL واقعی خروجی آن‌ها بازبینی شود؛ نتیجهٔ استاتیک/CI به‌تنهایی تأیید رفتار runtime نیست.
+
+
+## Parallel synchronization pass — 2026-11-17 (continued)
+
+- Reconciled the latest mainline reverse-engineering sections additively into `docs/EMWAT-SERVICE-EXECUTABLE-ANALYSIS.md`, `docs/SERVICE-REQUEST-LIFECYCLE-2026-11-16.md`, `docs/WORD-AUTOMATION-SURFACE-2026-11-16.md`, `docs/WORD-CUSTOM-PROPERTY-PIPELINE-ANALYSIS.md`, and `docs/RESEARCH-LOG-2026-11-16.md`; branch-specific native scanner/image and HTTP hardening notes were preserved.
+- Reconciled 24 additional mainline status sections into `docs/PROJECT-STATUS.md` without replacing the branch's Linux implementation status.
+- Reviewed Python source/test deltas: the bridge implementation is functionally identical to main; branch-only duplicate Referer/Origin/Content-Type rejection tests and the strict UTF-8 nested optional-attribute guard remain intentionally preserved. The Word-field test suite is identical to main. Writer inspection keeps both sorted custom-property names and the raw UNO Info enumeration order; its tests assert the distinction.
+- Latest reverse-engineering workflow results checked: close/response chain (run 44053390566), event sink (44053390597), controller content unpacking (44053390505), SevenZip object fields (44053385132), and a second controller unpacking run (44053385179) completed successfully and uploaded artifacts. Other runs for Word lifecycle, Word field mapping, BPL dispatch, callback contracts, and related call chains were still running at the last poll.
+- Existing Python bridge and LibreOffice UNO CI successes remain those recorded above; no new Python/UNO test pass is claimed for the latest documentation-only synchronization.
+- PR #1 remains Draft and not mergeable. Do not merge until the 92-commit mainline divergence and remaining file conflicts are reconciled and CI is green.
