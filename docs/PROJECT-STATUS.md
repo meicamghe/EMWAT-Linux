@@ -2136,3 +2136,8 @@ These are real implementation increments, not proof of operational Almas compati
 - ImageDocument batch append tests prove an invalid later page cannot partially alter an existing document.
 - Atomic image save now fsyncs the completed temporary file before rename and fsyncs the containing directory after rename. A successful return therefore includes both data and directory-entry synchronization on supported local filesystems.
 - Native CI runs #119–#121 are validating the scanner bounds and durable save changes; results are pending.
+
+
+## HTTP header ambiguity hardening — 2026-11-17
+- The loopback bridge now rejects duplicate `Origin` and `Content-Type` headers before dispatch, and the init route requires exactly one `Referer` header before deriving the parent origin.
+- Python bridge run #228 passed: **120 tests**, 3 optional skips. The initial run #227 exposed a duplicate-Host mistake in the new Referer test itself; the request fixture was corrected and #228 passed.
