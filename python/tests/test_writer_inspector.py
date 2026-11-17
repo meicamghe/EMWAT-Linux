@@ -86,8 +86,8 @@ class FakeUserDefinedProperties:
     def getPropertySetInfo(self):
         return type("PropertyInfo", (), {
             "getProperties": lambda _self: [
-                type("Property", (), {"Name": "EMWATLetterNumber"})(),
                 type("Property", (), {"Name": "EMWATSubject"})(),
+                type("Property", (), {"Name": "EMWATLetterNumber"})(),
             ]
         })()
 
@@ -154,6 +154,10 @@ class WriterInspectorTests(unittest.TestCase):
         self.assertEqual(
             catalog.custom_document_properties,
             ("EMWATLetterNumber", "EMWATSubject"),
+        )
+        self.assertEqual(
+            catalog.custom_document_properties_in_info_order,
+            ("EMWATSubject", "EMWATLetterNumber"),
         )
 
 
