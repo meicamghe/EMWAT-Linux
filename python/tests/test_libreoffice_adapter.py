@@ -25,6 +25,16 @@ class FakeUno:
         return FakeProperty()
 
 
+def fake_snapshot_properties():
+    filter_name = FakeProperty()
+    filter_name.Name = "FilterName"
+    filter_name.Value = "MS Word 97"
+    overwrite = FakeProperty()
+    overwrite.Name = "Overwrite"
+    overwrite.Value = True
+    return (filter_name, overwrite)
+
+
 class FakeDocument:
     def __init__(self, *, fail=False):
         self.calls = []
@@ -101,7 +111,7 @@ class LibreOfficeAdapterUnitTests(unittest.TestCase):
             document,
             "file:///tmp/final.doc",
             lambda: closed.append(True),
-            (FakeUno().createUnoStruct("com.sun.star.beans.PropertyValue"),),
+            fake_snapshot_properties(),
             Lock(),
             Event(),
         )
