@@ -2235,3 +2235,10 @@ workflow `python-bridge.yml` پس از تغییرات docstring و تفکیک ر
 - تابع cleanup از `0x00471258` آغاز می‌شود، دیکشنری Params در offset `+0x08` را آزاد می‌کند و `ClassDestroy` را در `0x0047127F` فراخوانی می‌کند.
 - `StartExe` در `0x004014BA` بخشی از package startup و `GetProcAddress` در `0x00401720` بخشی از dynamic-symbol lookup است؛ هیچ‌کدام مسیر dispatch جداگانه‌ی EMWAT نیستند.
 - callsiteهای اصلی `LoadPackage` و `GetClass` در بخش service executable analysis ثبت شده‌اند.
+
+### تکمیل مسیر ParseMethod — 2026-11-17
+
+- `GetClass` در `0x00470E07` نام کلاس استخراج‌شده از XML را resolve می‌کند؛ در صورت شکست، پیام `Unable to load "<class>" class.` ساخته می‌شود.
+- بعد از resolve، نام کلاس با `TUpgradeEmwat` مقایسه و نتیجه در `method-info+4` ذخیره می‌شود؛ سپس instance از طریق `TObject.$bctr` ساخته و pointer مربوط به method-info در `instance+4` قرار می‌گیرد.
+- فراخوانی غیرمستقیم بعدی در `0x00470EF6` از `[instance.VMT+0x0C]` انجام می‌شود. ارتباط دقیق این slot با `TEmwatMethod.Invoke` هنوز با RTTI/VMT مستقل باید اثبات شود؛ فعلاً آن را قطعی نام‌گذاری نکرده‌ایم.
+- پیش از `GetClass`، رشتهٔ ثابت `T` در `0x004710E0` به helper `0x00401310` داده می‌شود؛ احتمال prefix شدن نام کلاس Delphi وجود دارد، اما تا decode helper این مورد در حد فرضیهٔ قوی است.
