@@ -53,6 +53,12 @@ public:
     void flip_active(FlipAxis axis);
     void crop_active(CropRect region);
     void mark_saved() noexcept { dirty_ = false; }
+    // Mark clean only if the document still matches the saved snapshot revision.
+    [[nodiscard]] bool mark_saved_if_generation(std::uint64_t expected) noexcept {
+        if (generation_ != expected) return false;
+        dirty_ = false;
+        return true;
+    }
 
 private:
     std::vector<ImagePage> pages_;
