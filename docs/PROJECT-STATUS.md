@@ -2293,3 +2293,7 @@ workflow `python-bridge.yml` پس از تغییرات docstring و تفکیک ر
 - تست جدید `test_document_post_waits_for_close_while_heartbeat_remains_responsive` اضافه شد.
 - تست ثابت می‌کند POST مربوط به سند تا آزاد شدن رویداد close پاسخ نهایی نمی‌دهد، اما به‌دلیل `ThreadingHTTPServer`، درخواست مستقل heartbeat در همان زمان پاسخ‌گو می‌ماند.
 - اجرای CI در run `44029314633` موفق شد: **109 تست** در 5.105 ثانیه.
+
+## نتیجه‌ی منفیِ تقویت‌شده برای مسیر populate کردن descriptor mapها — 2026-11-17
+
+Artifact `14304323294` با موفقیت تولید شد. trace کامل `LoadDocument` از `0x004B7724` تا `0x004B8A84` و scan پنجاه متد `TWordViwer` برای offsets `+0x64/+0x68/+0x6C` اجرا شد. 39 reference پیدا شد؛ در کلاس viewer، نوشتن روی `+0x68/+0x6C` فقط هنگام انتساب dictionaryهای ساخته‌شده در setup (`0x004D0F98/0x004D0FB3`) دیده شد. در scan کل PE و byte-level rel32 نیز callsite مستقیمی برای helperهای insertion single/twin پیدا نشد. این نتیجه مسیر populate را هنوز قطعی نمی‌کند، چون dispatch غیرمستقیم/VMT، callback یا object خارجی ممکن است؛ اما شواهد فعلی هیچ مسیر insertion مستقیم را تأیید نمی‌کنند.
