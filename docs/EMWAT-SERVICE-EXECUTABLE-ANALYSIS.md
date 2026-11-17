@@ -390,3 +390,47 @@ Source: workflow 43832144163, artifact 14209690263.
 - The parser recognizes root tag "emwat", its "version" attribute, and child tags "method", "class", and "param"; the "param" child uses the "name" attribute.
 - Parser token helper 0x0046ADBC compares the token names and routes recognized elements. Helper 0x0046A7A4 appends a three-value record to the parser's dynamic collection (three adjacent string/value slots); exact semantic names for all three record fields remain unconfirmed.
 - This is the service-side XML parsing stage. The BPL-side TEmwatMethod.Invoke dictionary contract is known separately; the conversion/link from these parser records to the BPL invocation and the exact response payload still need proof.
+
+
+---
+
+## Findings incorporated from main
+
+## Delphi runtime package and class-resolution imports
+
+The PE import table confirms that `EmwatService.exe` imports `LoadPackage`, `UnloadPackage`, `StartExe`, `GetClass`, `ClassCreate`, `ClassDestroy`, `TObject.InheritsFrom`, `ClassParent`, `ClassName`, and two `GetProcAddress` entries. Exact callsites now confirm `LoadPackage` via thunk `0x00402174` at `0x0047E15F`, and `GetClass` via thunk `0x00402354` at `0x00470E07`. `ClassCreate` via thunk `0x00401158` at `0x00471220` and `ClassDestroy` via thunk `0x00401160` at `0x0047127F` form the constructor/destructor pair for the `TMethodInfo` parser metadata object. The destructor beginning at `0x00471258` frees its Params dictionary at object offset `+0x08` before invoking `ClassDestroy`. These calls must not be conflated with creation of the dynamically resolved BPL method object. The latter is constructed by the class-reference path in `ParseMethod` after `GetClass`, then dispatched through the recovered VMT slots. `StartExe` at `0x004014BA` belongs to package startup initialization; `GetProcAddress` at `0x00401720` and its wrapper at `0x00401D84` belong to runtime dynamic-symbol resolution, not a second EMWAT method dispatch path.
+
+
+## TMainForm published event/method table
+
+The VMT at `0x0047B284` points to a Delphi published method table at `0x0047B84E` (`VMT-0x40`). The table begins with a 16-bit count of 17, followed by records containing entry size, code address, and shortstring method name. The first entry is `IdHTTPServerCommandGet` at `0x0047BF30`, proving the HTTP request handler's class/method identity. Other recovered entries include `FormCreate`, `Terminate`, `Log`, `ShowMainForm`, `HideMainForm`, and `FormClose`. The VMT inspector now decodes the full table for the next pass.
+
+### Complete TMainForm published methods
+
+The method table contains 17 published methods, including the HTTP request handler (`IdHTTPServerCommandGet` at `0x0047BF30`) and HTTP exception handler (`IdHTTPServerException` at `0x0047CA44`), plus `FormCreate`, `FormClose`, `Terminate`, `LoadQuickConfig`, `Log`, and UI/timer handlers. The next analysis pass traces the startup, shutdown, and HTTP exception methods to recover server initialization and failure behavior.
+
+
+## Runtime BPL method object lifecycle (confirmed callsites)
+
+The `ParseMethod` body provides the complete dynamic dispatch lifecycle:
+
+1. `GetClass` via thunk `0x00402354` at `0x00470E07` resolves the Delphi class named by the XML `class` attribute (after the parser's `T` prefix handling).
+2. `TObject.ClassName` via thunk `0x004010B8` at `0x00470E5D` checks whether the resolved class name equals `TUpgradeEmwat` (`0x00471128`); the result is stored in `TMethodInfo+0x04`.
+3. `TObject.Create` via thunk `0x004010D8` at `0x00470EDC` constructs the actual BPL method object.
+4. The service attaches the `TMethodInfo` pointer at instance offset `+0x04` and calls the object's VMT slot `+0x0C` at `0x00470EF6`.
+5. `TObject.Free` via thunk `0x004010E8` at `0x00470F42` releases the method object after invocation.
+
+This object lifecycle is distinct from the parser metadata object's own constructor/destructor (`ClassCreate` at `0x00471220`; `ClassDestroy` at `0x0047127F`). The distinction is important for the Linux dispatcher: the XML class name selects a registered method class; a per-call method object receives the parsed method-info payload, executes through its virtual dispatch slot, and is then released.
+
+### Exact Delphi class-name construction and Invoke wrapper bridge
+
+The `T` prefix is now confirmed at instruction level, not merely inferred from the nearby literal. In `ParseMethod`, the XML `class` value is combined with the constant `T` at `0x004710E0` by helper `0x00401310`; that thunk resolves to `rtl230.bpl!System.@UStrCat3`. The resulting `T` + class string is passed to `GetClass` through thunk `0x00402354` at `0x00470E07`.
+
+The BPL side resolves the service's virtual call precisely:
+
+- Service instruction `0x00470EF6` invokes `[instance.VMT+0x0C]`.
+- For `TEmwatMethod`, the `+0x0C` VMT entry is `0x0046C9E0`, the public/exported `Invoke` wrapper. Preserve the TD32 naming mismatch: TD32 calls `0x0046C9E0` `Finalization` and labels the inner routine `0x0046C82C` as `TEmwatMethod.Invoke`.
+- The wrapper at `0x0046C9E0` calls the 433-byte shared dictionary/XML helper at `0x0046C82C`, then invokes `[instance.VMT+0x10]` at `0x0046CA88`.
+- For `TEditWordDocument`, VMT `0x005ED764` has `+0x10 = 0x005EE82C`; this concrete `PerformMethod` reads `wordConfig`, `wordBody`, `letterImages`, and `signData`, then calls `TWordViwer.LoadDocument` (`0x004B7724`).
+
+This closes the class-name construction and service→BPL→concrete `PerformMethod` edge. It does not close all document-field semantics or end-to-end Almas integration.
