@@ -2313,3 +2313,7 @@ Python bridge CI در run `44030420508` موفق شد: **111 تست موفق، 2
 ## UNO integration پس از حفظ ترتیب خام propertyها — 2026-11-17
 
 LibreOffice UNO integration در run `44030867583` موفق شد: **11 تست** در 3.974 ثانیه. تست جدید `custom_document_properties_in_info_order` را با ترتیب مستقیم `XPropertySetInfo.getProperties()` مقایسه می‌کند و ثابت می‌کند adapter ترتیب خام API را بدون sort حفظ می‌کند؛ این هنوز معادل بودن ترتیب Writer با Word را اثبات نمی‌کند.
+
+## CI پس از تبدیل descriptor payload به WordField node — 2026-11-17
+
+Python bridge CI در run `44031548179` موفق شد: **111 تست موفق، 2 skip اختیاری** در 5.120 ثانیه. تست‌ها اکنون به‌جای string فرضی، reference به خود `WordField` node متناظر در `wordConfig.fields` را بررسی می‌کنند.
