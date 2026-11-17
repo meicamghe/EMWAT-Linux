@@ -65,3 +65,33 @@ Do not treat this helper as an image codec or as proof of a particular UI-window
 - Trace the writer-side TDocumentCProperty construction and the custom-property dictionary insertion path, not just generic collection helpers.
 - Resolve the Hidden_Customizable special-field branch in GetDocFieldName and connect it to request wordConfig metadata.
 - Continue close/registration tracing independently; no HTTP behavior should be inferred from these document-field helpers.
+
+
+---
+
+## Findings incorporated from main
+
+## Descriptor dictionary construction and generic insertion semantics — 2026-11-17
+
+The latest field-mapping artifact (`14304455134`) clarifies the object construction path and corrects another TD32 naming trap:
+
+- `TWordViwer` setup routine `0x004D0D24` is called from `LoadDocument` at `0x004B78E9` with the constructor flag set. Although TD32 decorates it `$bdtr`, its body initializes viewer flags/configuration and creates three dictionary objects: `viewer+0x64` (`TObjectDictionary<UnicodeString,TDocumentCProperty>`, constructor `0x004D4670`), `viewer+0x68` (`TObjectDictionary<UnicodeString,TXmlWordConfigField>`, constructor `0x004D5C28`), and `viewer+0x6C` (`TObjectDictionary<UnicodeString,TXmlWordConfigTwinField>`, constructor `0x004D71E0`). The two descriptor maps are created with zero initial capacity and a comparer/ownership configuration; this is creation, not proof of population.
+- `TWordViwer.$bctr` at `0x004D08B4` is a separate option-form path. Its only direct caller is `ShowRecAndCcOptionForm` (`0x004D1B63`); it scans the viewer's active-field array and constructs option entries for `Receivers`, `ReceiverDeps`, `ccReceivers`, and `ccReceiverDeps`. It is not the descriptor-map population path.
+- For the single-field map, `0x004D552C` is the actual AddOrSetValue-shaped routine even though TD32 labels it `ContainsKey`: it hashes/searches the key, updates an existing entry through `0x004D4DA8`, or grows and inserts a new `(hash,key,value)` triple through `0x004D4D58`.
+- For the twin-field map, `0x004D6AE4` has the same AddOrSetValue-shaped control flow despite its TD32 `ContainsKey` label: it searches, updates an existing value through `0x004D6360`, or grows and inserts through `0x004D6310`.
+- The generic dictionary record layout is three 32-bit slots per entry: hash, managed UnicodeString key, and descriptor pointer. The update/insert helper names in TD32 are not reliable labels for the observed operation; use the instructions and call graph.
+
+The map population source is now identified: `AddCustomDocPropertiesToDic` inserts entries into the single/twin maps using the full custom-property name as key. The remaining uncertainty is the precise semantics of every XML field accessor used to retrieve the field-name strings and whether the Writer API exposes the same custom-property enumeration order as Word.
+
+### Complete LoadDocument/viewer scan and confirmed insertion callsites
+
+Artifact `14304323294` traced `LoadDocument` across `0x004B7724–0x004B8A84` and scanned 50 `TWordViwer` methods for offsets `+0x64`, `+0x68`, and `+0x6C` (39 references). The key map accesses in `AddCustomDocPropertiesToDic` are `viewer+0x6C` at `0x004D15BE` followed by the twin-map Add wrapper call at `0x004D15C6`, and `viewer+0x68` at `0x004D162D` followed by the single-map Add wrapper call at `0x004D1635`. The low-level insertion helpers have no external direct CALL references because `AddCustomDocPropertiesToDic` calls the wrapper methods, which then invoke the low-level insert routines internally. This closes the descriptor-map population path.
+
+### Correction — Add wrappers were mislabelled as Remove in TD32
+
+The full callsite trace resolves the earlier false interpretation. `AddCustomDocPropertiesToDic` calls `0x004D68D4` for the twin map at `0x004D15C6` and `0x004D531C` for the single map at `0x004D1635`. Although TD32 decorates both routines `TDictionary.Remove`, their bodies are Add implementations: they compute the hash/bucket, raise the duplicate-key exception when the key already exists, and insert the `(hash,key,value)` entry through `0x004D6310` (twin) or `0x004D4D58` (single). The `ecx` argument is the descriptor value pointer. The earlier direct-call scan that found no references to the low-level insertion helpers was a false negative for the wrapper-level call chain; the wrapper callsites are direct and are now confirmed. The separate `AddOrSetValue` helpers (`0x004D552C` single and `0x004D6AE4` twin) are not the methods used by this population pass.
+
+
+## Python descriptor builder alignment
+
+`build_word_custom_property_field_maps()` now mirrors the confirmed population shape more carefully: it accepts the ordered custom-property names plus an optional, same-length `xml_fields` sequence from `wordConfig`. It preserves the zero-based index and original unsplit property name as the map key, splits only the first `†` for twin members, and stores the corresponding full `WordField` node (attributes and text) as the descriptor's XML interface reference. When XML field nodes are unavailable, it leaves that member `None`. The Writer metadata catalog remains name-only and sorted for deterministic display; it is deliberately not wired to this builder until Word-versus-Writer enumeration order is validated.
