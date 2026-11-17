@@ -2522,3 +2522,10 @@ workflow `python-bridge.yml` پس از تغییرات docstring و تفکیک ر
 - LibreOffice close retry fix and regression test are committed; no fresh CI result is visible through the available Actions query.
 - Workflow now publishes the AutoSave table report to the GitHub job summary and validates that PE data is file-backed before reading. It also traces the wait-loop and close callback. A fresh run/artifact is not verified.
 - Correct compare orientation `base=main`, `head=work/template-mapping-inventory`: after this handoff/status checkpoint commits, the branch will be **154 commits ahead, 343 behind, 56 changed files; diverged**. PR #1 remains Draft/non-mergeable; no merge/rebase/force-push.
+
+
+## ابزار جدید برای state-field data flow — 2026-11-17
+
+- `tools/scan_td32_instance_field_refs.py` اضافه شد تا دسترسی‌های حافظه با displacementهای مشخص را در تمام procedureهای TD32 یک کلاس inventory کند؛ گزارش شامل procedure، VA، mnemonic، base/index register و access candidate است.
+- workflow Word lifecycle اکنون برای `TWordViwer+0x58`, `+0x7C`, `+0x88`, `+0xA0` گزارش‌های جدا تولید می‌کند. هدف بعدی تعیین setter اولیهٔ wait-state، ارتباط timer object و document path است.
+- این اسکن فقط candidate می‌دهد و به‌تنهایی Self/base register یا معنای business فیلد را اثبات نمی‌کند. اجرای تازهٔ آن هنوز تأیید نشده است.
