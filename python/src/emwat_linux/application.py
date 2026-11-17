@@ -54,8 +54,9 @@ def create_libreoffice_bridge_server(
     additional_handlers: Mapping[str, MethodHandler] | None = None,
     host: str = "127.0.0.1",
     port: int = 1984,
-    max_request_bytes: int = 16 * 1024 * 1024,
-    max_response_bytes: int = 16 * 1024 * 1024,
+    max_request_bytes: int = 96 * 1024 * 1024,
+    max_response_bytes: int = 96 * 1024 * 1024,
+    max_document_bytes: int = 64 * 1024 * 1024,
     socket_timeout_seconds: float = 10.0,
 ) -> BridgeHTTPServer:
     """Compose the captured EditWordDocument route with LibreOffice UNO.
@@ -69,10 +70,11 @@ def create_libreoffice_bridge_server(
     from emwat_linux.libreoffice_adapter import LibreOfficeAdapter
 
     office = office_adapter if office_adapter is not None else LibreOfficeAdapter()
-    service = EditWordDocumentService(office)
+    service = EditWordDocumentService(office, max_document_bytes=max_document_bytes)
     edit_word_handler = create_editword_handler(
         service,
         cancel_response_factory=cancel_response_factory,
+        max_response_bytes=max_response_bytes,
     )
     registered_handlers = dict(additional_handlers or {})
     registered_handlers["EditWordDocument"] = edit_word_handler
