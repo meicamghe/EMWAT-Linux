@@ -1176,3 +1176,11 @@ Do not implement guessed `signData` joining or claim end-to-end Almas registrati
 - دو workflow تحلیل `analyze-emwat-dispatch-crosswalk.yml` و `analyze-word-automation-surface.yml` با نسخه گسترش‌یافته `main` همگام شدند تا traceهای بیشتر مربوط به زنجیره dispatch، GetClass، thunkهای import و مسیرهای Word اجرا شوند.
 - `dispatcher.py` اکنون مستند می‌کند که سرویس Delphi پیشوند `T` را برای GetClass اضافه می‌کند؛ registry لینوکس همچنان نام XML اصلی را به‌صورت allowlist نگه می‌دارد و runtime class resolution انجام نمی‌دهد.
 - دو workflow پس از push در حال اجرا هستند؛ تا دریافت نتیجه نهایی، هیچ ادعایی درباره سبز بودن آن‌ها ثبت نمی‌شود. ابزارهای تازه‌وارد نیز هنوز باید در CI و روی artifact واقعی تحلیل شوند.
+
+
+## CI و تکمیل ابزارهای Delphi RTTI — 2026-11-17
+
+- هر چهار workflow قبلی با موفقیت پایان یافتند: Python bridge روی `de5e4ff`، LibreOffice UNO و Python bridge روی `916312b`، و دو workflow تحلیل Word/dispatch روی commitهای `7dade3a` و `c2c55dd`.
+- ابزار `inspect_delphi_vmt_address.py` با قابلیت خواندن Method Table و Field Table، نمونه‌برداری از بایت‌های جدول و برچسب‌گذاری آدرس‌های رویه از TD32 همگام شد.
+- ابزار `trace_delphi_interfaces.py` با فهرست گسترده‌تر interfaceهای Word/XML و نمونه‌برداری قابل تنظیم از vtable تا 60 slot همگام شد.
+- این دو ابزار تغییر کرده‌اند و باید در اجرای بعدی تحلیل روی BPL واقعی خروجی آن‌ها بازبینی شود؛ نتیجهٔ استاتیک/CI به‌تنهایی تأیید رفتار runtime نیست.
