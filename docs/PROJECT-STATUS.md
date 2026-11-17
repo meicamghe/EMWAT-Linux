@@ -6,7 +6,7 @@
 - The Word close path clears viewer `+0x58`, releasing the pending EditWordDocument request. `LoadDocument` then writes the captured `response-word` Base64 legacy DOC/CFB response through Indy and sets `bResultSet`. PCAP shows ~54.558 seconds from request body to response; TCP gaps preclude a full hash claim.
 - New detailed note: `docs/WORD-CLOSE-WAIT-AND-RESPONSE-CORRELATION-2026-11-17.md`. Earlier abbreviated interpretation in the 2026-11-17 addenda is superseded by this evidence.
 - Fixed two escaped-literal defects in the new workflow's AutoSave report generator: section-name NUL trimming and newline joining.
-- Latest verified PR head at checkpoint: `7c8122cc57399536db0017de061b41dd0e337df7`. Correct compare orientation `base=main`, `head=work/template-mapping-inventory`: **137 commits ahead, 343 behind, 56 changed files; diverged**.
+- Latest verified PR head at checkpoint: `7c8122cc57399536db0017de061b41dd0e337df7`. Correct compare orientation `base=main`, `head=work/template-mapping-inventory`: **139 commits ahead, 343 behind, 56 changed files; diverged**.
 - PR #1 remains Draft/non-mergeable. The Actions query available here returned no run records for the workflow change, so the updated workflow and interval-table artifact remain unverified. No new native C++ suite, physical scanner test, or end-to-end Almas test is claimed.
 
 # وضعیت پروژه EMWAT-Linux
