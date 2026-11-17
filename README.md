@@ -90,3 +90,8 @@ The loopback transport is hardened with IPv4-loopback-only binding, Host-header 
 ### Parallel implementation progress (2026-11-15)
 
 The native bridge now includes the observed Agent liveness route GET /?heartbeat (HTTP 200, empty response body) with a regression test. A separate office-independent document-session state machine is available at python/src/emwat_linux/sessions.py; it distinguishes office-engine Save from close-time finalization and supports safe idempotent return. Tests were added for lifecycle transitions and heartbeat behavior. These newest commits are not yet represented by a verified CI run, and no production Almas Gam handler or LibreOffice integration is claimed.
+
+
+## Build and test
+
+See [docs/BUILD-AND-TEST.md](docs/BUILD-AND-TEST.md) for reproducible build and test commands for the native image/scanner core, Python bridge, and LibreOffice UNO integration suite.
