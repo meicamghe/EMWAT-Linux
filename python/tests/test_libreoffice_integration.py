@@ -250,6 +250,8 @@ class LibreOfficeIntegrationTests(unittest.TestCase):
                     if field.custom_property_name is not None
                 ),
             )
+            with handle.snapshot_lock:
+                modified_before_recovery = handle.document.isModified()
             deadline = time.monotonic() + 10
             snapshots = recovery_store.list_snapshots()
             while not snapshots and time.monotonic() < deadline:
@@ -260,6 +262,8 @@ class LibreOfficeIntegrationTests(unittest.TestCase):
             self.assertTrue(
                 recovery_store.load_snapshot(handle.recovery_session_id).startswith(_CFB_SIGNATURE)
             )
+            with handle.snapshot_lock:
+                self.assertEqual(handle.document.isModified(), modified_before_recovery)
             handle.document.close(True)
             close_event = adapter.wait_for_close(handle)
             self.assertEqual(close_event.disposition, CloseDisposition.CLOSED)
