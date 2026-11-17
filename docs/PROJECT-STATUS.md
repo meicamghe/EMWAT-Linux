@@ -2115,3 +2115,12 @@ These are real implementation increments, not proof of operational Almas compati
 - The immediately preceding native run #109 was triggered between the source and header commits and failed to compile because it saw only the first half of the multi-frame API change. The completed source+header+test commit in run #111 is green.
 - Python bridge run #220: 116 tests, all successful with 3 optional skips.
 - LibreOffice UNO run #39: 12 tests passed.
+
+
+### Scanner integration and document response bounds — 2026-11-17
+- Added `ImageDocument.append_pages()`: validates the full page batch before mutating the current document.
+- Added `scan_into_document()`: obtains all scanner frames first, then appends the complete batch. A failed scan leaves the existing document unchanged.
+- Added tests for multi-frame append and failure atomicity.
+- Native image run #118 passed: normal build/test and ASan/UBSan build/test each passed all 4 CTest targets.
+- Python bridge run #224 passed: 117 tests, 114 passed and 3 optional skips.
+- Corrected EditWord response limits: the LibreOffice composition path now pairs a 64 MiB decoded document cap with 128 MiB request and 96 MiB response limits to account for Base64 expansion and XML overhead. The response serializer receives the configured response cap rather than relying on a smaller internal default.
