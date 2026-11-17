@@ -112,6 +112,7 @@ jobs:
             python tools/scan_pe_rel32_call_bytes.py analysis-input/EmwatMethods.bpl1 "$address" "word-automation/fields/helper-$name-rel32-call-candidates.md"
           done
           python tools/scan_td32_class_field_refs.py analysis-input/EmwatMethods.bpl1 TWordViwer word-automation/fields/twordviewer-map-field-accesses.md --offsets 0x64 0x68 0x6c
+          python tools/find_td32_class_procedures.py analysis-input/EmwatMethods.bpl1 TXMLFieldsType TXMLFieldType > word-automation/fields/xml-field-collection-td32-procedures.md
           python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x004B7724 0x004B8A84 word-automation/fields/load-document-full-range.md
           python tools/scan_pe_call_refs.py analysis-input/EmwatMethods.bpl1 0x004D4D08 word-automation/fields/map-single-doadd-all-callrefs.md
           python tools/scan_pe_call_refs.py analysis-input/EmwatMethods.bpl1 0x004D4D58 word-automation/fields/map-single-dosetvalue-all-callrefs.md
