@@ -2135,7 +2135,7 @@ Workflow تحلیل Word گسترش یافت تا helper مرکزی درج تص�
 
 ## مدل‌سازی descriptorهای single و twin در Python — 2026-11-16
 
-تابع `build_word_custom_property_field_maps()` و مدل‌های `SingleWordFieldDescriptor` / `TwinWordFieldDescriptor` در `word_fields.py` نگه داشته شدند. تابع اکنون نام‌های ordered Custom Document Property و در صورت وجود `xml_field_names` متناظر از `wordConfig` را می‌گیرد؛ اگر XML field names ارائه نشوند، مقدار field-name را حدس نمی‌زند و `None` می‌گذارد. طول دو sequence هنگام ارائه هر دو باید برابر باشد.
+تابع `build_word_custom_property_field_maps()` و مدل‌های `SingleWordFieldDescriptor` / `TwinWordFieldDescriptor` در `word_fields.py` نگه داشته شدند. تابع اکنون نام‌های ordered Custom Document Property و در صورت وجود `xml_fields` متناظر از `wordConfig` را می‌گیرد و reference به خود `WordField` node (attributes و text) را ذخیره می‌کند؛ اگر XML field node ارائه نشود، reference برابر `None` می‌ماند. طول دو sequence هنگام ارائه هر دو باید برابر باشد.
 
 - Python CI اجرا `43890539219`: **۱۰۷ تست موفق، ۲ skip اختیاری**.
 
@@ -2148,7 +2148,7 @@ Workflow تحلیل Word گسترش یافت تا helper مرکزی درج تص�
 
 ## مرزبندی inventory Writer و descriptorهای native — 2026-11-16
 
-ردیابی نهایی نشان داد `AddCustomDocPropertiesToDic` خودش descriptor mapها را از Word CustomDocumentProperties populate می‌کند. بااین‌حال `WriterDocumentCatalog` هم نام‌های مرتب‌شده برای نمایش و هم نام‌ها در ترتیب `PropertySetInfo` خود UNO را جداگانه گزارش می‌کند؛ این ترتیب هنوز با enumeration ورد تطبیق داده نشده و XML field name متناظر نیز باید از `wordConfig.fields` با همان index گرفته شود، پس اتصال خودکار catalog به descriptor map عمداً انجام نشده است. helper Python برای split نام‌ها باقی مانده و باید XML field name را جداگانه دریافت کند؛ این helper به‌تنهایی ادعای mapping کامل ندارد.
+ردیابی نهایی نشان داد `AddCustomDocPropertiesToDic` خودش descriptor mapها را از Word CustomDocumentProperties populate می‌کند. بااین‌حال `WriterDocumentCatalog` هم نام‌های مرتب‌شده برای نمایش و هم نام‌ها در ترتیب `PropertySetInfo` خود UNO را جداگانه گزارش می‌کند؛ این ترتیب هنوز با enumeration ورد تطبیق داده نشده و `WordField` node متناظر نیز باید از `wordConfig.fields` با همان index گرفته شود، پس اتصال خودکار catalog به descriptor map عمداً انجام نشده است. helper Python برای split نام‌ها باقی مانده و می‌تواند `WordField` node متناظر را با همان index دریافت کند؛ این helper به‌تنهایی ادعای mapping کامل ندارد.
 
 ## اتصال runtime Custom Property به مسیر تصویر و چاپ — 2026-11-16
 
@@ -2300,11 +2300,11 @@ Artifact `14304323294` با موفقیت تولید شد. trace کامل `LoadDo
 
 ## اصلاح builder descriptorها بر اساس مسیر واقعی Add — 2026-11-17
 
-`build_word_custom_property_field_maps()` به‌روزرسانی شد تا دیگر property name را به‌اشتباه معادل XML field name فرض نکند. اکنون `xml_field_names` را به‌صورت اختیاری و هم‌تراز با ترتیب property enumeration می‌پذیرد؛ در صورت نبود آن، field-name در descriptor برابر `None` می‌ماند. تست‌ها mapping با index مشترک و ردکردن sequenceهای ناهم‌طول را پوشش می‌دهند. Writer catalog فعلاً به این builder وصل نشده، چون enumeration order مرتب‌شده‌ی catalog هنوز با ترتیب Word ثابت نشده است.
+`build_word_custom_property_field_maps()` به‌روزرسانی شد تا دیگر property name را به‌اشتباه معادل XML field name فرض نکند. اکنون `xml_fields` را به‌صورت اختیاری و هم‌تراز با ترتیب property enumeration می‌پذیرد و خود `WordField` node را نگه می‌دارد؛ در صورت نبود آن، reference در descriptor برابر `None` می‌ماند. تست‌ها نگهداری XML node با index مشترک و ردکردن sequenceهای ناهم‌طول را پوشش می‌دهند. Writer catalog فعلاً به این builder وصل نشده، چون enumeration order مرتب‌شده‌ی catalog هنوز با ترتیب Word ثابت نشده است.
 
 ## CI پس از اصلاح descriptor builder — 2026-11-17
 
-Python bridge CI در run `44030420508` موفق شد: **111 تست موفق، 2 skip اختیاری** در 5.163 ثانیه. تست‌های جدید هم‌ترازی `property_names` و `xml_field_names`، رد sequenceهای ناهم‌طول و حفظ field-name به‌صورت `None` هنگام نبود XML mapping را پوشش می‌دهند.
+Python bridge CI در run `44030420508` موفق شد: **111 تست موفق، 2 skip اختیاری** در 5.163 ثانیه. تست‌های جدید هم‌ترازی `property_names` و `xml_fields`، رد sequenceهای ناهم‌طول و حفظ reference برابر `None` هنگام نبود XML node را پوشش می‌دهند.
 
 ## حفظ ترتیب خام Custom Propertyهای Writer — 2026-11-17
 
