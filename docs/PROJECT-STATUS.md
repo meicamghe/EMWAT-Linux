@@ -2287,3 +2287,9 @@ workflow `python-bridge.yml` پس از تغییرات docstring و تفکیک ر
 - `0x004D552C` برای single و `0x004D6AE4` برای twin در عمل AddOrSetValue هستند، هرچند TD32 هر دو را `ContainsKey` نام‌گذاری کرده است. در حالت key موجود، به helper update و در حالت key جدید، پس از grow به helper insert می‌روند.
 - هر entry سه slot دارد: hash، UnicodeString key و pointer به descriptor. helperهای update/insert نیز بعضاً TD32 label نامتناسب دارند؛ semantics از بدنه disassembly تعیین می‌شود.
 - منبع اولیه‌ی insertion هنوز پیدا نشده است. batch جدید trace کامل `LoadDocument`، همه‌ی دسترسی‌های `TWordViwer` به offsets `+0x64/+0x68/+0x6C` و helperهای update-existing را اجرا می‌کند.
+
+## آزمون transport برای session همگام و close-driven — 2026-11-17
+
+- تست جدید `test_document_post_waits_for_close_while_heartbeat_remains_responsive` اضافه شد.
+- تست ثابت می‌کند POST مربوط به سند تا آزاد شدن رویداد close پاسخ نهایی نمی‌دهد، اما به‌دلیل `ThreadingHTTPServer`، درخواست مستقل heartbeat در همان زمان پاسخ‌گو می‌ماند.
+- اجرای CI در run `44029314633` موفق شد: **109 تست** در 5.105 ثانیه.
