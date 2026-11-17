@@ -100,6 +100,12 @@ jobs:
               python tools/scan_pe_pointer_refs.py analysis-input/EmwatService.exe "$address" "dispatch-crosswalk/service/import-${address}-pointer-refs.md" || true
             done
             python -m py_compile tools/scan_pe_call_refs.py tools/scan_pe_rel32_call_bytes.py tools/scan_pe_ff15_iat_refs.py
+            for address in 0x004011BA 0x00401162 0x0040115A 0x00401466 0x00401D7E 0x00402176 0x00402356; do
+              name=${address#0x}
+              python tools/trace_pe_target.py analysis-input/EmwatService.exe "$address" "dispatch-crosswalk/service/import-thunks-$name.md" 1600 ret
+              python tools/scan_pe_call_refs.py analysis-input/EmwatService.exe "$address" "dispatch-crosswalk/service/import-thunks-$name-callers.md"
+              python tools/scan_pe_rel32_call_bytes.py analysis-input/EmwatService.exe "$address" "dispatch-crosswalk/service/import-thunks-$name-rel32-candidates.md"
+            done
             for address in 0x004873E0 0x0048740C 0x00487410 0x0048753C 0x004875CC 0x00487680 0x00487B9C; do
               python tools/scan_pe_ff15_iat_refs.py analysis-input/EmwatService.exe "$address" "dispatch-crosswalk/service/${address}-ff15-iat-refs.md"
             done
