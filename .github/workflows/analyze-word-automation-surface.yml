@@ -116,6 +116,15 @@ jobs:
           python tools/scan_pe_call_refs.py analysis-input/EmwatMethods.bpl1 0x004D1148 word-automation/fields/add-xml-word-config-fields-all-callrefs.md
           python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 0x004D1148 word-automation/fields/add-xml-word-config-fields-pointer-refs.md || true
           python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 0x004D1454 word-automation/fields/add-custom-doc-properties-pointer-refs.md || true
+          for address in 0x004B4C38 0x004B6A70; do
+            python tools/inspect_delphi_vmt_address.py analysis-input/EmwatMethods.bpl1 "$address" "word-automation/fields/dictionary-vmt-${address#0x}.md" || true
+            python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 "$address" "word-automation/fields/dictionary-vmt-${address#0x}-pointer-refs.md" || true
+          done
+          for address in 0x004D52DC 0x004D54E0 0x004D6894 0x004D6A98; do
+            python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 "$address" "word-automation/fields/${address}-method-pointer-refs.md" || true
+          done
+          python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x004B1080 0x004B10D0 word-automation/fields/add-xml-word-config-fields-context-4B10.md
+          python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x004B15F0 0x004B1660 word-automation/fields/add-xml-word-config-fields-context-4B16.md
           for address in 0x004D4D08 0x004D4D58 0x004D4DA8 0x004D52DC 0x004D54E0 0x004D552C 0x004D559C 0x004D6894 0x004D6A98; do
             python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 "$address" "word-automation/fields/${address}-method-pointer-refs.md" || true
           done
