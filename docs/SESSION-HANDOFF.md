@@ -1233,3 +1233,11 @@ Do not implement guessed `signData` joining or claim end-to-end Almas registrati
 - Earlier source-only refactor runs `44055185443` (Python bridge) and `44055185438` (UNO integration) on `b7c0babf285633b697d5a0972ceacb86b2b0bf69` also succeeded.
 - The separate Word lifecycle analysis run `44053390645` completed successfully and uploaded artifact `14314903496`; its registry/control findings are summarized in `docs/AUTOSAVE-SETTINGS-REGISTRY-CONTRACT-2026-11-17.md`.
 - No native C++ suite was rerun in this pass. Prior native #121 success remains the latest verified native run.
+
+
+## Compare-direction correction and latest CI — 2026-11-17
+
+- Important compare orientation correction: GitHub's `ahead_by` counts commits in the compare head relative to the base. With `base=main`, `head=work/template-mapping-inventory`, the branch is **110 commits ahead and 343 commits behind main**; compare status is diverged and the compare result reports 53 changed files. Earlier handoff/PR wording that said 343 ahead / 102 behind had the direction reversed and is superseded.
+- Latest PR head is `f7db9057d965d83d7af0cf025eebf41d6f701849`; PR #1 remains Draft and not mergeable. The PR description has been corrected to show the proper direction.
+- Latest source verification: Python bridge run `44055192702` and LibreOffice UNO integration run `44055192704` both succeeded on `22a7d6d828f3b799cd1dbe544acff170530ab64f`. The UNO run verifies the raw UNO custom-property metadata order against the live `PropertySetInfo` enumeration.
+- Documentation-only commits after that test commit include the Word VMT/TD32 mapping, event-sink/save cancellation, and AutoSave settings/registry evidence. No source code changed after the verified test commit in this documentation pass.
