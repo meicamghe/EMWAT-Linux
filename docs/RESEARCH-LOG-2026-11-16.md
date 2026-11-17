@@ -759,3 +759,7 @@ Aligned trace artifact `14301682420` confirms the GetClass callsite at `0x00470E
 ## TD32 batch scanner added to shorten repeated binary-analysis runs — 2026-11-17
 
 The field workflow previously reparsed the same TD32 subsection directory twice per target (`trace_td32_procedure.py` and `trace_td32_callers.py`) across 69 target addresses. Added `tools/trace_td32_batch.py`: it loads/parses TD32 once, decodes each procedure once, then emits the same per-target `*-td32.md` and `*-callers.md` artifacts. The workflow now uses the batch tool while retaining bounded linear traces for each target. This preserves the existing report naming and content contract while avoiding repeated debug-directory scans.
+
+## Class-name prefix before GetClass identified as a targeted question
+
+The aligned ParseMethod island shows `mov edx, 0x004710E0` immediately before `call 0x00401310`, then loads the resulting local string into EAX and calls `GetClass` at `0x00470E07`. The decoded string at `0x004710E0` is exactly `T`. This strongly suggests the service prefixes the XML class attribute with Delphi's conventional `T` class prefix before runtime lookup (e.g. request `EditWordDocument` → registered class `TEditWordDocument`), which matches the recovered BPL class symbol. The semantics of helper `0x00401310` have not yet been decoded; a dedicated helper/caller trace is now in the service workflow before this is treated as confirmed string concatenation.
