@@ -14,6 +14,7 @@
 namespace emwat {
 namespace {
 constexpr std::size_t max_scan_bytes = 1024ULL * 1024ULL * 1024ULL;
+constexpr std::size_t max_scan_pages = 100;
 constexpr SANE_Word max_capability_entries = 4096;
 constexpr std::size_t max_capability_string_length = 256;
 std::mutex& sane_mutex() {
@@ -215,7 +216,10 @@ std::vector<ImagePage> read_scan_frames(
     bool all_frames,
     const std::pair<std::optional<double>, std::optional<double>>& dpi) {
     std::vector<ImagePage> pages;
+    std::size_t total_bytes = 0;
     for (;;) {
+        if (pages.size() >= max_scan_pages)
+            throw ScannerError("Scanner exceeded the 100-page safety limit");
         const auto start_status = sane_start(handle);
         if (start_status != SANE_STATUS_GOOD)
             throw ScannerError(std::string("Cannot start scan: ") + sane_strstatus(start_status));
@@ -284,6 +288,10 @@ std::vector<ImagePage> read_scan_frames(
             throw ScannerError("Scanner returned an incomplete image frame");
         if (!pixels.valid())
             throw ScannerError("Scanner produced an invalid pixel buffer");
+        const auto frame_bytes = pixels.bytes.size();
+        if (frame_bytes > max_scan_bytes - total_bytes)
+            throw ScannerError("Multi-frame scan exceeds the 1 GiB total safety limit");
+        total_bytes += frame_bytes;
         pages.push_back(ImagePage{std::move(pixels), dpi.first, dpi.second});
 
         if (params.last_frame) break;
