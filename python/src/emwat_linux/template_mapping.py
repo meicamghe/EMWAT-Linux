@@ -29,6 +29,7 @@ class TemplateMappingReport:
     property_count: int
     config_field_count: int
     index_alignment_valid: bool
+    property_order_equivalence_verified: bool
     alignment_error: str | None
     candidates: tuple[TemplateFieldCandidate, ...]
     unmatched_config_fields: tuple[str, ...]
@@ -39,12 +40,13 @@ def inspect_template_mapping(
     config: WordDocumentConfig,
     catalog: WriterDocumentCatalog,
 ) -> TemplateMappingReport:
-    """Create an exact-name candidate report without mutating the Writer file.
+    """Create exact-name candidates without mutating the Writer file.
 
-    The recovered native AddCustomDocPropertiesToDic path uses each custom
-    property's enumeration index to select the XML field at the same index.
-    If those sequences differ in length, the association is ambiguous and no
-    positional candidates are emitted.
+    The native Word path associates each custom-property enumeration index
+    with the XML field at the same index. LibreOffice exposes its own property
+    metadata order; equivalence between that order and Word COM enumeration is
+    not yet proven. Equal counts are therefore necessary for candidates, but
+    do not prove positional equivalence. The report exposes that distinction.
 
     For aligned entries, single-field names and both sides of a twin identifier
     are compared case-insensitively with Writer structure names. Custom
@@ -59,6 +61,7 @@ def inspect_template_mapping(
             property_count=len(property_names),
             config_field_count=len(config_fields),
             index_alignment_valid=False,
+            property_order_equivalence_verified=False,
             alignment_error="custom_property_and_config_field_counts_differ",
             candidates=(),
             unmatched_config_fields=tuple(field.field_id for field in config_fields),
@@ -130,6 +133,7 @@ def inspect_template_mapping(
         property_count=len(property_names),
         config_field_count=len(config_fields),
         index_alignment_valid=True,
+        property_order_equivalence_verified=False,
         alignment_error=None,
         candidates=tuple(candidates),
         unmatched_config_fields=tuple(
