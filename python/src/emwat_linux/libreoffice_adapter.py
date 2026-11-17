@@ -139,6 +139,10 @@ class _DocumentCloseListener:
         self.snapshot_ready = Event()
 
     def queryClosing(self, _event: object, _gets_ownership: bool) -> None:
+        # A close attempt can be vetoed/cancelled by the office UI and retried.
+        # Do not let a previous snapshot failure poison a later successful close.
+        self.snapshot_error = None
+        self.snapshot_ready.clear()
         try:
             # storeToURL writes a copy and does not change the document's URL.
             self._document.storeToURL(
