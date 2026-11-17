@@ -142,6 +142,13 @@ def decode_optional_attributes(
         encoding = attribute.content_attributes.get("encryption")
         attribute_id = attribute.attributes.get("id", f"optional-{index}")
         value = _decode_value(attribute.content, encoding, field_id=attribute_id)
+        if isinstance(value, bytes):
+            try:
+                value = value.decode("utf-8", errors="strict")
+            except UnicodeDecodeError as exc:
+                raise WordFieldDecodeError(
+                    f"optional_attribute_must_be_text:{attribute_id}"
+                ) from exc
         if not isinstance(value, str):
             raise WordFieldDecodeError(
                 f"optional_attribute_must_be_text:{attribute_id}"
