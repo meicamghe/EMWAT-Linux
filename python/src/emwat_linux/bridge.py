@@ -12,7 +12,7 @@ import re
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from ipaddress import ip_address
 from typing import Callable
-from urllib.parse import urlsplit
+from urllib.parse import parse_qsl, urlsplit
 
 
 @dataclass(frozen=True)
@@ -208,6 +208,26 @@ class BridgeHTTPServer:
                     return
                 if origin is not None:
                     self._allowed_response_origin = origin
+
+                # The captured browser bridge sends exactly one invoke nonce
+                # per POST. Reject ambiguous/missing routing before reading the
+                # body or dispatching a method.
+                try:
+                    invoke_parameters = parse_qsl(
+                        parsed.query,
+                        keep_blank_values=True,
+                        strict_parsing=True,
+                    )
+                except ValueError:
+                    self._send(400, b"invalid_invoke_query", "text/plain; charset=utf-8")
+                    return
+                if (
+                    len(invoke_parameters) != 1
+                    or invoke_parameters[0][0] != "invoke"
+                    or not invoke_parameters[0][1]
+                ):
+                    self._send(400, b"invalid_invoke_query", "text/plain; charset=utf-8")
+                    return
 
                 body = self.rfile.read(length)
                 if len(body) != length:
