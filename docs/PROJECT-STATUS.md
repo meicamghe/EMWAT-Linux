@@ -2553,3 +2553,13 @@ workflow `python-bridge.yml` پس از تغییرات docstring و تفکیک ر
 - Local isolated execution of the five recovery-store unit tests: **5/5 passed**.
 - A separate local harness using the same recovery-loop logic and a fake UNO document verified transient first-attempt failure → successful retry → persisted CFB snapshot → clean worker stop.
 - These local checks do not replace the committed GitHub Python bridge tests or live LibreOffice UNO integration. No fresh GitHub Actions run is confirmed.
+
+
+## Final checkpoint for this continuation — 2026-11-17
+
+- Linux-native periodic recovery is implemented in `recovery_store.py` and integrated into `LibreOfficeAdapter`: 10-second default worker, owner-only state storage, full SHA-256 filenames, fsync + atomic manifest switch, transient retry, close synchronization, cleanup on successful final DOC export, and preservation after abnormal termination.
+- Recovery is a Linux-native format, not Windows `.easz` compatibility. It is not encrypted; owner-only permissions are used. A restore UI and retention policy remain open.
+- Five recovery-store unit tests passed in an isolated local run; a separate isolated worker harness passed retry/persist/stop. Live UNO integration and GitHub Actions remain unverified.
+- The live UNO test is committed to verify: real periodic DOC/CFB snapshot, Writer modified flag remains true, recovery does not emit the user-save callback, and normal final export removes the recovery session.
+- New TD32 field scanner/workflow targets `TWordViwer+0x58/+0x7C/+0x88/+0xA0`; the latest analysis artifact is not visible through the available Actions query.
+- Correct compare orientation `base=main`, `head=work/template-mapping-inventory`: after these two checkpoint commits the branch is **199 commits ahead, 343 behind, 61 changed files; diverged**. PR #1 remains Draft/non-mergeable; no merge/rebase/force-push.
