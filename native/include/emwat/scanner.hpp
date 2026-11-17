@@ -67,6 +67,7 @@ public:
 } // namespace emwat
 
 
+namespace emwat {
 // Acquire a complete scan before changing the document. Invalid/incomplete
 // batches leave the existing document untouched.
 inline void scan_into_document(
@@ -77,3 +78,4 @@ inline void scan_into_document(
     auto pages = scanner.scan_all(device_id, options);
     document.append_pages(std::move(pages));
 }
+} // namespace emwat
