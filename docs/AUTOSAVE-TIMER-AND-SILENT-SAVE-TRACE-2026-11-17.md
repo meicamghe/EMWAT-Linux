@@ -62,7 +62,7 @@ In `TfrmShowAutoSaveFiles.CloseWordApp` at `0x005EBDA8`, the virtual call at `0x
 
 - Inspect the new `autosave-interval-table.md` artifact to recover the exact DWORD lookup values.
 - Decode the `cbbAutoSaveInterval` item labels and index convention from the original form resource or runtime form state.
-- Resolve the timer enable/interval assignment and establish whether a periodic event is actually wired to this method.
+- Recover the exact lookup-table DWORD values and UI labels; timer callback wiring and the 10-second minimum are established.
 - Trace `GetDocFieldName`'s conditional `SilentSaveEmwatDoc` path through the helper `0x004BFF1C` to its output/persistence boundary.
 - Resolve the VCL component type at form offset `+0x3C0` and the virtual slot `+0x104`.
 
