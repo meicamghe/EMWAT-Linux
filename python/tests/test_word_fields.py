@@ -12,6 +12,7 @@ from emwat_linux.word_fields import (
     find_native_twin_field_index,
     is_native_business_signature_end,
     parse_word_field_identifier,
+    resolve_twin_field_partner,
 )
 
 
@@ -57,6 +58,19 @@ class WordFieldDecodingTests(unittest.TestCase):
             ],
             [(1, "SignStart", "SignEnd")],
         )
+
+    def test_resolves_twin_partner_with_native_case_insensitive_compare(self):
+        maps = build_word_custom_property_field_maps(("SignSenderStart†SignSenderEnd",))
+        descriptor = maps.twins[0]
+        self.assertEqual(
+            resolve_twin_field_partner(descriptor, "SIGNSENDERSTART"),
+            "SignSenderEnd",
+        )
+        self.assertEqual(
+            resolve_twin_field_partner(descriptor, "signsenderend"),
+            "SignSenderStart",
+        )
+        self.assertIsNone(resolve_twin_field_partner(descriptor, "LetterSubject"))
 
     def test_matches_native_business_signature_end_pattern(self):
         for field_name in ("signsenderend", "signsenderend0", "signsenderend12", "signend29"):
