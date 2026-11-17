@@ -86,6 +86,23 @@ int main() {
     assert(scanned_document.page(1).pixels.bytes[0] == 84);
     backend.multi_frame = false;
 
+    // Invalid batches must not partially append or mark the document dirty.
+    ImageDocument invalid_batch_document;
+    invalid_batch_document.append_page(ImagePage{
+        PixelBuffer{1, 1, 1, PixelFormat::Gray8, {9}}, 150.0, 150.0});
+    invalid_batch_document.mark_saved();
+    bool invalid_batch_rejected = false;
+    try {
+        invalid_batch_document.append_pages({
+            ImagePage{PixelBuffer{1, 1, 1, PixelFormat::Gray8, {10}}, 150.0, 150.0},
+            ImagePage{PixelBuffer{}, {}, {}},
+        });
+    } catch (const std::invalid_argument&) { invalid_batch_rejected = true; }
+    assert(invalid_batch_rejected);
+    assert(invalid_batch_document.page_count() == 1);
+    assert(!invalid_batch_document.dirty());
+    assert(invalid_batch_document.page(0).pixels.bytes[0] == 9);
+
     ImageDocument unchanged_document;
     unchanged_document.append_page(ImagePage{
         PixelBuffer{1, 1, 1, PixelFormat::Gray8, {7}}, 150.0, 150.0});
