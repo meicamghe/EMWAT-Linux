@@ -1116,3 +1116,13 @@ Do not implement guessed `signData` joining or claim end-to-end Almas registrati
 - It wraps `TWordViwer.LoadDocument` in `CoInitialize`/`CoUninitialize`, passes the `TEmwatInvokeParam` pointer and output string, stores the returned method result, and sets `bResultSet=1`.
 - `LoadDocument` extracts `DocFileName` from `wordBody`, writes document data to a local `TFileStream(fmCreate)`, parses `wordConfig` XML, then calls `OnTmrAutoSave` with that file path. The path is stored in viewer `+0xA0` and later packaged as `.easd` inside `.easz`.
 - Next priority: determine how the returned string and `bResultSet` become the actual HTTP response body, and trace the full `wordConfig`/`letterImages`/`signData` handling.
+
+
+## Latest implementation handoff — 2026-11-17
+- Branch: `work/template-mapping-inventory`; open draft PR #1.
+- Python: `template_mapping.py` now parses single/twin custom property names from the native U+2020 delimiter; Writer inspector retains UNO custom-property metadata order separately from sorted names. **Do not assume UNO order equals Word COM enumeration order**; the report explicitly marks that equivalence unverified.
+- Payload inventory covers field image metadata, opaque signData fingerprints, external paramId references, and optional attributes decoded by their nested encoding. It does not expose payload values or interpret signData framing.
+- Python bridge run #220 passed 116 tests (113 passed, 3 optional skips). LibreOffice UNO run #39 passed 12 tests.
+- Native image core: image-document save only clears dirty state if the document generation matches the snapshot; SANE scan cancellation is RAII-managed; SANE now exposes `scan_all()` for multi-frame/ADF scans while `scan_one()` stops after one frame.
+- Native runs #109–#111 are pending final result for multi-frame SANE.
+- Still not production-ready: no verified Almas template/180-field map, no proven signData framing, no image placement into letter templates, and no complete Almas request/response round-trip. Keep PR draft and do not merge as a release.
