@@ -1288,3 +1288,15 @@ Do not implement guessed `signData` joining or claim end-to-end Almas registrati
 - PR #1 body was refreshed with the corrected evidence and verification boundary. It remains Draft and non-mergeable.
 - Correct compare orientation `base=main`, `head=work/template-mapping-inventory`: **128 commits ahead, 343 behind, 55 changed files; diverged**. Mainline integration remains additive-only; no rebase, merge, or force push.
 - Commits in this continuation: `c464ed4070c5c974f7842da5727648b48346fb3f` (evidence correction), `beda5f8ba217337b137f88743165c2beed9d36d6` (field collector trace), `b9a74db130881b7f0dfca61b4b05a17104bfdb42` (interval/callback reference scan), plus README/status/handoff updates.
+
+
+## مهم‌ترین اصلاح مسیر Word — Run 153 و PCAP correlation (2026-11-17)
+
+- **اصلاح برداشت OnTmrAutoSave:** تابع `0x004B8A84` علاوه بر ثبت event sink، `OnControlerNotify` (`0x004BB3B0`) را به `TTimer.OnTimer` کنترل viewer+`0x7C` متصل می‌کند، interval viewer+`0x88` را حداقل 10,000ms تنظیم می‌کند و timer را فعال می‌کند.
+- همین تابع synchronously در `0x004B9AE8` تا صفر شدن viewer+`0x58` صبر می‌کند: `Sleep(5)` → `TApplication.ProcessMessages` → poll. بنابراین HTTP invoke اصلی تا پایان Word session باز می‌ماند.
+- `OnControlerNotify` callback دوره‌ای recovery محلی است: Word Content را می‌خواند و `.easd/.easz` را با 7z output archive می‌سازد. این با response نهایی HTTP یا ثبت نهایی Almas یکی نیست.
+- callback `0x004CD154` با TD32 name `WordAppDocumentBeforeSave` مسیر Word `Document.Close` را از slot `+0x29C` اجرا می‌کند و سپس viewer+`0x58` را صفر می‌کند. DISPID رسمی COM و معنای event identity هنوز باز است.
+- پس از خروج از wait، `LoadDocument` XML `response-word status="success"` را در `AResponseInfo.ContentText` می‌گذارد، Indy `WriteContent` را فراخوانی می‌کند و `bResultSet` را set می‌کند. پاسخ captured HTTP 200 و Base64 با MIME `application/msword` است؛ payload با OLE CFB signature شروع می‌شود.
+- PCAP تأخیر حدود 54.558s از پایان request body تا شروع response را نشان می‌دهد؛ TCP gaps مانع ادعای hash کامل هستند.
+- رابطه مستقیم registry `AutoSaveInterval` با viewer+`0x88` هنوز اثبات نشده است. `SilentSaveEmwatDoc` نیز مسیر جداگانه field collection باقی می‌ماند.
+- سند جامع: `docs/WORD-CLOSE-WAIT-AND-RESPONSE-CORRELATION-2026-11-17.md`.
