@@ -131,8 +131,11 @@ class BridgeHTTPServer:
                     if not re.fullmatch(r"init=\d+_\d+", parsed.query):
                         self._send(404, b"", "text/plain; charset=utf-8")
                         return
-                    referer = self.headers.get("Referer")
-                    parent_origin = owner._referer_origin(referer)
+                    referers = self.headers.get_all("Referer", [])
+                    if len(referers) != 1:
+                        self._send(403, b"init_referer_required", "text/plain; charset=utf-8")
+                        return
+                    parent_origin = owner._referer_origin(referers[0])
                     if parent_origin is None:
                         self._send(403, b"init_referer_required", "text/plain; charset=utf-8")
                         return
@@ -192,7 +195,11 @@ class BridgeHTTPServer:
                     self._send(413, b"request_too_large", "text/plain; charset=utf-8")
                     return
 
-                origin = self.headers.get("Origin")
+                origins = self.headers.get_all("Origin", [])
+                if len(origins) > 1:
+                    self._send(400, b"invalid_origin_header", "text/plain; charset=utf-8")
+                    return
+                origin = origins[0] if origins else None
                 if origin is None and owner._require_origin:
                     self._send(403, b"origin_required", "text/plain; charset=utf-8")
                     return
@@ -207,10 +214,14 @@ class BridgeHTTPServer:
                     self._send(400, b"incomplete_request_body", "text/plain; charset=utf-8")
                     return
 
+                content_types = self.headers.get_all("Content-Type", [])
+                if len(content_types) > 1:
+                    self._send(400, b"invalid_content_type", "text/plain; charset=utf-8")
+                    return
                 request = BridgeRequest(
                     path=parsed.path,
                     query=parsed.query,
-                    content_type=self.headers.get("Content-Type", ""),
+                    content_type=content_types[0] if content_types else "",
                     origin=origin,
                     body=body,
                 )
