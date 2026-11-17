@@ -63,6 +63,24 @@ class TwinWordFieldDescriptor:
     second_field_name: str
 
 
+def resolve_twin_field_partner(
+    descriptor: TwinWordFieldDescriptor,
+    requested_field_name: str,
+) -> str | None:
+    """Return the opposite member using EMWAT's case-insensitive CompareText.
+
+    GetXmlFieldInfo compares the requested field name with both descriptor
+    members using System.SysUtils.CompareText. A match on the first member
+    returns the second, and vice versa; a non-match returns None.
+    """
+    requested = requested_field_name.casefold()
+    if requested == descriptor.first_field_name.casefold():
+        return descriptor.second_field_name
+    if requested == descriptor.second_field_name.casefold():
+        return descriptor.first_field_name
+    return None
+
+
 @dataclass(frozen=True)
 class WordCustomPropertyFieldMaps:
     """Temporary single/twin descriptor candidates for custom-property reconciliation."""
