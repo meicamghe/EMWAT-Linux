@@ -43,9 +43,6 @@ jobs:
           python tools/resolve_delphi_vmt_slots.py analysis-input/EmwatMethods.bpl1 controller-unarchive/sevenzip-vmt.md
           python tools/trace_delphi_interfaces.py analysis-input/EmwatMethods.bpl1 controller-unarchive/sevenzip-interfaces.md
           python tools/trace_td32_immediate_refs.py analysis-input/EmwatMethods.bpl1 0x00452C10 controller-unarchive/T7zPlugin-constructor-refs.md
-          python tools/inspect_delphi_vmt_address.py analysis-input/EmwatMethods.bpl1 0x00451E60 controller-unarchive/vmt-T7zPlugin-object-pointer.md
-          python tools/inspect_delphi_vmt_address.py analysis-input/EmwatMethods.bpl1 0x00452608 controller-unarchive/vmt-T7zInArchive-object-pointer.md
-          python tools/inspect_delphi_vmt_address.py analysis-input/EmwatMethods.bpl1 0x00452A98 controller-unarchive/vmt-T7zOutArchive-object-pointer.md
           python tools/inspect_delphi_vmt_address.py analysis-input/EmwatMethods.bpl1 0x00451E08 controller-unarchive/vmt-T7zPlugin.md
           python tools/inspect_delphi_vmt_address.py analysis-input/EmwatMethods.bpl1 0x004525B0 controller-unarchive/vmt-T7zInArchive.md
           python tools/inspect_delphi_vmt_address.py analysis-input/EmwatMethods.bpl1 0x00452A40 controller-unarchive/vmt-T7zOutArchive.md
