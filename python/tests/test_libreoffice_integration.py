@@ -3,7 +3,10 @@ import base64
 import io
 import os
 import shutil
+import tempfile
+import time
 import unittest
+from pathlib import Path
 import zipfile
 import xml.etree.ElementTree as ET
 
@@ -14,6 +17,7 @@ from emwat_linux.protocol import WORD_RESPONSE_CONTENT_TYPE, parse_method_call
 
 from emwat_linux.editword_request import EditWordDocumentRequest
 from emwat_linux.libreoffice_adapter import LibreOfficeAdapter, _CFB_SIGNATURE
+from emwat_linux.recovery_store import RecoverySnapshotStore
 from emwat_linux.office_adapter import CloseDisposition
 from emwat_linux.word_config import WordDocumentConfig
 
@@ -198,7 +202,16 @@ class LibreOfficeIntegrationTests(unittest.TestCase):
             sign_data_text="",
             extra_parameters={},
         )
-        adapter = LibreOfficeAdapter(headless=True, connect_timeout_seconds=30, close_timeout_seconds=10)
+        recovery_temp = tempfile.TemporaryDirectory()
+        self.addCleanup(recovery_temp.cleanup)
+        recovery_store = RecoverySnapshotStore(Path(recovery_temp.name) / "recovery")
+        adapter = LibreOfficeAdapter(
+            headless=True,
+            connect_timeout_seconds=30,
+            close_timeout_seconds=10,
+            recovery_store=recovery_store,
+            recovery_interval_seconds=0.2,
+        )
         handle = adapter.open_document(
             request,
             on_modified=lambda: 1,
@@ -240,11 +253,22 @@ class LibreOfficeIntegrationTests(unittest.TestCase):
                     if field.custom_property_name is not None
                 ),
             )
+            deadline = time.monotonic() + 10
+            snapshots = recovery_store.list_snapshots()
+            while not snapshots and time.monotonic() < deadline:
+                time.sleep(0.05)
+                snapshots = recovery_store.list_snapshots()
+            self.assertTrue(snapshots, "periodic_recovery_snapshot_not_created")
+            self.assertEqual(snapshots[0].session_id, handle.recovery_session_id)
+            self.assertTrue(
+                recovery_store.load_snapshot(handle.recovery_session_id).startswith(_CFB_SIGNATURE)
+            )
             handle.document.close(True)
             close_event = adapter.wait_for_close(handle)
             self.assertEqual(close_event.disposition, CloseDisposition.CLOSED)
             output = adapter.export_final_document(handle)
             self.assertTrue(output.startswith(_CFB_SIGNATURE))
+            self.assertEqual(recovery_store.list_snapshots(), ())
 
             # The real EMWAT request carries a legacy OLE/CFB .doc, not DOCX.
             # Reopen the exported CFB payload to verify the actual input path.
@@ -280,6 +304,7 @@ class LibreOfficeIntegrationTests(unittest.TestCase):
                 self.assertEqual(roundtrip_close.disposition, CloseDisposition.CLOSED)
                 final_roundtrip = adapter.export_final_document(roundtrip_handle)
                 self.assertTrue(final_roundtrip.startswith(_CFB_SIGNATURE))
+                self.assertEqual(recovery_store.list_snapshots(), ())
             finally:
                 if roundtrip_handle.process.poll() is None:
                     adapter._cleanup(roundtrip_handle)
