@@ -49,7 +49,7 @@ class WordFieldDecodingTests(unittest.TestCase):
         )
         self.assertEqual(
             [(item.index, item.field_name) for item in maps.singles],
-            [(0, "LetterSubject"), (2, "†Malformed"), (3, "Trailing†")],
+            [(0, None), (2, None), (3, None)],
         )
         self.assertEqual(
             [
@@ -58,6 +58,30 @@ class WordFieldDecodingTests(unittest.TestCase):
             ],
             [(1, "SignStart", "SignEnd")],
         )
+
+    def test_builds_descriptor_xml_field_names_from_matching_wordconfig_indices(self):
+        maps = build_word_custom_property_field_maps(
+            ("LetterSubject", "SignStart†SignEnd", "LetterNumber"),
+            xml_field_names=("SubjectXmlField", "SignatoriesXmlField", "NumberXmlField"),
+        )
+        self.assertEqual(
+            [(item.index, item.field_name) for item in maps.singles],
+            [(0, "SubjectXmlField"), (2, "NumberXmlField")],
+        )
+        self.assertEqual(
+            [
+                (item.index, item.first_field_name, item.second_field_name, item.xml_field_name)
+                for item in maps.twins
+            ],
+            [(1, "SignStart", "SignEnd", "SignatoriesXmlField")],
+        )
+
+    def test_rejects_misaligned_property_and_xml_field_sequences(self):
+        with self.assertRaisesRegex(ValueError, "xml_field_names_must_match_property_names_length"):
+            build_word_custom_property_field_maps(
+                ("LetterSubject", "LetterNumber"),
+                xml_field_names=("SubjectXmlField",),
+            )
 
     def test_resolves_twin_partner_with_native_case_insensitive_compare(self):
         maps = build_word_custom_property_field_maps(("SignSenderStart†SignSenderEnd",))
