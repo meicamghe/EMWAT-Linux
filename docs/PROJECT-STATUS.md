@@ -2108,3 +2108,10 @@ These changes improve template and payload discovery but do not yet implement Al
 
 ### Current product boundary
 These are real implementation increments, not proof of operational Almas compatibility. Image insertion/placement, the signData framing, Word's actual custom-property ordering, full 180-field mapping, close/cancel wire semantics, scanner UI, and end-to-end Almas registration remain open. No production template mapping is enabled on the basis of synthetic fixtures alone.
+
+
+### Final verification of this implementation batch
+- Native image run #111 passed both normal and AddressSanitizer/UndefinedBehaviorSanitizer jobs; all 4 CTest targets passed in each job.
+- The immediately preceding native run #109 was triggered between the source and header commits and failed to compile because it saw only the first half of the multi-frame API change. The completed source+header+test commit in run #111 is green.
+- Python bridge run #220: 116 tests, all successful with 3 optional skips.
+- LibreOffice UNO run #39: 12 tests passed.
