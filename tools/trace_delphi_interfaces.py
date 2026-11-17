@@ -161,7 +161,7 @@ def main():
     # Win32 tkInterface TTypeData: IntfParent (4), IntfFlags (1), GUID (16), UnitName (ShortString).
     lines += ["## Selected interface RTTI decode", ""]
     ii_hits=[]
-    interface_names=("IIPEditor","IImageProcessor","IResultImage","IResultImageUnit","IProcessResult","Fields","Field","_Document","Document","Range","_Range","StoryRanges","StoryRange","FormFields","FormField","Selection","Tables","IXMLFieldType","IXMLFieldsType","IXMLWordConfigType","IXMLWordDocumentType","IInArchive","IOutArchive","IInStream","IOutStream","ISequentialInStream","ISequentialOutStream")
+    interface_names=("IIPEditor","IImageProcessor","IResultImage","IResultImageUnit","IProcessResult","Fields","Field","_Document","Document","Range","_Range","StoryRanges","StoryRange","FormFields","FormField","Selection","Tables","IXMLFieldType","IXMLFieldsType","IXMLWordConfig","IXMLWordConfigType","IXMLWord","IXMLWordType","IXMLDocument","IXMLDocumentType","IXMLRoot","IXMLWordDocument","IXMLWordDocumentType","IInArchive","IOutArchive","IInStream","IOutStream","ISequentialInStream","ISequentialOutStream")
     for interface_name in interface_names:
         encoded=interface_name.encode("ascii")
         for m in __import__("re").finditer(__import__("re").escape(encoded), blob):
@@ -200,7 +200,7 @@ def main():
             lines.append(f"- Implementing class: {name}; VMT: 0x{vmt:08X}; interface VTable: 0x{vt:08X}; IOffset: 0x{ioffset:X}")
             vr=va_raw(vt)
             if vr is None: continue
-            slot_count = 60 if interface_name in ("IXMLFieldType", "IXMLFieldsType", "IXMLWordConfigType", "IXMLWordDocumentType") else 12
+            slot_count = 60 if interface_name.startswith(("IXMLField", "IXMLFields", "IXMLWord", "IXMLDocument", "IXMLRoot")) else 12
             lines.append(f"- Interface vtable slots ({slot_count} entries sampled; slots 0-2 are IUnknown):")
             for slot in range(slot_count):
                 target=u32(blob,vr+slot*4)
