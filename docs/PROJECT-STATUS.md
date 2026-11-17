@@ -1,3 +1,11 @@
+## سرویس کاتالوگ بازیابی و شناسایی فیلدهای signer — 2026-11-17
+
+- ماژول `recovery_service.py` یک مرز کاربردی برای Recovery Picker فراهم می‌کند: فهرست snapshotهای معتبر را به‌شکل metadata امن (بدون مسیر خصوصی یا محتوای سند) می‌دهد و عملیات restore بدون overwrite و discard را به store واگذار می‌کند. این هنوز UI گرافیکی یا endpoint HTTP نیست.
+- حذف session اکنون symlink بودن خود session directory را صریحاً رد می‌کند؛ تست تضمین می‌کند فایل‌های مقصد symlink دست‌نخورده بمانند.
+- `emwat_field_catalog.py` هفت خانواده‌ی تکرارشونده‌ی signer را از روی شناسه‌ی خام طبقه‌بندی می‌کند و index و ترتیب ورودی را نگه می‌دارد. twin signature image فقط وقتی پذیرفته می‌شود که دو index یکسان باشند. این ابزار ساختاری است و هنوز Word Custom Property را به Writer field/property نگاشت نمی‌کند.
+- Python CI روی commit `17c75859ab0541073874f8dbe84d92a9aac21f98` موفق شد: **140 تست اجرا، 138 پاس و 2 skip**؛ run `44101952864`.
+- تغییرات بازیابی و کاتالوگ فیلدها روی `main` هستند؛ Recovery UI، اتصال HTTP، رمزنگاری/retention و نگاشت واقعی فیلدها همچنان باز هستند.
+
 ## سخت‌سازی بیشتر Recovery Store — 2026-11-17
 
 - مسیر ریشه‌ی recovery اکنون در مرز ورودی بررسی می‌شود و اگر خود مسیر به symlink تبدیل شده باشد، ساخت session و دسترسی به snapshot رد می‌شود؛ enumeration نیز از دنبال‌کردن root symlink خودداری می‌کند.
