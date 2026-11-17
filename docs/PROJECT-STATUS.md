@@ -2244,3 +2244,186 @@ LibreOffice UNO integration در run `44030867583` موفق شد: **11 تست** 
 ## CI پس از تبدیل descriptor payload به WordField node — 2026-11-17
 
 Python bridge CI در run `44031548179` موفق شد: **111 تست موفق، 2 skip اختیاری** در 5.120 ثانیه. تست‌ها اکنون به‌جای string فرضی، reference به خود `WordField` node متناظر در `wordConfig.fields` را بررسی می‌کنند.
+
+
+---
+
+## Additional mainline status entries
+
+## تحلیل تکمیلی تصویر و فیلدهای چاپ — کار در صف CI
+
+Workflow تحلیل Word گسترش یافت تا helper مرکزی درج تصویر `0x004C19C0)، resolver فیلد `0x004BC170)، رشته‌های شاخه‌های `FillImageField` و رشته‌های شرطی `FillPrintDocFields` را decode کند. تغییرات در commitهای `367e4aa58514029278624c65837059f13807394a` و `c159c69141da56ea1bba0c8d829e4839febaf135` ثبت شده‌اند. خروجی این batch هنوز باید از GitHub Actions دریافت و بررسی شود؛ تا آن زمان helper و برچسب‌های شرطی را ناشناخته نگه می‌داریم.
+
+
+
+## تکمیل تحلیل GetDocFieldIndex و بازبینی CI — 2026-11-16
+
+- تابع `0x004C0550` با سمبل TD32 به‌صورت قطعی `TWordViwer.GetDocFieldIndex` شناسایی شد.
+- زنجیره تطبیق فیلد: Word Fields → `FindFieldInActivefields` → `GetXmlFieldInfo` → شاخه‌های `FillMSWFields` و `SetFieldValue`؛ مسیر متن از `FillTextField` و شاخه تصویر/کپشن از `AddImagesToDoc` ادامه پیدا می‌کند.
+- `GetCaptionItemFont` از مسیر `AddImagesToDoc` فراخوانی می‌شود و خودش `GetXmlFieldInfo`، `SetFieldValue`، `EmbedTextToImage` و `FillMSWFields` را اجرا می‌کند.
+- `GetCaptionItems` از `ResizeBitmapCanvas` و `ProcessWords` فراخوانی می‌شود. `GetImageResolution` در مسیر `StrToAlign` به‌عنوان تبدیل رشته به مقدار enum با شش حالت دیده شده؛ نام سمبل به‌تنهایی معنای DPI را ثابت نمی‌کند.
+- خطای مسیر خروجی decoder در Workflow اصلاح شد. اجرای `43886833015` هر سه job تحلیل lifecycle، field mapping و save/print را با موفقیت تمام کرد.
+- CI کد: Python bridge اجرا `43886698595` با ۱۰۴ تست موفق و ۲ skip اختیاری؛ LibreOffice UNO اجرا `43886698714` با ۱۱ تست موفق.
+- مستند تفصیلی: `docs/WORD-AUTOMATION-SURFACE-2026-11-16.md`. اجرای جدید برای decode رشته‌های دقیق branchها با run `43887016674` در صف/حال اجراست.
+
+
+
+## نکته جدید در مسیر چاپ — 2026-11-16
+
+در trace تابع `FillPrintDocFields` رشته خاص `EMBED Equation` در آدرس `0x004CCB0C` decode شد و یک شاخه جداگانه برای آن وجود دارد. مسیر دیگر این تابع با کلیدهای `CustomDocumentProperties` و `count` کار می‌کند؛ decode دقیق شروع بایتی این دو رشته در اجرای بعدی Workflow انجام می‌شود. برای تعیین رفتار نهایی، trace توابع `0x004D3DF8`، `0x004D34B0` و `0x004D3B78` در حال اضافه شدن است.
+
+
+
+## جزئیات تازه مسیر امضا و تصویر — 2026-11-16
+
+- تابع TD32 با نام `GetCaptionItemFont` در آدرس `0x004C19C0` از مسیر `AddImagesToDoc` فراخوانی می‌شود، اما بدنه آن عملاً پردازش تصویر/امضا را انجام می‌دهد: `signData` و `signText` را بررسی می‌کند، `igLzw32s.Dll` را بارگذاری می‌کند، فایل‌های تصویر را اعتبارسنجی می‌کند، image list می‌سازد و پیام موفقیت `AddImageToDoc succeed` دارد.
+- کلیدهای خاص فیلد در `FillImageField`: `LetterRegistrationDate`، `LetterRegistrationNo`، `ProduceDate`، `Receivers`، `ReceiverDeps`، `ccReceivers` و `ccReceiverDeps`.
+- همین تابع بین ذخیره مقدار در `CustomDocumentProperties` و `Field.Result.Text` تفاوت می‌گذارد و وضعیت قفل بودن فیلد را بررسی می‌کند.
+- `GetDocFieldIndex` الگوی نام فیلدهای امضا، فیلدهای twin، موارد skip شده و خطای نبود twin را مدیریت می‌کند. در نبود twin، مسیر abort و بستن سند بدون نگه‌داشتن تغییرات وجود دارد.
+- برچسب‌های شش حالت تابع `GetImageResolution` هنوز در صف decode هستند؛ از نام تابع درباره DPI یا pixel resolution نتیجه‌گیری نمی‌کنیم.
+- مستند تفصیلی: `docs/WORD-AUTOMATION-SURFACE-2026-11-16.md`.
+
+
+
+## پیاده‌سازی matcher امضای native و تست‌ها — 2026-11-16
+
+- آدرس `0x004B032C` به `TRegEx.IsMatch` در `rtl230.bpl` resolve شد.
+- الگوی native برای فیلدهای انتهایی امضا دقیقاً `^sign.*end[0-2]?[0-9]?$` و case-sensitive است.
+- تابع `is_native_business_signature_end()` به `word_fields.py` اضافه شد. فعلاً فقط روی نام فیلد resolve‌شده قابل استفاده است؛ به‌صورت خودکار روی XML field ID اعمال نشده تا تفاوت این دو بدون مدرک فرض نشود.
+- تست اولیه به‌علت استفاده از `End` با حروف بزرگ شکست خورد؛ تست‌ها با الگوی دقیق lowercase اصلاح شدند.
+- Python bridge run `43888658420`: **۱۰۵ تست موفق، ۲ skip اختیاری**.
+
+
+
+## تفکیک سه ساختار فیلد و Custom Property — 2026-11-16
+
+ردیابی `AddCustomDocPropertiesToDic` سه ساختار مجزا را مشخص کرد:
+- `viewer + 0x68`: descriptorهای فیلد تکی از نوع `TXmlWordConfigField`.
+- `viewer + 0x6C`: descriptorهای twin از نوع `TXmlWordConfigTwinField` که دو شناسه جداشده با `†` را نگه می‌دارند.
+- `viewer + 0x64`: دیکشنری runtime جداگانه از نوع `TDictionary<UnicodeString,TDocumentCProperty>`.
+
+در نسخه لینوکس این سه ساختار نباید به یک دیکشنری تخت تبدیل شوند. جزئیات و offsetها در `docs/RESEARCH-LOG-2026-11-16.md` ثبت شده‌اند.
+
+
+
+## اصلاح تطبیق parser فیلدهای Word با باینری — 2026-11-16
+
+ردیابی `FindFieldInActivefields` نشان داد استخراج شناسه `DOCPROPERTY` از `Pos` و `Copy` دلفی استفاده می‌کند. رفتار edge-case در Python اصلاح شد: نبودن delimiter دو فاصله باعث شروع Copy از کاراکتر دوم می‌شود و اگر فاصله بعدی وجود نداشته باشد، همان segment برگردانده می‌شود. تست جدید این دو حالت را پوشش می‌دهد.
+
+- Python CI اجرا `43889681823`: **۱۰۵ تست موفق، ۲ skip اختیاری**.
+- helper امضای business نیز با regex دقیق و case-sensitive باینری پیاده‌سازی شده است.
+
+
+
+## تکمیل شاخه MIME و alignment — 2026-11-16
+
+- مقدار MIME شاخه متن در `FillTextField` دقیقاً `text/plain` است؛ فیلد بدون interface یا با MIME غیر از `text/plain` به `FillImageField` می‌رود.
+- مقادیر alignment: `right`، `center`، `left`، `top`، `middle`، `bottom`.
+- سبک‌های caption: `bold`، `italic`، `underline`، `strikeout`.
+- اجرای Workflow `43889057276` هر سه job را موفق تمام کرد و artifactهای field mapping و save/print تولید شدند.
+
+
+
+## مدل‌سازی descriptorهای single و twin در Python — 2026-11-16
+
+تابع `build_word_custom_property_field_maps()` و مدل‌های `SingleWordFieldDescriptor` / `TwinWordFieldDescriptor` در `word_fields.py` نگه داشته شدند. تابع اکنون نام‌های ordered Custom Document Property و در صورت وجود `xml_fields` متناظر از `wordConfig` را می‌گیرد و reference به خود `WordField` node (attributes و text) را ذخیره می‌کند؛ اگر XML field node ارائه نشود، reference برابر `None` می‌ماند. طول دو sequence هنگام ارائه هر دو باید برابر باشد.
+
+- Python CI اجرا `43890539219`: **۱۰۷ تست موفق، ۲ skip اختیاری**.
+
+
+## اصلاح semantics دیکشنری و مقایسه Twin — 2026-11-16
+
+- `0x004D531C` و `0x004D68D4` در TD32 به‌اشتباه `TDictionary.Remove` نام‌گذاری شده‌اند؛ بدنه هر دو Add است و در `AddCustomDocPropertiesToDic` فراخوانی می‌شوند. آن‌ها duplicate key را رد می‌کنند و entry جدید را درج می‌کنند.
+- `0x00403248` به `System.SysUtils.CompareText` resolve شد؛ جست‌وجوی Twin نسبت به بزرگی/کوچکی حروف حساس نیست. تابع Python نیز با `casefold()` اصلاح شد.
+- Python CI اجرا `43891288399`: **۱۰۷ تست موفق، ۲ skip اختیاری**.
+- LibreOffice UNO اجرا `43890949051`: **۱۱ تست موفق**.
+
+
+## مرزبندی inventory Writer و descriptorهای native — 2026-11-16
+
+ردیابی نهایی نشان داد `AddCustomDocPropertiesToDic` خودش descriptor mapها را از Word CustomDocumentProperties populate می‌کند. بااین‌حال `WriterDocumentCatalog` هم نام‌های مرتب‌شده برای نمایش و هم نام‌ها در ترتیب `PropertySetInfo` خود UNO را جداگانه گزارش می‌کند؛ این ترتیب هنوز با enumeration ورد تطبیق داده نشده و `WordField` node متناظر نیز باید از `wordConfig.fields` با همان index گرفته شود، پس اتصال خودکار catalog به descriptor map عمداً انجام نشده است. helper Python برای split نام‌ها باقی مانده و می‌تواند `WordField` node متناظر را با همان index دریافت کند؛ این helper به‌تنهایی ادعای mapping کامل ندارد.
+
+
+## اتصال runtime Custom Property به مسیر تصویر و چاپ — 2026-11-16
+
+- `FillImageField` دیکشنری runtime در `viewer+0x64` را با `TDictionary<UnicodeString,TDocumentCProperty>.SetItem` به‌روزرسانی می‌کند.
+- `FillImageField` و `FillPrintDocFields` از `ContainsValue` استفاده می‌کنند؛ `FillPrintDocFields` و `FillPrintOptionForm` در مسیرهای مشخص `Remove` را اجرا می‌کنند.
+- این دیکشنری runtime از descriptorهای single/twin در `viewer+0x68/+0x6C` جداست. trace روش‌های `SetItem/TryGetValue/Clear` برای دو map descriptor در batch بعدی اضافه شده است.
+
+
+## اثبات هویت دیکشنری Parser سرویس — 2026-11-16
+
+- `TMethodInfo` با VMT `0x0047097C` و constructor در `0x00471214` ساخته می‌شود.
+- Constructor از class reference `0x004699E4`، که به VMT `TDictionary<AnsiString,AnsiString>` در `0x00469A3C` اشاره می‌کند، برای ساخت دیکشنری با helper `0x0046AA70` استفاده می‌کند.
+- pointer دیکشنری در `TMethodInfo+0x08` ذخیره می‌شود و `ParseMethod` همان pointer را به XML parser می‌دهد.
+- بنابراین نوع پارامترهای سرویس با ورودی `TEmwatMethod.Invoke` در BPL یکسان است. فقط dispatch نهایی و غیرمستقیم بین سرویس و BPL هنوز نیاز به اثبات دارد.
+
+
+## تفکیک descriptorهای XML و داده‌های CustomDocumentProperties — 2026-11-16
+
+- دیکشنری `viewer+0x68` برای `TXmlWordConfigField` و `viewer+0x6C` برای `TXmlWordConfigTwinField` است.
+- `GetXmlFieldInfo` ابتدا descriptor تک‌فیلدی را بررسی می‌کند و در صورت نیاز به مسیر twin می‌رود؛ ساختارهای خروجی شامل index و یک یا دو نام/کلید فیلد هستند.
+- helper `0x004BC170` در مسیرهای XML field، twin fill، index lookup، print و image-print تکرار می‌شود و نقش نرمال‌سازی/تقسیم رشته ورودی را دارد؛ جزئیات delimiter پس از artifact جدید قطعی می‌شود.
+- `AddCustomDocPropertiesToDic` نام propertyهای Word را با `†` تفکیک می‌کند، XML field متناظر را با index می‌خواند، رکورد single/twin می‌سازد و با Add wrapper در descriptor map درج می‌کند؛ بنابراین این تابع مسیر population mapهاست.
+- مسیر population descriptor mapها اکنون مشخص است: AddCustomDocPropertiesToDic از wrapperهای `0x004D531C` و `0x004D68D4` استفاده می‌کند که بدنه آن‌ها Add است، با وجود TD32 label اشتباه Remove. AddOrSetValueهای جداگانه (`0x004D552C` و `0x004D6AE4`) در این مسیر استفاده نمی‌شوند.
+
+
+## کشف فیلدهای Option Form گیرنده و رونوشت — 2026-11-16
+
+Constructor مربوط به `TWordViwer` چهار فیلد `Receivers`، `ReceiverDeps`، `ccReceivers` و `ccReceiverDeps` را برای option form مقداردهی می‌کند. سپس برای هر گزینه `field index`، نام، `xmlfidx` و `isInDoc` را log می‌کند. این مسیر، UI/metadata اختصاصی گیرنده و رونوشت را تأیید می‌کند؛ منطق کامل انتخاب گیرنده و serialization آن هنوز باز است.
+
+
+## کشف APIهای بارگذاری Package و ساخت کلاس در سرویس — 2026-11-16
+
+Import Table در `EmwatService.exe` شامل `LoadPackage`، `UnloadPackage`، `StartExe`، `GetClass`، `ClassCreate`، `ClassDestroy`، `TObject.InheritsFrom`، `ClassParent`، `ClassName` و دو `GetProcAddress` است. این موضوع توانایی سرویس برای بارگذاری BPL و resolve/create کلاس Delphi در زمان اجرا را اثبات می‌کند، اما هنوز زنجیره دقیق فراخوانی `GetClass → ClassCreate → TEmwatMethod.Invoke` قطعی نشده است. به همین دلیل workflow جدید علاوه بر pointer refs، opcodeهای `FF 15` و `FF 25` مربوط به فراخوانی/پرش مستقیم به IAT را اسکن می‌کند.
+
+
+## بازیابی Method Table فرم اصلی سرویس — 2026-11-16
+
+از VMT کلاس `TMainForm` در `0x0047B284`، method table در `0x0047B84E` پیدا شد. تعداد entryها 17 است و ساختار هر entry شامل اندازه، آدرس کد و نام shortstring است. اولین entry دقیقاً `IdHTTPServerCommandGet` در `0x0047BF30` است؛ بنابراین هویت handler درخواست HTTP تأیید شد. `FormCreate`، `Terminate`، `Log`، `ShowMainForm`، `HideMainForm` و `FormClose` نیز در ابتدای جدول بازیابی شدند.
+
+
+## فهرست کامل ۱۷ متد منتشرشده TMainForm — 2026-11-16
+
+جدول RTTI فرم اصلی ۱۷ متد را تأیید کرد. علاوه بر `IdHTTPServerCommandGet` در `0x0047BF30`، متد `IdHTTPServerException` در `0x0047CA44`، `FormCreate` در `0x0047CCD8`، `FormClose` در `0x0047CCC8`، `Terminate` در `0x0047E3EC` و `LoadQuickConfig` در `0x0047E7E4` بازیابی شدند. workflow اکنون مسیرهای startup/shutdown و HTTP exception را نیز trace می‌کند.
+
+
+## اتصال قطعی EmwatService به BPL و Invoke — 2026-11-16
+
+- `ParseMethod` کلاس را با `GetClass` resolve و با `TObject.Create` نمونه‌سازی می‌کند.
+- سپس سرویس slot مجازی `VMT+0x0C` را فراخوانی می‌کند.
+- در BPL، این slot در `TEmwatMethod` به `Finalization` در `0x0046C9E0` می‌رسد و آن تابع `TEmwatMethod.Invoke` در `0x0046C82C` را صدا می‌زند.
+- بنابراین زنجیره service→BPL تا ورود به `Invoke` اثبات شده است. تابع `Finalization` پس از `Invoke`، slot مجازی `+0x10` را فراخوانی می‌کند؛ در VMT کلاس `TEditWordDocument` این slot به `0x005EE82C` می‌رسد و آن تابع `LoadDocument` را اجرا می‌کند.
+
+
+## نتیجه CI پل Python — 2026-11-16
+
+پس از تغییر مستندات dispatcher برای تطبیق با prefix واقعی Delphi، workflow `python-bridge.yml` با موفقیت اجرا شد: **107 تست موفق، 2 تست اختیاری skip**؛ run `43953680591`.
+
+
+## تکمیل زنجیره dispatch تا LoadDocument — 2026-11-16
+
+`Finalization` ابتدا `Invoke` را در `0x0046CA67` اجرا می‌کند و سپس در `0x0046CA88` از VMT slot `+0x10`، `PerformMethod` کلاس فرزند را فراخوانی می‌کند. در VMT `TEditWordDocument`، این slot به `0x005EE82C` می‌رسد؛ بدنه آن `TWordViwer.LoadDocument` در `0x004B7724` را فراخوانی می‌کند. بنابراین زنجیره از HTTP/XML سرویس تا شروع Word automation در BPL مشخص شده است.
+
+
+## ردیابی VMT دیکشنری‌های descriptor — 2026-11-17
+
+دو VMT واقعی برای mapهای descriptor مشخص شدند: `TDictionary<string,TXmlWordConfigField>` در `0x004B4C38` و `TDictionary<string,TXmlWordConfigTwinField>` در `0x004B6A70`. همچنین `TWordViwer` VMT candidate در `0x004B10A4`، destroy slot `0x004B10A0` و method RTTI `Destroy` در `0x004B1629` نشان می‌دهند `0x004D1148` destructor است، نه AddXml. routine در `0x004D0D24` دیکشنری‌ها را می‌سازد؛ `AddCustomDocPropertiesToDic` با wrapperهای Add که TD32 به‌اشتباه Remove نام‌گذاری کرده، descriptorهای single/twin را در mapهای مربوطه درج می‌کند؛ مسیر population با callsiteهای `0x004D15C6` و `0x004D1635` اثبات شده است.
+
+workflow بعدی روی جزئیات XML field accessorهای `+0xBC/+0xC0` و تطبیق ترتیب property enumeration در Writer با Word متمرکز می‌شود؛ منبع population دیگر unresolved نیست.
+
+
+## تأیید CI پس از اصلاح مستندات descriptor — 2026-11-17
+
+workflow `python-bridge.yml` پس از تغییرات docstring و تفکیک روشن descriptorهای موقت reconciliation از mapهای اولیه با موفقیت اجرا شد: **108 تست موفق، 2 تست اختیاری skip**؛ run `44023065489` (latest confirmed run).
+
+ردیابی جدید `CreateOptionFormFields` (`0x004CFC74`) نیز به workflow تحلیل BPL افزوده شده است؛ این تابع نامزد تازه‌ای برای یافتن مسیر ساخت اولیه mapهای single/twin است، اما تا دریافت artifact هنوز نتیجه‌ای به آن نسبت داده نمی‌شود.
+
+
+## وضعیت جدید مهندسی معکوس — 2026-11-17
+
+- اسکن دقیق Import Table، thunk واقعی و caller مستقیم APIهای Delphi را جدا کرد: `LoadPackage` در `0x0047E15F`، `GetClass` در `0x00470E07`، `StartExe` در `0x004014BA` و `GetProcAddress` در `0x00401720` / `0x00401DA8` / `0x00401DCA`.
+- `ClassCreate` و `ClassDestroy` در سرویس callsiteهای متعدد دارند؛ برای اتصال قطعی آن‌ها به مسیر درخواست، trace کامل `ParseMethod` و دو callsite اصلی در workflow جدید اضافه شده است.
+- `GetXmlFieldInfo` اکنون دقیق‌تر مدل شده: اول single-map را جست‌وجو می‌کند، سپس twin-map را؛ در مسیر twin با `CompareText` عضو مقابل را برمی‌گرداند. تابع `resolve_twin_field_partner` و تست آن اضافه شد.
+- CI پایتون: **108 تست موفق، 2 مورد optional skip** در run `44023065489`.
+- نسخهٔ کامل لینوکس و سازگاری end-to-end با Almas هنوز تأیید نشده‌اند؛ پروتکل بازگشت در حالت cancel/discard، همهٔ فیلدها، تصاویر/امضاها و چاپ واقعی همچنان نیازمند fixture و آزمون یکپارچه‌اند.
