@@ -80,6 +80,40 @@ class RecoverySnapshotStoreTests(unittest.TestCase):
             with self.assertRaisesRegex(RecoveryStoreError, "recovery_snapshot_size_mismatch"):
                 store.load_snapshot(session_id)
 
+    def test_snapshot_size_limit_is_enforced(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            store = RecoverySnapshotStore(Path(temporary) / "recovery", max_snapshot_bytes=16)
+            session_id = store.create_session()
+            payload = bytes.fromhex("D0CF11E0A1B11AE1") + b"oversized"
+            with self.assertRaisesRegex(RecoveryStoreError, "recovery_snapshot_too_large"):
+                store.save_snapshot(session_id, payload)
+            self.assertFalse(store.has_snapshot(session_id))
+
+    def test_corrupt_snapshot_is_not_listed_or_reported_as_available(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            store = RecoverySnapshotStore(Path(temporary) / "recovery")
+            session_id = store.create_session()
+            info = store.save_snapshot(
+                session_id,
+                bytes.fromhex("D0CF11E0A1B11AE1") + b"document",
+            )
+            info.document_path.write_bytes(b"tampered")
+            self.assertFalse(store.has_snapshot(session_id))
+            self.assertEqual(store.list_snapshots(), ())
+
+    def test_snapshot_symlink_is_rejected(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary) / "recovery"
+            store = RecoverySnapshotStore(root)
+            session_id = store.create_session()
+            outside = Path(temporary) / "outside.doc"
+            outside.write_bytes(bytes.fromhex("D0CF11E0A1B11AE1") + b"outside")
+            info = store.save_snapshot(session_id, outside.read_bytes())
+            info.document_path.unlink()
+            info.document_path.symlink_to(outside)
+            with self.assertRaisesRegex(RecoveryStoreError, "recovery_snapshot_unavailable"):
+                store.load_snapshot(session_id)
+
     def test_invalid_session_id_is_rejected(self):
         with tempfile.TemporaryDirectory() as temporary:
             store = RecoverySnapshotStore(Path(temporary) / "recovery")
