@@ -10,9 +10,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from emwat_linux.word_config import WordDocumentConfig
-from emwat_linux.word_fields import (
-    build_word_custom_property_field_maps,
-)
+from emwat_linux.word_fields import parse_word_field_identifier
 from emwat_linux.writer_inspector import WriterDocumentCatalog
 
 
@@ -67,12 +65,25 @@ def inspect_template_mapping(
             unmatched_template_structures=(),
         )
 
-    # Reuse the native-shaped single/twin descriptor parser. It rejects
-    # duplicate property keys rather than silently overwriting them.
-    maps = build_word_custom_property_field_maps(
-        property_names,
-        xml_fields=config_fields,
-    )
+    # The recovered native path enumerates custom document properties and
+    # splits a property name at the first U+2020 dagger into twin members.
+    # Each enumerated property remains aligned with the XML field at the same
+    # index; this association is used only after the count check above.
+    folded_members: set[str] = set()
+    descriptors: list[tuple[int, str, str, tuple[str, ...]]] = []
+    for index, (property_name, xml_field) in enumerate(zip(property_names, config_fields)):
+        if not property_name:
+            raise ValueError("custom_property_name_missing")
+        identifier = parse_word_field_identifier(property_name)
+        members = tuple(
+            member for member in (identifier.first, identifier.second) if member
+        )
+        for member in members:
+            folded = member.casefold()
+            if folded in folded_members:
+                raise ValueError("duplicate_custom_property_field_name")
+            folded_members.add(folded)
+        descriptors.append((index, property_name, xml_field.field_id, members))
 
     structures: list[tuple[str, str]] = []
     for kind, names in (
@@ -99,26 +110,21 @@ def inspect_template_mapping(
     matched_structures: set[tuple[str, str]] = set()
     matched_config: set[int] = set()
 
-    for descriptor in (*maps.singles, *maps.twins):
-        members = (
-            (descriptor.property_name,)
-            if not hasattr(descriptor, "first_field_name")
-            else (descriptor.first_field_name, descriptor.second_field_name)
-        )
+    for config_index, property_name, xml_field_id, members in descriptors:
         for member in members:
             for kind, actual_name in by_folded_name.get(member.casefold(), ()):
                 candidates.append(
                     TemplateFieldCandidate(
-                        config_index=descriptor.index,
-                        xml_field_id=descriptor.xml_field.field_id,
-                        custom_property_name=descriptor.property_name,
+                        config_index=config_index,
+                        xml_field_id=xml_field_id,
+                        custom_property_name=property_name,
                         config_member=member,
                         structure_kind=kind,
                         structure_name=actual_name,
                     )
                 )
                 matched_structures.add((kind, actual_name))
-                matched_config.add(descriptor.index)
+                matched_config.add(config_index)
 
     return TemplateMappingReport(
         property_count=len(property_names),
