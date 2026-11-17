@@ -1,6 +1,17 @@
 # وضعیت پروژه EMWAT-Linux
 آخرین به‌روزرسانی: 2026-11-17
 
+## ادامه پیاده‌سازی Native — 2026-11-17 (main)
+
+- مسیر HTTP اکنون قبل از خواندن بدنه، query مربوط به POST را اعتبارسنجی می‌کند: دقیقاً یک پارامتر غیرخالی `invoke` لازم است؛ query تکراری، ناقص یا نامرتبط با پاسخ 400 رد می‌شود.
+- `RecoverySnapshotStore` به شاخه main منتقل شده است: snapshotهای DOC/DOCX با SHA-256 و محدودیت پیش‌فرض 128 MiB، مجوزهای owner-only، اعتبارسنجی symlink/manifest/container، فهرست‌کردن فقط snapshotهای معتبر و restore اتمیک بدون overwrite.
+- `LibreOfficeAdapter` اکنون برای هر سند یک recovery session مستقل می‌سازد و worker دوره‌ای (پیش‌فرض 10 ثانیه) دارد. snapshot موقت با UNO و فیلتر Word 97 گرفته و در store ذخیره می‌شود؛ خطای موقت snapshot مانع ادامه ویرایش نیست. هنگام close worker متوقف و join می‌شود؛ پس از export موفق session پاک می‌شود و در خطای پیش از تکمیل، آخرین snapshot معتبر حفظ می‌شود.
+- تست Python bridge روی commit `a92822d1aa83edba4e811ebebe1edd111e7dfab2` موفق شد: **131 تست، 2 skip**؛ run `44081916126`.
+- LibreOffice UNO integration برای همین commit در زمان ثبت این یادداشت هنوز در حال اجراست؛ نتیجه آن تا تکمیل job ادعا نمی‌شود.
+- محدودیت باقی‌مانده: recovery picker/UI هنوز به کاربر وصل نشده؛ store رمزنگاری‌شده نیست و جایگزین آرشیو رمزدار Windows `.easz` محسوب نمی‌شود. سازگاری end-to-end با Almas Gam و mapping کامل فیلدهای 180گانه نیز هنوز اثبات نشده است.
+
+آخرین به‌روزرسانی: 2026-11-17
+
 ## تکمیل مسیر DOCPROPERTY در Writer — 2026-11-16
 
 - Python CI run `43815297715` سبز شد: **96 تست پاس** و یک تست اختیاری UNO skip.
