@@ -125,6 +125,20 @@ void ImageDocument::append_page(ImagePage value) {
     dirty_ = true;
     ++generation_;
 }
+void ImageDocument::append_pages(std::vector<ImagePage> values) {
+    for (const auto& value : values) {
+        if (!value.pixels.valid())
+            throw std::invalid_argument("cannot append invalid image page");
+        if ((value.dpi_x && (!std::isfinite(*value.dpi_x) || *value.dpi_x <= 0.0)) ||
+            (value.dpi_y && (!std::isfinite(*value.dpi_y) || *value.dpi_y <= 0.0)))
+            throw std::invalid_argument("cannot append image page with invalid resolution metadata");
+    }
+    if (values.empty()) return;
+    if (values.size() > pages_.max_size() - pages_.size())
+        throw std::length_error("image document page count overflow");
+    pages_.reserve(pages_.size() + values.size());
+    for (auto& value : values) append_page(std::move(value));
+}
 void ImageDocument::select_page(std::size_t index) {
     if (index >= pages_.size()) throw std::out_of_range("page index out of range");
     if (active_page_ != index) { active_page_ = index; ++generation_; }
