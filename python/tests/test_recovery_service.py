@@ -1,4 +1,5 @@
 from pathlib import Path
+import json
 import tempfile
 import unittest
 
@@ -28,6 +29,27 @@ class RecoverySnapshotServiceTests(unittest.TestCase):
             self.assertEqual(entries[0].size_bytes, len(
                 bytes.fromhex("D0CF11E0A1B11AE1") + b"newer"
             ))
+
+    def test_catalog_json_is_versioned_and_does_not_expose_store_paths(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary) / "private" / "recovery"
+            store = RecoverySnapshotStore(root)
+            service = RecoverySnapshotService(store)
+            session_id = store.create_session()
+            store.save_snapshot(
+                session_id, bytes.fromhex("D0CF11E0A1B11AE1") + b"catalog"
+            )
+
+            payload = json.loads(service.catalog_json())
+
+            self.assertEqual(payload["schema_version"], 1)
+            self.assertEqual(len(payload["snapshots"]), 1)
+            snapshot = payload["snapshots"][0]
+            self.assertEqual(snapshot["session_id"], session_id)
+            self.assertEqual(snapshot["document_name"], f"document-{session_id}.doc")
+            self.assertNotIn("document_path", snapshot)
+            self.assertNotIn(str(root), service.catalog_json())
+            self.assertNotIn("content", snapshot)
 
     def test_restore_delegates_verified_no_overwrite_operation(self):
         with tempfile.TemporaryDirectory() as temporary:
