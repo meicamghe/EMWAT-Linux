@@ -54,6 +54,47 @@ class PayloadInventoryTests(unittest.TestCase):
         self.assertEqual(report.sign_data_character_count, len("opaque-signature-data"))
         self.assertEqual(len(report.sign_data_sha256 or ""), 64)
 
+    def test_decodes_optional_attributes_using_their_own_encoding(self):
+        value = "سلام"
+        encoded = base64.b64encode(value.encode()).decode()
+        xml = (
+            "<word-document><optional-attributes>"
+            '<attribute id="department" type="text"><content encryption="base64">'
+            + encoded
+            + "</content></attribute>"
+            "</optional-attributes></word-document>"
+        ).encode()
+        req = EditWordDocumentRequest(
+            config=parse_word_config(base64.b64encode(xml).decode()),
+            document_bytes=b"synthetic-document",
+            sign_data_text="",
+            extra_parameters={},
+        )
+        report = inspect_request_payloads(req)
+        self.assertEqual(len(report.optional_attributes), 1)
+        self.assertEqual(report.optional_attributes[0].attribute_id, "department")
+        self.assertEqual(report.optional_attributes[0].value_type, "text")
+        self.assertEqual(report.optional_attributes[0].character_count, len(value))
+        self.assertEqual(len(report.optional_attributes[0].sha256), 64)
+
+    def test_rejects_binary_optional_attribute_in_text_inventory(self):
+        encoded = base64.b64encode(b"\\x00\\x01").decode()
+        xml = (
+            "<word-document><optional-attributes>"
+            '<attribute id="opaque"><content encryption="base64">'
+            + encoded
+            + "</content></attribute>"
+            "</optional-attributes></word-document>"
+        ).encode()
+        req = EditWordDocumentRequest(
+            config=parse_word_config(base64.b64encode(xml).decode()),
+            document_bytes=b"synthetic-document",
+            sign_data_text="",
+            extra_parameters={},
+        )
+        with self.assertRaisesRegex(ValueError, "optional_attribute_must_be_text"):
+            inspect_request_payloads(req)
+
     def test_empty_sign_data_has_no_digest(self):
         report = inspect_request_payloads(request([], sign_data=""))
         self.assertFalse(report.sign_data_present)
