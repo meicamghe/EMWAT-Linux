@@ -496,7 +496,7 @@ The latest field artifact (`14265228751`) finds five direct callers of the singl
 
 ## Full MainForm handler reveals post-parse processing helper
 
-The full `0x0047BF30–0x0047C341` trace (`14265996115`) confirms that the first `RET` at `0x0047C0E5` is inside nested exception/finally structure, not the end of the entire handler. The main success path calls `ParseMethod` at `0x0047C0C5`, then executes cleanup at `0x0047E2D4`. Separate status/error branches later call `0x004610FC` at `0x0047C237` and `0x0047C2A9`; this is now a candidate for the service's post-parse/request-completion behavior and has been added to the service trace and whole-PE direct-call scan. Its role is not yet assigned. Do not treat `0x0047E2D4` as dispatch.
+The full `0x0047BF30–0x0047C341` trace (`14265996115`) confirms that the first `RET` at `0x0047C0E5` is inside nested exception/finally structure, not the end of the entire handler. The main success path calls `ParseMethod` at `0x0047C0C5`, then executes cleanup at `0x0047E2D4`. Separate init/heartbeat response branches call `0x004610FC` at `0x0047C237` and `0x0047C2A9`. The new body trace identifies `0x004610FC` as Indy `TIdHTTPResponseInfo.WriteContent`, the response-send helper; it is not a method-dispatch routine. Do not treat `0x0047E2D4` as dispatch.
 
 ## Byte-level rel32 CALL scanner added after linear-sweep false negative
 
@@ -504,7 +504,7 @@ The full handler trace proves direct relative calls to `0x004610FC` at `0x0047C2
 
 ## Byte-level scan validates post-parse helper callsites
 
-Artifact `14267210294` shows five E8-rel32 candidates targeting `0x004610FC`; two are confirmed instructions inside the complete MainForm handler (`0x0047C237` and `0x0047C2A9`). Three additional candidates occur at `0x0045EB81`, `0x0045F883`, and `0x00470F34` and require surrounding-function validation. The same scan finds four candidates targeting `0x0047E2D4`: `0x0047C0E0` (confirmed MainForm cleanup call) and three additional sites `0x0047D92F`, `0x0047DB73`, `0x0047DDB7`. These candidates support the helper's reuse in cleanup/error paths, not a dispatch role. The service workflow now emits bounded disassembly windows around all seven additional callsites and pointer refs for `0x004610FC`.
+Artifact `14267210294` shows five E8-rel32 candidates targeting `0x004610FC`; three are now confirmed in bounded code: MainForm init/heartbeat at `0x0047C237` and `0x0047C2A9`, plus the ParseMethod post-invocation branch at `0x00470F34`. The helper is `TIdHTTPResponseInfo.WriteContent` and is used to transmit response content. Two candidates at `0x0045EB81` and `0x0045F883` remain to be classified. The same scan finds four candidates targeting `0x0047E2D4`: `0x0047C0E0` (confirmed MainForm cleanup call) and three additional sites `0x0047D92F`, `0x0047DB73`, `0x0047DDB7`. These candidates support the helper's reuse in cleanup/error paths, not a dispatch role.
 
 ## TMainForm RTTI/VMT inspection added
 
@@ -775,3 +775,7 @@ The ParseMethod validation artifact confirms the class-instance lifecycle separa
 - `TObject.Free` thunk `0x004010E8` is called at `0x00470F42` to release the method instance.
 
 This definitively distinguishes the runtime-created BPL method instance from the parser's own `TMethodInfo` object, which uses `ClassCreate`/`ClassDestroy` at `0x00471220`/`0x0047127F`.
+
+### Response-send helper resolved as Indy WriteContent
+
+The complete service helper body at `0x004610FC` plus its RTTI method-name pointer reference identify it as `TIdHTTPResponseInfo.WriteContent`. It operates on the response-info object, branches on status and content fields, sends the response through the Indy response interface, clears the temporary content pointer, and performs final response cleanup. Confirmed callsites are `ParseMethod` at `0x00470F34` and the MainForm `init`/`heartbeat` branches at `0x0047C237`/`0x0047C2A9`. The normal connector response path remains conditional on `TEmwatInvokeParam.bResultSet`: if the connector sets the flag, the generic handler skips its default ContentText write; otherwise it assigns the output string to `AResponseInfo.ContentText` and calls WriteContent.
