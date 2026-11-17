@@ -200,3 +200,14 @@ The service calls the created object's VMT slot `+0x0C` at `0x00470EF6`. For BPL
 ### Complete PerformMethod dispatch and document-load chain
 
 `TEmwatMethod.Finalization` calls `TEmwatMethod.Invoke` at `0x0046CA67`, then calls the created object's VMT slot `+0x10` at `0x0046CA88`. `Invoke` handles the request parameter dictionary; it is the following virtual slot that dispatches to the subclass method. In the `TEditWordDocument` VMT at `0x005ED764`, slot `+0x10` points to `0x005EE82C` (TD32 symbol `TScanDocument.PerformMethod`). That implementation calls `TWordViwer.LoadDocument` at `0x004B7724`. The service-to-Word automation execution path is therefore now traced end-to-end at the dispatch boundary.
+
+### Runtime package and class lookup callsites (2026-11-17)
+
+The exact IAT/thunk scan now locates the native Delphi runtime calls, not merely their import-table entries:
+
+- `LoadPackage` is reached from service code at `0x0047E15F` through thunk `0x00402174`. The surrounding block builds the package path, calls the package loader, checks the returned module handle, and logs either `Unable to load "EmwatMethods.bpl".` or `"EmwatMethods.bpl" loaded.`
+- `GetClass` is reached at `0x00470E07` through thunk `0x00402354`, inside the ParseMethod processing region. This is the concrete runtime class-resolution edge for the XML-supplied method class.
+- `StartExe` is called at `0x004014BA`; `GetProcAddress` callsites are at `0x00401720`, `0x00401DA8`, and `0x00401DCA`.
+- `ClassCreate` and `ClassDestroy` are used widely by the service runtime; their existence alone does not identify the request-specific object-construction edge.
+
+The full ParseMethod disassembly contains several separated code islands and embedded exception/finally data. A linear trace from `0x00470D00` stops at its first internal RET; the workflow now traces the islands and the exact GetClass call instruction separately. The final `GetClass` → instance construction → `TEmwatMethod.Invoke` receiver/ABI is not yet considered proven.
