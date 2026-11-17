@@ -69,15 +69,71 @@ jobs:
           EOF
             echo "EmwatService.exe absent; service trace intentionally skipped."
           else
-            for address in 0x0047BF30 0x0047E0EC 0x00470D00 0x00470B38 0x0046ADBC 0x0046A7A4; do
+            for address in 0x0047BF30 0x0047CA44 0x0047D5A4 0x0047DF64 0x0047DF84 0x0047CCD8 0x0047CCC8 0x0047E3EC 0x0047E7E4 0x004010B8 0x004010D8 0x00401320 0x0047E0EC 0x0047E2D4 0x004610FC 0x004612F4 0x00460764 0x0044D380 0x00401156 0x00401158 0x0040115E 0x00401160 0x004011B6 0x004011B8 0x00401462 0x00401464 0x00401D7A 0x00401D7C 0x00402172 0x00402174 0x00402352 0x00402354 0x00470D00 0x00470B38 0x00471214 0x0046AA70 0x0046ADBC 0x0046A7A4 0x0046A620 0x0046A570; do
               name=${address#0x}
-              python tools/trace_pe_target.py analysis-input/EmwatService.exe "$address" "dispatch-crosswalk/service/$name.md" 5000 ret
+              python tools/trace_pe_target.py analysis-input/EmwatService.exe "$address" "dispatch-crosswalk/service/$name.md" 1200 ret
               python tools/trace_td32_procedure.py analysis-input/EmwatService.exe "$address" "dispatch-crosswalk/service/$name-td32.md" || true
               python tools/trace_td32_callers.py analysis-input/EmwatService.exe "$address" "dispatch-crosswalk/service/$name-callers.md" || true
             done
+            python -m py_compile tools/inspect_delphi_vmt_address.py
+            python tools/inspect_delphi_vmt_address.py analysis-input/EmwatService.exe 0x0047B284 dispatch-crosswalk/service/mainform-vmt.md || true
+            python tools/scan_pe_pointer_refs.py analysis-input/EmwatService.exe 0x0047B284 dispatch-crosswalk/service/mainform-vmt-pointer-refs.md || true
+            python tools/scan_pe_pointer_refs.py analysis-input/EmwatService.exe 0x0047BF0C dispatch-crosswalk/service/mainform-classinfo-pointer-refs.md || true
+            python tools/trace_pe_range.py analysis-input/EmwatService.exe 0x0047BF30 0x0047C341 dispatch-crosswalk/service/mainform-request-handler-full.md
+            python tools/trace_td32_procedure.py analysis-input/EmwatService.exe 0x00470D00 dispatch-crosswalk/service/parse-method-td32.md || true
+            python tools/trace_pe_range.py analysis-input/EmwatService.exe 0x00470D00 0x00471080 dispatch-crosswalk/service/parse-method-full.md
+            python tools/trace_pe_range.py analysis-input/EmwatService.exe 0x0047E100 0x0047E1A0 dispatch-crosswalk/service/package-load-callsite-context.md
+            python tools/trace_pe_range.py analysis-input/EmwatService.exe 0x00401490 0x004014D0 dispatch-crosswalk/service/start-exe-callsite-context.md
+            python tools/trace_pe_range.py analysis-input/EmwatService.exe 0x004016F0 0x00401750 dispatch-crosswalk/service/getprocaddress-callsite-context.md
+            python tools/trace_pe_range.py analysis-input/EmwatService.exe 0x00471200 0x00471260 dispatch-crosswalk/service/method-info-classcreate-context.md
+            python tools/trace_pe_range.py analysis-input/EmwatService.exe 0x00471258 0x004712A0 dispatch-crosswalk/service/method-info-classdestroy-context.md
+            python tools/trace_td32_procedure.py analysis-input/EmwatService.exe 0x00471258 dispatch-crosswalk/service/method-info-destructor-td32.md || true
+            python tools/trace_td32_procedure.py analysis-input/EmwatService.exe 0x004014BA dispatch-crosswalk/service/start-exe-owner-td32.md || true
+            python tools/trace_td32_procedure.py analysis-input/EmwatService.exe 0x00401720 dispatch-crosswalk/service/getprocaddress-owner-td32.md || true
+            python tools/trace_pe_range.py analysis-input/EmwatService.exe 0x00470DE0 0x00470E40 dispatch-crosswalk/service/getclass-callsite-context.md
+            python tools/trace_pe_range.py analysis-input/EmwatService.exe 0x00470D76 0x00470E58 dispatch-crosswalk/service/parse-method-post-finally-island.md
+            python tools/trace_pe_range.py analysis-input/EmwatService.exe 0x00470DF0 0x00470E58 dispatch-crosswalk/service/getclass-callsite-aligned-context.md
+            python tools/trace_pe_target.py analysis-input/EmwatService.exe 0x00470E07 dispatch-crosswalk/service/getclass-call-instruction.md 100 ret
+            python tools/trace_pe_target.py analysis-input/EmwatService.exe 0x00401310 dispatch-crosswalk/service/class-name-prefix-helper.md 500 ret
+            python tools/scan_pe_call_refs.py analysis-input/EmwatService.exe 0x00401310 dispatch-crosswalk/service/class-name-prefix-helper-callers.md
+            python tools/trace_pe_range.py analysis-input/EmwatService.exe 0x00470D00 0x00471033 dispatch-crosswalk/service/parse-method-full.md
+            python tools/trace_pe_range.py analysis-input/EmwatService.exe 0x00470DB2 0x00470E80 dispatch-crosswalk/service/parse-method-code-island-1.md
+            python tools/trace_pe_range.py analysis-input/EmwatService.exe 0x00470E58 0x00470F80 dispatch-crosswalk/service/parse-method-class-validation.md
+            python tools/decode_pe_strings.py analysis-input/EmwatService.exe 0x004710E0 0x004710F0 0x00471110 0x00471128 0x00471150 0x004711FC > dispatch-crosswalk/service/parse-method-class-validation-strings.md
+            python tools/trace_pe_range.py analysis-input/EmwatService.exe 0x00470E00 0x00470E50 dispatch-crosswalk/service/getclass-callsite-context.md
+            python tools/trace_pe_range.py analysis-input/EmwatService.exe 0x00470F80 0x00471033 dispatch-crosswalk/service/parse-method-finally-island.md
+            python tools/decode_pe_strings.py analysis-input/EmwatService.exe 0x00461290 0x004612BC 0x004612CC > dispatch-crosswalk/service/write-content-strings.md
+            for range in "0x0045EA80 0x0045EC20" "0x0045F780 0x0045F940" "0x00470E80 0x00471020" "0x0047C180 0x0047C300" "0x0047D8C0 0x0047D980" "0x0047DB00 0x0047DBD0" "0x0047DD40 0x0047DE10"; do
+              set -- $range
+              name=${1#0x}
+              python tools/trace_pe_range.py analysis-input/EmwatService.exe "$1" "$2" "dispatch-crosswalk/service/callsite-context-$name.md"
+            done
+            python tools/scan_pe_pointer_refs.py analysis-input/EmwatService.exe 0x004610FC dispatch-crosswalk/service/postparse-helper-pointer-refs.md || true
             python tools/find_td32_class_procedures.py analysis-input/EmwatService.exe TMainForm TIdHTTPServer TIdHTTPResponseInfo > dispatch-crosswalk/service/service-classes.md || true
             python tools/resolve_delphi_vmt_slots.py analysis-input/EmwatService.exe dispatch-crosswalk/service/service-vmt.md || true
             python tools/trace_delphi_interfaces.py analysis-input/EmwatService.exe dispatch-crosswalk/service/service-interfaces.md || true
+            python tools/list_pe_imports.py analysis-input/EmwatService.exe dispatch-crosswalk/service/service-imports.md
+            for address in 0x004873E0 0x0048740C 0x00487410 0x0048742C 0x00487434 0x00487438 0x00487460 0x00487464 0x0048753C 0x004875CC 0x00487680 0x00487B9C; do
+              python tools/scan_pe_pointer_refs.py analysis-input/EmwatService.exe "$address" "dispatch-crosswalk/service/import-${address}-pointer-refs.md" || true
+            done
+            python -m py_compile tools/scan_pe_call_refs.py tools/scan_pe_rel32_call_bytes.py tools/scan_pe_ff15_iat_refs.py
+            python -m py_compile tools/scan_pe_iat_callers.py
+            python tools/scan_pe_iat_callers.py analysis-input/EmwatService.exe 0x004873E0 0x0048740C 0x00487410 0x0048753C 0x004875CC 0x00487680 0x00487B9C > dispatch-crosswalk/service/service-import-thunk-callers.md
+            for address in 0x004873E0 0x0048740C 0x00487410 0x0048753C 0x004875CC 0x00487680 0x00487B9C; do
+              python tools/scan_pe_ff15_iat_refs.py analysis-input/EmwatService.exe "$address" "dispatch-crosswalk/service/${address}-ff15-iat-refs.md"
+            done
+            for address in 0x00401156 0x00401158 0x0040115E 0x00401160 0x004011B6 0x004011B8 0x00401462 0x00401464 0x00401D7A 0x00401D7C 0x00402172 0x00402174 0x00402352 0x00402354; do
+              python tools/scan_pe_pointer_refs.py analysis-input/EmwatService.exe "$address" "dispatch-crosswalk/service/thunk-${address}-pointer-refs.md" || true
+            done
+            for address in 0x004610FC 0x0047E2D4 0x00401158 0x00401160 0x004011B8 0x00401464 0x00401D7C 0x00402174 0x00402354; do
+              python tools/scan_pe_rel32_call_bytes.py analysis-input/EmwatService.exe "$address" "dispatch-crosswalk/service/${address}-rel32-call-candidates.md"
+            done
+            for address in 0x0046AA70 0x00471214 0x0046ADBC 0x0046A7A4 0x0047E2D4 0x004610FC; do
+              python tools/scan_pe_call_refs.py analysis-input/EmwatService.exe "$address" "dispatch-crosswalk/service/${address}-all-callrefs.md"
+            done
+            python tools/inspect_delphi_vmt_address.py analysis-input/EmwatService.exe 0x00469A3C dispatch-crosswalk/service/ansi-string-dictionary-vmt.md || true
+            python tools/scan_pe_pointer_refs.py analysis-input/EmwatService.exe 0x00469A3C dispatch-crosswalk/service/ansi-string-dictionary-vmt-pointer-refs.md || true
+            python tools/scan_pe_pointer_refs.py analysis-input/EmwatService.exe 0x00470924 dispatch-crosswalk/service/ansi-string-dictionary-class-ref-pointer-refs.md || true
             python tools/trace_pe_range.py analysis-input/EmwatService.exe 0x0046A500 0x0046AE30 dispatch-crosswalk/service/parser-token-collection-full.md
             python tools/trace_pe_range.py analysis-input/EmwatService.exe 0x00470B38 0x00470CA3 dispatch-crosswalk/service/xml-token-loop-full.md
             python tools/trace_pe_range.py analysis-input/EmwatService.exe 0x0047E0EC 0x0047E218 dispatch-crosswalk/service/package-loader-full.md
@@ -124,7 +180,9 @@ jobs:
         shell: bash
         run: |
           mkdir -p dispatch-crosswalk/bpl
-          for address in 0x0046C82C 0x0046DE84 0x0046E324 0x0046E3CC 0x005EE82C 0x004B7724 0x004B8A84 0x004D1148 0x004BCA88 0x004BFDB0 0x004C009C 0x004CB638; do
+          python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x0046C82C 0x0046C9DD dispatch-crosswalk/bpl/emwatmethod-invoke-full.md
+          python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x0046C9E0 0x0046CDF7 dispatch-crosswalk/bpl/emwatmethod-finalization-full.md
+          for address in 0x0046C82C 0x0046C9E0 0x0046DE84 0x0046E324 0x0046E3CC 0x005EE82C 0x004B7724 0x004B8A84 0x004D1148 0x004BCA88 0x004BFDB0 0x004C009C 0x004CB638; do
             name=${address#0x}
             python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 "$address" "dispatch-crosswalk/bpl/$name.md" 5000 ret
             python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 "$address" "dispatch-crosswalk/bpl/$name-td32.md" || true
@@ -132,6 +190,10 @@ jobs:
           done
           python tools/find_td32_class_procedures.py analysis-input/EmwatMethods.bpl1 TEmwatMethod TEditWordDocument TScanDocument TWordViwer TWordViewer > dispatch-crosswalk/bpl/bpl-classes.md
           python tools/resolve_delphi_vmt_slots.py analysis-input/EmwatMethods.bpl1 dispatch-crosswalk/bpl/bpl-vmt.md
+          python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x0046ABFC 0x0046AC90 dispatch-crosswalk/bpl/temwatmethod-vmt-rtti-region.md
+          python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 0x0046C82C dispatch-crosswalk/bpl/temwatmethod-invoke-pointer-refs.md
+          python tools/trace_td32_immediate_refs.py analysis-input/EmwatMethods.bpl1 0x0046C82C dispatch-crosswalk/bpl/temwatmethod-invoke-immediate-refs.md
+          python tools/decode_pe_strings.py analysis-input/EmwatMethods.bpl1 0x0046AC4A 0x0046AC57 0x0046AC98 > dispatch-crosswalk/bpl/temwatmethod-class-rtti-strings.md
           python tools/trace_delphi_interfaces.py analysis-input/EmwatMethods.bpl1 dispatch-crosswalk/bpl/bpl-interfaces.md
           for item in "TEmwatMethod:0x0046ABFC" "TEditWordDocument:0x005ED764" "TScanDocument:0x005ED884" "TWordViwer:0x004B10A4" "TEDPController:0x004B0DFC"; do
             name=${item%%:*}
