@@ -1,6 +1,6 @@
 # Native Linux Image Document — Design Contract (Draft)
 
-Status: architecture draft grounded in static reverse engineering; not yet an implementation or a claim of binary/API parity.
+Status: partially implemented C++ core grounded in static reverse engineering; this document remains the design contract for unimplemented UI/workflow behavior and is not a claim of binary/API parity.
 
 ## 1. Evidence boundary
 
@@ -123,3 +123,16 @@ These rules mirror the observed repeated create/load/delete lifecycle without re
 5. Exact multi-page format behavior and per-page metadata preservation.
 
 Until these are resolved, implement the data model and codec-independent transforms first; keep persistence and scanner adapters behind interfaces.
+
+
+## 7. Implemented native core snapshot — 2026-11-17
+
+The repository now contains a partial C++ implementation of the codec-independent image core and Linux acquisition backend:
+
+- `ImageDocument` / `PixelBuffer`: owned Gray8/RGB8/RGBA8 buffers, stride validation, rotate, flip, crop, page selection, DPI-axis swap on quarter-turn rotation, dirty state and generation tracking.
+- Image codecs: PNG, JPEG and multi-page TIFF load/save with DPI metadata handling and corruption/IFD-chain checks.
+- Document I/O: transactional load; save to a same-directory temporary file followed by atomic rename. The document is marked clean only if its generation still matches the saved snapshot.
+- Scanner: SANE device discovery/capability inspection and 8-bit Gray/RGB scan capture. `scan_one()` captures one frame; `scan_all()` reads all frames when the device reports `last_frame=false`, supporting ADF/multi-frame devices. An RAII guard cancels a started scan on exceptional exits.
+- Native CI runs #106–#108 passed for document revision handling and scan cancellation. Runs #109–#111 are pending for multi-frame changes.
+
+The SANE backend has not been validated against a physical scanner in this CI environment. Hardware-specific option support, feeder behavior, duplex, color depths other than 8-bit Gray/RGB, and real-device multi-frame output remain unverified. The UI, preview, acquisition workflow, ImageEn-specific editing path, and Almas integration are not yet implemented.
