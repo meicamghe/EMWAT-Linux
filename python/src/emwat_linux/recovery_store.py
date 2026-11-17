@@ -237,7 +237,11 @@ class RecoverySnapshotStore:
 
     def remove_session(self, session_id: str) -> None:
         folder = self._session_dir(session_id)
+        if folder.is_symlink():
+            raise RecoveryStoreError("recovery_session_symlink_rejected")
         if folder.exists():
+            if not folder.is_dir():
+                raise RecoveryStoreError("recovery_session_not_directory")
             shutil.rmtree(folder)
             if self.root.exists():
                 self._fsync_directory(self.root)
