@@ -1194,3 +1194,13 @@ Do not implement guessed `signData` joining or claim end-to-end Almas registrati
 - Latest reverse-engineering workflow results checked: close/response chain (run 44053390566), event sink (44053390597), controller content unpacking (44053390505), SevenZip object fields (44053385132), and a second controller unpacking run (44053385179) completed successfully and uploaded artifacts. Other runs for Word lifecycle, Word field mapping, BPL dispatch, callback contracts, and related call chains were still running at the last poll.
 - Existing Python bridge and LibreOffice UNO CI successes remain those recorded above; no new Python/UNO test pass is claimed for the latest documentation-only synchronization.
 - PR #1 remains Draft and not mergeable. Do not merge until the 92-commit mainline divergence and remaining file conflicts are reconciled and CI is green.
+
+
+## VMT/TD32 reconciliation — 2026-11-17
+
+- Downloaded and inspected the successful BPL dispatch crosswalk artifact from run `44053390563` and the BPL static-analysis artifact from run `44053390613`.
+- Added `docs/BPL-VMT-METHOD-TARGET-RECONCILIATION-2026-11-17.md`. The key finding: `TEditWordDocument` VMT `0x005ED764` publishes exactly one `PerformMethod` entry at `0x005EE82C`, while TD32 decorates that same address as `TScanDocument.PerformMethod`. The document preserves this as a symbol/VMT discrepancy rather than guessing which label is wrong.
+- The same bounded method body reads `wordConfig`, `wordBody`, `letterImages`, and `signData`; calls `TWordViwer.LoadDocument` at `0x004B7724` with the invoke context and output string; then sets `bUnloadPkg` at invoke-record offset `+0x04`. It does not itself set `bResultSet`.
+- Additional workflow jobs now confirmed successful: service/BPL dispatch crosswalk (all 3 jobs), BPL static analysis, Word event sink, Word close/response chain, Word save/print, Word field mapping, Word lifecycle in the automation-surface workflow, callback contracts, SevenZip recovery plugin, and controller content unpacking.
+- A separate Word lifecycle run `44053390645` was still in progress at the latest poll. No new native C++ or Python test run was triggered by this analysis-only documentation update.
+- The VMT/TD32 mismatch is now an explicit implementation constraint: keep the XML `EditWordDocument` allowlist key and map by verified VMT dispatch, not by decorated TD32 procedure label.
