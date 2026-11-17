@@ -39,7 +39,15 @@ class RecoverySnapshotInfo:
 class RecoverySnapshotStore:
     """Owner-only atomic snapshots under XDG_STATE_HOME or ~/.local/state."""
 
-    def __init__(self, root: str | Path | None = None) -> None:
+    def __init__(
+        self,
+        root: str | Path | None = None,
+        *,
+        max_snapshot_bytes: int = 128 * 1024 * 1024,
+    ) -> None:
+        if max_snapshot_bytes <= 0:
+            raise ValueError("max_snapshot_bytes must be positive")
+        self.max_snapshot_bytes = max_snapshot_bytes
         if root is None:
             state_home = os.environ.get("XDG_STATE_HOME")
             base = Path(state_home).expanduser() if state_home else Path.home() / ".local" / "state"
@@ -59,8 +67,10 @@ class RecoverySnapshotStore:
     def save_snapshot(self, session_id: str, payload: bytes) -> RecoverySnapshotInfo:
         if not isinstance(payload, bytes) or not payload:
             raise RecoveryStoreError("recovery_snapshot_empty_or_invalid")
+        if len(payload) > self.max_snapshot_bytes:
+            raise RecoveryStoreError("recovery_snapshot_too_large")
         folder = self._session_dir(session_id)
-        if not folder.is_dir():
+        if folder.is_symlink() or not folder.is_dir():
             raise RecoveryStoreError("recovery_session_missing")
         folder.chmod(0o700)
 
@@ -122,11 +132,22 @@ class RecoverySnapshotStore:
             document_name = manifest["document_name"]
             if not re.fullmatch(r"document-[0-9a-f]{64}\.(?:doc|docx)", document_name):
                 raise RecoveryStoreError("recovery_manifest_document_name_invalid")
-            payload = (folder / document_name).read_bytes()
+            document_path = folder / document_name
+            if document_path.is_symlink() or not document_path.is_file():
+                raise RecoveryStoreError("recovery_snapshot_unavailable")
+            if document_path.stat().st_size > self.max_snapshot_bytes:
+                raise RecoveryStoreError("recovery_snapshot_too_large")
+            payload = document_path.read_bytes()
             if len(payload) != manifest["size_bytes"]:
                 raise RecoveryStoreError("recovery_snapshot_size_mismatch")
+            if not isinstance(manifest["sha256"], str) or not re.fullmatch(r"[0-9a-f]{64}", manifest["sha256"]):
+                raise RecoveryStoreError("recovery_manifest_hash_invalid")
             if hashlib.sha256(payload).hexdigest() != manifest["sha256"]:
                 raise RecoveryStoreError("recovery_snapshot_hash_mismatch")
+            if payload.startswith(_CFB_SIGNATURE) and not document_name.endswith(".doc"):
+                raise RecoveryStoreError("recovery_snapshot_format_mismatch")
+            if payload.startswith(_ZIP_SIGNATURES) and not document_name.endswith(".docx"):
+                raise RecoveryStoreError("recovery_snapshot_format_mismatch")
             return payload
         except RecoveryStoreError:
             raise
@@ -138,35 +159,42 @@ class RecoverySnapshotStore:
             return ()
         snapshots = []
         for folder in self.root.iterdir():
-            if not folder.is_dir() or not _SESSION_ID.fullmatch(folder.name):
+            if folder.is_symlink() or not folder.is_dir() or not _SESSION_ID.fullmatch(folder.name):
                 continue
             try:
-                manifest = json.loads((folder / "manifest.json").read_text(encoding="utf-8"))
+                manifest_path = folder / "manifest.json"
+                if manifest_path.is_symlink() or not manifest_path.is_file():
+                    continue
+                manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
                 if manifest.get("schema_version") != 1 or manifest.get("session_id") != folder.name:
                     continue
                 name = manifest["document_name"]
-                if not re.fullmatch(r"document-[0-9a-f]{64}\.(?:doc|docx)", name):
+                if not isinstance(name, str) or not re.fullmatch(r"document-[0-9a-f]{64}\\.(?:doc|docx)", name):
                     continue
                 path = folder / name
-                if not path.is_file():
+                if path.is_symlink() or not path.is_file():
                     continue
+                payload = self.load_snapshot(folder.name)
                 snapshots.append(
                     RecoverySnapshotInfo(
                         session_id=folder.name,
                         document_name=name,
-                        size_bytes=int(manifest["size_bytes"]),
-                        sha256=str(manifest["sha256"]),
+                        size_bytes=len(payload),
+                        sha256=hashlib.sha256(payload).hexdigest(),
                         updated_at=float(manifest["updated_at"]),
                         document_path=path,
                     )
                 )
-            except (OSError, ValueError, KeyError, TypeError):
+            except (OSError, ValueError, KeyError, TypeError, RecoveryStoreError):
                 continue
         return tuple(sorted(snapshots, key=lambda item: item.updated_at, reverse=True))
 
     def has_snapshot(self, session_id: str) -> bool:
-        folder = self._session_dir(session_id)
-        return (folder / "manifest.json").is_file()
+        try:
+            self.load_snapshot(session_id)
+            return True
+        except RecoveryStoreError:
+            return False
 
     def remove_session(self, session_id: str) -> None:
         folder = self._session_dir(session_id)
