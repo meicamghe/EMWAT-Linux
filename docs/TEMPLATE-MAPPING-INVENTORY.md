@@ -23,11 +23,12 @@ It returns a `TemplateMappingReport` with exact-name candidates and unmatched en
 ## Example
 
 ```python
+from emwat_linux.editword_request import parse_editword_request
 from emwat_linux.template_mapping import inspect_template_mapping
 
-config = request.config
+edit_request = parse_editword_request(method_call)
 catalog = office_adapter.inspect_document(handle)
-report = inspect_template_mapping(config, catalog)
+report = inspect_template_mapping(edit_request.config, catalog)
 
 if not report.index_alignment_valid:
     raise RuntimeError(report.alignment_error)
