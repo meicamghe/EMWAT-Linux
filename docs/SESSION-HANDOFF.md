@@ -1140,3 +1140,8 @@ Do not implement guessed `signData` joining or claim end-to-end Almas registrati
 - Native run #118 passed both regular and ASan/UBSan jobs; 4/4 CTest targets passed in each.
 - EditWord composition defaults: max decoded document 64 MiB, max HTTP request 128 MiB, max HTTP response 96 MiB. The handler passes the configured response cap into the observed Base64 XML response serializer.
 - Python bridge run #224 passed 117 tests (114 passed, 3 optional skips).
+
+
+### Scanner memory and batch safety
+- SANE frame capture is bounded to 100 pages and 1 GiB total pixel data (with per-frame dimension/stride checks).
+- ImageDocument.append_pages() is covered for invalid second-page rollback: the original page and clean state remain unchanged.
