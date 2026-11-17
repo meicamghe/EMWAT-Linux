@@ -12,7 +12,7 @@ from dataclasses import dataclass
 from typing import Mapping, Sequence
 from urllib.parse import unquote_plus
 
-from emwat_linux.word_config import WordDocumentConfig
+from emwat_linux.word_config import WordDocumentConfig, WordField
 
 
 class WordFieldDecodeError(ValueError):
@@ -50,7 +50,7 @@ class SingleWordFieldDescriptor:
 
     index: int
     property_name: str
-    field_name: str | None
+    xml_field: WordField | None
 
 
 @dataclass(frozen=True)
@@ -61,7 +61,7 @@ class TwinWordFieldDescriptor:
     property_name: str
     first_field_name: str
     second_field_name: str
-    xml_field_name: str | None = None
+    xml_field: WordField | None = None
 
 
 def resolve_twin_field_partner(
@@ -93,29 +93,29 @@ class WordCustomPropertyFieldMaps:
 def build_word_custom_property_field_maps(
     property_names: Sequence[str],
     *,
-    xml_field_names: Sequence[str] | None = None,
+    xml_fields: Sequence[WordField] | None = None,
 ) -> WordCustomPropertyFieldMaps:
-    """Build single/twin descriptors in native custom-property enumeration order.
+    """Build native-shaped descriptors in custom-property enumeration order.
 
     The native AddCustomDocPropertiesToDic routine assigns a zero-based index
     to each Word CustomDocumentProperties item, retrieves the corresponding
-    XML field name at the same index, and inserts a descriptor under the
-    original (unsplit) property name. The first dagger separates twin members;
-    empty sides follow the native single-field branch.
+    IXMLFieldType object from wordConfig.fields at the same index, and inserts
+    a descriptor under the original (unsplit) property name. The first dagger
+    separates twin members; empty sides follow the native single-field branch.
 
-    Pass xml_field_names in the exact corresponding wordConfig field order
-    to populate each descriptor's XML field-name member. If omitted, that
-    member remains None rather than guessing that the property name is also
-    the XML field name. When supplied, the two sequences must have equal
-    lengths so index alignment cannot silently drift.
+    Pass xml_fields in the exact corresponding wordConfig field order. The
+    descriptor retains the full WordField node (attributes and text), matching
+    the native interface reference stored in TXmlWordConfigField/TwinField.
+    If omitted, the reference remains None. When supplied, the two sequences
+    must have equal lengths so index alignment cannot silently drift.
     """
-    if xml_field_names is not None and len(xml_field_names) != len(property_names):
-        raise ValueError("xml_field_names_must_match_property_names_length")
+    if xml_fields is not None and len(xml_fields) != len(property_names):
+        raise ValueError("xml_fields_must_match_property_names_length")
 
     singles: list[SingleWordFieldDescriptor] = []
     twins: list[TwinWordFieldDescriptor] = []
     for index, property_name in enumerate(property_names):
-        xml_field_name = xml_field_names[index] if xml_field_names is not None else None
+        xml_field = xml_fields[index] if xml_fields is not None else None
         identifier = parse_word_field_identifier(property_name)
         if identifier.is_twin:
             twins.append(
@@ -124,7 +124,7 @@ def build_word_custom_property_field_maps(
                     property_name=property_name,
                     first_field_name=identifier.first,
                     second_field_name=identifier.second or "",
-                    xml_field_name=xml_field_name,
+                    xml_field=xml_field,
                 )
             )
         else:
@@ -132,7 +132,7 @@ def build_word_custom_property_field_maps(
                 SingleWordFieldDescriptor(
                     index=index,
                     property_name=property_name,
-                    field_name=xml_field_name,
+                    xml_field=xml_field,
                 )
             )
     return WordCustomPropertyFieldMaps(
