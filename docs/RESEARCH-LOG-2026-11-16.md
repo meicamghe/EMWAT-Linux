@@ -788,3 +788,14 @@ There are two separate response-send call paths and they must not be conflated:
 - The BPL's `TWordViwer.LoadDocument` directly calls its imported `IdCustomHTTPServer.TIdHTTPResponseInfo.WriteContent` thunk at `0x0040448C` after assigning the generated `response-word` XML to `AResponseInfo.ContentText`; it then sets `bResultSet=true`. This is the successful EditWordDocument response path and bypasses the generic fallback sender.
 
 The native service helper's internal string/stream cleanup and status handling is now being traced separately from the BPL's direct response writer.
+
+## Generic dictionary insertion semantics clarified; option-form candidate rejected — 2026-11-17
+
+The new batch artifact (`14302108319`) yields two important corrections:
+
+1. `TWordViwer.CrateOptionFormFields` (`0x004CFC74`) is called from `LoadOptions` (`0x004D03A0`). Its body reads a set of XML/config properties and builds option-form entries; it does not touch the viewer's descriptor maps at `+0x68/+0x6C` or call their insertion helpers. Reject it as the initial descriptor-map population routine.
+2. Some generic-method TD32 labels are misaligned with the actual method-table names. The raw method-table pointer reference at `0x004B50B6` ties `0x004D552C` to `AddOrSetValue`, although its TD32 procedure label says `ContainsKey`. Its body computes a hash, checks for an existing entry, grows when needed, and calls `DoSetValue` (`0x004D4D58`) to insert/update. Conversely, `0x004D559C` is the key-presence check in the `GetXmlFieldInfo` call path, despite its TD32 label `ContainsValue`.
+
+The insertion record layout is now decoded: `DoSetValue` writes a three-slot entry (hash, UnicodeString key, descriptor value) at 12-byte stride, increments dictionary count, and issues key/value notifications. `DoAdd` (`0x004D4D08`) is the rehash/grow insertion helper. `TDictionary.Create(IEnumerable<TPair<...>>)` at `0x004D5100` iterates a pair enumerator and calls the `AddOrSetValue` body at `0x004D552C` for each pair. This is a concrete possible population mechanism, but direct CALL scans found no caller for `0x004D5100`; its invocation/source enumerable remain unresolved.
+
+The next workflow batch therefore scans raw pointer references for the enumerable constructor (`0x004D5100`), capacity constructors (`0x004D5048`/`0x004D4FB4`), AddOrSetValue (`0x004D552C`), and the dictionary VMT/method-table targets, and traces the other constructor overload at `0x004D522E` before deciding whether the enumerable constructor is used by the viewer.
