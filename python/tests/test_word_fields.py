@@ -58,6 +58,22 @@ class WordFieldDecodingTests(unittest.TestCase):
             ],
             [(1, "SignStart", "SignEnd")],
         )
+        self.assertEqual(
+            set(maps.single_by_property_name),
+            {"LetterSubject", "†Malformed", "Trailing†"},
+        )
+        self.assertEqual(
+            set(maps.twin_by_property_name),
+            {"SignStart†SignEnd"},
+        )
+
+    def test_rejects_duplicate_keys_like_native_dictionary_add(self):
+        with self.assertRaisesRegex(ValueError, "duplicate_single_custom_property_name"):
+            build_word_custom_property_field_maps(("LetterSubject", "LetterSubject"))
+        with self.assertRaisesRegex(ValueError, "duplicate_twin_custom_property_name"):
+            build_word_custom_property_field_maps(
+                ("SignStart†SignEnd", "SignStart†SignEnd")
+            )
 
     def test_builds_descriptors_with_matching_wordconfig_field_nodes(self):
         config = parse(
