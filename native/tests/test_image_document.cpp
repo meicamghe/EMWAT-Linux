@@ -104,6 +104,17 @@ int main() {
     {
         ImageDocument doc;
         doc.append_page(ImagePage{sample(), 300.0, 300.0});
+        const auto saved_revision = doc.generation();
+        doc.mark_saved();
+        doc.flip_active(FlipAxis::Horizontal);
+        assert(!doc.mark_saved_if_generation(saved_revision));
+        assert(doc.dirty());
+        assert(doc.mark_saved_if_generation(doc.generation()));
+        assert(!doc.dirty());
+    }
+    {
+        ImageDocument doc;
+        doc.append_page(ImagePage{sample(), 300.0, 300.0});
         doc.append_page(ImagePage{sample(), 150.0, 150.0});
         doc.mark_saved();
         const auto before_select = doc.generation();
