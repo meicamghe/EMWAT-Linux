@@ -414,3 +414,16 @@ The `ParseMethod` body provides the complete dynamic dispatch lifecycle:
 5. `TObject.Free` via thunk `0x004010E8` at `0x00470F42` releases the method object after invocation.
 
 This object lifecycle is distinct from the parser metadata object's own constructor/destructor (`ClassCreate` at `0x00471220`; `ClassDestroy` at `0x0047127F`). The distinction is important for the Linux dispatcher: the XML class name selects a registered method class; a per-call method object receives the parsed method-info payload, executes through its virtual dispatch slot, and is then released.
+
+### Exact Delphi class-name construction and Invoke wrapper bridge
+
+The `T` prefix is now confirmed at instruction level, not merely inferred from the nearby literal. In `ParseMethod`, the XML `class` value is combined with the constant `T` at `0x004710E0` by helper `0x00401310`; that thunk resolves to `rtl230.bpl!System.@UStrCat3`. The resulting `T` + class string is passed to `GetClass` through thunk `0x00402354` at `0x00470E07`.
+
+The BPL side resolves the service's virtual call precisely:
+
+- Service instruction `0x00470EF6` invokes `[instance.VMT+0x0C]`.
+- For `TEmwatMethod`, the `+0x0C` VMT entry is `0x0046C9E0`, the public/exported `Invoke` wrapper. Preserve the TD32 naming mismatch: TD32 calls `0x0046C9E0` `Finalization` and labels the inner routine `0x0046C82C` as `TEmwatMethod.Invoke`.
+- The wrapper at `0x0046C9E0` calls the 433-byte shared dictionary/XML helper at `0x0046C82C`, then invokes `[instance.VMT+0x10]` at `0x0046CA88`.
+- For `TEditWordDocument`, VMT `0x005ED764` has `+0x10 = 0x005EE82C`; this concrete `PerformMethod` reads `wordConfig`, `wordBody`, `letterImages`, and `signData`, then calls `TWordViwer.LoadDocument` (`0x004B7724`).
+
+This closes the class-name construction and service→BPL→concrete `PerformMethod` edge. It does not close all document-field semantics or end-to-end Almas integration.
