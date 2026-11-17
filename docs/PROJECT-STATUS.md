@@ -2571,3 +2571,12 @@ workflow `python-bridge.yml` پس از تغییرات docstring و تفکیک ر
 - fixture خروجی Word 97 نیز دو `PropertyValue` واقعی و هم‌نام `FilterName=MS Word 97` و `Overwrite=True` تولید می‌کند؛ تست صرفاً از ساختار خالی fake استفاده نمی‌کند.
 - Python bridge CI روی commit `43804e76ba8fa0f2b62609c252305b9a356031b5` موفق شد: **135 تست موفق، 3 skip**؛ run `44075703317`.
 - LibreOffice UNO integration روی همان commit موفق شد: **14 تست موفق**؛ run `44075703251`.
+
+
+## Recovery integrity and restore hardening — 2026-11-17
+
+- `RecoverySnapshotStore` now enforces a configurable maximum snapshot size (128 MiB default), rejects symlinked session/manifest/document paths, validates manifest size/hash/container extension, and verifies bytes before listing or reporting a snapshot as available.
+- Added `restore_snapshot(session_id, destination)`: verified content is staged in the destination directory, fsynced, then published atomically with a no-overwrite hard link. Existing destinations are never replaced; `.doc`/`.docx` extension must match the stored container. This is an API, not a recovery UI.
+- Python CI on restore commit `9e466138eb83cbc1a5895f9e2c4045ddf4e5b7e4`: **140 tests passed, 3 skipped**, run `44081200320`.
+- Python CI after manifest/symlink validation: **138 tests passed**, run `44081194436`. LibreOffice UNO integration after that hardening: **14 tests passed**, run `44081137842`.
+- A preceding CI run on commit `5d3bfb6b8a27d7d1b14f6d4aadac90e23a67af0a` exposed an incorrect escaped filename regex; it was corrected in `b91b330bf7b1d9cb594cd96bb1751441fcd56d9c`, and both Python and UNO checks passed afterward. The failing run is retained as regression history, not hidden.
