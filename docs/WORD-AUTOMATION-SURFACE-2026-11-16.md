@@ -254,3 +254,176 @@ The expanded field-mapping artifact adds important caller context to the Word-fi
 Implementation consequence: keep three distinct layers in the Linux backend—field/config inventory, Word/Writer field mutation, and document-level image insertion. Do not collapse `AddImagesToDoc`, `FillImageField`, and `FillField` into one generic image setter.
 
 Evidence: `emwat-word-field-mapping`, run `43882925143`, artifact `14232259712`.
+
+
+---
+
+## Findings incorporated from main
+
+## Image-field branch analysis — additional trace targets queued
+
+A closer read of the existing TD32 trace narrows the next image-field work:
+
+- `AddImagesToDoc` (`0x004C0410`) obtains a string-valued property from the supplied `IXMLFieldType` interface through vtable offset `+0xB0`, normalizes/copies it, and compares it against a constant at `0x004C0510`. Only the non-equal branch calls `0x004C19C0`, whose TD32 symbol is `TWordViwer.GetCaptionItemFont`. The literal at `0x004C0510` is still undecoded; no field-type label is assigned here.
+- The helper call at `0x004C048C` receives the current Word Fields interface, the XML field object, the caller's field metadata, and additional string/record arguments. This is a document-level path distinct from `FillImageField`.
+- `FillImageField` (`0x004BC30C`) has two major branches. When viewer flag `+0xF0) is set, it checks three metadata strings before invoking `FindWindowExtd` (`0x0045644C`). In the later branch it inspects a field/index-related value and conditionally uses Word Fields/Field COM calls, including vtable offsets `+0x40), `+0x20), `+0x2EC), and `+0x2F0). These offsets are intentionally left unmapped until the imported WordXP interface method order is established; guessing their names would risk implementing the wrong operation.
+- The final helper path also reaches `0x004C19C0) through `AddImagesToDoc`; this helper is now included as a first-class trace target in the Word field-analysis workflow, together with `0x004BC170) and the branch-string constants at `0x004BC6D4) through `0x004BC910).
+
+Workflow expansion commit: `367e4aa58514029278624c65837059f13807394a`. The next run's artifact is required before treating the helper or branch strings as decoded evidence.
+
+
+
+## GetDocFieldName caller-chain detail
+
+The TD32 body for `GetDocFieldName` (`0x004BB81C`) gives a useful ordering constraint:
+
+1. It reads viewer field `+0x48) and passes it to helper `0x004D1808`.
+2. It invokes `FillPrintDocFields` (`0x004CB638`) with the active document/field context and viewer collection at `+0xA4).
+3. It then iterates the entries in viewer collection `+0xA4) and calls helper `0x004C0550` for each entry.
+4. The special `Hidden_Customizable` comparison follows; on that branch it calls `SilentSaveEmwatDoc` (`0x004D23D8`).
+
+This confirms print-field preparation happens before the per-entry resolver loop in this routine. It also identifies `0x004C0550` as the next field-resolution target (the current trace does not yet prove its TD32 symbolic name). The workflow now traces `0x004C0550` and the separately named `GetFieldIndexInList` (`0x004CB1B4`) to establish whether they share lookup or collection semantics.
+
+Workflow trace additions: commit `e5933a10905c5edb6075767aa4d25be800698b11`.
+
+
+
+## Confirmed GetDocFieldIndex and caption/image sub-pipeline — artifact 14233429328
+
+The expanded field-mapping artifact from run `43886492031` resolves `0x004C0550` as `TWordViwer.GetDocFieldIndex` (procedure range `0x004C0550–0x004C1793`). Its direct caller is `GetDocFieldName` at `0x004BBB2B`. This is the per-configured-field resolver, not an anonymous helper.
+
+The trace establishes this order within `GetDocFieldIndex`:
+- Enumerates the Word `Fields` collection and obtains per-field data through its COM interface.
+- Calls `FindFieldInActivefields` (`0x004BC170`) on the extracted field name.
+- Calls `GetXmlFieldInfo` (`0x004BFC18`) to retrieve the matching XML field metadata.
+- Uses `FillMSWFields` (`0x004C009C`) in several branches and `SetFieldValue` (`0x004BFDB0`) in multiple branches.
+- Calls `AddImagesToDoc` (`0x004C0410`) at `0x004C0A5D` in the image/caption branch.
+- Uses `FillTextField` (`0x004BC980`) on multiple paths and returns a Boolean result to the caller.
+
+This provides the first connected mapping pipeline from Word Field enumeration through active-field filtering, XML metadata resolution, text/property updates, and the separate image/caption branch. The exact semantics of every branch and the string constants are still being decoded; the implementation must preserve this order rather than simply mapping config IDs to bookmarks or properties.
+
+### Caption and bitmap helpers
+
+The same artifact cross-checks these symbols and call relationships:
+- `GetCaptionItemFont` (`0x004C19C0`) is called only by `AddImagesToDoc` in the current direct-call scan. Despite the symbol name, its body is the substantial image-generation/insertion path: it calls `GetXmlFieldInfo`, `SetFieldValue` (two observed sites), `EmbedTextToImage` (`0x004C436C`), and `FillMSWFields`; it logs `AddImageToDoc method called`, loads/unloads `igLzw32s.Dll`, processes `signData` and `signText`, validates image files, creates an image list, and logs `AddImageToDoc succeed`. The routine therefore cannot be reduced to a font getter; its body is responsible for image and signature processing.
+- `GetCaptionItems` (`0x004C2B20`) is called by `ResizeBitmapCanvas` and `ProcessWords`. It builds/returns a `TCaptionItem` object from a record and several parsed values.
+- `GetImageResolution` (`0x004C2DE0`) is called by `StrToAlign` at six sites. Its body compares an input string against six constants and returns enum-like values 1 through 6 (or 0 for no match). The six literal labels are now decoded as `right`, `center`, `left`, `top`, `middle`, and `bottom`. Together with the six call sites in `StrToAlign`, this establishes that the routine converts alignment/position strings to enum-like values; the TD32 symbol name `GetImageResolution` is misleading for this call path.
+- `EmbedTextToImage` (`0x004C436C`) is called from `GetCaptionItemFont`; it parses numeric image/caption parameters, converts dimensions through floating-point unit scaling, and invokes helper routines `0x004AFF10` and `0x004AFEB8`. Exact units and final rendering side effects remain open.
+
+Workflow evidence: field-mapping job succeeded in run `43886492031`, artifact `14233429328`. The companion save-print job in that run failed only because its decoder output directory was wrong; this was corrected separately and a new run was queued.
+
+
+
+## Print-field special cases — decoded string evidence
+
+The save/print artifact from run `43887016674` confirms the string constant at `0x004CCB0C) is exactly `EMBED Equation`. `FillPrintDocFields` compares the current Word field-code string against this value before entering a separate branch. The routine also constructs/uses a property key around `CustomDocumentProperties` and `count` in the custom-property branch (the string is embedded at an unaligned address; the workflow now decodes the exact byte-aligned starts `0x004CCB45` and `0x004CCB61` to verify both labels).
+
+Do not treat this as a generic field rewrite rule yet: the surrounding helper calls `0x004D3DF8`, `0x004D34B0`, and `0x004D3B78` still need their full traces to determine how custom property fields are selected and stored.
+
+Artifact: `emwat-word-save-print`, run `43887016674`, artifact `14234129463`.
+
+
+### Field resolver and image-path string evidence
+
+The expanded decoder also resolves important strings used by `GetDocFieldIndex` and `FillImageField`:
+
+- `GetDocFieldIndex` checks a regex-like field-name pattern `^sign.*end[0-2]?[0-9]?$` and emits distinct skip reasons for business rules, exceptions, and repeated processing.
+- It logs whether a field's XML value is a single value or a multi-value set, logs twin-field matches, and has a `SignsArea` special case.
+- A missing twin field triggers an abort path; the decoded Persian prompt says the field was not found and the document will close while discarding changes. A separate branch aborts if the GAM document is protected with an invalid password.
+- `FillImageField` includes special metadata keys `LetterRegistrationDate`, `LetterRegistrationNo`, `ProduceDate`, `Receivers`, `ReceiverDeps`, `ccReceivers`, and `ccReceiverDeps`. Its diagnostics distinguish values stored in `CustomDocumentProperties` from values stored in `Field.Result.Text`, and it checks whether a field is locked.
+
+These are concrete special cases to preserve in the Linux resolver; they are not generic assumptions that all fields map to custom properties. Evidence: `emwat-word-save-print` run `43887016674`, artifact `14234129463`.
+
+
+The same string-decoding artifact resolves the four `TCaptionItem` text-style labels as `bold`, `italic`, `underline`, and `strikeout`. The `GetCaptionItems` routine parses these style switches while constructing caption-item metadata. The alignment enum labels are `right`, `center`, `left`, `top`, `middle`, and `bottom`; these correspond to the six branches in `GetImageResolution` when called by `StrToAlign`.
+
+
+
+## Print-time image field dispatch
+
+The `FillImgFldsForPrint` routine (`0x004CCDC8`) is now traced end-to-end. It enumerates the supplied Word Fields collection, resolves each field through `FindFieldInActivefields` and `GetFieldIndexInList`, and uses `FillTextField` on specific fallback/metadata branches. For an indexed field, it consults viewer-side arrays at `+0xE8) and `+0xEC); one conditional path calls the misleadingly named `WordAppDocumentBeforeClose` routine. This routine is therefore part of print-time image-field substitution, not document-close lifecycle handling.
+
+This explains the only direct caller previously found for `WordAppDocumentBeforeClose`: `FillImgFldsForPrint` at `0x004CCF8F`. The direct call chain is `GetFieldIndexInList` → `FillImgFldsForPrint` → conditional field substitution helper.
+
+
+
+## Exact active-field name extraction
+
+`FindFieldInActivefields` (`0x004BC170`) is not a generic case-folding lookup. It searches the Word field code for the literal `DOCPROPERTY`; if present, it applies Delphi `Pos`/`Copy` operations using the first double-space delimiter and then the first single space in the copied segment. If the keyword is absent, it preserves the original code. The implementation and tests in `word_fields.py` now mirror the observed edge cases, including Delphi's `Pos = 0) behavior when the double-space delimiter is absent. This normalized output is the name passed to `FindFieldInActivefields` consumers and to the signature-end regex check.
+
+
+
+## Text-versus-image MIME dispatch
+
+The completed string decoder identifies the discriminator at `0x004BCA70` as `text/plain`. In `FillTextField` (`0x004BC980`), the native code delegates to `FillImageField` when the XML field interface is absent, the MIME property is absent, or its value does not match `text/plain`. Thus `text/plain` is the ordinary text-field path; other declared MIME types enter the alternate field/image path. This provides a concrete branch condition for the Linux resolver.
+
+
+
+## Twin-field lookup algorithm
+
+`FillTwinFields` (`0x004C02EC`) scans the Word Fields collection from the caller-supplied one-based start index to `Fields.Count). For each item it reads `Field.Code`, normalizes it through `FindFieldInActivefields`, and compares the result to the requested twin identifier. It returns the first matching one-based field index or `0` when no match exists. `GetDocFieldIndex` uses this return value to detect a missing twin and enter its abort/close-without-changes path.
+
+The Python mirror is `find_native_twin_field_index()` in `python/src/emwat_linux/word_fields.py`; its test suite covers one-based indexing, start offsets, no-match behavior, and invalid zero-based starts.
+
+
+
+## Correction: descriptor maps are populated through Add wrappers; twin lookup uses CompareText
+
+The routines at `0x004D531C` and `0x004D68D4` are TD32-labelled `Remove`, but their observed machine behavior is `Add(key,value)`:
+- `0x004D531C` inserts into `TDictionary<UnicodeString,TXmlWordConfigField>` via `0x004D4D58`.
+- `0x004D68D4` inserts into `TDictionary<UnicodeString,TXmlWordConfigTwinField>` via `0x004D6310`.
+
+Both wrappers hash and search the key, raise the duplicate-key exception if it already exists, and otherwise insert the `(hash,key,value)` entry. `AddCustomDocPropertiesToDic` calls them at `0x004D1635` and `0x004D15C6`, respectively. This is the confirmed descriptor-map population path. The separate runtime map at viewer `+0x64` is the `TDictionary<UnicodeString,TDocumentCProperty>` map with its own SetItem/ContainsValue/Remove lifecycle.
+
+The comparison helper `0x00403248` resolves to RTL `System.SysUtils.CompareText`. Consequently, `FillTwinFields` compares the normalized Word field identifier case-insensitively. The Python `find_native_twin_field_index()` mirrors this with `casefold()`; the signature-end regular-expression branch remains separately case-sensitive.
+
+
+## Runtime custom-property map: image-fill to print consumption
+
+The runtime dictionary at viewer `+0x64` (`TDictionary<UnicodeString,TDocumentCProperty>`) has a concrete caller chain:
+- `FillImageField` updates it through `SetItem` (`0x004D34B0`) at `0x004BC45E`.
+- `FillImageField` and `FillPrintDocFields` query it through `ContainsValue` (`0x004D3DF8`).
+- `FillPrintDocFields` removes entries through `Remove` (`0x004D3B78`) at four sites; `FillPrintOptionForm` removes entries at one site.
+
+This separates the runtime custom-property values from the single/twin XML descriptor maps at viewer `+0x68/+0x6C`. `AddCustomDocPropertiesToDic` populates the descriptor maps; the runtime map at `+0x64` separately participates in the image-field and print-value lifecycle.
+
+
+## Descriptor dictionaries: normalized field lookup and paired-property records
+
+The 2026-11-16 field-mapping artifact adds a concrete call graph around the two descriptor maps:
+
+- `viewer + 0x68` is `TDictionary<UnicodeString,TXmlWordConfigField>`; `viewer + 0x6C` is `TDictionary<UnicodeString,TXmlWordConfigTwinField>`.
+- `TWordViwer.GetXmlFieldInfo` (`0x004BFC18`) first checks the single-field map and retrieves its descriptor; if that path does not match, it checks the twin-field map and retrieves the paired descriptor. The returned records expose an integer field/index at `+0x04`; the single descriptor also exposes a string at `+0x08`, while the twin descriptor exposes strings at `+0x08`, `+0x0C`, and another string slot at `+0x10` used by the custom-property path.
+- The string normalizer/splitter `0x004BC170` is called repeatedly from the XML-field `GetXmlFieldInfo` overload, `FillTwinFields`, `GetDocFieldIndex`, `FillPrintDocFields`, `FillImgFldsForPrint`, and the viewer constructor. It splits/transforms incoming field/property names before downstream comparisons; exact delimiter semantics remain to be validated from the new decoded constants.
+- `AddCustomDocPropertiesToDic` (`0x004D1454`) enumerates Word custom document properties, splits the property name on `†` (U+2020), retrieves the matching XML field entry by zero-based index, constructs a single or twin descriptor, and adds it to the corresponding map (`+0x68` or `+0x6C`) under the original unsplit property name.
+
+The descriptor-map population path is now closed: `AddCustomDocPropertiesToDic` calls the two Add wrappers directly. Low-level `DoSetValue`/`DoAdd` helper scans alone missed this because the caller uses wrapper methods whose TD32 names are misleading. Do not equate these XML descriptor maps with the separate runtime `TDocumentCProperty` map at viewer `+0x64`.
+
+
+## Recipient/CC option-form fields seeded by the viewer constructor
+
+The expanded constructor artifact (`14265228751`) decodes four field identifiers referenced by `TWordViwer.$bctr` (`0x004D08B4`): `Receivers`, `ReceiverDeps`, `ccReceivers`, and `ccReceiverDeps`. The constructor builds option-form field entries from these names and emits `OptionForm fields have been created:` followed by records formatted as `field[%d]: "%s", xmlfidx: %d, isInDoc:%s.` This gives a concrete native inventory for the recipient/CC option UI and shows that each option entry tracks its XML-field index and whether the field is present in the Word document. It does not establish the full semantics of recipient selection, department expansion, or how those values are serialized back to Almas.
+
+
+## Exact GetXmlFieldInfo single/twin lookup behavior
+
+The full TD32 trace of `TWordViwer.GetXmlFieldInfo` (`0x004BFC18–0x004BFD34`) resolves the descriptor lookup contract more precisely:
+
+1. Initialize the output index to `-1` and the `isTwin` output flag to false.
+2. Probe the single-field dictionary at `viewer+0x68` using the normalized input identifier. If found, retrieve the `TXmlWordConfigField` descriptor, return its integer index from record offset `+0x04`, and return its associated string from `+0x08`.
+3. Otherwise probe the twin-field dictionary at `viewer+0x6C`. If found, retrieve `TXmlWordConfigTwinField`, compare the input identifier case-insensitively with the first field name at `+0x08` and then the second at `+0x0C`, and return the opposite partner name. The index comes from `+0x04`, the associated custom-property name from `+0x10`, and `isTwin` is set true.
+4. If neither dictionary contains the key, the initialized sentinel outputs remain (`index=-1`, `isTwin=false`).
+
+The helper at `0x004D559C` is TD32-labelled `ContainsValue`, but its machine body searches by the supplied UnicodeString key through the dictionary's bucket/entry lookup; treat it as a key-presence check in this call path, not as a semantic value scan. The twin map follows the same lookup pattern. This lookup algorithm is now suitable for a direct Python mirror. The population source is confirmed as `AddCustomDocPropertiesToDic`; the remaining compatibility risks are preserving the native property order in Writer and mapping the indexed `IXMLFieldType` interface reference to the corresponding `WordField` node.
+
+
+## Exact single/twin descriptor lookup behavior
+
+`TWordViwer.GetXmlFieldInfo` (`0x004BFC18`) performs a two-stage lookup. It first checks `viewer+0x68` (single descriptors) with `ContainsKey`; on a hit it reads the descriptor's zero-based index from `+0x04` and returns its associated string at `+0x08`. If that misses, it checks `viewer+0x6C` (twin descriptors); on a hit it reads the index at `+0x04`, compares the requested field name against both member strings at `+0x08` and `+0x0C` using `System.SysUtils.CompareText` (case-insensitive), and returns the *opposite* member. The twin descriptor's string at `+0x10` is returned separately as the associated custom-property name/value field. The twin flag output is set only on the twin-map hit. This is now represented by `resolve_twin_field_partner()` and a regression test; Python `casefold()` approximates Windows `CompareText` for normal field identifiers, while locale-specific Unicode collation remains unverified.
+
+
+## Native Word field-to-XML mapping pipeline
+
+`TWordViwer.GetDocFieldIndex` (`0x004C0550`) is the orchestration routine that connects Word's live Fields collection to the XML descriptor maps. For each Word field it extracts the `DOCPROPERTY` identifier through `FindFieldInActivefields` (`0x004BC170`), then calls `GetXmlFieldInfo` (`0x004BFC18`) to obtain the XML field index, mapped field name/property, and twin flag. When the twin flag is set, it calls `FillTwinFields` (`0x004C02EC`) to scan forward through the Word Fields collection from the current one-based index, extract each candidate field identifier with the same normalizer, and compare it to the requested partner using `System.SysUtils.CompareText`. It returns the first matching one-based field index or zero if no partner is found. The caller then follows the paired-field path or ordinary field/image path; the observed call graph includes `FillField` (`0x004BC2C4`), `FillImageField` (`0x004BC30C`), `FillMSWFields` (`0x004C009C`), and image helper `AddImagesToDoc` (`0x004C0410`).
+
+This validates the existing Python `find_native_twin_field_index()` approach: one-based scan, starts at the supplied current index, extracts Word DOCPROPERTY names, and performs case-insensitive comparison. It also shows that twin matching is a second-stage scan over Word's document fields, not just a split of the dagger-delimited custom-property name.
