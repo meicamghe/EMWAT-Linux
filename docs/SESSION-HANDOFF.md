@@ -1126,3 +1126,9 @@ Do not implement guessed `signData` joining or claim end-to-end Almas registrati
 - Native image core: image-document save only clears dirty state if the document generation matches the snapshot; SANE scan cancellation is RAII-managed; SANE now exposes `scan_all()` for multi-frame/ADF scans while `scan_one()` stops after one frame.
 - Native runs #109–#111 are pending final result for multi-frame SANE.
 - Still not production-ready: no verified Almas template/180-field map, no proven signData framing, no image placement into letter templates, and no complete Almas request/response round-trip. Keep PR draft and do not merge as a release.
+
+
+### Final CI result for this batch
+- Native image run #111: build/test and ASan/UBSan build/test both passed; 4/4 CTest targets passed in both jobs. Run #109 was an intermediate commit between the scanner source and header updates and is superseded by the green complete commit.
+- Python bridge run #220: 116 tests passed, 3 optional skips.
+- LibreOffice UNO run #39: 12 tests passed.
