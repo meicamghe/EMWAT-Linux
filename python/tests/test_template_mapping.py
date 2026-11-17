@@ -46,6 +46,7 @@ class TemplateMappingTests(unittest.TestCase):
             ),
         )
         self.assertTrue(report.index_alignment_valid)
+        self.assertFalse(report.property_order_equivalence_verified)
         self.assertEqual(
             [
                 (item.config_index, item.xml_field_id, item.config_member, item.structure_kind)
