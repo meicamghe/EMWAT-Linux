@@ -6,6 +6,7 @@
 #include <stdexcept>
 #include <string>
 #include <vector>
+#include <utility>
 
 namespace emwat {
 
@@ -64,3 +65,15 @@ public:
 };
 
 } // namespace emwat
+
+
+// Acquire a complete scan before changing the document. Invalid/incomplete
+// batches leave the existing document untouched.
+inline void scan_into_document(
+    ScannerBackend& scanner,
+    const std::string& device_id,
+    ImageDocument& document,
+    const ScanOptions& options = {}) {
+    auto pages = scanner.scan_all(device_id, options);
+    document.append_pages(std::move(pages));
+}
