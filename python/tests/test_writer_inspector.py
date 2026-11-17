@@ -155,6 +155,10 @@ class WriterInspectorTests(unittest.TestCase):
             catalog.custom_document_properties,
             ("EMWATLetterNumber", "EMWATSubject"),
         )
+        self.assertEqual(
+            catalog.custom_document_properties_in_info_order,
+            ("EMWATLetterNumber", "EMWATSubject"),
+        )
 
 
 if __name__ == "__main__":
