@@ -44,3 +44,8 @@ for candidate in report.candidates:
 ```
 
 Do not use these candidates to apply production values until they have been checked against an anonymized, representative Almas Gam template and the native Word behavior.
+
+
+## Property-order caveat
+
+The native Word trace confirms that Word's custom-property enumeration index is paired with the XML field at the same index. LibreOffice exposes a separate custom-property metadata sequence, and the inspector preserves that sequence rather than sorting it. **Equivalence between LibreOffice's property order and Word COM's enumeration order has not been proven.** Therefore equal counts only make a positional candidate report possible; they do not verify the order. The report sets `property_order_equivalence_verified=False` and must not be used to populate production letter fields until a representative sanitized template confirms the order.
