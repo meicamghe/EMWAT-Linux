@@ -2210,7 +2210,7 @@ workflow جدید VMT هر دو دیکشنری، pointerهای Add methodها و
 
 ## تأیید CI پس از اصلاح مستندات descriptor — 2026-11-17
 
-workflow `python-bridge.yml` پس از تغییرات docstring و تفکیک روشن descriptorهای موقت reconciliation از mapهای اولیه با موفقیت اجرا شد: **107 تست موفق، 2 تست اختیاری skip**؛ run `44022878095`.
+workflow `python-bridge.yml` پس از تغییرات docstring و تفکیک روشن descriptorهای موقت reconciliation از mapهای اولیه با موفقیت اجرا شد: **108 تست موفق، 2 تست اختیاری skip**؛ run `44023065489` (latest confirmed run).
 
 ردیابی جدید `CreateOptionFormFields` (`0x004CFC74`) نیز به workflow تحلیل BPL افزوده شده است؛ این تابع نامزد تازه‌ای برای یافتن مسیر ساخت اولیه mapهای single/twin است، اما تا دریافت artifact هنوز نتیجه‌ای به آن نسبت داده نمی‌شود.
 
