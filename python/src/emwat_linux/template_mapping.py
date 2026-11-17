@@ -12,7 +12,6 @@ from dataclasses import dataclass
 from emwat_linux.word_config import WordDocumentConfig
 from emwat_linux.word_fields import (
     build_word_custom_property_field_maps,
-    resolve_twin_field_partner,
 )
 from emwat_linux.writer_inspector import WriterDocumentCatalog
 
