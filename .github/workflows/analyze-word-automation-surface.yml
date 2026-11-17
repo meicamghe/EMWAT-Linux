@@ -256,11 +256,11 @@ jobs:
           else:
               table_va = struct.unpack("<I", raw)[0]
               lines += [f"- Pointer-slot section: `{section}`", f"- Table pointer: `0x{table_va:08X}`", ""]
-              table, table_section = read_va(table_va, 32)
+              table, table_section = read_va(table_va, 24)
               if table is None:
                   lines.append("- The pointed-to table is not file-backed; values may be initialized at runtime.")
               else:
-                  values = struct.unpack("<8I", table)
+                  values = struct.unpack("<6I", table)
                   lines += [f"- Table section: `{table_section}`", "", "| Index | DWORD | Interval after ×1000 |", "|---:|---:|---:|"]
                   for index, value in enumerate(values):
                       lines.append(f"| {index} | {value} | {value * 1000} ms |")
