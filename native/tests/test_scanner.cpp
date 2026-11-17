@@ -86,7 +86,19 @@ int main() {
     assert(scanned_document.page(1).pixels.bytes[0] == 84);
     backend.multi_frame = false;
 
+    ImageDocument unchanged_document;
+    unchanged_document.append_page(ImagePage{
+        PixelBuffer{1, 1, 1, PixelFormat::Gray8, {7}}, 150.0, 150.0});
+    unchanged_document.mark_saved();
     backend.fail = true;
+    bool scan_into_failed = false;
+    try { scan_into_document(backend, "test:scanner0", unchanged_document); }
+    catch (const ScannerError&) { scan_into_failed = true; }
+    assert(scan_into_failed);
+    assert(unchanged_document.page_count() == 1);
+    assert(!unchanged_document.dirty());
+    assert(unchanged_document.page(0).pixels.bytes[0] == 7);
+
     bool threw = false;
     try { (void)backend.list_devices(); }
     catch (const ScannerError&) { threw = true; }
