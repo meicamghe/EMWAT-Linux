@@ -221,6 +221,59 @@ jobs:
           python tools/trace_delphi_interfaces.py analysis-input/EmwatMethods.bpl1 word-automation/save-print/word-interfaces.md
           python tools/decode_pe_strings.py analysis-input/EmwatMethods.bpl1 0x004BFEE8 0x004BFF0C 0x004D1704 0x004D1768 0x004D1778 0x004CCB0C 0x004CCB2C 0x004CCB38 0x004CCB44 0x004CCB60 0x004CCB6C 0x004CC280 0x004CC26C 0x004CC6DD 0x004CC6C9 0x004CCB84 0x004CCAA7 0x004CD094 0x004CD0D0 0x004CD0F0 0x004CD12C 0x004CCB45 0x004CCB46 0x004CCB61 0x004CCB62 0x004C10A0 0x004C10DC 0x004C1130 0x004C1160 0x004C11C0 0x004C1224 0x004C12A4 0x004C12C4 0x004C1408 0x004C1418 0x004C148C 0x004C14C0 0x004C14D8 0x004C1558 0x004C15E8 0x004C1648 0x004C16AC 0x004C1718 0x004C25C4 0x004C260C 0x004C26B8 0x004C26BC 0x004C26C4 0x004C26E0 0x004C2718 0x004C2730 0x004C27BC 0x004C281C 0x004C2844 0x004C287C 0x004C289C 0x004C28DC 0x004C2958 0x004C29B4 0x004C29F4 0x004C2A50 0x004C2AB4 0x004C2AF0 0x004C2D68 0x004C2D84 0x004C2DA4 0x004C2DC8 0x004C2E70 0x004C2E88 0x004C2EA4 0x004C2EBC 0x004C2ED0 0x004C2EEC > word-automation/save-print/field-and-property-keys.md
           python tools/decode_pe_strings.py analysis-input/EmwatMethods.bpl1 0x004BC23C 0x004BC260 0x004BC274 0x004BCA70 0x004BC6D4 0x004BC710 0x004BC748 0x004BC76C 0x004BC78C 0x004BC7B4 0x004BC7D8 0x004BC7F8 0x004BC804 0x004BC82C 0x004BC8A8 0x004BC910 > word-automation/save-print/image-field-branch-strings.md
+          # Resolve the AutoSaveInterval lookup table and direct save-path references.
+          python - <<'PY'
+          from pathlib import Path
+          import pefile
+          import struct
+
+          path = Path("analysis-input/EmwatMethods.bpl1")
+          blob = path.read_bytes()
+          pe = pefile.PE(data=blob, fast_load=False)
+          base = pe.OPTIONAL_HEADER.ImageBase
+
+          def read_va(va, size):
+              rva = va - base
+              for section in pe.sections:
+                  start = section.VirtualAddress
+                  span = max(section.Misc_VirtualSize, section.SizeOfRawData)
+                  if start <= rva and rva + size <= start + span:
+                      raw = section.PointerToRawData + rva - start
+                      if raw + size <= len(blob):
+                          return blob[raw:raw + size], section.Name.rstrip(b"\\0").decode("ascii", "replace")
+              return None, None
+
+          lines = [
+              "# AutoSaveInterval lookup-table data",
+              "",
+              "- Global pointer slot: `0x0062A808` (read from the file-backed PE image).",
+              "- The UI handler indexes the pointed-to DWORD array by combo ItemIndex and multiplies the selected DWORD by 1000.",
+              "",
+          ]
+          raw, section = read_va(0x0062A808, 4)
+          if raw is None:
+              lines.append("- The pointer slot is not file-backed; static lookup values cannot be recovered from this image.")
+          else:
+              table_va = struct.unpack("<I", raw)[0]
+              lines += [f"- Pointer-slot section: `{section}`", f"- Table pointer: `0x{table_va:08X}`", ""]
+              table, table_section = read_va(table_va, 32)
+              if table is None:
+                  lines.append("- The pointed-to table is not file-backed; values may be initialized at runtime.")
+              else:
+                  values = struct.unpack("<8I", table)
+                  lines += [f"- Table section: `{table_section}`", "", "| Index | DWORD | Interval after ×1000 |", "|---:|---:|---:|"]
+                  for index, value in enumerate(values):
+                      lines.append(f"| {index} | {value} | {value * 1000} ms |")
+          out = Path("word-automation/save-print/autosave-interval-table.md")
+          out.write_text("\\n".join(lines) + "\\n", encoding="utf-8")
+          print(f"Wrote {out}")
+          PY
+          python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x004D2948 word-automation/save-print/word-wrap-line-count-4D2948.md || true
+          for address in 0x004D23D8 0x004D2948 0x004AEA78 0x004AEBBC; do
+            name=${address#0x}
+            python tools/scan_pe_call_refs.py analysis-input/EmwatMethods.bpl1 "$address" "word-automation/save-print/callers-$name.md" 8
+            python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 "$address" "word-automation/save-print/pointer-refs-$name.md" || true
+          done
       - uses: actions/upload-artifact@v4
         if: hashFiles('analysis-input/EmwatMethods.bpl1') != ''
         with:
