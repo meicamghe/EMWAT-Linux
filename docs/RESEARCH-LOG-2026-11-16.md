@@ -703,3 +703,7 @@ The first thunk-trace batch (`14300914213`) was invalid for caller attribution: 
 ### Add-method internal helper chain expanded
 
 The latest TD32 body comparison shows the public single-field dictionary `Add` at `0x004D52DC` calls `0x004D5404` and then `0x004D48A8`; the twin-field `Add` at `0x004D6894` calls `0x004D69BC` and `0x004D5E60`. These internal routines are more promising than the public Add wrappers for finding the real population path. The field workflow now traces these helpers and their dictionary search/entry-management dependencies (`0x004D610C`, `0x004D6138`, `0x004D61E8`, `0x004D6310`, `0x004D48D0`, `0x004D49E0`, `0x004D49D4`, `0x004D4B80`) with direct caller scans. No map population claim is made until the helper bodies and callsites are cross-checked.
+
+### Additional likely initializer: CreateOptionFormFields
+
+A further candidate for the unresolved descriptor-map initialization is `TWordViwer.CrateOptionFormFields` at `0x004CFC74` (TD32 spelling preserved). It sits immediately before the viewer constructor/option-form routines in the class procedure inventory and was not included in the earlier dictionary-only trace batch. The field workflow now traces its full body and callers, cross-checking writes to viewer offsets `+0x68/+0x6C` and calls into the single/twin dictionary helpers. It remains a candidate, not an assigned population routine, until the new artifact confirms those operations.
