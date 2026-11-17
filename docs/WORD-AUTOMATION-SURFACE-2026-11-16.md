@@ -388,3 +388,14 @@ The actual initial population path for the two descriptor maps remains open. Dir
 ## Recipient/CC option-form fields seeded by the viewer constructor
 
 The expanded constructor artifact (`14265228751`) decodes four field identifiers referenced by `TWordViwer.$bctr` (`0x004D08B4`): `Receivers`, `ReceiverDeps`, `ccReceivers`, and `ccReceiverDeps`. The constructor builds option-form field entries from these names and emits `OptionForm fields have been created:` followed by records formatted as `field[%d]: "%s", xmlfidx: %d, isInDoc:%s.` This gives a concrete native inventory for the recipient/CC option UI and shows that each option entry tracks its XML-field index and whether the field is present in the Word document. It does not establish the full semantics of recipient selection, department expansion, or how those values are serialized back to Almas.
+
+## Exact GetXmlFieldInfo single/twin lookup behavior
+
+The full TD32 trace of `TWordViwer.GetXmlFieldInfo` (`0x004BFC18–0x004BFD34`) resolves the descriptor lookup contract more precisely:
+
+1. Initialize the output index to `-1` and the `isTwin` output flag to false.
+2. Probe the single-field dictionary at `viewer+0x68` using the normalized input identifier. If found, retrieve the `TXmlWordConfigField` descriptor, return its integer index from record offset `+0x04`, and return its associated string from `+0x08`.
+3. Otherwise probe the twin-field dictionary at `viewer+0x6C`. If found, retrieve `TXmlWordConfigTwinField`, compare the input identifier case-insensitively with the first field name at `+0x08` and then the second at `+0x0C`, and return the opposite partner name. The index comes from `+0x04`, the associated custom-property name from `+0x10`, and `isTwin` is set true.
+4. If neither dictionary contains the key, the initialized sentinel outputs remain (`index=-1`, `isTwin=false`).
+
+The helper at `0x004D559C` is TD32-labelled `ContainsValue`, but its machine body searches by the supplied UnicodeString key through the dictionary's bucket/entry lookup; treat it as a key-presence check in this call path, not as a semantic value scan. The twin map follows the same lookup pattern. This lookup algorithm is now suitable for a direct Python mirror; only the source that initially populates both dictionaries remains unresolved.
