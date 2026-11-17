@@ -263,10 +263,11 @@ class LibreOfficeIntegrationTests(unittest.TestCase):
             recovery_store=recovery_store,
             recovery_interval_seconds=0.2,
         )
+        saved_events = []
         handle = adapter.open_document(
             request,
             on_modified=lambda: 1,
-            on_saved=lambda: None,
+            on_saved=lambda: saved_events.append("saved"),
         )
         try:
             user_properties = handle.document.getDocumentProperties().getUserDefinedProperties()
@@ -319,6 +320,7 @@ class LibreOfficeIntegrationTests(unittest.TestCase):
             self.assertTrue(
                 recovery_store.load_snapshot(handle.recovery_session_id).startswith(_CFB_SIGNATURE)
             )
+            self.assertEqual(saved_events, [])
             with handle.snapshot_lock:
                 self.assertEqual(handle.document.isModified(), modified_before_recovery)
             handle.document.close(True)
