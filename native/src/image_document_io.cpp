@@ -5,6 +5,7 @@
 #include <filesystem>
 #include <system_error>
 #include <unistd.h>
+#include <fcntl.h>
 #include <utility>
 #include <vector>
 
@@ -42,10 +43,36 @@ public:
     const std::filesystem::path& path() const noexcept { return path_; }
 
     void commit_to(const std::filesystem::path& destination) {
+        // Flush encoded bytes before the atomic name replacement.
+        const int file_descriptor = ::open(path_.c_str(), O_RDONLY | O_CLOEXEC);
+        if (file_descriptor < 0)
+            throw std::system_error(errno, std::generic_category(), "cannot reopen temporary image file");
+        if (::fsync(file_descriptor) != 0) {
+            const int error = errno;
+            (void)::close(file_descriptor);
+            throw std::system_error(error, std::generic_category(), "cannot sync temporary image file");
+        }
+        if (::close(file_descriptor) != 0)
+            throw std::system_error(errno, std::generic_category(), "cannot close synced image file");
+
         std::error_code error;
         std::filesystem::rename(path_, destination, error);
         if (error) throw std::system_error(error, "cannot atomically replace image file");
         committed_ = true;
+
+        // Persist the directory entry update as well as the file contents.
+        const auto parent = destination.has_parent_path()
+            ? destination.parent_path() : std::filesystem::path(".");
+        const int directory_descriptor = ::open(parent.c_str(), O_RDONLY | O_DIRECTORY | O_CLOEXEC);
+        if (directory_descriptor < 0)
+            throw std::system_error(errno, std::generic_category(), "cannot open image directory for sync");
+        if (::fsync(directory_descriptor) != 0) {
+            const int sync_error = errno;
+            (void)::close(directory_descriptor);
+            throw std::system_error(sync_error, std::generic_category(), "cannot sync image directory");
+        }
+        if (::close(directory_descriptor) != 0)
+            throw std::system_error(errno, std::generic_category(), "cannot close synced image directory");
     }
 
 private:
