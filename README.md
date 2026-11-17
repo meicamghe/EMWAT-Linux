@@ -24,6 +24,7 @@ EMWAT واسط محلی بین اتوماسیون تحت وب الماس گام 
 - [تحلیل ایستای چرخه Word و اختلاف VMT/TD32](docs/WORD-LIFECYCLE-STATIC-TRACE.md)
 - [تحلیل تایمر AutoSave و مسیر SilentSave](docs/AUTOSAVE-TIMER-AND-SILENT-SAVE-TRACE-2026-11-17.md)
 - [اصلاح شواهد راه‌اندازی Word و گردآوری فیلدها](docs/WORD-LOAD-AND-FIELD-COLLECTION-EVIDENCE-CORRECTION-2026-11-17.md)
+- [زنجیره انتظار بستن Word، بازیابی دوره‌ای و پاسخ HTTP](docs/WORD-CLOSE-WAIT-AND-RESPONSE-CORRELATION-2026-11-17.md)
 - [تحلیل سرویس HTTP محلی و bridge](docs/HTTP-LOCAL-API-ANALYSIS.md)
 - [تحلیل Import Table و وابستگی‌های Windows](docs/IMPORT-TABLE-ANALYSIS.md)
 - [تحلیل Office Automation و COM](docs/OFFICE-COM-ANALYSIS.md)
