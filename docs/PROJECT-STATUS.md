@@ -2455,3 +2455,13 @@ workflow `python-bridge.yml` پس از تغییرات docstring و تفکیک ر
 - Correct compare orientation `base=main`, `head=work/template-mapping-inventory`: **118 commits ahead, 343 behind, 54 changed files; status diverged**. Historical counts elsewhere in this handoff are earlier snapshots and are superseded by this checkpoint.
 - New AutoSave workflow analysis is queued by the workflow-file push commit `9efc8533c8029f2abca3948116af946535329c10`. The Actions connector available in this session does not expose push-triggered run listing; no result is claimed. Inspect the next `emwat-word-save-print` artifact before treating the lookup table as recovered.
 - No merge, rebase, force-push, or PR retargeting was performed. PR #1 remains Draft/non-mergeable pending the mainline reconciliation.
+
+
+## اصلاح شواهد AutoSave و مسیر جمع‌آوری مقادیر فیلد — 2026-11-17
+
+- artifact `14314903496` (بسته `word-lifecycle-2026-11-17.zip`) بررسی شد. نماد TD32 در `0x004B8A84` با نام `OnTmrAutoSave` ثبت شده، اما بدنهٔ مشاهده‌شده پیام `wv.LoadDocument method called.`، پیام‌های اتصال به OLE Word Engine، تنظیم callback/owner رویدادهای Word و پیام `Init word engine finished.` را دارد. تنها direct caller شناخته‌شده `LoadDocument` در `0x004B7A58` است و raw pointer scan برای خود آدرس نتیجه‌ای نداشت. این شواهد برای مدل‌کردن آن به‌عنوان یک عملیات ذخیرهٔ دوره‌ای کافی نیست؛ امکان dispatch غیرمستقیم/event framework همچنان باز است.
+- `SilentSaveEmwatDoc` در `0x004D23D8` از `GetDocFieldName` در `0x004BBA86` فراخوانی می‌شود. بدنهٔ آن `TfrmWordPrintOption.SetLetterReceivers`، `FreePrinters` و `TWrapRecord.LineCount` را صدا می‌زند؛ تابع آخر مقادیر را از مجموعه‌های viewer جمع می‌کند و به `TWordViwer.StoreFieldValuesForPrint` در `0x004BFF1C` می‌سپارد. این مسیر فعلاً field-value collection/refresh است؛ Word COM Save یا persistence قطعی اثبات نشده است.
+- سند اصلاحی جدید: `docs/WORD-LOAD-AND-FIELD-COLLECTION-EVIDENCE-CORRECTION-2026-11-17.md`.
+- workflow تحلیل save/print گسترش یافت تا بدنه و callerهای `StoreFieldValuesForPrint`، referenceهای global slot `0x0062A808` و referenceهای نام registry `AutoSaveInterval` را استخراج کند. این workflow هنوز نتیجهٔ اجرای جدیدی در دسترس ندارد.
+- commitهای این دور: سند اصلاحی `c464ed4070c5c974f7842da5727648b48346fb3f`؛ workflow field collector `beda5f8ba217337b137f88743165c2beed9d36d6`؛ workflow reference scan `b9a74db130881b7f0dfca61b4b05a17104bfdb42`.
+- از روی وجود preference در فرم تنظیمات، هنوز نتیجه نمی‌گیریم که `AutoSaveInterval` حتماً تایمر `TWordViwer` را کنترل می‌کند؛ consumer باید از reference scan یا مسیر runtime ثابت شود.
