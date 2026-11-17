@@ -147,7 +147,7 @@ class RecoverySnapshotStore:
                 if manifest.get("schema_version") != 1 or manifest.get("session_id") != folder.name:
                     continue
                 name = manifest["document_name"]
-                if not re.fullmatch(r"document-[0-9a-f]{16}\.(?:doc|docx)", name):
+                if not re.fullmatch(r"document-[0-9a-f]{64}\.(?:doc|docx)", name):
                     continue
                 path = folder / name
                 if not path.is_file():
