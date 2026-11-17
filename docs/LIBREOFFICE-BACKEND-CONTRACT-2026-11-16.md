@@ -209,3 +209,16 @@ Those results validate isolated Python/UNO behaviors and fixtures. They do not e
 - The successful response uses `response-word`, `return-types/type`, `mimetype="application/msword"`, and `encryption="base64"`.
 
 For the full request/service evidence, use `docs/SERVICE-REQUEST-LIFECYCLE-2026-11-16.md`, `docs/EDITWORD-REQUEST-SCHEMA.md`, and `docs/HTTP-LOCAL-API-ANALYSIS.md`.
+
+
+## 9. Current implementation boundary — verified after source review
+
+The current `LibreOfficeAdapter.open_document()` opens the incoming DOC/ DOCX payload in an isolated Writer process and registers modify, save, and close listeners. It does **not** yet apply `request.config.fields`, `optional_attributes`, `requested_types`, `sign_data_text`, or `extra_parameters` automatically. The adapter's `apply_custom_property_updates()` is a low-level explicit API only; its caller must already possess a verified EMWAT-ID-to-property mapping.
+
+This distinction is now stated directly in `OfficeAdapter.open_document` and `LibreOfficeAdapter.open_document` docstrings (commits `1bb703728ab1728969a752de62c87ca40cc81b26` and `f7673bf32d83fec0cca2905abbd6a0762aca6c3f`). The request parser and field decoder can preserve/decode text and Base64 image payloads, but there is not yet an automatic Writer field/image mutation pipeline.
+
+Do not describe the current prototype as filling the letter template. The next implementation gate is to recover the native field resolver and map its outputs to Writer anchors, then implement and test text and image mutation as separate operations. In parallel, recover the actual caption/image pipeline (`GetCaptionItems`, `GetImageResolution`, `EmbedTextToImage`) and the print-field labels before implementing those behaviors.
+
+## 10. Writer custom-property inventory boundary
+
+`WriterDocumentCatalog` exposes custom-property names only; it does not currently attach the single/twin descriptor classifier. A pure helper, `build_word_custom_property_field_maps()`, can classify an ordered sequence of identifiers using the native first-dagger split rule, but the binary's actual descriptor-map population and subsequent `TDictionary.Remove` consumption are still being traced. Keeping this classifier separate avoids incorrectly treating Writer custom-property names as the source of the native XML descriptor maps. No field mutation, twin-value splitting, or image/signature application is implied.
