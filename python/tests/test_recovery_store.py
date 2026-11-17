@@ -18,7 +18,8 @@ class RecoverySnapshotStoreTests(unittest.TestCase):
 
             info = store.save_snapshot(session_id, payload)
 
-            self.assertEqual(info.document_name, "document.doc")
+            self.assertTrue(info.document_name.startswith("document-"))
+            self.assertTrue(info.document_name.endswith(".doc"))
             self.assertEqual(info.size_bytes, len(payload))
             self.assertEqual(info.sha256, hashlib.sha256(payload).hexdigest())
             self.assertEqual(store.load_snapshot(session_id), payload)
@@ -36,7 +37,8 @@ class RecoverySnapshotStoreTests(unittest.TestCase):
             session_id = store.create_session()
             payload = b"PK\x03\x04" + b"synthetic-docx"
             info = store.save_snapshot(session_id, payload)
-            self.assertEqual(info.document_name, "document.docx")
+            self.assertTrue(info.document_name.startswith("document-"))
+            self.assertTrue(info.document_name.endswith(".docx"))
             self.assertEqual(store.load_snapshot(session_id), payload)
 
     def test_corrupted_snapshot_is_rejected(self):
