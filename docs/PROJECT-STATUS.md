@@ -2242,3 +2242,13 @@ workflow `python-bridge.yml` پس از تغییرات docstring و تفکیک ر
 - بعد از resolve، نام کلاس با `TUpgradeEmwat` مقایسه و نتیجه در `method-info+4` ذخیره می‌شود؛ سپس instance از طریق `TObject.$bctr` ساخته و pointer مربوط به method-info در `instance+4` قرار می‌گیرد.
 - فراخوانی غیرمستقیم بعدی در `0x00470EF6` از `[instance.VMT+0x0C]` انجام می‌شود. ارتباط دقیق این slot با `TEmwatMethod.Invoke` هنوز با RTTI/VMT مستقل باید اثبات شود؛ فعلاً آن را قطعی نام‌گذاری نکرده‌ایم.
 - پیش از `GetClass`، رشتهٔ ثابت `T` در `0x004710E0` به helper `0x00401310` داده می‌شود؛ احتمال prefix شدن نام کلاس Delphi وجود دارد، اما تا decode helper این مورد در حد فرضیهٔ قوی است.
+
+## چرخه‌ی واقعی ساخت و اجرای کلاس BPL مشخص شد — 2026-11-17
+
+- `GetClass` در `0x00470E07` کلاس Delphi متناظر با XML را resolve می‌کند.
+- `TObject.ClassName` در `0x00470E5D` نام کلاس را با `TUpgradeEmwat` مقایسه می‌کند و نتیجه را در `TMethodInfo+0x04` می‌گذارد.
+- `TObject.Create` در `0x00470EDC` نمونه‌ی واقعی متد BPL را می‌سازد.
+- اشاره‌گر `TMethodInfo` در offset `+0x04` نمونه قرار می‌گیرد و VMT slot `+0x0C` در `0x00470EF6` فراخوانی می‌شود.
+- `TObject.Free` در `0x00470F42` نمونه را آزاد می‌کند.
+
+این چرخه با ساخت/تخریب شیء metadata یعنی `TMethodInfo` از طریق `ClassCreate`/`ClassDestroy` متفاوت است.
