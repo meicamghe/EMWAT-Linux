@@ -779,3 +779,12 @@ This definitively distinguishes the runtime-created BPL method instance from the
 ### Response-send helper resolved as Indy WriteContent
 
 The complete service helper body at `0x004610FC` plus its RTTI method-name pointer reference identify it as `TIdHTTPResponseInfo.WriteContent`. It operates on the response-info object, branches on status and content fields, sends the response through the Indy response interface, clears the temporary content pointer, and performs final response cleanup. Confirmed callsites are `ParseMethod` at `0x00470F34` and the MainForm `init`/`heartbeat` branches at `0x0047C237`/`0x0047C2A9`. The normal connector response path remains conditional on `TEmwatInvokeParam.bResultSet`: if the connector sets the flag, the generic handler skips its default ContentText write; otherwise it assigns the output string to `AResponseInfo.ContentText` and calls WriteContent.
+
+### Distinguish service-side and BPL-side Indy WriteContent paths
+
+There are two separate response-send call paths and they must not be conflated:
+
+- Service executable helper `0x004610FC` is `TIdHTTPResponseInfo.WriteContent` and serves the generic handler fallback plus the `init`/`heartbeat` routes. The generic path only runs when `TEmwatInvokeParam.bResultSet` is still false.
+- The BPL's `TWordViwer.LoadDocument` directly calls its imported `IdCustomHTTPServer.TIdHTTPResponseInfo.WriteContent` thunk at `0x0040448C` after assigning the generated `response-word` XML to `AResponseInfo.ContentText`; it then sets `bResultSet=true`. This is the successful EditWordDocument response path and bypasses the generic fallback sender.
+
+The native service helper's internal string/stream cleanup and status handling is now being traced separately from the BPL's direct response writer.
