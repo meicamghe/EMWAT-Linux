@@ -67,3 +67,15 @@ Do not treat this helper as an image codec or as proof of a particular UI-window
 - Trace the writer-side TDocumentCProperty construction and the custom-property dictionary insertion path, not just generic collection helpers.
 - Resolve the Hidden_Customizable special-field branch in GetDocFieldName and connect it to request wordConfig metadata.
 - Continue close/registration tracing independently; no HTTP behavior should be inferred from these document-field helpers.
+
+## Descriptor dictionary construction and generic insertion semantics — 2026-11-17
+
+The latest field-mapping artifact (`14304455134`) clarifies the object construction path and corrects another TD32 naming trap:
+
+- `TWordViwer` setup routine `0x004D0D24` is called from `LoadDocument` at `0x004B78E9` with the constructor flag set. Although TD32 decorates it `$bdtr`, its body initializes viewer flags/configuration and creates three dictionary objects: `viewer+0x64` (`TObjectDictionary<UnicodeString,TDocumentCProperty>`, constructor `0x004D4670`), `viewer+0x68` (`TObjectDictionary<UnicodeString,TXmlWordConfigField>`, constructor `0x004D5C28`), and `viewer+0x6C` (`TObjectDictionary<UnicodeString,TXmlWordConfigTwinField>`, constructor `0x004D71E0`). The two descriptor maps are created with zero initial capacity and a comparer/ownership configuration; this is creation, not proof of population.
+- `TWordViwer.$bctr` at `0x004D08B4` is a separate option-form path. Its only direct caller is `ShowRecAndCcOptionForm` (`0x004D1B63`); it scans the viewer's active-field array and constructs option entries for `Receivers`, `ReceiverDeps`, `ccReceivers`, and `ccReceiverDeps`. It is not the descriptor-map population path.
+- For the single-field map, `0x004D552C` is the actual AddOrSetValue-shaped routine even though TD32 labels it `ContainsKey`: it hashes/searches the key, updates an existing entry through `0x004D4DA8`, or grows and inserts a new `(hash,key,value)` triple through `0x004D4D58`.
+- For the twin-field map, `0x004D6AE4` has the same AddOrSetValue-shaped control flow despite its TD32 `ContainsKey` label: it searches, updates an existing value through `0x004D6360`, or grows and inserts through `0x004D6310`.
+- The generic dictionary record layout is three 32-bit slots per entry: hash, managed UnicodeString key, and descriptor pointer. The update/insert helper names in TD32 are not reliable labels for the observed operation; use the instructions and call graph.
+
+The map population source is still unresolved. Current viewer-field scans identify lookups in `GetXmlFieldInfo` and removals in `AddCustomDocPropertiesToDic`, but have not yet identified a proven callsite that inserts the initial XML descriptors. A new workflow batch traces the full `LoadDocument` body, all `TWordViwer` accesses to offsets `+0x64/+0x68/+0x6C`, and the single/twin update-existing helpers. Do not describe the dictionaries as populated until that evidence arrives.
