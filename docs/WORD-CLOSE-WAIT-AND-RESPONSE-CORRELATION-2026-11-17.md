@@ -28,7 +28,7 @@ The timer callback at `0x004BB3B0` is distinct from the registered Word BeforeSa
 
 The source document path is passed to `T7zOutArchive.AddFiles` as the source file; the archive member name is derived from viewer base path `+0x80` plus `.easd`. `T7zOutArchive.SaveToStream` creates/truncates the `.easz` target with a `TFileStream(fmCreate)` and completes the archive. This is a local periodic recovery/archive mechanism. It must not be equated with the final Almas response body or claimed as a final registration POST.
 
-The exact relationship between the registry setting `AutoSaveInterval` and viewer timer field `+0x88` is not yet established. The settings handler stores a millisecond duration using a lookup table; the runtime timer path clamps its interval to at least 10 seconds. Do not assume that the registry preference is the timer's direct source until the read-side registry and assignment are traced.
+The read-side linkage is established by the main `TWordViwer` constructor at `0x004D0D24–0x004D0FE6`: it opens `HKCU\\Software\\Emwat\\Dynamic Config`, conditionally reads integer `AutoSaveInterval`, stores it in viewer field `+0x88` (default `0`), and the timer setup clamps that field to at least `10000 ms`. The settings form's write path stores lookup-table values multiplied by 1000 for indices 1–5 and writes `10000` for index 0/out-of-range. Exact lookup DWORDs and combo labels remain to be recovered.
 
 ## Close callback releases the waiting request
 
@@ -65,7 +65,7 @@ The current LibreOffice adapter already models a close-driven session and snapsh
 
 ## Remaining work
 
-- Trace the read-side `AutoSaveInterval` registry consumer and its relation, if any, to viewer timer field `+0x88`.
+- Recover the exact DWORD values at lookup table pointer slot `0x0062A808` and the corresponding `cbbAutoSaveInterval` labels; verify the index-zero/default behavior.
 - Recover the exact COM event identity/DISPID and initial setter of viewer field `+0x58`.
 - Implement and test a separate periodic recovery snapshot mechanism in the Linux adapter, with cancellation/close synchronization and atomic replacement.
 - Confirm save/discard/cancel response envelopes and whether each path returns a DOC/CFB body.
