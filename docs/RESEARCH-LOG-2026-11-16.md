@@ -711,3 +711,15 @@ A further candidate for the unresolved descriptor-map initialization is `TWordVi
 ## GetXmlFieldInfo now decoded down to twin-member selection
 
 Artifact `14271907043` gives the full `TWordViwer.GetXmlFieldInfo` (`0x004BFC18`) branch logic. It probes the single map at `viewer+0x68` first; on hit it returns descriptor index `+0x04` and string `+0x08`. Otherwise it probes the twin map at `viewer+0x6C`; on hit it compares the requested name against descriptor members `+0x08` and `+0x0C` through `0x00403248`, resolved by the import-thunk metadata as `System.SysUtils.CompareText`. It returns the opposite member, index `+0x04`, associated string `+0x10`, and sets the twin flag. Added `resolve_twin_field_partner()` in `python/src/emwat_linux/word_fields.py` and a test covering case-insensitive matching and no-match behavior. The implementation uses Python `casefold()`; Windows locale-specific CompareText behavior remains an explicit compatibility caveat.
+
+## Exact service Delphi import callsites recovered (run 44022802959)
+
+The exact IAT scanner output (`14302370292`) identifies the real import thunk instruction addresses and direct callsites:
+- `LoadPackage` IAT `0x00487680` → thunk `0x00402174` → direct call at `0x0047E15F`.
+- `GetClass` IAT `0x00487B9C` → thunk `0x00402354` → direct call at `0x00470E07`.
+- `StartExe` IAT `0x004873E0` → thunk `0x004011B8` → direct call at `0x004014BA`.
+- `GetProcAddress` IAT `0x0048753C` → thunk `0x00401464` → call at `0x00401720`; second IAT `0x004875CC` → thunk `0x00401D7C` → calls at `0x00401DA8` and `0x00401DCA`.
+- `ClassCreate` IAT `0x00487410` → thunk `0x00401158`, with many direct callsites across service runtime/class creation code.
+- `ClassDestroy` IAT `0x0048740C` → thunk `0x00401160`, likewise with many callsites.
+
+The key request-path pair is now localized: `ParseMethod` at `0x00470D00` reaches `GetClass` at `0x00470E07`, and the package-loading path reaches `LoadPackage` at `0x0047E15F`. This materially strengthens the dynamic class-dispatch model, but does not yet prove the final `ClassCreate`/`Invoke` sequence. The service workflow now traces the full ParseMethod range `0x00470D00–0x00471080` plus bounded contexts around the two key callsites.
