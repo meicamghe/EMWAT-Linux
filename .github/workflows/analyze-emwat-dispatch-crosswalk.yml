@@ -187,6 +187,10 @@ jobs:
           done
           python tools/find_td32_class_procedures.py analysis-input/EmwatMethods.bpl1 TEmwatMethod TEditWordDocument TScanDocument TWordViwer TWordViewer > dispatch-crosswalk/bpl/bpl-classes.md
           python tools/resolve_delphi_vmt_slots.py analysis-input/EmwatMethods.bpl1 dispatch-crosswalk/bpl/bpl-vmt.md
+          python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x0046ABFC 0x0046AC90 dispatch-crosswalk/bpl/temwatmethod-vmt-rtti-region.md
+          python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 0x0046C82C dispatch-crosswalk/bpl/temwatmethod-invoke-pointer-refs.md
+          python tools/trace_td32_immediate_refs.py analysis-input/EmwatMethods.bpl1 0x0046C82C dispatch-crosswalk/bpl/temwatmethod-invoke-immediate-refs.md
+          python tools/decode_pe_strings.py analysis-input/EmwatMethods.bpl1 0x0046AC4A 0x0046AC57 0x0046AC98 > dispatch-crosswalk/bpl/temwatmethod-class-rtti-strings.md
           python tools/trace_delphi_interfaces.py analysis-input/EmwatMethods.bpl1 dispatch-crosswalk/bpl/bpl-interfaces.md
           for item in "TEmwatMethod:0x0046ABFC" "TEditWordDocument:0x005ED764" "TScanDocument:0x005ED884" "TWordViwer:0x004B10A4" "TEDPController:0x004B0DFC"; do
             name=${item%%:*}
