@@ -78,22 +78,22 @@ The workflow has been committed, but its Actions run and artifacts must be check
 
 The downloaded `TWordViwer.LoadDocument` procedure trace gives three useful cross-links into the class-procedure index:
 
-- At `0x004B78E4–0x004B78E9`, `LoadDocument` calls `TWordViwer.$bdtr` at `0x004D0D24`. The destructor's TD32 procedure record is `0x004D0D24`, size `0x424`. This is a direct call-site confirmation that the document-load path explicitly tears down a `TWordViwer` instance at this point; it does not, by itself, establish the complete COM shutdown semantics.
+- At `0x004B78E4–0x004B78E9`, `LoadDocument` calls `0x004D0D24` on the global viewer instance. Although TD32 labels this procedure `$bdtr`, its body initializes viewer flags/settings and allocates the three dictionaries at offsets `+0x64/+0x68/+0x6C`; classify it as a constructor/initializer-like path, not teardown. The actual VMT destructor is at `0x004D1148` (see below).
 - At `0x004B7991–0x004B7994`, `LoadDocument` calls `AddCustomDocPropertiesToDic` at `0x004D1454`. TD32 indexes this method as a `TWordViwer` method, size `0x3B4`. This places custom document-property extraction in the load/response preparation path.
 - At `0x004B7A55–0x004B7A58`, `LoadDocument` calls `OnTmrAutoSave` at `0x004B8A84` synchronously and tests its Boolean result immediately afterwards. The detailed wait-loop and response-release evidence is recorded in the research log; this is distinct from Word's registered BeforeSave event.
 
-The TD32 index also confirms:
-- `TWordViwer.$bctr`: `0x004D08B4`, size `0x470`
-- `TWordViwer.$bdtr`: `0x004D0D24`, size `0x424`
-- `TWordViwer.AddXmlWordConfigFieldsToDic`: `0x004D1148`, size `0x30C`
-- `TWordViwer.AddCustomDocPropertiesToDic`: `0x004D1454`, size `0x3B4`
+The raw TD32 index labels these procedures as:
+- `$bctr`: `0x004D08B4`, size `0x470`
+- `$bdtr`: `0x004D0D24`, size `0x424`
+- `AddXmlWordConfigFieldsToDic`: `0x004D1148`, size `0x30C`
+- `AddCustomDocPropertiesToDic`: `0x004D1454`, size `0x3B4`
 
-The constructor is now a high-priority trace target, but its actual COM activation and event-subscription instructions have **not** yet been inspected. Likewise, the call to `AddCustomDocPropertiesToDic` proves that custom properties are collected on this path, not the exact property names or response schema. Do not infer either until the constructor and callee bodies are available.
+These first three TD32 names conflict with stronger code/VMT evidence. `0x004D1148` is the actual `TWordViwer.Destroy` entry: the `TWordViwer` VMT candidate at `0x004B10A4` has `vmtDestroy` at `VMT-0x04` (`0x004B10A0`) pointing to `0x004D1148`, and the RTTI method record at `0x004B1629` names it `Destroy`. Its body frees the viewer dictionaries/resources and calls `ScreenRefresh`; its `AddXmlWordConfigFieldsToDic` diagnostics are stale. `0x004D0D24`, called by `LoadDocument`, is the initialization-like routine that creates the dictionaries. `0x004D08B4` is called from `ShowRecAndCcOptionForm` and builds the recipient/CC option fields. The actual COM activation and event-subscription instructions are still not fully mapped. The call to `AddCustomDocPropertiesToDic` proves that custom properties are collected on this path, not the exact response schema.
 
 ## Revised next steps
 
-1. Inspect the constructor and destructor bodies, then identify imported COM activation APIs and event connection points/dispatch interfaces.
-2. Trace `AddXmlWordConfigFieldsToDic` and `AddCustomDocPropertiesToDic` together to derive the exact metadata returned from the Word document.
+1. Trace the dictionary constructors at `0x004D4670`, `0x004D5C28`, and `0x004D71E0` called by the `LoadDocument` initializer; determine whether any constructor receives an enumerable or creates empty maps.
+2. Resolve the initial single/twin descriptor-map population path and reconcile it with `AddCustomDocPropertiesToDic`'s `Remove` behavior.
 3. Trace the complete `OnTmrAutoSave` and `OnControlerNotify` bodies independently and correlate their state changes with the close-triggered HTTP response.
 4. Only after the exact Word methods and event contracts are enumerated, define the LibreOffice bridge compatibility surface.
 
@@ -104,10 +104,10 @@ The class-procedure index allows the Word-facing implementation to be divided in
 
 | Subsystem | Procedures / addresses | What can be established |
 |---|---|---|
-| Document lifecycle | `LoadDocument` `0x004B7724`; `PrepareDocument` `0x004BB77C`; constructor `0x004D08B4`; destructor `0x004D0D24`; `QuitWord` `0x004CDB54` | Dedicated load, prepare, construction, teardown and Word-quit routines exist |
+| Document lifecycle | `LoadDocument` `0x004B7724`; `PrepareDocument` `0x004BB77C`; viewer initializer `0x004D0D24`; VMT destructor `0x004D1148`; recipient/CC option constructor `0x004D08B4`; `QuitWord` `0x004CDB54` | Dedicated load, prepare, viewer initialization/destruction, option-form construction and Word-quit routines exist |
 | Request/config field mapping | `GetXmlFieldInfo` `0x004BCA88`; overload `0x004BFC18`; `GetDocFieldName` `0x004BB81C`; `FindFieldInActivefields` `0x004BC170`; `AddFieldInActivefields` `0x004BC278` | XML field definitions are resolved and tracked in an active-fields collection |
 | Document field mutation | `FillField` `0x004BC2C4`; `FillImageField` `0x004BC30C`; `GetFieldValue` `0x004BFD38`; `SetFieldValue` `0x004BFDB0`; `FillMSWFields` `0x004C009C`; `AddImagesToDoc` `0x004C0410` | The implementation has distinct text/value and image-field paths and explicitly consumes Word `_Document`, `Field` and `Fields` interfaces |
-| Content and custom metadata | `AddXmlWordConfigFieldsToDic` `0x004D1148`; `AddCustomDocPropertiesToDic` `0x004D1454` | One routine is named `AddXmlWordConfigFieldsToDic` but its observed body clears viewer maps and calls `TWordApplication.ScreenRefresh`; the second enumerates Word custom properties and consumes matching single/twin descriptors with dictionary Remove. The descriptor-map population path remains unresolved |
+| Content and custom metadata | `TWordViwer.Destroy` `0x004D1148` (stale TD32/log label `AddXmlWordConfigFieldsToDic`); `AddCustomDocPropertiesToDic` `0x004D1454` | The VMT destructor frees viewer maps/resources and calls `ScreenRefresh`; the second routine enumerates Word custom properties and consumes matching single/twin descriptors with dictionary Remove. The descriptor-map population path remains unresolved |
 | Save and close callbacks | `WordAppDocumentBeforeSave` `0x004CD154`; `WordAppDocumentBeforeClose` `0x004CCBBC`; `SilentSaveEmwatDoc` `0x004D23D8`; `OnTmrAutoSave` `0x004B8A84`; `OnControlerNotify` `0x004BB3B0` | Save events, close events, silent save, timer-driven waiting and controller notification are separate code paths |
 | Print pipeline | `PreparePrintDocument` `0x004CB108`; `CollectFieldsSets` `0x004CB5E4`; `FillPrintDocFields` `0x004CB638`; `PrintWithGamPrintOptions` `0x004C5E04`; `BGPrintWithGamPrintOptions` `0x004C5FF8`; print event callbacks `0x004CDC2C`, `0x004CE030` | Print preparation, field substitution, foreground/background print and Word print callbacks have dedicated routines |
 | Document formatting/protection | `ProtectDocument` `0x004C9EA8`; `SaveOriginalOptions` `0x004C5CDC`; `RollBackOriginalOptions` `0x004CA4B0`; `SetDocCaption` `0x004C5D68` | EMWAT also manages document protection and temporary document options; these behaviors must not be omitted from a replacement |
