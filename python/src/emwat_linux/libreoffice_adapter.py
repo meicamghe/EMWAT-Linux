@@ -15,12 +15,13 @@ import shutil
 import socket
 import subprocess
 import tempfile
-from threading import Event
+from threading import Event, Lock, Thread
 import time
 from typing import Callable
 
 from emwat_linux.editword_request import EditWordDocumentRequest
 from emwat_linux.office_adapter import CloseDisposition, OfficeCloseEvent
+from emwat_linux.recovery_store import RecoverySnapshotStore
 from emwat_linux.writer_fields import refresh_writer_text_fields
 from emwat_linux.writer_inspector import WriterDocumentCatalog, inspect_writer_document
 from emwat_linux.writer_properties import set_custom_document_properties
@@ -122,36 +123,36 @@ class _ModifyListener:
 
 
 class _DocumentCloseListener:
-    """Snapshot the current document from UNO's close callback."""
+    """Snapshot the final document before close and stop periodic recovery after close."""
 
     def __init__(
         self,
         document: object,
         output_url: str,
         on_closed: Callable[[], None],
-        uno_module: object,
+        snapshot_properties: tuple[object, ...],
+        snapshot_lock: Lock,
+        recovery_stop: Event,
     ) -> None:
         self._document = document
         self._output_url = output_url
         self._on_closed = on_closed
-        self._uno = uno_module
+        self._snapshot_properties = snapshot_properties
+        self._snapshot_lock = snapshot_lock
+        self._recovery_stop = recovery_stop
         self.snapshot_error: Exception | None = None
         self.snapshot_ready = Event()
 
     def queryClosing(self, _event: object, _gets_ownership: bool) -> None:
         # A close attempt can be vetoed/cancelled by the office UI and retried.
-        # Do not let a previous snapshot failure poison a later successful close.
+        # Reset only this attempt's result; periodic recovery remains active until
+        # notifyClosed confirms that the document really closed.
         self.snapshot_error = None
         self.snapshot_ready.clear()
         try:
             # storeToURL writes a copy and does not change the document's URL.
-            self._document.storeToURL(
-                self._output_url,
-                (
-                    self._property("FilterName", "MS Word 97"),
-                    self._property("Overwrite", True),
-                ),
-            )
+            with self._snapshot_lock:
+                self._document.storeToURL(self._output_url, self._snapshot_properties)
         except Exception as exc:  # retained internally; never returned to browser
             self.snapshot_error = exc
         finally:
@@ -161,19 +162,12 @@ class _DocumentCloseListener:
         return
 
     def notifyClosed(self, _event: object) -> None:
+        self._recovery_stop.set()
         self._on_closed()
 
     def disposing(self, _event: object) -> None:
+        self._recovery_stop.set()
         self._on_closed()
-
-    def _property(self, name: str, value: object) -> object:
-        try:
-            prop = self._uno.createUnoStruct("com.sun.star.beans.PropertyValue")
-            prop.Name = name
-            prop.Value = value
-            return prop
-        except Exception as exc:
-            raise RuntimeError("libreoffice_uno_property_unavailable") from exc
 
 
 class _DocumentEventListener:
@@ -200,12 +194,19 @@ class _OfficeHandle:
         document: object,
         close_listener: _DocumentCloseListener | None,
         work_dir: Path,
+        recovery_session_id: str,
     ) -> None:
         self.process = process
         self.document = document
         self.close_listener = close_listener
         self.work_dir = work_dir
+        self.recovery_session_id = recovery_session_id
         self.closed = Event()
+        self.recovery_stop = Event()
+        self.snapshot_lock = Lock()
+        self.recovery_thread: Thread | None = None
+        self.recovery_error: Exception | None = None
+        self.snapshot_properties: tuple[object, ...] = ()
         self._closed_once = False
 
     def mark_closed(self) -> None:
@@ -232,11 +233,15 @@ class LibreOfficeAdapter:
         uno_module: object | None = None,
         headless: bool = False,
         close_timeout_seconds: float | None = None,
+        recovery_store: RecoverySnapshotStore | None = None,
+        recovery_interval_seconds: float = 10.0,
     ) -> None:
         if connect_timeout_seconds <= 0 or poll_interval_seconds <= 0:
             raise ValueError("connection and polling timeouts must be positive")
         if close_timeout_seconds is not None and close_timeout_seconds <= 0:
             raise ValueError("close timeout must be positive when configured")
+        if recovery_interval_seconds <= 0:
+            raise ValueError("recovery interval must be positive")
         self._soffice_path = soffice_path
         self._connect_timeout = connect_timeout_seconds
         self._poll_interval = poll_interval_seconds
@@ -244,6 +249,8 @@ class LibreOfficeAdapter:
         self._uno = uno_module
         self._headless = headless
         self._close_timeout = close_timeout_seconds
+        self._recovery_store = recovery_store if recovery_store is not None else RecoverySnapshotStore()
+        self._recovery_interval = recovery_interval_seconds
 
     def _uno_runtime(self) -> object:
         if self._uno is None:
@@ -292,6 +299,8 @@ class LibreOfficeAdapter:
         """
         work_dir = Path(tempfile.mkdtemp(prefix="emwat-lo-"))
         process: subprocess.Popen[bytes] | None = None
+        recovery_session_id = self._recovery_store.create_session()
+        handle: _OfficeHandle | None = None
         try:
             extension = _source_extension(request.document_bytes)
             source_path = work_dir / ("incoming" + extension)
@@ -336,17 +345,25 @@ class LibreOfficeAdapter:
             if document is None:
                 raise RuntimeError("libreoffice_failed_to_open_document")
 
+            snapshot_properties = (
+                self._property(uno, "FilterName", "MS Word 97"),
+                self._property(uno, "Overwrite", True),
+            )
             handle = _OfficeHandle(
                 process=process,
                 document=document,
                 close_listener=None,  # attached below once callback is available
                 work_dir=work_dir,
+                recovery_session_id=recovery_session_id,
             )
+            handle.snapshot_properties = snapshot_properties
             close_listener = _DocumentCloseListener(
                 document,
                 _file_url(output_path),
                 handle.mark_closed,
-                uno,
+                snapshot_properties,
+                handle.snapshot_lock,
+                handle.recovery_stop,
             )
             handle.close_listener = close_listener
             modify_listener = _ModifyListener(on_modified)
@@ -383,12 +400,47 @@ class LibreOfficeAdapter:
             handle.source_path = source_path
             handle.profile_path = profile_path
             handle.context = context
+            handle.recovery_thread = Thread(
+                target=self._recovery_loop,
+                args=(handle,),
+                name=f"emwat-recovery-{recovery_session_id[:8]}",
+                daemon=True,
+            )
+            handle.recovery_thread.start()
             return handle
         except Exception:
+            if handle is not None:
+                handle.recovery_stop.set()
+                if handle.recovery_thread is not None:
+                    handle.recovery_thread.join(timeout=2)
             if process is not None:
                 _stop_process(process, terminate_timeout=3, kill_timeout=2)
             shutil.rmtree(work_dir, ignore_errors=True)
+            self._recovery_store.remove_session(recovery_session_id)
             raise
+
+    def _recovery_loop(self, handle: _OfficeHandle) -> None:
+        """Persist an owner-only snapshot every interval while the document is open."""
+        temporary_path = handle.work_dir / "recovery-snapshot.doc"
+        while not handle.recovery_stop.wait(self._recovery_interval):
+            try:
+                with handle.snapshot_lock:
+                    if handle.recovery_stop.is_set():
+                        break
+                    handle.document.storeToURL(
+                        _file_url(temporary_path),
+                        handle.snapshot_properties,
+                    )
+                    payload = temporary_path.read_bytes()
+                    self._recovery_store.save_snapshot(handle.recovery_session_id, payload)
+            except Exception as exc:
+                # A transient snapshot failure must not close or fail the live Word session.
+                handle.recovery_error = exc
+            finally:
+                try:
+                    temporary_path.unlink()
+                except FileNotFoundError:
+                    pass
 
     @staticmethod
     def _property(uno: object, name: str, value: object) -> object:
@@ -401,7 +453,8 @@ class LibreOfficeAdapter:
         """Inventory Writer structure without exposing document text or values."""
         if not isinstance(handle, _OfficeHandle):
             raise TypeError("invalid_libreoffice_handle")
-        return inspect_writer_document(handle.document)
+        with handle.snapshot_lock:
+            return inspect_writer_document(handle.document)
 
     def apply_custom_property_updates(
         self,
@@ -416,9 +469,10 @@ class LibreOfficeAdapter:
         """
         if not isinstance(handle, _OfficeHandle):
             raise TypeError("invalid_libreoffice_handle")
-        set_custom_document_properties(handle.document, updates)
-        if updates:
-            refresh_writer_text_fields(handle.document)
+        with handle.snapshot_lock:
+            set_custom_document_properties(handle.document, updates)
+            if updates:
+                refresh_writer_text_fields(handle.document)
 
     def wait_for_close(self, handle: object) -> OfficeCloseEvent:
         if not isinstance(handle, _OfficeHandle):
@@ -435,6 +489,12 @@ class LibreOfficeAdapter:
             if deadline is not None and time.monotonic() >= deadline:
                 self._cleanup(handle)
                 raise RuntimeError("libreoffice_close_timeout")
+        handle.recovery_stop.set()
+        if handle.recovery_thread is not None:
+            handle.recovery_thread.join(timeout=self._connect_timeout)
+            if handle.recovery_thread.is_alive():
+                self._cleanup(handle)
+                raise RuntimeError("libreoffice_recovery_thread_timeout")
         if handle.close_listener is None:
             self._cleanup(handle)
             raise RuntimeError("libreoffice_close_listener_missing")
@@ -458,14 +518,22 @@ class LibreOfficeAdapter:
             payload = output_path.read_bytes()
             if not payload.startswith(_CFB_SIGNATURE):
                 raise RuntimeError("libreoffice_export_not_legacy_word_format")
+            self._recovery_store.remove_session(handle.recovery_session_id)
             return payload
         finally:
             self._cleanup(handle)
 
     def _cleanup(self, handle: _OfficeHandle) -> None:
+        handle.recovery_stop.set()
+        if handle.recovery_thread is not None and handle.recovery_thread is not Thread.current_thread if False else False:
+            pass
+        if handle.recovery_thread is not None:
+            handle.recovery_thread.join(timeout=2)
         process = handle.process
         _stop_process(process, terminate_timeout=5, kill_timeout=2)
         shutil.rmtree(handle.work_dir, ignore_errors=True)
+        if not self._recovery_store.has_snapshot(handle.recovery_session_id):
+            self._recovery_store.remove_session(handle.recovery_session_id)
 
 
 __all__ = ["LibreOfficeAdapter"]
