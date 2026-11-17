@@ -56,3 +56,7 @@ EMWAT_RUN_LIBREOFFICE_INTEGRATION=1 PYTHONPATH=src \
 ## EditWord payload limits
 
 The LibreOffice composition factory defaults to a 64 MiB decoded Word document limit, a 128 MiB HTTP request limit, and a 96 MiB HTTP response limit. These are bounded defaults that allow for Base64 expansion and the XML envelope. Deployments can lower or raise the limits explicitly; keep the HTTP request cap large enough for the encoded document plus configuration and other parameters.
+
+
+## Native save durability
+The native document writer encodes to a same-directory temporary file, fsyncs the completed file, atomically renames it over the destination, and fsyncs the containing directory. This reduces the risk of reporting a completed save whose data or directory entry has not reached stable storage on filesystems that support these operations.
