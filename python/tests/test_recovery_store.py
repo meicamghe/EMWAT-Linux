@@ -63,6 +63,11 @@ class RecoverySnapshotStoreTests(unittest.TestCase):
 
             self.assertEqual(store.load_snapshot(session_id), first)
 
+            store.save_snapshot(session_id, second)
+            document_files = tuple((Path(temporary) / "recovery" / session_id).glob("document-*"))
+            self.assertEqual(len(document_files), 1)
+            self.assertEqual(store.load_snapshot(session_id), second)
+
     def test_corrupted_snapshot_is_rejected(self):
         with tempfile.TemporaryDirectory() as temporary:
             store = RecoverySnapshotStore(Path(temporary) / "recovery")
