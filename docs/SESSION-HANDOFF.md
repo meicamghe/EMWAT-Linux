@@ -1168,3 +1168,11 @@ Do not implement guessed `signData` joining or claim end-to-end Almas registrati
 - The viewer owns three separate dictionaries at offsets `+0x64`, `+0x68`, and `+0x6C`: runtime custom properties, single-field descriptors, and twin-field descriptors. Do not flatten these into one map. Initial descriptor population is still unresolved; current scans have not found a proven direct insertion caller.
 - Recent native analysis corrects several misleading TD32 labels. Trust verified method-table/VMT behavior and body-level traces over symbol labels. See the synchronized additions in `docs/PROJECT-STATUS.md`, `docs/EMWAT-SERVICE-EXECUTABLE-ANALYSIS.md`, and `docs/WORD-CUSTOM-PROPERTY-PIPELINE-ANALYSIS.md`.
 - Next critical work: resolve descriptor-map population through indirect/VMT/external paths, validate the actual EditWord response envelope against a runtime capture, and trace the parent-page message that triggers the close-time POST and applies the returned document. Keep cancel/discard and the user's observed close/register behavior distinct; no end-to-end Almas compatibility is established.
+
+
+## همگام‌سازی ابزارهای تحلیل باینری — 2026-11-17
+
+- هفت ابزار تحلیل PE/Delphi که در `main` موجود بودند به شاخه کاری افزوده شدند: `list_pe_imports.py`, `scan_pe_call_refs.py`, `scan_pe_ff15_iat_refs.py`, `scan_pe_iat_callers.py`, `scan_pe_import_thunks.py`, `scan_pe_rel32_call_bytes.py` و `trace_td32_batch.py`.
+- دو workflow تحلیل `analyze-emwat-dispatch-crosswalk.yml` و `analyze-word-automation-surface.yml` با نسخه گسترش‌یافته `main` همگام شدند تا traceهای بیشتر مربوط به زنجیره dispatch، GetClass، thunkهای import و مسیرهای Word اجرا شوند.
+- `dispatcher.py` اکنون مستند می‌کند که سرویس Delphi پیشوند `T` را برای GetClass اضافه می‌کند؛ registry لینوکس همچنان نام XML اصلی را به‌صورت allowlist نگه می‌دارد و runtime class resolution انجام نمی‌دهد.
+- دو workflow پس از push در حال اجرا هستند؛ تا دریافت نتیجه نهایی، هیچ ادعایی درباره سبز بودن آن‌ها ثبت نمی‌شود. ابزارهای تازه‌وارد نیز هنوز باید در CI و روی artifact واقعی تحلیل شوند.
