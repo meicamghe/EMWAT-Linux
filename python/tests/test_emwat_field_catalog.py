@@ -71,7 +71,7 @@ class EmwatFieldCatalogTests(unittest.TestCase):
         )
         self.assertEqual(
             slots[1].missing_families,
-            ("unit", "index_unit", "signature_number", "behalf_name", "signature_image"),
+            ("unit", "index_unit", "behalf_name", "signature_image"),
         )
         self.assertEqual(
             [field.field_id for field in slots[1].fields],
