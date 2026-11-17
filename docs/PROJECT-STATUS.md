@@ -2145,3 +2145,102 @@ These are real implementation increments, not proof of operational Almas compati
 ### HTTP request parsing hardening — 2026-11-17
 - Duplicate `Content-Type` headers are now rejected before the bridge reads the request body, avoiding unnecessary body consumption for an ambiguous request.
 - Python bridge run #229 passed on commit `5dc0c8f9db6d82dfac6ee4c2e948e6d3e34f6c51`.
+
+
+## Mainline reverse-engineering findings synchronized — 2026-11-17
+
+## تأیید callsiteهای LoadPackage و GetClass در سرویس — 2026-11-17
+
+- `LoadPackage` از thunk آدرس `0x00402174` در `0x0047E15F` و داخل gate بارگذاری BPL فراخوانی می‌شود.
+- `GetClass` از thunk آدرس `0x00402354` در `0x00470E07` و پس از prefix شدن `T` به مقدار XML `class` فراخوانی می‌شود.
+- `ClassCreate` و `ClassDestroy` در `0x00471220` و `0x0047127F` به ساخت/پاک‌سازی شیء metadata به نام `TMethodInfo` تعلق دارند؛ این‌ها را نباید با ساخت کلاس متد واقعی BPL اشتباه گرفت.
+- workflow جدید، callsiteهای `StartExe` و `GetProcAddress` را نیز با محدوده کد اطرافشان بررسی می‌کند.
+
+## تکمیل چرخه‌ی TMethodInfo و تفکیک توابع runtime — 2026-11-17
+
+- `TMethodInfo` در `0x00471214` ساخته می‌شود؛ `ClassCreate` در `0x00471220` و مقداردهی دیکشنری Params در `0x00471232` انجام می‌شود.
+- تابع cleanup از `0x00471258` آغاز می‌شود، دیکشنری Params در offset `+0x08` را آزاد می‌کند و `ClassDestroy` را در `0x0047127F` فراخوانی می‌کند.
+- `StartExe` در `0x004014BA` بخشی از package startup و `GetProcAddress` در `0x00401720` بخشی از dynamic-symbol lookup است؛ هیچ‌کدام مسیر dispatch جداگانه‌ی EMWAT نیستند.
+- callsiteهای اصلی `LoadPackage` و `GetClass` در بخش service executable analysis ثبت شده‌اند.
+
+### تکمیل مسیر ParseMethod — 2026-11-17
+
+- `GetClass` در `0x00470E07` نام کلاس استخراج‌شده از XML را resolve می‌کند؛ در صورت شکست، پیام `Unable to load "<class>" class.` ساخته می‌شود.
+- بعد از resolve، نام کلاس با `TUpgradeEmwat` مقایسه و نتیجه در `method-info+4` ذخیره می‌شود؛ سپس instance از طریق `TObject.$bctr` ساخته و pointer مربوط به method-info در `instance+4` قرار می‌گیرد.
+- فراخوانی غیرمستقیم `0x00470EF6` از `[instance.VMT+0x0C]` انجام می‌شود؛ در VMT کلاس پایه `TEmwatMethod` این slot به wrapper عمومی `Invoke` در `0x0046C9E0` می‌رسد. این wrapper helper داخلی `0x0046C82C` را اجرا می‌کند و سپس از slot `+0x10`، `PerformMethod` کلاس فرزند را فراخوانی می‌کند.
+- prefix کلاس قطعی است: ثابت `T` در `0x004710E0` و مقدار XML `class` به helper `0x00401310` داده می‌شوند؛ این thunk به `System.@UStrCat3` می‌رود و رشته `T` + نام کلاس را می‌سازد، سپس `GetClass` آن را resolve می‌کند.
+
+## چرخه‌ی واقعی ساخت و اجرای کلاس BPL مشخص شد — 2026-11-17
+
+- `GetClass` در `0x00470E07` کلاس Delphi متناظر با XML را resolve می‌کند.
+- `TObject.ClassName` در `0x00470E5D` نام کلاس را با `TUpgradeEmwat` مقایسه می‌کند و نتیجه را در `TMethodInfo+0x04` می‌گذارد.
+- `TObject.Create` در `0x00470EDC` نمونه‌ی واقعی متد BPL را می‌سازد.
+- اشاره‌گر `TMethodInfo` در offset `+0x04` نمونه قرار می‌گیرد و VMT slot `+0x0C` در `0x00470EF6` فراخوانی می‌شود.
+- `TObject.Free` در `0x00470F42` نمونه را آزاد می‌کند.
+
+این چرخه با ساخت/تخریب شیء metadata یعنی `TMethodInfo` از طریق `ClassCreate`/`ClassDestroy` متفاوت است.
+
+## مسیر ارسال پاسخ HTTP شناسایی شد — 2026-11-17
+
+تابع `0x004610FC` با RTTI name به‌عنوان `TIdHTTPResponseInfo.WriteContent` شناسایی شد. این helper پاسخ Indy را با توجه به status/content ارسال می‌کند و pointer موقت `ContentText` را پاک‌سازی می‌کند. callsiteهای تأییدشده: `ParseMethod` در `0x00470F34` و شاخه‌های `init` و `heartbeat` در `0x0047C237` و `0x0047C2A9`. مسیر پاسخ عادی connector همچنان به `bResultSet` وابسته است: اگر connector پاسخ را خودش ثبت کند handler مسیر پیش‌فرض را رد می‌کند؛ در غیر این صورت خروجی را در `AResponseInfo.ContentText` می‌گذارد و `WriteContent` را صدا می‌زند.
+
+## تفکیک دو مسیر WriteContent — 2026-11-17
+
+- `0x004610FC` در خود سرویس، sender عمومی Indy است؛ برای fallback عمومی و مسیرهای `init`/`heartbeat` استفاده می‌شود.
+- `0x0040448C` در BPL، thunk واردشده‌ی `IdCustomHTTPServer.TIdHTTPResponseInfo.WriteContent` است؛ `LoadDocument` پس از قرار دادن XML `response-word` در `ContentText` آن را صدا می‌زند و `bResultSet=true` می‌کند. در نتیجه پاسخ موفق EditWordDocument از fallback عمومی سرویس عبور نمی‌کند.
+
+## اصلاح مسیر احتمالی ساخت mapهای فیلد — 2026-11-17
+
+`CrateOptionFormFields` در `0x004CFC74` از `LoadOptions` فراخوانی می‌شود و mapهای descriptor را populate نمی‌کند؛ این نامزد رد شد. در generic dictionaryها، نام‌های TD32 برای بعضی متدها با method-table واقعی جابه‌جا هستند: `0x004D552C` در method table با نام `AddOrSetValue` ثبت شده و در بدنه واقعاً از `DoSetValue` برای درج/به‌روزرسانی استفاده می‌کند؛ `0x004D559C` در مسیر `GetXmlFieldInfo` نقش key-presence دارد، با وجود برچسب TD32 `ContainsValue`.
+
+هر entry دیکشنری سه slot دارد: hash، کلید UnicodeString و pointer مقدار descriptor. constructor از نوع `TDictionary.Create(IEnumerable<TPair>)` در `0x004D5100` pairها را پیمایش و با `AddOrSetValue` وارد map می‌کند؛ اما caller مستقیم برای این constructor هنوز پیدا نشده و منبع enumerable مشخص نیست.
+
+## اصلاح هویت destructor و initializer viewer — 2026-11-17
+
+`0x004D1148` دیگر به‌عنوان `AddXmlWordConfigFieldsToDic` ثبت نمی‌شود. VMT/RTTI آن را `TWordViwer.Destroy` نشان می‌دهند: destroy slot در `0x004B10A0` به این آدرس اشاره می‌کند و method record در `0x004B1629` نام `Destroy` دارد. routine در `0x004D0D24` که `LoadDocument` در `0x004B78E9` صدا می‌زند، برخلاف TD32 label `$bdtr`، flags و منابع viewer را initialize می‌کند و سه dictionary را در `+0x64/+0x68/+0x6C` می‌سازد. constructor helperهای تک/دو فیلدی به‌ترتیب `0x004D5C28` و `0x004D71E0` هستند؛ semantics و منبع اولیه‌ی داده‌ی آن‌ها هنوز در حال ردیابی است.
+
+## رفع ابهام نهایی dispatch سرویس به BPL — 2026-11-17
+
+- `0x00401310` thunk به `System.@UStrCat3` است؛ پس ساخت `T` + مقدار XML `class` پیش از `GetClass` اثبات شد.
+- VMT slot `+0x0C` روی instance متد BPL به wrapper `TEmwatMethod.Invoke` در `0x0046C9E0` می‌رسد. برچسب TD32 برای این wrapper (`Finalization`) گمراه‌کننده است؛ خود method-table/VMT و بدنه نشان می‌دهند این wrapper، helper داخلی `0x0046C82C` را صدا می‌زند.
+- wrapper سپس VMT slot `+0x10` را فراخوانی می‌کند؛ برای `TEditWordDocument` این slot به `0x005EE82C` می‌رسد و آن `PerformMethod`، `LoadDocument` را اجرا می‌کند.
+- مستند کامل این crosswalk در `docs/EMWAT-SERVICE-EXECUTABLE-ANALYSIS.md` ثبت شد.
+
+## ساختار واقعی mapهای descriptor و نام‌های گمراه‌کننده TD32 — 2026-11-17
+
+- routine `0x004D0D24` که از `LoadDocument` در `0x004B78E9` فراخوانی می‌شود، با وجود label اشتباه `$bdtr`، مسیر setup/constructor-like است و سه dictionary را می‌سازد: `+0x64` برای `TDocumentCProperty`، `+0x68` برای single descriptor و `+0x6C` برای twin descriptor.
+- constructorهای descriptor map به‌ترتیب `0x004D5C28` و `0x004D71E0` هستند؛ هر دو TObjectDictionary با ظرفیت اولیه صفر و comparer/ownership configuration می‌سازند.
+- `TWordViwer.$bctr` در `0x004D08B4` مسیر جداگانه option form است و فقط از `ShowRecAndCcOptionForm` فراخوانی می‌شود؛ این routine فیلدهای Rec/CC را می‌سازد و مسیر populate اولیه descriptor map نیست.
+- `0x004D552C` برای single و `0x004D6AE4` برای twin در عمل AddOrSetValue هستند، هرچند TD32 هر دو را `ContainsKey` نام‌گذاری کرده است. در حالت key موجود، به helper update و در حالت key جدید، پس از grow به helper insert می‌روند.
+- هر entry سه slot دارد: hash، UnicodeString key و pointer به descriptor. helperهای update/insert نیز بعضاً TD32 label نامتناسب دارند؛ semantics از بدنه disassembly تعیین می‌شود.
+- منبع اولیه‌ی insertion هنوز پیدا نشده است. batch جدید trace کامل `LoadDocument`، همه‌ی دسترسی‌های `TWordViwer` به offsets `+0x64/+0x68/+0x6C` و helperهای update-existing را اجرا می‌کند.
+
+## آزمون transport برای session همگام و close-driven — 2026-11-17
+
+- تست جدید `test_document_post_waits_for_close_while_heartbeat_remains_responsive` اضافه شد.
+- تست ثابت می‌کند POST مربوط به سند تا آزاد شدن رویداد close پاسخ نهایی نمی‌دهد، اما به‌دلیل `ThreadingHTTPServer`، درخواست مستقل heartbeat در همان زمان پاسخ‌گو می‌ماند.
+- اجرای CI در run `44029314633` موفق شد: **109 تست** در 5.105 ثانیه.
+
+## نتیجه‌ی منفیِ تقویت‌شده برای مسیر populate کردن descriptor mapها — 2026-11-17
+
+Artifact `14304323294` با موفقیت تولید شد. trace کامل `LoadDocument` از `0x004B7724` تا `0x004B8A84` و scan پنجاه متد `TWordViwer` برای offsets `+0x64/+0x68/+0x6C` اجرا شد. 39 reference پیدا شد؛ در کلاس viewer، نوشتن روی `+0x68/+0x6C` فقط هنگام انتساب dictionaryهای ساخته‌شده در setup (`0x004D0F98/0x004D0FB3`) دیده شد. در scan کل PE و byte-level rel32 نیز callsite مستقیمی برای helperهای insertion single/twin پیدا نشد. این نتیجه مسیر populate را هنوز قطعی نمی‌کند، چون dispatch غیرمستقیم/VMT، callback یا object خارجی ممکن است؛ اما شواهد فعلی هیچ مسیر insertion مستقیم را تأیید نمی‌کنند.
+
+## اصلاح builder descriptorها بر اساس مسیر واقعی Add — 2026-11-17
+
+`build_word_custom_property_field_maps()` به‌روزرسانی شد تا دیگر property name را به‌اشتباه معادل XML field name فرض نکند. اکنون `xml_fields` را به‌صورت اختیاری و هم‌تراز با ترتیب property enumeration می‌پذیرد و خود `WordField` node را نگه می‌دارد؛ در صورت نبود آن، reference در descriptor برابر `None` می‌ماند. تست‌ها نگهداری XML node با index مشترک و ردکردن sequenceهای ناهم‌طول را پوشش می‌دهند. Writer catalog فعلاً به این builder وصل نشده، چون enumeration order مرتب‌شده‌ی catalog هنوز با ترتیب Word ثابت نشده است.
+
+## CI پس از اصلاح descriptor builder — 2026-11-17
+
+Python bridge CI در run `44030420508` موفق شد: **111 تست موفق، 2 skip اختیاری** در 5.163 ثانیه. تست‌های جدید هم‌ترازی `property_names` و `xml_fields`، رد sequenceهای ناهم‌طول و حفظ reference برابر `None` هنگام نبود XML node را پوشش می‌دهند.
+
+## حفظ ترتیب خام Custom Propertyهای Writer — 2026-11-17
+
+`WriterDocumentCatalog` اکنون علاوه بر فهرست sorted قبلی، فیلد `custom_document_properties_in_info_order` را هم از ترتیب خام `XPropertySetInfo.getProperties()` برمی‌گرداند. این داده فقط نام‌ها را می‌خواند، نه valueها. تست FakeDocument ثابت می‌کند ترتیب خام با sorted display اشتباه گرفته نمی‌شود؛ تست UNO واقعی نیز برابری آن با sequence مستقیم API را assert می‌کند. این قدم زیرساخت مقایسه‌ی ترتیب Word/Writer را فراهم می‌کند، اما هنوز ثابت نمی‌کند UNO order همان Word CustomDocumentProperties index order است.
+
+## UNO integration پس از حفظ ترتیب خام propertyها — 2026-11-17
+
+LibreOffice UNO integration در run `44030867583` موفق شد: **11 تست** در 3.974 ثانیه. تست جدید `custom_document_properties_in_info_order` را با ترتیب مستقیم `XPropertySetInfo.getProperties()` مقایسه می‌کند و ثابت می‌کند adapter ترتیب خام API را بدون sort حفظ می‌کند؛ این هنوز معادل بودن ترتیب Writer با Word را اثبات نمی‌کند.
+
+## CI پس از تبدیل descriptor payload به WordField node — 2026-11-17
+
+Python bridge CI در run `44031548179` موفق شد: **111 تست موفق، 2 skip اختیاری** در 5.120 ثانیه. تست‌ها اکنون به‌جای string فرضی، reference به خود `WordField` node متناظر در `wordConfig.fields` را بررسی می‌کنند.
