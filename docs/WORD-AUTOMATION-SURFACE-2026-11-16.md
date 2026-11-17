@@ -61,7 +61,7 @@ The workflow has been committed, but its Actions run and artifacts must be check
 
 ## Next reverse-engineering targets
 
-1. Trace `TWordViwer.$bctr` (`0x004D08B4`) and `$bdtr` (`0x004D0D24`) for COM object creation and event hookup/teardown.
+1. Trace the viewer initializer at `0x004D0D24` and its dictionary constructors (`0x004D4670`, `0x004D5C28`, `0x004D71E0`); separately trace the VMT destructor at `0x004D1148` and COM event hookup/teardown.
 2. Trace `WordAppDocumentBeforeSave` and `WordAppDocumentBeforeClose` to establish cancel/save behavior and the exact bridge callback sequence.
 3. Trace `OnTmrAutoSave` and `OnControlerNotify` separately; do not conflate periodic content sync with the Word BeforeSave event.
 4. Resolve Word interface VMT/dispinterface calls in `LoadDocument`, `FillMSWFields`, and `FillPrintDocFields`.
