@@ -2124,3 +2124,8 @@ These are real implementation increments, not proof of operational Almas compati
 - Native image run #118 passed: normal build/test and ASan/UBSan build/test each passed all 4 CTest targets.
 - Python bridge run #224 passed: 117 tests, 114 passed and 3 optional skips.
 - Corrected EditWord response limits: the LibreOffice composition path now pairs a 64 MiB decoded document cap with 128 MiB request and 96 MiB response limits to account for Base64 expansion and XML overhead. The response serializer receives the configured response cap rather than relying on a smaller internal default.
+
+
+## Scanner acquisition hardening — 2026-11-17
+- SANE multi-frame capture now enforces a 100-page ceiling and a 1 GiB aggregate decoded-pixel budget, in addition to the per-frame allocation bound. This prevents an ADF/device from returning an unbounded number of individually valid frames.
+- Native tests additionally verify invalid page batches do not partially mutate an existing document or mark it dirty.
