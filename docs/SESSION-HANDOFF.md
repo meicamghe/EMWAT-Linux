@@ -1311,3 +1311,11 @@ Do not implement guessed `signData` joining or claim end-to-end Almas registrati
 - PCAP تأخیر حدود 54.558s از پایان request body تا شروع response را نشان می‌دهد؛ TCP gaps مانع ادعای hash کامل هستند.
 - رابطه مستقیم registry `AutoSaveInterval` با viewer+`0x88` هنوز اثبات نشده است. `SilentSaveEmwatDoc` نیز مسیر جداگانه field collection باقی می‌ماند.
 - سند جامع: `docs/WORD-CLOSE-WAIT-AND-RESPONSE-CORRELATION-2026-11-17.md`.
+
+
+## LibreOffice close-retry regression fix — 2026-11-17
+
+- Found a real close-retry edge case in `_DocumentCloseListener.queryClosing`: if the first snapshot attempt failed (for example, a close attempt is vetoed/cancelled) and a later close attempt succeeded, the previous `snapshot_error` and set `snapshot_ready` event could remain stale and incorrectly fail the completed session.
+- Fixed by clearing the prior snapshot error and readiness event at the beginning of every `queryClosing` attempt; the current attempt then publishes its own success/failure.
+- Added a focused regression test in `python/tests/test_libreoffice_integration.py` using a fake document that fails its first `storeToURL` and succeeds on retry.
+- Code commit: `e6a4abd21cbb08b90fc669c3d949bafa6127be3a`; regression test commit: `41506f0a22a3fecb6d0c7f8bd41a49f6c435435b`. The available Actions query returned no run records for the commit; test execution is therefore not claimed.
