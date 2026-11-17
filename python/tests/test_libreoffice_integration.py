@@ -26,13 +26,8 @@ from emwat_linux.word_config import WordDocumentConfig
 
 class DocumentCloseListenerRetryTests(unittest.TestCase):
     def test_snapshot_failure_is_cleared_when_close_is_retried(self):
-        from types import SimpleNamespace
+        from threading import Event, Lock
         from emwat_linux.libreoffice_adapter import _DocumentCloseListener
-
-        class FakeUno:
-            @staticmethod
-            def createUnoStruct(_name):
-                return SimpleNamespace(Name="", Value=None)
 
         class FlakyDocument:
             def __init__(self):
@@ -48,7 +43,9 @@ class DocumentCloseListenerRetryTests(unittest.TestCase):
             document,
             "file:///tmp/emwat-final.doc",
             lambda: None,
-            FakeUno(),
+            (),
+            Lock(),
+            Event(),
         )
 
         listener.queryClosing(None, False)
