@@ -58,3 +58,12 @@ This is strong evidence that the path populates print/document field-value colle
 - Scan references to global pointer slot `0x0062A808` and string `AutoSaveInterval` to locate the runtime consumer of the configured duration.
 - Inspect the `TWordViwer` resource/DFM for timer component and event-property wiring; static direct-call xrefs alone cannot settle this.
 - Trace the final response/serialization path after the field-value lists are populated.
+
+
+## تکمیل مهم پس از Run 153 در mainline — 2026-11-17
+
+برداشت قبلی این سند درباره نقش `OnTmrAutoSave` ناقص بود و اکنون با شواهد کامل‌تر mainline اصلاح می‌شود. تابع `0x004B8A84` علاوه بر راه‌اندازی Word و ثبت callbackها، `OnControlerNotify` در `0x004BB3B0` را به‌عنوان `TTimer.OnTimer` برای timer موجود در viewer+`0x7C` نصب می‌کند، interval در viewer+`0x88` را حداقل `10000 ms` می‌کند و timer را فعال می‌کند. سپس به‌صورت synchronous در `0x004B9AE8` با `Sleep(5)` و `Application.ProcessMessages` منتظر صفر شدن viewer+`0x58` می‌ماند. callback دوره‌ای `OnControlerNotify` مسیر recovery محلی `.easd/.easz` است؛ مسیر نهایی HTTP response نیست.
+
+callback ثبت‌شده `0x004CD154` (نام TD32: `WordAppDocumentBeforeSave`) مسیر Word `Document.Close` را از slot `+0x29C` اجرا می‌کند و سپس viewer+`0x58` را صفر می‌کند. با خروج از wait، `LoadDocument` XML پاسخ `response-word` را از طریق Indy `WriteContent` ارسال و `bResultSet` را تنظیم می‌کند. پاسخ PCAP شامل DOC/CFB با MIME `application/msword` و Base64 است؛ PCAP ناقص است و hash کامل سند قابل ادعا نیست.
+
+جزئیات و مرزهای شواهد در سند جدید `docs/WORD-CLOSE-WAIT-AND-RESPONSE-CORRELATION-2026-11-17.md` ثبت شده‌اند. این یافته‌ها ادعای قبلی «صرفاً setup و callback registration» را supersede می‌کنند؛ اما همچنان ثابت نمی‌کنند که timer هر بار Word COM Save اجرا می‌کند یا که archive محلی همان پاسخ نهایی Almas است.
