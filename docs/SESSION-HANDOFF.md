@@ -1214,3 +1214,13 @@ Do not implement guessed `signData` joining or claim end-to-end Almas registrati
 - Latest CI queued for commit `22a7d6d828f3b799cd1dbe544acff170530ab64f`: UNO integration run `44055192704` and Python bridge run `44055192702`; previous commit's equivalent workflows `44055185438` and `44055185443` also queued. Await results; no pass claimed yet.
 - Python bridge, dispatcher, LibreOffice adapter, office adapter, VMT inspector, interface tracer, writer-inspector tests, and word-field tests are otherwise synchronized with main; branch-only duplicate-header security tests and strict UTF-8 optional-attribute rejection remain preserved.
 - PR #1 description refreshed. Branch/main compare is 343 ahead and 102 behind; PR remains draft/non-mergeable. No rebase or merge attempted.
+
+
+## AutoSave registry and timer analysis — 2026-11-17
+
+- Inspected successful Word lifecycle artifact `14314903496` (run `44053390645`). Added `docs/AUTOSAVE-SETTINGS-REGISTRY-CONTRACT-2026-11-17.md`.
+- Confirmed AutoSave settings use HKEY_CURRENT_USER key `Software\\Emwat\\Dynamic Config` with native value names `Logging Level`, `Save I/O Trace Files`, `Background Priniting`, `Dont Ask Save On Print`, `Save Before Print`, and `AutoSaveInterval`. The original typo `Priniting` is retained.
+- `AutoSaveInterval` accepts observed values 1–5 through a lookup table multiplied by 1000; out-of-range values fall back to 10000. Lookup entries/UI labels are not yet recovered, so no exact interval choices are asserted.
+- AutoSave setup is confirmed to install the Word event-sink callback/owner pairs; this does not yet prove that each timer tick directly saves the document. The full scheduler decision remains open.
+- The auto-save file viewer has separate delete/show/close handlers. Its `CloseWordApp` iterates tracked Word documents and invokes an unresolved virtual slot `+0x104`; do not guess the COM method name.
+- Latest UNO/Python runs on commit `22a7d6d828f3b799cd1dbe544acff170530ab64f` were still queued at last poll; static Word lifecycle run `44053390645` is now verified success.
