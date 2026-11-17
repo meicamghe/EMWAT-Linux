@@ -2504,3 +2504,12 @@ workflow `python-bridge.yml` پس از تغییرات docstring و تفکیک ر
 - Fixed by clearing the prior snapshot error and readiness event at the beginning of every `queryClosing` attempt; the current attempt then publishes its own success/failure.
 - Added a focused regression test in `python/tests/test_libreoffice_integration.py` using a fake document that fails its first `storeToURL` and succeeds on retry.
 - Code commit: `e6a4abd21cbb08b90fc669c3d949bafa6127be3a`; regression test commit: `41506f0a22a3fecb6d0c7f8bd41a49f6c435435b`. The available Actions query returned no run records for the commit; test execution is therefore not claimed.
+
+
+## تأیید read-side تنظیم AutoSaveInterval — Run 113 mainline evidence
+
+- گزارش mainline `docs/PROJECT-STATUS.md` در Run 113 (run ID `43688755518`, artifact `14151906706`) مسیر startup را در constructor کلاس `TWordViwer` در بازه `0x004D0D24–0x004D0FE6` ثبت کرده است.
+- این constructor کلید `HKCU\\Software\\Emwat\\Dynamic Config` را باز می‌کند و با `ValueExists` مقدار integer با نام `AutoSaveInterval` را می‌خواند و در viewer field `+0x88` قرار می‌دهد؛ default این فیلد صفر است.
+- `OnTmrAutoSave` همین فیلد `+0x88` را برای `TTimer.Interval` به کار می‌برد، حداقل 10000ms را اعمال می‌کند و timer را فعال می‌کند. بنابراین رابطهٔ registry → viewer+`0x88` → timer قطعی است.
+- write-side فرم تنظیمات: indexهای 1 تا 5 از جدول DWORD انتخاب می‌شوند و در 1000 ضرب می‌شوند؛ index صفر یا خارج از محدوده مقدار 10000 را می‌نویسد. exact table DWORDها و labelهای combo هنوز استخراج نشده‌اند.
+- در همان constructor، `Background Priniting` به viewer+`0x3C` (default true)، `Dont Ask Save On Print` به `+0x3D` (default true) و `Save Before Print` به `+0x3E` (default false) خوانده می‌شوند. `Logging Level` و `Save I/O Trace Files` در این constructor خوانده نمی‌شوند و read-side آن‌ها هنوز باز است.
