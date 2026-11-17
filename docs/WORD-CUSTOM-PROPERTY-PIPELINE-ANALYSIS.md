@@ -79,3 +79,13 @@ The latest field-mapping artifact (`14304455134`) clarifies the object construct
 - The generic dictionary record layout is three 32-bit slots per entry: hash, managed UnicodeString key, and descriptor pointer. The update/insert helper names in TD32 are not reliable labels for the observed operation; use the instructions and call graph.
 
 The map population source is still unresolved. Current viewer-field scans identify lookups in `GetXmlFieldInfo` and removals in `AddCustomDocPropertiesToDic`, but have not yet identified a proven callsite that inserts the initial XML descriptors. A new workflow batch traces the full `LoadDocument` body, all `TWordViwer` accesses to offsets `+0x64/+0x68/+0x6C`, and the single/twin update-existing helpers. Do not describe the dictionaries as populated until that evidence arrives.
+
+### Negative callsite result: no map insertion found in the complete LoadDocument/viewer scan
+
+Artifact `14304323294` completed the next bounded search batch:
+
+- `LoadDocument` was traced across `0x004B7724–0x004B8A84` (full TD32 procedure range, including separated blocks).
+- `scan_td32_class_field_refs.py` scanned 50 `TWordViwer` methods for offsets `+0x64`, `+0x68`, and `+0x6C`, finding 39 references. The descriptor maps are read by the string-key `GetXmlFieldInfo`/`GetFieldValue` path and consumed by `AddCustomDocPropertiesToDic`; the only writes to viewer `+0x68/+0x6C` in the scanned class are the dictionary-object assignments in setup at `0x004D0F98/0x004D0FB3`.
+- Whole-PE direct-call scans and byte-level `E8 rel32` candidate scans found no callsites to the single/twin map insertion helpers (`0x004D4D08`, `0x004D4D58`, `0x004D4DA8`, `0x004D6310`, `0x004D6360`).
+
+This strengthens the negative finding but does not prove the maps are never populated: VMT/interface calls, callbacks, or an external object that receives the dictionary references are still possible. The population path remains the primary unresolved field-pipeline question; no insertion routine is being guessed from TD32 labels alone.
