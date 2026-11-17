@@ -196,3 +196,8 @@ Evidence: response/controller workflow run `43872534265`, artifact `14228851062`
 ## Service class-name resolution — 2026-11-16
 
 The XML `<method class="EditWordDocument">` value is not passed verbatim to Delphi `GetClass`. `ParseMethod` prefixes the literal `T` and resolves `TEditWordDocument` through `System.Classes.GetClass`; this matches the BPL class VMT at `0x005ED764`. The Python dispatcher intentionally uses an explicit allowlist rather than reproducing unrestricted runtime class loading, but its registered class key should correspond to the XML value (`EditWordDocument`), with the native `T` prefix treated as an implementation detail.
+
+
+## Native Python structural catalog — 2026-11-17
+
+The new `emwat_linux.emwat_field_catalog` helper recognizes the seven repeated signer families observed in this capture: department, person, unit, index unit, signature number, behalf name, and signature image. It retains the original field ID and capture order, and requires the two halves of a signature-image twin to carry the same numeric index. It deliberately does not infer mappings from these identifiers to LibreOffice Writer properties; that mapping still requires verified document fixtures and native resolver evidence.
