@@ -38,6 +38,7 @@ EMWAT واسط محلی بین اتوماسیون تحت وب الماس گام 
 - [تحلیل دقیق APIهای ImageGear](docs/GEAR-API-CALLS.md)
 - [تحلیل قرارداد انتخاب اسکنر و رابط‌های callback](docs/SCANNER-INTERFACE-ANALYSIS.md)
 - ابزار [استخراج GUID/ProgID و Resourceها](tools/EMWAT-COM-Resource-Analyzer.py)
+- ابزار [ردیابی دسترسی به فیلدهای instance در TD32](tools/scan_td32_instance_field_refs.py) برای یافتن read/writeهای candidate روی offsetهای `TWordViwer`
 
 ## گزارش‌ها و فایل‌های مرجع موجود
 
