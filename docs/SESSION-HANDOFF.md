@@ -1,5 +1,14 @@
 # EMWAT-Linux — Project Handoff
 
+## Latest main-branch implementation — 2026-11-17
+
+- POST bridge requests now require exactly one non-empty `invoke` query parameter before the request body is read or a method is dispatched. Duplicate/missing/invalid query shapes return HTTP 400.
+- The hardened `RecoverySnapshotStore` has been ported to main. It validates manifest metadata, SHA-256, DOC/CFB vs DOCX container extension, symlink boundaries and the 128 MiB default limit. Restore uses a private temporary file, fsync and no-overwrite atomic publication.
+- `LibreOfficeAdapter` starts a per-document periodic recovery worker (default 10 seconds), serializes snapshotting with document operations, retries transient failures, stops the worker on confirmed close, and removes the recovery session only after successful final export. A failed session preserves its last valid snapshot.
+- Python bridge CI on commit `a92822d1aa83edba4e811ebebe1edd111e7dfab2` passed **131 tests, 2 skipped** (run `44081916126`). The corresponding LibreOffice UNO workflow is still pending at this checkpoint.
+- Recovery UI/picker and retention policy are not yet implemented. The local store is not encrypted and is not compatible with the Windows password-protected `.easz` archive. Do not claim Almas end-to-end or full 180-field mapping.
+
+
 Last reviewed: 2026-11-16
 
 This is the concise continuity entry point for future sessions. Detailed reverse-engineering evidence remains in the linked analysis documents.
