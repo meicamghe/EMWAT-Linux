@@ -54,7 +54,7 @@ def create_libreoffice_bridge_server(
     additional_handlers: Mapping[str, MethodHandler] | None = None,
     host: str = "127.0.0.1",
     port: int = 1984,
-    max_request_bytes: int = 96 * 1024 * 1024,
+    max_request_bytes: int = 128 * 1024 * 1024,
     max_response_bytes: int = 96 * 1024 * 1024,
     max_document_bytes: int = 64 * 1024 * 1024,
     socket_timeout_seconds: float = 10.0,
@@ -63,7 +63,9 @@ def create_libreoffice_bridge_server(
 
     The cancellation response remains a required injection because its exact
     Windows wire envelope has not been captured. Additional method handlers
-    may be supplied, but cannot replace EditWordDocument.
+    may be supplied, but cannot replace EditWordDocument. The default 64 MiB
+    document limit is paired with 128 MiB request and 96 MiB response bounds
+    to account for Base64 expansion and the surrounding XML envelope.
     """
     from emwat_linux.editword_handler import create_editword_handler
     from emwat_linux.editword_service import EditWordDocumentService
