@@ -93,7 +93,7 @@ These first three TD32 names conflict with stronger code/VMT evidence. `0x004D11
 ## Revised next steps
 
 1. Trace the dictionary constructors at `0x004D4670`, `0x004D5C28`, and `0x004D71E0` called by the `LoadDocument` initializer; determine whether any constructor receives an enumerable or creates empty maps.
-2. Resolve the initial single/twin descriptor-map population path and reconcile it with `AddCustomDocPropertiesToDic`'s `Remove` behavior.
+2. Validate the XML field accessor slots `+0xBC/+0xC0` used to fill descriptor records, then verify Writer custom-property enumeration order against Word's indexed collection.
 3. Trace the complete `OnTmrAutoSave` and `OnControlerNotify` bodies independently and correlate their state changes with the close-triggered HTTP response.
 4. Only after the exact Word methods and event contracts are enumerated, define the LibreOffice bridge compatibility surface.
 
@@ -398,7 +398,7 @@ The full TD32 trace of `TWordViwer.GetXmlFieldInfo` (`0x004BFC18–0x004BFD34`) 
 3. Otherwise probe the twin-field dictionary at `viewer+0x6C`. If found, retrieve `TXmlWordConfigTwinField`, compare the input identifier case-insensitively with the first field name at `+0x08` and then the second at `+0x0C`, and return the opposite partner name. The index comes from `+0x04`, the associated custom-property name from `+0x10`, and `isTwin` is set true.
 4. If neither dictionary contains the key, the initialized sentinel outputs remain (`index=-1`, `isTwin=false`).
 
-The helper at `0x004D559C` is TD32-labelled `ContainsValue`, but its machine body searches by the supplied UnicodeString key through the dictionary's bucket/entry lookup; treat it as a key-presence check in this call path, not as a semantic value scan. The twin map follows the same lookup pattern. This lookup algorithm is now suitable for a direct Python mirror; only the source that initially populates both dictionaries remains unresolved.
+The helper at `0x004D559C` is TD32-labelled `ContainsValue`, but its machine body searches by the supplied UnicodeString key through the dictionary's bucket/entry lookup; treat it as a key-presence check in this call path, not as a semantic value scan. The twin map follows the same lookup pattern. This lookup algorithm is now suitable for a direct Python mirror. The population source is confirmed as `AddCustomDocPropertiesToDic`; the remaining compatibility risk is preserving the native property order and resolving the XML field-name accessor semantics in Writer.
 
 ## Exact single/twin descriptor lookup behavior
 
