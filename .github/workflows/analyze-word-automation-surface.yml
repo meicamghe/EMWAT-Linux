@@ -100,12 +100,69 @@ jobs:
         shell: bash
         run: |
           mkdir -p word-automation/fields
-          for address in 0x004BB81C 0x004BC2C4 0x004BC30C 0x004BCA88 0x004BFC18 0x004BFD38 0x004BFDB0 0x004C009C 0x004C0410 0x004CB638 0x004D08B4 0x004D0D24 0x004D1148 0x004D1454; do
-            name=${address#0x}
-            python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 "$address" "word-automation/fields/$name.md" 7000 ret
-            python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 "$address" "word-automation/fields/$name-td32.md" || true
-            python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 "$address" "word-automation/fields/$name-callers.md" || true
+          python -m py_compile tools/scan_pe_call_refs.py tools/scan_pe_rel32_call_bytes.py
+          for address in 0x004D1148 0x004D52DC 0x004D54E0 0x004D6894 0x004D6A98; do
+            python tools/scan_pe_rel32_call_bytes.py analysis-input/EmwatMethods.bpl1 "$address" "word-automation/fields/${address}-rel32-call-candidates.md"
           done
+          for address in 0x00441DD4 0x004D49E0 0x004D48D0 0x004D48A8 0x004D4D08 0x004D4D58 0x004D4DA8 0x004D6310 0x004D552C 0x004D559C 0x004D620C 0x004D5CC0 0x004D7278 0x004D6360 0x004D610C 0x00478338 0x004783DC 0x00478444 0x0044B638 0x0044B488 0x0044B4B0 0x0061A384 0x0061A428 0x0061A490 0x0061A504 0x0061A5B4 0x0061A634 0x0061A6F0 0x0061A77C 0x0061A83C 0x0061A8CC 0x0061A988 0x0061AA14 0x0061AAD0; do
+            name=${address#0x}
+            python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 "$address" "word-automation/fields/helper-$name.md" 1800 ret
+            python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 "$address" "word-automation/fields/helper-$name-td32.md" || true
+            python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 "$address" "word-automation/fields/helper-$name-callers.md" || true
+            python tools/scan_pe_rel32_call_bytes.py analysis-input/EmwatMethods.bpl1 "$address" "word-automation/fields/helper-$name-rel32-call-candidates.md"
+          done
+          python tools/scan_td32_class_field_refs.py analysis-input/EmwatMethods.bpl1 TWordViwer word-automation/fields/twordviewer-map-field-accesses.md --offsets 0x64 0x68 0x6c
+          python tools/find_td32_class_procedures.py analysis-input/EmwatMethods.bpl1 TXMLFieldsType TXMLFieldType > word-automation/fields/xml-field-collection-td32-procedures.md
+          python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x004B7724 0x004B8A84 word-automation/fields/load-document-full-range.md
+          python tools/scan_pe_call_refs.py analysis-input/EmwatMethods.bpl1 0x004D4D08 word-automation/fields/map-single-doadd-all-callrefs.md
+          python tools/scan_pe_call_refs.py analysis-input/EmwatMethods.bpl1 0x004D4D58 word-automation/fields/map-single-dosetvalue-all-callrefs.md
+          python tools/scan_pe_call_refs.py analysis-input/EmwatMethods.bpl1 0x004D4DA8 word-automation/fields/map-single-update-existing-all-callrefs.md
+          python tools/scan_pe_call_refs.py analysis-input/EmwatMethods.bpl1 0x004D6310 word-automation/fields/map-twin-dosetvalue-all-callrefs.md
+          python tools/scan_pe_call_refs.py analysis-input/EmwatMethods.bpl1 0x004D6360 word-automation/fields/map-twin-update-existing-all-callrefs.md
+          python tools/scan_pe_rel32_call_bytes.py analysis-input/EmwatMethods.bpl1 0x004D4D08 word-automation/fields/map-single-doadd-rel32-candidates.md
+          python tools/scan_pe_rel32_call_bytes.py analysis-input/EmwatMethods.bpl1 0x004D4D58 word-automation/fields/map-single-dosetvalue-rel32-candidates.md
+          python tools/scan_pe_rel32_call_bytes.py analysis-input/EmwatMethods.bpl1 0x004D4DA8 word-automation/fields/map-single-update-existing-rel32-candidates.md
+          python tools/scan_pe_rel32_call_bytes.py analysis-input/EmwatMethods.bpl1 0x004D6310 word-automation/fields/map-twin-dosetvalue-rel32-candidates.md
+          python tools/scan_pe_rel32_call_bytes.py analysis-input/EmwatMethods.bpl1 0x004D6360 word-automation/fields/map-twin-update-existing-rel32-candidates.md
+          python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x004BC170 word-automation/fields/field-config-string-normalizer.md
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004BC170 word-automation/fields/field-config-string-normalizer-callers.md
+          python tools/decode_pe_strings.py analysis-input/EmwatMethods.bpl1 0x004BC23C 0x004BC260 0x004BC274 0x004D0BD0 0x004D0BF0 0x004D0C18 0x004D0C3C 0x004D0C5C 0x004D0C60 0x004D0C70 0x004D0CC8 > word-automation/fields/field-config-and-viewer-constructor-strings.md
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004D5048 word-automation/fields/field-map-constructor-from-enumerable-callers.md
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004D5100 word-automation/fields/field-map-constructor-from-enumerable-overload-callers.md
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004D52DC word-automation/fields/field-map-add-callers.md
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004D54E0 word-automation/fields/field-map-addorset-callers.md
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004D6894 word-automation/fields/twin-field-map-add-callers.md
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004D6A98 word-automation/fields/twin-field-map-addorset-callers.md
+          python tools/scan_pe_call_refs.py analysis-input/EmwatMethods.bpl1 0x004D1148 word-automation/fields/add-xml-word-config-fields-all-callrefs.md
+          python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 0x004D1148 word-automation/fields/add-xml-word-config-fields-pointer-refs.md || true
+          python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 0x004D1454 word-automation/fields/add-custom-doc-properties-pointer-refs.md || true
+          python tools/inspect_delphi_vmt_address.py analysis-input/EmwatMethods.bpl1 0x004B10A4 word-automation/fields/wordviewer-vmt.md || true
+          python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 0x004D5C28 word-automation/fields/single-map-constructor-pointer-refs.md || true
+          python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 0x004D71E0 word-automation/fields/twin-map-constructor-pointer-refs.md || true
+          for address in 0x004B4C38 0x004B6A70; do
+            python tools/inspect_delphi_vmt_address.py analysis-input/EmwatMethods.bpl1 "$address" "word-automation/fields/dictionary-vmt-${address#0x}.md" || true
+            python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 "$address" "word-automation/fields/dictionary-vmt-${address#0x}-pointer-refs.md" || true
+          done
+          for address in 0x004D5100 0x004D522E 0x004D5048 0x004D4FB4 0x004D552C 0x004D559C 0x004D4D58 0x004D4D08 0x004D52DC 0x004D54E0 0x004D6894 0x004D6A98 0x004D68D4 0x004D531C; do
+            python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 "$address" "word-automation/fields/${address}-method-pointer-refs.md" || true
+          done
+          python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x004B1080 0x004B10D0 word-automation/fields/add-xml-word-config-fields-context-4B10.md
+          python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x004B15F0 0x004B1660 word-automation/fields/add-xml-word-config-fields-context-4B16.md
+          for address in 0x004D4D08 0x004D4D58 0x004D4DA8 0x004D52DC 0x004D54E0 0x004D552C 0x004D559C 0x004D6894 0x004D6A98; do
+            python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 "$address" "word-automation/fields/${address}-method-pointer-refs.md" || true
+          done
+          for address in 0x004D4C54 0x004D52DC 0x004D54E0 0x004D4D58 0x004D620C 0x004D6894 0x004D6A98 0x004D6310 0x004D5048 0x004D5100 0x004D6600 0x004D66B8; do
+            python tools/scan_pe_call_refs.py analysis-input/EmwatMethods.bpl1 "$address" "word-automation/fields/${address}-all-callrefs.md"
+          done
+          python tools/list_td32_symbols.py analysis-input/EmwatMethods.bpl1 TXmlWordConfigField TXmlWordConfigTwinField TDocumentCProperty > word-automation/fields/field-descriptor-symbols.md
+          python tools/list_td32_symbols.py analysis-input/EmwatMethods.bpl1 TDictionary > word-automation/fields/generic-dictionary-symbols.md
+          addresses=(0x004BB81C 0x004BC2C4 0x004BC30C 0x004BCA88 0x004BFC18 0x004BFD38 0x004BFDB0 0x004C009C 0x004C0410 0x004C19C0 0x004C2B20 0x004C2DE0 0x004C436C 0x004C0550 0x004BC980 0x004B032C 0x004CFC74 0x004C02EC 0x004CCDC8 0x004D34B0 0x004D3B78 0x004D3DF8 0x004D4D08 0x004D4D58 0x004D4DA8 0x004D4C30 0x004D4B54 0x004D559C 0x004D552C 0x004D5048 0x004D5100 0x004D531C 0x004D4C54 0x004D5404 0x004D48A8 0x004D69BC 0x004D5E60 0x004D610C 0x004D6138 0x004D61E8 0x004D6310 0x004D48D0 0x004D49E0 0x004D49D4 0x004D4B80 0x004D54D0 0x004D552C 0x004D53AC 0x004D620C 0x004D6A88 0x004D6AE4 0x004D6964 0x004D52DC 0x004D54E0 0x004D68D4 0x004D6894 0x004D6A98 0x004D3B38 0x004D3D3C 0x00403248 0x00441DD4 0x004BC170 0x004CB638 0x004CB1B4 0x004CB5E4 0x004D08B4 0x004D0D24 0x004D1148 0x004D1454 0x004D522E 0x004D4FB4 0x004D4FEB 0x004D5028 0x004D5140 0x004D6B54 0x004D4670 0x004D5C28 0x004D71E0)
+          python -m py_compile tools/trace_td32_batch.py
+          for address in "${addresses[@]}"; do
+            name=${address#0x}
+            python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 "$address" "word-automation/fields/$name.md" 2500 ret
+          done
+          python tools/trace_td32_batch.py analysis-input/EmwatMethods.bpl1 word-automation/fields "${addresses[@]}"
       - uses: actions/upload-artifact@v4
         if: hashFiles('analysis-input/EmwatMethods.bpl1') != ''
         with:
@@ -148,19 +205,31 @@ jobs:
         shell: bash
         run: |
           mkdir -p word-automation/save-print
-          for address in 0x004C5E04 0x004C5FF8 0x004CB108 0x004CB638 0x004CDC2C 0x004CE030 0x004D23D8; do
+          for address in 0x004C5E04 0x004C5FF8 0x004CB108 0x004CB1B4 0x004CB638 0x004CDC2C 0x004CE030 0x004D23D8; do
             name=${address#0x}
             python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 "$address" "word-automation/save-print/$name.md" 7000 ret
             python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 "$address" "word-automation/save-print/$name-td32.md" || true
             python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 "$address" "word-automation/save-print/$name-callers.md" || true
           done
-          python tools/find_td32_class_procedures.py analysis-input/EmwatMethods.bpl1 TWordViwer TEmwatMethod TScanDocument > word-automation/save-print/word-class-procedures.md
+          python tools/find_td32_class_procedures.py analysis-input/EmwatMethods.bpl1 TWordViwer TEmwatMethod TScanDocument TDocumentCProperty TXmlWordConfigField TXmlWordConfigTwinField > word-automation/save-print/word-class-procedures.md
+          python -m py_compile tools/inspect_delphi_vmt_address.py
+          python tools/inspect_delphi_vmt_address.py analysis-input/EmwatMethods.bpl1 0x004B05A8 word-automation/fields/document-property-vmt.md || true
+          python tools/inspect_delphi_vmt_address.py analysis-input/EmwatMethods.bpl1 0x0046ABFC word-automation/dispatch/emwat-method-vmt-method-table.md || true
+          python tools/inspect_delphi_vmt_address.py analysis-input/EmwatMethods.bpl1 0x005ED764 word-automation/dispatch/edit-word-document-vmt-method-table.md || true
+          python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 0x004B05A8 word-automation/fields/document-property-vmt-pointer-refs.md || true
           python tools/resolve_delphi_vmt_slots.py analysis-input/EmwatMethods.bpl1 word-automation/save-print/word-vmt.md
           python tools/trace_delphi_interfaces.py analysis-input/EmwatMethods.bpl1 word-automation/save-print/word-interfaces.md
-          python tools/decode_pe_strings.py analysis-input/EmwatMethods.bpl1 0x004BFEE8 0x004BFF0C 0x004D1704 0x004D1768 0x004D1778 > word-automation/save-print/field-and-property-keys.md
+          python tools/decode_pe_strings.py analysis-input/EmwatMethods.bpl1 0x004BFEE8 0x004BFF0C 0x004D1704 0x004D1768 0x004D1778 0x004CCB0C 0x004CCB2C 0x004CCB38 0x004CCB44 0x004CCB60 0x004CCB6C 0x004CC280 0x004CC26C 0x004CC6DD 0x004CC6C9 0x004CCB84 0x004CCAA7 0x004CD094 0x004CD0D0 0x004CD0F0 0x004CD12C 0x004CCB45 0x004CCB46 0x004CCB61 0x004CCB62 0x004C10A0 0x004C10DC 0x004C1130 0x004C1160 0x004C11C0 0x004C1224 0x004C12A4 0x004C12C4 0x004C1408 0x004C1418 0x004C148C 0x004C14C0 0x004C14D8 0x004C1558 0x004C15E8 0x004C1648 0x004C16AC 0x004C1718 0x004C25C4 0x004C260C 0x004C26B8 0x004C26BC 0x004C26C4 0x004C26E0 0x004C2718 0x004C2730 0x004C27BC 0x004C281C 0x004C2844 0x004C287C 0x004C289C 0x004C28DC 0x004C2958 0x004C29B4 0x004C29F4 0x004C2A50 0x004C2AB4 0x004C2AF0 0x004C2D68 0x004C2D84 0x004C2DA4 0x004C2DC8 0x004C2E70 0x004C2E88 0x004C2EA4 0x004C2EBC 0x004C2ED0 0x004C2EEC > word-automation/save-print/field-and-property-keys.md
+          python tools/decode_pe_strings.py analysis-input/EmwatMethods.bpl1 0x004BC23C 0x004BC260 0x004BC274 0x004BCA70 0x004BC6D4 0x004BC710 0x004BC748 0x004BC76C 0x004BC78C 0x004BC7B4 0x004BC7D8 0x004BC7F8 0x004BC804 0x004BC82C 0x004BC8A8 0x004BC910 > word-automation/save-print/image-field-branch-strings.md
       - uses: actions/upload-artifact@v4
         if: hashFiles('analysis-input/EmwatMethods.bpl1') != ''
         with:
           name: emwat-word-save-print
           path: word-automation/save-print/
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        if: hashFiles('analysis-input/EmwatMethods.bpl1') != ''
+        with:
+          name: emwat-word-dispatch-rtti
+          path: word-automation/dispatch/
           if-no-files-found: error
