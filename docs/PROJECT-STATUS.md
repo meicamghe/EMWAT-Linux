@@ -2201,3 +2201,9 @@ Import Table در `EmwatService.exe` شامل `LoadPackage`، `UnloadPackage`، 
 ## تکمیل زنجیره dispatch تا LoadDocument — 2026-11-16
 
 `Finalization` ابتدا `Invoke` را در `0x0046CA67` اجرا می‌کند و سپس در `0x0046CA88` از VMT slot `+0x10`، `PerformMethod` کلاس فرزند را فراخوانی می‌کند. در VMT `TEditWordDocument`، این slot به `0x005EE82C` می‌رسد؛ بدنه آن `TWordViwer.LoadDocument` در `0x004B7724` را فراخوانی می‌کند. بنابراین زنجیره از HTTP/XML سرویس تا شروع Word automation در BPL مشخص شده است.
+
+## ردیابی VMT دیکشنری‌های descriptor — 2026-11-17
+
+دو VMT واقعی برای mapهای descriptor مشخص شدند: `TDictionary<string,TXmlWordConfigField>` در `0x004B4C38` و `TDictionary<string,TXmlWordConfigTwinField>` در `0x004B6A70`. متدهای generic مربوط به `Add` و `AddOrSetValue` هنوز caller مستقیم ندارند؛ `AddXmlWordConfigFieldsToDic` در بدنه decodeشده collectionها را پاک/آزاد می‌کند و `AddCustomDocPropertiesToDic` کلیدهای متناظر را از mapهای موجود Remove می‌کند. بنابراین مسیر populate اولیه هنوز اثبات نشده است.
+
+workflow جدید VMT هر دو دیکشنری، pointerهای Add methodها و دو محدوده‌ی حاوی reference به `0x004D1148` را trace می‌کند تا مسیر indirect/virtual احتمالی مشخص شود.
