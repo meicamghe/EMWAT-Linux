@@ -2129,3 +2129,10 @@ These are real implementation increments, not proof of operational Almas compati
 ## Scanner acquisition hardening — 2026-11-17
 - SANE multi-frame capture now enforces a 100-page ceiling and a 1 GiB aggregate decoded-pixel budget, in addition to the per-frame allocation bound. This prevents an ADF/device from returning an unbounded number of individually valid frames.
 - Native tests additionally verify invalid page batches do not partially mutate an existing document or mark it dirty.
+
+
+## Durable image save and bounded scanner batches — 2026-11-17
+- SANE multi-frame reads now stop after 100 pages or 1 GiB aggregate pixel data; each frame still has its own dimension/stride checks.
+- ImageDocument batch append tests prove an invalid later page cannot partially alter an existing document.
+- Atomic image save now fsyncs the completed temporary file before rename and fsyncs the containing directory after rename. A successful return therefore includes both data and directory-entry synchronization on supported local filesystems.
+- Native CI runs #119–#121 are validating the scanner bounds and durable save changes; results are pending.
