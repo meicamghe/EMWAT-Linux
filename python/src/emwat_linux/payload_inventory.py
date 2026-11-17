@@ -13,6 +13,7 @@ from emwat_linux.editword_request import EditWordDocumentRequest
 from emwat_linux.word_fields import (
     DecodedWordField,
     WordFieldDecodeError,
+    decode_optional_attributes,
     decode_word_fields,
 )
 
@@ -34,10 +35,19 @@ class ExternalFieldReference:
 
 
 @dataclass(frozen=True)
+class OptionalPayloadInfo:
+    attribute_id: str
+    value_type: str | None
+    character_count: int
+    sha256: str
+
+
+@dataclass(frozen=True)
 class PayloadInventory:
     decoded_field_count: int
     image_payloads: tuple[ImagePayloadInfo, ...]
     external_references: tuple[ExternalFieldReference, ...]
+    optional_attributes: tuple[OptionalPayloadInfo, ...]
     unresolved_external_references: tuple[str, ...]
     sign_data_present: bool
     sign_data_character_count: int
@@ -78,11 +88,21 @@ def inspect_request_payloads(
         for field in fields
         if field.external_parameter
     )
+    optional_attributes = tuple(
+        OptionalPayloadInfo(
+            attribute_id=item.attribute_id,
+            value_type=item.value_type,
+            character_count=len(item.value),
+            sha256=hashlib.sha256(item.value.encode("utf-8")).hexdigest(),
+        )
+        for item in decode_optional_attributes(request.config)
+    )
     sign_data = request.sign_data_text
     return PayloadInventory(
         decoded_field_count=len(fields),
         image_payloads=images,
         external_references=external,
+        optional_attributes=optional_attributes,
         unresolved_external_references=tuple(
             item.parameter_id for item in external
         ),
@@ -99,6 +119,7 @@ def inspect_request_payloads(
 __all__ = [
     "ExternalFieldReference",
     "ImagePayloadInfo",
+    "OptionalPayloadInfo",
     "PayloadInventory",
     "inspect_request_payloads",
 ]
