@@ -19,3 +19,8 @@
 ## Why this boundary exists
 
 The field metadata exposes image MIME/encoding declarations and external parameter IDs, but the native signData framing and association rules have not yet been verified. This inventory makes captures comparable and helps isolate fields without inventing a production mapping. It performs no Writer mutation.
+
+
+## Optional attributes
+
+The inventory also decodes `optional-attributes/attribute/content` using that content node's own declared encoding. It records only the attribute ID, declared value type, decoded character count, and SHA-256. Text values are never included in the report. Values that decode to binary are rejected by the text-only optional-attribute decoder rather than silently coerced.
