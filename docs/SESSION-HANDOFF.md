@@ -1344,3 +1344,13 @@ Do not implement guessed `signData` joining or claim end-to-end Almas registrati
 - `tools/scan_td32_instance_field_refs.py` اضافه شد تا دسترسی‌های حافظه با displacementهای مشخص را در تمام procedureهای TD32 یک کلاس inventory کند؛ گزارش شامل procedure، VA، mnemonic، base/index register و access candidate است.
 - workflow Word lifecycle اکنون برای `TWordViwer+0x58`, `+0x7C`, `+0x88`, `+0xA0` گزارش‌های جدا تولید می‌کند. هدف بعدی تعیین setter اولیهٔ wait-state، ارتباط timer object و document path است.
 - این اسکن فقط candidate می‌دهد و به‌تنهایی Self/base register یا معنای business فیلد را اثبات نمی‌کند. اجرای تازهٔ آن هنوز تأیید نشده است.
+
+
+## پیاده‌سازی recovery snapshot دوره‌ای در LibreOffice — 2026-11-17
+
+- ماژول `python/src/emwat_linux/recovery_store.py` اضافه شد: sessionهای تصادفی در `$XDG_STATE_HOME/emwat-linux/recovery` یا `~/.local/state/emwat-linux/recovery`، پوشه‌های `0700` و فایل‌های `0600`، snapshot با نام content-addressed مبتنی بر SHA-256 کامل و manifest اتمیک.
+- `LibreOfficeAdapter` اکنون به‌صورت پیش‌فرض worker دوره‌ای با interval پیش‌فرض 10 ثانیه راه‌اندازی می‌کند و با UNO `storeToURL` یک نسخهٔ Word 97 جداگانه می‌گیرد. این روش URL/حالت داخلی سند را تغییر نمی‌دهد؛ lock مشترک از هم‌زمانی snapshot با close، inspection و property updates جلوگیری می‌کند.
+- close واقعی worker را متوقف می‌کند؛ export نهایی موفق recovery session را پاک می‌کند. در خطا یا خروج غیرمنتظره، آخرین snapshot معتبر حفظ می‌شود. خطای موقت snapshot، session زنده را terminate نمی‌کند.
+- قالب recovery لینوکس مستقل است و با archive رمزدار Windows `.easz` سازگار ادعا نمی‌شود. این نسخه رمزنگاری ندارد؛ دسترسی در سطح سیستم‌عامل با مجوزهای owner-only محدود است. UI بازیابی/retention هنوز پیاده‌سازی نشده است.
+- تست‌های جدید: `python/tests/test_recovery_store.py` (permission، hash، DOC/DOCX، manifest crash-safety) و تست UNO برای ایجاد snapshot دوره‌ای و حذف آن پس از close/export موفق.
+- سند طراحی: `docs/LINUX-NATIVE-RECOVERY-SNAPSHOT-DESIGN-2026-11-17.md`. اجرای تازهٔ تست‌ها هنوز از Actions تأیید نشده است.
