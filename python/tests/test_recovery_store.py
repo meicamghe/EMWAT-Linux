@@ -166,6 +166,25 @@ class RecoverySnapshotStoreTests(unittest.TestCase):
             ):
                 linked_store.load_snapshot(session_id)
 
+    def test_remove_session_rejects_symlink_without_touching_target(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            base = Path(temporary)
+            root = base / "recovery"
+            store = RecoverySnapshotStore(root)
+            session_id = store.create_session()
+            outside = base / "outside"
+            outside.mkdir()
+            (outside / "keep.txt").write_text("keep", encoding="utf-8")
+            (root / session_id).rmdir()
+            (root / session_id).symlink_to(outside, target_is_directory=True)
+
+            with self.assertRaisesRegex(
+                RecoveryStoreError, "recovery_session_symlink_rejected"
+            ):
+                store.remove_session(session_id)
+
+            self.assertEqual((outside / "keep.txt").read_text(encoding="utf-8"), "keep")
+
     def test_invalid_session_id_is_rejected(self):
         with tempfile.TemporaryDirectory() as temporary:
             store = RecoverySnapshotStore(Path(temporary) / "recovery")
