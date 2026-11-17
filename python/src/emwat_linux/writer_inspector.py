@@ -107,13 +107,8 @@ def _custom_document_property_names_in_info_order(document: object) -> tuple[str
 
 
 def _custom_document_property_names(document: object) -> tuple[str, ...]:
-    """Return custom-property names only; never retrieve property values."""
-    try:
-        properties = document.getDocumentProperties().getUserDefinedProperties()
-        info = properties.getPropertySetInfo()
-        return tuple(sorted(str(item.Name) for item in info.getProperties()))
-    except Exception:
-        return ()
+    """Return sorted custom-property names only; never retrieve property values."""
+    return tuple(sorted(_custom_document_property_names_in_info_order(document)))
 
 
 def inspect_writer_document(document: object) -> WriterDocumentCatalog:
