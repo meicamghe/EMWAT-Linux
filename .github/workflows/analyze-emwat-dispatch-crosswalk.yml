@@ -86,7 +86,10 @@ jobs:
             python tools/trace_pe_range.py analysis-input/EmwatService.exe 0x00401490 0x004014D0 dispatch-crosswalk/service/start-exe-callsite-context.md
             python tools/trace_pe_range.py analysis-input/EmwatService.exe 0x004016F0 0x00401750 dispatch-crosswalk/service/getprocaddress-callsite-context.md
             python tools/trace_pe_range.py analysis-input/EmwatService.exe 0x00471200 0x00471260 dispatch-crosswalk/service/method-info-classcreate-context.md
-            python tools/trace_pe_range.py analysis-input/EmwatService.exe 0x00471260 0x004712A0 dispatch-crosswalk/service/method-info-classdestroy-context.md
+            python tools/trace_pe_range.py analysis-input/EmwatService.exe 0x00471258 0x004712A0 dispatch-crosswalk/service/method-info-classdestroy-context.md
+            python tools/trace_td32_procedure.py analysis-input/EmwatService.exe 0x00471258 dispatch-crosswalk/service/method-info-destructor-td32.md || true
+            python tools/trace_td32_procedure.py analysis-input/EmwatService.exe 0x004014BA dispatch-crosswalk/service/start-exe-owner-td32.md || true
+            python tools/trace_td32_procedure.py analysis-input/EmwatService.exe 0x00401720 dispatch-crosswalk/service/getprocaddress-owner-td32.md || true
             python tools/trace_pe_range.py analysis-input/EmwatService.exe 0x00470DE0 0x00470E40 dispatch-crosswalk/service/getclass-callsite-context.md
             python tools/trace_pe_range.py analysis-input/EmwatService.exe 0x00470D76 0x00470E58 dispatch-crosswalk/service/parse-method-post-finally-island.md
             python tools/trace_pe_range.py analysis-input/EmwatService.exe 0x00470DF0 0x00470E58 dispatch-crosswalk/service/getclass-callsite-aligned-context.md
