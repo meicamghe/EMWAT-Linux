@@ -135,6 +135,8 @@ jobs:
           python tools/scan_pe_call_refs.py analysis-input/EmwatMethods.bpl1 0x004D1148 word-automation/fields/add-xml-word-config-fields-all-callrefs.md
           python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 0x004D1148 word-automation/fields/add-xml-word-config-fields-pointer-refs.md || true
           python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 0x004D1454 word-automation/fields/add-custom-doc-properties-pointer-refs.md || true
+          python tools/inspect_delphi_vmt_address.py analysis-input/EmwatMethods.bpl1 0x0046AC54 word-automation/fields/temwatmethod-vmt-object-pointer.md || true
+          python tools/inspect_delphi_vmt_address.py analysis-input/EmwatMethods.bpl1 0x005ED7BC word-automation/fields/teditworddocument-vmt-object-pointer.md || true
           python tools/inspect_delphi_vmt_address.py analysis-input/EmwatMethods.bpl1 0x004B10A4 word-automation/fields/wordviewer-vmt.md || true
           python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 0x004D5C28 word-automation/fields/single-map-constructor-pointer-refs.md || true
           python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 0x004D71E0 word-automation/fields/twin-map-constructor-pointer-refs.md || true
