@@ -70,3 +70,8 @@ The current LibreOffice adapter already models a close-driven session and snapsh
 - Implement and test a separate periodic recovery snapshot mechanism in the Linux adapter, with cancellation/close synchronization and atomic replacement.
 - Confirm save/discard/cancel response envelopes and whether each path returns a DOC/CFB body.
 - Validate the response against a complete sanitized PCAP/template fixture and perform an end-to-end Almas round trip.
+
+
+## فیلدهای state برای ردیابی بعدی
+
+ابزار جدید `tools/scan_td32_instance_field_refs.py` به workflow اضافه شد. این ابزار تمام procedureهای TD32 با prefix کلاس `TWordViwer` را disassemble می‌کند و operandهایی را که displacement آن‌ها با offset فیلد موردنظر برابر است، همراه نام procedure، آدرس دستور، base/index register و نوع دسترسی candidate گزارش می‌کند. workflow برای offsetهای `+0x58` (wait/release state)، `+0x7C` (timer object)، `+0x88` (timer interval) و `+0xA0` (document path) artifactهای جدا تولید می‌کند. خروجی فقط candidate است؛ register پایه باید با data-flow بررسی شود تا Self بودن آن اثبات شود.
