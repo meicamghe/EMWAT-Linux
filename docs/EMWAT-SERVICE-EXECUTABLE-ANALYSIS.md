@@ -171,7 +171,7 @@ The dispatcher at `0x00470D00` checks `TEmwatInvokeParam.bResultSet` immediately
 - If `bResultSet == 0`, the service checks that the output string is nonempty and `AResponseInfo` at record offset `+0x0C` is non-null.
 - It assigns the output string to `AResponseInfo.ContentText` at object offset `+0xBC), calls helper `0x004610FC`, then sets `bResultSet = 1`.
 
-The helper `0x004610FC` operates on the Indy response-info object and examines status/response fields before sending; it is the response-send path used by the default branch. Its full imported/virtual call mapping is still being traced.
+The helper `0x004610FC` is identified by its RTTI method-name reference as `TIdHTTPResponseInfo.WriteContent`. Its body examines the response status/content fields, sends through the Indy response interface, clears the temporary ContentText pointer, and performs response cleanup. The same helper is called from ParseMethod after invocation (`0x00470F34`) and from the MainForm init/heartbeat branches (`0x0047C237`, `0x0047C2A9`). The exact names/signatures of each Indy interface slot remain to be resolved.
 
 This means the Word connector can either write the HTTP response itself and set `bResultSet`, or leave the flag false and return a string for the service's default response handling. The observed `wordConfig` XML response may therefore be produced by the connector-specific branch; inspect `TEditWordDocument` for writes to `AResponseInfo` and `bResultSet` before assigning the response serialization to the generic service handler.
 
