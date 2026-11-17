@@ -2427,3 +2427,11 @@ workflow `python-bridge.yml` پس از تغییرات docstring و تفکیک ر
 - `GetXmlFieldInfo` اکنون دقیق‌تر مدل شده: اول single-map را جست‌وجو می‌کند، سپس twin-map را؛ در مسیر twin با `CompareText` عضو مقابل را برمی‌گرداند. تابع `resolve_twin_field_partner` و تست آن اضافه شد.
 - CI پایتون: **108 تست موفق، 2 مورد optional skip** در run `44023065489`.
 - نسخهٔ کامل لینوکس و سازگاری end-to-end با Almas هنوز تأیید نشده‌اند؛ پروتکل بازگشت در حالت cancel/discard، همهٔ فیلدها، تصاویر/امضاها و چاپ واقعی همچنان نیازمند fixture و آزمون یکپارچه‌اند.
+
+
+## 2026-11-17 — latest reverse-engineering and integration notes
+
+- New evidence note: `docs/BPL-VMT-METHOD-TARGET-RECONCILIATION-2026-11-17.md`. `TEditWordDocument` VMT `0x005ED764` publishes `PerformMethod` at `0x005EE82C`, despite the TD32 decorated label naming `TScanDocument`; retain both facts and dispatch by verified VMT/class evidence.
+- New event note: `docs/WORD-COM-EVENT-SINK-REGISTRATION-2026-11-17.md`. The original BPL wires Word BeforeSave, NewDocument, and WindowActivate callbacks; BeforeSave has explicit cancel branches and a Persian save-confirmation prompt. Full UNO listener parity is not implemented yet.
+- Writer inspector now derives sorted custom-property names from its unsorted UNO metadata enumeration, and the live UNO integration test asserts exact preservation of that enumeration order.
+- New Python/UNO CI runs are pending on latest code commit; existing static-analysis runs for BPL dispatch, Word callbacks/close, lifecycle surface, recovery callbacks/plugin, and controller unpack completed successfully.
