@@ -73,7 +73,19 @@ class RecoverySnapshotStore:
 
         digest = hashlib.sha256(payload).hexdigest()
         updated_at = time.time()
+        suffix = ".doc" if document_name == "document.doc" else ".docx"
+        document_name = f"document-{digest[:16]}{suffix}"
         document_path = folder / document_name
+        previous_name = None
+        manifest_path = folder / "manifest.json"
+        if manifest_path.is_file():
+            try:
+                previous_name = json.loads(manifest_path.read_text(encoding="utf-8")).get("document_name")
+            except (OSError, ValueError, TypeError):
+                previous_name = None
+
+        # Write a new immutable snapshot first, then atomically switch the manifest.
+        # A crash between these steps leaves the previous manifest/document usable.
         self._atomic_write(document_path, payload)
         manifest = {
             "schema_version": 1,
@@ -84,9 +96,15 @@ class RecoverySnapshotStore:
             "updated_at": updated_at,
         }
         self._atomic_write(
-            folder / "manifest.json",
+            manifest_path,
             (json.dumps(manifest, sort_keys=True, separators=(",", ":")) + "\n").encode("utf-8"),
         )
+        if isinstance(previous_name, str) and previous_name != document_name:
+            if re.fullmatch(r"document-[0-9a-f]{16}\.(?:doc|docx)", previous_name):
+                try:
+                    (folder / previous_name).unlink()
+                except FileNotFoundError:
+                    pass
         self._fsync_directory(folder)
         return RecoverySnapshotInfo(
             session_id=session_id,
@@ -102,7 +120,7 @@ class RecoverySnapshotStore:
         try:
             manifest = json.loads((folder / "manifest.json").read_text(encoding="utf-8"))
             document_name = manifest["document_name"]
-            if document_name not in {"document.doc", "document.docx"}:
+            if not re.fullmatch(r"document-[0-9a-f]{16}\\.(?:doc|docx)", document_name):
                 raise RecoveryStoreError("recovery_manifest_document_name_invalid")
             payload = (folder / document_name).read_bytes()
             if len(payload) != manifest["size_bytes"]:
@@ -125,7 +143,7 @@ class RecoverySnapshotStore:
             try:
                 manifest = json.loads((folder / "manifest.json").read_text(encoding="utf-8"))
                 name = manifest["document_name"]
-                if name not in {"document.doc", "document.docx"}:
+                if not re.fullmatch(r"document-[0-9a-f]{16}\\.(?:doc|docx)", name):
                     continue
                 path = folder / name
                 if not path.is_file():
