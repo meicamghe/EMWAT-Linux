@@ -2086,3 +2086,25 @@ Artifact `14227611377` resolves the earlier interface-signature uncertainty:
 
 ### Current boundary
 These changes improve template and payload discovery but do not yet implement Almas-specific image placement or signData reconstruction. The actual sanitized Almas template and a safe signData capture remain necessary to prove those behaviors. The bridge/Writer round-trip tests still use synthetic fixtures; operational Almas compatibility is not claimed.
+
+
+## Parallel implementation update — 2026-11-17 (continued)
+
+### Python request and Writer metadata
+- Extended `payload_inventory.py` to summarize decoded optional attributes using each nested `content` node's own encoding. The report contains only ID/type/character count/SHA-256; values are not exposed.
+- Corrected optional Base64 text handling: decoded bytes are accepted only when strict UTF-8 decoding succeeds; invalid binary payloads are rejected.
+- Implemented native-shaped single/twin custom-property-name parsing in `template_mapping.py`; removed a stale import of a helper that did not exist.
+- Writer inspection now preserves the UNO custom-property metadata enumeration sequence separately from the sorted display list.
+- Important limitation is explicit in the report: equal counts allow candidate generation, but equivalence between UNO property order and Word COM enumeration is **not verified**. `property_order_equivalence_verified` remains false.
+- Python bridge runs #218, #219 and #220 succeeded; latest run #220 executed 116 tests (113 passed, 3 optional skips).
+- LibreOffice UNO run #39 succeeded: 12 tests passed.
+
+### Native image and scanner engine
+- Added revision-aware saved-state handling. A document is marked clean after saving only if its generation still matches the saved snapshot; a newer edit remains dirty.
+- Added SANE scan RAII cancellation so errors during parameter validation/read do not leave the device in an active scan state.
+- Added `ScannerBackend.scan_all()` and a SANE multi-frame implementation for ADF/multi-frame devices. `scan_one()` retains one-frame behavior and cancels any remaining frames.
+- Native image runs #106–#108 succeeded for the save-revision and SANE cleanup changes.
+- Native runs #109–#111 are validating the multi-frame scanner update; final result is pending.
+
+### Current product boundary
+These are real implementation increments, not proof of operational Almas compatibility. Image insertion/placement, the signData framing, Word's actual custom-property ordering, full 180-field mapping, close/cancel wire semantics, scanner UI, and end-to-end Almas registration remain open. No production template mapping is enabled on the basis of synthetic fixtures alone.
