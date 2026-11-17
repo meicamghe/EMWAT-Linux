@@ -2539,3 +2539,10 @@ workflow `python-bridge.yml` پس از تغییرات docstring و تفکیک ر
 - قالب recovery لینوکس مستقل است و با archive رمزدار Windows `.easz` سازگار ادعا نمی‌شود. این نسخه رمزنگاری ندارد؛ دسترسی در سطح سیستم‌عامل با مجوزهای owner-only محدود است. UI بازیابی/retention هنوز پیاده‌سازی نشده است.
 - تست‌های جدید: `python/tests/test_recovery_store.py` (permission، hash، DOC/DOCX، manifest crash-safety) و تست UNO برای ایجاد snapshot دوره‌ای و حذف آن پس از close/export موفق.
 - سند طراحی: `docs/LINUX-NATIVE-RECOVERY-SNAPSHOT-DESIGN-2026-11-17.md`. اجرای تازهٔ تست‌ها هنوز از Actions تأیید نشده است.
+
+
+## Recovery snapshot validation update — 2026-11-17
+
+- Five `python/tests/test_recovery_store.py` tests were executed in an isolated local harness against the current branch module/test source: **5/5 passed** (permissions, DOCX recognition, integrity/corruption, invalid session IDs, manifest crash safety and orphan cleanup).
+- Added a non-UNO `RecoveryWorkerTests` case to verify a transient `storeToURL` failure is retried, a later snapshot is persisted, and the internal error clears after success.
+- The real UNO integration test now checks the modified flag remains unchanged across periodic `storeToURL` snapshots and that successful final export removes the recovery session. This live UNO test and GitHub Actions runs remain unverified in this session.
