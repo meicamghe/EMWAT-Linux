@@ -2207,3 +2207,9 @@ Import Table در `EmwatService.exe` شامل `LoadPackage`، `UnloadPackage`، 
 دو VMT واقعی برای mapهای descriptor مشخص شدند: `TDictionary<string,TXmlWordConfigField>` در `0x004B4C38` و `TDictionary<string,TXmlWordConfigTwinField>` در `0x004B6A70`. متدهای generic مربوط به `Add` و `AddOrSetValue` هنوز caller مستقیم ندارند؛ `AddXmlWordConfigFieldsToDic` در بدنه decodeشده collectionها را پاک/آزاد می‌کند و `AddCustomDocPropertiesToDic` کلیدهای متناظر را از mapهای موجود Remove می‌کند. بنابراین مسیر populate اولیه هنوز اثبات نشده است.
 
 workflow جدید VMT هر دو دیکشنری، pointerهای Add methodها و دو محدوده‌ی حاوی reference به `0x004D1148` را trace می‌کند تا مسیر indirect/virtual احتمالی مشخص شود.
+
+## تأیید CI پس از اصلاح مستندات descriptor — 2026-11-17
+
+workflow `python-bridge.yml` پس از تغییرات docstring و تفکیک روشن descriptorهای موقت reconciliation از mapهای اولیه با موفقیت اجرا شد: **107 تست موفق، 2 تست اختیاری skip**؛ run `44022878095`.
+
+ردیابی جدید `CreateOptionFormFields` (`0x004CFC74`) نیز به workflow تحلیل BPL افزوده شده است؛ این تابع نامزد تازه‌ای برای یافتن مسیر ساخت اولیه mapهای single/twin است، اما تا دریافت artifact هنوز نتیجه‌ای به آن نسبت داده نمی‌شود.
