@@ -685,3 +685,13 @@ The paired `TWordViwer.AddCustomDocPropertiesToDic` (`0x004D1454`) is directly c
 ## Service import-reference scan interpretation corrected
 
 The service artifact (`14266461337`) shows each imported Delphi API's exact IAT address appears once in a compiler-generated import thunk (`jmp dword ptr [IAT]`), not at its actual high-level callsites. For example `GetClass` IAT `0x00487B9C` is referenced by thunk `0x00402356`, `LoadPackage` IAT `0x00487680` by thunk `0x00402176`, and `ClassCreate` IAT `0x00487410` by thunk `0x0040115A`. Those raw pointer references are not themselves dispatch callsites. The service workflow now traces each thunk body and scans direct/rel32 callers of the thunk addresses to recover actual usage. Until that run completes, the import table proves runtime capability but not the exact call chain.
+
+## Descriptor dictionary VMT-based population trace batch — 2026-11-17
+
+The latest BPL inventory identifies the concrete generic dictionary VMTs for the two unresolved descriptor maps:
+- `TDictionary<string,TXmlWordConfigField>` VMT `0x004B4C38`.
+- `TDictionary<string,TXmlWordConfigTwinField>` VMT `0x004B6A70`.
+
+The generic `Add`/`AddOrSetValue` implementations (`0x004D52DC`, `0x004D54E0`, `0x004D6894`, `0x004D6A98`) have no direct TD32 CALL xrefs. The `AddXmlWordConfigFieldsToDic` body (`0x004D1148`) clears/releases the viewer's `+0x64/+0x68/+0x6C` collections and emits refresh diagnostics; it does not show direct Add calls in its decoded body. `AddCustomDocPropertiesToDic` (`0x004D1454`) enumerates Word custom properties, constructs descriptor-shaped values, then calls `Remove` on the single/twin dictionaries. Thus the initial population path remains the principal open edge.
+
+The next artifact batch now inspects both concrete dictionary VMTs, scans their VMT and Add-method pointer references, and decodes the two code windows containing raw references to `0x004D1148` (`0x004B1080–0x004B10D0` and `0x004B15F0–0x004B1660`). This is intended to distinguish virtual method registration/callback paths from ordinary direct calls before assigning any map-population semantics.
