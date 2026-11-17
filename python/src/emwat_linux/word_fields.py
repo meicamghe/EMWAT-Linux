@@ -9,10 +9,10 @@ import base64
 import binascii
 import re
 from dataclasses import dataclass
-from typing import Mapping
+from typing import Mapping, Sequence
 from urllib.parse import unquote_plus
 
-from emwat_linux.word_config import WordDocumentConfig
+from emwat_linux.word_config import WordDocumentConfig, WordField
 
 
 class WordFieldDecodeError(ValueError):
@@ -35,8 +35,8 @@ def parse_word_field_identifier(field_id: str) -> WordFieldIdentifier:
     """Split the observed U+2020 twin-field delimiter once.
 
     The native AddCustomDocPropertiesToDic routine uses the first dagger
-    separator to distinguish TXmlWordConfigTwinField from TXmlWordConfigField.
-    Empty sides fall back to a single identifier, matching its observed branch.
+    separator to choose a TXmlWordConfigTwinField versus TXmlWordConfigField.
+    Empty sides fall back to a single descriptor, matching its observed branch.
     """
     first, separator, remainder = field_id.partition("†")
     if separator and first and remainder:
@@ -44,15 +44,142 @@ def parse_word_field_identifier(field_id: str) -> WordFieldIdentifier:
     return WordFieldIdentifier(first=field_id)
 
 
+@dataclass(frozen=True)
+class SingleWordFieldDescriptor:
+    """Native TXmlWordConfigField entry for one custom-property identifier."""
+
+    index: int
+    property_name: str
+    xml_field: WordField | None
+
+
+@dataclass(frozen=True)
+class TwinWordFieldDescriptor:
+    """Native TXmlWordConfigTwinField entry for a dagger-separated pair."""
+
+    index: int
+    property_name: str
+    first_field_name: str
+    second_field_name: str
+    xml_field: WordField | None = None
+
+
+def resolve_twin_field_partner(
+    descriptor: TwinWordFieldDescriptor,
+    requested_field_name: str,
+) -> str | None:
+    """Return the opposite member using EMWAT's case-insensitive CompareText.
+
+    GetXmlFieldInfo compares the requested field name with both descriptor
+    members using System.SysUtils.CompareText. A match on the first member
+    returns the second, and vice versa; a non-match returns None.
+    """
+    requested = requested_field_name.casefold()
+    if requested == descriptor.first_field_name.casefold():
+        return descriptor.second_field_name
+    if requested == descriptor.second_field_name.casefold():
+        return descriptor.first_field_name
+    return None
+
+
+@dataclass(frozen=True)
+class WordCustomPropertyFieldMaps:
+    """Single/twin descriptor entries populated from ordered custom properties."""
+
+    singles: tuple[SingleWordFieldDescriptor, ...]
+    twins: tuple[TwinWordFieldDescriptor, ...]
+
+    @property
+    def single_by_property_name(self) -> Mapping[str, SingleWordFieldDescriptor]:
+        return {item.property_name: item for item in self.singles}
+
+    @property
+    def twin_by_property_name(self) -> Mapping[str, TwinWordFieldDescriptor]:
+        return {item.property_name: item for item in self.twins}
+
+
+def build_word_custom_property_field_maps(
+    property_names: Sequence[str],
+    *,
+    xml_fields: Sequence[WordField] | None = None,
+) -> WordCustomPropertyFieldMaps:
+    """Build native-shaped descriptors in custom-property enumeration order.
+
+    The native AddCustomDocPropertiesToDic routine assigns a zero-based index
+    to each Word CustomDocumentProperties item, retrieves the corresponding
+    IXMLFieldType object from wordConfig.fields at the same index, and inserts
+    a descriptor under the original (unsplit) property name. The first dagger
+    separates twin members; empty sides follow the native single-field branch.
+
+    Pass xml_fields in the exact corresponding wordConfig field order. The
+    descriptor retains the full WordField node (attributes and text), matching
+    the native interface reference stored in TXmlWordConfigField/TwinField.
+    If omitted, the reference remains None. When supplied, the two sequences
+    must have equal lengths so index alignment cannot silently drift.
+    """
+    if xml_fields is not None and len(xml_fields) != len(property_names):
+        raise ValueError("xml_fields_must_match_property_names_length")
+
+    singles: list[SingleWordFieldDescriptor] = []
+    twins: list[TwinWordFieldDescriptor] = []
+    seen_single_names: set[str] = set()
+    seen_twin_names: set[str] = set()
+    for index, property_name in enumerate(property_names):
+        xml_field = xml_fields[index] if xml_fields is not None else None
+        identifier = parse_word_field_identifier(property_name)
+        if identifier.is_twin:
+            if property_name in seen_twin_names:
+                raise ValueError(f"duplicate_twin_custom_property_name:{property_name}")
+            seen_twin_names.add(property_name)
+            twins.append(
+                TwinWordFieldDescriptor(
+                    index=index,
+                    property_name=property_name,
+                    first_field_name=identifier.first,
+                    second_field_name=identifier.second or "",
+                    xml_field=xml_field,
+                )
+            )
+        else:
+            if property_name in seen_single_names:
+                raise ValueError(f"duplicate_single_custom_property_name:{property_name}")
+            seen_single_names.add(property_name)
+            singles.append(
+                SingleWordFieldDescriptor(
+                    index=index,
+                    property_name=property_name,
+                    xml_field=xml_field,
+                )
+            )
+    return WordCustomPropertyFieldMaps(
+        singles=tuple(singles),
+        twins=tuple(twins),
+    )
+
+
+_NATIVE_BUSINESS_SIGNATURE_END = re.compile(r"^sign.*end[0-2]?[0-9]?$")
+
+
+def is_native_business_signature_end(field_name: str) -> bool:
+    """Match the exact signature-end exclusion used by GetDocFieldIndex.
+
+    Native code calls System.RegularExpressions.TRegEx.IsMatch with the
+    case-sensitive pattern ^sign.*end[0-2]?[0-9]?$. Matching active-field
+    names are logged as skipped by business logic. Pass the resolved active
+    field name; do not assume every XML field ID is identical.
+    """
+    return _NATIVE_BUSINESS_SIGNATURE_END.fullmatch(field_name) is not None
+
+
 def extract_docproperty_identifier(field_code: str) -> str:
     """Mirror EMWAT's DOCPROPERTY field-code extraction.
 
-    The native helper first searches case-sensitively for DOCPROPERTY.
-    It then copies up to 255 characters after the first double-space token
-    and, when that copied segment contains a further space, returns the first
-    token. If either search branch does not match, it preserves the input.
-    This intentionally mirrors the observed legacy parser rather than
-    normalizing arbitrary Word field-code syntax.
+    The native helper searches case-sensitively for DOCPROPERTY. If absent,
+    it preserves the input. Otherwise it copies up to 255 characters starting
+    two characters after the first double-space position (or from character 2
+    when that delimiter is absent), then truncates at the first single space
+    if present. If no single space exists, it returns the copied segment.
+    This intentionally preserves the native parser's odd edge cases.
     """
     if "DOCPROPERTY" not in field_code:
         return field_code
@@ -62,8 +189,30 @@ def extract_docproperty_identifier(field_code: str) -> str:
     segment = field_code[start : start + 255]
     next_space = segment.find(" ")
     if next_space < 0:
-        return field_code
+        return segment
     return segment[:next_space]
+
+
+def find_native_twin_field_index(
+    field_codes: Sequence[str],
+    target_identifier: str,
+    *,
+    start_index: int = 1,
+) -> int:
+    """Find a twin-field partner using the native one-based Word Fields scan.
+
+    FillTwinFields starts at start_index, extracts each Word Field.Code through
+    FindFieldInActivefields, compares names with RTL CompareText (case-insensitive),
+    and returns the first matching one-based index. Native code returns zero
+    when no matching partner is found. Python casefold matches the observed
+    ASCII field identifiers; locale-specific Unicode collation is unverified.
+    """
+    if start_index < 1:
+        raise ValueError("start_index must be one-based and positive")
+    for index in range(start_index, len(field_codes) + 1):
+        if extract_docproperty_identifier(field_codes[index - 1]).casefold() == target_identifier.casefold():
+            return index
+    return 0
 
 
 @dataclass(frozen=True)
@@ -75,6 +224,11 @@ class DecodedWordField:
     encoding: str | None
     external_parameter: str | None
     attributes: Mapping[str, str]
+
+    @property
+    def uses_native_text_field_path(self) -> bool:
+        """Whether FillTextField takes its ordinary text/plain branch."""
+        return self.mimetype == "text/plain"
 
     @property
     def is_image(self) -> bool:
