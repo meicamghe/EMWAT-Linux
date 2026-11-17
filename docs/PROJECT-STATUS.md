@@ -2228,3 +2228,10 @@ workflow `python-bridge.yml` پس از تغییرات docstring و تفکیک ر
 - `GetClass` از thunk آدرس `0x00402354` در `0x00470E07` و پس از prefix شدن `T` به مقدار XML `class` فراخوانی می‌شود.
 - `ClassCreate` و `ClassDestroy` در `0x00471220` و `0x0047127F` به ساخت/پاک‌سازی شیء metadata به نام `TMethodInfo` تعلق دارند؛ این‌ها را نباید با ساخت کلاس متد واقعی BPL اشتباه گرفت.
 - workflow جدید، callsiteهای `StartExe` و `GetProcAddress` را نیز با محدوده کد اطرافشان بررسی می‌کند.
+
+## تکمیل چرخه‌ی TMethodInfo و تفکیک توابع runtime — 2026-11-17
+
+- `TMethodInfo` در `0x00471214` ساخته می‌شود؛ `ClassCreate` در `0x00471220` و مقداردهی دیکشنری Params در `0x00471232` انجام می‌شود.
+- تابع cleanup از `0x00471258` آغاز می‌شود، دیکشنری Params در offset `+0x08` را آزاد می‌کند و `ClassDestroy` را در `0x0047127F` فراخوانی می‌کند.
+- `StartExe` در `0x004014BA` بخشی از package startup و `GetProcAddress` در `0x00401720` بخشی از dynamic-symbol lookup است؛ هیچ‌کدام مسیر dispatch جداگانه‌ی EMWAT نیستند.
+- callsiteهای اصلی `LoadPackage` و `GetClass` در بخش service executable analysis ثبت شده‌اند.
