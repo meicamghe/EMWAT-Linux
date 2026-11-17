@@ -1151,3 +1151,7 @@ Do not implement guessed `signData` joining or claim end-to-end Almas registrati
 - Multi-frame SANE capture: max 100 pages and max 1 GiB total pixel bytes.
 - Image batch append: invalid page validation rejects the whole batch without altering the existing document.
 - Atomic save durability: fsync temporary file, rename atomically, then fsync containing directory. CI runs #119–#121 pending at handoff.
+
+
+### HTTP request ambiguity checks
+- Duplicate Origin and Content-Type headers are rejected; init requires one Referer header. Python run #228: 120 tests passed, 3 optional skips.
