@@ -34,6 +34,19 @@ class IndexedSignerField:
     field_id: str
 
 
+@dataclass(frozen=True)
+class IndexedSignerSlot:
+    """Fields observed for one signer index, without inferred property mapping."""
+
+    index: int
+    fields: tuple[IndexedSignerField, ...]
+    missing_families: tuple[str, ...]
+
+    @property
+    def complete(self) -> bool:
+        return not self.missing_families
+
+
 def parse_indexed_signer_field(field_id: str) -> IndexedSignerField | None:
     """Classify a known indexed signer field without rewriting its raw ID.
 
@@ -68,8 +81,36 @@ def group_indexed_signer_fields(
     return {family: tuple(items) for family, items in grouped.items()}
 
 
+def build_indexed_signer_slots(
+    field_ids: tuple[str, ...] | list[str],
+) -> tuple[IndexedSignerSlot, ...]:
+    """Align recognized fields by numeric signer index for schema auditing.
+
+    Slots are ordered by numeric index. Fields inside each slot retain their
+    original capture order. Missing families are reported, never synthesized.
+    """
+    grouped = group_indexed_signer_fields(field_ids)
+    by_index: dict[int, list[IndexedSignerField]] = {}
+    for fields in grouped.values():
+        for field in fields:
+            by_index.setdefault(field.index, []).append(field)
+    expected_families = tuple(family for family, _pattern in _SIGNER_PATTERNS)
+    slots = []
+    for index in sorted(by_index):
+        fields = tuple(sorted(by_index[index], key=lambda item: field_ids.index(item.field_id)))
+        present = {field.family for field in fields}
+        slots.append(IndexedSignerSlot(
+            index=index,
+            fields=fields,
+            missing_families=tuple(family for family in expected_families if family not in present),
+        ))
+    return tuple(slots)
+
+
 __all__ = [
     "IndexedSignerField",
+    "IndexedSignerSlot",
+    "build_indexed_signer_slots",
     "group_indexed_signer_fields",
     "parse_indexed_signer_field",
 ]
