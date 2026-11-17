@@ -96,6 +96,30 @@ class BridgeHTTPServerTests(unittest.TestCase):
         self.assertEqual(headers["Content-Length"], "8")
         self.assertEqual(headers["Content-Type"], "text/html; charset=ISO-8859-1")
 
+    def test_post_requires_one_nonempty_invoke_parameter(self):
+        for path in ("/", "/?invoke=", "/?invoke=1&invoke=2", "/?other=1"):
+            with self.subTest(path=path):
+                status, body, _ = self.request(
+                    "POST",
+                    path,
+                    b"<emwat/>",
+                    {"Content-Type": "text/plain", "Origin": "https://office.example"},
+                )
+                self.assertEqual(status, 400)
+                self.assertEqual(body, b"invalid_invoke_query")
+        self.assertEqual(self.seen, [])
+
+    def test_post_rejects_malformed_invoke_query(self):
+        status, body, _ = self.request(
+            "POST",
+            "/?invoke=1&",
+            b"<emwat/>",
+            {"Content-Type": "text/plain", "Origin": "https://office.example"},
+        )
+        self.assertEqual(status, 400)
+        self.assertEqual(body, b"invalid_invoke_query")
+        self.assertEqual(self.seen, [])
+
     def test_post_preserves_opaque_body_and_query(self):
         payload = b'<emwat><method class="EditWordDocument"/></emwat>'
         status, body, headers = self.request(
@@ -217,7 +241,7 @@ class BridgeHTTPServerTests(unittest.TestCase):
         self.thread.start()
         self.host, self.port = self.server.address
         status, body, _ = self.request(
-            "POST", "/", b"x", {"Origin": "https://office.example"}
+            "POST", "/?invoke=test", b"x", {"Origin": "https://office.example"}
         )
         self.assertEqual(status, 500)
         self.assertEqual(body, b"internal_bridge_error")
@@ -266,7 +290,7 @@ class BridgeHTTPServerTests(unittest.TestCase):
         self.thread.start()
         self.host, self.port = self.server.address
         status, body, _ = self.request(
-            "POST", "/", b"x", {"Origin": "https://office.example"}
+            "POST", "/?invoke=test", b"x", {"Origin": "https://office.example"}
         )
         self.assertEqual(status, 500)
         self.assertEqual(body, b"internal_bridge_error")
