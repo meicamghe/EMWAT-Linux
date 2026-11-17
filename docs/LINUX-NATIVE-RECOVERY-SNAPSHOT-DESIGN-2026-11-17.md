@@ -55,3 +55,5 @@ Local isolated run: all five `test_recovery_store.py` unit tests passed, and a s
 - `list_snapshots()` and `has_snapshot()` now verify the referenced snapshot bytes instead of trusting manifest presence alone. Corrupted or symlinked entries are not reported as recoverable.
 - `restore_snapshot(session_id, destination)` validates the snapshot first, writes to a private temporary file in the destination directory, fsyncs it, and publishes it with a no-overwrite hard link. It refuses an existing destination and enforces `.doc`/`.docx` extension consistency. This is a storage API only; no user-facing recovery picker/UI is claimed.
 - CI after the integrity hardening: Python transport suite passed **138 tests** on run `44081194436`; LibreOffice UNO integration passed **14 tests** on run `44081137842`. The restore-specific test run `44081200320` is still pending at this checkpoint.
+
+- Restore regression tests completed on commit `9e466138eb83cbc1a5895f9e2c4045ddf4e5b7e4`: **140 Python tests passed, 3 skipped**; run `44081200320`. The tests cover atomic restore, mode `0600`, no-overwrite behavior, and extension mismatch.
