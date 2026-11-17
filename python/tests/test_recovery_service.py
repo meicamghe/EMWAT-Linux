@@ -46,7 +46,7 @@ class RecoverySnapshotServiceTests(unittest.TestCase):
             self.assertEqual(len(payload["snapshots"]), 1)
             snapshot = payload["snapshots"][0]
             self.assertEqual(snapshot["session_id"], session_id)
-            self.assertRegex(snapshot["document_name"], r"^document-[0-9a-f]{64}\\.doc$")
+            self.assertRegex(snapshot["document_name"], r"^document-[0-9a-f]{64}\.doc$")
             self.assertNotIn("document_path", snapshot)
             self.assertNotIn(str(root), service.catalog_json())
             self.assertNotIn("content", snapshot)
