@@ -114,6 +114,32 @@ class RecoverySnapshotStoreTests(unittest.TestCase):
             with self.assertRaisesRegex(RecoveryStoreError, "recovery_snapshot_unavailable"):
                 store.load_snapshot(session_id)
 
+    def test_restore_writes_verified_snapshot_atomically_without_overwrite(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary) / "recovery"
+            store = RecoverySnapshotStore(root)
+            session_id = store.create_session()
+            payload = bytes.fromhex("D0CF11E0A1B11AE1") + b"recover-me"
+            store.save_snapshot(session_id, payload)
+            destination = Path(temporary) / "restored.doc"
+
+            restored = store.restore_snapshot(session_id, destination)
+
+            self.assertEqual(restored, destination)
+            self.assertEqual(destination.read_bytes(), payload)
+            self.assertEqual(stat.S_IMODE(destination.stat().st_mode), 0o600)
+            with self.assertRaisesRegex(RecoveryStoreError, "recovery_restore_destination_exists"):
+                store.restore_snapshot(session_id, destination)
+            self.assertEqual(destination.read_bytes(), payload)
+
+    def test_restore_rejects_wrong_extension(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            store = RecoverySnapshotStore(Path(temporary) / "recovery")
+            session_id = store.create_session()
+            store.save_snapshot(session_id, bytes.fromhex("D0CF11E0A1B11AE1") + b"doc")
+            with self.assertRaisesRegex(RecoveryStoreError, "recovery_restore_extension_mismatch"):
+                store.restore_snapshot(session_id, Path(temporary) / "restored.docx")
+
     def test_invalid_session_id_is_rejected(self):
         with tempfile.TemporaryDirectory() as temporary:
             store = RecoverySnapshotStore(Path(temporary) / "recovery")
