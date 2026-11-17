@@ -807,3 +807,14 @@ The next workflow batch therefore scans raw pointer references for the enumerabl
 The `TWordViwer` VMT candidate at `0x004B10A4` now resolves the earlier confusing procedure labels. `VMT-0x04` at `0x004B10A0` contains `0x004D1148`, and the corresponding RTTI method record at `0x004B1629` is named `Destroy`. Thus the routine previously called `AddXmlWordConfigFieldsToDic` is actually the viewer destructor. Its cleanup of `+0x64/+0x68/+0x6C` is teardown, not population. `LoadDocument` directly calls `0x004D0D24` at `0x004B78E9`; that body initializes viewer flags and allocates the three dictionary objects. TD32's `$bdtr` label for `0x004D0D24` conflicts with the observed initialization behavior, so the current documentation uses the neutral term *initializer-like routine* until constructor ABI is fully resolved.
 
 The map constructor callsites inside `0x004D0D24` are `0x004D4670` (viewer `+0x64`), `0x004D5C28` (single descriptor map `+0x68`), and `0x004D71E0` (twin descriptor map `+0x6C`). Their overload semantics are the next target. The `CrateOptionFormFields` routine at `0x004CFC74` remains rejected as unrelated to descriptor-map population.
+
+## Correction 2026-11-17: AddCustomDocPropertiesToDic populates the descriptor maps
+
+The earlier interpretation that `AddCustomDocPropertiesToDic` consumes/removes descriptors was incorrect. Full caller-context disassembly proves that the wrapper calls at `0x004D15C6` (twin map) and `0x004D1635` (single map) are Add operations despite their TD32 symbols saying `TDictionary.Remove`:
+
+- Twin wrapper `0x004D68D4` receives `eax=map`, `edx=original property name`, `ecx=descriptor pointer`; after duplicate-key check it inserts through `0x004D6310`.
+- Single wrapper `0x004D531C` has the same argument shape and inserts through `0x004D4D58`.
+- Both low-level insertion helpers write the hash/key/value entry and increment dictionary count. The duplicate path raises the duplicate-key exception. The separate AddOrSetValue routines are not used by this population pass.
+- For each Word CustomDocumentProperties item, the routine uses the zero-based item index to fetch the corresponding `wordConfig` XML field entry from viewer `+0x40`, splits the original property name at the first `†`, creates a single/twin descriptor, and adds it under the original unsplit property name. The descriptor also stores the matching XML field name obtained from the indexed XML entry.
+
+The direct-call scans of low-level `DoSetValue` helpers returned zero because the native caller invokes the wrapper Add methods, not those internals directly. This resolves the previously open population path and supersedes the earlier notes in this chronological log that described the calls as Remove/consumption. Current status and field-pipeline docs have been corrected. Remaining work: verify XML accessor semantics and preserve Word custom-property enumeration order in the Writer adapter.
