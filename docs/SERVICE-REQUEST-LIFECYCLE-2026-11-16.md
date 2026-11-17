@@ -221,3 +221,15 @@ The aligned code-island artifact (`14301682420`) resolves the previously ambiguo
 3. It constructs an instance by calling `TObject.$bctr` (`0x004010D8`) with the resolved class reference, stores the method-info pointer at instance `+0x04`, then invokes an indirect slot at `0x00470EF6` through `[instance.VMT+0x0C]`, passing the parsed method/parameter context in registers.
 
 This is the first complete service-side evidence of XML class resolution followed by runtime object construction and an indirect method call. The exact meaning of VMT slot `+0x0C` and its mapping to BPL `TEmwatMethod.Invoke` (`0x0046C82C`) still needs a verified cross-module VMT/ABI match; do not yet label the slot as `Invoke` as a proven fact.
+
+### Confirmed dynamic method-instance creation and invocation
+
+The complete `ParseMethod` validation island (`0x00470E58–0x00470F80`) closes the previously inferred class-construction edge:
+
+- `GetClass` resolves the XML class name at `0x00470E07` through thunk `0x00402354`.
+- The service calls `TObject.ClassName` through thunk `0x004010B8` at `0x00470E5D` and compares the result with the literal `TUpgradeEmwat` at `0x00471128`; the Boolean result is stored in the `TMethodInfo` flag at `+0x04`. This is a special-class check, not a generic prefix test.
+- The resolved class reference is instantiated with `TObject.Create` through thunk `0x004010D8` at `0x00470EDC`.
+- The `TMethodInfo` object pointer is attached to the new instance at object offset `+0x04`; the parsed class name/parameter data are then passed into the virtual call at `0x00470EF6` (`call [VMT+0x0C]`).
+- The method instance is released with `TObject.Free` through thunk `0x004010E8` at `0x00470F42`.
+
+This is the actual BPL method-instance lifecycle. Keep it distinct from the separate `ClassCreate`/`ClassDestroy` calls that construct and destroy the service's `TMethodInfo` metadata object.
