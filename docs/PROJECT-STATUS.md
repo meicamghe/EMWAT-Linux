@@ -2358,3 +2358,9 @@ Python bridge CI در run `44031548179` موفق شد: **111 تست موفق، 2
 - Restore remains a separate explicit operation requiring a caller-selected destination; the service still delegates validation and atomic no-overwrite publication to `RecoverySnapshotStore`. Discard remains explicit by session ID.
 - Added a serialization regression test for schema version, content-addressed document names, and absence of private paths/content. Python CI run `44102938620` was queued at the time of this update; do not report it green until its result is checked.
 - This is a UI integration boundary, not yet a graphical recovery picker or HTTP endpoint. The desktop/UI composition still needs to provide a trusted file-save dialog and explicit discard confirmation.
+
+
+## Recovery catalog CI result — 2026-11-17
+
+- The first serialization-test run `44102938620` exposed a test-fixture assumption: snapshot filenames are content-addressed by SHA-256, not by session ID. The production code behaved as designed; the assertion was corrected to validate the documented content-addressed filename shape.
+- Corrected run `44103059363` on commit `2f7c771a213a9769c5a0d1e112b4b9edf3e2d74e` passed: **141 tests run, 139 passed, 2 optional LibreOffice tests skipped**.
