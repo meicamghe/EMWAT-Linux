@@ -10,6 +10,7 @@ VMT_FIELDTABLE=-68
 VMT_CLASSNAME=-56
 VMT_INSTANCESIZE=-52
 VMT_PARENT=-48
+VMT_DESTROY=-4
 
 def u32(b,o): return struct.unpack_from("<I",b,o)[0]
 def va_raw(pe,va):
@@ -53,6 +54,7 @@ def main():
       "Class-name field":readva(vmt+VMT_CLASSNAME),
       "Instance size":readva(vmt+VMT_INSTANCESIZE),
       "Parent VMT":readva(vmt+VMT_PARENT),
+      "Destroy slot (VMT-0x04)":readva(vmt+VMT_DESTROY),
     }
     td32_status = "available" if hit else "not present; addresses shown without symbol labels"
     lines=["# Delphi VMT address inspection","",f"- VMT VA: 0x{vmt:08X}","",f"- TD32 symbols: {td32_status}",""]
