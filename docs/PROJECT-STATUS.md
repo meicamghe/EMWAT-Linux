@@ -2546,3 +2546,10 @@ workflow `python-bridge.yml` پس از تغییرات docstring و تفکیک ر
 - Five `python/tests/test_recovery_store.py` tests were executed in an isolated local harness against the current branch module/test source: **5/5 passed** (permissions, DOCX recognition, integrity/corruption, invalid session IDs, manifest crash safety and orphan cleanup).
 - Added a non-UNO `RecoveryWorkerTests` case to verify a transient `storeToURL` failure is retried, a later snapshot is persisted, and the internal error clears after success.
 - The real UNO integration test now checks the modified flag remains unchanged across periodic `storeToURL` snapshots and that successful final export removes the recovery session. This live UNO test and GitHub Actions runs remain unverified in this session.
+
+
+## Recovery worker local validation — 2026-11-17
+
+- Local isolated execution of the five recovery-store unit tests: **5/5 passed**.
+- A separate local harness using the same recovery-loop logic and a fake UNO document verified transient first-attempt failure → successful retry → persisted CFB snapshot → clean worker stop.
+- These local checks do not replace the committed GitHub Python bridge tests or live LibreOffice UNO integration. No fresh GitHub Actions run is confirmed.
