@@ -61,6 +61,18 @@ class BridgeHTTPServerTests(unittest.TestCase):
         self.assertTrue(script.endswith("</script>"))
         self.assertNotIn("</body></html>", script)
 
+    def test_init_endpoint_rejects_ambiguous_duplicate_referer(self):
+        conn = http.client.HTTPConnection(self.host, self.port, timeout=2)
+        conn.putrequest("GET", "/?init=123_456")
+        conn.putheader("Host", f"{self.host}:{self.port}")
+        conn.putheader("Referer", "https://office.example/")
+        conn.putheader("Referer", "https://attacker.example/")
+        conn.endheaders()
+        response = conn.getresponse()
+        self.assertEqual(response.status, 403)
+        self.assertEqual(response.read(), b"init_referer_required")
+        conn.close()
+
     def test_init_endpoint_requires_allowlisted_parent_referer(self):
         status, body, _ = self.request("GET", "/?init=123_456")
         self.assertEqual(status, 403)
@@ -177,6 +189,33 @@ class BridgeHTTPServerTests(unittest.TestCase):
         status, body, _ = self.request("POST", "/", b"x")
         self.assertEqual(status, 403)
         self.assertEqual(body, b"origin_required")
+        self.assertEqual(self.seen, [])
+
+    def test_duplicate_origin_headers_are_rejected_before_dispatch(self):
+        conn = http.client.HTTPConnection(self.host, self.port, timeout=2)
+        conn.putrequest("POST", "/")
+        conn.putheader("Content-Length", "1")
+        conn.putheader("Origin", "https://office.example")
+        conn.putheader("Origin", "https://attacker.example")
+        conn.endheaders(b"x")
+        response = conn.getresponse()
+        self.assertEqual(response.status, 400)
+        self.assertEqual(response.read(), b"invalid_origin_header")
+        conn.close()
+        self.assertEqual(self.seen, [])
+
+    def test_duplicate_content_type_headers_are_rejected(self):
+        conn = http.client.HTTPConnection(self.host, self.port, timeout=2)
+        conn.putrequest("POST", "/")
+        conn.putheader("Content-Length", "1")
+        conn.putheader("Origin", "https://office.example")
+        conn.putheader("Content-Type", "text/plain")
+        conn.putheader("Content-Type", "application/xml")
+        conn.endheaders(b"x")
+        response = conn.getresponse()
+        self.assertEqual(response.status, 400)
+        self.assertEqual(response.read(), b"invalid_content_type")
+        conn.close()
         self.assertEqual(self.seen, [])
 
     def test_unlisted_origin_is_rejected(self):
