@@ -64,7 +64,6 @@ class BridgeHTTPServerTests(unittest.TestCase):
     def test_init_endpoint_rejects_ambiguous_duplicate_referer(self):
         conn = http.client.HTTPConnection(self.host, self.port, timeout=2)
         conn.putrequest("GET", "/?init=123_456")
-        conn.putheader("Host", f"{self.host}:{self.port}")
         conn.putheader("Referer", "https://office.example/")
         conn.putheader("Referer", "https://attacker.example/")
         conn.endheaders()
