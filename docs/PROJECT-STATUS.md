@@ -2513,3 +2513,12 @@ workflow `python-bridge.yml` پس از تغییرات docstring و تفکیک ر
 - `OnTmrAutoSave` همین فیلد `+0x88` را برای `TTimer.Interval` به کار می‌برد، حداقل 10000ms را اعمال می‌کند و timer را فعال می‌کند. بنابراین رابطهٔ registry → viewer+`0x88` → timer قطعی است.
 - write-side فرم تنظیمات: indexهای 1 تا 5 از جدول DWORD انتخاب می‌شوند و در 1000 ضرب می‌شوند؛ index صفر یا خارج از محدوده مقدار 10000 را می‌نویسد. exact table DWORDها و labelهای combo هنوز استخراج نشده‌اند.
 - در همان constructor، `Background Priniting` به viewer+`0x3C` (default true)، `Dont Ask Save On Print` به `+0x3D` (default true) و `Save Before Print` به `+0x3E` (default false) خوانده می‌شوند. `Logging Level` و `Save I/O Trace Files` در این constructor خوانده نمی‌شوند و read-side آن‌ها هنوز باز است.
+
+
+## Current verified checkpoint — 2026-11-17 (supersedes older compare counts)
+
+- Mainline Run 113 evidence confirms startup reads `AutoSaveInterval` from `HKCU\\Software\\Emwat\\Dynamic Config` into `TWordViwer+0x88` (default 0); `OnTmrAutoSave` uses that field for the VCL timer and clamps it to at least 10,000 ms. The registry-to-timer linkage is no longer an open question. Exact lookup DWORD values and combo labels remain open.
+- Run 153/PCAP correlation confirms timer-driven `OnControlerNotify` local `.easd/.easz` recovery, close-driven release of viewer `+0x58`, and the subsequent successful Base64 legacy DOC/CFB HTTP response. Keep recovery archive and final response separate.
+- LibreOffice close retry fix and regression test are committed; no fresh CI result is visible through the available Actions query.
+- Workflow now publishes the AutoSave table report to the GitHub job summary and validates that PE data is file-backed before reading. It also traces the wait-loop and close callback. A fresh run/artifact is not verified.
+- Correct compare orientation `base=main`, `head=work/template-mapping-inventory`: after this handoff/status checkpoint commits, the branch will be **154 commits ahead, 343 behind, 56 changed files; diverged**. PR #1 remains Draft/non-mergeable; no merge/rebase/force-push.
