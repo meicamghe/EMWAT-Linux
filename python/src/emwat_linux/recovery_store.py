@@ -74,7 +74,7 @@ class RecoverySnapshotStore:
         digest = hashlib.sha256(payload).hexdigest()
         updated_at = time.time()
         suffix = ".doc" if document_name == "document.doc" else ".docx"
-        document_name = f"document-{digest[:16]}{suffix}"
+        document_name = f"document-{digest}{suffix}"
         document_path = folder / document_name
         previous_name = None
         manifest_path = folder / "manifest.json"
@@ -100,7 +100,7 @@ class RecoverySnapshotStore:
             (json.dumps(manifest, sort_keys=True, separators=(",", ":")) + "\n").encode("utf-8"),
         )
         if isinstance(previous_name, str) and previous_name != document_name:
-            if re.fullmatch(r"document-[0-9a-f]{16}\.(?:doc|docx)", previous_name):
+            if re.fullmatch(r"document-[0-9a-f]{64}\.(?:doc|docx)", previous_name):
                 try:
                     (folder / previous_name).unlink()
                 except FileNotFoundError:
@@ -119,8 +119,10 @@ class RecoverySnapshotStore:
         folder = self._session_dir(session_id)
         try:
             manifest = json.loads((folder / "manifest.json").read_text(encoding="utf-8"))
+            if manifest.get("schema_version") != 1 or manifest.get("session_id") != session_id:
+                raise RecoveryStoreError("recovery_manifest_identity_invalid")
             document_name = manifest["document_name"]
-            if not re.fullmatch(r"document-[0-9a-f]{16}\.(?:doc|docx)", document_name):
+            if not re.fullmatch(r"document-[0-9a-f]{64}\.(?:doc|docx)", document_name):
                 raise RecoveryStoreError("recovery_manifest_document_name_invalid")
             payload = (folder / document_name).read_bytes()
             if len(payload) != manifest["size_bytes"]:
@@ -142,6 +144,8 @@ class RecoverySnapshotStore:
                 continue
             try:
                 manifest = json.loads((folder / "manifest.json").read_text(encoding="utf-8"))
+                if manifest.get("schema_version") != 1 or manifest.get("session_id") != folder.name:
+                    continue
                 name = manifest["document_name"]
                 if not re.fullmatch(r"document-[0-9a-f]{16}\.(?:doc|docx)", name):
                     continue
