@@ -2213,3 +2213,11 @@ workflow جدید VMT هر دو دیکشنری، pointerهای Add methodها و
 workflow `python-bridge.yml` پس از تغییرات docstring و تفکیک روشن descriptorهای موقت reconciliation از mapهای اولیه با موفقیت اجرا شد: **107 تست موفق، 2 تست اختیاری skip**؛ run `44022878095`.
 
 ردیابی جدید `CreateOptionFormFields` (`0x004CFC74`) نیز به workflow تحلیل BPL افزوده شده است؛ این تابع نامزد تازه‌ای برای یافتن مسیر ساخت اولیه mapهای single/twin است، اما تا دریافت artifact هنوز نتیجه‌ای به آن نسبت داده نمی‌شود.
+
+## وضعیت جدید مهندسی معکوس — 2026-11-17
+
+- اسکن دقیق Import Table، thunk واقعی و caller مستقیم APIهای Delphi را جدا کرد: `LoadPackage` در `0x0047E15F`، `GetClass` در `0x00470E07`، `StartExe` در `0x004014BA` و `GetProcAddress` در `0x00401720` / `0x00401DA8` / `0x00401DCA`.
+- `ClassCreate` و `ClassDestroy` در سرویس callsiteهای متعدد دارند؛ برای اتصال قطعی آن‌ها به مسیر درخواست، trace کامل `ParseMethod` و دو callsite اصلی در workflow جدید اضافه شده است.
+- `GetXmlFieldInfo` اکنون دقیق‌تر مدل شده: اول single-map را جست‌وجو می‌کند، سپس twin-map را؛ در مسیر twin با `CompareText` عضو مقابل را برمی‌گرداند. تابع `resolve_twin_field_partner` و تست آن اضافه شد.
+- CI پایتون: **108 تست موفق، 2 مورد optional skip** در run `44023065489`.
+- نسخهٔ کامل لینوکس و سازگاری end-to-end با Almas هنوز تأیید نشده‌اند؛ پروتکل بازگشت در حالت cancel/discard، همهٔ فیلدها، تصاویر/امضاها و چاپ واقعی همچنان نیازمند fixture و آزمون یکپارچه‌اند.
