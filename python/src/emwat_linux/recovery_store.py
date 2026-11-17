@@ -201,6 +201,39 @@ class RecoverySnapshotStore:
         except RecoveryStoreError:
             return False
 
+    def restore_snapshot(self, session_id: str, destination: str | Path) -> Path:
+        """Atomically restore a verified snapshot without overwriting an existing file."""
+        payload = self.load_snapshot(session_id)
+        destination_path = Path(destination).expanduser()
+        expected_suffix = ".doc" if payload.startswith(_CFB_SIGNATURE) else ".docx"
+        if destination_path.suffix.lower() != expected_suffix:
+            raise RecoveryStoreError("recovery_restore_extension_mismatch")
+        parent = destination_path.parent
+        if not parent.is_dir():
+            raise RecoveryStoreError("recovery_restore_directory_missing")
+        descriptor, temporary_name = tempfile.mkstemp(prefix=".emwat-restore-", dir=parent)
+        temporary = Path(temporary_name)
+        try:
+            os.fchmod(descriptor, 0o600)
+            with os.fdopen(descriptor, "wb") as stream:
+                stream.write(payload)
+                stream.flush()
+                os.fsync(stream.fileno())
+            # A hard link publishes the complete file and fails rather than
+            # replacing an existing destination or following a destination symlink.
+            os.link(temporary, destination_path)
+            self._fsync_directory(parent)
+            return destination_path
+        except FileExistsError as exc:
+            raise RecoveryStoreError("recovery_restore_destination_exists") from exc
+        except OSError as exc:
+            raise RecoveryStoreError("recovery_restore_failed") from exc
+        finally:
+            try:
+                temporary.unlink()
+            except FileNotFoundError:
+                pass
+
     def remove_session(self, session_id: str) -> None:
         folder = self._session_dir(session_id)
         if folder.exists():
