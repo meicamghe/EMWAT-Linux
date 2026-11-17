@@ -65,6 +65,7 @@ void load_into_document(ImageDocument& document, const std::filesystem::path& pa
 
 void save_document(ImageDocument& document, const std::filesystem::path& path,
                    CodecOptions options) {
+    const auto snapshot_generation = document.generation();
     std::vector<ImagePage> snapshot;
     snapshot.reserve(document.page_count());
     for (std::size_t i = 0; i < document.page_count(); ++i)
@@ -73,7 +74,9 @@ void save_document(ImageDocument& document, const std::filesystem::path& path,
     TemporaryFile temporary(path);
     save_image_file(snapshot, temporary.path(), options);
     temporary.commit_to(path);
-    document.mark_saved();
+    // A newer edit may have occurred while the snapshot was being encoded.
+    // The file is valid, but the live document must remain dirty in that case.
+    (void)document.mark_saved_if_generation(snapshot_generation);
 }
 
 } // namespace emwat
