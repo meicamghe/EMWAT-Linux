@@ -6,7 +6,8 @@ requires an explicit destination for restore.
 """
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
+import json
 from pathlib import Path
 
 from emwat_linux.recovery_store import RecoverySnapshotStore
@@ -42,12 +43,24 @@ class RecoverySnapshotService:
             for item in self._store.list_snapshots()
         )
 
+    def catalog_json(self) -> str:
+        """Serialize a versioned, metadata-only catalog for native UI clients.
+
+        The schema is deliberately independent of the private store layout. No
+        absolute paths, document contents, or mutable store objects are exposed.
+        """
+        payload = {
+            "schema_version": 1,
+            "snapshots": [asdict(item) for item in self.list_snapshots()],
+        }
+        return json.dumps(payload, ensure_ascii=False, separators=(",", ":"))
+
     def restore(self, session_id: str, destination: str | Path) -> Path:
         """Restore one verified snapshot without overwriting an existing file."""
         return self._store.restore_snapshot(session_id, destination)
 
     def discard(self, session_id: str) -> None:
-        """Remove one recovery session selected by its opaque identifier."""
+        """Discard one recovery session after explicit UI/user selection."""
         self._store.remove_session(session_id)
 
 
