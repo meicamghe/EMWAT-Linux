@@ -65,7 +65,7 @@ class TwinWordFieldDescriptor:
 
 @dataclass(frozen=True)
 class WordCustomPropertyFieldMaps:
-    """Separate single/twin descriptor collections built from property names."""
+    """Temporary single/twin descriptor candidates for custom-property reconciliation."""
 
     singles: tuple[SingleWordFieldDescriptor, ...]
     twins: tuple[TwinWordFieldDescriptor, ...]
@@ -74,12 +74,13 @@ class WordCustomPropertyFieldMaps:
 def build_word_custom_property_field_maps(
     property_names: Sequence[str],
 ) -> WordCustomPropertyFieldMaps:
-    """Classify an ordered sequence of identifiers into single/twin buckets.
+    """Build temporary descriptor candidates from ordered Word property names.
 
     Indices are zero-based. Only a non-empty pair around the first dagger
-    becomes a twin descriptor; malformed/empty sides stay single. This helper
-    models the native split rule only, not the unresolved source-map population
-    or TDictionary.Remove consumption performed by the binary.
+    becomes a twin descriptor; malformed/empty sides stay single. The native
+    routine uses these shapes while reconciling Word custom properties against
+    pre-existing descriptor maps and removes matched keys. This helper does not
+    model the still-unresolved initial population of those maps.
     """
     singles: list[SingleWordFieldDescriptor] = []
     twins: list[TwinWordFieldDescriptor] = []
