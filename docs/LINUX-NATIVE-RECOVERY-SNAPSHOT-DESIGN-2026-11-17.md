@@ -47,3 +47,11 @@ If a process crashes between steps 1 and 2, the previous manifest still points t
 - `python/tests/test_libreoffice_integration.py`: a non-UNO worker test verifies retry after a transient UNO error and persistence; the live UNO test waits for a periodic recovery snapshot, verifies the DOC/CFB signature and unchanged Writer modified flag, then verifies successful close/export removes the recovery session.
 
 Local isolated run: all five `test_recovery_store.py` unit tests passed, and a separate isolated harness verified the recovery worker's transient-error retry, snapshot persistence and stop behavior. The committed recovery-worker unittest and real UNO integration test have not yet been confirmed by a fresh CI run in this session.
+
+
+## Integrity bounds and manual restore API — 2026-11-17
+
+- Recovery snapshots are now capped at 128 MiB by default; callers can configure a smaller positive limit. Loads reject oversized files, malformed SHA-256 metadata, mismatched container extensions, symlinked session directories, manifests, and document files.
+- `list_snapshots()` and `has_snapshot()` now verify the referenced snapshot bytes instead of trusting manifest presence alone. Corrupted or symlinked entries are not reported as recoverable.
+- `restore_snapshot(session_id, destination)` validates the snapshot first, writes to a private temporary file in the destination directory, fsyncs it, and publishes it with a no-overwrite hard link. It refuses an existing destination and enforces `.doc`/`.docx` extension consistency. This is a storage API only; no user-facing recovery picker/UI is claimed.
+- CI after the integrity hardening: Python transport suite passed **138 tests** on run `44081194436`; LibreOffice UNO integration passed **14 tests** on run `44081137842`. The restore-specific test run `44081200320` is still pending at this checkpoint.
