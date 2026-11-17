@@ -183,7 +183,14 @@ class LibreOfficeIntegrationTests(unittest.TestCase):
                 "updated-fixture-value",
                 handle.document.getText().getString(),
             )
+            property_info_order = tuple(
+                str(item.Name) for item in user_properties.getPropertySetInfo().getProperties()
+            )
             catalog = adapter.inspect_document(handle)
+            self.assertEqual(
+                catalog.custom_document_properties_in_info_order,
+                property_info_order,
+            )
             self.assertIn("LetterSubject", catalog.bookmarks)
             self.assertIn("EMWATIntegrationMarker", catalog.custom_document_properties)
             self.assertIn(
