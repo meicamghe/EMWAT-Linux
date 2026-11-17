@@ -1241,3 +1241,11 @@ Do not implement guessed `signData` joining or claim end-to-end Almas registrati
 - Latest PR head is `f7db9057d965d83d7af0cf025eebf41d6f701849`; PR #1 remains Draft and not mergeable. The PR description has been corrected to show the proper direction.
 - Latest source verification: Python bridge run `44055192702` and LibreOffice UNO integration run `44055192704` both succeeded on `22a7d6d828f3b799cd1dbe544acff170530ab64f`. The UNO run verifies the raw UNO custom-property metadata order against the live `PropertySetInfo` enumeration.
 - Documentation-only commits after that test commit include the Word VMT/TD32 mapping, event-sink/save cancellation, and AutoSave settings/registry evidence. No source code changed after the verified test commit in this documentation pass.
+
+
+## Final branch reconciliation checkpoint — 2026-11-17
+
+- Reviewed all 53 files in the correctly oriented `main...work/template-mapping-inventory` compare. Python bridge, dispatcher, LibreOffice/office adapters, Word field tests, Writer inspector tests, VMT inspector, and Delphi interface tracer are synchronized or intentionally retain branch-only safety/backward-compatibility behavior. Branch-only additions include strict UTF-8 validation for binary nested optional attributes, duplicate-header rejection tests, response/request size limits, and raw UNO order preservation.
+- Native scanner/image differences were reviewed: main's single-frame SANE implementation was not copied over the branch's RAII-guarded multi-frame/ADF implementation, page/aggregate-size limits, and transactional scan-to-document behavior. The branch retains the stronger durability and revision-aware save semantics.
+- Added links to the three 2026-11-17 reverse-engineering notes in README.
+- Latest PR head: `a6f709f565cd5394bb758dfc486c86f13d0abc93`. Correct compare is now 112 commits ahead / 343 commits behind main, 53 changed files, diverged. PR #1 remains Draft and not mergeable; no merge or rebase attempted.
