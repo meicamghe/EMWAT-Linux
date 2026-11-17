@@ -84,7 +84,7 @@ def resolve_twin_field_partner(
 
 @dataclass(frozen=True)
 class WordCustomPropertyFieldMaps:
-    """Temporary single/twin descriptor candidates for custom-property reconciliation."""
+    """Single/twin descriptor entries populated from ordered custom properties."""
 
     singles: tuple[SingleWordFieldDescriptor, ...]
     twins: tuple[TwinWordFieldDescriptor, ...]
