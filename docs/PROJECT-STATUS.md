@@ -2317,3 +2317,10 @@ LibreOffice UNO integration در run `44030867583` موفق شد: **11 تست** 
 ## CI پس از تبدیل descriptor payload به WordField node — 2026-11-17
 
 Python bridge CI در run `44031548179` موفق شد: **111 تست موفق، 2 skip اختیاری** در 5.120 ثانیه. تست‌ها اکنون به‌جای string فرضی، reference به خود `WordField` node متناظر در `wordConfig.fields` را بررسی می‌کنند.
+
+
+## سخت‌سازی تکمیلی HTTP و CI — 2026-11-17
+
+- تست‌های transport اکنون علاوه بر duplicate Origin، Referer، Content-Type و Content-Length، duplicate Host و ارسال هم‌زمان Transfer-Encoding با Content-Length را نیز پوشش می‌دهند.
+- رفتار مورد انتظار در هر دو حالت جدید رد درخواست با 400 است؛ در تست Transfer-Encoding بررسی می‌شود handler برنامه اصلاً فراخوانی نشود.
+- CI روی commit 18fe366e8be5badcdd5a5edfeea5be8ff33aeff1 موفق شد: **117 تست موفق**؛ run 44075572673.
