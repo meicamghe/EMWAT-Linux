@@ -56,7 +56,7 @@
 - **اصلاح مهم در تفسیر Saved:** wrapperهای تولیدشده نشان دادند `Get_Saved` از slot `+0xD4` و `Set_Saved` از slot `+0xD8` استفاده می‌کند. بنابراین استفاده callback `WordAppDocumentBeforeSave` از `+0xD8` خواندن Saved نیست؛ مقدار OleVariant ورودی و علت این setter هنوز باید ردیابی شود. slot `+0xDC` در `OnControlerNotify` نیز هیچ‌کدام از این دو نیست و بررسی `Get_Content` در حال اجراست.
 
 - **تکمیل decode ثابت‌های native:** در `SetFieldValue` ثابت `0x004BFEE8` برابر `urlencoded` و `0x004BFF0C` برابر `base64` شناسایی شد؛ این دو شاخه با decoder فعلی Python هم‌راستا هستند. تابع `FindFieldInActivefields` نیز token واقعی `DOCPROPERTY` و جداکننده‌های فاصله را پردازش می‌کند. شناسه ویژه `Hidden_Customizable` هم از مسیر `GetDocFieldName` به `SilentSaveEmwatDoc` می‌رسد؛ این مسیر مستقل از callback بستن سند است.
-- **چرخه‌ی viewer و dictionaryها:** routine در `0x004D1148` با شواهد VMT/RTTI به‌عنوان `TWordViwer.Destroy` شناسایی شد، نه `AddXmlWordConfigFieldsToDic`: VMT candidate در `0x004B10A4`، destroy slot در `0x004B10A0` و RTTI method record در `0x004B1629` هر سه این هویت را تأیید می‌کنند. این destructor دیکشنری‌های `+0x64/+0x68/+0x6C` را آزاد می‌کند و `ScreenRefresh` را صدا می‌زند؛ متن‌های log و برچسب TD32 قدیمی/گمراه‌کننده‌اند. `LoadDocument` routine initializer-like در `0x004D0D24` را صدا می‌زند که همین سه دیکشنری را می‌سازد. `AddCustomDocPropertiesToDic` در `0x004D1454` مجموعه CustomDocumentProperties ورد را enumerate می‌کند، نام‌های twin را با `†` جدا می‌کند و از `TDictionary.Remove` برای مصرف descriptorهای single/twin در viewer+0x68/+0x6c استفاده می‌کند. دیکشنری runtime جداگانه viewer+0x64 از نوع `TDictionary<UnicodeString,TDocumentCProperty>` است. مسیر populate اولیه‌ی دو descriptor map هنوز حل نشده است.
+- **چرخه‌ی viewer و dictionaryها:** routine در `0x004D1148` با شواهد VMT/RTTI به‌عنوان `TWordViwer.Destroy` شناسایی شد، نه `AddXmlWordConfigFieldsToDic`: VMT candidate در `0x004B10A4`، destroy slot در `0x004B10A0` و RTTI method record در `0x004B1629` هر سه این هویت را تأیید می‌کنند. این destructor دیکشنری‌های `+0x64/+0x68/+0x6C` را آزاد می‌کند و `ScreenRefresh` را صدا می‌زند؛ متن‌های log و برچسب TD32 قدیمی/گمراه‌کننده‌اند. `LoadDocument` routine initializer-like در `0x004D0D24` را صدا می‌زند که همین سه دیکشنری را می‌سازد. `AddCustomDocPropertiesToDic` در `0x004D1454` مجموعه CustomDocumentProperties ورد را enumerate می‌کند، برای هر property با index صفرمبنا XML field متناظر را از viewer+0x40 می‌خواند، نام را در اولین `†` split می‌کند و descriptor تک/twin را با Add wrapper در mapهای viewer+0x68/+0x6c درج می‌کند. کلید map نام اصلی و unsplit property است. wrapperهای `0x004D531C` و `0x004D68D4` در TD32 به‌اشتباه `Remove` نام‌گذاری شده‌اند، اما بدنه آن‌ها Add است. دیکشنری runtime جداگانه viewer+0x64 از نوع `TDictionary<UnicodeString,TDocumentCProperty>` است.
 
 - **ردیابی چرخه Close در Word:** run شماره 43813684507 موفق شد. wrapper بستن بدون آرگومان از slot `+0x4D4` و wrapper سه‌آرگومانی `OleVariant` از slot `+0x29C` استفاده می‌کند؛ callback مربوط به BeforeSave wrapper سه‌آرگومانی را پس از منطق Cancel/Prompt فراخوانی می‌کند. مسیر OnControlerNotify نیز CostumizeRecAndCC را اجرا می‌کند که به slot `+0x2BC` (PrintOutOld) می‌رسد؛ slot جداگانه `+0xDC` هنوز در حال تعیین هویت است و هیچ اتصال مستقیم به HTTP ثبت نشده.
 
@@ -1345,7 +1345,7 @@ Added `python/src/emwat_linux/application.py` with `create_bridge_server(...)`. 
 
 - Run #92 (43597403349) موفق بود؛ artifact 14114738491 بررسی شد.
 - `LoadDocument` پس از خواندن فایل واسط، `TWordViwer.OnTmrAutoSave` را در 0x004B7A58 فراخوانی می‌کند. این یک anchor جدید برای تحلیل چرخه پس از بارگذاری Word است؛ هنوز callback بستن سند یا مسیر HTTP response بودن آن اثبات نشده است.
-- `TWordViwer.AddCustomDocPropertiesToDic` در 0x004D1454 مستقیماً از LoadDocument فراخوانی می‌شود؛ این تابع CustomDocumentProperties را enumerate می‌کند و descriptorهای متناظر را از mapهای single/twin با Remove مصرف می‌کند، نه اینکه آن mapها را در همین مسیر populate کند.
+- `TWordViwer.AddCustomDocPropertiesToDic` در 0x004D1454 مستقیماً از LoadDocument فراخوانی می‌شود؛ این تابع CustomDocumentProperties را enumerate می‌کند و descriptorهای single/twin را با Add در mapهای مربوطه populate می‌کند.
 - مسیر مستقل تصاویر/TIFF شناسایی شد: `CreateImageFile` فایل‌های مجزا را با `PrintWordDoc` و `TFileStream(fmCreate).Write` می‌سازد. `CreateTIFF.SeparteImages` نیز در ماژول چاپ/TIFF موجود است، اما caller مستقیم در محدوده اسکن‌شده پیدا نشد.
 - هنوز هیچ قرارداد close-time POST یا payload نهایی HTTP از این run به دست نیامده است. این مسیرهای چاپ/TIFF را نباید با upload یا پاسخ اصلی EMWAT یکی دانست.
 - بعدی: تحلیل بدنه کامل OnTmrAutoSave، callbackها و timer/VMT؛ سپس registration/callerهای مسیر TIFF/Print و بررسی اینکه آیا این مسیرها به Word editor اصلی متصل‌اند.
@@ -2141,14 +2141,14 @@ Workflow تحلیل Word گسترش یافت تا helper مرکزی درج تص�
 
 ## اصلاح semantics دیکشنری و مقایسه Twin — 2026-11-16
 
-- `0x004D531C` و `0x004D68D4` هر دو متد `TDictionary.Remove` هستند؛ مسیر `AddCustomDocPropertiesToDic` descriptorهای موجود را از mapهای single/twin مصرف می‌کند، نه اینکه در این نقاط اضافه کند.
+- `0x004D531C` و `0x004D68D4` در TD32 به‌اشتباه `TDictionary.Remove` نام‌گذاری شده‌اند؛ بدنه هر دو Add است و در `AddCustomDocPropertiesToDic` فراخوانی می‌شوند. آن‌ها duplicate key را رد می‌کنند و entry جدید را درج می‌کنند.
 - `0x00403248` به `System.SysUtils.CompareText` resolve شد؛ جست‌وجوی Twin نسبت به بزرگی/کوچکی حروف حساس نیست. تابع Python نیز با `casefold()` اصلاح شد.
 - Python CI اجرا `43891288399`: **۱۰۷ تست موفق، ۲ skip اختیاری**.
 - LibreOffice UNO اجرا `43890949051`: **۱۱ تست موفق**.
 
 ## مرزبندی inventory Writer و descriptorهای native — 2026-11-16
 
-در بررسی دقیق‌تر مشخص شد descriptorهای single/twin در زمان `AddCustomDocPropertiesToDic` از mapهای موجود با `TDictionary.Remove` مصرف می‌شوند؛ منبع اولیه و مرحله population این mapها هنوز قطعی نیست. بنابراین اتصال classifier به `WriterDocumentCatalog` حذف شد. catalog فقط نام Custom Document Properties را گزارش می‌کند و helper خالص Python صرفاً قانون split را طبقه‌بندی می‌کند؛ هیچ ادعایی درباره تطبیق یا اعمال خودکار فیلدها ندارد.
+ردیابی نهایی نشان داد `AddCustomDocPropertiesToDic` خودش descriptor mapها را از Word CustomDocumentProperties populate می‌کند. بااین‌حال `WriterDocumentCatalog` فعلاً فقط نام‌ها را به‌شکل مرتب‌شده گزارش می‌کند؛ چون ترتیب enumeration در Writer هنوز با Word تطبیق داده نشده و XML field name متناظر نیز باید از `wordConfig.fields` با همان index گرفته شود، اتصال خودکار catalog به descriptor map عمداً انجام نشده است. helper Python برای split نام‌ها باقی مانده و باید XML field name را جداگانه دریافت کند؛ این helper به‌تنهایی ادعای mapping کامل ندارد.
 
 ## اتصال runtime Custom Property به مسیر تصویر و چاپ — 2026-11-16
 
@@ -2168,8 +2168,8 @@ Workflow تحلیل Word گسترش یافت تا helper مرکزی درج تص�
 - دیکشنری `viewer+0x68` برای `TXmlWordConfigField` و `viewer+0x6C` برای `TXmlWordConfigTwinField` است.
 - `GetXmlFieldInfo` ابتدا descriptor تک‌فیلدی را بررسی می‌کند و در صورت نیاز به مسیر twin می‌رود؛ ساختارهای خروجی شامل index و یک یا دو نام/کلید فیلد هستند.
 - helper `0x004BC170` در مسیرهای XML field، twin fill، index lookup، print و image-print تکرار می‌شود و نقش نرمال‌سازی/تقسیم رشته ورودی را دارد؛ جزئیات delimiter پس از artifact جدید قطعی می‌شود.
-- `AddCustomDocPropertiesToDic` نام propertyهای Word را با `†` تفکیک می‌کند، رکورد single/twin می‌سازد و کلید متناظر را از descriptor map حذف می‌کند؛ بنابراین این تابع مرحله تطبیق/مصرف descriptor است، نه اثبات ساخت اولیه دیکشنری.
-- مسیر پرشدن اولیه descriptor mapها هنوز باز است. در بررسی جدید، چند نام TD32 برای generic dictionary با رفتار واقعی بدنه کد هم‌خوان نیستند (از جمله SetItem که در مسیر بررسی‌شده مقدار را می‌خواند و AddOrSetValue که مانند TryGetValue رفتار می‌کند). بنابراین نتیجه‌گیری از نام متدها یا caller scan آن‌ها کافی نیست؛ helperهای داخلی DoAdd/DoSetValue/DoRemove در batch بعدی ردیابی می‌شوند.
+- `AddCustomDocPropertiesToDic` نام propertyهای Word را با `†` تفکیک می‌کند، XML field متناظر را با index می‌خواند، رکورد single/twin می‌سازد و با Add wrapper در descriptor map درج می‌کند؛ بنابراین این تابع مسیر population mapهاست.
+- مسیر population descriptor mapها اکنون مشخص است: AddCustomDocPropertiesToDic از wrapperهای `0x004D531C` و `0x004D68D4` استفاده می‌کند که بدنه آن‌ها Add است، با وجود TD32 label اشتباه Remove. AddOrSetValueهای جداگانه (`0x004D552C` و `0x004D6AE4`) در این مسیر استفاده نمی‌شوند.
 
 ## کشف فیلدهای Option Form گیرنده و رونوشت — 2026-11-16
 
@@ -2204,9 +2204,9 @@ Import Table در `EmwatService.exe` شامل `LoadPackage`، `UnloadPackage`، 
 
 ## ردیابی VMT دیکشنری‌های descriptor — 2026-11-17
 
-دو VMT واقعی برای mapهای descriptor مشخص شدند: `TDictionary<string,TXmlWordConfigField>` در `0x004B4C38` و `TDictionary<string,TXmlWordConfigTwinField>` در `0x004B6A70`. همچنین `TWordViwer` VMT candidate در `0x004B10A4`، destroy slot `0x004B10A0` و method RTTI `Destroy` در `0x004B1629` نشان می‌دهند `0x004D1148` destructor است، نه AddXml. routine در `0x004D0D24` دیکشنری‌ها را می‌سازد؛ `AddCustomDocPropertiesToDic` کلیدهای متناظر را از mapهای موجود Remove می‌کند. مسیر populate اولیه هنوز اثبات نشده است.
+دو VMT واقعی برای mapهای descriptor مشخص شدند: `TDictionary<string,TXmlWordConfigField>` در `0x004B4C38` و `TDictionary<string,TXmlWordConfigTwinField>` در `0x004B6A70`. همچنین `TWordViwer` VMT candidate در `0x004B10A4`، destroy slot `0x004B10A0` و method RTTI `Destroy` در `0x004B1629` نشان می‌دهند `0x004D1148` destructor است، نه AddXml. routine در `0x004D0D24` دیکشنری‌ها را می‌سازد؛ `AddCustomDocPropertiesToDic` با wrapperهای Add که TD32 به‌اشتباه Remove نام‌گذاری کرده، descriptorهای single/twin را در mapهای مربوطه درج می‌کند؛ مسیر population با callsiteهای `0x004D15C6` و `0x004D1635` اثبات شده است.
 
-workflow بعدی constructor helperهای `0x004D5C28` و `0x004D71E0`، constructor-from-enumerable و callsiteهای AddOrSetValue را بررسی می‌کند تا منبع اولیه‌ی descriptor mapها مشخص شود.
+workflow بعدی روی جزئیات XML field accessorهای `+0xBC/+0xC0` و تطبیق ترتیب property enumeration در Writer با Word متمرکز می‌شود؛ منبع population دیگر unresolved نیست.
 
 ## تأیید CI پس از اصلاح مستندات descriptor — 2026-11-17
 
