@@ -2364,3 +2364,10 @@ Python bridge CI در run `44031548179` موفق شد: **111 تست موفق، 2
 
 - The first serialization-test run `44102938620` exposed a test-fixture assumption: snapshot filenames are content-addressed by SHA-256, not by session ID. The production code behaved as designed; the assertion was corrected to validate the documented content-addressed filename shape.
 - Corrected run `44103059363` on commit `2f7c771a213a9769c5a0d1e112b4b9edf3e2d74e` passed: **141 tests run, 139 passed, 2 optional LibreOffice tests skipped**.
+
+
+## Indexed signer slot alignment — 2026-11-17
+
+- Added `IndexedSignerSlot` and `build_indexed_signer_slots()` to align the seven observed repeated signer-field families by numeric index.
+- The catalog reports absent families explicitly, orders slots numerically, and preserves the original capture order of fields inside each slot. It does not synthesize missing fields or infer Word-to-Writer property mappings.
+- Added regression coverage for sparse indices, incomplete slots, and capture-order preservation. This improves schema auditing before mapping work; it is not evidence that all 180 EMWAT fields are understood.
