@@ -2371,3 +2371,10 @@ Python bridge CI در run `44031548179` موفق شد: **111 تست موفق، 2
 - Added `IndexedSignerSlot` and `build_indexed_signer_slots()` to align the seven observed repeated signer-field families by numeric index.
 - The catalog reports absent families explicitly, orders slots numerically, and preserves the original capture order of fields inside each slot. It does not synthesize missing fields or infer Word-to-Writer property mappings.
 - Added regression coverage for sparse indices, incomplete slots, and capture-order preservation. This improves schema auditing before mapping work; it is not evidence that all 180 EMWAT fields are understood.
+
+
+## Signer-slot catalog verification and recovery consumer spec — 2026-11-17
+
+- Added `build_indexed_signer_slots()` / `IndexedSignerSlot` to align recognized signer fields by numeric index, preserve capture order within each slot, and report absent families without synthesizing values or guessing mappings.
+- The first CI attempt found an incorrect expectation in the new test (the fixture included `SignNumberOfSigner3`); the assertion was corrected. The corrected run `44105991823` on `ef95c118111a4e2909657e9e06f75a87a68a326b` passed: **142 tests run, 140 passed, 2 optional LibreOffice tests skipped**.
+- Added `docs/RECOVERY-CATALOG.md` specifying the in-process JSON consumer contract, explicit save-dialog restore flow, confirmation requirement for discard, and prohibition on exposing the service as an unauthenticated HTTP endpoint.
