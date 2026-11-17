@@ -11,6 +11,7 @@ on:
       - 'tools/find_td32_class_procedures.py'
       - 'tools/resolve_delphi_vmt_slots.py'
       - 'tools/trace_delphi_interfaces.py'
+      - 'tools/scan_td32_instance_field_refs.py'
   pull_request:
     paths:
       - 'EMWAT_Extracted.zip'
@@ -22,6 +23,7 @@ on:
       - 'tools/find_td32_class_procedures.py'
       - 'tools/resolve_delphi_vmt_slots.py'
       - 'tools/trace_delphi_interfaces.py'
+      - 'tools/scan_td32_instance_field_refs.py'
   workflow_dispatch:
 
 permissions:
@@ -68,6 +70,11 @@ jobs:
             python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 "$address" "word-automation/lifecycle/$name.md" 7000 ret
             python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 "$address" "word-automation/lifecycle/$name-td32.md" || true
             python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 "$address" "word-automation/lifecycle/$name-callers.md" || true
+          done
+          python -m py_compile tools/scan_td32_instance_field_refs.py
+          for offset in 0x58 0x7C 0x88 0xA0; do
+            name=${offset#0x}
+            python tools/scan_td32_instance_field_refs.py analysis-input/EmwatMethods.bpl1 TWordViwer "$offset" "word-automation/lifecycle/TWordViwer-field-$name.md"
           done
       - uses: actions/upload-artifact@v4
         if: hashFiles('analysis-input/EmwatMethods.bpl1') != ''
