@@ -2261,3 +2261,9 @@ workflow `python-bridge.yml` پس از تغییرات docstring و تفکیک ر
 
 - `0x004610FC` در خود سرویس، sender عمومی Indy است؛ برای fallback عمومی و مسیرهای `init`/`heartbeat` استفاده می‌شود.
 - `0x0040448C` در BPL، thunk واردشده‌ی `IdCustomHTTPServer.TIdHTTPResponseInfo.WriteContent` است؛ `LoadDocument` پس از قرار دادن XML `response-word` در `ContentText` آن را صدا می‌زند و `bResultSet=true` می‌کند. در نتیجه پاسخ موفق EditWordDocument از fallback عمومی سرویس عبور نمی‌کند.
+
+## اصلاح مسیر احتمالی ساخت mapهای فیلد — 2026-11-17
+
+`CrateOptionFormFields` در `0x004CFC74` از `LoadOptions` فراخوانی می‌شود و mapهای descriptor را populate نمی‌کند؛ این نامزد رد شد. در generic dictionaryها، نام‌های TD32 برای بعضی متدها با method-table واقعی جابه‌جا هستند: `0x004D552C` در method table با نام `AddOrSetValue` ثبت شده و در بدنه واقعاً از `DoSetValue` برای درج/به‌روزرسانی استفاده می‌کند؛ `0x004D559C` در مسیر `GetXmlFieldInfo` نقش key-presence دارد، با وجود برچسب TD32 `ContainsValue`.
+
+هر entry دیکشنری سه slot دارد: hash، کلید UnicodeString و pointer مقدار descriptor. constructor از نوع `TDictionary.Create(IEnumerable<TPair>)` در `0x004D5100` pairها را پیمایش و با `AddOrSetValue` وارد map می‌کند؛ اما caller مستقیم برای این constructor هنوز پیدا نشده و منبع enumerable مشخص نیست.
