@@ -104,7 +104,7 @@ jobs:
           for address in 0x004D1148 0x004D52DC 0x004D54E0 0x004D6894 0x004D6A98; do
             python tools/scan_pe_rel32_call_bytes.py analysis-input/EmwatMethods.bpl1 "$address" "word-automation/fields/${address}-rel32-call-candidates.md"
           done
-          for address in 0x00441DD4 0x004D49E0 0x004D48D0 0x004D48A8 0x004D4D08 0x004D4D58 0x004D4DA8 0x004D6310 0x004D552C 0x004D559C 0x004D620C 0x004D5CC0 0x004D7278 0x004D6360 0x004D610C; do
+          for address in 0x00441DD4 0x004D49E0 0x004D48D0 0x004D48A8 0x004D4D08 0x004D4D58 0x004D4DA8 0x004D6310 0x004D552C 0x004D559C 0x004D620C 0x004D5CC0 0x004D7278 0x004D6360 0x004D610C 0x00478338 0x004783DC 0x00478444 0x0044B638 0x0044B488 0x0044B4B0 0x0061A504 0x0061A5B4 0x0061A634 0x0061A6F0 0x0061A77C 0x0061A83C 0x0061A8CC 0x0061A988 0x0061AA14 0x0061AAD0; do
             name=${address#0x}
             python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 "$address" "word-automation/fields/helper-$name.md" 1800 ret
             python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 "$address" "word-automation/fields/helper-$name-td32.md" || true
