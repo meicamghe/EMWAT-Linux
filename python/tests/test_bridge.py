@@ -313,5 +313,30 @@ class BridgeHTTPServerTests(unittest.TestCase):
         self.assertEqual(self.seen, [])
 
 
+    def test_duplicate_host_header_is_rejected(self):
+        conn = http.client.HTTPConnection(self.host, self.port, timeout=2)
+        conn.putrequest("GET", "/healthz")
+        conn.putheader("Host", f"{self.host}:{self.port}")
+        conn.endheaders()
+        response = conn.getresponse()
+        self.assertEqual(response.status, 400)
+        self.assertEqual(response.read(), b"invalid_host_header")
+        conn.close()
+
+    def test_transfer_encoding_is_rejected_even_with_content_length(self):
+        conn = http.client.HTTPConnection(self.host, self.port, timeout=2)
+        conn.putrequest("POST", "/?invoke=12345")
+        conn.putheader("Content-Length", "1")
+        conn.putheader("Transfer-Encoding", "chunked")
+        conn.putheader("Origin", "https://office.example")
+        conn.endheaders()
+        conn.send(b"x")
+        response = conn.getresponse()
+        self.assertEqual(response.status, 400)
+        self.assertEqual(response.read(), b"transfer_encoding_not_supported")
+        conn.close()
+        self.assertEqual(self.seen, [])
+
+
 if __name__ == "__main__":
     unittest.main()
