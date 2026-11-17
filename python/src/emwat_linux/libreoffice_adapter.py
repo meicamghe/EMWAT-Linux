@@ -299,9 +299,10 @@ class LibreOfficeAdapter:
         """
         work_dir = Path(tempfile.mkdtemp(prefix="emwat-lo-"))
         process: subprocess.Popen[bytes] | None = None
-        recovery_session_id = self._recovery_store.create_session()
+        recovery_session_id: str | None = None
         handle: _OfficeHandle | None = None
         try:
+            recovery_session_id = self._recovery_store.create_session()
             extension = _source_extension(request.document_bytes)
             source_path = work_dir / ("incoming" + extension)
             output_path = work_dir / "final.doc"
@@ -416,7 +417,8 @@ class LibreOfficeAdapter:
             if process is not None:
                 _stop_process(process, terminate_timeout=3, kill_timeout=2)
             shutil.rmtree(work_dir, ignore_errors=True)
-            self._recovery_store.remove_session(recovery_session_id)
+            if recovery_session_id is not None:
+                self._recovery_store.remove_session(recovery_session_id)
             raise
 
     def _recovery_loop(self, handle: _OfficeHandle) -> None:
@@ -525,8 +527,6 @@ class LibreOfficeAdapter:
 
     def _cleanup(self, handle: _OfficeHandle) -> None:
         handle.recovery_stop.set()
-        if handle.recovery_thread is not None and handle.recovery_thread is not Thread.current_thread if False else False:
-            pass
         if handle.recovery_thread is not None:
             handle.recovery_thread.join(timeout=2)
         process = handle.process
