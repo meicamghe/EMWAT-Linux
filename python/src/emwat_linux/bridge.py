@@ -209,14 +209,14 @@ class BridgeHTTPServer:
                 if origin is not None:
                     self._allowed_response_origin = origin
 
-                body = self.rfile.read(length)
-                if len(body) != length:
-                    self._send(400, b"incomplete_request_body", "text/plain; charset=utf-8")
-                    return
-
                 content_types = self.headers.get_all("Content-Type", [])
                 if len(content_types) > 1:
                     self._send(400, b"invalid_content_type", "text/plain; charset=utf-8")
+                    return
+
+                body = self.rfile.read(length)
+                if len(body) != length:
+                    self._send(400, b"incomplete_request_body", "text/plain; charset=utf-8")
                     return
                 request = BridgeRequest(
                     path=parsed.path,
