@@ -80,6 +80,10 @@ jobs:
             python tools/scan_pe_pointer_refs.py analysis-input/EmwatService.exe 0x0047B284 dispatch-crosswalk/service/mainform-vmt-pointer-refs.md || true
             python tools/scan_pe_pointer_refs.py analysis-input/EmwatService.exe 0x0047BF0C dispatch-crosswalk/service/mainform-classinfo-pointer-refs.md || true
             python tools/trace_pe_range.py analysis-input/EmwatService.exe 0x0047BF30 0x0047C341 dispatch-crosswalk/service/mainform-request-handler-full.md
+            python tools/trace_td32_procedure.py analysis-input/EmwatService.exe 0x00470D00 dispatch-crosswalk/service/parse-method-td32.md || true
+            python tools/trace_pe_range.py analysis-input/EmwatService.exe 0x00470D00 0x00471080 dispatch-crosswalk/service/parse-method-full.md
+            python tools/trace_pe_range.py analysis-input/EmwatService.exe 0x0047E100 0x0047E1A0 dispatch-crosswalk/service/package-load-callsite-context.md
+            python tools/trace_pe_range.py analysis-input/EmwatService.exe 0x00470DE0 0x00470E40 dispatch-crosswalk/service/getclass-callsite-context.md
             python tools/trace_pe_range.py analysis-input/EmwatService.exe 0x00470D00 0x00471033 dispatch-crosswalk/service/parse-method-full.md
             python tools/trace_pe_range.py analysis-input/EmwatService.exe 0x00470DB2 0x00470E80 dispatch-crosswalk/service/parse-method-code-island-1.md
             python tools/trace_pe_range.py analysis-input/EmwatService.exe 0x00470E58 0x00470F80 dispatch-crosswalk/service/parse-method-class-validation.md
