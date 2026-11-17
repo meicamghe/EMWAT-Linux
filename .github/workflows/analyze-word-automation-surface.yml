@@ -11,6 +11,17 @@ on:
       - 'tools/find_td32_class_procedures.py'
       - 'tools/resolve_delphi_vmt_slots.py'
       - 'tools/trace_delphi_interfaces.py'
+  pull_request:
+    paths:
+      - 'EMWAT_Extracted.zip'
+      - '.github/workflows/analyze-word-automation-surface.yml'
+      - 'analysis-input/EmwatMethods.bpl1'
+      - 'tools/trace_pe_target.py'
+      - 'tools/trace_td32_procedure.py'
+      - 'tools/trace_td32_callers.py'
+      - 'tools/find_td32_class_procedures.py'
+      - 'tools/resolve_delphi_vmt_slots.py'
+      - 'tools/trace_delphi_interfaces.py'
   workflow_dispatch:
 
 permissions:
