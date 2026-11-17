@@ -2141,3 +2141,7 @@ These are real implementation increments, not proof of operational Almas compati
 ## HTTP header ambiguity hardening — 2026-11-17
 - The loopback bridge now rejects duplicate `Origin` and `Content-Type` headers before dispatch, and the init route requires exactly one `Referer` header before deriving the parent origin.
 - Python bridge run #228 passed: **120 tests**, 3 optional skips. The initial run #227 exposed a duplicate-Host mistake in the new Referer test itself; the request fixture was corrected and #228 passed.
+
+### HTTP request parsing hardening — 2026-11-17
+- Duplicate `Content-Type` headers are now rejected before the bridge reads the request body, avoiding unnecessary body consumption for an ambiguous request.
+- Python bridge run #229 passed on commit `5dc0c8f9db6d82dfac6ee4c2e948e6d3e34f6c51`.
