@@ -240,7 +240,7 @@ jobs:
                   if start <= rva and rva + size <= start + span:
                       raw = section.PointerToRawData + rva - start
                       if raw + size <= len(blob):
-                          return blob[raw:raw + size], section.Name.rstrip(b"\\0").decode("ascii", "replace")
+                          return blob[raw:raw + size], section.Name.rstrip(b"\0").decode("ascii", "replace")
               return None, None
 
           lines = [
@@ -265,7 +265,7 @@ jobs:
                   for index, value in enumerate(values):
                       lines.append(f"| {index} | {value} | {value * 1000} ms |")
           out = Path("word-automation/save-print/autosave-interval-table.md")
-          out.write_text("\\n".join(lines) + "\\n", encoding="utf-8")
+          out.write_text("\n".join(lines) + "\n", encoding="utf-8")
           print(f"Wrote {out}")
           PY
           python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x004D2948 word-automation/save-print/word-wrap-line-count-4D2948.md || true
