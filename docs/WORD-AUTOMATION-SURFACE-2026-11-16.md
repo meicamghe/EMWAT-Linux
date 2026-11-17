@@ -107,7 +107,7 @@ The class-procedure index allows the Word-facing implementation to be divided in
 | Document lifecycle | `LoadDocument` `0x004B7724`; `PrepareDocument` `0x004BB77C`; viewer initializer `0x004D0D24`; VMT destructor `0x004D1148`; recipient/CC option constructor `0x004D08B4`; `QuitWord` `0x004CDB54` | Dedicated load, prepare, viewer initialization/destruction, option-form construction and Word-quit routines exist |
 | Request/config field mapping | `GetXmlFieldInfo` `0x004BCA88`; overload `0x004BFC18`; `GetDocFieldName` `0x004BB81C`; `FindFieldInActivefields` `0x004BC170`; `AddFieldInActivefields` `0x004BC278` | XML field definitions are resolved and tracked in an active-fields collection |
 | Document field mutation | `FillField` `0x004BC2C4`; `FillImageField` `0x004BC30C`; `GetFieldValue` `0x004BFD38`; `SetFieldValue` `0x004BFDB0`; `FillMSWFields` `0x004C009C`; `AddImagesToDoc` `0x004C0410` | The implementation has distinct text/value and image-field paths and explicitly consumes Word `_Document`, `Field` and `Fields` interfaces |
-| Content and custom metadata | `TWordViwer.Destroy` `0x004D1148` (stale TD32/log label `AddXmlWordConfigFieldsToDic`); `AddCustomDocPropertiesToDic` `0x004D1454` | The VMT destructor frees viewer maps/resources and calls `ScreenRefresh`; the second routine enumerates Word custom properties and consumes matching single/twin descriptors with dictionary Remove. The descriptor-map population path remains unresolved |
+| Content and custom metadata | `TWordViwer.Destroy` `0x004D1148` (stale TD32/log label `AddXmlWordConfigFieldsToDic`); `AddCustomDocPropertiesToDic` `0x004D1454` | The VMT destructor frees viewer maps/resources and calls `ScreenRefresh`; the second routine enumerates Word custom properties, builds single/twin descriptors using the matching XML field entry, and inserts them into the descriptor maps |
 | Save and close callbacks | `WordAppDocumentBeforeSave` `0x004CD154`; `WordAppDocumentBeforeClose` `0x004CCBBC`; `SilentSaveEmwatDoc` `0x004D23D8`; `OnTmrAutoSave` `0x004B8A84`; `OnControlerNotify` `0x004BB3B0` | Save events, close events, silent save, timer-driven waiting and controller notification are separate code paths |
 | Print pipeline | `PreparePrintDocument` `0x004CB108`; `CollectFieldsSets` `0x004CB5E4`; `FillPrintDocFields` `0x004CB638`; `PrintWithGamPrintOptions` `0x004C5E04`; `BGPrintWithGamPrintOptions` `0x004C5FF8`; print event callbacks `0x004CDC2C`, `0x004CE030` | Print preparation, field substitution, foreground/background print and Word print callbacks have dedicated routines |
 | Document formatting/protection | `ProtectDocument` `0x004C9EA8`; `SaveOriginalOptions` `0x004C5CDC`; `RollBackOriginalOptions` `0x004CA4B0`; `SetDocCaption` `0x004C5D68` | EMWAT also manages document protection and temporary document options; these behaviors must not be omitted from a replacement |
@@ -149,7 +149,7 @@ The exact mapping of each XML interface getter to the internal field-model prope
 
 ### Custom document properties
 
-`TWordViwer.AddCustomDocPropertiesToDic` at `0x004D1454` obtains Word's `CustomDocumentProperties` collection and iterates its entries. It splits each selected property name at `†` (U+2020 DAGGER; constant at `0x004D1768`), constructs a single/twin descriptor-shaped record, then calls `TDictionary.Remove` on the corresponding pre-existing descriptor map at viewer `+0x68` or `+0x6C`. This is a reconciliation/consumption pass, not map population. The routine's embedded diagnostics misleadingly use the `AddXmlWordConfigFieldsToDic` label; the TD32 symbol and body identify it as `AddCustomDocPropertiesToDic`.
+`TWordViwer.AddCustomDocPropertiesToDic` at `0x004D1454` obtains Word's `CustomDocumentProperties` collection and iterates its entries in index order. It splits each original property name at `†` (U+2020 DAGGER; constant at `0x004D1768`), retrieves the corresponding XML field entry from viewer `+0x40`, constructs a single/twin descriptor record, and inserts it into the map at viewer `+0x68` or `+0x6C`. The dictionary key is the original unsplit custom-property name. The insertion wrappers are `0x004D531C` (single) and `0x004D68D4` (twin); TD32 misleadingly labels both `Remove`, but their bodies hash/search, reject duplicate keys, and insert through `0x004D4D58`/`0x004D6310`. The routine's embedded diagnostics misleadingly use the `AddXmlWordConfigFieldsToDic` label; the TD32 procedure identity and body identify it as `AddCustomDocPropertiesToDic`.
 
 This is a significant compatibility requirement: the Linux backend must preserve EMWAT custom-property extraction and round-trip behavior, not only visible document text.
 
@@ -355,15 +355,15 @@ The completed string decoder identifies the discriminator at `0x004BCA70` as `te
 The Python mirror is `find_native_twin_field_index()` in `python/src/emwat_linux/word_fields.py`; its test suite covers one-based indexing, start offsets, no-match behavior, and invalid zero-based starts.
 
 
-## Correction: descriptor dictionaries are consumed with Remove; twin comparison uses CompareText
+## Correction: descriptor maps are populated through Add wrappers; twin lookup uses CompareText
 
-The helper symbols at `0x004D531C` and `0x004D68D4` are not insertion methods:
-- `0x004D531C` is `TDictionary<UnicodeString,TXmlWordConfigField>.Remove`.
-- `0x004D68D4` is `TDictionary<UnicodeString,TXmlWordConfigTwinField>.Remove`.
+The routines at `0x004D531C` and `0x004D68D4` are TD32-labelled `Remove`, but their observed machine behavior is `Add(key,value)`:
+- `0x004D531C` inserts into `TDictionary<UnicodeString,TXmlWordConfigField>` via `0x004D4D58`.
+- `0x004D68D4` inserts into `TDictionary<UnicodeString,TXmlWordConfigTwinField>` via `0x004D6310`.
 
-`AddCustomDocPropertiesToDic` calls these methods while enumerating Word custom properties. It therefore consumes/returns matching descriptors from the single/twin maps at viewer offsets `+0x68` and `+0x6C`; the exact object lifetime and subsequent use of the returned descriptor remain open. Do not describe these call sites as adding descriptors. The separate runtime map at viewer `+0x64` is the `TDictionary<UnicodeString,TDocumentCProperty>` map with its own SetItem/ContainsValue/Remove methods.
+Both wrappers hash and search the key, raise the duplicate-key exception if it already exists, and otherwise insert the `(hash,key,value)` entry. `AddCustomDocPropertiesToDic` calls them at `0x004D1635` and `0x004D15C6`, respectively. This is the confirmed descriptor-map population path. The separate runtime map at viewer `+0x64` is the `TDictionary<UnicodeString,TDocumentCProperty>` map with its own SetItem/ContainsValue/Remove lifecycle.
 
-The comparison helper `0x00403248` resolves to RTL `System.SysUtils.CompareText`. Consequently, `FillTwinFields` compares the normalized Word field identifier case-insensitively. The Python `find_native_twin_field_index()` now mirrors this with `casefold()`; the signature-end regular-expression branch remains separately case-sensitive.
+The comparison helper `0x00403248` resolves to RTL `System.SysUtils.CompareText`. Consequently, `FillTwinFields` compares the normalized Word field identifier case-insensitively. The Python `find_native_twin_field_index()` mirrors this with `casefold()`; the signature-end regular-expression branch remains separately case-sensitive.
 
 ## Runtime custom-property map: image-fill to print consumption
 
@@ -372,7 +372,7 @@ The runtime dictionary at viewer `+0x64` (`TDictionary<UnicodeString,TDocumentCP
 - `FillImageField` and `FillPrintDocFields` query it through `ContainsValue` (`0x004D3DF8`).
 - `FillPrintDocFields` removes entries through `Remove` (`0x004D3B78`) at four sites; `FillPrintOptionForm` removes entries at one site.
 
-This separates the runtime custom-property values from the single/twin XML descriptor maps at viewer `+0x68/+0x6C`, which `AddCustomDocPropertiesToDic` accesses through their own Remove methods. The runtime map therefore participates in the image-field and print-value lifecycle, not merely in static field inventory.
+This separates the runtime custom-property values from the single/twin XML descriptor maps at viewer `+0x68/+0x6C`. `AddCustomDocPropertiesToDic` populates the descriptor maps; the runtime map at `+0x64` separately participates in the image-field and print-value lifecycle.
 
 ## Descriptor dictionaries: normalized field lookup and paired-property records
 
@@ -381,9 +381,9 @@ The 2026-11-16 field-mapping artifact adds a concrete call graph around the two 
 - `viewer + 0x68` is `TDictionary<UnicodeString,TXmlWordConfigField>`; `viewer + 0x6C` is `TDictionary<UnicodeString,TXmlWordConfigTwinField>`.
 - `TWordViwer.GetXmlFieldInfo` (`0x004BFC18`) first checks the single-field map and retrieves its descriptor; if that path does not match, it checks the twin-field map and retrieves the paired descriptor. The returned records expose an integer field/index at `+0x04`; the single descriptor also exposes a string at `+0x08`, while the twin descriptor exposes strings at `+0x08`, `+0x0C`, and another string slot at `+0x10` used by the custom-property path.
 - The string normalizer/splitter `0x004BC170` is called repeatedly from the XML-field `GetXmlFieldInfo` overload, `FillTwinFields`, `GetDocFieldIndex`, `FillPrintDocFields`, `FillImgFldsForPrint`, and the viewer constructor. It splits/transforms incoming field/property names before downstream comparisons; exact delimiter semantics remain to be validated from the new decoded constants.
-- `AddCustomDocPropertiesToDic` (`0x004D1454`) enumerates Word custom document properties, splits the property name on `†` (U+2020), constructs a single or twin descriptor-shaped record, and removes the matching key from the corresponding descriptor map (`+0x68` or `+0x6C`). This is consistent with consuming matched descriptors during reconciliation; it is not evidence that this routine populates the maps.
+- `AddCustomDocPropertiesToDic` (`0x004D1454`) enumerates Word custom document properties, splits the property name on `†` (U+2020), retrieves the matching XML field entry by zero-based index, constructs a single or twin descriptor, and adds it to the corresponding map (`+0x68` or `+0x6C`) under the original unsplit property name.
 
-The actual initial population path for the two descriptor maps remains open. Direct caller scans of the TD32-labelled `Add`/`AddOrSetValue` methods did not identify a direct static callsite, but a follow-up body inspection found several generic dictionary TD32 labels do not match observed machine behavior (`SetItem` body reads a value; `AddOrSetValue` body behaves like TryGetValue; `ContainsValue` body behaves like ContainsKey). Therefore those name-based scans are not sufficient to rule out insertion. The internal `DoAdd`, `DoSetValue`, and `DoRemove` helpers are being traced before concluding where the maps are populated. Do not equate these XML descriptor maps with the separate runtime `TDocumentCProperty` map at `viewer + 0x64`.
+The descriptor-map population path is now closed: `AddCustomDocPropertiesToDic` calls the two Add wrappers directly. Low-level `DoSetValue`/`DoAdd` helper scans alone missed this because the caller uses wrapper methods whose TD32 names are misleading. Do not equate these XML descriptor maps with the separate runtime `TDocumentCProperty` map at viewer `+0x64`.
 
 ## Recipient/CC option-form fields seeded by the viewer constructor
 
