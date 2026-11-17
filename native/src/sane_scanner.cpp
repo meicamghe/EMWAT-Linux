@@ -37,6 +37,18 @@ private:
     bool active_{};
 };
 
+class SaneScanGuard {
+public:
+    explicit SaneScanGuard(SANE_Handle handle) noexcept : handle_(handle) {}
+    ~SaneScanGuard() { if (active_) sane_cancel(handle_); }
+    SaneScanGuard(const SaneScanGuard&) = delete;
+    SaneScanGuard& operator=(const SaneScanGuard&) = delete;
+    void complete() noexcept { active_ = false; }
+private:
+    SANE_Handle handle_{};
+    bool active_{true};
+};
+
 class SaneHandle {
 public:
     explicit SaneHandle(const std::string& id) {
@@ -247,10 +259,11 @@ ImagePage SaneScannerBackend::scan_one(const std::string& device_id, const ScanO
     if (status != SANE_STATUS_GOOD)
         throw ScannerError(std::string("Cannot start scan: ") + sane_strstatus(status));
 
+    // Cancel the device on every exceptional exit after sane_start().
+    SaneScanGuard scan_guard(device.get());
     SANE_Parameters params{};
     status = sane_get_parameters(device.get(), &params);
     if (status != SANE_STATUS_GOOD) {
-        sane_cancel(device.get());
         throw ScannerError(std::string("Cannot read scan parameters: ") + sane_strstatus(status));
     }
 
@@ -305,7 +318,7 @@ ImagePage SaneScannerBackend::scan_one(const std::string& device_id, const ScanO
             }
             pixels.bytes.insert(pixels.bytes.end(), chunk.begin(), chunk.begin() + received);
         }
-        if (status == SANE_STATUS_EOF) break;
+        if (status == SANE_STATUS_EOF) { scan_guard.complete(); break; }
         if (status != SANE_STATUS_GOOD) {
             sane_cancel(device.get());
             throw ScannerError(std::string("Scanner read failed: ") + sane_strstatus(status));
