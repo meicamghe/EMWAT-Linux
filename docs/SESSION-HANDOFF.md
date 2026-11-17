@@ -1279,3 +1279,12 @@ Do not implement guessed `signData` joining or claim end-to-end Almas registrati
 - workflow تحلیل save/print گسترش یافت تا بدنه و callerهای `StoreFieldValuesForPrint`، referenceهای global slot `0x0062A808` و referenceهای نام registry `AutoSaveInterval` را استخراج کند. این workflow هنوز نتیجهٔ اجرای جدیدی در دسترس ندارد.
 - commitهای این دور: سند اصلاحی `c464ed4070c5c974f7842da5727648b48346fb3f`؛ workflow field collector `beda5f8ba217337b137f88743165c2beed9d36d6`؛ workflow reference scan `b9a74db130881b7f0dfca61b4b05a17104bfdb42`.
 - از روی وجود preference در فرم تنظیمات، هنوز نتیجه نمی‌گیریم که `AutoSaveInterval` حتماً تایمر `TWordViwer` را کنترل می‌کند؛ consumer باید از reference scan یا مسیر runtime ثابت شود.
+
+
+## Verified continuation checkpoint — 2026-11-17
+
+- Downloaded and inspected lifecycle artifact `14314903496`; it confirms the `OnTmrAutoSave` body performs LoadDocument/OLE Word-engine lifecycle setup and callback registration, while `SilentSaveEmwatDoc` reaches `StoreFieldValuesForPrint` through the field-collection path. See `docs/WORD-LOAD-AND-FIELD-COLLECTION-EVIDENCE-CORRECTION-2026-11-17.md`.
+- Added save/print workflow tracing for `StoreFieldValuesForPrint` at `0x004BFF1C`, all direct callers, raw pointer references, and the AutoSave interval global/name references. New workflow output has not yet been verified; no fresh-run success is claimed.
+- PR #1 body was refreshed with the corrected evidence and verification boundary. It remains Draft and non-mergeable.
+- Correct compare orientation `base=main`, `head=work/template-mapping-inventory`: **128 commits ahead, 343 behind, 55 changed files; diverged**. Mainline integration remains additive-only; no rebase, merge, or force push.
+- Commits in this continuation: `c464ed4070c5c974f7842da5727648b48346fb3f` (evidence correction), `beda5f8ba217337b137f88743165c2beed9d36d6` (field collector trace), `b9a74db130881b7f0dfca61b4b05a17104bfdb42` (interval/callback reference scan), plus README/status/handoff updates.
