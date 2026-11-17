@@ -160,3 +160,93 @@ The collection append helper also calls its virtual methods at `+0x08` and `+0x0
 The service PE's type metadata includes `TDictionary<System.AnsiString,System.AnsiString>` at VMT `0x00469A3C` (typeinfo `0x0046A054`). The exact pointer/dataflow connection from parser context field `+0x08` to this VMT has not yet been directly proven. The service-side collection and BPL Invoke dictionary contract are therefore structurally aligned, but their identity link remains a follow-up target.
 
 Artifact: `emwat-service-dispatch-crosswalk`, run `43883105610`, artifact `14233736412`.
+
+
+---
+
+## Findings incorporated from main
+
+### Duplicate parameter behavior
+
+The parser's dictionary insertion helper `0x0046ADBC` probes the hash table before appending. If the key already exists (`0x0046A570` returns a non-negative bucket index), it enters the duplicate-key exception path (`0x0040211C` / `0x00401198`) instead of treating the second value as an overwrite. The Python envelope parser's `duplicate_parameter` rejection therefore matches the native Add semantics; it must not be changed to last-value-wins behavior.
+
+
+### Remaining service-to-BPL dispatch callsite
+
+The `TMainForm` request handler at `0x0047BF30` calls `ParseMethod` (`0x00470D00`) after the package-load gate. The helper at `0x0047E2D4`, reached from the handler's cleanup/finally path, is an exception-reporting and object-release helper, not the BPL dispatch: it logs through `0x0047D2C8`, calls `0x0040217C` on a referenced object, and clears the pointer slot. The actual dispatch edge remains unresolved. The service workflow now traces the complete MainForm handler range `0x0047BF30–0x0047C341` to find the callsite beyond the first internal RET.
+
+
+### Confirmed runtime package-load edge
+
+The service helper `0x0047E0EC` calls the imported `LoadPackage` thunk at `0x00402174` from callsite `0x0047E15F`. That thunk jumps through IAT `0x00487680`. The helper builds the package path/name containing `EmwatMethods.bpl`, stores the returned module pointer, and logs the exact load success/failure messages. Thus the service's BPL load gate is confirmed at the machine-code callsite level. The later class-resolution/instance-creation edge is still under analysis.
+
+
+### GetClass is called from ParseMethod
+
+The code-island trace confirms that `ParseMethod` (`0x00470D00`) branches from `0x00470D74` to `0x00470DB2`, where it reads the XML class attribute, obtains the class-name string, and calls `GetClass` via thunk `0x00402354` at `0x00470E07`. If the returned class is null, it constructs/logs an error and exits; otherwise it proceeds into class validation and object preparation. Thus the XML parser's dynamic Delphi class-resolution edge is confirmed. The remaining block `0x00470E58–0x00470F80` is being traced to identify inheritance checks, instance creation, and final Invoke dispatch.
+
+
+### ClassCreate is confirmed for TMethodInfo, not yet for the requested method class
+
+The `ClassCreate` thunk call at `0x00471220` is inside `TMethodInfo`'s constructor (`0x00471214`). It allocates the parser metadata object; the constructor then creates its `TDictionary<AnsiString,AnsiString>` at `0x00471232` and stores it at offset `+0x08`. This does not yet prove how the class named in the XML request is instantiated. The separate `GetClass` candidate at `0x00470E07` is being validated through a disassembly of the code island around that address.
+
+
+### Dynamic class construction and virtual dispatch edge
+
+After `GetClass`, the service compares a class-related value with `TUpgradeEmwat`, creates the selected class instance through helper `0x004010D8`, stores the `TMethodInfo` pointer at object offset `+0x04`, then loads the parsed parameter dictionary from `TMethodInfo+0x08` and calls the object's VMT slot `+0x0C` indirectly at `0x00470EF6`. This establishes the service's dynamic class-instance dispatch path. The target slot is the leading candidate for the BPL Invoke bridge, but its exact identity is not yet proven: the current `TEmwatMethod` VMT dump shows `+0x0C` as `Finalization`, while `Invoke` is at `0x0046C82C` and `PerformMethod` is a separate virtual slot at `+0x10`. The BPL method table and service class/interface mapping are being cross-checked before naming this slot `Invoke`.
+
+
+### Class-name validation and object construction helpers resolved
+
+The helper at `0x004010B8` is `TObject.ClassName` (IAT `0x00487460`); the helper at `0x00401320` is `System.UStrEqual` (IAT `0x0048732C`); and the helper at `0x004010D8` is `TObject.Create` (IAT `0x00487450`). `ParseMethod` therefore obtains the resolved class name, compares it with `TUpgradeEmwat`, stores the Boolean result at `TMethodInfo+0x04`, and creates the selected class instance with `TObject.Create`. The later VMT `+0x0C` call still needs its exact BPL method-slot identity.
+
+
+### Confirmed service → BPL Invoke bridge
+
+The service calls the created object's VMT slot `+0x0C` at `0x00470EF6`. For BPL class `TEmwatMethod` (VMT `0x0046ABFC`), this slot points to `TEmwatMethod.Finalization` at `0x0046C9E0`; the direct-caller trace proves that routine calls `TEmwatMethod.Invoke` at `0x0046CA67` (`0x0046C82C`). The confirmed dispatch chain is therefore `ParseMethod → GetClass → TObject.Create → VMT[+0x0C] → TEmwatMethod.Finalization → TEmwatMethod.Invoke`. The complete `Finalization` trace shows that it calls `Invoke` at `0x0046CA67`, then makes the indirect call through the object's VMT slot `+0x10` at `0x0046CA88`. The `Invoke` body processes request parameters; the subsequent `PerformMethod` dispatch is in `Finalization`, not inside `Invoke`.
+
+
+### XML class attribute → Delphi class name transformation
+
+`ParseMethod` reads the XML `class` attribute, prefixes the literal `T` (`0x004710E0`) using helper `0x00401310`, then passes the resulting name to `GetClass` at `0x00470E07`. Therefore `<method class="EditWordDocument">` resolves the Delphi class `TEditWordDocument` (BPL VMT `0x005ED764`). The subsequent `TObject.ClassName` check compares the resolved class name against `TUpgradeEmwat` for the special-case flag.
+
+
+### Complete PerformMethod dispatch and document-load chain
+
+`TEmwatMethod.Finalization` calls `TEmwatMethod.Invoke` at `0x0046CA67`, then calls the created object's VMT slot `+0x10` at `0x0046CA88`. `Invoke` handles the request parameter dictionary; it is the following virtual slot that dispatches to the subclass method. In the `TEditWordDocument` VMT at `0x005ED764`, slot `+0x10` points to `0x005EE82C` (TD32 symbol `TScanDocument.PerformMethod`). That implementation calls `TWordViwer.LoadDocument` at `0x004B7724`. The service-to-Word automation execution path is therefore now traced end-to-end at the dispatch boundary.
+
+
+### Runtime package and class lookup callsites (2026-11-17)
+
+The exact IAT/thunk scan now locates the native Delphi runtime calls, not merely their import-table entries:
+
+- `LoadPackage` is reached from service code at `0x0047E15F` through thunk `0x00402174`. The surrounding block builds the package path, calls the package loader, checks the returned module handle, and logs either `Unable to load "EmwatMethods.bpl".` or `"EmwatMethods.bpl" loaded.`
+- `GetClass` is reached at `0x00470E07` through thunk `0x00402354`, inside the ParseMethod processing region. This is the concrete runtime class-resolution edge for the XML-supplied method class.
+- `StartExe` is called at `0x004014BA`; `GetProcAddress` callsites are at `0x00401720`, `0x00401DA8`, and `0x00401DCA`.
+- `ClassCreate` and `ClassDestroy` are used widely by the service runtime; their existence alone does not identify the request-specific object-construction edge.
+
+The full ParseMethod disassembly contains several separated code islands and embedded exception/finally data. A linear trace from `0x00470D00` stops at its first internal RET; the workflow now traces the islands and the exact GetClass call instruction separately. The final `GetClass` → instance construction → `TEmwatMethod.Invoke` receiver/ABI is not yet considered proven.
+
+
+### ParseMethod class-resolution and invocation sequence narrowed further
+
+The aligned code-island artifact (`14301682420`) resolves the previously ambiguous `GetClass` callsite:
+
+1. At `0x00470E07`, the service calls `rtl230.bpl!GetClass` with the class-name string extracted from the XML method element. A null return branches to an error path that formats `Unable to load "<class>" class.`
+2. On success, the service obtains the resolved class name through `TObject.ClassName`, compares it with the hard-coded `TUpgradeEmwat` name using `@UStrEqual`, and stores the resulting special-class flag in the method-info record at `+0x04`.
+3. It constructs an instance by calling `TObject.$bctr` (`0x004010D8`) with the resolved class reference, stores the method-info pointer at instance `+0x04`, then invokes an indirect slot at `0x00470EF6` through `[instance.VMT+0x0C]`, passing the parsed method/parameter context in registers.
+
+This is the first complete service-side evidence of XML class resolution followed by runtime object construction and an indirect method call. The exact meaning of VMT slot `+0x0C` and its mapping to BPL `TEmwatMethod.Invoke` (`0x0046C82C`) still needs a verified cross-module VMT/ABI match; do not yet label the slot as `Invoke` as a proven fact.
+
+
+### Confirmed dynamic method-instance creation and invocation
+
+The complete `ParseMethod` validation island (`0x00470E58–0x00470F80`) closes the previously inferred class-construction edge:
+
+- `GetClass` resolves the XML class name at `0x00470E07` through thunk `0x00402354`.
+- The service calls `TObject.ClassName` through thunk `0x004010B8` at `0x00470E5D` and compares the result with the literal `TUpgradeEmwat` at `0x00471128`; the Boolean result is stored in the `TMethodInfo` flag at `+0x04`. This is a special-class check, not a generic prefix test.
+- The resolved class reference is instantiated with `TObject.Create` through thunk `0x004010D8` at `0x00470EDC`.
+- The `TMethodInfo` object pointer is attached to the new instance at object offset `+0x04`; the parsed class name/parameter data are then passed into the virtual call at `0x00470EF6` (`call [VMT+0x0C]`).
+- The method instance is released with `TObject.Free` through thunk `0x004010E8` at `0x00470F42`.
+
+This is the actual BPL method-instance lifecycle. Keep it distinct from the separate `ClassCreate`/`ClassDestroy` calls that construct and destroy the service's `TMethodInfo` metadata object.
