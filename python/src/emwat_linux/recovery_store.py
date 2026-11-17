@@ -55,8 +55,7 @@ class RecoverySnapshotStore:
         self.root = Path(root).expanduser()
 
     def create_session(self) -> str:
-        self.root.mkdir(parents=True, exist_ok=True, mode=0o700)
-        self.root.chmod(0o700)
+        self._ensure_root()
         session_id = uuid.uuid4().hex
         folder = self._session_dir(session_id)
         folder.mkdir(mode=0o700)
@@ -160,7 +159,9 @@ class RecoverySnapshotStore:
             raise RecoveryStoreError("recovery_snapshot_unavailable") from exc
 
     def list_snapshots(self) -> tuple[RecoverySnapshotInfo, ...]:
-        if not self.root.is_dir():
+        # Never follow a replaced/symlinked state directory while enumerating
+        # snapshots. A symlink here could otherwise expose another directory.
+        if self.root.is_symlink() or not self.root.is_dir():
             return ()
         snapshots = []
         for folder in self.root.iterdir():
@@ -241,9 +242,23 @@ class RecoverySnapshotStore:
             if self.root.exists():
                 self._fsync_directory(self.root)
 
+    def _ensure_root(self) -> None:
+        # XDG state is private application data. Refuse a symlink or a
+        # non-directory at the trust boundary instead of chmod/mkdir-following it.
+        if self.root.is_symlink():
+            raise RecoveryStoreError("recovery_root_symlink_rejected")
+        if self.root.exists() and not self.root.is_dir():
+            raise RecoveryStoreError("recovery_root_not_directory")
+        self.root.mkdir(parents=True, exist_ok=True, mode=0o700)
+        if self.root.is_symlink():
+            raise RecoveryStoreError("recovery_root_symlink_rejected")
+        self.root.chmod(0o700)
+
     def _session_dir(self, session_id: str) -> Path:
         if not isinstance(session_id, str) or not _SESSION_ID.fullmatch(session_id):
             raise RecoveryStoreError("recovery_session_id_invalid")
+        if self.root.is_symlink():
+            raise RecoveryStoreError("recovery_root_symlink_rejected")
         return self.root / session_id
 
     @staticmethod
