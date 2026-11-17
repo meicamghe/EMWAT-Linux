@@ -24,7 +24,7 @@ Default root:
 
 Each session uses a random 32-hex identifier. Directory permissions are owner-only (`0700`); snapshot and manifest files are owner-only (`0600`). The snapshot format is the actual Word container emitted by the configured filter (currently legacy DOC/CFB for the active adapter).
 
-The manifest records schema version, session ID, document filename, size, SHA-256 and update time. Snapshot filenames include a truncated content hash. Update order is crash-conscious:
+The manifest records schema version, session ID, document filename, size, SHA-256 and update time. Snapshot filenames include the full SHA-256 digest. Update order is crash-conscious:
 
 1. Write/fsync a new immutable snapshot file.
 2. Atomically replace/fsync `manifest.json` to point to the new snapshot.
@@ -44,6 +44,6 @@ If a process crashes between steps 1 and 2, the previous manifest still points t
 ## Tests added
 
 - `python/tests/test_recovery_store.py`: CFB/DOCX recognition, owner-only permissions, integrity validation, invalid session rejection, and manifest-switch crash safety.
-- `python/tests/test_libreoffice_integration.py`: live UNO session waits for a periodic recovery snapshot, verifies the stored DOC/CFB signature, then verifies successful close/export removes the recovery session.
+- `python/tests/test_libreoffice_integration.py`: live UNO session waits for a periodic recovery snapshot, verifies the stored DOC/CFB signature and that `storeToURL` did not change the Writer modified flag, then verifies successful close/export removes the recovery session.
 
 These tests are committed but have not yet been confirmed by a fresh CI run in this session.
