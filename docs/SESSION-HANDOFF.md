@@ -1145,3 +1145,9 @@ Do not implement guessed `signData` joining or claim end-to-end Almas registrati
 ### Scanner memory and batch safety
 - SANE frame capture is bounded to 100 pages and 1 GiB total pixel data (with per-frame dimension/stride checks).
 - ImageDocument.append_pages() is covered for invalid second-page rollback: the original page and clean state remain unchanged.
+
+
+### Latest native hardening
+- Multi-frame SANE capture: max 100 pages and max 1 GiB total pixel bytes.
+- Image batch append: invalid page validation rejects the whole batch without altering the existing document.
+- Atomic save durability: fsync temporary file, rename atomically, then fsync containing directory. CI runs #119–#121 pending at handoff.
