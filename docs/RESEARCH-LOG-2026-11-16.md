@@ -502,7 +502,7 @@ The full `0x0047BF30–0x0047C341` trace (`14265996115`) confirms that the first
 
 ## Byte-level rel32 CALL scanner added after linear-sweep false negative
 
-The full handler trace proves direct relative calls to `0x004610FC` at `0x0047C237` and `0x0047C2A9`, but the first whole-PE Capstone linear-sweep scanner reported zero references. This is a false negative caused by instruction-boundary loss when linearly disassembling mixed code/data sections. Added `tools/scan_pe_rel32_call_bytes.py`, which scans executable-section bytes for `E8 + signed rel32` targets without relying on a linear disassembly. Results are deliberately labelled candidates, not confirmed calls, because byte patterns can occur inside data/immediates. Both service and BPL workflows now run this byte-level scan alongside the disassembly-based scanner; the BPL scan targets descriptor-map Add/AddOrSetValue and `AddXmlWordConfigFieldsToDic` references.
+The full handler trace proves direct relative calls to `0x004610FC` at `0x0047C237` and `0x0047C2A9`, but the first whole-PE Capstone linear-sweep scanner reported zero references. This is a false negative caused by instruction-boundary loss when linearly disassembling mixed code/data sections. Added `tools/scan_pe_rel32_call_bytes.py`, which scans executable-section bytes for `E8 + signed rel32` targets without relying on a linear disassembly. Results are deliberately labelled candidates, not confirmed calls, because byte patterns can occur inside data/immediates. Both service and BPL workflows now run this byte-level scan alongside the disassembly-based scanner; the BPL scan targets descriptor-map Add/AddOrSetValue and `TWordViwer.Destroy` (`0x004D1148`) references.
 
 ## Byte-level scan validates post-parse helper callsites
 
