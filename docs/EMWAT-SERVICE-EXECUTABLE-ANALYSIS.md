@@ -393,7 +393,7 @@ Source: workflow 43832144163, artifact 14209690263.
 
 ## Delphi runtime package and class-resolution imports
 
-The PE import table confirms that `EmwatService.exe` imports `LoadPackage`, `UnloadPackage`, `StartExe`, `GetClass`, `ClassCreate`, `ClassDestroy`, `TObject.InheritsFrom`, `ClassParent`, `ClassName`, and two `GetProcAddress` entries. This establishes the service's capability to load Delphi runtime packages and resolve/create classes dynamically. It is consistent with the service-side `TMethodInfo` parser and the BPL-side `TEmwatMethod.Invoke` contract, but the exact class-name resolution and callsite chain still require IAT-reference tracing. The current workflow scans pointer references to these import slots.
+The PE import table confirms that `EmwatService.exe` imports `LoadPackage`, `UnloadPackage`, `StartExe`, `GetClass`, `ClassCreate`, `ClassDestroy`, `TObject.InheritsFrom`, `ClassParent`, `ClassName`, and two `GetProcAddress` entries. Exact callsites now confirm `LoadPackage` via thunk `0x00402174` at `0x0047E15F`, and `GetClass` via thunk `0x00402354` at `0x00470E07`. `ClassCreate` via thunk `0x00401158` at `0x00471220` and `ClassDestroy` via thunk `0x00401160` at `0x0047127F` belong to the `TMethodInfo` parser metadata object's constructor/cleanup; they must not be conflated with creation of the dynamically resolved BPL method object. The latter is constructed by the class-reference path in `ParseMethod` after `GetClass`, then dispatched through the recovered VMT slots. Additional `StartExe` and `GetProcAddress` callsite candidates are being checked against surrounding helper bodies.
 
 ## TMainForm published event/method table
 
