@@ -1261,3 +1261,11 @@ Do not implement guessed `signData` joining or claim end-to-end Almas registrati
 - سند جدید: `docs/AUTOSAVE-TIMER-AND-SILENT-SAVE-TRACE-2026-11-17.md`.
 - workflow `analyze-word-automation-surface.yml` گسترش یافت تا lookup table در `0x0062A808`، callerهای `SilentSaveEmwatDoc` و helperهای مرتبط را در artifact بعدی dump کند. نتیجهٔ این اجرای جدید هنوز بررسی نشده و هیچ مقداری از جدول حدس زده نشده است.
 - commitهای این دور: workflow `9efc8533c8029f2abca3948116af946535329c10`؛ سند `a601f56cf312ea29ce20ee4a728fb87bbb127361`.
+
+
+## Checkpoint after AutoSave trace update — 2026-11-17
+
+- Current verified branch tip: `672088bdc6d8c60914e495b702c47cbf08dd7d06` (handoff update commit).
+- Correct compare orientation `base=main`, `head=work/template-mapping-inventory`: **118 commits ahead, 343 behind, 54 changed files; status diverged**. Historical counts elsewhere in this handoff are earlier snapshots and are superseded by this checkpoint.
+- New AutoSave workflow analysis is queued by the workflow-file push commit `9efc8533c8029f2abca3948116af946535329c10`. The Actions connector available in this session does not expose push-triggered run listing; no result is claimed. Inspect the next `emwat-word-save-print` artifact before treating the lookup table as recovered.
+- No merge, rebase, force-push, or PR retargeting was performed. PR #1 remains Draft/non-mergeable pending the mainline reconciliation.
