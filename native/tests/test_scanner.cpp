@@ -59,6 +59,9 @@ int main() {
     assert(capabilities.max_resolution_dpi == 600.0);
     assert(capabilities.discrete_resolutions_dpi.size() == 4);
 
+    const auto scanned_pages = backend.scan_all("test:scanner0");
+    assert(scanned_pages.size() == 1);
+    assert(scanned_pages[0].pixels.bytes[0] == 42);
     const auto scanned = backend.scan_one("test:scanner0");
     assert(scanned.pixels.valid());
     assert(scanned.pixels.bytes[0] == 42);
