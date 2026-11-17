@@ -1224,3 +1224,12 @@ Do not implement guessed `signData` joining or claim end-to-end Almas registrati
 - AutoSave setup is confirmed to install the Word event-sink callback/owner pairs; this does not yet prove that each timer tick directly saves the document. The full scheduler decision remains open.
 - The auto-save file viewer has separate delete/show/close handlers. Its `CloseWordApp` iterates tracked Word documents and invokes an unresolved virtual slot `+0x104`; do not guess the COM method name.
 - Latest UNO/Python runs on commit `22a7d6d828f3b799cd1dbe544acff170530ab64f` were still queued at last poll; static Word lifecycle run `44053390645` is now verified success.
+
+
+## Final verification of UNO property-order regression — 2026-11-17
+
+- Python bridge run `44055192702` on commit `22a7d6d828f3b799cd1dbe544acff170530ab64f`: success.
+- LibreOffice UNO integration run `44055192704` on the same commit: success. This includes the live check that the inspector's `custom_document_properties_in_info_order` exactly matches the document's `PropertySetInfo.getProperties()` enumeration.
+- Earlier source-only refactor runs `44055185443` (Python bridge) and `44055185438` (UNO integration) on `b7c0babf285633b697d5a0972ceacb86b2b0bf69` also succeeded.
+- The separate Word lifecycle analysis run `44053390645` completed successfully and uploaded artifact `14314903496`; its registry/control findings are summarized in `docs/AUTOSAVE-SETTINGS-REGISTRY-CONTRACT-2026-11-17.md`.
+- No native C++ suite was rerun in this pass. Prior native #121 success remains the latest verified native run.
