@@ -2350,3 +2350,11 @@ Python bridge CI در run `44031548179` موفق شد: **111 تست موفق، 2
 - تست‌های transport اکنون علاوه بر duplicate Origin، Referer، Content-Type و Content-Length، duplicate Host و ارسال هم‌زمان Transfer-Encoding با Content-Length را نیز پوشش می‌دهند.
 - رفتار مورد انتظار در هر دو حالت جدید رد درخواست با 400 است؛ در تست Transfer-Encoding بررسی می‌شود handler برنامه اصلاً فراخوانی نشود.
 - CI روی commit 18fe366e8be5badcdd5a5edfeea5be8ff33aeff1 موفق شد: **117 تست موفق**؛ run 44075572673.
+
+
+## Recovery catalog JSON contract — 2026-11-17
+
+- `RecoverySnapshotService.catalog_json()` now emits a versioned (`schema_version: 1`) metadata-only JSON catalog for native UI clients. The contract contains newest-first snapshot metadata and deliberately excludes absolute private-store paths and document bytes.
+- Restore remains a separate explicit operation requiring a caller-selected destination; the service still delegates validation and atomic no-overwrite publication to `RecoverySnapshotStore`. Discard remains explicit by session ID.
+- Added a serialization regression test for schema version, content-addressed document names, and absence of private paths/content. Python CI run `44102938620` was queued at the time of this update; do not report it green until its result is checked.
+- This is a UI integration boundary, not yet a graphical recovery picker or HTTP endpoint. The desktop/UI composition still needs to provide a trusted file-save dialog and explicit discard confirmation.
