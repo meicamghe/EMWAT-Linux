@@ -22,6 +22,7 @@ EMWAT واسط محلی بین اتوماسیون تحت وب الماس گام 
 - [تحلیل گردش‌کار واقعی EMWAT در الماس گام](docs/PRODUCT-WORKFLOW-ANALYSIS.md)
 - [تحلیل connector و ساختار XML گردش‌کار Word](docs/WORD-DOCUMENT-PROTOCOL-ANALYSIS.md)
 - [تحلیل ایستای چرخه Word و اختلاف VMT/TD32](docs/WORD-LIFECYCLE-STATIC-TRACE.md)
+- [تحلیل تایمر AutoSave و مسیر SilentSave](docs/AUTOSAVE-TIMER-AND-SILENT-SAVE-TRACE-2026-11-17.md)
 - [تحلیل سرویس HTTP محلی و bridge](docs/HTTP-LOCAL-API-ANALYSIS.md)
 - [تحلیل Import Table و وابستگی‌های Windows](docs/IMPORT-TABLE-ANALYSIS.md)
 - [تحلیل Office Automation و COM](docs/OFFICE-COM-ANALYSIS.md)
