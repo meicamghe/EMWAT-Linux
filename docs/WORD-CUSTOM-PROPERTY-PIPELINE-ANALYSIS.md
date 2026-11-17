@@ -80,15 +80,9 @@ The latest field-mapping artifact (`14304455134`) clarifies the object construct
 
 The map population source is now identified: `AddCustomDocPropertiesToDic` inserts entries into the single/twin maps using the full custom-property name as key. The remaining uncertainty is the precise semantics of every XML field accessor used to retrieve the field-name strings and whether the Writer API exposes the same custom-property enumeration order as Word.
 
-### Negative callsite result: no map insertion found in the complete LoadDocument/viewer scan
+### Complete LoadDocument/viewer scan and confirmed insertion callsites
 
-Artifact `14304323294` completed the next bounded search batch:
-
-- `LoadDocument` was traced across `0x004B7724–0x004B8A84` (full TD32 procedure range, including separated blocks).
-- `scan_td32_class_field_refs.py` scanned 50 `TWordViwer` methods for offsets `+0x64`, `+0x68`, and `+0x6C`, finding 39 references. The descriptor maps are read by the string-key `GetXmlFieldInfo`/`GetFieldValue` path and consumed by `AddCustomDocPropertiesToDic`; the only writes to viewer `+0x68/+0x6C` in the scanned class are the dictionary-object assignments in setup at `0x004D0F98/0x004D0FB3`.
-- Whole-PE direct-call scans and byte-level `E8 rel32` candidate scans found no callsites to the single/twin map insertion helpers (`0x004D4D08`, `0x004D4D58`, `0x004D4DA8`, `0x004D6310`, `0x004D6360`).
-
-This strengthens the negative finding but does not prove the maps are never populated: VMT/interface calls, callbacks, or an external object that receives the dictionary references are still possible. The population path remains the primary unresolved field-pipeline question; no insertion routine is being guessed from TD32 labels alone.
+Artifact `14304323294` traced `LoadDocument` across `0x004B7724–0x004B8A84` and scanned 50 `TWordViwer` methods for offsets `+0x64`, `+0x68`, and `+0x6C` (39 references). The key map accesses in `AddCustomDocPropertiesToDic` are `viewer+0x6C` at `0x004D15BE` followed by the twin-map Add wrapper call at `0x004D15C6`, and `viewer+0x68` at `0x004D162D` followed by the single-map Add wrapper call at `0x004D1635`. The low-level insertion helpers have no external direct CALL references because `AddCustomDocPropertiesToDic` calls the wrapper methods, which then invoke the low-level insert routines internally. This closes the descriptor-map population path.
 
 ### Correction — Add wrappers were mislabelled as Remove in TD32
 
