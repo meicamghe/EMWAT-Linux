@@ -1,6 +1,7 @@
 import unittest
 
 from emwat_linux.emwat_field_catalog import (
+    build_indexed_signer_slots,
     group_indexed_signer_fields,
     parse_indexed_signer_field,
 )
@@ -52,6 +53,30 @@ class EmwatFieldCatalogTests(unittest.TestCase):
             [2],
         )
         self.assertEqual(grouped["department"], ())
+
+    def test_builds_indexed_slots_and_reports_missing_families(self):
+        fields = (
+            "LetterSignerPer3",
+            "LetterSignerDep1",
+            "SignNumberOfSigner3",
+            "LetterSignerUnit1",
+            "LetterSignerDep3",
+        )
+        slots = build_indexed_signer_slots(fields)
+        self.assertEqual([slot.index for slot in slots], [1, 3])
+        self.assertFalse(slots[0].complete)
+        self.assertEqual(
+            [field.field_id for field in slots[0].fields],
+            ["LetterSignerDep1", "LetterSignerUnit1"],
+        )
+        self.assertEqual(
+            slots[1].missing_families,
+            ("unit", "index_unit", "signature_number", "behalf_name", "signature_image"),
+        )
+        self.assertEqual(
+            [field.field_id for field in slots[1].fields],
+            ["LetterSignerPer3", "SignNumberOfSigner3", "LetterSignerDep3"],
+        )
 
     def test_rejects_non_text_field_ids(self):
         with self.assertRaisesRegex(TypeError, "field_id_must_be_text"):
