@@ -402,3 +402,15 @@ The VMT at `0x0047B284` points to a Delphi published method table at `0x0047B84E
 ### Complete TMainForm published methods
 
 The method table contains 17 published methods, including the HTTP request handler (`IdHTTPServerCommandGet` at `0x0047BF30`) and HTTP exception handler (`IdHTTPServerException` at `0x0047CA44`), plus `FormCreate`, `FormClose`, `Terminate`, `LoadQuickConfig`, `Log`, and UI/timer handlers. The next analysis pass traces the startup, shutdown, and HTTP exception methods to recover server initialization and failure behavior.
+
+## Runtime BPL method object lifecycle (confirmed callsites)
+
+The `ParseMethod` body provides the complete dynamic dispatch lifecycle:
+
+1. `GetClass` via thunk `0x00402354` at `0x00470E07` resolves the Delphi class named by the XML `class` attribute (after the parser's `T` prefix handling).
+2. `TObject.ClassName` via thunk `0x004010B8` at `0x00470E5D` checks whether the resolved class name equals `TUpgradeEmwat` (`0x00471128`); the result is stored in `TMethodInfo+0x04`.
+3. `TObject.Create` via thunk `0x004010D8` at `0x00470EDC` constructs the actual BPL method object.
+4. The service attaches the `TMethodInfo` pointer at instance offset `+0x04` and calls the object's VMT slot `+0x0C` at `0x00470EF6`.
+5. `TObject.Free` via thunk `0x004010E8` at `0x00470F42` releases the method object after invocation.
+
+This object lifecycle is distinct from the parser metadata object's own constructor/destructor (`ClassCreate` at `0x00471220`; `ClassDestroy` at `0x0047127F`). The distinction is important for the Linux dispatcher: the XML class name selects a registered method class; a per-call method object receives the parsed method-info payload, executes through its virtual dispatch slot, and is then released.
