@@ -2252,3 +2252,7 @@ workflow `python-bridge.yml` پس از تغییرات docstring و تفکیک ر
 - `TObject.Free` در `0x00470F42` نمونه را آزاد می‌کند.
 
 این چرخه با ساخت/تخریب شیء metadata یعنی `TMethodInfo` از طریق `ClassCreate`/`ClassDestroy` متفاوت است.
+
+## مسیر ارسال پاسخ HTTP شناسایی شد — 2026-11-17
+
+تابع `0x004610FC` با RTTI name به‌عنوان `TIdHTTPResponseInfo.WriteContent` شناسایی شد. این helper پاسخ Indy را با توجه به status/content ارسال می‌کند و pointer موقت `ContentText` را پاک‌سازی می‌کند. callsiteهای تأییدشده: `ParseMethod` در `0x00470F34` و شاخه‌های `init` و `heartbeat` در `0x0047C237` و `0x0047C2A9`. مسیر پاسخ عادی connector همچنان به `bResultSet` وابسته است: اگر connector پاسخ را خودش ثبت کند handler مسیر پیش‌فرض را رد می‌کند؛ در غیر این صورت خروجی را در `AResponseInfo.ContentText` می‌گذارد و `WriteContent` را صدا می‌زند.
