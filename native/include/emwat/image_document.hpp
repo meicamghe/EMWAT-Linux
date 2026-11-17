@@ -48,6 +48,8 @@ public:
     [[nodiscard]] const ImagePage& page(std::size_t index) const;
 
     void append_page(ImagePage page);
+    // Validate the complete batch before mutating the document.
+    void append_pages(std::vector<ImagePage> pages);
     void select_page(std::size_t index);
     void rotate_active(QuarterTurn turn);
     void flip_active(FlipAxis axis);
