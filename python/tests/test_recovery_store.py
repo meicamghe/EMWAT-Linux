@@ -41,6 +41,28 @@ class RecoverySnapshotStoreTests(unittest.TestCase):
             self.assertTrue(info.document_name.endswith(".docx"))
             self.assertEqual(store.load_snapshot(session_id), payload)
 
+    def test_manifest_switch_keeps_previous_snapshot_if_update_fails(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            store = RecoverySnapshotStore(Path(temporary) / "recovery")
+            session_id = store.create_session()
+            first = bytes.fromhex("D0CF11E0A1B11AE1") + b"first-document"
+            second = bytes.fromhex("D0CF11E0A1B11AE1") + b"second-document"
+            store.save_snapshot(session_id, first)
+
+            atomic_write = store._atomic_write
+
+            def fail_manifest(destination, payload):
+                if destination.name == "manifest.json":
+                    raise OSError("simulated_manifest_commit_failure")
+                atomic_write(destination, payload)
+
+            store._atomic_write = fail_manifest
+            with self.assertRaisesRegex(OSError, "simulated_manifest_commit_failure"):
+                store.save_snapshot(session_id, second)
+            store._atomic_write = atomic_write
+
+            self.assertEqual(store.load_snapshot(session_id), first)
+
     def test_corrupted_snapshot_is_rejected(self):
         with tempfile.TemporaryDirectory() as temporary:
             store = RecoverySnapshotStore(Path(temporary) / "recovery")
