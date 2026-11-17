@@ -1204,3 +1204,13 @@ Do not implement guessed `signData` joining or claim end-to-end Almas registrati
 - Additional workflow jobs now confirmed successful: service/BPL dispatch crosswalk (all 3 jobs), BPL static analysis, Word event sink, Word close/response chain, Word save/print, Word field mapping, Word lifecycle in the automation-surface workflow, callback contracts, SevenZip recovery plugin, and controller content unpacking.
 - A separate Word lifecycle run `44053390645` was still in progress at the latest poll. No new native C++ or Python test run was triggered by this analysis-only documentation update.
 - The VMT/TD32 mismatch is now an explicit implementation constraint: keep the XML `EditWordDocument` allowlist key and map by verified VMT dispatch, not by decorated TD32 procedure label.
+
+
+## Word event sink and UNO order regression — 2026-11-17
+
+- Added `docs/WORD-COM-EVENT-SINK-REGISTRATION-2026-11-17.md` from successful event-sink artifact run `44053390597`: BeforeSave/NewDocument/WindowActivate callback pointers and Self slots are recorded, the conditional callback remains unnamed, and BeforeSave cancellation plus the Persian save prompt are documented with unresolved result mapping.
+- Refactored Writer inspector's sorted custom-property list to derive from the raw UNO Info order helper, retaining the backward-compatible default for the raw-order dataclass field.
+- Extended the real LibreOffice integration test to compare the inspector's raw order with `PropertySetInfo.getProperties()` from the live document.
+- Latest CI queued for commit `22a7d6d828f3b799cd1dbe544acff170530ab64f`: UNO integration run `44055192704` and Python bridge run `44055192702`; previous commit's equivalent workflows `44055185438` and `44055185443` also queued. Await results; no pass claimed yet.
+- Python bridge, dispatcher, LibreOffice adapter, office adapter, VMT inspector, interface tracer, writer-inspector tests, and word-field tests are otherwise synchronized with main; branch-only duplicate-header security tests and strict UTF-8 optional-attribute rejection remain preserved.
+- PR #1 description refreshed. Branch/main compare is 343 ahead and 102 behind; PR remains draft/non-mergeable. No rebase or merge attempted.
