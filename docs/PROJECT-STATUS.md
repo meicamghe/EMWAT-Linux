@@ -2474,3 +2474,14 @@ workflow `python-bridge.yml` پس از تغییرات docstring و تفکیک ر
 - PR #1 body was refreshed with the corrected evidence and verification boundary. It remains Draft and non-mergeable.
 - Correct compare orientation `base=main`, `head=work/template-mapping-inventory`: **128 commits ahead, 343 behind, 55 changed files; diverged**. Mainline integration remains additive-only; no rebase, merge, or force push.
 - Commits in this continuation: `c464ed4070c5c974f7842da5727648b48346fb3f` (evidence correction), `beda5f8ba217337b137f88743165c2beed9d36d6` (field collector trace), `b9a74db130881b7f0dfca61b4b05a17104bfdb42` (interval/callback reference scan), plus README/status/handoff updates.
+
+
+## تکمیل زنجیره close → recovery timer → HTTP response — 2026-11-17
+
+- یافته‌های Run 153 در mainline با سند PCAP round-trip تطبیق داده شد. `OnTmrAutoSave` در `0x004B8A84` یک `TTimer` در viewer+`0x7C` را با callback `OnControlerNotify` (`0x004BB3B0`)، interval حداقل 10,000ms در viewer+`0x88` و وضعیت enabled تنظیم می‌کند.
+- همان routine در `0x004B9AE8` تا صفر شدن viewer+`0x58` منتظر می‌ماند: `Sleep(5)`، `Application.ProcessMessages` و polling. این wait همگام باعث می‌شود POST اصلی هنگام باز بودن Word باز بماند.
+- `OnControlerNotify` مسیر دوره‌ای recovery محلی `.easd/.easz` را ایجاد/به‌روزرسانی می‌کند؛ این archive با response نهایی HTTP یکی نیست.
+- callback ثبت‌شده `0x004CD154` مسیر Word `Document.Close` را از slot `+0x29C` اجرا می‌کند و viewer+`0x58` را صفر می‌کند. سپس `LoadDocument` پاسخ XML `response-word status=success` را از طریق Indy `WriteContent` می‌فرستد و `bResultSet` را تنظیم می‌کند.
+- PCAP پاسخ HTTP 200 با `application/msword` و Base64 legacy DOC/CFB را نشان می‌دهد؛ حدود 54.558 ثانیه فاصلهٔ request body تا response با مدت session سازگار است. به‌علت TCP gaps، hash کامل/مقایسه بایت‌به‌بایت ادعا نمی‌شود.
+- registry preference `AutoSaveInterval` و timer field viewer+`0x88` هنوز از نظر read-side linkage به‌طور قطعی به هم وصل نشده‌اند.
+- سند جدید: `docs/WORD-CLOSE-WAIT-AND-RESPONSE-CORRELATION-2026-11-17.md`. این یافته، برداشت قبلی «OnTmrAutoSave فقط setup است» را اصلاح می‌کند.
