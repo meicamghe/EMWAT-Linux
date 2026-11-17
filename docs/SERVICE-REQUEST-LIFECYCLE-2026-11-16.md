@@ -211,3 +211,13 @@ The exact IAT/thunk scan now locates the native Delphi runtime calls, not merely
 - `ClassCreate` and `ClassDestroy` are used widely by the service runtime; their existence alone does not identify the request-specific object-construction edge.
 
 The full ParseMethod disassembly contains several separated code islands and embedded exception/finally data. A linear trace from `0x00470D00` stops at its first internal RET; the workflow now traces the islands and the exact GetClass call instruction separately. The final `GetClass` → instance construction → `TEmwatMethod.Invoke` receiver/ABI is not yet considered proven.
+
+### ParseMethod class-resolution and invocation sequence narrowed further
+
+The aligned code-island artifact (`14301682420`) resolves the previously ambiguous `GetClass` callsite:
+
+1. At `0x00470E07`, the service calls `rtl230.bpl!GetClass` with the class-name string extracted from the XML method element. A null return branches to an error path that formats `Unable to load "<class>" class.`
+2. On success, the service obtains the resolved class name through `TObject.ClassName`, compares it with the hard-coded `TUpgradeEmwat` name using `@UStrEqual`, and stores the resulting special-class flag in the method-info record at `+0x04`.
+3. It constructs an instance by calling `TObject.$bctr` (`0x004010D8`) with the resolved class reference, stores the method-info pointer at instance `+0x04`, then invokes an indirect slot at `0x00470EF6` through `[instance.VMT+0x0C]`, passing the parsed method/parameter context in registers.
+
+This is the first complete service-side evidence of XML class resolution followed by runtime object construction and an indirect method call. The exact meaning of VMT slot `+0x0C` and its mapping to BPL `TEmwatMethod.Invoke` (`0x0046C82C`) still needs a verified cross-module VMT/ABI match; do not yet label the slot as `Invoke` as a proven fact.
