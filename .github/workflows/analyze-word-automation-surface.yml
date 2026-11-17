@@ -235,6 +235,7 @@ jobs:
           # Resolve the AutoSaveInterval lookup table and direct save-path references.
           python - <<'PY'
           from pathlib import Path
+          import os
           import pefile
           import struct
 
@@ -248,10 +249,13 @@ jobs:
               for section in pe.sections:
                   start = section.VirtualAddress
                   span = max(section.Misc_VirtualSize, section.SizeOfRawData)
+                  delta = rva - start
                   if start <= rva and rva + size <= start + span:
-                      raw = section.PointerToRawData + rva - start
-                      if raw + size <= len(blob):
-                          return blob[raw:raw + size], section.Name.rstrip(b"\0").decode("ascii", "replace")
+                      # Virtual-only zero-fill bytes have no corresponding raw file data.
+                      if delta + size <= section.SizeOfRawData:
+                          raw = section.PointerToRawData + delta
+                          if raw + size <= len(blob):
+                              return blob[raw:raw + size], section.Name.rstrip(b"\0").decode("ascii", "replace")
               return None, None
 
           lines = [
@@ -276,7 +280,12 @@ jobs:
                   for index, value in enumerate(values):
                       lines.append(f"| {index} | {value} | {value * 1000} ms |")
           out = Path("word-automation/save-print/autosave-interval-table.md")
-          out.write_text("\n".join(lines) + "\n", encoding="utf-8")
+          report = "\n".join(lines) + "\n"
+          out.write_text(report, encoding="utf-8")
+          summary_path = os.environ.get("GITHUB_STEP_SUMMARY")
+          if summary_path:
+              with Path(summary_path).open("a", encoding="utf-8") as summary:
+                  summary.write(report)
           print(f"Wrote {out}")
           PY
           python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x004D2948 word-automation/save-print/word-wrap-line-count-4D2948.md || true
