@@ -95,3 +95,10 @@ The native bridge now includes the observed Agent liveness route GET /?heartbeat
 ## Build and test
 
 See [docs/BUILD-AND-TEST.md](docs/BUILD-AND-TEST.md) for reproducible build and test commands for the native image/scanner core, Python bridge, and LibreOffice UNO integration suite.
+
+
+## Reverse-engineering notes
+
+- [BPL VMT and TD32 method-target reconciliation](docs/BPL-VMT-METHOD-TARGET-RECONCILIATION-2026-11-17.md)
+- [Word COM event-sink registration and save behavior](docs/WORD-COM-EVENT-SINK-REGISTRATION-2026-11-17.md)
+- [AutoSave settings and registry contract](docs/AUTOSAVE-SETTINGS-REGISTRY-CONTRACT-2026-11-17.md)
