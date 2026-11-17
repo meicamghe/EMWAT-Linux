@@ -140,6 +140,32 @@ class RecoverySnapshotStoreTests(unittest.TestCase):
             with self.assertRaisesRegex(RecoveryStoreError, "recovery_restore_extension_mismatch"):
                 store.restore_snapshot(session_id, Path(temporary) / "restored.docx")
 
+    def test_symlinked_recovery_root_is_rejected_and_not_enumerated(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            base = Path(temporary)
+            outside = base / "outside"
+            outside.mkdir()
+            store = RecoverySnapshotStore(outside)
+            session_id = store.create_session()
+            store.save_snapshot(
+                session_id,
+                bytes.fromhex("D0CF11E0A1B11AE1") + b"outside-document",
+            )
+
+            link = base / "recovery-link"
+            link.symlink_to(outside, target_is_directory=True)
+            linked_store = RecoverySnapshotStore(link)
+
+            self.assertEqual(linked_store.list_snapshots(), ())
+            with self.assertRaisesRegex(
+                RecoveryStoreError, "recovery_root_symlink_rejected"
+            ):
+                linked_store.create_session()
+            with self.assertRaisesRegex(
+                RecoveryStoreError, "recovery_root_symlink_rejected"
+            ):
+                linked_store.load_snapshot(session_id)
+
     def test_invalid_session_id_is_rejected(self):
         with tempfile.TemporaryDirectory() as temporary:
             store = RecoverySnapshotStore(Path(temporary) / "recovery")
