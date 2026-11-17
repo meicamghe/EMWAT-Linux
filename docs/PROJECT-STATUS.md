@@ -2301,3 +2301,7 @@ Artifact `14304323294` با موفقیت تولید شد. trace کامل `LoadDo
 ## اصلاح builder descriptorها بر اساس مسیر واقعی Add — 2026-11-17
 
 `build_word_custom_property_field_maps()` به‌روزرسانی شد تا دیگر property name را به‌اشتباه معادل XML field name فرض نکند. اکنون `xml_field_names` را به‌صورت اختیاری و هم‌تراز با ترتیب property enumeration می‌پذیرد؛ در صورت نبود آن، field-name در descriptor برابر `None` می‌ماند. تست‌ها mapping با index مشترک و ردکردن sequenceهای ناهم‌طول را پوشش می‌دهند. Writer catalog فعلاً به این builder وصل نشده، چون enumeration order مرتب‌شده‌ی catalog هنوز با ترتیب Word ثابت نشده است.
+
+## CI پس از اصلاح descriptor builder — 2026-11-17
+
+Python bridge CI در run `44030420508` موفق شد: **111 تست موفق، 2 skip اختیاری** در 5.163 ثانیه. تست‌های جدید هم‌ترازی `property_names` و `xml_field_names`، رد sequenceهای ناهم‌طول و حفظ field-name به‌صورت `None` هنگام نبود XML mapping را پوشش می‌دهند.
