@@ -7,6 +7,8 @@ import tempfile
 import time
 import unittest
 from pathlib import Path
+from threading import Thread
+from urllib.parse import unquote, urlparse
 import zipfile
 import xml.etree.ElementTree as ET
 
@@ -16,7 +18,7 @@ from emwat_linux.editword_service import EditWordDocumentService
 from emwat_linux.protocol import WORD_RESPONSE_CONTENT_TYPE, parse_method_call
 
 from emwat_linux.editword_request import EditWordDocumentRequest
-from emwat_linux.libreoffice_adapter import LibreOfficeAdapter, _CFB_SIGNATURE
+from emwat_linux.libreoffice_adapter import LibreOfficeAdapter, _CFB_SIGNATURE, _OfficeHandle
 from emwat_linux.recovery_store import RecoverySnapshotStore
 from emwat_linux.office_adapter import CloseDisposition
 from emwat_linux.word_config import WordDocumentConfig
@@ -56,6 +58,58 @@ class DocumentCloseListenerRetryTests(unittest.TestCase):
         self.assertIsNone(listener.snapshot_error)
         self.assertTrue(listener.snapshot_ready.is_set())
         self.assertEqual(document.attempts, 2)
+
+
+class RecoveryWorkerTests(unittest.TestCase):
+    def test_worker_retries_transient_error_and_persists_snapshot(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary) / "recovery"
+            work_dir = Path(temporary) / "work"
+            work_dir.mkdir()
+            store = RecoverySnapshotStore(root)
+            session_id = store.create_session()
+            payload = _CFB_SIGNATURE + b"periodic-recovery-fixture"
+
+            class FlakyDocument:
+                def __init__(self):
+                    self.attempts = 0
+
+                def storeToURL(self, url, _properties):
+                    self.attempts += 1
+                    if self.attempts == 1:
+                        raise RuntimeError("transient_uno_snapshot_failure")
+                    destination = Path(unquote(urlparse(url).path))
+                    destination.write_bytes(payload)
+
+            document = FlakyDocument()
+            handle = _OfficeHandle(
+                process=None,
+                document=document,
+                close_listener=None,
+                work_dir=work_dir,
+                recovery_session_id=session_id,
+            )
+            adapter = LibreOfficeAdapter(
+                recovery_store=store,
+                recovery_interval_seconds=0.01,
+            )
+            worker = Thread(target=adapter._recovery_loop, args=(handle,), daemon=True)
+            handle.recovery_thread = worker
+            worker.start()
+            try:
+                deadline = time.monotonic() + 3
+                snapshots = store.list_snapshots()
+                while not snapshots and time.monotonic() < deadline:
+                    time.sleep(0.01)
+                    snapshots = store.list_snapshots()
+                self.assertTrue(snapshots, "recovery_worker_did_not_persist_snapshot")
+                self.assertGreaterEqual(document.attempts, 2)
+                self.assertIsNone(handle.recovery_error)
+                self.assertEqual(store.load_snapshot(session_id), payload)
+            finally:
+                handle.recovery_stop.set()
+                worker.join(timeout=2)
+            self.assertFalse(worker.is_alive())
 
 
 @unittest.skipUnless(
