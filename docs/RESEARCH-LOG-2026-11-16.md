@@ -675,3 +675,13 @@ The full `Invoke` body (`0x0046C82C–0x0046C9DD`) handles the parameter data an
 ### TD32 sizes for dispatch wrapper and Invoke
 
 The BPL TD32 trace (`14269626143`) confirms `TEmwatMethod.Finalization` spans `0x0046C9E0–0x0046CDF7` (size `0x418`), while `TEmwatMethod.Invoke` spans `0x0046C82C–0x0046C9DD` (size `0x1B1`). The full Finalization workflow range has been extended to the exact TD32 end address `0x0046CDF7`; the earlier `0x0046CC98` range omitted its exception/finally tail, though it already contained the key Invoke and PerformMethod calls.
+
+## Virtual AddXml method and map population boundary clarified
+
+The newest field artifact (`14271907043`) confirms `TWordViwer.AddXmlWordConfigFieldsToDic` at `0x004D1148` is installed in the `TWordViwer` VMT at slot `+0x2A4` (`bpl-vmt.md`, around line 6411). This explains why direct CALL scans find no caller: invocation is virtual. Its decoded body, however, does not insert descriptor entries: it clears viewer collections at `+0x64`, `+0x68`, and `+0x6C`, runs XML/interface cleanup around `+0x44`, calls `TWordApplication.ScreenRefresh` (`0x00441DD4`), and logs completion. Its method name/diagnostics therefore cannot be treated as proof of dictionary population.
+
+The paired `TWordViwer.AddCustomDocPropertiesToDic` (`0x004D1454`) is directly called by `LoadDocument` (`0x004B7994`). It enumerates Word custom properties, splits property names on `†`, and calls the generic dictionary `Remove` methods: single-field map `Remove` at `0x004D531C` and twin-field map `Remove` at `0x004D68D4`. This is consistent with removing descriptors matched by Word custom properties. The generic `Add` / `AddOrSetValue` implementations exist (`0x004D52DC`, `0x004D54E0`, `0x004D6894`, `0x004D6A98`), but no direct code CALL sites were found; raw pointer matches for these addresses occur in Delphi RTTI/method metadata and are not proven runtime calls. Thus the initial descriptor-map population path remains unresolved.
+
+## Service import-reference scan interpretation corrected
+
+The service artifact (`14266461337`) shows each imported Delphi API's exact IAT address appears once in a compiler-generated import thunk (`jmp dword ptr [IAT]`), not at its actual high-level callsites. For example `GetClass` IAT `0x00487B9C` is referenced by thunk `0x00402356`, `LoadPackage` IAT `0x00487680` by thunk `0x00402176`, and `ClassCreate` IAT `0x00487410` by thunk `0x0040115A`. Those raw pointer references are not themselves dispatch callsites. The service workflow now traces each thunk body and scans direct/rel32 callers of the thunk addresses to recover actual usage. Until that run completes, the import table proves runtime capability but not the exact call chain.
