@@ -126,7 +126,12 @@ class RecoverySnapshotStore:
     def load_snapshot(self, session_id: str) -> bytes:
         folder = self._session_dir(session_id)
         try:
-            manifest = json.loads((folder / "manifest.json").read_text(encoding="utf-8"))
+            if folder.is_symlink() or not folder.is_dir():
+                raise RecoveryStoreError("recovery_session_missing")
+            manifest_path = folder / "manifest.json"
+            if manifest_path.is_symlink() or not manifest_path.is_file():
+                raise RecoveryStoreError("recovery_snapshot_unavailable")
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
             if manifest.get("schema_version") != 1 or manifest.get("session_id") != session_id:
                 raise RecoveryStoreError("recovery_manifest_identity_invalid")
             document_name = manifest["document_name"]
@@ -138,7 +143,7 @@ class RecoverySnapshotStore:
             if document_path.stat().st_size > self.max_snapshot_bytes:
                 raise RecoveryStoreError("recovery_snapshot_too_large")
             payload = document_path.read_bytes()
-            if len(payload) != manifest["size_bytes"]:
+            if type(manifest["size_bytes"]) is not int or len(payload) != manifest["size_bytes"]:
                 raise RecoveryStoreError("recovery_snapshot_size_mismatch")
             if not isinstance(manifest["sha256"], str) or not re.fullmatch(r"[0-9a-f]{64}", manifest["sha256"]):
                 raise RecoveryStoreError("recovery_manifest_hash_invalid")
@@ -169,7 +174,7 @@ class RecoverySnapshotStore:
                 if manifest.get("schema_version") != 1 or manifest.get("session_id") != folder.name:
                     continue
                 name = manifest["document_name"]
-                if not isinstance(name, str) or not re.fullmatch(r"document-[0-9a-f]{64}\\.(?:doc|docx)", name):
+                if not isinstance(name, str) or not re.fullmatch(r"document-[0-9a-f]{64}\.(?:doc|docx)", name):
                     continue
                 path = folder / name
                 if path.is_symlink() or not path.is_file():
