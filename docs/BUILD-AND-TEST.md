@@ -51,3 +51,8 @@ EMWAT_RUN_LIBREOFFICE_INTEGRATION=1 PYTHONPATH=src \
 - `signData` framing and external `paramId` resolution remain unverified.
 - SANE scanning is implemented against the API contract but has not yet been validated on physical scanner hardware.
 - Do not expose this bridge to non-loopback interfaces or production traffic until the complete authentication/origin and response contracts are verified.
+
+
+## EditWord payload limits
+
+The LibreOffice composition factory defaults to a 64 MiB decoded Word document limit, a 128 MiB HTTP request limit, and a 96 MiB HTTP response limit. These are bounded defaults that allow for Base64 expansion and the XML envelope. Deployments can lower or raise the limits explicitly; keep the HTTP request cap large enough for the encoded document plus configuration and other parameters.
