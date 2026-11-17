@@ -286,7 +286,6 @@ class BridgeHTTPServerTests(unittest.TestCase):
     def test_post_rejects_duplicate_origin_headers(self):
         conn = http.client.HTTPConnection(self.host, self.port, timeout=2)
         conn.putrequest("POST", "/?invoke=12345")
-        conn.putheader("Host", f"{self.host}:{self.port}")
         conn.putheader("Content-Length", "1")
         conn.putheader("Origin", "https://office.example")
         conn.putheader("Origin", "https://attacker.example")
