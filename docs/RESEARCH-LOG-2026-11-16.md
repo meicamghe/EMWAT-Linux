@@ -723,3 +723,13 @@ The exact IAT scanner output (`14302370292`) identifies the real import thunk in
 - `ClassDestroy` IAT `0x0048740C` → thunk `0x00401160`, likewise with many callsites.
 
 The key request-path pair is now localized: `ParseMethod` at `0x00470D00` reaches `GetClass` at `0x00470E07`, and the package-loading path reaches `LoadPackage` at `0x0047E15F`. This materially strengthens the dynamic class-dispatch model, but does not yet prove the final `ClassCreate`/`Invoke` sequence. The service workflow now traces the full ParseMethod range `0x00470D00–0x00471080` plus bounded contexts around the two key callsites.
+
+## Direct service runtime import callsites confirmed — 2026-11-17
+
+The fresh service artifact (`14300914213`) validates three key import edges by exact rel32 callsite and thunk target:
+
+- `LoadPackage` IAT `0x00487680` is reached through thunk `0x00402174`, called from the BPL package gate at `0x0047E15F`.
+- `GetClass` IAT `0x00487B9C` is reached through thunk `0x00402354`, called from `ParseMethod` at `0x00470E07` after the XML class value is prefixed with `T`.
+- `ClassCreate` IAT `0x00487410` is reached through thunk `0x00401158`, called at `0x00471220` from the `TMethodInfo` constructor (`0x00471214`). The nearby `ClassDestroy` thunk `0x00401160` is called at `0x0047127F` during metadata-object cleanup. These are parser metadata allocation/cleanup callsites; do not misattribute them to the dynamically resolved BPL method instance, which is created later through the class-reference constructor path in `ParseMethod`.
+
+Additional rel32 candidates identify `StartExe` at `0x004014BA` and `GetProcAddress` at `0x00401720`; their surrounding helper bodies are now included in the next service workflow batch. The two GetProcAddress imports may be Delphi package/runtime infrastructure and are not yet assigned to the request method path.
