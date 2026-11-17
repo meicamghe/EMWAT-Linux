@@ -763,3 +763,15 @@ The field workflow previously reparsed the same TD32 subsection directory twice 
 ## Class-name prefix before GetClass identified as a targeted question
 
 The aligned ParseMethod island shows `mov edx, 0x004710E0` immediately before `call 0x00401310`, then loads the resulting local string into EAX and calls `GetClass` at `0x00470E07`. The decoded string at `0x004710E0` is exactly `T`. This strongly suggests the service prefixes the XML class attribute with Delphi's conventional `T` class prefix before runtime lookup (e.g. request `EditWordDocument` → registered class `TEditWordDocument`), which matches the recovered BPL class symbol. The semantics of helper `0x00401310` have not yet been decoded; a dedicated helper/caller trace is now in the service workflow before this is treated as confirmed string concatenation.
+
+### Actual BPL method object constructor/destructor chain resolved
+
+The ParseMethod validation artifact confirms the class-instance lifecycle separately from TMethodInfo metadata allocation:
+
+- `GetClass` at `0x00470E07` returns the registered Delphi class reference.
+- `TObject.ClassName` thunk `0x004010B8` is called at `0x00470E5D`; the result is compared with the special class name `TUpgradeEmwat` (`0x00471128`) and the Boolean is stored in `TMethodInfo+0x04`.
+- `TObject.Create` thunk `0x004010D8` is called at `0x00470EDC` on the resolved class reference.
+- The newly created instance receives the `TMethodInfo` pointer at `+0x04`; the service invokes its VMT slot `+0x0C` at `0x00470EF6`.
+- `TObject.Free` thunk `0x004010E8` is called at `0x00470F42` to release the method instance.
+
+This definitively distinguishes the runtime-created BPL method instance from the parser's own `TMethodInfo` object, which uses `ClassCreate`/`ClassDestroy` at `0x00471220`/`0x0047127F`.
