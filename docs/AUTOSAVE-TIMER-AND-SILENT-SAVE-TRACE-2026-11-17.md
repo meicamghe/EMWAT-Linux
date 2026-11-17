@@ -65,3 +65,10 @@ In `TfrmShowAutoSaveFiles.CloseWordApp` at `0x005EBDA8`, the virtual call at `0x
 - Resolve the timer enable/interval assignment and establish whether a periodic event is actually wired to this method.
 - Trace `GetDocFieldName`'s conditional `SilentSaveEmwatDoc` path through the helper `0x004BFF1C` to its output/persistence boundary.
 - Resolve the VCL component type at form offset `+0x3C0` and the virtual slot `+0x104`.
+
+
+## اصلاح تکمیلی Run 153 — تایمر واقعی و انتظار close
+
+این بخش برداشت قبلی این سند را تکمیل می‌کند: `OnTmrAutoSave` در `0x004B8A84` فقط event-sink setup نیست. این routine `OnControlerNotify` در `0x004BB3B0` را روی `TTimer.OnTimer` در viewer+`0x7C` نصب می‌کند، interval در viewer+`0x88` را حداقل 10 ثانیه قرار می‌دهد و timer را فعال می‌کند. سپس loop همگام `Sleep(5) → ProcessMessages → test viewer+0x58` را اجرا می‌کند تا close callback مقدار را صفر کند. `OnControlerNotify` یک recovery/archive محلی `.easd/.easz` می‌سازد و با HTTP response نهایی یکی نیست.
+
+پس از صفر شدن viewer+`0x58`، `LoadDocument` پاسخ موفق `response-word` را می‌نویسد: HTTP 200، MIME داخلی `application/msword`، Base64 و محتوای legacy OLE DOC/CFB. پاسخ از `AResponseInfo.ContentText`، Indy `WriteContent` و سپس `bResultSet` عبور می‌کند. PCAP حدود 54.558 ثانیه تأخیر را نشان می‌دهد؛ این با طول جلسه و wait loop سازگار است. شرح کامل در `docs/WORD-CLOSE-WAIT-AND-RESPONSE-CORRELATION-2026-11-17.md` است.
