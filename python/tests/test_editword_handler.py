@@ -69,6 +69,21 @@ class EditWordHandlerTests(unittest.TestCase):
         self.assertIn(b"application/msword", response.body)
         self.assertEqual(len(service.calls), 1)
 
+    def test_success_response_respects_configured_response_limit(self):
+        from emwat_linux.protocol import ProtocolError
+
+        service = FakeService(returned_result())
+        handler = create_editword_handler(
+            service,
+            cancel_response_factory=lambda _result, _request: BridgeResponse(b"cancel"),
+            max_response_bytes=8,
+        )
+        call = parse_method_call(
+            b'<emwat version="1.0"><method class="EditWordDocument"/></emwat>'
+        )
+        with self.assertRaisesRegex(ProtocolError, "response_size_invalid"):
+            handler(call, request())
+
     def test_cancel_response_is_explicitly_injected(self):
         service = FakeService(cancelled_result())
         observed = []
