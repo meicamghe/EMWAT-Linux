@@ -272,5 +272,48 @@ class BridgeHTTPServerTests(unittest.TestCase):
         self.assertEqual(body, b"internal_bridge_error")
 
 
+    def test_init_endpoint_rejects_duplicate_referer_headers(self):
+        conn = http.client.HTTPConnection(self.host, self.port, timeout=2)
+        conn.putrequest("GET", "/?init=123_456")
+        conn.putheader("Referer", "https://office.example/")
+        conn.putheader("Referer", "https://attacker.example/")
+        conn.endheaders()
+        response = conn.getresponse()
+        self.assertEqual(response.status, 403)
+        self.assertEqual(response.read(), b"init_referer_required")
+        conn.close()
+
+    def test_post_rejects_duplicate_origin_headers(self):
+        conn = http.client.HTTPConnection(self.host, self.port, timeout=2)
+        conn.putrequest("POST", "/?invoke=12345")
+        conn.putheader("Host", f"{self.host}:{self.port}")
+        conn.putheader("Content-Length", "1")
+        conn.putheader("Origin", "https://office.example")
+        conn.putheader("Origin", "https://attacker.example")
+        conn.endheaders()
+        conn.send(b"x")
+        response = conn.getresponse()
+        self.assertEqual(response.status, 400)
+        self.assertEqual(response.read(), b"invalid_origin_header")
+        conn.close()
+        self.assertEqual(self.seen, [])
+
+    def test_post_rejects_duplicate_content_type_headers(self):
+        conn = http.client.HTTPConnection(self.host, self.port, timeout=2)
+        conn.putrequest("POST", "/?invoke=12345")
+        conn.putheader("Host", f"{self.host}:{self.port}")
+        conn.putheader("Content-Length", "1")
+        conn.putheader("Origin", "https://office.example")
+        conn.putheader("Content-Type", "text/plain")
+        conn.putheader("Content-Type", "application/xml")
+        conn.endheaders()
+        conn.send(b"x")
+        response = conn.getresponse()
+        self.assertEqual(response.status, 400)
+        self.assertEqual(response.read(), b"invalid_content_type")
+        conn.close()
+        self.assertEqual(self.seen, [])
+
+
 if __name__ == "__main__":
     unittest.main()
