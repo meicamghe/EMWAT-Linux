@@ -2496,3 +2496,11 @@ workflow `python-bridge.yml` پس از تغییرات docstring و تفکیک ر
 - PCAP پاسخ HTTP 200 با `application/msword` و Base64 legacy DOC/CFB را نشان می‌دهد؛ حدود 54.558 ثانیه فاصلهٔ request body تا response با مدت session سازگار است. به‌علت TCP gaps، hash کامل/مقایسه بایت‌به‌بایت ادعا نمی‌شود.
 - registry preference `AutoSaveInterval` و timer field viewer+`0x88` هنوز از نظر read-side linkage به‌طور قطعی به هم وصل نشده‌اند.
 - سند جدید: `docs/WORD-CLOSE-WAIT-AND-RESPONSE-CORRELATION-2026-11-17.md`. این یافته، برداشت قبلی «OnTmrAutoSave فقط setup است» را اصلاح می‌کند.
+
+
+## LibreOffice close-retry regression fix — 2026-11-17
+
+- Found a real close-retry edge case in `_DocumentCloseListener.queryClosing`: if the first snapshot attempt failed (for example, a close attempt is vetoed/cancelled) and a later close attempt succeeded, the previous `snapshot_error` and set `snapshot_ready` event could remain stale and incorrectly fail the completed session.
+- Fixed by clearing the prior snapshot error and readiness event at the beginning of every `queryClosing` attempt; the current attempt then publishes its own success/failure.
+- Added a focused regression test in `python/tests/test_libreoffice_integration.py` using a fake document that fails its first `storeToURL` and succeeds on retry.
+- Code commit: `e6a4abd21cbb08b90fc669c3d949bafa6127be3a`; regression test commit: `41506f0a22a3fecb6d0c7f8bd41a49f6c435435b`. The available Actions query returned no run records for the commit; test execution is therefore not claimed.
