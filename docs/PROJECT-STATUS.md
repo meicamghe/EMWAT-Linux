@@ -2278,3 +2278,12 @@ workflow `python-bridge.yml` پس از تغییرات docstring و تفکیک ر
 - VMT slot `+0x0C` روی instance متد BPL به wrapper `TEmwatMethod.Invoke` در `0x0046C9E0` می‌رسد. برچسب TD32 برای این wrapper (`Finalization`) گمراه‌کننده است؛ خود method-table/VMT و بدنه نشان می‌دهند این wrapper، helper داخلی `0x0046C82C` را صدا می‌زند.
 - wrapper سپس VMT slot `+0x10` را فراخوانی می‌کند؛ برای `TEditWordDocument` این slot به `0x005EE82C` می‌رسد و آن `PerformMethod`، `LoadDocument` را اجرا می‌کند.
 - مستند کامل این crosswalk در `docs/EMWAT-SERVICE-EXECUTABLE-ANALYSIS.md` ثبت شد.
+
+## ساختار واقعی mapهای descriptor و نام‌های گمراه‌کننده TD32 — 2026-11-17
+
+- routine `0x004D0D24` که از `LoadDocument` در `0x004B78E9` فراخوانی می‌شود، با وجود label اشتباه `$bdtr`، مسیر setup/constructor-like است و سه dictionary را می‌سازد: `+0x64` برای `TDocumentCProperty`، `+0x68` برای single descriptor و `+0x6C` برای twin descriptor.
+- constructorهای descriptor map به‌ترتیب `0x004D5C28` و `0x004D71E0` هستند؛ هر دو TObjectDictionary با ظرفیت اولیه صفر و comparer/ownership configuration می‌سازند.
+- `TWordViwer.$bctr` در `0x004D08B4` مسیر جداگانه option form است و فقط از `ShowRecAndCcOptionForm` فراخوانی می‌شود؛ این routine فیلدهای Rec/CC را می‌سازد و مسیر populate اولیه descriptor map نیست.
+- `0x004D552C` برای single و `0x004D6AE4` برای twin در عمل AddOrSetValue هستند، هرچند TD32 هر دو را `ContainsKey` نام‌گذاری کرده است. در حالت key موجود، به helper update و در حالت key جدید، پس از grow به helper insert می‌روند.
+- هر entry سه slot دارد: hash، UnicodeString key و pointer به descriptor. helperهای update/insert نیز بعضاً TD32 label نامتناسب دارند؛ semantics از بدنه disassembly تعیین می‌شود.
+- منبع اولیه‌ی insertion هنوز پیدا نشده است. batch جدید trace کامل `LoadDocument`، همه‌ی دسترسی‌های `TWordViwer` به offsets `+0x64/+0x68/+0x6C` و helperهای update-existing را اجرا می‌کند.
