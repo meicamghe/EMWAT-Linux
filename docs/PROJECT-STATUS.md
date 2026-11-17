@@ -2221,3 +2221,10 @@ workflow `python-bridge.yml` پس از تغییرات docstring و تفکیک ر
 - `GetXmlFieldInfo` اکنون دقیق‌تر مدل شده: اول single-map را جست‌وجو می‌کند، سپس twin-map را؛ در مسیر twin با `CompareText` عضو مقابل را برمی‌گرداند. تابع `resolve_twin_field_partner` و تست آن اضافه شد.
 - CI پایتون: **108 تست موفق، 2 مورد optional skip** در run `44023065489`.
 - نسخهٔ کامل لینوکس و سازگاری end-to-end با Almas هنوز تأیید نشده‌اند؛ پروتکل بازگشت در حالت cancel/discard، همهٔ فیلدها، تصاویر/امضاها و چاپ واقعی همچنان نیازمند fixture و آزمون یکپارچه‌اند.
+
+## تأیید callsiteهای LoadPackage و GetClass در سرویس — 2026-11-17
+
+- `LoadPackage` از thunk آدرس `0x00402174` در `0x0047E15F` و داخل gate بارگذاری BPL فراخوانی می‌شود.
+- `GetClass` از thunk آدرس `0x00402354` در `0x00470E07` و پس از prefix شدن `T` به مقدار XML `class` فراخوانی می‌شود.
+- `ClassCreate` و `ClassDestroy` در `0x00471220` و `0x0047127F` به ساخت/پاک‌سازی شیء metadata به نام `TMethodInfo` تعلق دارند؛ این‌ها را نباید با ساخت کلاس متد واقعی BPL اشتباه گرفت.
+- workflow جدید، callsiteهای `StartExe` و `GetProcAddress` را نیز با محدوده کد اطرافشان بررسی می‌کند.
