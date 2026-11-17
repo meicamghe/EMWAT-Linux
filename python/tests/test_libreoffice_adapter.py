@@ -1,5 +1,6 @@
 import tempfile
 import unittest
+from threading import Event, Lock
 from pathlib import Path
 
 from emwat_linux.libreoffice_adapter import (
@@ -100,7 +101,9 @@ class LibreOfficeAdapterUnitTests(unittest.TestCase):
             document,
             "file:///tmp/final.doc",
             lambda: closed.append(True),
-            FakeUno(),
+            (FakeUno().createUnoStruct("com.sun.star.beans.PropertyValue"),),
+            Lock(),
+            Event(),
         )
         listener.queryClosing(object(), False)
         self.assertTrue(listener.snapshot_ready.is_set())
@@ -117,7 +120,9 @@ class LibreOfficeAdapterUnitTests(unittest.TestCase):
             FakeDocument(fail=True),
             "file:///tmp/final.doc",
             lambda: None,
-            FakeUno(),
+            (FakeUno().createUnoStruct("com.sun.star.beans.PropertyValue"),),
+            Lock(),
+            Event(),
         )
         listener.queryClosing(object(), False)
         self.assertTrue(listener.snapshot_ready.is_set())
