@@ -205,7 +205,7 @@ jobs:
         shell: bash
         run: |
           mkdir -p word-automation/save-print
-          for address in 0x004C5E04 0x004C5FF8 0x004CB108 0x004CB1B4 0x004CB638 0x004CDC2C 0x004CE030 0x004D23D8; do
+          for address in 0x004BFF1C 0x004C5E04 0x004C5FF8 0x004CB108 0x004CB1B4 0x004CB638 0x004CDC2C 0x004CE030 0x004D23D8; do
             name=${address#0x}
             python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 "$address" "word-automation/save-print/$name.md" 7000 ret
             python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 "$address" "word-automation/save-print/$name-td32.md" || true
@@ -269,6 +269,11 @@ jobs:
           print(f"Wrote {out}")
           PY
           python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x004D2948 word-automation/save-print/word-wrap-line-count-4D2948.md || true
+          # Resolve the field-value collector called by SilentSaveEmwatDoc.
+          python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x004BFF1C word-automation/save-print/store-field-values-for-print-4BFF1C.md || true
+          python tools/scan_pe_call_refs.py analysis-input/EmwatMethods.bpl1 0x004BFF1C word-automation/save-print/store-field-values-for-print-callers.md 10
+          python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 0x004BFF1C word-automation/save-print/store-field-values-for-print-pointer-refs.md || true
+          python tools/decode_pe_strings.py analysis-input/EmwatMethods.bpl1 0x004BFF40 0x004BFF60 0x004BFF80 0x004BFFA0 0x004BFFC0 0x004BFFE0 0x004C0000 > word-automation/save-print/store-field-values-for-print-strings.md
           for address in 0x004D23D8 0x004D2948 0x004AEA78 0x004AEBBC; do
             name=${address#0x}
             python tools/scan_pe_call_refs.py analysis-input/EmwatMethods.bpl1 "$address" "word-automation/save-print/callers-$name.md" 8
