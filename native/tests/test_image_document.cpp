@@ -103,6 +103,17 @@ int main() {
 
     {
         ImageDocument doc;
+        bool threw = false;
+        try {
+            doc.append_pages({
+                ImagePage{sample(), 300.0, 300.0},
+                ImagePage{PixelBuffer{}, {}, {}},
+            });
+        } catch (const std::invalid_argument&) { threw = true; }
+        assert(threw && doc.page_count() == 0 && !doc.dirty());
+    }
+    {
+        ImageDocument doc;
         doc.append_page(ImagePage{sample(), 300.0, 300.0});
         const auto saved_revision = doc.generation();
         doc.mark_saved();
