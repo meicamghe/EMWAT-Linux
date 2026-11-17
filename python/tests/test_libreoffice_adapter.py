@@ -1,5 +1,6 @@
 import tempfile
 import unittest
+from threading import Event, Lock
 from pathlib import Path
 
 from emwat_linux.libreoffice_adapter import (
@@ -22,6 +23,16 @@ class FakeUno:
     @staticmethod
     def createUnoStruct(_name):
         return FakeProperty()
+
+
+def fake_snapshot_properties():
+    filter_name = FakeProperty()
+    filter_name.Name = "FilterName"
+    filter_name.Value = "MS Word 97"
+    overwrite = FakeProperty()
+    overwrite.Name = "Overwrite"
+    overwrite.Value = True
+    return (filter_name, overwrite)
 
 
 class FakeDocument:
@@ -100,7 +111,9 @@ class LibreOfficeAdapterUnitTests(unittest.TestCase):
             document,
             "file:///tmp/final.doc",
             lambda: closed.append(True),
-            FakeUno(),
+            fake_snapshot_properties(),
+            Lock(),
+            Event(),
         )
         listener.queryClosing(object(), False)
         self.assertTrue(listener.snapshot_ready.is_set())
@@ -117,7 +130,9 @@ class LibreOfficeAdapterUnitTests(unittest.TestCase):
             FakeDocument(fail=True),
             "file:///tmp/final.doc",
             lambda: None,
-            FakeUno(),
+            (FakeUno().createUnoStruct("com.sun.star.beans.PropertyValue"),),
+            Lock(),
+            Event(),
         )
         listener.queryClosing(object(), False)
         self.assertTrue(listener.snapshot_ready.is_set())
