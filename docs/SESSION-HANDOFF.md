@@ -1132,3 +1132,11 @@ Do not implement guessed `signData` joining or claim end-to-end Almas registrati
 - Native image run #111: build/test and ASan/UBSan build/test both passed; 4/4 CTest targets passed in both jobs. Run #109 was an intermediate commit between the scanner source and header updates and is superseded by the green complete commit.
 - Python bridge run #220: 116 tests passed, 3 optional skips.
 - LibreOffice UNO run #39: 12 tests passed.
+
+
+### Scanner-to-document and large document handling — 2026-11-17
+- `ImageDocument.append_pages()` validates a complete batch before mutation. `scan_into_document()` gathers all SANE frames before appending; failed acquisition leaves the existing document unchanged.
+- Fake scanner tests cover multi-frame page insertion and failure atomicity.
+- Native run #118 passed both regular and ASan/UBSan jobs; 4/4 CTest targets passed in each.
+- EditWord composition defaults: max decoded document 64 MiB, max HTTP request 128 MiB, max HTTP response 96 MiB. The handler passes the configured response cap into the observed Base64 XML response serializer.
+- Python bridge run #224 passed 117 tests (114 passed, 3 optional skips).
