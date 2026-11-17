@@ -2065,3 +2065,24 @@ Artifact `14227611377` resolves the earlier interface-signature uncertainty:
 - `FillImageField` از دو شاخه `FillTextField` فراخوانی می‌شود و در وضعیت خاص از `FindWindowExtd` استفاده می‌کند.
 - `FillField` فقط field interface را به collection داخلی اضافه می‌کند و عملیات نهایی تغییر متن/تصویر نیست.
 - مستند شواهد: `docs/WORD-AUTOMATION-SURFACE-2026-11-16.md` و artifact شماره `14232259712`.
+
+
+## Parallel implementation update — 2026-11-17
+
+### Writer template mapping
+- Added `emwat_linux.template_mapping.inspect_template_mapping`: an evidence-bounded, read-only inventory of exact-name candidates across bookmarks, named ranges, sections, tables, frames, graphics, document indexes, and `DocInfo.Custom` fields.
+- It only uses the recovered property/config index alignment when the sequence counts match. Count mismatch returns no positional candidates.
+- Twin-field members are reported independently; fuzzy/semantic guesses are not generated.
+- Added a real LibreOffice UNO integration test using a synthetic DOCX with a bookmark and a DOCPROPERTY field.
+- UNO run #35 passed all 12 tests, including the live Writer mapping integration test.
+
+### Image and signData investigation
+- Added `emwat_linux.payload_inventory.inspect_request_payloads`.
+- Image fields are decoded according to their declared per-field encoding and summarized by field ID, MIME type, byte count, and SHA-256; raw image bytes are not returned or logged.
+- `paramId` references remain explicitly unresolved. signData is kept opaque and summarized only by presence, character count, and SHA-256.
+- No assumptions are made about signData separators, offsets, Base64 framing, or parameter association.
+- Python bridge run #210 passed: 122 tests, 119 passed and 3 optional tests skipped.
+- UNO run #38 is pending its final result for this update.
+
+### Current boundary
+These changes improve template and payload discovery but do not yet implement Almas-specific image placement or signData reconstruction. The actual sanitized Almas template and a safe signData capture remain necessary to prove those behaviors. The bridge/Writer round-trip tests still use synthetic fixtures; operational Almas compatibility is not claimed.
