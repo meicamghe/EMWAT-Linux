@@ -94,6 +94,8 @@ jobs:
             python tools/trace_pe_range.py analysis-input/EmwatService.exe 0x00470D76 0x00470E58 dispatch-crosswalk/service/parse-method-post-finally-island.md
             python tools/trace_pe_range.py analysis-input/EmwatService.exe 0x00470DF0 0x00470E58 dispatch-crosswalk/service/getclass-callsite-aligned-context.md
             python tools/trace_pe_target.py analysis-input/EmwatService.exe 0x00470E07 dispatch-crosswalk/service/getclass-call-instruction.md 100 ret
+            python tools/trace_pe_target.py analysis-input/EmwatService.exe 0x00401310 dispatch-crosswalk/service/class-name-prefix-helper.md 500 ret
+            python tools/scan_pe_call_refs.py analysis-input/EmwatService.exe 0x00401310 dispatch-crosswalk/service/class-name-prefix-helper-callers.md
             python tools/trace_pe_range.py analysis-input/EmwatService.exe 0x00470D00 0x00471033 dispatch-crosswalk/service/parse-method-full.md
             python tools/trace_pe_range.py analysis-input/EmwatService.exe 0x00470DB2 0x00470E80 dispatch-crosswalk/service/parse-method-code-island-1.md
             python tools/trace_pe_range.py analysis-input/EmwatService.exe 0x00470E58 0x00470F80 dispatch-crosswalk/service/parse-method-class-validation.md
