@@ -111,6 +111,55 @@ class BridgeHTTPServerTests(unittest.TestCase):
         self.assertEqual(self.seen[0].query, "invoke=12345")
         self.assertEqual(self.seen[0].origin, "https://office.example")
 
+    def test_document_post_waits_for_close_while_heartbeat_remains_responsive(self):
+        entered = threading.Event()
+        release = threading.Event()
+        completed = threading.Event()
+        outcome = {}
+
+        self.server.shutdown()
+        self.server.server_close()
+        self.thread.join(timeout=2)
+
+        def close_driven_handler(_request):
+            entered.set()
+            if not release.wait(timeout=3):
+                raise RuntimeError("test_close_event_timeout")
+            return BridgeResponse(b"<final-document/>")
+
+        self.server = BridgeHTTPServer(
+            close_driven_handler,
+            allowed_origins=frozenset({"https://office.example"}),
+        )
+        self.thread = threading.Thread(target=self.server.serve_forever, daemon=True)
+        self.thread.start()
+        self.host, self.port = self.server.address
+
+        def post_document():
+            outcome["response"] = self.request(
+                "POST",
+                "/?invoke=54321",
+                b"<emwat><method class=\"EditWordDocument\"/></emwat>",
+                {"Origin": "https://office.example"},
+            )
+            completed.set()
+
+        request_thread = threading.Thread(target=post_document, daemon=True)
+        request_thread.start()
+        self.assertTrue(entered.wait(timeout=1))
+        self.assertFalse(completed.wait(timeout=0.05))
+
+        # The server is threaded: the long-running document session must not
+        # block the independent agent heartbeat route.
+        heartbeat_status, heartbeat_body, _ = self.request("GET", "/?heartbeat")
+        self.assertEqual((heartbeat_status, heartbeat_body), (200, b"TickTack"))
+        self.assertFalse(completed.is_set())
+
+        release.set()
+        request_thread.join(timeout=2)
+        self.assertTrue(completed.is_set())
+        self.assertEqual(outcome["response"][0:2], (200, b"<final-document/>"))
+
     def test_host_header_must_match_loopback_listener(self):
         status, body, _ = self.request(
             "GET", "/healthz", headers={"Host": "attacker.example:1984"}
