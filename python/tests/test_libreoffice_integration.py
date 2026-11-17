@@ -18,6 +18,45 @@ from emwat_linux.office_adapter import CloseDisposition
 from emwat_linux.word_config import WordDocumentConfig
 
 
+
+
+class DocumentCloseListenerRetryTests(unittest.TestCase):
+    def test_snapshot_failure_is_cleared_when_close_is_retried(self):
+        from types import SimpleNamespace
+        from emwat_linux.libreoffice_adapter import _DocumentCloseListener
+
+        class FakeUno:
+            @staticmethod
+            def createUnoStruct(_name):
+                return SimpleNamespace(Name="", Value=None)
+
+        class FlakyDocument:
+            def __init__(self):
+                self.attempts = 0
+
+            def storeToURL(self, _url, _properties):
+                self.attempts += 1
+                if self.attempts == 1:
+                    raise RuntimeError("simulated_close_attempt_cancelled")
+
+        document = FlakyDocument()
+        listener = _DocumentCloseListener(
+            document,
+            "file:///tmp/emwat-final.doc",
+            lambda: None,
+            FakeUno(),
+        )
+
+        listener.queryClosing(None, False)
+        self.assertIsInstance(listener.snapshot_error, RuntimeError)
+        self.assertTrue(listener.snapshot_ready.is_set())
+
+        listener.queryClosing(None, False)
+        self.assertIsNone(listener.snapshot_error)
+        self.assertTrue(listener.snapshot_ready.is_set())
+        self.assertEqual(document.attempts, 2)
+
+
 @unittest.skipUnless(
     os.environ.get("EMWAT_RUN_LIBREOFFICE_INTEGRATION") == "1"
     and shutil.which("soffice"),
