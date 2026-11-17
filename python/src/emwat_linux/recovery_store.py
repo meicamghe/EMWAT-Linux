@@ -144,6 +144,10 @@ class RecoverySnapshotStore:
                 continue
         return tuple(sorted(snapshots, key=lambda item: item.updated_at, reverse=True))
 
+    def has_snapshot(self, session_id: str) -> bool:
+        folder = self._session_dir(session_id)
+        return (folder / "manifest.json").is_file()
+
     def remove_session(self, session_id: str) -> None:
         folder = self._session_dir(session_id)
         if folder.exists():
