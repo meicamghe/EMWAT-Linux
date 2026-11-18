@@ -67,7 +67,7 @@ def _read_manifest(path: Path) -> dict[str, object]:
             raise RecoveryStoreError("recovery_manifest_too_large")
         try:
             manifest = json.loads(raw.decode("utf-8", errors="strict"))
-        except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        except (UnicodeDecodeError, json.JSONDecodeError, RecursionError) as exc:
             raise RecoveryStoreError("recovery_manifest_invalid") from exc
         if not isinstance(manifest, dict):
             raise RecoveryStoreError("recovery_manifest_invalid")
