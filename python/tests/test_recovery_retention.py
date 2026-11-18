@@ -7,6 +7,7 @@ from emwat_linux.recovery_retention import (
     apply_recovery_retention,
 )
 from emwat_linux.recovery_store import RecoverySnapshotStore
+from emwat_linux.recovery_service import RecoverySnapshotService
 
 
 DOC = bytes.fromhex("D0CF11E0A1B11AE1") + b"retention-fixture"
@@ -73,6 +74,20 @@ class RecoveryRetentionTests(unittest.TestCase):
 
             self.assertEqual(removed, (old,))
             self.assertEqual(tuple(item.session_id for item in store.list_snapshots()), (fresh,))
+
+    def test_service_exposes_retention_only_when_explicitly_called(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            store = RecoverySnapshotStore(Path(temporary) / "recovery")
+            service = RecoverySnapshotService(store)
+            session = store.create_session()
+            store.save_snapshot(session, DOC)
+
+            removed = service.apply_retention(
+                RecoveryRetentionPolicy(max_snapshots=1), now=10**12
+            )
+
+            self.assertEqual(removed, ())
+            self.assertEqual(len(service.list_snapshots()), 1)
 
     def test_no_op_when_policy_does_not_exceed_limits(self):
         with tempfile.TemporaryDirectory() as temporary:
