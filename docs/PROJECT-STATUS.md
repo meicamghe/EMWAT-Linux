@@ -4,13 +4,13 @@
 - Plaintext snapshot filenames retain the SHA-256 prefix plus a unique per-write suffix to keep writes immutable and crash-safe.
 - Manifest schema version is checked with strict integer typing; booleans are rejected.
 - Added a regression assertion that encrypted filenames do not disclose the plaintext digest.
-- Python run 44247973310 passed the preceding AES-GCM implementation and tests. The opaque encrypted-filename and strict-schema follow-up commits were added after that run and require fresh CI verification.
+- Fresh Python bridge CI run `44248272905` passed after the opaque encrypted-filename and strict-schema changes. Native build-test and ASan/UBSan run `44248272884` also passed. LibreOffice UNO integration run `44248272886` was still running at the last check.
 
 ## Optional AES-256-GCM recovery encryption — 2026-11-18
 
 - `RecoverySnapshotStore` now supports opt-in AES-256-GCM encryption when a trusted caller injects a 32-byte key. The key is never stored in the recovery directory or manifest.
-- Encrypted snapshots use a versioned envelope, random 96-bit nonce, authenticated encryption, and associated data binding the session ID, document name, and plaintext size. The plaintext SHA-256 is checked after decryption.
-- Encrypted snapshots fail closed when the key is absent or incorrect. A keyed store rejects legacy plaintext snapshots rather than silently mixing formats.
+- Encrypted snapshots use a versioned envelope, random 96-bit nonce, authenticated encryption, and associated data binding the session ID, document name, plaintext size, and plaintext SHA-256. The plaintext SHA-256 is checked after decryption.
+- Encrypted snapshots use opaque random filenames, fail closed when the key is absent or incorrect, and reject legacy plaintext snapshots when a key is configured rather than silently mixing formats.
 - Added tests for plaintext confidentiality, round-trip, wrong/missing key, tampering, legacy plaintext rejection, and crash-safe repeated writes.
 - Python CI run 44247873577 exposed two issues (AES-GCM envelope offset and a stale catalog filename assertion); both have been corrected in subsequent commits. Do not claim the correction is green until a fresh Python run completes.
 - Encryption remains opt-in. The application must obtain a stable key from an OS credential store or administrator secret provider and inject it; key rotation, migration of existing plaintext snapshots, and default activation are not implemented.
