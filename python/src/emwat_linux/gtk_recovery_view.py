@@ -163,6 +163,9 @@ def build_recovery_picker(application: Any, controller: Any) -> Any:
 
     def discard(_button: Any) -> None:
         session_id = selected_id()
+        if session_id is None:
+            update_actions()
+            return
         state = controller.state(session_id)
         entry = state.selected_entry
         if entry is None:
