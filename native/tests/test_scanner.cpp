@@ -50,6 +50,15 @@ int main() {
     catch (const ScannerError&) { invalid_id_rejected = true; }
     assert(invalid_id_rejected);
 
+    invalid_id_rejected = false;
+    try { (void)sane_backend.get_capabilities("test:\\nscanner"); }
+    catch (const ScannerError&) { invalid_id_rejected = true; }
+    assert(invalid_id_rejected);
+    invalid_id_rejected = false;
+    try { (void)sane_backend.scan_one(std::string("test:scanner\\0hidden", 18)); }
+    catch (const ScannerError&) { invalid_id_rejected = true; }
+    assert(invalid_id_rejected);
+
     FakeScannerBackend backend;
     backend.devices.push_back({"test:scanner0", "Example", "Virtual Scanner", "flatbed"});
     const auto devices = backend.list_devices();
