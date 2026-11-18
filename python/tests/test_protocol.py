@@ -131,6 +131,11 @@ class MethodEnvelopeTests(unittest.TestCase):
         with self.assertRaises(TypeError):
             serialize_word_document_response("not bytes")  # type: ignore[arg-type]
 
+    def test_word_response_size_is_rejected_before_base64_expansion(self):
+        document = b"x" * (1024 * 1024)
+        with self.assertRaisesRegex(ProtocolError, "response_size_invalid"):
+            serialize_word_document_response(document, max_response_bytes=1024)
+
     def test_rejects_non_bytes(self):
         with self.assertRaises(TypeError):
             parse_method_call("<emwat/>")  # type: ignore[arg-type]
