@@ -15,8 +15,8 @@ These findings identify the observed Windows output as a password-protected 7z a
 
 ## What is not implemented or proven on Linux
 
-- The Linux recovery store uses its own DOC/ DOCX snapshot plus JSON manifest format.
-- Linux recovery snapshots are **not encrypted at rest**.
+- The Linux recovery store uses its own DOC/DOCX snapshot plus JSON manifest format, separate from the Windows `.easz` container.
+- The Linux store supports opt-in AES-256-GCM encryption when the application injects an externally managed 32-byte key; its default configuration remains plaintext.
 - The Linux store does **not** read or write Windows `.easz` archives.
 - The Windows password value, derivation, encoding, archive header/encryption parameters, entry metadata, and exact 7z compatibility profile have not been validated with a captured synthetic archive.
 - No claim is made that a generic 7z command or library can reproduce all EMWAT-specific behavior.
