@@ -82,9 +82,9 @@ For the current project decisions, implementation boundaries, and next-session c
 
 تست‌ها شامل Python unit/transport، build و ASan/UBSan برای native core و roundtrip واقعی LibreOffice UNO هستند. آخرین ترکیب کد تأییدشده در 2026-11-18:
 
-- Python bridge: [run 44304965568](https://github.com/meicamghe/EMWAT-Linux/actions/runs/44304965568) — 196 تست، 194 موفق و 2 تست اختیاری UNO skip شدند.
-- Native build + ASan/UBSan: [run 44304965055](https://github.com/meicamghe/EMWAT-Linux/actions/runs/44304965055) — هر دو job موفق.
-- LibreOffice UNO: [run 44304965075](https://github.com/meicamghe/EMWAT-Linux/actions/runs/44304965075) — runtime و roundtrip واقعی Writer موفق.
+- Python bridge: [run 44305529480](https://github.com/meicamghe/EMWAT-Linux/actions/runs/44304965568) — 198 تست، 196 موفق و 2 تست اختیاری UNO skip شدند.
+- Native build + ASan/UBSan: [run 44305529408](https://github.com/meicamghe/EMWAT-Linux/actions/runs/44304965055) — هر دو job موفق.
+- LibreOffice UNO: [run 44305529564](https://github.com/meicamghe/EMWAT-Linux/actions/runs/44304965075) — runtime و roundtrip واقعی Writer موفق.
 
 ### مواردی که هنوز تکمیل نشده‌اند
 
