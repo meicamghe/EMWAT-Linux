@@ -35,6 +35,7 @@ class WriterPropertyAlignmentAuditTests(unittest.TestCase):
         self.assertEqual(audit.word_only_names, ("WordOnly",))
         self.assertEqual(audit.writer_only_names, ("WriterOnly",))
         self.assertEqual(audit.writer_docinfo_custom_field_names, ("LetterSubject",))
+        self.assertEqual(audit.case_only_candidates, ())
         self.assertEqual(audit.writer_property_names, (
             "WriterOnly", "SignerPerson†SignerUnit", "LetterSubject"
         ))
@@ -51,6 +52,21 @@ class WriterPropertyAlignmentAuditTests(unittest.TestCase):
         self.assertEqual(audit.exact_name_matches, ())
         self.assertEqual(audit.word_only_names, ("LetterSubject",))
         self.assertEqual(audit.writer_only_names, ("lettersubject",))
+        self.assertEqual(
+            audit.case_only_candidates, (("LetterSubject", "lettersubject"),)
+        )
+
+
+    def test_ambiguous_casefold_collisions_are_not_suggested(self):
+        word = build_word_custom_property_field_maps(["Field", "FIELD"])
+        writer = WriterDocumentCatalog(
+            bookmarks=(), named_ranges=(), text_sections=(), text_tables=(),
+            text_frames=(), graphic_objects=(), document_indexes=(), text_fields=(),
+            custom_document_properties=("field",),
+            custom_document_properties_in_info_order=("field",),
+        )
+        audit = audit_writer_property_alignment(word, writer)
+        self.assertEqual(audit.case_only_candidates, ())
 
 
 if __name__ == "__main__":
