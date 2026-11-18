@@ -283,5 +283,34 @@ class RecoverySnapshotStoreTests(unittest.TestCase):
                 RecoverySnapshotStore(Path(temporary) / "recovery", encryption_key=b"short")
 
 
+    def test_encrypted_rewrite_keeps_previous_snapshot_if_manifest_commit_fails(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            store = RecoverySnapshotStore(
+                Path(temporary) / "recovery", encryption_key=b"R" * 32
+            )
+            session_id = store.create_session()
+            payload = bytes.fromhex("D0CF11E0A1B11AE1") + b"same-plaintext"
+            first = store.save_snapshot(session_id, payload)
+            atomic_write = store._atomic_write
+
+            def fail_manifest(destination, data):
+                if destination.name == "manifest.json":
+                    raise OSError("simulated_encrypted_manifest_failure")
+                atomic_write(destination, data)
+
+            store._atomic_write = fail_manifest
+            with self.assertRaisesRegex(OSError, "simulated_encrypted_manifest_failure"):
+                store.save_snapshot(session_id, payload)
+            store._atomic_write = atomic_write
+
+            self.assertEqual(store.load_snapshot(session_id), payload)
+            self.assertTrue(first.document_path.exists())
+            second = store.save_snapshot(session_id, payload)
+            self.assertEqual(store.load_snapshot(session_id), payload)
+            self.assertNotEqual(first.document_path, second.document_path)
+            self.assertEqual(len(tuple(first.document_path.parent.glob("document-*"))), 1)
+            self.assertEqual(len(store.list_snapshots()), 1)
+
+
 if __name__ == "__main__":
     unittest.main()
