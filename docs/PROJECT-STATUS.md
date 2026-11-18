@@ -2561,3 +2561,5 @@ Python bridge CI در run `44031548179` موفق شد: **111 تست موفق، 2
 - Added regression tests for an oversized manifest and a symlinked manifest targeting a file outside the recovery session.
 - Implementation: `cced3b65a7485fcde9503c7df94f1abd773411d9`; tests: `513e6c819e0e7eb952cd75e02090199029c636c7`; documentation: `186e94b354583655b83a0bd716aac0e8dd30d184`.
 - CI for this follow-up has not yet been observed on the new branch head; do not treat prior green runs as covering these changes.
+
+- Follow-up review also catches JSON parser recursion-depth failures inside the same bounded manifest reader; deeply nested metadata now fails closed with `recovery_manifest_invalid`. Commits: implementation `570fb8de7c22f73bda8e37f29adc058b699fc793`, regression test `26c831ebf80cb94178912158f1c712f93082582d`, documentation `b2e12ab948c638ac4c0e91d035927d5ccbc224c4`.
