@@ -1,3 +1,11 @@
+## 2026-11-18 — opt-in recovery retention implementation (PR #2)
+
+- Added `recovery_retention.py` with explicit age and/or snapshot-count limits. It keeps the newest valid snapshots, removes expired/excess sessions only when explicitly invoked, and returns removed session IDs.
+- Exposed the policy through `RecoverySnapshotService.apply_retention()`; there is no default policy, background timer, or implicit deletion. At least one positive limit is required and count limits cannot be zero.
+- Added unit tests for policy validation, age pruning, newest-N retention, service integration, and no-op behavior. Invalid/unverifiable entries are not enumerated by the store and are not deleted by this policy.
+- Python bridge CI passed on the final PR head `f1a8260589d6f5fbd8fda0a2e45bd29c7741ff4e`: runs `44244362768` and `44244353561` both completed successfully.
+- Draft PR: https://github.com/meicamghe/EMWAT-Linux/pull/2. This is not merged to main. Retention is not encryption; encryption-at-rest, user-facing policy controls, and a real Recovery UI remain open.
+
 ## 2026-11-18 — CI verification and recovery trigger coverage
 
 - Native image core run `44240525477` completed successfully on `ecf4fa8a8784b2403272ecd79186fd073e1a8e1b`: both `build-test` and `sanitizer-test` passed, including the ASan/UBSan test step.
