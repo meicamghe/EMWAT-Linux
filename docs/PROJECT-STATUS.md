@@ -2550,4 +2550,4 @@ Python bridge CI در run `44031548179` موفق شد: **111 تست موفق، 2
 - Parent-Origin allowlist entries are type-checked before URL parsing; malformed values fail at server construction.
 - Added regression coverage for invalid status types and malformed allowlist containers/entries.
 - Commits: status implementation `104aa318` / tests `82f3963`; allowlist implementation `9231fd6`, `95c735f` / tests `a978d0e`, `4ea99bb`.
-- These changes are newer than the last green CI head and require fresh Python, native and UNO workflow verification.
+- Full CI on code/test head `4ea99bb3b1cf2b1ed664e5420c640d657e7df61a` passed: Python bridge run `44305529480` (**198 tests, 196 passed, 2 optional LibreOffice skips**); Native image core run `44305529408` (build and ASan/UBSan jobs passed); LibreOffice UNO run `44305529564` (runtime verification and real Writer roundtrip passed). The subsequent project-status commit is documentation-only.
