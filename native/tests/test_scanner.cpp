@@ -51,11 +51,11 @@ int main() {
     assert(invalid_id_rejected);
 
     invalid_id_rejected = false;
-    try { (void)sane_backend.get_capabilities("test:\\nscanner"); }
+    try { (void)sane_backend.get_capabilities("test:\nscanner"); }
     catch (const ScannerError&) { invalid_id_rejected = true; }
     assert(invalid_id_rejected);
     invalid_id_rejected = false;
-    try { (void)sane_backend.scan_one(std::string("test:scanner\\0hidden", 18)); }
+    try { (void)sane_backend.scan_one(std::string("test:scanner\0hidden", 19)); }
     catch (const ScannerError&) { invalid_id_rejected = true; }
     assert(invalid_id_rejected);
 
