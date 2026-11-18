@@ -41,7 +41,7 @@ def audit_writer_property_alignment(
     for name in writer_names:
         writer_by_fold.setdefault(name.casefold(), []).append(name)
     case_only_candidates = tuple(
-        (word_candidates[0], writer_candidates[0])
+        (word_candidates[0], writer_by_fold[folded][0])
         for folded, word_candidates in word_by_fold.items()
         if folded in writer_by_fold
         and len(word_candidates) == 1
