@@ -241,7 +241,7 @@ ScannerCapabilities SaneScannerBackend::get_capabilities(const std::string& devi
 }
 
 ImagePage SaneScannerBackend::scan_one(const std::string& device_id, const ScanOptions& options) {
-    if (device_id.empty()) throw ScannerError("scanner device id cannot be empty");
+    validate_device_id(device_id);
     std::lock_guard<std::mutex> lock(sane_mutex());
     SaneSession session;
     SaneHandle device(device_id);
