@@ -1,1 +1,2 @@
 cryptography>=42,<47
+keyring>=25,<27
