@@ -1,3 +1,10 @@
+## 2026-11-18 — additional parallel work
+
+- Native scanner scope documented against actual SANE implementation: one 8-bit Gray/RGB frame, optional mode/source/DPI, bounded 1 GiB frame size, and explicit unverified gaps (ADF/duplex/multi-frame, interactive cancellation, physical scanner matrix).
+- Removed duplicate `libsane-dev` entry from `.github/workflows/native-core.yml`; existing native build and ASan/UBSan jobs will validate the workflow change.
+- Python bridge CI for the latest property-order assertion passed: run `44237865553`, 147 tests, 145 passed, 2 optional UNO skips.
+- Recovery UI, at-rest encryption, executable retention, semantic field mapping, Cancel/Discard wire contract and Almas E2E remain open.
+
 ## 2026-11-18 — parallel implementation checkpoint
 
 - Added toolkit-neutral `RecoveryPickerController`; it exposes safe metadata, delegates restore to the hardened store using a UI-selected destination, and requires explicit confirmation before destructive discard. It is not a graphical widget or HTTP endpoint.
