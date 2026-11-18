@@ -1,3 +1,10 @@
+## Application-level encrypted recovery opt-in — 2026-11-18
+
+- `create_libreoffice_bridge_server(encrypt_recovery=True, recovery_root=...)` now explicitly creates the Secret Service-backed encrypted store and injects it into `LibreOfficeAdapter`.
+- Default behavior remains unchanged (plaintext recovery). A caller-supplied office adapter combined with `encrypt_recovery=True` is rejected to avoid a false security guarantee.
+- Added composition tests verifying store injection and rejection of the ambiguous custom-adapter combination.
+- The key provider's real DBus/Secret Service behavior remains unverified in a live desktop session; CI uses a strict mocked Secret Service backend.
+
 ## Secret Service key-provider integration — 2026-11-18
 
 - Added `recovery_key_provider.py` with explicit Secret Service get-or-create behavior for a stable 256-bit AES key.
