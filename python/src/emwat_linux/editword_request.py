@@ -38,8 +38,9 @@ def parse_editword_request(
     """
     if call.class_name != "EditWordDocument":
         raise EditWordDocumentRequestError("unexpected_method_class")
-    if max_document_bytes <= 0 or max_encoded_document_chars <= 0 or max_config_bytes <= 0:
-        raise ValueError("size limits must be positive")
+    limits = (max_document_bytes, max_encoded_document_chars, max_config_bytes)
+    if any(type(limit) is not int or limit <= 0 for limit in limits):
+        raise ValueError("size limits must be positive integers")
 
     encoded_config = call.params.get("wordConfig")
     encoded_document = call.params.get("wordBody")
