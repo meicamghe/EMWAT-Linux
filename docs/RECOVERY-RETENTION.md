@@ -64,3 +64,15 @@ The bounded manifest parser also converts JSON nesting-depth failures into a
 stable recovery-manifest validation error. A deeply nested but size-bounded
 JSON value is therefore skipped by catalog enumeration rather than leaking a
 `RecursionError` to the caller.
+
+## Snapshot payload read bounds and symlink protection
+
+Snapshot payloads are opened through a file descriptor with `O_NOFOLLOW` where
+the platform supports it. The opened object must be a regular file; its size
+is checked against the configured document limit plus the encryption envelope
+overhead, and the read itself is capped at limit + 1 byte to remain bounded if
+the file grows after the metadata check. A replaced symlink, non-regular file,
+or oversized payload fails closed before decryption or document parsing.
+
+Regression tests cover the bounded read and simulate a path-check race in
+which a regular snapshot is replaced by a symlink before the descriptor open.
