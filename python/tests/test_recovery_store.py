@@ -241,6 +241,7 @@ class RecoverySnapshotStoreTests(unittest.TestCase):
             info = store.save_snapshot(session_id, payload)
             stored = info.document_path.read_bytes()
             self.assertTrue(stored.startswith(b"EMWATREC\x01"))
+            self.assertNotIn(hashlib.sha256(payload).hexdigest(), info.document_name)
             self.assertNotIn(b"secret-document-content", stored)
             self.assertEqual(store.load_snapshot(session_id), payload)
             self.assertEqual(store.list_snapshots()[0].sha256, hashlib.sha256(payload).hexdigest())
