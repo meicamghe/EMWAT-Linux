@@ -1159,3 +1159,15 @@ Do not implement guessed `signData` joining or claim end-to-end Almas registrati
 - It wraps `TWordViwer.LoadDocument` in `CoInitialize`/`CoUninitialize`, passes the `TEmwatInvokeParam` pointer and output string, stores the returned method result, and sets `bResultSet=1`.
 - `LoadDocument` extracts `DocFileName` from `wordBody`, writes document data to a local `TFileStream(fmCreate)`, parses `wordConfig` XML, then calls `OnTmrAutoSave` with that file path. The path is stored in viewer `+0xA0` and later packaged as `.easd` inside `.easz`.
 - Next priority: determine how the returned string and `bResultSet` become the actual HTTP response body, and trace the full `wordConfig`/`letterImages`/`signData` handling.
+
+
+## Accepted product decisions — 2026-11-18 (do not reopen implicitly)
+
+- Linux only. Do not develop a new Windows app, UI, or installer; Windows is an analysis/compatibility reference only.
+- GTK 4 + Python/PyGObject is selected for a small, free/open-source Linux control UI. Do not use Qt/PySide unless the owner explicitly changes the decision.
+- LibreOffice Writer via UNO is the document editor. GTK is only for EMWAT status, settings, recovery, scanner entry points, and diagnostics.
+- Main product workflow: Almas request/document → local EMWAT protocol bridge → LibreOffice Writer editing → final document returned to Almas in the verified response format.
+- Keep bridge, document coordinator, UNO adapter, recovery, and scanner core independent from GTK; core and tests must run headlessly.
+- No paid toolkit, subscription, or mandatory cloud service. Check license obligations for all distributed dependencies.
+- Source of truth: `docs/LINUX-PRODUCT-DECISIONS.md`; also reflected in README, PROJECT-STATUS, Ubuntu installation guide, and recovery picker UX.
+- Next implementation priority remains real Almas/browser wire-contract evidence and full Writer document roundtrip, not GTK screen proliferation.
