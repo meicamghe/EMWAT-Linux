@@ -2616,3 +2616,29 @@ Python bridge CI در run `44031548179` موفق شد: **111 تست موفق، 2
 - Added a transport regression test proving a query with extra fields returns the existing sanitized 400 response and never invokes the application handler.
 - Implementation: `6e20a554e71db777aec8b133596814d45a800365`; test: `673eecda6f486eceda12447f9e53821ab2b2b2bc`.
 - CI for the updated code/test head is pending.
+
+
+## Parallel workstreams follow-up — 2026-11-18
+
+### Browser/Almas E2E
+- Strengthened the synthetic application composition test: it now parses the complete HTTP response, validates the observed `response-word`/MIME/Base64 structure, and decodes the returned bytes to assert byte-for-byte equality with the final Office adapter output.
+- This proves the mocked loopback → XML dispatch → EditWord service → Office adapter → response serializer path. It is not a live Almas Gam or physical LibreOffice UI test.
+- Test commit: `afb7e4d003d678f3bccbfb08fc26edf54e02d551`.
+
+### Ubuntu packaging
+- Added CMake install rules for the native image/scanner library and public headers, using GNUInstallDirs.
+- This is a staged library installation foundation only. There is still no production bridge daemon, desktop entry, GUI, service unit, or complete .deb package.
+- CMake commit: `34f23f303329c8781ba41af3dd6e75545e140522`; follow-up kept install rules dependency-neutral: `50044deab7259f17295824c9581421b6cecdae97`.
+
+### Recovery UI, Word mapping, EASZ and scanner
+- Confirmed existing toolkit-neutral RecoverySnapshotService/RecoveryPickerController supports metadata listing, explicit-destination restore, and confirmed discard; it is not a graphical UI.
+- Confirmed the Word field pipeline handles declared URL/Base64 encodings, indexed signer field families and evidence-bounded property audits. `signData` remains opaque because separator/concater semantics are not proven.
+- Confirmed .easz is still not implemented: no authorized synthetic encrypted archive fixture exists.
+- Confirmed SANE native support remains single-frame Gray/RGB; ADF, duplex, multi-page, cancellation and physical hardware are not validated.
+
+### Integration/install documentation
+- Added `docs/UBUNTU-INSTALLATION-AND-INTEGRATION.md` with reproducible native build/install commands, Python/UNO setup boundaries, synthetic E2E coverage, field/signData limits, recovery UI boundary, .easz fixture requirements, scanner acceptance criteria and release blockers.
+- Linked it from README.
+- Documentation commits: `b845e45f9b6da5d2c19874229f1f2c56f851f7de`, `8d7073a88615f3be71716c5124140d0b6666db5a`.
+
+CI for the new E2E test and CMake install rules is pending on the latest code/test head; no result is claimed until GitHub Actions completes.
