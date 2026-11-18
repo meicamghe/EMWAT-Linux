@@ -17,7 +17,7 @@ The rule is applied consistently to:
 - `EditWordDocumentService`: the service-level document byte limit;
 - `parse_method_call`: the outer XML request byte limit;
 - `serialize_word_document_response`: the serialized response byte limit;
-- `parse_word_config`: encoded Base64 character and decoded XML byte limits.
+- `parse_word_config`: encoded Base64 character and decoded XML byte limits;\n- `LibreOfficeAdapter`: connection, polling, optional close and recovery intervals must be finite positive numbers (booleans, NaN, infinities, strings and non-positive values are rejected).
 
 Invalid configuration raises `ValueError` with a stable, layer-specific
 message. Invalid request contents continue to use the existing protocol or
