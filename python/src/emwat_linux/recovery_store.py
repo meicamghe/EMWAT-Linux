@@ -1,7 +1,8 @@
 """Private, crash-survivable recovery snapshots for active EMWAT documents.
 
 This is a Linux-native recovery format. It deliberately does not claim
-compatibility with the Windows password-protected .easz archive.
+compatibility with the Windows password-protected .easz archive. AES-256-GCM
+is available when a trusted caller injects an externally managed key.
 """
 from __future__ import annotations
 
