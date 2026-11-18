@@ -28,7 +28,7 @@ def audit_writer_property_alignment(
 ) -> WriterPropertyAlignmentAudit:
     """Compare exact identifiers without inferring order or semantic equivalence."""
     word_names = tuple(
-        item.property_name for item in (*word_maps.singles, *word_maps.twins)
+        item.property_name for item in sorted((*word_maps.singles, *word_maps.twins), key=lambda item: item.index)
     )
     writer_names = writer_catalog.custom_document_properties_in_info_order
     word_set = set(word_names)
