@@ -1,6 +1,6 @@
 # Ubuntu installation and integration workstreams
 
-Status: implementation scaffolding; not a release-ready installer.
+Status: implementation scaffolding; not a release-ready installer. Product target and UI toolkit are decided: Linux-only, GTK 4 + PyGObject, LibreOffice Writer via UNO.
 Date: 2026-11-18
 
 This document separates the components that can already be installed/tested from
@@ -131,8 +131,7 @@ is permitted.
 [RECOVERY-PICKER-UX.md](RECOVERY-PICKER-UX.md). A future view must display
 metadata only, use a native Save dialog for restore, require a destructive
 confirmation for discard, and show errors without exposing private paths or
-document contents. The UI toolkit remains intentionally unselected;
-GTK/Qt should not be chosen implicitly by packaging work.
+document contents. **GTK 4 + PyGObject is the accepted toolkit.** Implement the picker as a thin GTK view over this controller. Do not add Qt/PySide or move filesystem/business logic into GTK callbacks. Keep GTK optional so headless services and protocol tests run without a display server.
 
 ## 6. Windows .easz compatibility
 
@@ -166,7 +165,11 @@ available, then separately verify:
 
 Do not map undocumented ImageGear integer modes to SANE options by guesswork.
 
-## 8. Release blockers
+## 8. Product UI and cost boundary
+
+The accepted product decision is Linux-only with a lightweight GTK 4 + Python/PyGObject control interface. LibreOffice Writer remains the document editor through UNO; GTK is not a document editor. Prefer distribution-provided free/open-source packages and do not introduce paid toolkit or cloud dependencies. The GUI must remain a thin optional layer over the existing service/controller APIs. See [LINUX-PRODUCT-DECISIONS.md](LINUX-PRODUCT-DECISIONS.md) for the binding decision.
+
+## 9. Release blockers
 
 A supported Ubuntu desktop release requires all of the following:
 - a production bridge entrypoint and supervised user-session lifecycle;
