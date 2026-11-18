@@ -312,5 +312,23 @@ class RecoverySnapshotStoreTests(unittest.TestCase):
             self.assertEqual(len(store.list_snapshots()), 1)
 
 
+    def test_manifest_rejects_boolean_schema_version(self):
+        import json
+        with tempfile.TemporaryDirectory() as temporary:
+            store = RecoverySnapshotStore(Path(temporary) / "recovery")
+            session_id = store.create_session()
+            info = store.save_snapshot(
+                session_id, bytes.fromhex("D0CF11E0A1B11AE1") + b"schema"
+            )
+            manifest = info.document_path.parent / "manifest.json"
+            data = json.loads(manifest.read_text(encoding="utf-8"))
+            data["schema_version"] = True
+            manifest.write_text(json.dumps(data), encoding="utf-8")
+            with self.assertRaisesRegex(
+                RecoveryStoreError, "recovery_manifest_identity_invalid"
+            ):
+                store.load_snapshot(session_id)
+
+
 if __name__ == "__main__":
     unittest.main()
