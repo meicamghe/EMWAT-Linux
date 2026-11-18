@@ -45,6 +45,18 @@ class XMLMethodDispatcherTests(unittest.TestCase):
         self.assertEqual(response.status, 400)
         self.assertEqual(response.body, b"invalid_emwat_request")
 
+    def test_invalid_dispatch_request_objects_are_rejected(self):
+        dispatcher = XMLMethodDispatcher()
+        for request in (
+            None,
+            object(),
+            BridgeRequest("/", "", "", None, "not-bytes"),
+        ):
+            with self.subTest(request=request):
+                response = dispatcher(request)
+                self.assertEqual(response.status, 400)
+                self.assertEqual(response.body, b"invalid_emwat_request")
+
     def test_handler_failure_is_sanitized(self):
         dispatcher = XMLMethodDispatcher()
         dispatcher.register("EditWordDocument", lambda *_: (_ for _ in ()).throw(RuntimeError()))
