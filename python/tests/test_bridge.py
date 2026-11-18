@@ -256,6 +256,21 @@ class BridgeHTTPServerTests(unittest.TestCase):
         self.assertEqual(response.read(), b"content_length_required")
         conn.close()
 
+    def test_invalid_handler_status_types_are_rejected(self):
+        for status_value in (True, False, 200.5, "200", None, 199, 600):
+            with self.subTest(status=status_value):
+                self.server._handler = lambda _request, value=status_value: BridgeResponse(
+                    b"invalid-status", status=value
+                )
+                status, body, _ = self.request(
+                    "POST",
+                    "/?invoke=invalid-status",
+                    b"x",
+                    {"Origin": "https://office.example"},
+                )
+                self.assertEqual(status, 500)
+                self.assertEqual(body, b"internal_bridge_error")
+
     def test_oversized_handler_response_is_not_sent(self):
         self.server.shutdown()
         self.server.server_close()
