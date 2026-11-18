@@ -25,6 +25,10 @@ class WriterPropertyAlignmentAuditTests(unittest.TestCase):
         audit = audit_writer_property_alignment(word, writer)
 
         self.assertEqual(
+            audit.word_property_names,
+            ("LetterSubject", "SignerPerson†SignerUnit", "WordOnly"),
+        )
+        self.assertEqual(
             audit.exact_name_matches,
             ("LetterSubject", "SignerPerson†SignerUnit"),
         )
