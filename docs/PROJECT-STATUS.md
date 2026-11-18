@@ -2693,3 +2693,12 @@ CI for the new E2E test and CMake install rules is pending on the latest code/te
 - Added `docs/RECOVERY-PICKER-UX.md`: toolkit-neutral view states, newest-first list, selection preservation/stale-selection clearing, native Save-dialog restore, explicit destructive discard confirmation, accessibility, encryption/key-unavailable behavior, and opt-in retention boundaries.
 - The design maps the same contract to GTK ListView/ColumnView or Qt QListView/QTableView without selecting either toolkit or adding GUI dependencies.
 - Implementation commit: `bc363e2aa784afd84682a8fc568b93b24a5412d9`.
+
+
+### Debian package lifecycle CI result — 2026-11-18
+
+- Native workflow run `44327277244` completed the Debian package lifecycle job successfully.
+- CI generated `emwat-native-core-dev` packages for versions 0.1.0 and 0.1.1, installed 0.1.0, upgraded to 0.1.1, verified the package version and installed library/header, removed the package, and verified the installed files were gone.
+- The same run's native `build-test` and staged CMake install jobs passed. At the time of this note, the sanitizer job was still running; no sanitizer result is inferred from the package lifecycle result.
+- Python and UNO runs on code head `97c89c3` completed successfully: Python `44327277074`, UNO `44327277376`. The latest Recovery UX document commit is documentation-only beyond that code state.
+- This validates install/upgrade/remove for the native development package only. It does not validate a full desktop application's configuration migration, service restart, Python/UNO runtime, or user-data preservation.
