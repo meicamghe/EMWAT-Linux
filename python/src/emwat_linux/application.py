@@ -94,6 +94,7 @@ def create_libreoffice_bridge_server(
     edit_word_handler = create_editword_handler(
         service,
         cancel_response_factory=cancel_response_factory,
+        max_response_bytes=max_response_bytes,
     )
     registered_handlers = dict(additional_handlers or {})
     registered_handlers["EditWordDocument"] = edit_word_handler
