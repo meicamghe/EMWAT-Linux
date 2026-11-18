@@ -51,3 +51,13 @@ The EditWord success serializer receives the same configured
 `max_response_bytes` as the HTTP server. This removes the former hidden
 16 MiB serializer ceiling when an application explicitly configures a larger
 bounded response allowance. Both layers still enforce the bound independently.
+
+
+## Preflight response-size calculation
+
+The observed success envelope Base64-encodes the returned Word bytes. The
+serializer now computes the exact encoded payload/envelope length before
+allocating the Base64 expansion and rejects a response that exceeds the
+configured bound. It then verifies the emitted XML length against that
+precomputed value. This avoids allocating an oversized response merely to
+reject it afterward.
