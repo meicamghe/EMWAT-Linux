@@ -7,7 +7,7 @@ Date: 2026-11-18
 Every caller-supplied size bound in the EditWord request path must be a
 positive built-in Python integer. The implementation deliberately uses
 `type(value) is int`, rather than `isinstance(value, int)`, so booleans are
-not accepted as integer limits. Floars, numeric strings, `None`, zero and
+not accepted as integer limits. Floats, numeric strings, `None`, zero and
 negative values are rejected before decoding or office-engine work begins.
 
 The rule is applied consistently to:
