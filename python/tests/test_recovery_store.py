@@ -266,6 +266,24 @@ class RecoverySnapshotStoreTests(unittest.TestCase):
             with self.assertRaisesRegex(RecoveryStoreError, "recovery_snapshot_authentication_failed"):
                 store.load_snapshot(session_id)
 
+    def test_encrypted_envelope_nonce_must_match_manifest_nonce(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            store = RecoverySnapshotStore(
+                Path(temporary) / "recovery", encryption_key=b"N" * 32
+            )
+            session_id = store.create_session()
+            info = store.save_snapshot(
+                session_id, bytes.fromhex("D0CF11E0A1B11AE1") + b"nonce-binding"
+            )
+            envelope = bytearray(info.document_path.read_bytes())
+            nonce_offset = len(b"EMWATREC\\x01")
+            envelope[nonce_offset] ^= 0x01
+            info.document_path.write_bytes(envelope)
+            with self.assertRaisesRegex(
+                RecoveryStoreError, "recovery_snapshot_authentication_failed"
+            ):
+                store.load_snapshot(session_id)
+
     def test_encrypted_store_rejects_legacy_plaintext_snapshot(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary) / "recovery"
