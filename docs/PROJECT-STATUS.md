@@ -2542,3 +2542,12 @@ Python bridge CI در run `44031548179` موفق شد: **111 تست موفق، 2
 - Added transport regression coverage for all invalid status classes.
 - Implementation commit: `104aa3181ae36df9db6c0dfce447dceb230f698f`; tests: `82f39637440b19d215491e2c90c4a0eebb6a63e2`.
 - This bridge follow-up is newer than the green combined CI above; fresh Python/native/UNO results are pending.
+
+
+### HTTP response and Origin allowlist boundary hardening — 2026-11-18
+- Bridge responses now require a built-in integer status code in the 200–599 range; malformed status values are sanitized to HTTP 500.
+- Both Origin allowlists now require set/frozenset containers containing only non-empty strings. This prevents accidentally passing a string as an allowlist, where Python substring membership could weaken exact Origin matching.
+- Parent-Origin allowlist entries are type-checked before URL parsing; malformed values fail at server construction.
+- Added regression coverage for invalid status types and malformed allowlist containers/entries.
+- Commits: status implementation `104aa318` / tests `82f3963`; allowlist implementation `9231fd6`, `95c735f` / tests `a978d0e`, `4ea99bb`.
+- These changes are newer than the last green CI head and require fresh Python, native and UNO workflow verification.
