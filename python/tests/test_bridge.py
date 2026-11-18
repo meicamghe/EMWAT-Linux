@@ -42,6 +42,34 @@ class BridgeHTTPServerTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             BridgeHTTPServer(lambda _request: BridgeResponse(b""), host="::1")
 
+    def test_constructor_rejects_invalid_integer_bounds(self):
+        factory = lambda **kwargs: BridgeHTTPServer(
+            lambda _request: BridgeResponse(b""), **kwargs
+        )
+        for parameter in ("port", "max_body_bytes", "max_response_bytes"):
+            for value in (True, False, 1.5, 16.0, "16", None):
+                with self.subTest(parameter=parameter, value=value):
+                    with self.assertRaises(ValueError):
+                        factory(**{parameter: value})
+        for parameter in ("max_body_bytes", "max_response_bytes"):
+            for value in (0, -1):
+                with self.subTest(parameter=parameter, value=value):
+                    with self.assertRaises(ValueError):
+                        factory(**{parameter: value})
+
+    def test_constructor_rejects_non_finite_or_invalid_socket_timeouts(self):
+        invalid = (True, False, float("nan"), float("inf"), float("-inf"), 0, -1, "1", 10 ** 1000)
+        for value in invalid:
+            with self.subTest(value=value), self.assertRaises(ValueError):
+                BridgeHTTPServer(
+                    lambda _request: BridgeResponse(b""),
+                    socket_timeout_seconds=value,
+                )
+
+    def test_host_must_be_an_address_string(self):
+        with self.assertRaises(ValueError):
+            BridgeHTTPServer(lambda _request: BridgeResponse(b""), host=2130706433)
+
 
     def test_init_endpoint_returns_captured_bridge_script(self):
         status, body, headers = self.request(
