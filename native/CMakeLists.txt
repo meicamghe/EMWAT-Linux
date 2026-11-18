@@ -47,7 +47,6 @@ add_test(NAME image_document_io COMMAND emwat_image_document_io_tests)
 # Install the reusable native image/scanner core and its public headers.
 # This is a library install rule, not yet a complete desktop application package.
 install(TARGETS emwat_image_core
-    EXPORT EMWATNativeCoreTargets
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
@@ -55,8 +54,4 @@ install(TARGETS emwat_image_core
 install(DIRECTORY include/emwat
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
     FILES_MATCHING PATTERN "*.hpp"
-)
-install(EXPORT EMWATNativeCoreTargets
-    NAMESPACE EMWAT::
-    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/EMWATNativeCore
 )
