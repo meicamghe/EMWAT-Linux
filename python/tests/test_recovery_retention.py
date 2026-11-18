@@ -32,6 +32,8 @@ class RecoveryRetentionTests(unittest.TestCase):
 
             # Make ordering deterministic without sleeping.
             infos = store.list_snapshots()
+            expected_removed = infos[0].session_id
+            expected_kept = {item.session_id for item in infos[1:]}
             for index, info in enumerate(infos):
                 manifest = info.document_path.parent / "manifest.json"
                 import json
@@ -43,10 +45,9 @@ class RecoveryRetentionTests(unittest.TestCase):
                 store, RecoveryRetentionPolicy(max_snapshots=2), now=10
             )
 
-            self.assertEqual(len(removed), 1)
+            self.assertEqual(removed, (expected_removed,))
             remaining = store.list_snapshots()
-            self.assertEqual(len(remaining), 2)
-            self.assertNotIn(removed[0], {item.session_id for item in remaining})
+            self.assertEqual({item.session_id for item in remaining}, expected_kept)
 
     def test_age_limit_removes_only_expired_valid_snapshots(self):
         with tempfile.TemporaryDirectory() as temporary:
