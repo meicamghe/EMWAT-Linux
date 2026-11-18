@@ -190,7 +190,14 @@ class RecoverySnapshotStore:
                     nonce = base64.b64decode(manifest["nonce"], validate=True)
                     if len(nonce) != _GCM_NONCE_BYTES:
                         raise ValueError("invalid_nonce_length")
-                    aad = self._manifest_aad(session_id, document_name, manifest["size_bytes"], manifest["sha256"])
+                    envelope_nonce = stored_payload[
+                        len(_ENCRYPTED_MAGIC):len(_ENCRYPTED_MAGIC) + _GCM_NONCE_BYTES
+                    ]
+                    if envelope_nonce != nonce:
+                        raise ValueError("recovery_nonce_manifest_mismatch")
+                    aad = self._manifest_aad(
+                        session_id, document_name, manifest["size_bytes"], manifest["sha256"]
+                    )
                     payload = self._aesgcm.decrypt(nonce, stored_payload[len(_ENCRYPTED_MAGIC) + _GCM_NONCE_BYTES:], aad)
                 except Exception as exc:
                     raise RecoveryStoreError("recovery_snapshot_authentication_failed") from exc
