@@ -6,6 +6,7 @@
 #include <cmath>
 #include <cstring>
 #include <array>
+#include <cctype>
 #include <limits>
 #include <mutex>
 #include <string>
@@ -53,6 +54,15 @@ private:
     SANE_Handle handle_{};
     bool active_{};
 };
+
+void validate_device_id(const std::string& device_id) {
+    if (device_id.empty())
+        throw ScannerError("scanner device id cannot be empty");
+    if (std::any_of(device_id.begin(), device_id.end(), [](unsigned char value) {
+            return std::iscntrl(value) != 0;
+        }))
+        throw ScannerError("scanner device id contains a control character");
+}
 
 void set_string_option(SANE_Handle handle, const char* name, const std::string& value) {
     SANE_Int index = 0;
@@ -219,7 +229,7 @@ std::vector<ScannerDevice> SaneScannerBackend::list_devices() {
 }
 
 ScannerCapabilities SaneScannerBackend::get_capabilities(const std::string& device_id) {
-    if (device_id.empty()) throw ScannerError("scanner device id cannot be empty");
+    validate_device_id(device_id);
     std::lock_guard<std::mutex> lock(sane_mutex());
     SaneSession session;
     SaneHandle device(device_id);
