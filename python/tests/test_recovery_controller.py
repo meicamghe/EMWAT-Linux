@@ -43,10 +43,14 @@ class RecoveryPickerControllerTests(unittest.TestCase):
             store.save_snapshot(session, _CFB + b"document")
             controller = RecoveryPickerController(RecoverySnapshotService(store))
 
-            with self.assertRaisesRegex(
-                PermissionError, "recovery_discard_confirmation_required"
-            ):
-                controller.discard(session)
+            for invalid_confirmation in (False, None, 1, "yes"):
+                with self.subTest(confirmed=invalid_confirmation):
+                    with self.assertRaisesRegex(
+                        PermissionError, "recovery_discard_confirmation_required"
+                    ):
+                        controller.discard(
+                            session, confirmed=invalid_confirmation
+                        )
             self.assertEqual(len(controller.entries()), 1)
 
             controller.discard(session, confirmed=True)
