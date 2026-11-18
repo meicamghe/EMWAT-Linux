@@ -138,7 +138,7 @@ class RecoverySnapshotStore:
             if (
                 candidate.is_file()
                 and candidate.name != document_name
-                and re.fullmatch(r"document-[0-9a-f]{64}(?:-[0-9a-f]{32})?\.(?:doc|docx)", candidate.name)
+                and re.fullmatch(r"document-(?:[0-9a-f]{64}(?:-[0-9a-f]{32})?|[0-9a-f]{32})\.(?:doc|docx)", candidate.name)
             ):
                 try:
                     candidate.unlink()
@@ -171,7 +171,7 @@ class RecoverySnapshotStore:
             if schema_version == 1 and self._aesgcm is not None:
                 raise RecoveryStoreError("recovery_plaintext_snapshot_rejected")
             document_name = manifest["document_name"]
-            if not re.fullmatch(r"document-[0-9a-f]{64}(?:-[0-9a-f]{32})?\.(?:doc|docx)", document_name):
+            if not re.fullmatch(r"document-(?:[0-9a-f]{64}(?:-[0-9a-f]{32})?|[0-9a-f]{32})\.(?:doc|docx)", document_name):
                 raise RecoveryStoreError("recovery_manifest_document_name_invalid")
             document_path = folder / document_name
             if document_path.is_symlink() or not document_path.is_file():
@@ -246,7 +246,7 @@ class RecoverySnapshotStore:
                 if manifest.get("schema_version") not in (1, 2) or manifest.get("session_id") != folder.name:
                     continue
                 name = manifest["document_name"]
-                if not isinstance(name, str) or not re.fullmatch(r"document-[0-9a-f]{64}(?:-[0-9a-f]{32})?\.(?:doc|docx)", name):
+                if not isinstance(name, str) or not re.fullmatch(r"document-(?:[0-9a-f]{64}(?:-[0-9a-f]{32})?|[0-9a-f]{32})\.(?:doc|docx)", name):
                     continue
                 path = folder / name
                 if path.is_symlink() or not path.is_file():
