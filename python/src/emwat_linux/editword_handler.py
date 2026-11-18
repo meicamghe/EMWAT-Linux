@@ -25,6 +25,7 @@ def create_editword_handler(
     service: EditWordDocumentService,
     *,
     cancel_response_factory: CancelResponseFactory,
+    max_response_bytes: int = 16 * 1024 * 1024,
 ) -> Callable[[MethodCall, BridgeRequest], BridgeResponse]:
     """Create a dispatcher handler with explicit discard/cancel response policy.
 
@@ -32,6 +33,9 @@ def create_editword_handler(
     their distinct DocumentState values let the caller choose a verified wire
     response without conflating "No" with "Cancel".
     """
+
+    if type(max_response_bytes) is not int or max_response_bytes <= 0:
+        raise ValueError("max_response_bytes must be a positive integer")
 
     def handle(call: MethodCall, request: BridgeRequest) -> BridgeResponse:
         result = service.process(call)
@@ -42,7 +46,10 @@ def create_editword_handler(
             return response
 
         return BridgeResponse(
-            body=serialize_word_document_response(result.payload),
+            body=serialize_word_document_response(
+                result.payload,
+                max_response_bytes=max_response_bytes,
+            ),
             content_type=WORD_RESPONSE_CONTENT_TYPE,
             status=200,
         )
