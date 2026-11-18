@@ -226,6 +226,34 @@ class ApplicationCompositionTests(unittest.TestCase):
             server.server_close()
             thread.join(timeout=2)
 
+    def test_default_bridge_limits_cover_editword_service_document_contract(self):
+        server = create_bridge_server(
+            allowed_origins=frozenset({"http://127.0.0.1"}),
+            handlers={},
+        )
+        try:
+            self.assertEqual(server._max_body_bytes, 128 * 1024 * 1024)
+            self.assertEqual(server._max_response_bytes, 96 * 1024 * 1024)
+            self.assertEqual(server._dispatcher._max_payload_bytes, 128 * 1024 * 1024)
+        finally:
+            server.server_close()
+
+    def test_libreoffice_factory_uses_same_bounded_request_and_response_limits(self):
+        class FakeOffice:
+            pass
+
+        server = create_libreoffice_bridge_server(
+            allowed_origins=frozenset({"http://127.0.0.1"}),
+            office_adapter=FakeOffice(),
+            cancel_response_factory=lambda _result, _request: BridgeResponse(b"cancelled"),
+        )
+        try:
+            self.assertEqual(server._max_body_bytes, 128 * 1024 * 1024)
+            self.assertEqual(server._max_response_bytes, 96 * 1024 * 1024)
+            self.assertEqual(server._dispatcher._max_payload_bytes, 128 * 1024 * 1024)
+        finally:
+            server.server_close()
+
 
 if __name__ == "__main__":
     unittest.main()
