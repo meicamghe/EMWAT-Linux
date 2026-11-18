@@ -78,6 +78,18 @@ class MethodEnvelopeTests(unittest.TestCase):
         with self.assertRaises(ProtocolError):
             parse_method_call(b"<emwat version='1.0'/>", max_bytes=4)
 
+    def test_all_parser_and_serializer_limits_require_positive_builtin_integers(self):
+        invalid_values = (True, False, 1.5, 16.0, "16", 0, -1, None)
+        payload = b'<emwat version="1.0"><method class="X"/></emwat>'
+        for value in invalid_values:
+            with self.subTest(parser_limit=value), self.assertRaisesRegex(
+                ValueError, "max_bytes must be a positive integer"
+            ):
+                parse_method_call(payload, max_bytes=value)
+            with self.subTest(serializer_limit=value), self.assertRaisesRegex(
+                ValueError, "max_response_bytes must be a positive integer"
+            ):
+                serialize_word_document_response(b"doc", max_response_bytes=value)
 
     def test_preserves_capture_sized_opaque_document_payload(self):
         # The captured EditWordDocument request carried a >1 MB Base64 wordBody.
@@ -92,7 +104,6 @@ class MethodEnvelopeTests(unittest.TestCase):
         self.assertEqual(len(call.params["wordBody"]), len(opaque))
         self.assertEqual(call.params["wordBody"][:16], "AQID" * 4)
         self.assertEqual(call.params["wordBody"][-16:], "AQID" * 4)
-
 
     def test_serializes_observed_word_document_response(self):
         document = bytes.fromhex("d0cf11e0a1b11ae1") + b"synthetic-word-bytes"
