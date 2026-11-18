@@ -2535,3 +2535,10 @@ Python bridge CI در run `44031548179` موفق شد: **111 تست موفق، 2
 - Added regression cases for None, arbitrary objects and a BridgeRequest carrying a non-bytes body.
 - Implementation commit: `7956525e4974256dd726ae19cb1363cb694a53a5`; tests: `0e3a590b3419d0846ad9cbb7d7fb4a01125e38f5`.
 - Full CI on the combined branch head `0231f31705ce2a9e97f932161d07a6acf71dae14` passed: Python bridge run `44304965568` (**196 tests, 194 passed, 2 optional LibreOffice skips**); Native image core run `44304965055` (build and ASan/UBSan jobs passed); LibreOffice UNO roundtrip run `44304965075` (UNO runtime and real Writer roundtrip job passed).
+
+
+### HTTP response status type validation — 2026-11-18
+- The loopback transport now requires response status codes to be built-in integers in the HTTP 200–599 range. Floats, strings, booleans, null and out-of-range values are rejected and converted to the existing sanitized 500 response.
+- Added transport regression coverage for all invalid status classes.
+- Implementation commit: `104aa3181ae36df9db6c0dfce447dceb230f698f`; tests: `82f39637440b19d215491e2c90c4a0eebb6a63e2`.
+- This bridge follow-up is newer than the green combined CI above; fresh Python/native/UNO results are pending.
