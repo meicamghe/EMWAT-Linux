@@ -1,3 +1,9 @@
+## تست ورودی اسکنر و CI — 2026-11-18 (PR #2)
+
+- تست‌های بدون سخت‌افزار اضافه شدند: شناسه خالی در `SaneScannerBackend.get_capabilities` و `scan_one` پیش از تماس با runtime مربوط به SANE رد می‌شود.
+- Native image core run `44244437647` روی commit `ed811a14f9d151a8a386c67b80b26b3d155f5c24` کامل و موفق شد؛ هر دو job یعنی build-test و ASan/UBSan sanitizer-test، شامل مرحله Test، سبز شدند.
+- این نتیجه فقط قرارداد ورودی و build/test backend را تأیید می‌کند؛ اسکنر فیزیکی، ADF و Duplex هنوز تست نشده‌اند.
+
 ## پیاده‌سازی retention بازیابی — 2026-11-18 (PR #2)
 
 - ماژول `recovery_retention.py` محدودیت سن snapshot و/یا حداکثر تعداد را فقط با فراخوانی صریح اعمال می‌کند؛ snapshotهای معتبر جدیدتر حفظ می‌شوند و شناسه‌های حذف‌شده برگردانده می‌شوند.
