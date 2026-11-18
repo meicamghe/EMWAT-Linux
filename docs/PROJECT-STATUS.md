@@ -1,3 +1,12 @@
+## Secret Service application integration and nonce validation — 2026-11-18
+
+- Added a strict freedesktop Secret Service key provider with get-or-create, read-after-write persistence verification, malformed/short key rejection, and refusal of plaintext fallback backends.
+- Added create_libreoffice_bridge_server(encrypt_recovery=True, recovery_root=...) to inject an encrypted recovery store into the default LibreOffice adapter. Default remains plaintext; a caller-supplied adapter cannot be combined with this flag.
+- Added regression coverage for Secret Service persistence failure, backend rejection, key reuse, encrypted store construction, application injection, and ambiguous custom-adapter rejection.
+- Added AES-GCM envelope/manifest nonce equality validation and its tampering regression test.
+- Latest branch head at this status update: ab304921215fb84a3bddb68a1f27a8ddb436b5dc. Python/Native/UNO CI runs 44249093187, 44249093242, and 44249093182 were still queued; they predate the last two key-provider test commits and must not be treated as validation of the final head.
+- The live DBus Secret Service backend has not been exercised in a desktop session. CI mocks the backend and validates the fail-closed policy.
+
 ## Application-level encrypted recovery opt-in — 2026-11-18
 
 - `create_libreoffice_bridge_server(encrypt_recovery=True, recovery_root=...)` now explicitly creates the Secret Service-backed encrypted store and injects it into `LibreOfficeAdapter`.
@@ -29,7 +38,7 @@
 - Encrypted snapshots use opaque random filenames, fail closed when the key is absent or incorrect, and reject legacy plaintext snapshots when a key is configured rather than silently mixing formats.
 - Added tests for plaintext confidentiality, round-trip, wrong/missing key, tampering, legacy plaintext rejection, and crash-safe repeated writes.
 - Python CI run 44247873577 exposed two issues (AES-GCM envelope offset and a stale catalog filename assertion); both have been corrected in subsequent commits. Do not claim the correction is green until a fresh Python run completes.
-- Encryption remains opt-in. The application must obtain a stable key from an OS credential store or administrator secret provider and inject it; key rotation, migration of existing plaintext snapshots, and default activation are not implemented.
+- Encryption remains opt-in. The application can now opt into the strict freedesktop Secret Service provider through create_libreoffice_bridge_server(encrypt_recovery=True); key rotation, migration of existing plaintext snapshots, and default activation are not implemented.
 - `LibreOfficeAdapter` can already receive a configured `RecoverySnapshotStore`; the current default construction remains plaintext until the application supplies an encrypted store.
 
 ## Recovery manifest integrity and Windows archive evidence — 2026-11-18
@@ -37,7 +46,7 @@
 - Recovery snapshot loading now validates that the manifest timestamp is a finite, non-negative numeric value and that the content-addressed filename hash matches the verified snapshot bytes. Invalid metadata is rejected and excluded from the recovery catalog.
 - Added regression tests for malformed timestamps and a manifest filename that does not match the content hash.
 - Added `docs/EASZ-ARCHIVE-FORMAT.md` documenting the evidence-bounded Windows archive path: password-protected 7z output, `.easd` entry, and `.easz` output file.
-- This documentation does not claim Linux `.easz` read/write compatibility. Linux recovery remains a separate, unencrypted DOC/DOCX snapshot format.
+- This documentation does not claim Linux `.easz` read/write compatibility. Linux recovery remains a separate DOC/DOCX snapshot format with optional AES-256-GCM encryption when a trusted application injects an external key.
 - Python bridge CI run `44246971008` completed successfully after the manifest hardening and regression tests. Native image core run `44246938174` passed build-test and ASan/UBSan; LibreOffice UNO integration run `44246938243` passed the real UNO roundtrip job. These native/UNO runs validate the corresponding workflow commits; the new manifest code is covered by the Python run.
 
 ## تست ورودی اسکنر و CI — 2026-11-18 (PR #2)
