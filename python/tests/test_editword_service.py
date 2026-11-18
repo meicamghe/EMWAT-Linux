@@ -94,6 +94,13 @@ class EditWordDocumentServiceTests(unittest.TestCase):
             service.process(call)
         self.assertIsNone(office.opened_bytes)
 
+    def test_document_limit_requires_positive_builtin_integer(self):
+        for value in (True, False, 1.5, 16.0, "16", 0, -1, None):
+            with self.subTest(value=value), self.assertRaisesRegex(
+                ValueError, "max_document_bytes must be a positive integer"
+            ):
+                EditWordDocumentService(FakeOffice(), max_document_bytes=value)
+
 
 if __name__ == "__main__":
     unittest.main()
