@@ -14,7 +14,8 @@ The rule is applied consistently to:
 
 - `parse_editword_request`: decoded document bytes, encoded document
   characters, decoded wordConfig bytes and encoded wordConfig characters;
-- `EditWordDocumentService`: the service-level document byte limit;
+- `EditWordDocumentService`: all four request limits are configurable at
+  service construction and forwarded to the request parser;
 - `parse_method_call`: the outer XML request byte limit;
 - `serialize_word_document_response`: the serialized response byte limit;
 - `parse_word_config`: encoded Base64 character and decoded XML byte limits;
@@ -22,11 +23,11 @@ The rule is applied consistently to:
   intervals must be finite positive numbers (booleans, NaN, infinities,
   strings and non-positive values are rejected).
 
-The EditWord request adapter now exposes a separate
+The EditWord request adapter exposes a separate
 `max_encoded_config_chars` bound (default 24 MiB) and passes it directly to
-`parse_word_config`. This closes the gap where the inner parser had an encoded
-input bound but the EditWord adapter did not let its caller configure that
-bound independently from decoded XML bytes.
+`parse_word_config`. The service exposes that setting together with the
+decoded config, encoded document and decoded document limits. This avoids a
+hidden parser default when applications need to tune request limits.
 
 The adapter also validates the public `MethodCall` boundary and requires
 `wordConfig`, `wordBody`, `signData` and extra parameter values to be text.
@@ -44,8 +45,8 @@ request error types.
 Synthetic unit tests reject `True`, `False`, floating-point values,
 numeric strings, zero, negative values and `None` for each public size-limit
 argument. Additional tests cover the encoded config ceiling, malformed
-MethodCall objects, non-text parameter values and the unchanged opaque
-`signData` handling.
+MethodCall objects, non-text parameter values, service-level limit forwarding
+and the unchanged opaque `signData` handling.
 
 ## Scope
 
