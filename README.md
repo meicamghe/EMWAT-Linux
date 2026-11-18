@@ -21,6 +21,7 @@ EMWAT واسط محلی بین اتوماسیون تحت وب الماس گام 
 - [قرارداد Recovery و رمزنگاری اختیاری AES-GCM](docs/RECOVERY-RETENTION.md)
 - [قرارداد کاتالوگ و بازیابی Recovery](docs/RECOVERY-CATALOG.md)
 - [نقشه پیاده‌سازی بومی لینوکس و مسیرهای موازی](docs/LINUX-NATIVE-IMPLEMENTATION-PLAN.md)
+- [راهنمای نصب Ubuntu و مرزهای پذیرش یکپارچه‌سازی](docs/UBUNTU-INSTALLATION-AND-INTEGRATION.md)
 - [اعتبارسنجی runtime نسخه Windows با Winux/Wine](docs/WINUX-RUNTIME-VALIDATION.md)
 - [تحلیل گردش‌کار واقعی EMWAT در الماس گام](docs/PRODUCT-WORKFLOW-ANALYSIS.md)
 - [تحلیل connector و ساختار XML گردش‌کار Word](docs/WORD-DOCUMENT-PROTOCOL-ANALYSIS.md)
