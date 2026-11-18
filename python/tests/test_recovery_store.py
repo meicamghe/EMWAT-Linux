@@ -240,7 +240,7 @@ class RecoverySnapshotStoreTests(unittest.TestCase):
             payload = bytes.fromhex("D0CF11E0A1B11AE1") + b"secret-document-content"
             info = store.save_snapshot(session_id, payload)
             stored = info.document_path.read_bytes()
-            self.assertTrue(stored.startswith(b"EMWATREC\\x01"))
+            self.assertTrue(stored.startswith(b"EMWATREC\x01"))
             self.assertNotIn(b"secret-document-content", stored)
             self.assertEqual(store.load_snapshot(session_id), payload)
             self.assertEqual(store.list_snapshots()[0].sha256, hashlib.sha256(payload).hexdigest())
