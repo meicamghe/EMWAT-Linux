@@ -2608,3 +2608,11 @@ Python bridge CI در run `44031548179` موفق شد: **111 تست موفق، 2
 - Added regression tests for non-callable handler values and non-boolean Origin policy values; both supported boolean settings are covered.
 - Implementation: `bb50f32fedb25e9d561c6886bdd36365058c9087`; tests: `966c666545ff9851e569ecffe0e57fcde44d1a5b`.
 - Fresh CI is running for the combined branch head; results are pending and are not claimed passed.
+
+
+## Invoke query parser field-count bound — 2026-11-18
+
+- The loopback bridge now calls `parse_qsl(..., max_num_fields=1)` because the captured route accepts exactly one non-empty `invoke` parameter. Extra query fields are rejected before dispatch without materializing an arbitrarily large parameter list.
+- Added a transport regression test proving a query with extra fields returns the existing sanitized 400 response and never invokes the application handler.
+- Implementation: `6e20a554e71db777aec8b133596814d45a800365`; test: `673eecda6f486eceda12447f9e53821ab2b2b2bc`.
+- CI for the updated code/test head is pending.
