@@ -1,3 +1,12 @@
+## Recovery manifest and input-validation hardening — 2026-11-18
+
+- Recovery manifest loading now explicitly rejects valid JSON scalars/arrays instead of allowing an AttributeError to escape the catalog path. The catalog skips malformed non-object manifests and continues listing other valid sessions.
+- Added regression cases for JSON array, null, and string manifests.
+- Retention numeric inputs now reject booleans and non-numeric values instead of accepting bool as an integer/time value.
+- Scanner device IDs are checked for control characters before SANE initialization/open, for both capability lookup and scan; regression tests include newline and embedded NUL.
+- Word/Writer audit exposes only unique one-to-one case-folded name differences as review candidates; exact matching remains case-sensitive and ambiguous collisions are not suggested.
+- Latest Python manifest tests were added after the latest observed CI run; final-head verification is still pending. Runs 44252073741/44252073807/44252073729 were queued at the last poll for the earlier scanner/mapping changes.
+
 ## Parallel hardening follow-up — 2026-11-18
 
 - Recovery retention now rejects booleans and non-numeric values for age limits and the supplied current-time argument; this avoids Python's bool-is-int behavior silently accepting invalid policy input.
