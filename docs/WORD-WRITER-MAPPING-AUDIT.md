@@ -9,7 +9,9 @@ This is an inventory aid, not an automatic mapping:
 - exact-name intersection is a candidate, not proof of semantic equivalence;
 - Word COM and UNO enumeration order are not assumed equivalent;
 - no property values, letter text, or image data are read;
-- no case folding, positional matching, or fuzzy matching is performed.
+- case-only candidates are reported only when the case-folded name is unique on both sides; they remain review hints, never automatic mappings;
+- ambiguous case-fold collisions are omitted rather than guessed;
+- no positional matching or fuzzy matching is performed.
 
 Validate candidates against anonymized real templates and field-result behavior
 before enabling writes for any mapped EMWAT field.
