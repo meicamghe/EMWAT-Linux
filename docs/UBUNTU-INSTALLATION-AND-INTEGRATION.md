@@ -127,10 +127,11 @@ is permitted.
 - optional retention policy operations;
 - an immutable `RecoveryPickerState` projection for native UI clients, including an explicit empty-catalog state, selected-entry metadata, default selection of the newest snapshot, and safe clearing of stale selections.
 
-`RecoveryPickerController.state()` performs no filesystem writes. A UI can refresh this projection after each action and bind it to GTK, Qt, or another toolkit later. This is a toolkit-neutral controller, not a graphical picker. A future view
-must display metadata only, use a native Save dialog for restore, require a
-destructive confirmation for discard, and show errors without exposing private
-paths or document contents. The UI toolkit remains intentionally unselected;
+`RecoveryPickerController.state()` performs no filesystem writes. A UI can refresh this projection after each action and bind it to GTK, Qt, or another toolkit later. This is a toolkit-neutral controller, not a graphical picker. The detailed toolkit-neutral interaction and accessibility contract is in
+[RECOVERY-PICKER-UX.md](RECOVERY-PICKER-UX.md). A future view must display
+metadata only, use a native Save dialog for restore, require a destructive
+confirmation for discard, and show errors without exposing private paths or
+document contents. The UI toolkit remains intentionally unselected;
 GTK/Qt should not be chosen implicitly by packaging work.
 
 ## 6. Windows .easz compatibility
