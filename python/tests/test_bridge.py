@@ -150,6 +150,17 @@ class BridgeHTTPServerTests(unittest.TestCase):
                 self.assertEqual(body, b"invalid_invoke_query")
         self.assertEqual(self.seen, [])
 
+    def test_post_bounds_invoke_query_field_count(self):
+        status, body, _ = self.request(
+            "POST",
+            "/?invoke=1&extra=2&another=3",
+            b"<emwat/>",
+            {"Content-Type": "text/plain", "Origin": "https://office.example"},
+        )
+        self.assertEqual(status, 400)
+        self.assertEqual(body, b"invalid_invoke_query")
+        self.assertEqual(self.seen, [])
+
     def test_post_rejects_malformed_invoke_query(self):
         status, body, _ = self.request(
             "POST",
