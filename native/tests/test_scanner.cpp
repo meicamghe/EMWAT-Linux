@@ -1,4 +1,5 @@
 #include "emwat/scanner.hpp"
+#include "emwat/scanner_detail.hpp"
 
 #include <stdexcept>
 #include <limits>
@@ -40,6 +41,18 @@ public:
 };
 
 int main() {
+    // Fixed-point DPI conversion must not overflow signed 16.16 SANE_Word.
+
+    // SANE_TYPE_FIXED uses a signed 16.16 SANE_Word. Keep conversion in range
+    // and reject non-finite values without relying on an overflowing SANE_FIX.
+    assert(detail::encode_sane_fixed_resolution(300.0).value() == 300 * 65536);
+    assert(detail::encode_sane_fixed_resolution(32767.0).has_value());
+    assert(!detail::encode_sane_fixed_resolution(32768.0).has_value());
+    assert(!detail::encode_sane_fixed_resolution(
+        std::numeric_limits<double>::infinity()).has_value());
+    assert(!detail::encode_sane_fixed_resolution(
+        std::numeric_limits<double>::quiet_NaN()).has_value());
+
     // Invalid identifiers must be rejected before touching the SANE runtime.
     SaneScannerBackend sane_backend;
     bool invalid_id_rejected = false;
