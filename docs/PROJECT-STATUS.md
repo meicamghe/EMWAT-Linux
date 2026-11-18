@@ -2676,3 +2676,13 @@ CI for the new E2E test and CMake install rules is pending on the latest code/te
 - Removed the redundant local import. The failure was in test setup, not the bridge or response implementation.
 - Correction commit: `3f2bf37d90fa12d8a828106263f794b4a812a61a`.
 - CI for the corrected head is pending; the earlier failed run is retained as evidence and is not represented as passing.
+
+
+## Debian native-core package lifecycle — 2026-11-18
+
+- Added CPack DEB metadata for `emwat-native-core-dev`, a host-architecture development package containing the native static library and public headers.
+- Package version follows the native CMake project version (currently 0.1.0); the CPack version is configurable for reproducible upgrade testing.
+- Declared package dependencies: `libpng-dev`, `libjpeg-dev`, `libtiff-dev`, `libsane-dev`. The package does not include the Python bridge, daemon, GUI, desktop entry, or user data.
+- Added a dedicated CI lifecycle job that builds 0.1.0 and 0.1.1 packages, installs the first, upgrades to the second, verifies the installed library/header, removes the package, and verifies the files are removed.
+- This is the first real Debian package lifecycle for the native development component only. A complete EMWAT desktop package remains blocked on the production entrypoint, selected GUI toolkit, service lifecycle, Python/UNO runtime policy, and desktop integration.
+- Implementation commits: CPack metadata `4e359951`; native-architecture correction `95291d4e`; package lifecycle CI `68291cdb` and version assertions `c654cb25`.
