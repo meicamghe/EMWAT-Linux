@@ -22,6 +22,19 @@ class RecoveryRetentionTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             RecoveryRetentionPolicy(max_age_seconds=float("inf"))
 
+    def test_rejects_boolean_age_limit_and_non_numeric_age_limit(self):
+        for value in (True, "3600"):
+            with self.subTest(value=value), self.assertRaises(ValueError):
+                RecoveryRetentionPolicy(max_age_seconds=value)
+
+    def test_rejects_boolean_and_non_numeric_current_time(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            store = RecoverySnapshotStore(Path(temporary) / "recovery")
+            policy = RecoveryRetentionPolicy(max_snapshots=1)
+            for value in (True, "1000"):
+                with self.subTest(value=value), self.assertRaises(ValueError):
+                    apply_recovery_retention(store, policy, now=value)
+
     def test_count_limit_keeps_newest_and_reports_removed_ids(self):
         with tempfile.TemporaryDirectory() as temporary:
             store = RecoverySnapshotStore(Path(temporary) / "recovery")
