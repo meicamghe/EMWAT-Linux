@@ -1,6 +1,7 @@
 #include "emwat/scanner.hpp"
 
-#include <stdexcept>\n#include <limits>
+#include <stdexcept>
+#include <limits>
 #include <utility>
 
 #ifdef NDEBUG
@@ -71,8 +72,8 @@ int main() {
     expect_invalid_options(ScanOptions{0.0, {}, {}});
     expect_invalid_options(ScanOptions{100001.0, {}, {}});
     expect_invalid_options(ScanOptions{{}, std::string{}, {}});
-    expect_invalid_options(ScanOptions{{}, std::string("Color\\n"), {}});
-    expect_invalid_options(ScanOptions{{}, {}, std::string("Flatbed\\0hidden", 15)});
+    expect_invalid_options(ScanOptions{{}, std::string("Color\n"), {}});
+    expect_invalid_options(ScanOptions{{}, {}, std::string("Flatbed\0hidden", 15)});
 
     FakeScannerBackend backend;
     backend.devices.push_back({"test:scanner0", "Example", "Virtual Scanner", "flatbed"});
