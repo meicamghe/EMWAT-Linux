@@ -20,6 +20,7 @@ EMWAT واسط محلی بین اتوماسیون تحت وب الماس گام 
 - [شواهد و مرز سازگاری آرشیو Windows .easz](docs/EASZ-ARCHIVE-FORMAT.md)
 - [قرارداد Recovery و رمزنگاری اختیاری AES-GCM](docs/RECOVERY-RETENTION.md)
 - [قرارداد کاتالوگ و بازیابی Recovery](docs/RECOVERY-CATALOG.md)
+- [طراحی UX انتخاب و بازیابی نسخه‌ها](docs/RECOVERY-PICKER-UX.md)
 - [نقشه پیاده‌سازی بومی لینوکس و مسیرهای موازی](docs/LINUX-NATIVE-IMPLEMENTATION-PLAN.md)
 - [راهنمای نصب Ubuntu و مرزهای پذیرش یکپارچه‌سازی](docs/UBUNTU-INSTALLATION-AND-INTEGRATION.md)
 - [اعتبارسنجی runtime نسخه Windows با Winux/Wine](docs/WINUX-RUNTIME-VALIDATION.md)
