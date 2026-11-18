@@ -18,6 +18,8 @@ EMWAT واسط محلی بین اتوماسیون تحت وب الماس گام 
 
 - [گزارش وضعیت و نقطه ادامه پروژه](docs/PROJECT-STATUS.md)
 - [شواهد و مرز سازگاری آرشیو Windows .easz](docs/EASZ-ARCHIVE-FORMAT.md)
+- [قرارداد Recovery و رمزنگاری اختیاری AES-GCM](docs/RECOVERY-RETENTION.md)
+- [قرارداد کاتالوگ و بازیابی Recovery](docs/RECOVERY-CATALOG.md)
 - [نقشه پیاده‌سازی بومی لینوکس و مسیرهای موازی](docs/LINUX-NATIVE-IMPLEMENTATION-PLAN.md)
 - [اعتبارسنجی runtime نسخه Windows با Winux/Wine](docs/WINUX-RUNTIME-VALIDATION.md)
 - [تحلیل گردش‌کار واقعی EMWAT در الماس گام](docs/PRODUCT-WORKFLOW-ANALYSIS.md)
