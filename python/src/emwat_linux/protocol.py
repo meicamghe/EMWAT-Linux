@@ -109,8 +109,17 @@ def serialize_word_document_response(
         "type",
         {"mimetype": "application/msword", "encryption": "base64"},
     )
+
+    # Base64 output is ASCII and needs no XML escaping. Compute its exact
+    # envelope size before allocating the expanded encoded document.
+    empty_envelope = ET.tostring(root, encoding="utf-8")
+    encoded_size = 4 * ((len(document) + 2) // 3)
+    expected_response_size = len(empty_envelope) + encoded_size + 5
+    if expected_response_size > max_response_bytes:
+        raise ProtocolError("response_size_invalid")
+
     node.text = base64.b64encode(document).decode("ascii")
     response = ET.tostring(root, encoding="utf-8")
-    if len(response) > max_response_bytes:
-        raise ProtocolError("response_size_invalid")
+    if len(response) != expected_response_size:
+        raise ProtocolError("response_size_calculation_mismatch")
     return response
