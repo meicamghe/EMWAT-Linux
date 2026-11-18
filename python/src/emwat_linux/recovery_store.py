@@ -52,8 +52,8 @@ class RecoverySnapshotStore:
         max_snapshot_bytes: int = 128 * 1024 * 1024,
         encryption_key: bytes | None = None,
     ) -> None:
-        if max_snapshot_bytes <= 0:
-            raise ValueError("max_snapshot_bytes must be positive")
+        if type(max_snapshot_bytes) is not int or max_snapshot_bytes <= 0:
+            raise ValueError("max_snapshot_bytes must be a positive integer")
         if encryption_key is not None and (
             not isinstance(encryption_key, bytes) or len(encryption_key) != 32
         ):
@@ -109,8 +109,6 @@ class RecoverySnapshotStore:
         document_path = folder / document_name
         manifest_path = folder / "manifest.json"
 
-        # Encryption is opt-in and the key is injected by a trusted caller.
-        # It is never written to this store or its manifest.
         stored_payload = payload
         manifest = {
             "schema_version": 1,
@@ -128,7 +126,6 @@ class RecoverySnapshotStore:
             manifest["encryption"] = "AES-256-GCM"
             manifest["nonce"] = base64.b64encode(nonce).decode("ascii")
 
-        # Publish immutable snapshot bytes before atomically switching the manifest.
         self._atomic_write(document_path, stored_payload)
         self._atomic_write(
             manifest_path,
@@ -239,8 +236,6 @@ class RecoverySnapshotStore:
             raise RecoveryStoreError("recovery_snapshot_unavailable") from exc
 
     def list_snapshots(self) -> tuple[RecoverySnapshotInfo, ...]:
-        # Never follow a replaced/symlinked state directory while enumerating
-        # snapshots. A symlink here could otherwise expose another directory.
         if self.root.is_symlink() or not self.root.is_dir():
             return ()
         snapshots = []
@@ -285,7 +280,6 @@ class RecoverySnapshotStore:
             return False
 
     def restore_snapshot(self, session_id: str, destination: str | Path) -> Path:
-        """Atomically restore a verified snapshot without overwriting an existing file."""
         payload = self.load_snapshot(session_id)
         destination_path = Path(destination).expanduser()
         expected_suffix = ".doc" if payload.startswith(_CFB_SIGNATURE) else ".docx"
@@ -302,8 +296,6 @@ class RecoverySnapshotStore:
                 stream.write(payload)
                 stream.flush()
                 os.fsync(stream.fileno())
-            # A hard link publishes the complete file and fails rather than
-            # replacing an existing destination or following a destination symlink.
             os.link(temporary, destination_path)
             self._fsync_directory(parent)
             return destination_path
@@ -329,8 +321,6 @@ class RecoverySnapshotStore:
                 self._fsync_directory(self.root)
 
     def _ensure_root(self) -> None:
-        # XDG state is private application data. Refuse a symlink or a
-        # non-directory at the trust boundary instead of chmod/mkdir-following it.
         if self.root.is_symlink():
             raise RecoveryStoreError("recovery_root_symlink_rejected")
         if self.root.exists() and not self.root.is_dir():
