@@ -1,3 +1,10 @@
+## 2026-11-18 — parallel implementation checkpoint
+
+- Added toolkit-neutral `RecoveryPickerController`; it exposes safe metadata, delegates restore to the hardened store using a UI-selected destination, and requires explicit confirmation before destructive discard. It is not a graphical widget or HTTP endpoint.
+- Added `audit_writer_property_alignment()` to report exact case-sensitive Word custom-property ↔ Writer custom-property name intersections and unmatched names, plus Writer DocInfo.Custom field references. It preserves Word property index order and makes no COM/UNO order-equivalence claim.
+- Python bridge CI run `44237776415` passed on `448090b0c7625bac5cfb086fcdf10b0ef1f17a19`: 147 tests, 145 passed, 2 optional LibreOffice tests skipped.
+- Still open: actual GTK/Qt picker, verified semantic/template mapping, Cancel/Discard wire response evidence, encrypted recovery/retention, native scanner hardware validation, and Almas end-to-end.
+
 # EMWAT-Linux — Project Handoff
 
 ## Latest main-branch implementation — 2026-11-17
