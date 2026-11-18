@@ -65,12 +65,12 @@ jobs:
         run: |
           cmake -S native -B native/package-v1 -DCMAKE_BUILD_TYPE=Release -DEMWAT_PACKAGE_VERSION=0.1.0
           cmake --build native/package-v1 --parallel 2
-          cpack --config native/package-v1/CPackConfig.cmake
+          cpack --config native/package-v1/CPackConfig.cmake -B native/package-v1
       - name: Build upgrade Debian package
         run: |
           cmake -S native -B native/package-v2 -DCMAKE_BUILD_TYPE=Release -DEMWAT_PACKAGE_VERSION=0.1.1
           cmake --build native/package-v2 --parallel 2
-          cpack --config native/package-v2/CPackConfig.cmake
+          cpack --config native/package-v2/CPackConfig.cmake -B native/package-v2
       - name: Install, upgrade, and remove package
         run: |
           first_package="$(find native/package-v1 -maxdepth 1 -name '*.deb' -print -quit)"
