@@ -26,6 +26,14 @@ jobs:
         run: cmake --build native/build --parallel 2
       - name: Test
         run: ctest --test-dir native/build --output-on-failure
+      - name: Install to staging prefix
+        env:
+          DESTDIR: ${{ runner.temp }}/emwat-native-stage
+        run: |
+          cmake --install native/build --prefix /usr
+          test -f "$DESTDIR/usr/lib/libemwat_image_core.a"
+          test -f "$DESTDIR/usr/include/emwat/image_document.hpp"
+          test -f "$DESTDIR/usr/include/emwat/scanner.hpp"
 
   sanitizer-test:
     runs-on: ubuntu-latest
