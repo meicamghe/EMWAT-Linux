@@ -159,7 +159,7 @@ class RecoverySnapshotStore:
                 raise RecoveryStoreError("recovery_snapshot_unavailable")
             manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
             schema_version = manifest.get("schema_version")
-            if schema_version not in (1, 2) or manifest.get("session_id") != session_id:
+            if type(schema_version) is not int or schema_version not in (1, 2) or manifest.get("session_id") != session_id:
                 raise RecoveryStoreError("recovery_manifest_identity_invalid")
             if schema_version == 2 and self._aesgcm is None:
                 raise RecoveryStoreError("recovery_encryption_key_required")
