@@ -250,7 +250,7 @@ class ApplicationCompositionTests(unittest.TestCase):
         try:
             self.assertEqual(server._max_body_bytes, 128 * 1024 * 1024)
             self.assertEqual(server._max_response_bytes, 96 * 1024 * 1024)
-            self.assertEqual(server._dispatcher._max_payload_bytes, 128 * 1024 * 1024)
+            self.assertEqual(server._handler._max_payload_bytes, 128 * 1024 * 1024)
         finally:
             server.server_close()
 
