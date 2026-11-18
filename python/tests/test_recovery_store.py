@@ -383,5 +383,45 @@ class RecoverySnapshotStoreTests(unittest.TestCase):
                         )
 
 
+    def test_oversized_manifest_is_rejected_with_a_bounded_read(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            store = RecoverySnapshotStore(Path(temporary) / "recovery")
+            session_id = store.create_session()
+            info = store.save_snapshot(
+                session_id,
+                bytes.fromhex("D0CF11E0A1B11AE1") + b"bounded-manifest",
+            )
+            manifest = info.document_path.parent / "manifest.json"
+            manifest.write_bytes(b" " * (64 * 1024 + 1))
+
+            with self.assertRaisesRegex(
+                RecoveryStoreError, "recovery_manifest_too_large"
+            ):
+                store.load_snapshot(session_id)
+            self.assertEqual(store.list_snapshots(), ())
+
+    def test_symlinked_manifest_is_not_followed(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            base = Path(temporary)
+            store = RecoverySnapshotStore(base / "recovery")
+            session_id = store.create_session()
+            info = store.save_snapshot(
+                session_id,
+                bytes.fromhex("D0CF11E0A1B11AE1") + b"manifest-symlink",
+            )
+            manifest = info.document_path.parent / "manifest.json"
+            outside = base / "outside-manifest.json"
+            outside.write_text(manifest.read_text(encoding="utf-8"), encoding="utf-8")
+            manifest.unlink()
+            manifest.symlink_to(outside)
+
+            with self.assertRaisesRegex(
+                RecoveryStoreError, "recovery_snapshot_unavailable"
+            ):
+                store.load_snapshot(session_id)
+            self.assertEqual(store.list_snapshots(), ())
+
+
+
 if __name__ == "__main__":
     unittest.main()
