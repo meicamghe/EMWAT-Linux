@@ -1,3 +1,13 @@
+## EditWordDocument transport capacity alignment — 2026-11-18
+
+- Found and fixed a real configuration mismatch: the EditWordDocument service accepted up to 64 MiB decoded Word documents and up to 24 MiB encoded configuration, but the default HTTP body and XML dispatcher caps were only 16 MiB. Such documents could never reach the service.
+- Default application bridge request cap is now 128 MiB. This is bounded and accommodates Base64 expansion of the 64 MiB document, encoded config, and XML framing.
+- Default HTTP and serialized response cap is now 96 MiB, enough for Base64 expansion of a 64 MiB final document plus the observed response XML envelope.
+- Both `create_bridge_server` and `create_libreoffice_bridge_server` pass the same request cap to HTTP and XML parsing, and the same response cap to HTTP and the response serializer.
+- Added regression tests asserting the defaults at the HTTP and dispatcher boundaries.
+- This changes only configured upper bounds; it does not claim that real Almas documents of this size have been tested. Deployments can explicitly lower either cap.
+- Fresh CI is required before treating this change as verified.
+
 ## Accepted Linux product decisions — 2026-11-18
 
 - Project owner confirmed the product target is **Linux only**. The existing Windows implementation is a compatibility/reference source; no new Windows application, GUI, or installer is in scope.
