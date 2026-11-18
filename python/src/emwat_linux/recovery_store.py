@@ -22,7 +22,7 @@ import uuid
 _SESSION_ID = re.compile(r"^[0-9a-f]{32}$")
 _CFB_SIGNATURE = bytes.fromhex("D0CF11E0A1B11AE1")
 _ZIP_SIGNATURES = (b"PK\x03\x04", b"PK\x05\x06", b"PK\x07\x08")
-_ENCRYPTED_MAGIC = b"EMWATREC\\x01"
+_ENCRYPTED_MAGIC = b"EMWATREC\x01"
 _GCM_NONCE_BYTES = 12
 _GCM_TAG_BYTES = 16
 
