@@ -22,11 +22,12 @@ EMWAT واسط محلی بین اتوماسیون تحت وب الماس گام 
 
 ## وضعیت فعلی
 
-پروژه از مرحله تحلیل اولیه عبور کرده و اکنون هسته‌های Python، پل HTTP محلی، parser/dispatcher، مسیر EditWordDocument، اتصال LibreOffice UNO، بازیابی دوره‌ای، ذخیره‌سازی اختیاری رمزگذاری‌شده و backend اولیه اسکن SANE را دارد. این‌ها هنوز به معنی سازگاری کامل با الماس گام نیستند: اجرای واقعی در مرورگر الماس گام، mapping کامل فیلدهای Word، قراردادهای Cancel/Discard، رابط گرافیکی و بسته‌بندی اجرایی نهایی همچنان باز هستند.
+پروژه از مرحله تحلیل اولیه عبور کرده و اکنون هسته‌های Python، پل HTTP محلی، parser/dispatcher، مسیر EditWordDocument، اتصال LibreOffice UNO، بازیابی دوره‌ای، ذخیره‌سازی اختیاری رمزگذاری‌شده و backend اولیه اسکن SANE را دارد. یک نمای اولیه GTK4 برای Recovery نیز به‌صورت لایه اختیاری اضافه شده است؛ اما هنوز رابط کامل برنامه، اجرای واقعی در مرورگر الماس گام، mapping کامل فیلدهای Word، قراردادهای Cancel/Discard و بسته‌بندی اجرایی نهایی باقی مانده‌اند.
 
 گزارش کامل وضعیت، شواهد، موارد نامشخص و گام‌های بعدی در این فایل نگهداری می‌شود:
 
 - [گزارش وضعیت و نقطه ادامه پروژه](docs/PROJECT-STATUS.md)
+- [قرارداد چرخه ارتباطی Almas و Writer و مرزهای Save/Close/Cancel](docs/ALMAS-WRITER-LIFECYCLE-CONTRACT.md)
 - [شواهد و مرز سازگاری آرشیو Windows .easz](docs/EASZ-ARCHIVE-FORMAT.md)
 - [قرارداد Recovery و رمزنگاری اختیاری AES-GCM](docs/RECOVERY-RETENTION.md)
 - [قرارداد کاتالوگ و بازیابی Recovery](docs/RECOVERY-CATALOG.md)
