@@ -1,0 +1,27 @@
+#pragma once
+
+#include <cmath>
+#include <cstdint>
+#include <limits>
+#include <optional>
+
+namespace emwat::detail {
+
+// SANE fixed-point values are signed 16.16 integers. Convert without invoking
+// SANE_FIX on values that would overflow its signed SANE_Word representation.
+inline std::optional<std::int32_t> encode_sane_fixed_resolution(double dpi) noexcept {
+    if (!std::isfinite(dpi) || dpi <= 0.0) return std::nullopt;
+
+    constexpr double scale = 65536.0;
+    const double scaled = dpi * scale;
+    if (!std::isfinite(scaled)) return std::nullopt;
+
+    const auto rounded = std::llround(scaled);
+    if (rounded <= 0 ||
+        rounded > static_cast<long long>(std::numeric_limits<std::int32_t>::max())) {
+        return std::nullopt;
+    }
+    return static_cast<std::int32_t>(rounded);
+}
+
+} // namespace emwat::detail
