@@ -100,7 +100,7 @@ class RecoverySnapshotStore:
         digest = hashlib.sha256(payload).hexdigest()
         updated_at = time.time()
         suffix = ".doc" if document_name == "document.doc" else ".docx"
-        document_name = f"document-{digest}{suffix}"
+        document_name = f"document-{digest}-{uuid.uuid4().hex}{suffix}"
         document_path = folder / document_name
         manifest_path = folder / "manifest.json"
 
@@ -133,7 +133,7 @@ class RecoverySnapshotStore:
             if (
                 candidate.is_file()
                 and candidate.name != document_name
-                and re.fullmatch(r"document-[0-9a-f]{64}\.(?:doc|docx)", candidate.name)
+                and re.fullmatch(r"document-[0-9a-f]{64}(?:-[0-9a-f]{32})?\.(?:doc|docx)", candidate.name)
             ):
                 try:
                     candidate.unlink()
@@ -166,7 +166,7 @@ class RecoverySnapshotStore:
             if schema_version == 1 and self._aesgcm is not None:
                 raise RecoveryStoreError("recovery_plaintext_snapshot_rejected")
             document_name = manifest["document_name"]
-            if not re.fullmatch(r"document-[0-9a-f]{64}\.(?:doc|docx)", document_name):
+            if not re.fullmatch(r"document-[0-9a-f]{64}(?:-[0-9a-f]{32})?\.(?:doc|docx)", document_name):
                 raise RecoveryStoreError("recovery_manifest_document_name_invalid")
             document_path = folder / document_name
             if document_path.is_symlink() or not document_path.is_file():
@@ -199,7 +199,10 @@ class RecoverySnapshotStore:
             if digest != manifest["sha256"]:
                 raise RecoveryStoreError("recovery_snapshot_hash_mismatch")
             expected_suffix = ".doc" if payload.startswith(_CFB_SIGNATURE) else ".docx"
-            if document_name != f"document-{digest}{expected_suffix}":
+            if not re.fullmatch(
+                rf"document-{digest}(?:-[0-9a-f]{{32}})?{re.escape(expected_suffix)}",
+                document_name,
+            ):
                 raise RecoveryStoreError("recovery_snapshot_name_hash_mismatch")
             updated_at = manifest.get("updated_at")
             if (
@@ -236,7 +239,7 @@ class RecoverySnapshotStore:
                 if manifest.get("schema_version") not in (1, 2) or manifest.get("session_id") != folder.name:
                     continue
                 name = manifest["document_name"]
-                if not isinstance(name, str) or not re.fullmatch(r"document-[0-9a-f]{64}\.(?:doc|docx)", name):
+                if not isinstance(name, str) or not re.fullmatch(r"document-[0-9a-f]{64}(?:-[0-9a-f]{32})?\.(?:doc|docx)", name):
                     continue
                 path = folder / name
                 if path.is_symlink() or not path.is_file():
