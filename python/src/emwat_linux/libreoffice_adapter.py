@@ -12,6 +12,7 @@ are intentionally not guessed here. Those mappings require verified fixtures.
 from __future__ import annotations
 
 import importlib
+import math
 from pathlib import Path
 import shutil
 import socket
@@ -238,12 +239,20 @@ class LibreOfficeAdapter:
         recovery_store: RecoverySnapshotStore | None = None,
         recovery_interval_seconds: float = 10.0,
     ) -> None:
-        if connect_timeout_seconds <= 0 or poll_interval_seconds <= 0:
-            raise ValueError("connection and polling timeouts must be positive")
-        if close_timeout_seconds is not None and close_timeout_seconds <= 0:
-            raise ValueError("close timeout must be positive when configured")
-        if recovery_interval_seconds <= 0:
-            raise ValueError("recovery interval must be positive")
+        def positive_finite_seconds(value: object) -> bool:
+            return (
+                not isinstance(value, bool)
+                and isinstance(value, (int, float))
+                and math.isfinite(value)
+                and value > 0
+            )
+
+        if not positive_finite_seconds(connect_timeout_seconds) or not positive_finite_seconds(poll_interval_seconds):
+            raise ValueError("connection and polling timeouts must be finite positive numbers")
+        if close_timeout_seconds is not None and not positive_finite_seconds(close_timeout_seconds):
+            raise ValueError("close timeout must be a finite positive number when configured")
+        if not positive_finite_seconds(recovery_interval_seconds):
+            raise ValueError("recovery interval must be a finite positive number")
         self._soffice_path = soffice_path
         self._connect_timeout = connect_timeout_seconds
         self._poll_interval = poll_interval_seconds
