@@ -33,3 +33,12 @@ Compatibility is fail-closed:
 - Encryption is opt-in at the storage API boundary; the current LibreOffice adapter still uses the default plaintext store unless the application injects an encrypted `RecoverySnapshotStore`.
 
 AES-GCM protects snapshot contents at rest, not filenames, manifest metadata, timestamps, file sizes, or the user's unlocked session. Filesystem permissions remain enabled as an additional control. This feature must not be described as enabled by default.
+
+
+## Snapshot size-bound validation
+
+The recovery store constructor accepts `max_snapshot_bytes` only as a positive
+built-in integer. Booleans, floating-point values (including integral-looking
+floats), strings, zero, negative values, and `None` are rejected before any
+filesystem access. This keeps the configured read/write bound unambiguous and
+prevents Python's bool-is-int behavior from silently accepting invalid limits.
