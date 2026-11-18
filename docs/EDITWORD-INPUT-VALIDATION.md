@@ -13,11 +13,27 @@ negative values are rejected before decoding or office-engine work begins.
 The rule is applied consistently to:
 
 - `parse_editword_request`: decoded document bytes, encoded document
-  characters and decoded wordConfig bytes;
+  characters, decoded wordConfig bytes and encoded wordConfig characters;
 - `EditWordDocumentService`: the service-level document byte limit;
 - `parse_method_call`: the outer XML request byte limit;
 - `serialize_word_document_response`: the serialized response byte limit;
-- `parse_word_config`: encoded Base64 character and decoded XML byte limits;\n- `LibreOfficeAdapter`: connection, polling, optional close and recovery intervals must be finite positive numbers (booleans, NaN, infinities, strings and non-positive values are rejected).
+- `parse_word_config`: encoded Base64 character and decoded XML byte limits;
+- `LibreOfficeAdapter`: connection, polling, optional close and recovery
+  intervals must be finite positive numbers (booleans, NaN, infinities,
+  strings and non-positive values are rejected).
+
+The EditWord request adapter now exposes a separate
+`max_encoded_config_chars` bound (default 24 MiB) and passes it directly to
+`parse_word_config`. This closes the gap where the inner parser had an encoded
+input bound but the EditWord adapter did not let its caller configure that
+bound independently from decoded XML bytes.
+
+The adapter also validates the public `MethodCall` boundary and requires
+`wordConfig`, `wordBody`, `signData` and extra parameter values to be text.
+Malformed manually-constructed calls now fail with stable
+`EditWordDocumentRequestError` codes rather than leaking incidental
+`TypeError`/attribute errors. Parsed wire calls already produce string
+parameters; this additionally hardens the reusable Python API.
 
 Invalid configuration raises `ValueError` with a stable, layer-specific
 message. Invalid request contents continue to use the existing protocol or
@@ -27,14 +43,16 @@ request error types.
 
 Synthetic unit tests reject `True`, `False`, floating-point values,
 numeric strings, zero, negative values and `None` for each public size-limit
-argument. Existing positive integer limits and ordinary request/response
-roundtrips remain covered by the existing tests.
+argument. Additional tests cover the encoded config ceiling, malformed
+MethodCall objects, non-text parameter values and the unchanged opaque
+`signData` handling.
 
 ## Scope
 
-This change validates configuration types; it does not change the observed
-EMWAT wire format, document payload decoding, response envelope, or office
-lifecycle. No Windows runtime capture or Almas end-to-end test is implied.
+This change validates configuration types and request boundaries; it does not
+change the observed EMWAT wire format, document payload decoding, response
+envelope, or office lifecycle. No Windows runtime capture or Almas end-to-end
+test is implied.
 
 
 ## Bridge transport and response bounds
