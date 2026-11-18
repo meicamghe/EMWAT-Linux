@@ -1,3 +1,11 @@
+## Recovery manifest integrity and Windows archive evidence — 2026-11-18
+
+- Recovery snapshot loading now validates that the manifest timestamp is a finite, non-negative numeric value and that the content-addressed filename hash matches the verified snapshot bytes. Invalid metadata is rejected and excluded from the recovery catalog.
+- Added regression tests for malformed timestamps and a manifest filename that does not match the content hash.
+- Added `docs/EASZ-ARCHIVE-FORMAT.md` documenting the evidence-bounded Windows archive path: password-protected 7z output, `.easd` entry, and `.easz` output file.
+- This documentation does not claim Linux `.easz` read/write compatibility. Linux recovery remains a separate, unencrypted DOC/DOCX snapshot format.
+- Fresh Python CI is required for the new manifest hardening; do not claim these new tests pass until the run completes.
+
 ## تست ورودی اسکنر و CI — 2026-11-18 (PR #2)
 
 - تست‌های بدون سخت‌افزار اضافه شدند: شناسه خالی در `SaneScannerBackend.get_capabilities` و `scan_one` پیش از تماس با runtime مربوط به SANE رد می‌شود.
