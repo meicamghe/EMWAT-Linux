@@ -2551,3 +2551,13 @@ Python bridge CI در run `44031548179` موفق شد: **111 تست موفق، 2
 - Added regression coverage for invalid status types and malformed allowlist containers/entries.
 - Commits: status implementation `104aa318` / tests `82f3963`; allowlist implementation `9231fd6`, `95c735f` / tests `a978d0e`, `4ea99bb`.
 - Full CI on code/test head `4ea99bb3b1cf2b1ed664e5420c640d657e7df61a` passed: Python bridge run `44305529480` (**198 tests, 196 passed, 2 optional LibreOffice skips**); Native image core run `44305529408` (build and ASan/UBSan jobs passed); LibreOffice UNO run `44305529564` (runtime verification and real Writer roundtrip passed). The subsequent project-status commit is documentation-only.
+
+
+## Recovery manifest read hardening — 2026-11-18
+
+- Recovery metadata reads now have a strict 64 KiB ceiling and use a bounded read (limit + 1 byte) rather than unbounded `read_text()`.
+- Manifest access opens with `O_NOFOLLOW` where supported, checks the opened descriptor is a regular file, and parses strict UTF-8 JSON objects only.
+- Oversized, symlinked, malformed and non-regular manifests fail closed; catalog enumeration skips invalid entries.
+- Added regression tests for an oversized manifest and a symlinked manifest targeting a file outside the recovery session.
+- Implementation: `cced3b65a7485fcde9503c7df94f1abd773411d9`; tests: `513e6c819e0e7eb952cd75e02090199029c636c7`; documentation: `186e94b354583655b83a0bd716aac0e8dd30d184`.
+- CI for this follow-up has not yet been observed on the new branch head; do not treat prior green runs as covering these changes.
