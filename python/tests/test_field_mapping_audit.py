@@ -29,7 +29,7 @@ class WriterPropertyAlignmentAuditTests(unittest.TestCase):
             ("LetterSubject", "SignerPerson†SignerUnit"),
         )
         self.assertEqual(audit.word_only_names, ("WordOnly",))
-        self.assertEqual(audit.writer_only_names, ("WriterOnly", ""))
+        self.assertEqual(audit.writer_only_names, ("WriterOnly",))
         self.assertEqual(audit.writer_docinfo_custom_field_names, ("LetterSubject",))
         self.assertEqual(audit.writer_property_names, (
             "WriterOnly", "SignerPerson†SignerUnit", "LetterSubject"
