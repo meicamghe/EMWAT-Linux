@@ -71,6 +71,23 @@ class EditWordDocumentRequestTests(unittest.TestCase):
                 max_document_bytes=4,
             )
 
+    def test_all_size_limits_require_positive_builtin_integers(self):
+        config = b64(b"<word-document/>")
+        body = b64(b"document")
+        invalid_values = (True, False, 1.5, 16.0, "16", 0, -1, None)
+        for parameter in (
+            "max_document_bytes",
+            "max_encoded_document_chars",
+            "max_config_bytes",
+        ):
+            for value in invalid_values:
+                with self.subTest(parameter=parameter, value=value):
+                    with self.assertRaisesRegex(ValueError, "size limits must be positive integers"):
+                        parse_editword_request(
+                            self.make_call(wordConfig=config, wordBody=body),
+                            **{parameter: value},
+                        )
+
     def test_wraps_invalid_inner_config(self):
         with self.assertRaises(EditWordDocumentRequestError):
             parse_editword_request(
