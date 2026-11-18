@@ -191,6 +191,45 @@ class RecoverySnapshotStoreTests(unittest.TestCase):
             with self.assertRaisesRegex(RecoveryStoreError, "recovery_session_id_invalid"):
                 store.load_snapshot("../outside")
 
+    def test_manifest_rejects_non_finite_or_non_numeric_timestamp(self):
+        import json
+        with tempfile.TemporaryDirectory() as temporary:
+            store = RecoverySnapshotStore(Path(temporary) / "recovery")
+            session_id = store.create_session()
+            info = store.save_snapshot(
+                session_id, bytes.fromhex("D0CF11E0A1B11AE1") + b"timestamp"
+            )
+            manifest = info.document_path.parent / "manifest.json"
+            data = json.loads(manifest.read_text(encoding="utf-8"))
+            data["updated_at"] = "nan"
+            manifest.write_text(json.dumps(data), encoding="utf-8")
+            with self.assertRaisesRegex(
+                RecoveryStoreError, "recovery_manifest_timestamp_invalid"
+            ):
+                store.load_snapshot(session_id)
+            self.assertEqual(store.list_snapshots(), ())
+
+    def test_manifest_rejects_document_name_not_bound_to_content_hash(self):
+        import json
+        import shutil
+        with tempfile.TemporaryDirectory() as temporary:
+            store = RecoverySnapshotStore(Path(temporary) / "recovery")
+            session_id = store.create_session()
+            info = store.save_snapshot(
+                session_id, bytes.fromhex("D0CF11E0A1B11AE1") + b"hash-bound"
+            )
+            manifest = info.document_path.parent / "manifest.json"
+            data = json.loads(manifest.read_text(encoding="utf-8"))
+            substituted_name = "document-" + ("0" * 64) + ".doc"
+            shutil.copyfile(info.document_path, info.document_path.parent / substituted_name)
+            data["document_name"] = substituted_name
+            manifest.write_text(json.dumps(data), encoding="utf-8")
+            with self.assertRaisesRegex(
+                RecoveryStoreError, "recovery_snapshot_name_hash_mismatch"
+            ):
+                store.load_snapshot(session_id)
+            self.assertEqual(store.list_snapshots(), ())
+
 
 if __name__ == "__main__":
     unittest.main()
