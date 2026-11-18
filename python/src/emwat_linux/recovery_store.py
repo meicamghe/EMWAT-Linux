@@ -101,7 +101,11 @@ class RecoverySnapshotStore:
         digest = hashlib.sha256(payload).hexdigest()
         updated_at = time.time()
         suffix = ".doc" if document_name == "document.doc" else ".docx"
-        document_name = f"document-{digest}-{uuid.uuid4().hex}{suffix}"
+        document_name = (
+            f"document-{uuid.uuid4().hex}{suffix}"
+            if self._aesgcm is not None
+            else f"document-{digest}-{uuid.uuid4().hex}{suffix}"
+        )
         document_path = folder / document_name
         manifest_path = folder / "manifest.json"
 
@@ -118,7 +122,7 @@ class RecoverySnapshotStore:
         }
         if self._aesgcm is not None:
             nonce = os.urandom(_GCM_NONCE_BYTES)
-            aad = self._manifest_aad(session_id, document_name, len(payload))
+            aad = self._manifest_aad(session_id, document_name, len(payload), digest)
             stored_payload = _ENCRYPTED_MAGIC + nonce + self._aesgcm.encrypt(nonce, payload, aad)
             manifest["schema_version"] = 2
             manifest["encryption"] = "AES-256-GCM"
@@ -186,7 +190,7 @@ class RecoverySnapshotStore:
                     nonce = base64.b64decode(manifest["nonce"], validate=True)
                     if len(nonce) != _GCM_NONCE_BYTES:
                         raise ValueError("invalid_nonce_length")
-                    aad = self._manifest_aad(session_id, document_name, manifest["size_bytes"])
+                    aad = self._manifest_aad(session_id, document_name, manifest["size_bytes"], manifest["sha256"])
                     payload = self._aesgcm.decrypt(nonce, stored_payload[len(_ENCRYPTED_MAGIC) + _GCM_NONCE_BYTES:], aad)
                 except Exception as exc:
                     raise RecoveryStoreError("recovery_snapshot_authentication_failed") from exc
@@ -200,10 +204,12 @@ class RecoverySnapshotStore:
             if digest != manifest["sha256"]:
                 raise RecoveryStoreError("recovery_snapshot_hash_mismatch")
             expected_suffix = ".doc" if payload.startswith(_CFB_SIGNATURE) else ".docx"
-            if not re.fullmatch(
-                rf"document-{digest}(?:-[0-9a-f]{{32}})?{re.escape(expected_suffix)}",
-                document_name,
-            ):
+            expected_name_pattern = (
+                rf"document-[0-9a-f]{{32}}{re.escape(expected_suffix)}"
+                if schema_version == 2
+                else rf"document-{digest}(?:-[0-9a-f]{{32}})?{re.escape(expected_suffix)}"
+            )
+            if not re.fullmatch(expected_name_pattern, document_name):
                 raise RecoveryStoreError("recovery_snapshot_name_hash_mismatch")
             updated_at = manifest.get("updated_at")
             if (
@@ -331,8 +337,12 @@ class RecoverySnapshotStore:
         return self.root / session_id
 
     @staticmethod
-    def _manifest_aad(session_id: str, document_name: str, size_bytes: int) -> bytes:
-        return f"emwat-recovery-v1:{session_id}:{document_name}:{size_bytes}".encode("utf-8")
+    def _manifest_aad(
+        session_id: str, document_name: str, size_bytes: int, sha256: str
+    ) -> bytes:
+        return (
+            f"emwat-recovery-v1:{session_id}:{document_name}:{size_bytes}:{sha256}"
+        ).encode("utf-8")
 
     @staticmethod
     def _atomic_write(destination: Path, payload: bytes) -> None:
