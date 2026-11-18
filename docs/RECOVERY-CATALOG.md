@@ -53,5 +53,7 @@ construct or delete store paths in UI code.
   The current contract is an in-process application boundary, not an HTTP API.
 - A successful final document export removes its recovery session. A failed
   export retains the snapshot for later recovery.
-- This contract does not yet define a graphical picker, desktop notification,
-  retention policy, or encryption-at-rest format.
+- This contract does not yet define a graphical picker or desktop notification.
+  Retention remains opt-in through the service, and AES-256-GCM encryption is
+  optional at the store boundary with an externally managed key; neither is
+  enabled automatically by this catalog contract.
