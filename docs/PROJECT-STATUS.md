@@ -1,3 +1,11 @@
+## کار موازی جدید — 2026-11-18
+
+- `recovery_controller.py` یک مرز in-process و مستقل از toolkit برای اتصال UI بومی فراهم می‌کند: فهرست metadata امن، restore به مقصد انتخاب‌شده، و الزام تأیید صریح پیش از discard. این هنوز پنجرهٔ گرافیکی GTK/Qt نیست و به HTTP متصل نشده است.
+- `field_mapping_audit.py` تطبیق دقیق و case-sensitive نام propertyهای Word و Writer را گزارش می‌کند؛ نام‌های مشترک، Word-only، Writer-only و نام‌های فیلدهای `DocInfo.Custom` جدا هستند. ترتیب Word و UNO برابر فرض نمی‌شود و هیچ مقدار سندی خوانده نمی‌شود.
+- تست‌های جدید controller و mapping audit به Python suite افزوده شدند.
+- Python bridge workflow run `44237776415` روی commit `448090b0c7625bac5cfb086fcdf10b0ef1f17a19` موفق شد: **147 تست اجرا، 145 پاس و 2 تست اختیاری LibreOffice skip**.
+- این مرحله UI واقعی، نگاشت معنایی کامل، رمزنگاری/retention، پاسخ‌های لغو/Discard در پروتکل ویندوز یا E2E با Almas را تکمیل نمی‌کند.
+
 ## سرویس کاتالوگ بازیابی و شناسایی فیلدهای signer — 2026-11-17
 
 - ماژول `recovery_service.py` یک مرز کاربردی برای Recovery Picker فراهم می‌کند: فهرست snapshotهای معتبر را به‌شکل metadata امن (بدون مسیر خصوصی یا محتوای سند) می‌دهد و عملیات restore بدون overwrite و discard را به store واگذار می‌کند. این هنوز UI گرافیکی یا endpoint HTTP نیست.
