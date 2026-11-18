@@ -1,3 +1,13 @@
+## Four parallel implementation tracks — 2026-11-18
+
+- **Almas ↔ Writer contract:** added `docs/ALMAS-WRITER-LIFECYCLE-CONTRACT.md` to separate the implemented synthetic success path from unverified live Almas behavior. It records that Save, accepted Close, close-veto/Cancel, and confirmed Discard are distinct; no unknown Cancel/Discard HTTP/XML response is guessed.
+- **Word/Writer mapping:** hardened custom-property descriptor construction to reject non-string property keys before parsing. Added regression coverage for `None`, integers, booleans, and bytes. This is input-contract hardening only; it does not claim full semantic field/signature mapping.
+- **Save/Close/Cancel:** documented the known close-driven behavior and the remaining evidence needed for Cancel/Don't Save. A vetoed close remains non-terminal; engine Save does not return the document; only accepted close finalization exports bytes. The current UNO adapter still lacks a verified distinct discard/cancel path.
+- **GTK 4 / Ubuntu:** added an optional GTK 4 recovery picker view over `RecoveryPickerController`. It displays metadata only, supports refresh/selection, uses a native Save chooser for restore, and asks for explicit confirmation before discard. GTK imports lazily, preserving headless service operation. Added an import-boundary test and documented Ubuntu runtime packages.
+- **Packaging boundary:** the existing Debian package remains the native-core development package only. No production Python bridge entrypoint, supervised user service, desktop launcher, or complete EMWAT .deb is claimed.
+- Commits: GTK view `ba54acd`; GTK import test `048db89`; mapping validation `71dc461`; mapping tests `0585b1d`; Almas/Writer lifecycle contract `323edb0`; Ubuntu GTK integration docs `52d8ea6`; README refresh follows.
+- CI for this new combined code head must be checked before calling these changes verified. The GTK window itself still requires a real Ubuntu GTK 4 desktop runtime test.
+
 ## EditWordDocument transport capacity alignment — 2026-11-18
 
 - Found and fixed a real configuration mismatch: the EditWordDocument service accepted up to 64 MiB decoded Word documents and up to 24 MiB encoded configuration, but the default HTTP body and XML dispatcher caps were only 16 MiB. Such documents could never reach the service.
