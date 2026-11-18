@@ -31,8 +31,8 @@ def parse_method_call(payload: bytes, *, max_bytes: int = 16 * 1024 * 1024) -> M
     """
     if not isinstance(payload, bytes):
         raise TypeError("payload must be bytes")
-    if max_bytes <= 0:
-        raise ValueError("max_bytes must be positive")
+    if type(max_bytes) is not int or max_bytes <= 0:
+        raise ValueError("max_bytes must be a positive integer")
     if not payload or len(payload) > max_bytes:
         raise ProtocolError("payload_size_invalid")
 
@@ -99,8 +99,8 @@ def serialize_word_document_response(
         raise TypeError("document must be bytes")
     if not document:
         raise ProtocolError("empty_document")
-    if max_response_bytes <= 0:
-        raise ValueError("max_response_bytes must be positive")
+    if type(max_response_bytes) is not int or max_response_bytes <= 0:
+        raise ValueError("max_response_bytes must be a positive integer")
 
     root = ET.Element("response-word", {"status": "success"})
     return_types = ET.SubElement(root, "return-types")
