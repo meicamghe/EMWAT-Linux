@@ -1,3 +1,22 @@
+## Accepted Linux product decisions — 2026-11-18
+
+- Project owner confirmed the product target is **Linux only**. The existing Windows implementation is a compatibility/reference source; no new Windows application, GUI, or installer is in scope.
+- **GTK 4 + Python/PyGObject** is the selected lightweight, free/open-source control UI. Qt/PySide is not selected and must not be introduced unless the owner explicitly changes this decision.
+- **LibreOffice Writer via UNO** is the Linux document editor. GTK is not a Word replacement or document editor; it is limited to EMWAT status, settings, recovery, scanner entry points, and diagnostics.
+- EMWAT's primary purpose is to bridge the Almas correspondence system to Writer: receive the Almas document/request, validate and coordinate the editing workflow, obtain the final document, and return it using the evidenced Almas-compatible response contract.
+- Keep the protocol bridge, document coordinator, UNO adapter, recovery, and scanner services independent of GTK. GUI dependencies must not be required by headless protocol tests or core services.
+- No paid toolkit, subscription, or mandatory cloud service is acceptable. Record and comply with all dependency licenses; zero purchase cost does not remove license obligations.
+- Authoritative decision record: [LINUX-PRODUCT-DECISIONS.md](LINUX-PRODUCT-DECISIONS.md).
+
+## Latest PR-head verification — 2026-11-18
+
+- PR #2 head checked before this documentation update: `6bedd5c64019c77d3a3fc09f6936d139e3095e29`.
+- Python bridge run [44327516656](https://github.com/meicamghe/EMWAT-Linux/actions/runs/44327516656): completed successfully.
+- LibreOffice UNO run [44327516796](https://github.com/meicamghe/EMWAT-Linux/actions/runs/44327516796): completed successfully.
+- Native image core run [44327516916](https://github.com/meicamghe/EMWAT-Linux/actions/runs/44327516916): completed successfully.
+- These are results for the checked head before the new documentation-only commits. New documentation commits do not change code, but no new CI result is claimed for the later documentation head until queried.
+- PR #2 remains open, Draft, and unmerged.
+
 ## Recovery picker state and current-head validation — 2026-11-18
 
 - The immutable picker view-state implementation and regression tests are on the current PR head.
