@@ -1,3 +1,11 @@
+## Document session boundary validation — 2026-11-18
+
+- Document session IDs now require text, non-empty and already-trimmed values; non-string inputs fail with a stable ValueError instead of leaking AttributeError.
+- A final document return now rejects empty bytes. The session remains FINALIZING on this validation error and the coordinator marks the operation failed rather than reporting an empty file as a successful return.
+- Added session and coordinator regression tests for non-string IDs and empty final documents.
+- Implementation/test commits: `8e651b7`, `d46a6be`, `b8e0189`.
+- Latest full CI result predates this follow-up; fresh verification is pending.
+
 ## Scanner preflight option validation — 2026-11-18
 
 - SANE scan options are now validated before SANE initialization or opening a physical device.
