@@ -1,3 +1,12 @@
+## Recovery picker view-state contract — 2026-11-18
+
+- Added immutable `RecoveryPickerState` and `RecoveryPickerController.state()` as a toolkit-neutral presentation boundary.
+- Empty catalogs are explicit; the newest snapshot is selected by default; a still-valid caller selection is preserved; stale/unknown selection IDs are cleared rather than silently selecting a different document.
+- The projection contains only the service's safe metadata and never exposes the private store path or document bytes.
+- Added tests for default selection, explicit selection, stale selection, empty state, restore behavior, and strict discard confirmation.
+- Implementation commit: `86bf845ea0df19aa40e470856a53034763ce3e90`; tests commit: `a3d6b06afdfdae092c39e6468b6d24fc635e2682`.
+- This remains a view-state contract, not a graphical UI; no toolkit has been selected.
+
 ## Parallel follow-up: staged native install and recovery confirmation — 2026-11-18
 
 - Native CI now exercises the CMake install rules instead of only compiling the library: it installs into a temporary staging prefix and asserts that the static library plus public image/scanner headers are present.
