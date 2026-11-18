@@ -25,8 +25,8 @@ def create_bridge_server(
     allowed_parent_origins: frozenset[str] = frozenset(),
     host: str = "127.0.0.1",
     port: int = 1984,
-    max_request_bytes: int = 16 * 1024 * 1024,
-    max_response_bytes: int = 16 * 1024 * 1024,
+    max_request_bytes: int = 128 * 1024 * 1024,
+    max_response_bytes: int = 96 * 1024 * 1024,
     socket_timeout_seconds: float = 10.0,
 ) -> BridgeHTTPServer:
     """Build the loopback HTTP server with an explicit XML method registry."""
@@ -57,8 +57,8 @@ def create_libreoffice_bridge_server(
     additional_handlers: Mapping[str, MethodHandler] | None = None,
     host: str = "127.0.0.1",
     port: int = 1984,
-    max_request_bytes: int = 16 * 1024 * 1024,
-    max_response_bytes: int = 16 * 1024 * 1024,
+    max_request_bytes: int = 128 * 1024 * 1024,
+    max_response_bytes: int = 96 * 1024 * 1024,
     socket_timeout_seconds: float = 10.0,
 ) -> BridgeHTTPServer:
     """Compose the captured EditWordDocument route with LibreOffice UNO.
@@ -66,6 +66,12 @@ def create_libreoffice_bridge_server(
     The cancellation response remains a required injection because its exact
     Windows wire envelope has not been captured. Additional method handlers
     may be supplied, but cannot replace EditWordDocument.
+
+    The bounded defaults support the service's 64 MiB decoded document limit:
+    a 128 MiB request cap accommodates Base64 document/config payloads and XML
+    framing, while a 96 MiB response cap accommodates Base64 expansion of a
+    64 MiB final document plus its XML envelope. Deployments may lower either
+    limit explicitly; the HTTP, dispatcher, and response serializer share them.
 
     Set ``encrypt_recovery=True`` to explicitly obtain the AES key from the
     freedesktop Secret Service and inject an encrypted recovery store. This
