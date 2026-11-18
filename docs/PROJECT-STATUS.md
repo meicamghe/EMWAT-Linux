@@ -1,3 +1,12 @@
+## Scanner preflight option validation — 2026-11-18
+
+- SANE scan options are now validated before SANE initialization or opening a physical device.
+- Requested resolution must be finite and within the supported safety interval (greater than zero and at most 100000 DPI).
+- Explicit mode/source strings must be non-empty and contain no control characters; invalid values are rejected before hardware access.
+- Added native regression cases for NaN, infinity, zero, over-limit resolution, empty mode, newline-containing mode and embedded-NUL source.
+- Implementation/test commits: `06ad29f`, `f4e7054`, `628ffad`, `cd6d6a8`.
+- This is preflight validation only. It does not establish physical scanner compatibility, ADF, duplex or multi-frame support; native CI for this newest head is pending.
+
 ## Loopback transport and EditWord response-bound hardening — 2026-11-18
 
 - Bridge constructor rejects non-built-in-integer TCP ports and body/response byte limits, invalid/non-string bind hosts, and non-finite/non-positive socket timeouts (including bool, NaN, infinities and oversized integers).
