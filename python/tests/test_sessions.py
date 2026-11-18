@@ -86,6 +86,18 @@ class DocumentSessionTests(unittest.TestCase):
             with self.subTest(value=value), self.assertRaises(ValueError):
                 DocumentSession(value)
 
+    def test_session_id_must_be_text(self):
+        for value in (None, 1, [], {}):
+            with self.subTest(value=value), self.assertRaises(ValueError):
+                DocumentSession(value)
+
+    def test_empty_returned_payload_is_rejected(self):
+        session = self.opened_session()
+        session.begin_finalize()
+        with self.assertRaisesRegex(ValueError, "payload must not be empty"):
+            session.complete_finalize(b"")
+        self.assertEqual(session.state, DocumentState.FINALIZING)
+
 
 if __name__ == "__main__":
     unittest.main()
