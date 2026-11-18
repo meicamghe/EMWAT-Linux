@@ -1,4 +1,5 @@
 #include "emwat/scanner.hpp"
+#include "emwat/scanner_detail.hpp"
 
 #include <sane/sane.h>
 
@@ -120,8 +121,15 @@ void set_resolution_option(SANE_Handle handle, double dpi) {
         (descriptor->cap & SANE_CAP_INACTIVE) || descriptor->size != static_cast<SANE_Int>(sizeof(SANE_Word)) ||
         (descriptor->type != SANE_TYPE_INT && descriptor->type != SANE_TYPE_FIXED))
         throw ScannerError("Scanner resolution option is unavailable or incompatible");
-    SANE_Word value = descriptor->type == SANE_TYPE_FIXED
-        ? SANE_FIX(dpi) : static_cast<SANE_Word>(std::lround(dpi));
+    SANE_Word value = 0;
+    if (descriptor->type == SANE_TYPE_FIXED) {
+        const auto fixed_value = detail::encode_sane_fixed_resolution(dpi);
+        if (!fixed_value)
+            throw ScannerError("Scan resolution cannot be represented by the scanner fixed-point option");
+        value = static_cast<SANE_Word>(*fixed_value);
+    } else {
+        value = static_cast<SANE_Word>(std::lround(dpi));
+    }
     SANE_Int info = 0;
     const auto status = sane_control_option(handle, index, SANE_ACTION_SET_VALUE, &value, &info);
     if (status != SANE_STATUS_GOOD)
