@@ -78,8 +78,10 @@ class BridgeHTTPServer:
             not isinstance(origin, str) or not origin for origin in allowed_origins
         ):
             raise ValueError("allowed_origins must be a set of non-empty origin strings")
-        if not isinstance(allowed_parent_origins, (set, frozenset)):
-            raise ValueError("allowed_parent_origins must be a set of origin strings")
+        if not isinstance(allowed_parent_origins, (set, frozenset)) or any(
+            not isinstance(origin, str) or not origin for origin in allowed_parent_origins
+        ):
+            raise ValueError("allowed_parent_origins must be a set of non-empty origin strings")
 
         self._handler = handler
         self._max_body_bytes = max_body_bytes
