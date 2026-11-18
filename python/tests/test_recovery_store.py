@@ -231,5 +231,57 @@ class RecoverySnapshotStoreTests(unittest.TestCase):
             self.assertEqual(store.list_snapshots(), ())
 
 
+    def test_aes_gcm_encryption_hides_plaintext_and_roundtrips(self):
+        key = b"K" * 32
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary) / "recovery"
+            store = RecoverySnapshotStore(root, encryption_key=key)
+            session_id = store.create_session()
+            payload = bytes.fromhex("D0CF11E0A1B11AE1") + b"secret-document-content"
+            info = store.save_snapshot(session_id, payload)
+            stored = info.document_path.read_bytes()
+            self.assertTrue(stored.startswith(b"EMWATREC\\x01"))
+            self.assertNotIn(b"secret-document-content", stored)
+            self.assertEqual(store.load_snapshot(session_id), payload)
+            self.assertEqual(store.list_snapshots()[0].sha256, hashlib.sha256(payload).hexdigest())
+
+    def test_encrypted_snapshot_requires_correct_key_and_authenticates(self):
+        key = b"A" * 32
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary) / "recovery"
+            store = RecoverySnapshotStore(root, encryption_key=key)
+            session_id = store.create_session()
+            payload = bytes.fromhex("D0CF11E0A1B11AE1") + b"authenticated"
+            info = store.save_snapshot(session_id, payload)
+            without_key = RecoverySnapshotStore(root)
+            with self.assertRaisesRegex(RecoveryStoreError, "recovery_encryption_key_required"):
+                without_key.load_snapshot(session_id)
+            wrong_key = RecoverySnapshotStore(root, encryption_key=b"B" * 32)
+            with self.assertRaisesRegex(RecoveryStoreError, "recovery_snapshot_authentication_failed"):
+                wrong_key.load_snapshot(session_id)
+            damaged = bytearray(info.document_path.read_bytes())
+            damaged[-1] ^= 1
+            info.document_path.write_bytes(damaged)
+            with self.assertRaisesRegex(RecoveryStoreError, "recovery_snapshot_authentication_failed"):
+                store.load_snapshot(session_id)
+
+    def test_encrypted_store_rejects_legacy_plaintext_snapshot(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary) / "recovery"
+            plain_store = RecoverySnapshotStore(root)
+            session_id = plain_store.create_session()
+            plain_store.save_snapshot(
+                session_id, bytes.fromhex("D0CF11E0A1B11AE1") + b"legacy-plaintext"
+            )
+            encrypted_store = RecoverySnapshotStore(root, encryption_key=b"C" * 32)
+            with self.assertRaisesRegex(RecoveryStoreError, "recovery_plaintext_snapshot_rejected"):
+                encrypted_store.load_snapshot(session_id)
+
+    def test_encryption_key_must_be_256_bits(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            with self.assertRaisesRegex(ValueError, "exactly 32 bytes"):
+                RecoverySnapshotStore(Path(temporary) / "recovery", encryption_key=b"short")
+
+
 if __name__ == "__main__":
     unittest.main()
