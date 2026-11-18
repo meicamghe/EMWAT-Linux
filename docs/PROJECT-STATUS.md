@@ -2563,3 +2563,10 @@ Python bridge CI در run `44031548179` موفق شد: **111 تست موفق، 2
 - Full CI on the combined code/test state through `26c831ebf80cb94178912158f1c712f93082582d` completed successfully: Python bridge run `44318451374` (**201 tests, 199 passed, 2 optional LibreOffice skips**); Native build + ASan/UBSan run `44318451310` (both jobs passed); LibreOffice UNO run `44318451381` (UNO runtime and real Writer roundtrip passed). The branch head `d93601fa0f418b378b73982d4c5a962b5a297ba0` is documentation-only beyond that tested code/test state.
 
 - Follow-up review also catches JSON parser recursion-depth failures inside the same bounded manifest reader; deeply nested metadata now fails closed with `recovery_manifest_invalid`. Commits: implementation `570fb8de7c22f73bda8e37f29adc058b699fc793`, regression test `26c831ebf80cb94178912158f1c712f93082582d`, documentation `b2e12ab948c638ac4c0e91d035927d5ccbc224c4`.
+
+## Recovery snapshot payload read hardening — 2026-11-18
+
+- Snapshot payloads now open with `O_NOFOLLOW` where supported and must be regular files.
+- The descriptor size is checked against the configured snapshot cap plus encryption envelope overhead; the actual read is also capped at limit + 1 byte to handle file growth after `fstat`.
+- Added regression tests for oversized payloads and a simulated symlink-replacement race between path precheck and descriptor open.
+- Implementation: `4e4bc2b4363ff69804f7bb219d15caace1fd45b6`; tests: `fb56e821129aa0ad665556f5e6fa3b434af0a0c7`. Fresh CI is required for this follow-up.
