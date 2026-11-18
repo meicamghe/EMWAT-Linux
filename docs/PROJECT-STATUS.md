@@ -2528,3 +2528,10 @@ Python bridge CI در run `44031548179` موفق شد: **111 تست موفق، 2
 - Regression tests cover malformed request objects, every invalid limit category, configured encoded-config bounds, service forwarding, and dispatcher registration validation.
 - Implementation and test changes are committed in the EditWord request parser, service and dispatcher modules; documentation commits include `75573fa` and `df39bb9`. Service commits: `120f7fc` / `dcfab72`; dispatcher commits: `f8a6edf` / `5487ef4`.
 - CI verified before service and dispatcher follow-ups: Python bridge `44302976157`, Native image core including ASan/UBSan `44302976163`, and LibreOffice UNO `44302976143` all passed. Service/dispatcher follow-up commits are not yet covered by those earlier runs; new CI status must be checked separately.
+
+
+### Dispatcher request-boundary validation — 2026-11-18
+- `XMLMethodDispatcher` now rejects non-`BridgeRequest` inputs and non-bytes request bodies with the same sanitized HTTP 400 response used for malformed XML, rather than leaking AttributeError/TypeError from the public callable boundary.
+- Added regression cases for None, arbitrary objects and a BridgeRequest carrying a non-bytes body.
+- Implementation commit: `7956525e4974256dd726ae19cb1363cb694a53a5`; tests: `0e3a590b3419d0846ad9cbb7d7fb4a01125e38f5`.
+- This follow-up is newer than the CI results listed above; a fresh combined run is required before claiming it verified.
