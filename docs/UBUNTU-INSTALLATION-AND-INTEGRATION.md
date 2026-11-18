@@ -106,9 +106,10 @@ is permitted.
 - newest-first validated metadata without exposing private store paths;
 - restore to a caller-selected destination without overwriting;
 - explicit confirmation before discard;
-- optional retention policy operations.
+- optional retention policy operations;
+- an immutable `RecoveryPickerState` projection for native UI clients, including an explicit empty-catalog state, selected-entry metadata, default selection of the newest snapshot, and safe clearing of stale selections.
 
-This is a toolkit-neutral controller, not a graphical picker. A future view
+`RecoveryPickerController.state()` performs no filesystem writes. A UI can refresh this projection after each action and bind it to GTK, Qt, or another toolkit later. This is a toolkit-neutral controller, not a graphical picker. A future view
 must display metadata only, use a native Save dialog for restore, require a
 destructive confirmation for discard, and show errors without exposing private
 paths or document contents. The UI toolkit remains intentionally unselected;
