@@ -51,6 +51,10 @@ class BridgeHTTPServer:
         socket_timeout_seconds: float = 10.0,
         require_origin: bool = True,
     ) -> None:
+        if not callable(handler):
+            raise ValueError("handler must be callable")
+        if type(require_origin) is not bool:
+            raise ValueError("require_origin must be a boolean")
         if not isinstance(host, str):
             raise ValueError("host must be an IPv4 loopback address string")
         address = ip_address(host)
