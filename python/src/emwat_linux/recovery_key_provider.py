@@ -9,7 +9,6 @@ import base64
 import binascii
 import secrets
 from pathlib import Path
-from types import ModuleType
 
 from emwat_linux.recovery_store import RecoverySnapshotStore
 
@@ -26,7 +25,7 @@ def get_or_create_secret_service_key(
     *,
     service: str = _DEFAULT_SERVICE,
     account: str = _DEFAULT_ACCOUNT,
-    keyring_module: ModuleType | object | None = None,
+    keyring_module: object | None = None,
 ) -> bytes:
     """Get a stable 32-byte key from freedesktop Secret Service.
 
