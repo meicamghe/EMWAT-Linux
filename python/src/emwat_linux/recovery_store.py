@@ -8,6 +8,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 import hashlib
 import json
+import math
 import os
 from pathlib import Path
 import re
@@ -146,8 +147,20 @@ class RecoverySnapshotStore:
                 raise RecoveryStoreError("recovery_snapshot_size_mismatch")
             if not isinstance(manifest["sha256"], str) or not re.fullmatch(r"[0-9a-f]{64}", manifest["sha256"]):
                 raise RecoveryStoreError("recovery_manifest_hash_invalid")
-            if hashlib.sha256(payload).hexdigest() != manifest["sha256"]:
+            digest = hashlib.sha256(payload).hexdigest()
+            if digest != manifest["sha256"]:
                 raise RecoveryStoreError("recovery_snapshot_hash_mismatch")
+            expected_suffix = ".doc" if payload.startswith(_CFB_SIGNATURE) else ".docx"
+            if document_name != f"document-{digest}{expected_suffix}":
+                raise RecoveryStoreError("recovery_snapshot_name_hash_mismatch")
+            updated_at = manifest.get("updated_at")
+            if (
+                isinstance(updated_at, bool)
+                or not isinstance(updated_at, (int, float))
+                or not math.isfinite(updated_at)
+                or updated_at < 0
+            ):
+                raise RecoveryStoreError("recovery_manifest_timestamp_invalid")
             if payload.startswith(_CFB_SIGNATURE) and not document_name.endswith(".doc"):
                 raise RecoveryStoreError("recovery_snapshot_format_mismatch")
             if payload.startswith(_ZIP_SIGNATURES) and not document_name.endswith(".docx"):
