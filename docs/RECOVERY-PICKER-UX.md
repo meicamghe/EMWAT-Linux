@@ -1,6 +1,6 @@
 # Recovery picker UX and toolkit-neutral interaction contract
 
-Status: design ready for GTK/Qt binding; no toolkit selected.
+Status: design contract accepted; GTK 4 + PyGObject selected.
 Date: 2026-11-18
 
 ## Product boundary
@@ -101,18 +101,17 @@ literal boolean `True`.
 
 ## Toolkit binding map
 
-The same contract can be implemented in GTK or Qt:
+The contract is to be implemented in GTK 4 + PyGObject:
 
-| Contract element | GTK binding | Qt binding |
-|---|---|---|
-| Snapshot list | ListView / ColumnView | QListView / QTableView |
-| Selection | Single-selection model | Single-selection model |
-| Restore destination | Native file chooser | QFileDialog |
-| Discard confirmation | Modal alert dialog | QMessageBox |
-| Loading / errors | Spinner + accessible status | Progress indicator + accessible status |
+| Contract element | GTK 4 binding |
+|---|---|
+| Snapshot list | Gtk.ListView or Gtk.ColumnView |
+| Selection | Gtk.SingleSelection |
+| Restore destination | Gtk.FileChooserNative / Save dialog |
+| Discard confirmation | Gtk.AlertDialog (or supported GTK 4 dialog API for the target minimum version) |
+| Loading / errors | Gtk.Spinner + accessible status label |
 
-This table is a mapping guide, not a toolkit decision. Do not add toolkit
-dependencies until the project owner selects GTK or Qt.
+Keep this view thin: all catalog, restore, discard, and validation behavior stays in the existing controller/service layer. GTK must not be imported by the headless protocol or document core. Do not add Qt/PySide.
 
 ## Acceptance tests before release
 
@@ -126,3 +125,8 @@ dependencies until the project owner selects GTK or Qt.
 - UI never receives or displays the recovery root, manifest path, key, or
   document bytes.
 - Keyboard-only and screen-reader flows cover selection, restore, and discard.
+
+
+## Accepted project decision
+
+The project owner selected GTK 4 + Python/PyGObject for the Linux-only control UI and LibreOffice Writer via UNO for document editing. This picker is a GTK view, not an editor. The authoritative scope and cost/licensing requirements are in [LINUX-PRODUCT-DECISIONS.md](LINUX-PRODUCT-DECISIONS.md).
