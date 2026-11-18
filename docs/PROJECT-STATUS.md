@@ -1,3 +1,21 @@
+## Secret Service key-provider integration — 2026-11-18
+
+- Added `recovery_key_provider.py` with explicit Secret Service get-or-create behavior for a stable 256-bit AES key.
+- The provider accepts only the freedesktop Secret Service backend; it refuses plaintext/file fallback and other unreviewed backends.
+- Existing malformed or wrong-length secrets fail closed and are not silently replaced. Newly created keys are read back to verify persistence.
+- Added an explicit factory to construct an encrypted `RecoverySnapshotStore`; the LibreOffice adapter's default remains unchanged and plaintext unless the application calls the factory and injects the returned store.
+- Added mock-backed tests for key persistence, backend rejection, malformed/short secrets, and encrypted-store roundtrip.
+- Added optional package extras for encryption and keyring support. Actual desktop DBus/Secret Service integration still requires a live Linux desktop session and has not been exercised in CI.
+
+## Secret Service key-provider integration — 2026-11-18
+
+- Added `recovery_key_provider.py` with explicit Secret Service get-or-create behavior for a stable 256-bit AES key.
+- The provider accepts only the freedesktop Secret Service backend; it refuses plaintext/file fallback and other unreviewed backends.
+- Existing malformed or wrong-length secrets fail closed and are not silently replaced. Newly created keys are read back to verify persistence.
+- Added an explicit factory to construct an encrypted `RecoverySnapshotStore`; the LibreOffice adapter's default remains unchanged and plaintext unless the application calls the factory and injects the returned store.
+- Added mock-backed tests for key persistence, backend rejection, malformed/short secrets, and encrypted-store roundtrip.
+- Added optional package extras for encryption and keyring support. Actual desktop DBus/Secret Service integration still requires a live Linux desktop session and has not been exercised in CI.
+
 ## Recovery encryption hardening follow-up — 2026-11-18
 
 - Encrypted snapshot filenames now use opaque random identifiers instead of exposing the plaintext SHA-256 in the path. The SHA-256 is bound into AES-GCM associated data and verified after decryption.
