@@ -29,16 +29,27 @@ def parse_editword_request(
     max_document_bytes: int = 64 * 1024 * 1024,
     max_encoded_document_chars: int = 90 * 1024 * 1024,
     max_config_bytes: int = 16 * 1024 * 1024,
+    max_encoded_config_chars: int = 24 * 1024 * 1024,
 ) -> EditWordDocumentRequest:
-    """Decode the two confirmed Base64 parameters and retain signData opaque.
+    """Decode confirmed Base64 parameters while retaining signData as opaque text.
 
     The captured request confirms Base64 wordConfig and wordBody. signData is
     deliberately retained as text because the inner config describes its
     concatenation and per-field encoding; it is not necessarily one Base64 blob.
     """
+    if not isinstance(call, MethodCall):
+        raise EditWordDocumentRequestError("method_call_invalid")
     if call.class_name != "EditWordDocument":
         raise EditWordDocumentRequestError("unexpected_method_class")
-    limits = (max_document_bytes, max_encoded_document_chars, max_config_bytes)
+    if not isinstance(call.params, Mapping):
+        raise EditWordDocumentRequestError("method_parameters_invalid")
+
+    limits = (
+        max_document_bytes,
+        max_encoded_document_chars,
+        max_config_bytes,
+        max_encoded_config_chars,
+    )
     if any(type(limit) is not int or limit <= 0 for limit in limits):
         raise ValueError("size limits must be positive integers")
 
@@ -46,12 +57,17 @@ def parse_editword_request(
     encoded_document = call.params.get("wordBody")
     if encoded_config is None or encoded_document is None:
         raise EditWordDocumentRequestError("required_parameter_missing")
+    if not isinstance(encoded_config, str):
+        raise EditWordDocumentRequestError("word_config_invalid_type")
+    if not isinstance(encoded_document, str):
+        raise EditWordDocumentRequestError("word_body_invalid_type")
     if not encoded_document or len(encoded_document) > max_encoded_document_chars:
         raise EditWordDocumentRequestError("document_encoded_size_invalid")
 
     try:
         config = parse_word_config(
             encoded_config,
+            max_encoded_chars=max_encoded_config_chars,
             max_decoded_bytes=max_config_bytes,
         )
     except WordConfigError as exc:
@@ -67,11 +83,16 @@ def parse_editword_request(
         raise EditWordDocumentRequestError("document_decoded_size_invalid")
 
     sign_data = call.params.get("signData", "")
+    if not isinstance(sign_data, str):
+        raise EditWordDocumentRequestError("sign_data_invalid_type")
     extras = {
         key: value
         for key, value in call.params.items()
         if key not in {"wordConfig", "wordBody", "signData"}
     }
+    if any(not isinstance(key, str) or not isinstance(value, str) for key, value in extras.items()):
+        raise EditWordDocumentRequestError("extra_parameter_invalid_type")
+
     return EditWordDocumentRequest(
         config=config,
         document_bytes=document_bytes,
