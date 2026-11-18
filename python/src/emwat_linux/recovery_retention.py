@@ -21,9 +21,12 @@ class RecoveryRetentionPolicy:
 
     def __post_init__(self) -> None:
         if self.max_age_seconds is not None and (
-            not math.isfinite(self.max_age_seconds) or self.max_age_seconds <= 0
+            isinstance(self.max_age_seconds, bool)
+            or not isinstance(self.max_age_seconds, (int, float))
+            or not math.isfinite(self.max_age_seconds)
+            or self.max_age_seconds <= 0
         ):
-            raise ValueError("max_age_seconds must be finite and positive")
+            raise ValueError("max_age_seconds must be a finite positive number")
         if self.max_snapshots is not None and (
             type(self.max_snapshots) is not int or self.max_snapshots < 1
         ):
@@ -45,8 +48,12 @@ def apply_recovery_retention(
     The caller controls when this function runs and owns the configured policy.
     """
     current_time = time.time() if now is None else now
-    if not math.isfinite(current_time):
-        raise ValueError("now must be finite")
+    if (
+        isinstance(current_time, bool)
+        or not isinstance(current_time, (int, float))
+        or not math.isfinite(current_time)
+    ):
+        raise ValueError("now must be a finite number")
 
     snapshots = list(store.list_snapshots())
     expired: set[str] = set()
