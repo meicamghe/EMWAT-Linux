@@ -68,7 +68,7 @@ jobs:
           cpack --config native/package-v1/CPackConfig.cmake
       - name: Build upgrade Debian package
         run: |
-          cmake -S native -B native/package-v2 -DCMAKE_BUILD_TYPE=Release -DEM WAT_PACKAGE_VERSION=0.1.1
+          cmake -S native -B native/package-v2 -DCMAKE_BUILD_TYPE=Release -DEMWAT_PACKAGE_VERSION=0.1.1
           cmake --build native/package-v2 --parallel 2
           cpack --config native/package-v2/CPackConfig.cmake
       - name: Install, upgrade, and remove package
