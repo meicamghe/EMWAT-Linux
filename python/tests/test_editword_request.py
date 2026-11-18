@@ -71,6 +71,15 @@ class EditWordDocumentRequestTests(unittest.TestCase):
                 max_document_bytes=4,
             )
 
+    def test_enforces_encoded_config_limit_before_base64_decode(self):
+        config = b64(b"<word-document/>")
+        body = b64(b"document")
+        with self.assertRaisesRegex(EditWordDocumentRequestError, "word_config_invalid"):
+            parse_editword_request(
+                self.make_call(wordConfig=config, wordBody=body),
+                max_encoded_config_chars=len(config) - 1,
+            )
+
     def test_all_size_limits_require_positive_builtin_integers(self):
         config = b64(b"<word-document/>")
         body = b64(b"document")
@@ -79,6 +88,7 @@ class EditWordDocumentRequestTests(unittest.TestCase):
             "max_document_bytes",
             "max_encoded_document_chars",
             "max_config_bytes",
+            "max_encoded_config_chars",
         ):
             for value in invalid_values:
                 with self.subTest(parameter=parameter, value=value):
@@ -87,6 +97,24 @@ class EditWordDocumentRequestTests(unittest.TestCase):
                             self.make_call(wordConfig=config, wordBody=body),
                             **{parameter: value},
                         )
+
+    def test_rejects_non_text_protocol_parameters_cleanly(self):
+        config = b64(b"<word-document/>")
+        body = b64(b"document")
+        cases = (
+            ({"wordConfig": 7, "wordBody": body}, "word_config_invalid_type"),
+            ({"wordConfig": config, "wordBody": b"not-text"}, "word_body_invalid_type"),
+            ({"wordConfig": config, "wordBody": body, "signData": None}, "sign_data_invalid_type"),
+            ({"wordConfig": config, "wordBody": body, "extra": 9}, "extra_parameter_invalid_type"),
+        )
+        for params, error in cases:
+            with self.subTest(error=error), self.assertRaisesRegex(EditWordDocumentRequestError, error):
+                parse_editword_request(MethodCall("EditWordDocument", params, "1.0"))
+
+    def test_rejects_invalid_method_call_and_parameter_container(self):
+        for call in (None, object(), MethodCall("EditWordDocument", None, "1.0")):
+            with self.subTest(call=call), self.assertRaises(EditWordDocumentRequestError):
+                parse_editword_request(call)
 
     def test_wraps_invalid_inner_config(self):
         with self.assertRaises(EditWordDocumentRequestError):
