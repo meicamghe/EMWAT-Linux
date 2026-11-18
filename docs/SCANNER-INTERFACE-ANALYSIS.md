@@ -766,3 +766,23 @@ Workflow run `43157168446` با موفقیت اجرا شد؛ artifact `139165262
 4. گام بعدی: trace دقیق `IG_image_dimensions_get`، `IG_page_count_get`، `IG_image_delete` و context virtual slot صفر/+0x20؛ سپس ثبت قرارداد نهایی `Document/Page/PixelBuffer` و شروع پیاده‌سازی مستقل از GEAR.
 
 **Confidence:** هویت importها و مسیر call در RotateLeft/Rotate90 با اطمینان بالا؛ معنای context virtual slotها و جزئیات خروجی dimensions هنوز باز است.
+
+
+## وضعیت پیاده‌سازی Linux فعلی — 2026-11-18
+
+کد `SaneScannerBackend` اکنون در `native/src/sane_scanner.cpp` این قرارداد محدود را اجرا می‌کند:
+
+- کشف دستگاه‌ها با SANE و شناسهٔ انتخاب‌شدهٔ صریح؛
+- inventory گزینه‌های قابل‌تشخیص برای `mode`، `source` و `resolution`؛
+- تنظیم اختیاری DPI/mode/source فقط در صورت پشتیبانی دستگاه؛
+- خواندن یک frame با خروجی 8-bit Gray یا RGB؛
+- بررسی ابعاد، stride، اندازهٔ کل (حداکثر 1 GiB) و طول دادهٔ دریافتی؛
+- لغو SANE در خطاهای حین خواندن و رد خروجی ناقص/بیش‌ازحد.
+
+این پیاده‌سازی هنوز معادل کامل دو مسیر ImageGear ویندوز نیست. چندصفحه‌ای/ADF، duplex، preview/crop workflow، callbackهای اختصاصی ImageGear، لغو تعاملی از UI و آزمون با مدل‌های واقعی اسکنر تأیید نشده‌اند. قرارداد تست فعلی با Fake backend است و تست سخت‌افزاری محسوب نمی‌شود. تا زمان شناسایی نسخه دقیق GEAR32PD و تطبیق رفتار، mode/sourceهای SANE را معادل enumهای خام ویندوز فرض نکنید.
+
+### گام‌های قابل انجام بدون سخت‌افزار
+
+1. CI ساخت Native و sanitizer را روی هر تغییر اجرا کنید.
+2. برای تست واقعی، مدل/شناسه SANE، backend و خروجی capability را بدون اطلاعات کاربر ثبت کنید.
+3. قبل از فعال‌سازی ADF/duplex، trace و قرارداد frameهای چندگانه را از نمونه ویندوز تکمیل کنید.
