@@ -99,7 +99,13 @@ class RecoveryWorkerTests(unittest.TestCase):
             try:
                 deadline = time.monotonic() + 3
                 snapshots = store.list_snapshots()
-                while not snapshots and time.monotonic() < deadline:
+                # The worker commits the snapshot before clearing the previous
+                # transient error. Wait for both observable success conditions;
+                # seeing the catalog entry alone can race the error-state update.
+                while (
+                    (not snapshots or handle.recovery_error is not None)
+                    and time.monotonic() < deadline
+                ):
                     time.sleep(0.01)
                     snapshots = store.list_snapshots()
                 self.assertTrue(snapshots, "recovery_worker_did_not_persist_snapshot")
