@@ -423,5 +423,24 @@ class RecoverySnapshotStoreTests(unittest.TestCase):
 
 
 
+    def test_deeply_nested_manifest_json_fails_closed(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            store = RecoverySnapshotStore(Path(temporary) / "recovery")
+            session_id = store.create_session()
+            info = store.save_snapshot(
+                session_id,
+                bytes.fromhex("D0CF11E0A1B11AE1") + b"nested-manifest",
+            )
+            manifest = info.document_path.parent / "manifest.json"
+            manifest.write_bytes(b"[" * 2000 + b"]" * 2000)
+
+            with self.assertRaisesRegex(
+                RecoveryStoreError, "recovery_manifest_invalid"
+            ):
+                store.load_snapshot(session_id)
+            self.assertEqual(store.list_snapshots(), ())
+
+
+
 if __name__ == "__main__":
     unittest.main()
