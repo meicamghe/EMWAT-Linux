@@ -4,11 +4,14 @@ on:
     paths:
       - 'python/src/emwat_linux/libreoffice_adapter.py'
       - 'python/src/emwat_linux/writer_inspector.py'
+      - 'python/src/emwat_linux/recovery_store.py'
       - 'python/tests/test_libreoffice*.py'
       - '.github/workflows/libreoffice-integration.yml'
   pull_request:
     paths:
       - 'python/src/emwat_linux/libreoffice_adapter.py'
+      - 'python/src/emwat_linux/writer_inspector.py'
+      - 'python/src/emwat_linux/recovery_store.py'
       - 'python/tests/test_libreoffice*.py'
       - '.github/workflows/libreoffice-integration.yml'
   workflow_dispatch:
