@@ -2569,4 +2569,4 @@ Python bridge CI در run `44031548179` موفق شد: **111 تست موفق، 2
 - Snapshot payloads now open with `O_NOFOLLOW` where supported and must be regular files.
 - The descriptor size is checked against the configured snapshot cap plus encryption envelope overhead; the actual read is also capped at limit + 1 byte to handle file growth after `fstat`.
 - Added regression tests for oversized payloads and a simulated symlink-replacement race between path precheck and descriptor open.
-- Implementation: `4e4bc2b4363ff69804f7bb219d15caace1fd45b6`; tests: `fb56e821129aa0ad665556f5e6fa3b434af0a0c7`. Fresh CI is required for this follow-up.
+- Implementation: `4e4bc2b4363ff69804f7bb219d15caace1fd45b6`; tests: `fb56e821129aa0ad665556f5e6fa3b434af0a0c7`. Python bridge run `44319343914` passed (**203 tests, 201 passed, 2 optional skips**); LibreOffice UNO run `44319344050` passed (**14 tests**, including real EditWord response-handler roundtrip); Native ASan/UBSan job in run `44319343995` passed. Native `build-test` job in that run was still installing dependencies at the time of this status update, so full native workflow completion remains pending.
