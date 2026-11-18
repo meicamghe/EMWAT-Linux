@@ -1,3 +1,14 @@
+## Loopback transport and EditWord response-bound hardening — 2026-11-18
+
+- Bridge constructor rejects non-built-in-integer TCP ports and body/response byte limits, invalid/non-string bind hosts, and non-finite/non-positive socket timeouts (including bool, NaN, infinities and oversized integers).
+- Added constructor regression tests for all rejected input classes.
+- EditWord success response serialization now receives the configured `max_response_bytes` from `create_libreoffice_bridge_server`, so the serializer and HTTP transport enforce the same configured cap instead of the serializer silently retaining its default 16 MiB ceiling.
+- Added handler tests for configured response bounds and strict limit typing.
+- Design and validation notes: `docs/EDITWORD-INPUT-VALIDATION.md`.
+- Bridge constructor implementation/test commits: `f76d01c`, `7f1c0e6`; response cap wiring/tests: `8a00051`, `a37ec60`, `abf3520`; documentation: `94cb903`.
+- CI for bridge constructor changes at `7f1c0e6`: Python run `44300445278`, Native run `44300445365`, and UNO run `44300445339` passed. The newer response-cap changes are awaiting Python CI; do not infer their result from the prior head.
+- This remains transport/input hardening. No live Almas origin, actual customer document, or Windows cancel/discard response contract is claimed.
+
 ## Recovery manifest and input-validation hardening — 2026-11-18
 
 - Recovery manifest loading now explicitly rejects valid JSON scalars/arrays instead of allowing an AttributeError to escape the catalog path. The catalog skips malformed non-object manifests and continues listing other valid sessions.
