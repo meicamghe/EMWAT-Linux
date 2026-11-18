@@ -22,6 +22,9 @@ import uuid
 _SESSION_ID = re.compile(r"^[0-9a-f]{32}$")
 _CFB_SIGNATURE = bytes.fromhex("D0CF11E0A1B11AE1")
 _ZIP_SIGNATURES = (b"PK\x03\x04", b"PK\x05\x06", b"PK\x07\x08")
+_ENCRYPTED_MAGIC = b"EMWATREC\\x01"
+_GCM_NONCE_BYTES = 12
+_GCM_TAG_BYTES = 16
 
 
 class RecoveryStoreError(RuntimeError):
@@ -230,7 +233,7 @@ class RecoverySnapshotStore:
                 if manifest_path.is_symlink() or not manifest_path.is_file():
                     continue
                 manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-                if manifest.get("schema_version") != 1 or manifest.get("session_id") != folder.name:
+                if manifest.get("schema_version") not in (1, 2) or manifest.get("session_id") != folder.name:
                     continue
                 name = manifest["document_name"]
                 if not isinstance(name, str) or not re.fullmatch(r"document-[0-9a-f]{64}\.(?:doc|docx)", name):
