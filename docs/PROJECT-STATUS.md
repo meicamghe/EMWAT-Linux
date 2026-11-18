@@ -2581,3 +2581,12 @@ Python bridge CI در run `44031548179` موفق شد: **111 تست موفق، 2
 - این نتایج مستقیماً به head فعلی PR متصل‌اند؛ وضعیت قبلی مبنی بر pending بودن Native build-test دیگر معتبر نیست.
 - PR #2 همچنان Open، Draft و Unmerged است. مقایسه با `main`: 160 commit جلوتر و صفر commit عقب‌تر.
 - این CI هنوز سازگاری زنده با Almas، اسکنر فیزیکی، parity معنایی کامل Word/Writer، فرمت Windows `.easz` و قرارداد واقعی Cancel/Discard را اثبات نمی‌کند.
+
+
+## Native SANE fixed-point conversion safety — 2026-11-18
+
+- Review found that the generic 100000-DPI input ceiling could still reach `SANE_FIX(dpi)` for a scanner exposing a `SANE_TYPE_FIXED` resolution option. SANE fixed values are signed 16.16 `SANE_Word`; values above the representable range could overflow during floating-point-to-integer conversion.
+- Added `scanner_detail.hpp` with a checked conversion to signed 16.16, rejecting non-finite, non-positive and out-of-range values before casting. The scanner now uses this helper instead of invoking `SANE_FIX` on unbounded-by-format values. Integer-valued SANE resolution options retain their existing path.
+- Added native tests for normal conversion, the 32768-DPI overflow boundary, infinity and NaN. No physical scanner is required for these pure conversion tests.
+- Commits: helper `c020d17`, implementation `5b253e0`, tests `8360337`.
+- Fresh Python/Native/UNO CI for this follow-up is pending; do not treat the preceding green PR-head run as validation of these new native changes.
