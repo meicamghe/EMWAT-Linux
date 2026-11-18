@@ -1,3 +1,12 @@
+## Parallel follow-up: staged native install and recovery confirmation — 2026-11-18
+
+- Native CI now exercises the CMake install rules instead of only compiling the library: it installs into a temporary staging prefix and asserts that the static library plus public image/scanner headers are present.
+- The staged install step passed in Native image core run `44324464761` on commit `f4edf25549d3a613a671a52de281047a1715cc22`; both normal build/CTest and ASan/UBSan jobs passed.
+- Recovery picker discard tests now verify that only the literal boolean `True` is accepted as confirmation; `False`, `None`, integer `1`, and string `"yes"` are rejected without deleting the snapshot.
+- Python bridge run `44324505028` on the combined code/test head `6aa0af6bfea79451e60826602a315dce901baa3a` passed: **206 tests run, 204 passed, 2 optional LibreOffice tests skipped**.
+- Native CI on the same head passed both build/CTest and ASan/UBSan jobs (run `44324505210`). The separate LibreOffice UNO workflow for that exact head was still running when this entry was written; do not treat it as passed until it completes.
+- The install check proves staging installation of the reusable native library and headers only. It does not create a .deb, daemon, GUI, desktop launcher, or service unit.
+
 ## Preflight Base64 response-size calculation — 2026-11-18
 
 - The observed Word success response Base64-expands the final document. The serializer now calculates the exact XML envelope length before allocating the encoded copy and rejects over-limit responses before expansion.
