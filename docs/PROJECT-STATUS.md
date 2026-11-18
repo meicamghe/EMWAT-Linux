@@ -2534,4 +2534,4 @@ Python bridge CI در run `44031548179` موفق شد: **111 تست موفق، 2
 - `XMLMethodDispatcher` now rejects non-`BridgeRequest` inputs and non-bytes request bodies with the same sanitized HTTP 400 response used for malformed XML, rather than leaking AttributeError/TypeError from the public callable boundary.
 - Added regression cases for None, arbitrary objects and a BridgeRequest carrying a non-bytes body.
 - Implementation commit: `7956525e4974256dd726ae19cb1363cb694a53a5`; tests: `0e3a590b3419d0846ad9cbb7d7fb4a01125e38f5`.
-- This follow-up is newer than the CI results listed above; a fresh combined run is required before claiming it verified.
+- Full CI on the combined branch head `0231f31705ce2a9e97f932161d07a6acf71dae14` passed: Python bridge run `44304965568` (**196 tests, 194 passed, 2 optional LibreOffice skips**); Native image core run `44304965055` (build and ASan/UBSan jobs passed); LibreOffice UNO roundtrip run `44304965075` (UNO runtime and real Writer roundtrip job passed).
