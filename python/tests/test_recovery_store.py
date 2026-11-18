@@ -441,6 +441,44 @@ class RecoverySnapshotStoreTests(unittest.TestCase):
             self.assertEqual(store.list_snapshots(), ())
 
 
+    def test_snapshot_read_is_bounded_even_if_file_grows_after_metadata_check(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            store = RecoverySnapshotStore(
+                Path(temporary) / "recovery", max_snapshot_bytes=128
+            )
+            session_id = store.create_session()
+            info = store.save_snapshot(
+                session_id, bytes.fromhex("D0CF11E0A1B11AE1") + b"bounded"
+            )
+            info.document_path.write_bytes(b"X" * 256)
+            with self.assertRaisesRegex(
+                RecoveryStoreError, "recovery_snapshot_too_large"
+            ):
+                store.load_snapshot(session_id)
+            self.assertEqual(store.list_snapshots(), ())
+
+    def test_snapshot_open_rejects_symlink_even_if_path_precheck_is_raced(self):
+        from unittest.mock import patch
+
+        with tempfile.TemporaryDirectory() as temporary:
+            base = Path(temporary)
+            store = RecoverySnapshotStore(base / "recovery")
+            session_id = store.create_session()
+            info = store.save_snapshot(
+                session_id, bytes.fromhex("D0CF11E0A1B11AE1") + b"no-follow"
+            )
+            outside = base / "outside.doc"
+            outside.write_bytes(info.document_path.read_bytes())
+            info.document_path.unlink()
+            info.document_path.symlink_to(outside)
+
+            # Simulate the path-based symlink check losing a replacement race.
+            with patch.object(Path, "is_symlink", return_value=False):
+                with self.assertRaisesRegex(
+                    RecoveryStoreError, "recovery_snapshot_unavailable"
+                ):
+                    store.load_snapshot(session_id)
+
 
 if __name__ == "__main__":
     unittest.main()
