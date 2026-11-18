@@ -2600,3 +2600,11 @@ Python bridge CI در run `44031548179` موفق شد: **111 تست موفق، 2
   - LibreOffice UNO run `44320784298`: **14 تست موفق**، شامل Writer roundtrip و EditWord response-handler.
 - بنابراین اصلاح fixed-point در build عادی و sanitizer تأیید شده است. UNO نیز روی همان کد/test commit سبز است.
 - PR head فعلی پس از مستندسازی `b35a3b8513abebd391bc5dc69aef7e7a71877f69` است؛ تغییرات پس از code/test commit صرفاً مستندات و metadata هستند.
+
+
+## Bridge constructor contract follow-up — 2026-11-18
+
+- `BridgeHTTPServer` now validates the request handler is callable and `require_origin` is an actual boolean at construction time. Invalid configuration fails immediately rather than producing a request-time 500 or relying on truthiness.
+- Added regression tests for non-callable handler values and non-boolean Origin policy values; both supported boolean settings are covered.
+- Implementation: `bb50f32fedb25e9d561c6886bdd36365058c9087`; tests: `966c666545ff9851e569ecffe0e57fcde44d1a5b`.
+- Fresh CI is running for the combined branch head; results are pending and are not claimed passed.
