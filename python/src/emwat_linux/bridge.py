@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import json
+import math
 import re
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from ipaddress import ip_address
@@ -50,17 +51,28 @@ class BridgeHTTPServer:
         socket_timeout_seconds: float = 10.0,
         require_origin: bool = True,
     ) -> None:
+        if not isinstance(host, str):
+            raise ValueError("host must be an IPv4 loopback address string")
         address = ip_address(host)
         if address.version != 4 or not address.is_loopback:
             raise ValueError("EMWAT bridge must bind to an IPv4 loopback address")
-        if not 0 <= port <= 65535:
-            raise ValueError("invalid TCP port")
-        if max_body_bytes <= 0:
-            raise ValueError("max_body_bytes must be positive")
-        if max_response_bytes <= 0:
-            raise ValueError("max_response_bytes must be positive")
-        if socket_timeout_seconds <= 0:
-            raise ValueError("socket_timeout_seconds must be positive")
+        if type(port) is not int or not 0 <= port <= 65535:
+            raise ValueError("port must be an integer in the TCP port range")
+        if type(max_body_bytes) is not int or max_body_bytes <= 0:
+            raise ValueError("max_body_bytes must be a positive integer")
+        if type(max_response_bytes) is not int or max_response_bytes <= 0:
+            raise ValueError("max_response_bytes must be a positive integer")
+        if (
+            isinstance(socket_timeout_seconds, bool)
+            or not isinstance(socket_timeout_seconds, (int, float))
+        ):
+            raise ValueError("socket_timeout_seconds must be a finite positive number")
+        try:
+            timeout_is_finite = math.isfinite(float(socket_timeout_seconds))
+        except (OverflowError, ValueError):
+            timeout_is_finite = False
+        if not timeout_is_finite or socket_timeout_seconds <= 0:
+            raise ValueError("socket_timeout_seconds must be a finite positive number")
 
         self._handler = handler
         self._max_body_bytes = max_body_bytes
