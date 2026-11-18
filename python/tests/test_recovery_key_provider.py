@@ -49,6 +49,16 @@ class RecoveryKeyProviderTests(unittest.TestCase):
                 keyring_module=_FakeKeyring(PlaintextBackend())
             )
 
+    def test_key_persistence_failure_is_reported(self):
+        class NonPersistingKeyring(_FakeKeyring):
+            def set_password(self, service, account, value):
+                return
+
+        with self.assertRaisesRegex(
+            RecoveryKeyProviderError, "recovery_keyring_persistence_failed"
+        ):
+            get_or_create_secret_service_key(keyring_module=NonPersistingKeyring())
+
     def test_malformed_existing_key_is_rejected_not_replaced(self):
         keyring = _FakeKeyring()
         keyring.values[("emwat-linux-recovery", "snapshot-aes-256-gcm")] = "not-base64!"
