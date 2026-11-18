@@ -261,7 +261,7 @@ class BridgeHTTPServer:
                     response = owner._handler(request)
                     if not isinstance(response, BridgeResponse):
                         raise TypeError("bridge handler must return BridgeResponse")
-                    if not 200 <= response.status <= 599:
+                    if type(response.status) is not int or not 200 <= response.status <= 599:
                         raise ValueError("invalid HTTP response status")
                     if not isinstance(response.body, bytes) or len(response.body) > owner._max_response_bytes:
                         raise ValueError("invalid or oversized response body")
