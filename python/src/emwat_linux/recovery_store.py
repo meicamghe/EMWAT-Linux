@@ -163,6 +163,8 @@ class RecoverySnapshotStore:
             if manifest_path.is_symlink() or not manifest_path.is_file():
                 raise RecoveryStoreError("recovery_snapshot_unavailable")
             manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            if not isinstance(manifest, dict):
+                raise RecoveryStoreError("recovery_manifest_invalid")
             schema_version = manifest.get("schema_version")
             if type(schema_version) is not int or schema_version not in (1, 2) or manifest.get("session_id") != session_id:
                 raise RecoveryStoreError("recovery_manifest_identity_invalid")
@@ -250,6 +252,8 @@ class RecoverySnapshotStore:
                 if manifest_path.is_symlink() or not manifest_path.is_file():
                     continue
                 manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+                if not isinstance(manifest, dict):
+                    continue
                 if manifest.get("schema_version") not in (1, 2) or manifest.get("session_id") != folder.name:
                     continue
                 name = manifest["document_name"]
