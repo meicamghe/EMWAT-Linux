@@ -8,6 +8,7 @@ implicitly.
 from __future__ import annotations
 
 from collections.abc import Mapping
+from pathlib import Path
 
 from emwat_linux.bridge import BridgeHTTPServer
 from emwat_linux.dispatcher import MethodHandler, XMLMethodDispatcher
@@ -51,6 +52,8 @@ def create_libreoffice_bridge_server(
     cancel_response_factory: Callable[[DocumentRunResult, BridgeRequest], BridgeResponse],
     allowed_parent_origins: frozenset[str] = frozenset(),
     office_adapter: OfficeAdapter | None = None,
+    encrypt_recovery: bool = False,
+    recovery_root: str | Path | None = None,
     additional_handlers: Mapping[str, MethodHandler] | None = None,
     host: str = "127.0.0.1",
     port: int = 1984,
@@ -68,7 +71,20 @@ def create_libreoffice_bridge_server(
     from emwat_linux.editword_service import EditWordDocumentService
     from emwat_linux.libreoffice_adapter import LibreOfficeAdapter
 
-    office = office_adapter if office_adapter is not None else LibreOfficeAdapter()
+    if office_adapter is not None and encrypt_recovery:
+        raise ValueError(
+            "encrypt_recovery cannot be combined with a caller-supplied office_adapter; "
+            "construct that adapter with an encrypted recovery_store explicitly"
+        )
+    if office_adapter is not None:
+        office = office_adapter
+    elif encrypt_recovery:
+        from emwat_linux.recovery_key_provider import create_secret_service_encrypted_store
+
+        recovery_store = create_secret_service_encrypted_store(recovery_root)
+        office = LibreOfficeAdapter(recovery_store=recovery_store)
+    else:
+        office = LibreOfficeAdapter()
     service = EditWordDocumentService(office)
     edit_word_handler = create_editword_handler(
         service,
