@@ -40,6 +40,24 @@ DESTDIR="$PWD/package-root" cmake --install build/native --prefix /usr
 The native install rules are intentionally library/header-only until a stable
 application entrypoint and dependency/export policy exist.
 
+A Debian development package can now be generated from the same CMake build:
+
+```sh
+cmake -S native -B build/native -DCMAKE_BUILD_TYPE=Release
+cmake --build build/native --parallel
+cpack --config build/native/CPackConfig.cmake
+```
+
+This produces `emwat-native-core-dev` for the host architecture, with the
+static library and public headers under `/usr`. Its declared build-time
+dependencies are `libpng-dev`, `libjpeg-dev`, `libtiff-dev`, and `libsane-dev`.
+It is a development package only: it does not install the Python bridge, a
+service/daemon, desktop launcher, GUI, or Almas integration. The CI lifecycle
+job installs version 0.1.0, upgrades to 0.1.1, verifies the installed files,
+then removes the package and verifies those files are gone. This validates
+dpkg mechanics for this library package, not a complete end-user application
+upgrade or data-migration policy.
+
 ## 2. Python bridge and LibreOffice runtime
 
 The Python project metadata is under `python/pyproject.toml`. Install the
