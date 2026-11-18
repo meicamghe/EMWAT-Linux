@@ -1,3 +1,11 @@
+## Preflight Base64 response-size calculation — 2026-11-18
+
+- The observed Word success response Base64-expands the final document. The serializer now calculates the exact XML envelope length before allocating the encoded copy and rejects over-limit responses before expansion.
+- The emitted XML byte length is checked against the precomputed exact size to detect serializer behavior drift.
+- Added a regression test using a synthetic 1 MiB document and a deliberately small response cap.
+- Implementation/test commits: `2b5f6d3`, `abe1ed5`; documentation: `9f3f67e`.
+- Latest Python CI for this response-size change is running; the preceding combined head `4a0b0b9` passed Python, Native build/sanitizers and UNO roundtrip.
+
 ## Document session boundary validation — 2026-11-18
 
 - Document session IDs now require text, non-empty and already-trimmed values; non-string inputs fail with a stable ValueError instead of leaking AttributeError.
