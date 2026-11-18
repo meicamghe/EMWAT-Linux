@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.20)
 project(emwat_native_core LANGUAGES CXX)
 
+include(GNUInstallDirs)
+
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -41,3 +43,20 @@ add_executable(emwat_image_document_io_tests tests/test_image_document_io.cpp)
 target_link_libraries(emwat_image_document_io_tests PRIVATE emwat_image_core)
 target_compile_options(emwat_image_document_io_tests PRIVATE -Wall -Wextra -Wpedantic -Werror)
 add_test(NAME image_document_io COMMAND emwat_image_document_io_tests)
+
+# Install the reusable native image/scanner core and its public headers.
+# This is a library install rule, not yet a complete desktop application package.
+install(TARGETS emwat_image_core
+    EXPORT EMWATNativeCoreTargets
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+)
+install(DIRECTORY include/emwat
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+    FILES_MATCHING PATTERN "*.hpp"
+)
+install(EXPORT EMWATNativeCoreTargets
+    NAMESPACE EMWAT::
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/EMWATNativeCore
+)
