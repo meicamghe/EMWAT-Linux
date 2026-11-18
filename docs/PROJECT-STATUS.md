@@ -2590,3 +2590,13 @@ Python bridge CI در run `44031548179` موفق شد: **111 تست موفق، 2
 - Added native tests for normal conversion, the 32768-DPI overflow boundary, infinity and NaN. No physical scanner is required for these pure conversion tests.
 - Commits: helper `c020d17`, implementation `5b253e0`, tests `8360337`.
 - Fresh Python/Native/UNO CI for this follow-up is pending; do not treat the preceding green PR-head run as validation of these new native changes.
+
+
+## تأیید CI اصلاح fixed-point اسکنر — 2026-11-18
+
+- تغییر native در code/test commit `83603371b8cfbae3b1e7817a79b0d3e62ed0ca4a` در هر سه workflow موفق شد:
+  - Python Bridge run `44320784317`: **203 تست؛ 201 موفق، 2 تست اختیاری skip**.
+  - Native image core run `44320784491`: build-test و ASan/UBSan هر دو موفق؛ هر چهار CTest در هر دو پیکربندی پاس شدند.
+  - LibreOffice UNO run `44320784298`: **14 تست موفق**، شامل Writer roundtrip و EditWord response-handler.
+- بنابراین اصلاح fixed-point در build عادی و sanitizer تأیید شده است. UNO نیز روی همان کد/test commit سبز است.
+- PR head فعلی پس از مستندسازی `b35a3b8513abebd391bc5dc69aef7e7a71877f69` است؛ تغییرات پس از code/test commit صرفاً مستندات و metadata هستند.
