@@ -2,7 +2,6 @@ import base64
 import tempfile
 import unittest
 from pathlib import Path
-from types import SimpleNamespace
 
 from emwat_linux.recovery_key_provider import (
     RecoveryKeyProviderError,
@@ -77,9 +76,14 @@ class RecoveryKeyProviderTests(unittest.TestCase):
             session = store.create_session()
             payload = bytes.fromhex("D0CF11E0A1B11AE1") + b"secret-service"
             info = store.save_snapshot(session, payload)
-            self.assertTrue(info.document_path.read_bytes().startswith(b"EMWATREC\\x01"))
+            self.assertTrue(info.document_path.read_bytes().startswith(b"EMWATREC\x01"))
             self.assertEqual(store.load_snapshot(session), payload)
-            self.assertNotIn("key", [p.name for p in (Path(temporary) / "recovery").rglob("*")])
+            encoded_key = keyring.values[
+                ("emwat-linux-recovery", "snapshot-aes-256-gcm")
+            ].encode("ascii")
+            for stored_file in (Path(temporary) / "recovery").rglob("*"):
+                if stored_file.is_file():
+                    self.assertNotIn(encoded_key, stored_file.read_bytes())
 
 
 if __name__ == "__main__":
