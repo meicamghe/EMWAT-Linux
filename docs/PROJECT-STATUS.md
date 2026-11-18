@@ -1,3 +1,13 @@
+## Optional AES-256-GCM recovery encryption — 2026-11-18
+
+- `RecoverySnapshotStore` now supports opt-in AES-256-GCM encryption when a trusted caller injects a 32-byte key. The key is never stored in the recovery directory or manifest.
+- Encrypted snapshots use a versioned envelope, random 96-bit nonce, authenticated encryption, and associated data binding the session ID, document name, and plaintext size. The plaintext SHA-256 is checked after decryption.
+- Encrypted snapshots fail closed when the key is absent or incorrect. A keyed store rejects legacy plaintext snapshots rather than silently mixing formats.
+- Added tests for plaintext confidentiality, round-trip, wrong/missing key, tampering, legacy plaintext rejection, and crash-safe repeated writes.
+- Python CI run 44247873577 exposed two issues (AES-GCM envelope offset and a stale catalog filename assertion); both have been corrected in subsequent commits. Do not claim the correction is green until a fresh Python run completes.
+- Encryption remains opt-in. The application must obtain a stable key from an OS credential store or administrator secret provider and inject it; key rotation, migration of existing plaintext snapshots, and default activation are not implemented.
+- `LibreOfficeAdapter` can already receive a configured `RecoverySnapshotStore`; the current default construction remains plaintext until the application supplies an encrypted store.
+
 ## Recovery manifest integrity and Windows archive evidence — 2026-11-18
 
 - Recovery snapshot loading now validates that the manifest timestamp is a finite, non-negative numeric value and that the content-addressed filename hash matches the verified snapshot bytes. Invalid metadata is rejected and excluded from the recovery catalog.
