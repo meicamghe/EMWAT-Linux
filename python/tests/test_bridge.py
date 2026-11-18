@@ -418,5 +418,29 @@ class BridgeHTTPServerTests(unittest.TestCase):
         self.assertEqual(self.seen, [])
 
 
+    def test_constructor_rejects_non_callable_handler(self):
+        for handler in (None, "handler", object()):
+            with self.subTest(handler=handler), self.assertRaisesRegex(
+                ValueError, "handler must be callable"
+            ):
+                BridgeHTTPServer(handler)
+
+    def test_constructor_requires_boolean_origin_policy(self):
+        for value in (None, 0, 1, "false", [], object()):
+            with self.subTest(value=value), self.assertRaisesRegex(
+                ValueError, "require_origin must be a boolean"
+            ):
+                BridgeHTTPServer(
+                    lambda _request: BridgeResponse(b""),
+                    require_origin=value,
+                )
+        # Both explicit boolean settings remain supported.
+        for value in (True, False):
+            server = BridgeHTTPServer(
+                lambda _request: BridgeResponse(b""),
+                require_origin=value,
+            )
+            server.server_close()
+
 if __name__ == "__main__":
     unittest.main()
