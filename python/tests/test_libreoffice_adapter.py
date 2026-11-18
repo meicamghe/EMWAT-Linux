@@ -4,6 +4,7 @@ from threading import Event, Lock
 from pathlib import Path
 
 from emwat_linux.libreoffice_adapter import (
+    LibreOfficeAdapter,
     _CFB_SIGNATURE,
     _DocumentCloseListener,
     _ModifyListener,
@@ -72,6 +73,19 @@ class FakeProcess:
 
 
 class LibreOfficeAdapterUnitTests(unittest.TestCase):
+    def test_adapter_timeouts_must_be_finite_positive_numbers(self):
+        invalid_values = (True, False, float("nan"), float("inf"), float("-inf"), 0, -1, "1")
+        for parameter in (
+            "connect_timeout_seconds",
+            "poll_interval_seconds",
+            "recovery_interval_seconds",
+            "close_timeout_seconds",
+        ):
+            for value in invalid_values:
+                with self.subTest(parameter=parameter, value=value):
+                    with self.assertRaises(ValueError):
+                        LibreOfficeAdapter(**{parameter: value})
+
     def test_stop_process_reaps_after_kill(self):
         process = FakeProcess()
         _stop_process(process, terminate_timeout=1, kill_timeout=2)
