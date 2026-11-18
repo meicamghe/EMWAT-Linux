@@ -42,3 +42,19 @@ built-in integer. Booleans, floating-point values (including integral-looking
 floats), strings, zero, negative values, and `None` are rejected before any
 filesystem access. This keeps the configured read/write bound unambiguous and
 prevents Python's bool-is-int behavior from silently accepting invalid limits.
+
+
+## Manifest input bounds and symlink handling
+
+Recovery manifests are fixed-size metadata, not document payloads. The store
+now caps their encoded size at 64 KiB and reads at most one byte beyond that
+limit, so a corrupted or replaced manifest cannot trigger an unbounded
+allocation during catalog enumeration or direct restore. Manifest reads use
+a no-follow file descriptor where the platform provides `O_NOFOLLOW`, verify
+that the opened object is a regular file, and parse only strict UTF-8 JSON
+objects. Oversized, non-regular, symlinked or malformed manifests fail closed;
+catalog listing skips them without exposing their contents.
+
+Regression tests cover oversized manifests and a manifest symlink pointing
+outside the recovery directory. This hardening does not change the manifest
+schema or recovery document format.
