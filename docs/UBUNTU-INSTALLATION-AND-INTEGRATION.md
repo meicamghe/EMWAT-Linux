@@ -127,11 +127,16 @@ is permitted.
 - optional retention policy operations;
 - an immutable `RecoveryPickerState` projection for native UI clients, including an explicit empty-catalog state, selected-entry metadata, default selection of the newest snapshot, and safe clearing of stale selections.
 
-`RecoveryPickerController.state()` performs no filesystem writes. A UI can refresh this projection after each action and bind it to GTK, Qt, or another toolkit later. This is a toolkit-neutral controller, not a graphical picker. The detailed toolkit-neutral interaction and accessibility contract is in
-[RECOVERY-PICKER-UX.md](RECOVERY-PICKER-UX.md). A future view must display
-metadata only, use a native Save dialog for restore, require a destructive
-confirmation for discard, and show errors without exposing private paths or
-document contents. **GTK 4 + PyGObject is the accepted toolkit.** Implement the picker as a thin GTK view over this controller. Do not add Qt/PySide or move filesystem/business logic into GTK callbacks. Keep GTK optional so headless services and protocol tests run without a display server.
+`RecoveryPickerController.state()` performs no filesystem writes. A GTK 4 recovery view now exists at `python/src/emwat_linux/gtk_recovery_view.py`.
+It is a thin presentation layer over this controller: metadata-only rows,
+selection refresh, a native Save chooser for restore, explicit confirmation
+before discard, and sanitized error messages. It does not access store paths
+or document contents. PyGObject is imported lazily inside the view factory, so
+headless bridge and service imports do not require GTK. A headless import test
+covers this boundary; the actual GTK window still needs runtime validation on
+supported Ubuntu desktop sessions. The detailed interaction and accessibility
+contract is in [RECOVERY-PICKER-UX.md](RECOVERY-PICKER-UX.md). Do not add
+Qt/PySide or move filesystem/business logic into GTK callbacks.
 
 ## 6. Windows .easz compatibility
 
@@ -164,6 +169,19 @@ available, then separately verify:
 - preview/edit/export handoff.
 
 Do not map undocumented ImageGear integer modes to SANE options by guesswork.
+
+### Optional GTK 4 runtime packages
+
+On Ubuntu desktop systems, install the distro-provided GTK 4/PyGObject runtime
+when using the recovery window:
+
+```sh
+sudo apt install --no-install-recommends gir1.2-gtk-4.0 python3-gi
+```
+
+The bridge package does not yet declare a production desktop entrypoint, user
+service, or complete application .deb. Do not treat the native-core development
+package as the EMWAT desktop installer.
 
 ## 8. Product UI and cost boundary
 
