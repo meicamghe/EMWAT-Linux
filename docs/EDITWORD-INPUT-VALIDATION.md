@@ -35,3 +35,19 @@ roundtrips remain covered by the existing tests.
 This change validates configuration types; it does not change the observed
 EMWAT wire format, document payload decoding, response envelope, or office
 lifecycle. No Windows runtime capture or Almas end-to-end test is implied.
+
+
+## Bridge transport and response bounds
+
+The loopback HTTP server now validates constructor configuration before binding:
+the TCP port must be a built-in integer in range, request/response byte limits
+must be positive built-in integers, and the socket timeout must be a finite
+positive number. Boolean values, floats/strings for integer limits, NaN,
+infinities, non-positive values and oversized integers that cannot be safely
+converted to a finite timeout are rejected. The bind host must be supplied as
+an IPv4 loopback address string.
+
+The EditWord success serializer receives the same configured
+`max_response_bytes` as the HTTP server. This removes the former hidden
+16 MiB serializer ceiling when an application explicitly configures a larger
+bounded response allowance. Both layers still enforce the bound independently.
