@@ -2642,3 +2642,11 @@ Python bridge CI در run `44031548179` موفق شد: **111 تست موفق، 2
 - Documentation commits: `b845e45f9b6da5d2c19874229f1f2c56f851f7de`, `8d7073a88615f3be71716c5124140d0b6666db5a`.
 
 CI for the new E2E test and CMake install rules is pending on the latest code/test head; no result is claimed until GitHub Actions completes.
+
+
+## E2E test correction — 2026-11-18
+
+- The first Python workflow for the strengthened E2E assertion exposed a test-only UnboundLocalError: a function-local import base64 shadowed the module-level import used earlier in that test.
+- Removed the redundant local import. The failure was in test setup, not the bridge or response implementation.
+- Correction commit: `3f2bf37d90fa12d8a828106263f794b4a812a61a`.
+- CI for the corrected head is pending; the earlier failed run is retained as evidence and is not represented as passing.
