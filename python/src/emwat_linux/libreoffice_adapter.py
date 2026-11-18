@@ -240,12 +240,13 @@ class LibreOfficeAdapter:
         recovery_interval_seconds: float = 10.0,
     ) -> None:
         def positive_finite_seconds(value: object) -> bool:
-            return (
-                not isinstance(value, bool)
-                and isinstance(value, (int, float))
-                and math.isfinite(value)
-                and value > 0
-            )
+            if isinstance(value, bool) or not isinstance(value, (int, float)):
+                return False
+            try:
+                finite = math.isfinite(float(value))
+            except (OverflowError, ValueError):
+                return False
+            return finite and value > 0
 
         if not positive_finite_seconds(connect_timeout_seconds) or not positive_finite_seconds(poll_interval_seconds):
             raise ValueError("connection and polling timeouts must be finite positive numbers")
