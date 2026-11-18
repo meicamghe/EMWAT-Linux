@@ -1,6 +1,6 @@
 #include "emwat/scanner.hpp"
 
-#include <stdexcept>
+#include <stdexcept>\n#include <limits>
 #include <utility>
 
 #ifdef NDEBUG
@@ -58,6 +58,21 @@ int main() {
     try { (void)sane_backend.scan_one(std::string("test:scanner\0hidden", 19)); }
     catch (const ScannerError&) { invalid_id_rejected = true; }
     assert(invalid_id_rejected);
+
+    // Invalid scan options are rejected before SANE initialization/open.
+    const auto expect_invalid_options = [&](const ScanOptions& options) {
+        bool rejected = false;
+        try { (void)sane_backend.scan_one("test:nonexistent", options); }
+        catch (const ScannerError&) { rejected = true; }
+        assert(rejected);
+    };
+    expect_invalid_options(ScanOptions{std::numeric_limits<double>::quiet_NaN(), {}, {}});
+    expect_invalid_options(ScanOptions{std::numeric_limits<double>::infinity(), {}, {}});
+    expect_invalid_options(ScanOptions{0.0, {}, {}});
+    expect_invalid_options(ScanOptions{100001.0, {}, {}});
+    expect_invalid_options(ScanOptions{{}, std::string{}, {}});
+    expect_invalid_options(ScanOptions{{}, std::string("Color\\n"), {}});
+    expect_invalid_options(ScanOptions{{}, {}, std::string("Flatbed\\0hidden", 15)});
 
     FakeScannerBackend backend;
     backend.devices.push_back({"test:scanner0", "Example", "Virtual Scanner", "flatbed"});
