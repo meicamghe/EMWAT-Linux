@@ -4,7 +4,7 @@
 - Added regression tests for malformed timestamps and a manifest filename that does not match the content hash.
 - Added `docs/EASZ-ARCHIVE-FORMAT.md` documenting the evidence-bounded Windows archive path: password-protected 7z output, `.easd` entry, and `.easz` output file.
 - This documentation does not claim Linux `.easz` read/write compatibility. Linux recovery remains a separate, unencrypted DOC/DOCX snapshot format.
-- Fresh Python CI is required for the new manifest hardening; do not claim these new tests pass until the run completes.
+- Python bridge CI run `44246971008` completed successfully after the manifest hardening and regression tests. Native image core run `44246938174` passed build-test and ASan/UBSan; LibreOffice UNO integration run `44246938243` passed the real UNO roundtrip job. These native/UNO runs validate the corresponding workflow commits; the new manifest code is covered by the Python run.
 
 ## تست ورودی اسکنر و CI — 2026-11-18 (PR #2)
 
