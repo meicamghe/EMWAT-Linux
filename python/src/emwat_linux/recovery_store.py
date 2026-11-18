@@ -44,6 +44,32 @@ class RecoverySnapshotInfo:
     document_path: Path
 
 
+def _read_snapshot_file(path: Path, max_bytes: int) -> bytes:
+    """Read a bounded regular snapshot without following a replaced symlink."""
+    flags = os.O_RDONLY | getattr(os, "O_CLOEXEC", 0) | getattr(os, "O_NOFOLLOW", 0)
+    try:
+        descriptor = os.open(path, flags)
+    except OSError as exc:
+        raise RecoveryStoreError("recovery_snapshot_unavailable") from exc
+
+    try:
+        metadata = os.fstat(descriptor)
+        if not stat.S_ISREG(metadata.st_mode):
+            raise RecoveryStoreError("recovery_snapshot_unavailable")
+        if metadata.st_size > max_bytes:
+            raise RecoveryStoreError("recovery_snapshot_too_large")
+
+        stream = os.fdopen(descriptor, "rb")
+        descriptor = -1
+        with stream:
+            payload = stream.read(max_bytes + 1)
+        if len(payload) > max_bytes:
+            raise RecoveryStoreError("recovery_snapshot_too_large")
+        return payload
+    finally:
+        if descriptor >= 0:
+            os.close(descriptor)
+
 def _read_manifest(path: Path) -> dict[str, object]:
     """Read a small regular manifest without following symlinks or unbounded reads."""
     flags = os.O_RDONLY | getattr(os, "O_CLOEXEC", 0) | getattr(os, "O_NOFOLLOW", 0)
@@ -211,11 +237,10 @@ class RecoverySnapshotStore:
             document_path = folder / document_name
             if document_path.is_symlink() or not document_path.is_file():
                 raise RecoveryStoreError("recovery_snapshot_unavailable")
-            stored_size = document_path.stat().st_size
             overhead = len(_ENCRYPTED_MAGIC) + _GCM_NONCE_BYTES + _GCM_TAG_BYTES
-            if stored_size > self.max_snapshot_bytes + overhead:
-                raise RecoveryStoreError("recovery_snapshot_too_large")
-            stored_payload = document_path.read_bytes()
+            stored_payload = _read_snapshot_file(
+                document_path, self.max_snapshot_bytes + overhead
+            )
             if type(manifest["size_bytes"]) is not int or manifest["size_bytes"] < 0:
                 raise RecoveryStoreError("recovery_snapshot_size_mismatch")
             if schema_version == 2:
