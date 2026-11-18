@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
-project(emwat_native_core LANGUAGES CXX)
+project(emwat_native_core VERSION 0.1.0 LANGUAGES CXX)
 
 include(GNUInstallDirs)
 
@@ -55,3 +55,23 @@ install(DIRECTORY include/emwat
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
     FILES_MATCHING PATTERN "*.hpp"
 )
+
+
+// Debian development package for the reusable static native core.
+// This deliberately does not claim to package the Python bridge, daemon, or GUI.
+set(EMWAT_PACKAGE_VERSION "${PROJECT_VERSION}" CACHE STRING "EMWAT Debian package version")
+set(CPACK_GENERATOR "DEB")
+set(CPACK_PACKAGE_NAME "emwat-native-core-dev")
+set(CPACK_PACKAGE_VERSION "${EMWAT_PACKAGE_VERSION}")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "EMWAT native image and scanner development library")
+set(CPACK_PACKAGE_VENDOR "EMWAT Linux")
+set(CPACK_PACKAGE_CONTACT "EMWAT Linux contributors")
+set(CPACK_PACKAGING_INSTALL_PREFIX "/usr")
+set(CPACK_DEBIAN_PACKAGE_MAINTAINER "EMWAT Linux contributors")
+set(CPACK_DEBIAN_PACKAGE_SECTION "libdevel")
+set(CPACK_DEBIAN_PACKAGE_PRIORITY "optional")
+set(CPACK_DEBIAN_PACKAGE_ARCHITECTURE "amd64")
+set(CPACK_DEBIAN_PACKAGE_DEPENDS "libpng-dev, libjpeg-dev, libtiff-dev, libsane-dev")
+set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS OFF)
+set(CPACK_DEBIAN_FILE_NAME "DEB-DEFAULT")
+include(CPack)
