@@ -1,3 +1,11 @@
+## Recovery picker state and current-head validation — 2026-11-18
+
+- The immutable picker view-state implementation and regression tests are on the current PR head.
+- Python bridge CI on current head `61a0a80860603053050a689ea75c705326baa5ac` passed: run `44326008488`, **209 tests run, 207 passed, 2 optional skips**.
+- LibreOffice UNO integration on the same current head passed: run `44326008410`; UNO runtime verification and real Writer roundtrip steps completed successfully.
+- Native image core run `44326008415` was still executing its build and sanitizer jobs at this status update. Earlier native run `44324686807` passed on the prior head, including the staged CMake install check.
+- The PR remains Draft/open/unmerged. No claim of complete application packaging or GUI is made.
+
 ## Recovery picker view-state contract — 2026-11-18
 
 - Added immutable `RecoveryPickerState` and `RecoveryPickerController.state()` as a toolkit-neutral presentation boundary.
