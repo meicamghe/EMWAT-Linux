@@ -36,6 +36,19 @@ class BridgeHTTPServerTests(unittest.TestCase):
         conn.close()
         return result
 
+    def test_origin_allowlists_must_be_sets_of_strings(self):
+        handler = lambda _request: BridgeResponse(b"")
+        for value in ("https://office.example", ["https://office.example"], {None}):
+            with self.subTest(allowed_origins=value), self.assertRaisesRegex(
+                ValueError, "allowed_origins must be a set of non-empty origin strings"
+            ):
+                BridgeHTTPServer(handler, allowed_origins=value)
+        for value in ("https://office.example", ["https://office.example"]):
+            with self.subTest(allowed_parent_origins=value), self.assertRaisesRegex(
+                ValueError, "allowed_parent_origins must be a set of origin strings"
+            ):
+                BridgeHTTPServer(handler, allowed_parent_origins=value)
+
     def test_only_loopback_bind_is_allowed(self):
         with self.assertRaises(ValueError):
             BridgeHTTPServer(lambda _request: BridgeResponse(b""), host="0.0.0.0")
