@@ -74,6 +74,13 @@ class BridgeHTTPServer:
         if not timeout_is_finite or socket_timeout_seconds <= 0:
             raise ValueError("socket_timeout_seconds must be a finite positive number")
 
+        if not isinstance(allowed_origins, (set, frozenset)) or any(
+            not isinstance(origin, str) or not origin for origin in allowed_origins
+        ):
+            raise ValueError("allowed_origins must be a set of non-empty origin strings")
+        if not isinstance(allowed_parent_origins, (set, frozenset)):
+            raise ValueError("allowed_parent_origins must be a set of origin strings")
+
         self._handler = handler
         self._max_body_bytes = max_body_bytes
         self._max_response_bytes = max_response_bytes
