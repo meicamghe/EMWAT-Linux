@@ -4,7 +4,7 @@
 - The emitted XML byte length is checked against the precomputed exact size to detect serializer behavior drift.
 - Added a regression test using a synthetic 1 MiB document and a deliberately small response cap.
 - Implementation/test commits: `2b5f6d3`, `abe1ed5`; documentation: `9f3f67e`.
-- Latest Python CI for this response-size change is running; the preceding combined head `4a0b0b9` passed Python, Native build/sanitizers and UNO roundtrip.
+- CI for response-size code commit `abe1ed5ea514372331bbc7407c8ebac5305cf49d` passed: Python `44301296592`, Native build + ASan/UBSan `44301296564`, and LibreOffice UNO `44301296574`. The later PR head `646bcad` contains documentation-only updates.
 
 ## Document session boundary validation — 2026-11-18
 
