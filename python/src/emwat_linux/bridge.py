@@ -242,6 +242,7 @@ class BridgeHTTPServer:
                         parsed.query,
                         keep_blank_values=True,
                         strict_parsing=True,
+                        max_num_fields=1,
                     )
                 except ValueError:
                     self._send(400, b"invalid_invoke_query", "text/plain; charset=utf-8")
