@@ -74,7 +74,7 @@ class FakeProcess:
 
 class LibreOfficeAdapterUnitTests(unittest.TestCase):
     def test_adapter_timeouts_must_be_finite_positive_numbers(self):
-        invalid_values = (True, False, float("nan"), float("inf"), float("-inf"), 0, -1, "1")
+        invalid_values = (True, False, float("nan"), float("inf"), float("-inf"), 10 ** 1000, 0, -1, "1")
         for parameter in (
             "connect_timeout_seconds",
             "poll_interval_seconds",
