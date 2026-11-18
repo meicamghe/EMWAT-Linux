@@ -2518,3 +2518,13 @@ Python bridge CI در run `44031548179` موفق شد: **111 تست موفق، 2
 - Added constructor regression coverage for all rejected input classes and documented the bound contract in `docs/RECOVERY-RETENTION.md`.
 - Implementation commit: `1a9cd2843c2fd37d6b547ddd668668ec116d5d6f` (restores the full prior implementation and applies the strict validation as a one-condition change); regression tests: `2d16580d94c6c4a8021799464d2d31d0c2fb16b0`; documentation commits: `3df46fcbfafdbf3d7abd4f4abb12bbe99f272c19` and this status update.
 - CI for this follow-up is pending; no test pass is claimed until the new branch head completes all relevant workflows.
+
+
+## EditWord request bounds and dispatcher validation — 2026-11-18
+
+- The EditWord request parser exposes independent positive-integer limits for decoded Word bytes, encoded Word characters, decoded wordConfig bytes and encoded wordConfig characters. The service constructor now exposes and forwards all four limits instead of silently relying on parser defaults.
+- Public `MethodCall` input is checked for expected class/parameter container and text values; `signData` remains opaque text because its complete wire encoding has not been established.
+- The XML dispatcher now rejects non-built-in-integer payload limits (including bool/float/string), non-text/blank class names and non-callable handlers at registration time.
+- Regression tests cover malformed request objects, every invalid limit category, configured encoded-config bounds, service forwarding, and dispatcher registration validation.
+- Commits: request parser `f76d01c` / request tests `b012e7c`; service `120f7fc` / service tests `dcfab72`; dispatcher `f8a6edf` / dispatcher tests `5487ef4`; request validation docs `75573fa` and service-limit note `df39bb9`. (Short hashes identify the relevant implementation commits; branch history remains authoritative.)
+- CI verified before service and dispatcher follow-ups: Python bridge `44302976157`, Native image core including ASan/UBSan `44302976163`, and LibreOffice UNO `44302976143` all passed. Service/dispatcher follow-up commits are not yet covered by those earlier runs; new CI status must be checked separately.
