@@ -64,6 +64,27 @@ void validate_device_id(const std::string& device_id) {
         throw ScannerError("scanner device id contains a control character");
 }
 
+void validate_scan_options(const ScanOptions& options) {
+    if (options.resolution_dpi &&
+        (!std::isfinite(*options.resolution_dpi) ||
+         *options.resolution_dpi <= 0.0 ||
+         *options.resolution_dpi > 100000.0)) {
+        throw ScannerError("Scan resolution must be finite and between 0 and 100000 DPI");
+    }
+    const auto validate_text = [](const std::optional<std::string>& value,
+                                  const char* option_name) {
+        if (!value) return;
+        if (value->empty() ||
+            std::any_of(value->begin(), value->end(), [](unsigned char ch) {
+                return std::iscntrl(ch) != 0;
+            })) {
+            throw ScannerError(std::string("Invalid scanner ") + option_name + " option");
+        }
+    };
+    validate_text(options.mode, "mode");
+    validate_text(options.source, "source");
+}
+
 void set_string_option(SANE_Handle handle, const char* name, const std::string& value) {
     SANE_Int index = 0;
     const SANE_Option_Descriptor* descriptor = nullptr;
@@ -242,6 +263,7 @@ ScannerCapabilities SaneScannerBackend::get_capabilities(const std::string& devi
 
 ImagePage SaneScannerBackend::scan_one(const std::string& device_id, const ScanOptions& options) {
     validate_device_id(device_id);
+    validate_scan_options(options);
     std::lock_guard<std::mutex> lock(sane_mutex());
     SaneSession session;
     SaneHandle device(device_id);
