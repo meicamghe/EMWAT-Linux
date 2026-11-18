@@ -58,3 +58,9 @@ catalog listing skips them without exposing their contents.
 Regression tests cover oversized manifests and a manifest symlink pointing
 outside the recovery directory. This hardening does not change the manifest
 schema or recovery document format.
+
+
+The bounded manifest parser also converts JSON nesting-depth failures into a
+stable recovery-manifest validation error. A deeply nested but size-bounded
+JSON value is therefore skipped by catalog enumeration rather than leaking a
+`RecursionError` to the caller.
