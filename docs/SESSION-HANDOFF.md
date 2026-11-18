@@ -1,3 +1,9 @@
+## 2026-11-18 — scanner input validation test
+
+- Added hardware-independent regression checks that `SaneScannerBackend.get_capabilities("")` and `scan_one("")` reject an empty device identifier before entering SANE.
+- Native image core workflow `44244437647` completed successfully on `ed811a14f9d151a8a386c67b80b26b3d155f5c24`: build-test and ASan/UBSan sanitizer-test both passed, including their test steps.
+- Included in draft PR #2; this does not claim validation against a physical scanner, ADF, or duplex device.
+
 ## 2026-11-18 — opt-in recovery retention implementation (PR #2)
 
 - Added `recovery_retention.py` with explicit age and/or snapshot-count limits. It keeps the newest valid snapshots, removes expired/excess sessions only when explicitly invoked, and returns removed session IDs.
