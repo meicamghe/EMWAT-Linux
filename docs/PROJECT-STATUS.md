@@ -2686,3 +2686,10 @@ CI for the new E2E test and CMake install rules is pending on the latest code/te
 - Added a dedicated CI lifecycle job that builds 0.1.0 and 0.1.1 packages, installs the first, upgrades to the second, verifies the installed library/header, removes the package, and verifies the files are removed.
 - This is the first real Debian package lifecycle for the native development component only. A complete EMWAT desktop package remains blocked on the production entrypoint, selected GUI toolkit, service lifecycle, Python/UNO runtime policy, and desktop integration.
 - Implementation commits: CPack metadata `4e359951`; native-architecture correction `95291d4e`; package lifecycle CI `68291cdb` and version assertions `c654cb25`.
+
+
+## Recovery picker UX design — 2026-11-18
+
+- Added `docs/RECOVERY-PICKER-UX.md`: toolkit-neutral view states, newest-first list, selection preservation/stale-selection clearing, native Save-dialog restore, explicit destructive discard confirmation, accessibility, encryption/key-unavailable behavior, and opt-in retention boundaries.
+- The design maps the same contract to GTK ListView/ColumnView or Qt QListView/QTableView without selecting either toolkit or adding GUI dependencies.
+- Implementation commit: `bc363e2aa784afd84682a8fc568b93b24a5412d9`.
