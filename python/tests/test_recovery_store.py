@@ -370,5 +370,18 @@ class RecoverySnapshotStoreTests(unittest.TestCase):
                 store.load_snapshot(session_id)
 
 
+    def test_snapshot_size_limit_must_be_a_positive_integer(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            for invalid_limit in (True, False, 1.5, 16.0, "16", 0, -1, None):
+                with self.subTest(max_snapshot_bytes=invalid_limit):
+                    with self.assertRaisesRegex(
+                        ValueError, "max_snapshot_bytes must be a positive integer"
+                    ):
+                        RecoverySnapshotStore(
+                            Path(temporary) / "recovery",
+                            max_snapshot_bytes=invalid_limit,
+                        )
+
+
 if __name__ == "__main__":
     unittest.main()
