@@ -2570,3 +2570,14 @@ Python bridge CI در run `44031548179` موفق شد: **111 تست موفق، 2
 - The descriptor size is checked against the configured snapshot cap plus encryption envelope overhead; the actual read is also capped at limit + 1 byte to handle file growth after `fstat`.
 - Added regression tests for oversized payloads and a simulated symlink-replacement race between path precheck and descriptor open.
 - Implementation: `4e4bc2b4363ff69804f7bb219d15caace1fd45b6`; tests: `fb56e821129aa0ad665556f5e6fa3b434af0a0c7`. Python bridge run `44319343914` passed (**203 tests, 201 passed, 2 optional skips**); LibreOffice UNO run `44319344050` passed (**14 tests**, including real EditWord response-handler roundtrip); Native ASan/UBSan job in run `44319343995` passed. Native `build-test` job in that run was still installing dependencies at the time of this status update, so full native workflow completion remains pending.
+
+
+## تأیید نهایی CI روی سر فعلی PR — 2026-11-18
+
+- اجرای تازه روی commit فعلی PR یعنی `8b9f74dce8d7c5648bc53b4668212c76ae8e90d9` هر سه workflow را با موفقیت کامل کرد:
+  - Python Bridge، run `44319637922`: **203 تست اجرا شد؛ 201 موفق و 2 تست اختیاری skip**.
+  - Native image core، run `44319637947`: هر دو job ساخت/CTest و ASan/UBSan موفق؛ چهار CTest شامل image document، codec، scanner contract و document I/O همگی پاس شدند.
+  - LibreOffice UNO، run `44319637936`: **14 تست موفق**؛ شامل Writer roundtrip و اجرای سند واقعی از مسیر EditWord response handler.
+- این نتایج مستقیماً به head فعلی PR متصل‌اند؛ وضعیت قبلی مبنی بر pending بودن Native build-test دیگر معتبر نیست.
+- PR #2 همچنان Open، Draft و Unmerged است. مقایسه با `main`: 160 commit جلوتر و صفر commit عقب‌تر.
+- این CI هنوز سازگاری زنده با Almas، اسکنر فیزیکی، parity معنایی کامل Word/Writer، فرمت Windows `.easz` و قرارداد واقعی Cancel/Discard را اثبات نمی‌کند.
