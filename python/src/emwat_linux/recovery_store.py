@@ -15,6 +15,7 @@ import os
 from pathlib import Path
 import re
 import shutil
+import stat
 import tempfile
 import time
 import uuid
@@ -26,6 +27,7 @@ _ZIP_SIGNATURES = (b"PK\x03\x04", b"PK\x05\x06", b"PK\x07\x08")
 _ENCRYPTED_MAGIC = b"EMWATREC\x01"
 _GCM_NONCE_BYTES = 12
 _GCM_TAG_BYTES = 16
+_MAX_MANIFEST_BYTES = 64 * 1024
 
 
 class RecoveryStoreError(RuntimeError):
@@ -40,6 +42,39 @@ class RecoverySnapshotInfo:
     sha256: str
     updated_at: float
     document_path: Path
+
+
+def _read_manifest(path: Path) -> dict[str, object]:
+    """Read a small regular manifest without following symlinks or unbounded reads."""
+    flags = os.O_RDONLY | getattr(os, "O_CLOEXEC", 0) | getattr(os, "O_NOFOLLOW", 0)
+    try:
+        descriptor = os.open(path, flags)
+    except OSError as exc:
+        raise RecoveryStoreError("recovery_manifest_unavailable") from exc
+
+    try:
+        metadata = os.fstat(descriptor)
+        if not stat.S_ISREG(metadata.st_mode):
+            raise RecoveryStoreError("recovery_manifest_invalid")
+        if metadata.st_size > _MAX_MANIFEST_BYTES:
+            raise RecoveryStoreError("recovery_manifest_too_large")
+
+        stream = os.fdopen(descriptor, "rb")
+        descriptor = -1
+        with stream:
+            raw = stream.read(_MAX_MANIFEST_BYTES + 1)
+        if len(raw) > _MAX_MANIFEST_BYTES:
+            raise RecoveryStoreError("recovery_manifest_too_large")
+        try:
+            manifest = json.loads(raw.decode("utf-8", errors="strict"))
+        except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+            raise RecoveryStoreError("recovery_manifest_invalid") from exc
+        if not isinstance(manifest, dict):
+            raise RecoveryStoreError("recovery_manifest_invalid")
+        return manifest
+    finally:
+        if descriptor >= 0:
+            os.close(descriptor)
 
 
 class RecoverySnapshotStore:
@@ -162,9 +197,7 @@ class RecoverySnapshotStore:
             manifest_path = folder / "manifest.json"
             if manifest_path.is_symlink() or not manifest_path.is_file():
                 raise RecoveryStoreError("recovery_snapshot_unavailable")
-            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-            if not isinstance(manifest, dict):
-                raise RecoveryStoreError("recovery_manifest_invalid")
+            manifest = _read_manifest(manifest_path)
             schema_version = manifest.get("schema_version")
             if type(schema_version) is not int or schema_version not in (1, 2) or manifest.get("session_id") != session_id:
                 raise RecoveryStoreError("recovery_manifest_identity_invalid")
@@ -251,9 +284,7 @@ class RecoverySnapshotStore:
                 manifest_path = folder / "manifest.json"
                 if manifest_path.is_symlink() or not manifest_path.is_file():
                     continue
-                manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-                if not isinstance(manifest, dict):
-                    continue
+                manifest = _read_manifest(manifest_path)
                 if manifest.get("schema_version") not in (1, 2) or manifest.get("session_id") != folder.name:
                     continue
                 name = manifest["document_name"]
