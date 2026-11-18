@@ -200,7 +200,27 @@ class ApplicationCompositionTests(unittest.TestCase):
             self.assertEqual(response.status, 200)
             self.assertIn(b'<response-word status="success">', payload)
             self.assertIn(b"application/msword", payload)
-            self.assertEqual(office.request.document_bytes[:8], bytes.fromhex("d0cf11e0a1b11ae1"))
+            # Verify the complete browser-facing response round-trips the final
+            # Office bytes, not merely that an XML envelope was emitted.
+            import xml.etree.ElementTree as ET
+            import base64
+            response_root = ET.fromstring(payload)
+            response_type = response_root.find("./return-types/type")
+            self.assertIsNotNone(response_type)
+            self.assertEqual(response_root.attrib, {"status": "success"})
+            self.assertEqual(
+                response_type.attrib,
+                {"mimetype": "application/msword", "encryption": "base64"},
+            )
+            returned_document = base64.b64decode(response_type.text, validate=True)
+            self.assertEqual(
+                returned_document,
+                bytes.fromhex("d0cf11e0a1b11ae1") + b"final-word-doc",
+            )
+            self.assertEqual(
+                office.request.document_bytes[:8],
+                bytes.fromhex("d0cf11e0a1b11ae1"),
+            )
             conn.close()
         finally:
             server.shutdown()
