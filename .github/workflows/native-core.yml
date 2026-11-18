@@ -78,11 +78,11 @@ jobs:
           test -n "$first_package"
           test -n "$second_package"
           sudo dpkg -i "$first_package"
-          test "$(dpkg-query -W -f='${Version}' emwat-native-core-dev)" = "0.1.0"
+          test "$(dpkg-query -W -f='${Version}' emwat-native-core-dev)" = "0.1.0-1"
           test -f /usr/lib/libemwat_image_core.a
           test -f /usr/include/emwat/scanner.hpp
           sudo dpkg -i "$second_package"
-          test "$(dpkg-query -W -f='${Version}' emwat-native-core-dev)" = "0.1.1"
+          test "$(dpkg-query -W -f='${Version}' emwat-native-core-dev)" = "0.1.1-1"
           test -f /usr/lib/libemwat_image_core.a
           sudo dpkg -r emwat-native-core-dev
           if dpkg-query -W emwat-native-core-dev >/dev/null 2>&1; then
