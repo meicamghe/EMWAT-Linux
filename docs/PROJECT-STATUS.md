@@ -2480,5 +2480,5 @@ Python bridge CI در run `44031548179` موفق شد: **111 تست موفق، 2
 
 - `RecoverySnapshotStore` now requires `max_snapshot_bytes` to be a positive built-in integer; booleans, floats, strings, zero, negative values, and `None` are rejected before filesystem access.
 - Added constructor regression coverage for all rejected input classes and documented the bound contract in `docs/RECOVERY-RETENTION.md`.
-- Implementation and test commits: `c966f092e4cb9746b2477bb4dc8d6fbed571debc`, `2d16580d94c6c4a8021799464d2d31d0c2fb16b0`, and documentation commit `3df46fcbfafdbf3d7abd4f4abb12bbe99f272c19`.
+- Implementation commit: `1a9cd2843c2fd37d6b547ddd668668ec116d5d6f` (restores the full prior implementation and applies the strict validation as a one-condition change); regression tests: `2d16580d94c6c4a8021799464d2d31d0c2fb16b0`; documentation commits: `3df46fcbfafdbf3d7abd4f4abb12bbe99f272c19` and this status update.
 - CI for this follow-up is pending; no test pass is claimed until the new branch head completes all relevant workflows.
