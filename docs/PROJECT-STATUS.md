@@ -1,3 +1,10 @@
+## Parallel hardening follow-up — 2026-11-18
+
+- Recovery retention now rejects booleans and non-numeric values for age limits and the supplied current-time argument; this avoids Python's bool-is-int behavior silently accepting invalid policy input.
+- SANE scanner identifiers are validated before entering the runtime: empty IDs and embedded control characters (including NUL/newline) are rejected for both capability lookup and scan operations.
+- Word/Writer audit now reports a case-only candidate only when the folded identifier is unique on both sides. It excludes ambiguous case-fold collisions and never converts these candidates into mappings.
+- Added regression tests for all three hardening areas. Final-head CI is pending.
+
 ## Secret Service application integration and nonce validation — 2026-11-18
 
 - Added a strict freedesktop Secret Service key provider with get-or-create, read-after-write persistence verification, malformed/short key rejection, and refusal of plaintext fallback backends.
