@@ -14,7 +14,7 @@ Call `RecoverySnapshotService.catalog_json()`. The response is UTF-8 JSON:
   "snapshots": [
     {
       "session_id": "opaque-session-id",
-      "document_name": "document-<sha256>-<unique-id>.doc",
+      "document_name": "document-<opaque-id>.doc",
       "size_bytes": 123456,
       "sha256": "<64 lowercase hexadecimal characters>",
       "updated_at": 1794931200.0
