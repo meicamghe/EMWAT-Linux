@@ -57,8 +57,8 @@ install(DIRECTORY include/emwat
 )
 
 
-// Debian development package for the reusable static native core.
-// This deliberately does not claim to package the Python bridge, daemon, or GUI.
+# Debian development package for the reusable static native core.
+# This deliberately does not claim to package the Python bridge, daemon, or GUI.
 set(EMWAT_PACKAGE_VERSION "${PROJECT_VERSION}" CACHE STRING "EMWAT Debian package version")
 set(CPACK_GENERATOR "DEB")
 set(CPACK_PACKAGE_NAME "emwat-native-core-dev")
