@@ -203,7 +203,6 @@ class ApplicationCompositionTests(unittest.TestCase):
             # Verify the complete browser-facing response round-trips the final
             # Office bytes, not merely that an XML envelope was emitted.
             import xml.etree.ElementTree as ET
-            import base64
             response_root = ET.fromstring(payload)
             response_type = response_root.find("./return-types/type")
             self.assertIsNotNone(response_type)
