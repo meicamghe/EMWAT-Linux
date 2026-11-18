@@ -1,3 +1,10 @@
+## تکمیل موازی Native scanner و اعتبارسنجی — 2026-11-18
+
+- سند scanner اکنون مرز دقیق کد SANE موجود و قابلیت‌های هنوز تأییدنشده را تفکیک می‌کند: یک frame هشت‌بیتی Gray/RGB، محدودیت 1 GiB، گزینه‌های mode/source/DPI و نبود تأیید ADF/duplex/multi-frame یا سخت‌افزار واقعی.
+- workflow ساخت Native اصلاح شد؛ تکرار بی‌دلیل بسته `libsane-dev` حذف شد. مسیرهای build و sanitizer موجودند و باید نتیجهٔ workflow را ملاک دانست.
+- تست Python روی commit `697766a367c1cf0023c57c2827ce98c45dea7c51` موفق است: run `44237865553`؛ 147 تست، 145 پاس و 2 تست اختیاری UNO skip.
+- Recovery UI گرافیکی، رمزنگاری at-rest، سیاست retention اجرایی، mapping معنایی کامل و Almas E2E همچنان باز هستند.
+
 ## کار موازی جدید — 2026-11-18
 
 - `recovery_controller.py` یک مرز in-process و مستقل از toolkit برای اتصال UI بومی فراهم می‌کند: فهرست metadata امن، restore به مقصد انتخاب‌شده، و الزام تأیید صریح پیش از discard. این هنوز پنجرهٔ گرافیکی GTK/Qt نیست و به HTTP متصل نشده است.
