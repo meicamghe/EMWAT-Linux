@@ -43,9 +43,9 @@ class BridgeHTTPServerTests(unittest.TestCase):
                 ValueError, "allowed_origins must be a set of non-empty origin strings"
             ):
                 BridgeHTTPServer(handler, allowed_origins=value)
-        for value in ("https://office.example", ["https://office.example"]):
+        for value in ("https://office.example", ["https://office.example"], {None}):
             with self.subTest(allowed_parent_origins=value), self.assertRaisesRegex(
-                ValueError, "allowed_parent_origins must be a set of origin strings"
+                ValueError, "allowed_parent_origins must be a set of non-empty origin strings"
             ):
                 BridgeHTTPServer(handler, allowed_parent_origins=value)
 
