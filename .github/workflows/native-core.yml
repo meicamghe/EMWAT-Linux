@@ -19,7 +19,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Install codec development libraries
-        run: sudo apt-get update && sudo apt-get install -y libpng-dev libjpeg-dev libtiff-dev libsane-dev libsane-dev
+        run: sudo apt-get update && sudo apt-get install -y libpng-dev libjpeg-dev libtiff-dev libsane-dev
       - name: Configure
         run: cmake -S native -B native/build -DCMAKE_BUILD_TYPE=Release
       - name: Build
