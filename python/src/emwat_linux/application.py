@@ -66,6 +66,11 @@ def create_libreoffice_bridge_server(
     The cancellation response remains a required injection because its exact
     Windows wire envelope has not been captured. Additional method handlers
     may be supplied, but cannot replace EditWordDocument.
+
+    Set ``encrypt_recovery=True`` to explicitly obtain the AES key from the
+    freedesktop Secret Service and inject an encrypted recovery store. This
+    option is rejected when a caller supplies its own adapter; the default
+    configuration remains the plaintext store.
     """
     from emwat_linux.editword_handler import create_editword_handler
     from emwat_linux.editword_service import EditWordDocumentService
