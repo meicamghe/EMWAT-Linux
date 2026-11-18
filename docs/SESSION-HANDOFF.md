@@ -2,7 +2,7 @@
 
 - Native image core run `44240525477` completed successfully on `ecf4fa8a8784b2403272ecd79186fd073e1a8e1b`: both `build-test` and `sanitizer-test` passed, including the ASan/UBSan test step.
 - Updated `.github/workflows/libreoffice-integration.yml` so changes to `recovery_store.py` and `writer_inspector.py` trigger the real LibreOffice UNO integration job on both push and pull request. This closes a CI coverage gap for recovery-store changes.
-- The UNO run for this workflow update is `44240952654` and was still running at the time of this note; do not report it as passed until its test step completes successfully.
+- The UNO run for this workflow update, `44240952654`, completed successfully: LibreOffice Writer/Python UNO installation, runtime verification, and adapter unit plus real UNO roundtrip test step all passed.
 
 ## 2026-11-18 — additional parallel work
 
