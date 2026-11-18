@@ -155,6 +155,13 @@ class DocumentCoordinatorTests(unittest.TestCase):
                 session_id="local-session-4", request=sample_request()
             )
 
+    def test_empty_final_document_fails_closed(self):
+        office = FakeOffice(output=b"")
+        with self.assertRaises(OfficeCoordinationError):
+            DocumentCoordinator(office).run(
+                session_id="local-session-empty", request=sample_request()
+            )
+
 
 if __name__ == "__main__":
     unittest.main()
