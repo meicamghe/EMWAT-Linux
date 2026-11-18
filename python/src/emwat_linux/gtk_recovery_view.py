@@ -127,6 +127,9 @@ def build_recovery_picker(application: Any, controller: Any) -> Any:
 
     def restore(_button: Any) -> None:
         session_id = selected_id()
+        if session_id is None:
+            update_actions()
+            return
         state = controller.state(session_id)
         entry = state.selected_entry
         if entry is None:
@@ -176,7 +179,6 @@ def build_recovery_picker(application: Any, controller: Any) -> Any:
             try:
                 if response == Gtk.ResponseType.OK:
                     controller.discard(session_id, confirmed=True)
-                    selected_session = None
                     refresh()
             except Exception:
                 _show_error(Gtk, window, "حذف نسخه بازیابی انجام نشد.")
