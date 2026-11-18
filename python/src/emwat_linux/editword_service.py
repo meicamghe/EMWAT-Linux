@@ -25,8 +25,8 @@ class EditWordDocumentService:
         session_id_factory: Callable[[], str] | None = None,
         max_document_bytes: int = 64 * 1024 * 1024,
     ) -> None:
-        if max_document_bytes <= 0:
-            raise ValueError("max_document_bytes must be positive")
+        if type(max_document_bytes) is not int or max_document_bytes <= 0:
+            raise ValueError("max_document_bytes must be a positive integer")
         self._coordinator = DocumentCoordinator(office)
         self._session_id_factory = session_id_factory or (lambda: secrets.token_urlsafe(24))
         self._max_document_bytes = max_document_bytes
