@@ -1,3 +1,11 @@
+## Recovery encryption hardening follow-up — 2026-11-18
+
+- Encrypted snapshot filenames now use opaque random identifiers instead of exposing the plaintext SHA-256 in the path. The SHA-256 is bound into AES-GCM associated data and verified after decryption.
+- Plaintext snapshot filenames retain the SHA-256 prefix plus a unique per-write suffix to keep writes immutable and crash-safe.
+- Manifest schema version is checked with strict integer typing; booleans are rejected.
+- Added a regression assertion that encrypted filenames do not disclose the plaintext digest.
+- Python run 44247973310 passed the preceding AES-GCM implementation and tests. The opaque encrypted-filename and strict-schema follow-up commits were added after that run and require fresh CI verification.
+
 ## Optional AES-256-GCM recovery encryption — 2026-11-18
 
 - `RecoverySnapshotStore` now supports opt-in AES-256-GCM encryption when a trusted caller injects a 32-byte key. The key is never stored in the recovery directory or manifest.
