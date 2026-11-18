@@ -89,6 +89,27 @@ class RecoverySnapshotStoreTests(unittest.TestCase):
                 store.save_snapshot(session_id, payload)
             self.assertFalse(store.has_snapshot(session_id))
 
+    def test_non_object_manifests_fail_closed_without_crashing_catalog(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            store = RecoverySnapshotStore(Path(temporary) / "recovery")
+            for malformed in ("[]", "null", '"not-a-manifest"'):
+                session_id = store.create_session()
+                info = store.save_snapshot(
+                    session_id,
+                    bytes.fromhex("D0CF11E0A1B11AE1") + b"manifest-shape",
+                )
+                (info.document_path.parent / "manifest.json").write_text(
+                    malformed, encoding="utf-8"
+                )
+                with self.subTest(manifest=malformed):
+                    with self.assertRaisesRegex(
+                        RecoveryStoreError, "recovery_manifest_invalid"
+                    ):
+                        store.load_snapshot(session_id)
+                    self.assertNotIn(
+                        session_id, {item.session_id for item in store.list_snapshots()}
+                    )
+
     def test_corrupt_snapshot_is_not_listed_or_reported_as_available(self):
         with tempfile.TemporaryDirectory() as temporary:
             store = RecoverySnapshotStore(Path(temporary) / "recovery")
