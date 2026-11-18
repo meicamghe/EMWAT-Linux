@@ -59,6 +59,27 @@ class XMLMethodDispatcherTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             dispatcher.register("EditWordDocument", handler)
 
+    def test_payload_limit_requires_positive_builtin_integer(self):
+        for value in (True, False, 1.5, 16.0, "16", 0, -1, None):
+            with self.subTest(value=value), self.assertRaisesRegex(
+                ValueError, "max_payload_bytes must be a positive integer"
+            ):
+                XMLMethodDispatcher(max_payload_bytes=value)
+
+    def test_registration_rejects_non_text_or_blank_class_names(self):
+        for value in (None, 7, b"EditWordDocument", "", " EditWordDocument", "EditWordDocument "):
+            with self.subTest(value=value), self.assertRaisesRegex(
+                ValueError, "invalid method class name"
+            ):
+                XMLMethodDispatcher().register(value, lambda *_: BridgeResponse(b""))
+
+    def test_registration_rejects_non_callable_handler(self):
+        for handler in (None, 7, "callable"):
+            with self.subTest(handler=handler), self.assertRaisesRegex(
+                ValueError, "method handler must be callable"
+            ):
+                XMLMethodDispatcher().register("EditWordDocument", handler)
+
 
 if __name__ == "__main__":
     unittest.main()
