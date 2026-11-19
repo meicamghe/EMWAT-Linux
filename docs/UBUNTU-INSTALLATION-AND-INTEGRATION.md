@@ -134,9 +134,14 @@ before discard, and sanitized error messages. It does not access store paths
 or document contents. PyGObject is imported lazily inside the view factory, so
 headless bridge and service imports do not require GTK. A headless import test
 covers this boundary; the actual GTK window still needs runtime validation on
-supported Ubuntu desktop sessions. The detailed interaction and accessibility
-contract is in [RECOVERY-PICKER-UX.md](RECOVERY-PICKER-UX.md). Do not add
-Qt/PySide or move filesystem/business logic into GTK callbacks.
+supported Ubuntu desktop sessions. The view identifies rows through GTK's widget-name API rather than attaching
+ad-hoc attributes to GI wrappers, tolerates out-of-range finite timestamps in
+catalog metadata, and refreshes stale selections when restore/discard is
+requested. Headless regression tests cover lazy GTK import and extreme timestamp
+formatting; they do not replace a live GTK desktop-session test. The detailed
+interaction and accessibility contract is in
+[RECOVERY-PICKER-UX.md](RECOVERY-PICKER-UX.md). Do not add Qt/PySide or move
+filesystem/business logic into GTK callbacks.
 
 ## 6. Windows .easz compatibility
 
