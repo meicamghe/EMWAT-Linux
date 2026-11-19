@@ -2741,3 +2741,15 @@ CI for the new E2E test and CMake install rules is pending on the latest code/te
 - The same run's native `build-test` and staged CMake install jobs passed. At the time of this note, the sanitizer job was still running; no sanitizer result is inferred from the package lifecycle result.
 - Python and UNO runs on code head `97c89c3` completed successfully: Python `44327277074`, UNO `44327277376`. The latest Recovery UX document commit is documentation-only beyond that code state.
 - This validates install/upgrade/remove for the native development package only. It does not validate a full desktop application's configuration migration, service restart, Python/UNO runtime, or user-data preservation.
+
+
+
+## GTK Recovery picker hardening — 2026-11-19
+
+- Recovery rows now use the supported GTK widget-name API for stable session identity rather than attaching arbitrary attributes to GI wrappers.
+- Catalog timestamps are formatted defensively; extreme but finite timestamps no longer crash the GTK refresh/render path.
+- Restore and discard refresh stale selections and show a bounded user-facing error if the selected snapshot disappears between listing and action.
+- Added a headless regression test for extreme timestamp formatting while preserving lazy PyGObject import.
+- Commits: GTK implementation `3660bdf`, follow-up stale-selection handling `88fa00e`; tests `fa008a6`; Ubuntu integration documentation `8182dec`.
+- These changes do not establish a live GTK window/runtime test. The Python/Native/UNO CI for the new head is pending and will be recorded only after completion.
+- The Debian package remains `emwat-native-core-dev` only; no full desktop installer or production user-service entrypoint is claimed.
