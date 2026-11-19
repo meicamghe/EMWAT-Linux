@@ -1,7 +1,7 @@
 # Almas ↔ EMWAT ↔ Writer lifecycle contract
 
 Status: implementation contract with explicitly unresolved wire behavior  
-Date: 2026-11-18  
+Date: 2026-11-19  
 Scope: Linux implementation; LibreOffice Writer via UNO
 
 This document separates behavior implemented in the Linux bridge from behavior
@@ -43,9 +43,14 @@ saved copy while the user still has the document open.
 ## 3. Close attempts and cancellation
 
 A close attempt vetoed by the office engine is non-terminal. The adapter must
-keep the document session alive and wait for a later accepted close. A failure
-to create the final close-time snapshot is an error; it must not be converted
-into a successful response.
+keep the document session alive and wait for a later accepted close. The UNO
+close listener resets its per-attempt snapshot result on every `queryClosing`,
+so a failed snapshot from an earlier attempt does not poison a later successful
+attempt. It signals terminal closure only from `notifyClosed`/`disposing`.
+Regression tests now cover failed-first/successful-second close attempts and
+verify that a save callback is emitted only for `OnSaveDone`/`OnSaveAsDone`.
+A failure to create the final close-time snapshot is an error; it must not be
+converted into a successful response.
 
 The Windows evidence recovered so far establishes a `BeforeSave` event sink.
 It does not establish a distinct `BeforeClose` callback in that registration,
@@ -88,7 +93,8 @@ Before declaring the workflow complete, tests must prove:
 - custom properties and verified field mappings are applied before display
   refresh;
 - Save events update saved revision but do not complete the bridge request;
-- a vetoed close leaves the session open;
+- a vetoed/failed close attempt leaves the session open and a subsequent attempt can succeed;
+- only confirmed save-complete document events update the saved revision;
 - accepted close snapshots and exports the final Word-compatible bytes;
 - confirmed discard never exports bytes;
 - Cancel leaves the session open or follows the separately captured native
