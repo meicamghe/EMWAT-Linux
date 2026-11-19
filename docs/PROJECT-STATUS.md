@@ -2753,3 +2753,13 @@ CI for the new E2E test and CMake install rules is pending on the latest code/te
 - Commits: GTK implementation `3660bdf`, follow-up stale-selection handling `88fa00e`; tests `fa008a6`; Ubuntu integration documentation `8182dec`.
 - These changes do not establish a live GTK window/runtime test. The Python/Native/UNO CI for the new head is pending and will be recorded only after completion.
 - The Debian package remains `emwat-native-core-dev` only; no full desktop installer or production user-service entrypoint is claimed.
+
+
+## Writer lifecycle regression coverage — 2026-11-19
+
+- Added adapter tests proving a failed close-time snapshot attempt is reset on a later close attempt, and that the session is not marked closed until UNO reports `notifyClosed`.
+- Added save-event tests: only `OnSaveDone` and `OnSaveAsDone` are treated as confirmed engine saves; pre-save and generic save notifications are ignored.
+- Updated the Almas/Writer lifecycle contract to record these boundaries and keep Cancel/Discard response semantics explicitly unresolved pending a sanitized reference capture.
+- Test commit: `33adcbfc18886933c6e4e47f52d1f359a10ec568`; contract update: `b3a22d10c2be0e14f4fb8caed7c07fa07cf6193b`.
+- Previous head `6ce47620` CI completed successfully: Python run `44549072545`, UNO run `44549072601`, Native run `44549072522`; all jobs passed. New lifecycle test/document commits have triggered a fresh CI cycle; results are pending.
+- No live Almas fixture, confirmed Writer discard/cancel implementation, or full desktop package is claimed.
