@@ -2761,5 +2761,5 @@ CI for the new E2E test and CMake install rules is pending on the latest code/te
 - Added save-event tests: only `OnSaveDone` and `OnSaveAsDone` are treated as confirmed engine saves; pre-save and generic save notifications are ignored.
 - Updated the Almas/Writer lifecycle contract to record these boundaries and keep Cancel/Discard response semantics explicitly unresolved pending a sanitized reference capture.
 - Test commit: `33adcbfc18886933c6e4e47f52d1f359a10ec568`; contract update: `b3a22d10c2be0e14f4fb8caed7c07fa07cf6193b`.
-- Previous head `6ce47620` CI completed successfully: Python run `44549072545`, UNO run `44549072601`, Native run `44549072522`; all jobs passed. New lifecycle test/document commits have triggered a fresh CI cycle; results are pending.
+- Previous head `6ce47620` CI completed successfully: Python run `44549072545`, UNO run `44549072601`, Native run `44549072522`; all jobs passed. At the time of this update, GitHub reported no workflow runs associated with exact head `8da682e9`; the new lifecycle tests are committed but their CI result is not yet available.
 - No live Almas fixture, confirmed Writer discard/cancel implementation, or full desktop package is claimed.
