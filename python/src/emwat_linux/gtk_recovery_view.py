@@ -138,10 +138,15 @@ def build_recovery_picker(application: Any, controller: Any) -> Any:
         if session_id is None:
             update_actions()
             return
-        state = controller.state(session_id)
+        try:
+            state = controller.state(session_id)
+        except Exception:
+            _show_error(Gtk, window, "نسخه بازیابی انتخاب‌شده دیگر در دسترس نیست.")
+            refresh()
+            return
         entry = state.selected_entry
         if entry is None:
-            update_actions()
+            refresh()
             return
         chooser = Gtk.FileChooserNative.new(
             "ذخیره سند بازیابی‌شده",
@@ -174,10 +179,15 @@ def build_recovery_picker(application: Any, controller: Any) -> Any:
         if session_id is None:
             update_actions()
             return
-        state = controller.state(session_id)
+        try:
+            state = controller.state(session_id)
+        except Exception:
+            _show_error(Gtk, window, "نسخه بازیابی انتخاب‌شده دیگر در دسترس نیست.")
+            refresh()
+            return
         entry = state.selected_entry
         if entry is None:
-            update_actions()
+            refresh()
             return
         dialog = Gtk.MessageDialog(
             transient_for=window,
