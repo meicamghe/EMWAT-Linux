@@ -159,6 +159,45 @@ class LibreOfficeAdapterUnitTests(unittest.TestCase):
         listener.disposing(object())
         self.assertEqual(changes, ["changed"])
 
+    def test_close_listener_retries_after_a_vetoed_or_cancelled_attempt(self):
+        document = FakeDocument(fail=True)
+        closed = Event()
+        listener = _DocumentCloseListener(
+            document,
+            "file:///tmp/final.doc",
+            closed.set,
+            fake_snapshot_properties(),
+            Lock(),
+            Event(),
+        )
+
+        listener.queryClosing(object(), False)
+        self.assertTrue(listener.snapshot_ready.is_set())
+        self.assertIsInstance(listener.snapshot_error, RuntimeError)
+        self.assertFalse(closed.is_set())
+
+        # The office UI can keep the document open after this close attempt.
+        # A later attempt must clear the prior error and produce a fresh snapshot.
+        document.fail = False
+        listener.queryClosing(object(), False)
+        self.assertTrue(listener.snapshot_ready.is_set())
+        self.assertIsNone(listener.snapshot_error)
+        self.assertEqual(len(document.calls), 1)
+        self.assertFalse(closed.is_set())
+
+        listener.notifyClosed(object())
+        self.assertTrue(closed.is_set())
+
+    def test_document_event_listener_only_reports_confirmed_save_events(self):
+        from emwat_linux.libreoffice_adapter import _DocumentEventListener
+
+        saved = []
+        listener = _DocumentEventListener(lambda: saved.append("saved"))
+        for event_name in ("OnSave", "OnSaveAs", "OnSaveDone", "OnSaveAsDone", ""):
+            listener.documentEventOccured(type("Event", (), {"EventName": event_name})())
+        listener.disposing(object())
+        self.assertEqual(saved, ["saved", "saved"])
+
 
 if __name__ == "__main__":
     unittest.main()
