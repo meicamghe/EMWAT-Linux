@@ -10,6 +10,14 @@ from pathlib import Path
 from typing import Any
 
 
+def _format_timestamp(timestamp: float) -> str:
+    """Format catalog timestamps without allowing extreme values to crash GTK."""
+    try:
+        return datetime.fromtimestamp(timestamp).astimezone().strftime("%Y-%m-%d %H:%M")
+    except (OverflowError, OSError, ValueError):
+        return "زمان نامعتبر"
+
+
 def _show_error(Gtk: Any, parent: Any, message: str) -> None:
     dialog = Gtk.MessageDialog(
         transient_for=parent,
@@ -76,7 +84,7 @@ def build_recovery_picker(application: Any, controller: Any) -> Any:
 
     def selected_id() -> str | None:
         row = listing.get_selected_row()
-        return getattr(row, "emwat_session_id", None) if row is not None else None
+        return row.get_name() if row is not None else None
 
     def update_actions() -> None:
         has_selection = selected_id() is not None
@@ -101,10 +109,10 @@ def build_recovery_picker(application: Any, controller: Any) -> Any:
 
         selected_session = state.selected_session_id
         for entry in state.entries:
-            stamp = datetime.fromtimestamp(entry.updated_at).astimezone()
+            stamp = _format_timestamp(entry.updated_at)
             details = (
                 f"{entry.document_name}  ·  {entry.size_bytes:,} bytes  ·  "
-                f"{stamp:%Y-%m-%d %H:%M}"
+                f"{stamp}"
             )
             row = Gtk.ListBoxRow()
             label = Gtk.Label(label=details)
@@ -114,7 +122,7 @@ def build_recovery_picker(application: Any, controller: Any) -> Any:
             label.set_margin_start(8)
             label.set_margin_end(8)
             row.set_child(label)
-            row.emwat_session_id = entry.session_id
+            row.set_name(entry.session_id)
             listing.append(row)
             if entry.session_id == selected_session:
                 listing.select_row(row)
