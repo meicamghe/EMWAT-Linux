@@ -2815,3 +2815,14 @@ CI for the new E2E test and CMake install rules is pending on the latest code/te
 - The separate docs-triggered UNO run `44797006712` also passed.
 - Native build/CTest and staged install passed in run `44796996414`; its Debian package lifecycle and ASan/UBSan jobs were still running at this checkpoint.
 - An earlier intermediate push had failed Python/UNO CI before the adapter test imports were corrected. The corrected code/test head above is green for Python and UNO; do not conflate the intermediate failures with the corrected head.
+
+
+## Full CI verification for read-only evidence audit — 2026-11-20
+
+- Code/test head `4c571a74be9c75ad6fa0b7b823bcd6a3e8d88f28` passed all three workflows:
+  - Python Bridge run `44796996459`: **220 tests, 218 passed, 2 optional skips**.
+  - LibreOffice UNO run `44796996426`: **18 tests passed**, including adapter evidence audit and real Writer roundtrip.
+  - Native run `44796996414`: build/CTest, staged install, Debian package lifecycle, and ASan/UBSan all passed; normal and sanitizer CTest each report **4/4 tests passed**.
+- Documentation-only follow-up UNO run `44797006712` passed.
+- Later commits `315cb5d`, `c327662`, and `bb1d920` update documentation only; the verified code/test tree is unchanged.
+- PR #2 remains open, Draft, unmerged. This verification does not establish Almas end-to-end compatibility, automatic WordConfig mapping, visible Save/Don't Save/Cancel behavior, full application packaging, or physical scanner support.
