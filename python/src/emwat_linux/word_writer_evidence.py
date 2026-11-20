@@ -9,6 +9,7 @@ from collections import Counter
 from dataclasses import dataclass
 
 from emwat_linux.word_config import WordDocumentConfig
+from emwat_linux.word_fields import parse_word_field_identifier
 from emwat_linux.writer_inspector import WriterDocumentCatalog
 
 
@@ -16,6 +17,8 @@ from emwat_linux.writer_inspector import WriterDocumentCatalog
 class WordConfigFieldEvidence:
     index: int
     field_id: str
+    twin_first_member: str | None
+    twin_second_member: str | None
     mimetype: str | None
     encoding: str | None
     external_parameter: str | None
@@ -86,10 +89,13 @@ def build_word_writer_evidence_report(
         field_id = field.field_id
         field_ids.append(field_id)
         mimetype = field.attributes.get("mimetype")
+        identifier = parse_word_field_identifier(field_id)
         evidence.append(
             WordConfigFieldEvidence(
                 index=index,
                 field_id=field_id,
+                twin_first_member=identifier.first if identifier.is_twin else None,
+                twin_second_member=identifier.second,
                 mimetype=mimetype,
                 encoding=field.attributes.get("encryption"),
                 external_parameter=field.attributes.get("paramId"),
