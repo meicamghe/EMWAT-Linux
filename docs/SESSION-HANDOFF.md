@@ -1181,3 +1181,13 @@ Do not implement guessed `signData` joining or claim end-to-end Almas registrati
 - LibreOffice UNO CI run `44784556817`: success; 17 tests passed, including real UNO open/close/export and EditWord response-handler integration.
 - Native CI run `44784556764`: package lifecycle and normal build/CTest/staged install passed; ASan/UBSan was still running at the checkpoint.
 - Next: poll Native sanitizer job, then record final combined CI status. Continue the Writer visible-UI Save / Don't Save / Cancel test design. Do not ship a daemon/desktop entrypoint or claim production readiness until Origin allowlists, verified close response policy, lifecycle supervision, secure recovery key custody and Almas wire fixtures are resolved.
+
+
+## 2026-11-20 — parallel Word/Writer evidence and close acceptance work
+
+- Added `python/src/emwat_linux/word_writer_evidence.py`: metadata-only summary of WordConfig field IDs, declared MIME/encoding, external parameter IDs, duplicates, settings, optional attributes and requested types, alongside Writer structural and custom-property names. It excludes field values, body text, image bytes and property values.
+- Exposed `LibreOfficeAdapter.audit_word_writer_evidence(handle, config)` under the document snapshot lock. It is read-only; no inferred mapping is applied.
+- Added tests for the report and adapter entry point. Initial report-only Python CI run `44796731919` passed 219 tests (217 passed, 2 optional skips). Newer adapter integration/test commit `4c571a74` has fresh CI runs queued.
+- Added `docs/WORD-WRITER-EVIDENCE-REPORT.md` and `docs/WRITER-VISIBLE-CLOSE-ACCEPTANCE.md`. The latter defines visible Writer Save, Don't Save, Cancel and retry acceptance, including output-marker checks and non-sensitive callback diagnostics.
+- Keep automatic WordConfig mapping disabled until a sanitized matching Word + wordConfig fixture and expected output are supplied and independently verified. Do not infer signData separators or property ordering.
+- Next: poll CI runs for commit `4c571a74be9c75ad6fa0b7b823bcd6a3e8d88f28` (Python `44796996459`, Native `44796996414`, UNO `44796996426`); then poll docs-triggered UNO run `44797006712`. PR #2 stays open, Draft and unmerged.
