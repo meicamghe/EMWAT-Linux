@@ -2771,3 +2771,18 @@ CI for the new E2E test and CMake install rules is pending on the latest code/te
 - Added a focused adapter regression proving that final close-time snapshot creation and terminal-close signaling do not require a preceding `OnSaveDone`/`OnSaveAsDone` event.
 - Test commit: `2776d889b330b88177ce7caeb86f659df56e4934`; lifecycle contract commit: `ddc95ce24bd6b7185fcb4b2c073d9f53e293ebdb`.
 - No workflow runs are currently associated with the latest PR head `ddc95ce24bd6b7185fcb4b2c073d9f53e293ebdb`; the new regression is committed but not yet CI-verified. No live Almas or interactive Writer prompt test is claimed.
+
+
+## Writer close/discard evidence checkpoint — 2026-11-20
+
+- Added `docs/WRITER-CLOSE-DISCARD-INVESTIGATION.md` to separate the documented UNO close-listener contract from the still-unverified interactive Writer Save / Don't Save / Cancel prompt ordering.
+- Guardrail: `queryClosing` snapshot creation plus `notifyClosed` is not proof that the user chose Save or Don't Save. Do not infer `DISCARDED` from close/disposal callbacks.
+- Required visible-Writer acceptance cases are now explicit: Save must return the edited marker; Don't Save must omit the unsaved marker; Cancel must leave Writer open and the Almas request pending. Capture callback order and returned bytes.
+- Latest PR head at this checkpoint: `79c017e757485dbd5fb19b7a7e1fd13beb05353c`.
+- CI for that head:
+  - Python bridge run `44784556864`: completed successfully.
+  - LibreOffice UNO run `44784556817`: completed successfully; the job log reports **17 tests passed**, including the real UNO roundtrip through the EditWord response handler and Word 97 export.
+  - Native run `44784556764`: Debian package lifecycle and normal build/CTest/staged install jobs passed; ASan/UBSan job was still running at this checkpoint.
+- The native package lifecycle remains limited to `emwat-native-core-dev`; it is not a complete EMWAT desktop installer.
+- These CI results do not prove interactive Save / Don't Save / Cancel behavior, live Almas/browser compatibility, full semantic Word/Writer field parity, physical scanner support, or Windows `.easz` interoperability.
+- PR #2 remains open, Draft, and unmerged. No release-readiness claim is made.
