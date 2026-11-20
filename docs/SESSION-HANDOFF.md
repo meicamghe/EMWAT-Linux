@@ -1230,3 +1230,11 @@ Do not implement guessed `signData` joining or claim end-to-end Almas registrati
 - Added tests for callback order, retry attempt numbering, allowlisted event names, and absence of payload/path data.
 - Python run `44798818684` on `2feff5bf`: 227 tests, 225 passed, 2 optional skips. UNO `44798818677` and Native `44798818848` still running at last poll.
 - The trace supports the visible Save / Don't Save / Cancel acceptance matrix; it does not itself prove the selected outcome.
+
+
+## Latest close-trace CI state
+
+- Python `44798818684`: 227 tests, 225 passed, 2 optional skips.
+- Native `44798818848`: normal build/CTest, ASan/UBSan and DEB package lifecycle all passed.
+- UNO `44798818677`: LibreOffice installation and runtime verification passed; the test step remains in progress. Poll it before claiming close-trace integration is UNO-verified.
+- PR #2 remains open, Draft, unmerged.
