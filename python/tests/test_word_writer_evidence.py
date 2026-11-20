@@ -82,6 +82,20 @@ class WordWriterEvidenceReportTests(unittest.TestCase):
         self.assertNotIn("editor", repr(report))
         self.assertNotIn("edit", repr(report))
 
+    def test_reports_declared_twin_identifier_members_without_writer_pairing(self):
+        xml = (
+            b"<word-document><fields>"
+            b"<field id='PrimaryName&#8224;SecondaryName' mimetype='text/plain'>opaque</field>"
+            b"</fields></word-document>"
+        )
+        config = parse_word_config(__import__("base64").b64encode(xml).decode())
+        report = build_word_writer_evidence_report(config, empty_catalog())
+        field = report.fields[0]
+        self.assertEqual(field.field_id, "PrimaryName†SecondaryName")
+        self.assertEqual(field.twin_first_member, "PrimaryName")
+        self.assertEqual(field.twin_second_member, "SecondaryName")
+        self.assertNotIn("opaque", repr(report))
+
     def test_missing_optional_attribute_ids_are_not_reported_as_duplicates(self):
         xml = (
             b"<word-document><optional-attributes>"
