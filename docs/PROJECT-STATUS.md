@@ -2795,3 +2795,14 @@ CI for the new E2E test and CMake install rules is pending on the latest code/te
 - Consequently, current real UNO CI validates open/close/export and the synthetic response path, not complete population of Almas-provided fields, signatures, or `signData`.
 - Updated `docs/WORD-WRITER-MAPPING-AUDIT.md` with the exact runtime boundary and safe fixture gate.
 - Release blocker: obtain one sanitized matching Word document + `wordConfig` fixture and expected field results; verify property enumeration, twin-field associations, image/signature handling and output roundtrip before enabling automatic writes. Do not infer order or `signData` encoding.
+
+
+## Read-only Word/Writer evidence audit and visible close matrix — 2026-11-20
+
+- Added `word_writer_evidence.py` with a metadata-only report of WordConfig field IDs, MIME/encoding declarations, external parameter IDs, duplicate IDs, settings/optional attributes/requested types, and Writer structural/property names.
+- Added `LibreOfficeAdapter.audit_word_writer_evidence(handle, config)` as a lock-protected, read-only entry point. It does not read field values or body text and does not mutate Writer.
+- Added regression tests for sensitive-value exclusion, duplicate IDs, image/text metadata, external parameter metadata, empty inputs, and adapter integration.
+- Added `docs/WORD-WRITER-EVIDENCE-REPORT.md` and `docs/WRITER-VISIBLE-CLOSE-ACCEPTANCE.md`.
+- Python CI run `44796731919` passed **219 tests, 217 passed, 2 optional skips** for the initial evidence-report commit. The subsequent adapter integration/test commit `4c571a74` has fresh Python, Native, and UNO workflows queued; do not mark those newer tests verified until their runs finish.
+- The previous current-head UNO run `44796732049` and Native run `44796731888` completed successfully, but they predate the adapter entry-point follow-up.
+- The evidence report is diagnostic only. It does not establish Word/Writer field equivalence or enable automatic writes. Visible Save / Don't Save / Cancel behavior remains unverified.
