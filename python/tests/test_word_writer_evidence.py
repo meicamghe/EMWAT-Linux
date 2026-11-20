@@ -82,6 +82,20 @@ class WordWriterEvidenceReportTests(unittest.TestCase):
         self.assertNotIn("editor", repr(report))
         self.assertNotIn("edit", repr(report))
 
+    def test_missing_optional_attribute_ids_are_not_reported_as_duplicates(self):
+        xml = (
+            b"<word-document><optional-attributes>"
+            b"<attribute type='first'/><attribute type='second'/>"
+            b"</optional-attributes></word-document>"
+        )
+        config = parse_word_config(__import__("base64").b64encode(xml).decode())
+        report = build_word_writer_evidence_report(config, empty_catalog())
+        self.assertEqual(report.duplicate_optional_attribute_ids, ())
+        self.assertEqual(
+            tuple(item.attribute_id for item in report.optional_attributes),
+            ("", ""),
+        )
+
     def test_rejects_invalid_input_types(self):
         config = parse_word_config(
             __import__("base64").b64encode(b"<word-document/>").decode()
