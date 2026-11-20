@@ -158,6 +158,45 @@ class LibreOfficeAdapterUnitTests(unittest.TestCase):
             self.assertTrue(url.startswith("file://"))
             self.assertIn("emwat%20space", url)
 
+    def test_adapter_close_trace_records_callback_order_without_payload(self):
+        from emwat_linux.libreoffice_adapter import _DocumentEventListener
+
+        handle = _OfficeHandle(
+            process=FakeProcess(),
+            document=FakeDocument(),
+            close_listener=None,
+            work_dir=Path("."),
+            recovery_session_id="trace-session",
+        )
+        closed = Event()
+        listener = _DocumentCloseListener(
+            handle.document,
+            "file:///tmp/final.doc",
+            closed.set,
+            fake_snapshot_properties(),
+            handle.snapshot_lock,
+            handle.recovery_stop,
+            handle.close_trace,
+        )
+        save_listener = _DocumentEventListener(lambda: None, handle.close_trace)
+
+        listener.queryClosing(object(), False)
+        listener.notifyClosing(object())
+        save_listener.documentEventOccured(
+            type("Event", (), {"EventName": "OnSaveDone"})()
+        )
+        listener.notifyClosed(object())
+
+        events = LibreOfficeAdapter().inspect_close_lifecycle_trace(handle)
+        self.assertEqual(
+            [event.name for event in events],
+            ["query_closing", "snapshot_succeeded", "notify_closing", "save_done", "notify_closed"],
+        )
+        self.assertTrue(all(event.attempt == 1 for event in events))
+        self.assertTrue(closed.is_set())
+        self.assertNotIn("final.doc", repr(events))
+        self.assertNotIn("document", repr(events))
+
     def test_close_listener_snapshots_word_97_before_close(self):
         document = FakeDocument()
         closed = []
