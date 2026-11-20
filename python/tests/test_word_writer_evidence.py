@@ -80,7 +80,7 @@ class WordWriterEvidenceReportTests(unittest.TestCase):
         self.assertNotIn("PRIVATE-VALUE", repr(report))
         self.assertNotIn("OTHER-SECRET", repr(report))
         self.assertNotIn("editor", repr(report))
-        self.assertNotIn("status", repr(report)) if False else None
+        self.assertNotIn("edit", repr(report))
 
     def test_rejects_invalid_input_types(self):
         config = parse_word_config(
