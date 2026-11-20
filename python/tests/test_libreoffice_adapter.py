@@ -188,6 +188,32 @@ class LibreOfficeAdapterUnitTests(unittest.TestCase):
         listener.notifyClosed(object())
         self.assertTrue(closed.is_set())
 
+    def test_close_returns_final_snapshot_without_an_explicit_save_event(self):
+        from emwat_linux.libreoffice_adapter import _DocumentEventListener
+
+        document = FakeDocument()
+        saved = []
+        closed = Event()
+        save_listener = _DocumentEventListener(lambda: saved.append(True))
+        close_listener = _DocumentCloseListener(
+            document,
+            "file:///tmp/final.doc",
+            closed.set,
+            fake_snapshot_properties(),
+            Lock(),
+            Event(),
+        )
+
+        # No OnSaveDone/OnSaveAsDone event is delivered before the user closes.
+        close_listener.queryClosing(object(), False)
+        close_listener.notifyClosed(object())
+
+        self.assertEqual(saved, [])
+        self.assertEqual(len(document.calls), 1)
+        self.assertTrue(close_listener.snapshot_ready.is_set())
+        self.assertIsNone(close_listener.snapshot_error)
+        self.assertTrue(closed.is_set())
+
     def test_document_event_listener_only_reports_confirmed_save_events(self):
         from emwat_linux.libreoffice_adapter import _DocumentEventListener
 
