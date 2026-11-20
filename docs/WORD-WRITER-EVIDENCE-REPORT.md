@@ -10,7 +10,7 @@ Date: 2026-11-20
 
 - WordConfig field IDs, MIME types, declared encoding names, and external parameter IDs.
 - Whether a field declares `text/plain` or an `image/*` MIME type.
-- Root/permission attribute names; WordConfig field positions and IDs; declared twin-field delimiter members; duplicate and case-fold-collision groups; setting and optional-attribute duplicate names; optional-attribute type/encoding/content-presence metadata; requested-type attributes.
+- Root/permission attribute names; WordConfig field positions and IDs; declared twin-field delimiter members; duplicate and case-fold-collision groups; setting and optional-attribute duplicate names; optional-attribute type/encoding/content-element-presence metadata (distinguishing an empty element from a missing element); requested-type attributes.
 - Writer bookmark, named-range, section, table, frame, graphic-object, and custom-property names.
 - Writer DocInfo.Custom field property names.
 
