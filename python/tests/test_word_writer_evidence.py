@@ -67,14 +67,14 @@ class WordWriterEvidenceReportTests(unittest.TestCase):
         self.assertTrue(report.fields[0].is_plain_text)
         self.assertTrue(report.fields[1].is_image)
         self.assertEqual(report.fields[2].external_parameter, "signData")
-        self.assertEqual(report.settings_names, ("readOnly",))
-        self.assertEqual(report.optional_attribute_ids, ("tokenizedReceivers",))
+        self.assertEqual(report.settings_names, ("readOnly", "readOnly"))
+        self.assertEqual(tuple(item.attribute_id for item in report.optional_attributes), ("tokenizedReceivers", "tokenizedReceivers"))
         self.assertEqual(
             report.requested_type_attributes,
             ((("mimetype", "application/msword"), ("name", "document")),),
         )
         self.assertEqual(report.writer_bookmark_names, ("LetterSubject",))
-        self.assertEqual(report.writer_custom_property_names, ("SignerPair", "LetterSubject"))
+        self.assertEqual(report.writer_custom_property_names, ("SignerPair", "LetterSubject", "lettersubject"))
         self.assertEqual(report.writer_docinfo_custom_field_names, ("LetterSubject",))
         self.assertNotIn("SECRET-TEXT", repr(report))
         self.assertNotIn("PRIVATE-VALUE", repr(report))
