@@ -110,3 +110,18 @@ Before declaring the workflow complete, tests must prove:
 
 Until the required fixtures exist, only the successful synthetic response path
 and the generic lifecycle contract are claimed.
+
+
+## 6. Interactive Writer close evidence checkpoint (2026-11-20)
+
+The adapter unit tests and the real UNO roundtrip workflow now pass on the latest tested head, including export of a Writer document as legacy Word and the synthetic EditWord response-handler path. This validates the ordinary close/export path exercised by CI.
+
+It does **not** validate the interactive Save / Don't Save / Cancel prompt. The close listener currently captures a copy during `queryClosing`, while terminal closure is signaled later by `notifyClosed` or disposal. The UNO close-listener callbacks alone do not identify the user's choice in the Writer UI.
+
+Until a visible-UI test or verified event contract exists:
+- do not label a closed document as discarded;
+- do not return a pre-prompt snapshot as though it represented the user's Don't Save choice;
+- do not treat a close attempt as terminal until the document actually closes;
+- keep the Almas Cancel/Discard response envelope unresolved.
+
+Required acceptance tests and the callback-order evidence are specified in `docs/WRITER-CLOSE-DISCARD-INVESTIGATION.md`.
