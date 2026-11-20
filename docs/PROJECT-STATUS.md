@@ -1,4 +1,4 @@
-## Four parallel implementation tracks — 2026-11-18
+## Four parallel implementation tracks — 2026 11 18
 
 - **Almas ↔ Writer contract:** added `docs/ALMAS-WRITER-LIFECYCLE-CONTRACT.md` to separate the implemented synthetic success path from unverified live Almas behavior. It records that Save, accepted Close, close-veto/Cancel, and confirmed Discard are distinct; no unknown Cancel/Discard HTTP/XML response is guessed.
 - **Word/Writer mapping:** hardened custom-property descriptor construction to reject non-string property keys before parsing. Added regression coverage for `None`, integers, booleans, and bytes. This is input-contract hardening only; it does not claim full semantic field/signature mapping.
