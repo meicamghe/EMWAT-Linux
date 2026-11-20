@@ -1,4 +1,4 @@
-## 2026-11-18 — scanner input validation test
+## 2026 11 18 — scanner input validation test
 
 - Added hardware-independent regression checks that `SaneScannerBackend.get_capabilities("")` and `scan_one("")` reject an empty device identifier before entering SANE.
 - Native image core workflow `44244437647` completed successfully on `ed811a14f9d151a8a386c67b80b26b3d155f5c24`: build-test and ASan/UBSan sanitizer-test both passed, including their test steps.
