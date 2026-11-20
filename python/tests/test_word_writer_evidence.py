@@ -23,7 +23,7 @@ def empty_catalog(**overrides):
             ),
         ),
         custom_document_properties=("LetterSubject", "SignerPair"),
-        custom_document_properties_in_info_order=("SignerPair", "LetterSubject"),
+        custom_document_properties_in_info_order=("SignerPair", "LetterSubject", "lettersubject"),
     )
     values.update(overrides)
     return WriterDocumentCatalog(**values)
@@ -34,14 +34,14 @@ class WordWriterEvidenceReportTests(unittest.TestCase):
         config = parse_word_config(
             __import__("base64").b64encode(
                 (
-                    "<word-document><settings><setting name='readOnly'>false</setting></settings>"
+                    "<word-document status='edit'><permission role='editor'/>""<settings><setting name='readOnly'>false</setting><setting name='readOnly'>true</setting></settings>"
                     "<fields>"
                     "<field id='subject' mimetype='text/plain' encryption='urlencoded'>SECRET-TEXT</field>"
                     "<field id='signature' mimetype='image/png' encryption='base64'>AQID</field>"
-                    "<field id='signature' mimetype='image/png' paramId='signData'></field>"
+                    "<field id='signature' mimetype='image/png' paramId='signData'></field>""<field id='Subject' mimetype='TEXT/PLAIN'>OTHER-SECRET</field>"
                     "</fields>"
                     "<optional-attributes><attribute id='tokenizedReceivers' type='compInfo'>"
-                    "<content>PRIVATE-VALUE</content></attribute></optional-attributes>"
+                    "<content encryption='urlencoded'>PRIVATE-VALUE</content></attribute>""<attribute id='tokenizedReceivers' type='compInfo'/></optional-attributes>"
                     "<requested-types><type name='document' mimetype='application/msword'/></requested-types>"
                     "</word-document>"
                 ).encode()
@@ -50,8 +50,19 @@ class WordWriterEvidenceReportTests(unittest.TestCase):
 
         report = build_word_writer_evidence_report(config, empty_catalog())
 
-        self.assertEqual([item.field_id for item in report.fields], ["subject", "signature", "signature"])
+        self.assertEqual([item.field_id for item in report.fields], ["subject", "signature", "signature", "Subject"])
         self.assertEqual(report.duplicate_field_ids, ("signature",))
+        self.assertEqual(report.casefold_field_id_collisions, (("subject", "Subject"),))
+        self.assertEqual(report.fields[3].index, 3)
+        self.assertTrue(report.fields[3].is_plain_text)
+        self.assertEqual(report.root_attribute_names, ("status",))
+        self.assertEqual(report.permission_attribute_names, ("role",))
+        self.assertEqual(report.duplicate_setting_names, ("readOnly",))
+        self.assertEqual(report.duplicate_optional_attribute_ids, ("tokenizedReceivers",))
+        self.assertEqual(report.optional_attributes[0].content_encoding, "urlencoded")
+        self.assertTrue(report.optional_attributes[0].has_content)
+        self.assertFalse(report.optional_attributes[1].has_content)
+        self.assertEqual(report.writer_custom_property_casefold_collisions, (("LetterSubject", "lettersubject"),))
         self.assertEqual(report.fields[0].encoding, "urlencoded")
         self.assertTrue(report.fields[0].is_plain_text)
         self.assertTrue(report.fields[1].is_image)
@@ -67,6 +78,7 @@ class WordWriterEvidenceReportTests(unittest.TestCase):
         self.assertEqual(report.writer_docinfo_custom_field_names, ("LetterSubject",))
         self.assertNotIn("SECRET-TEXT", repr(report))
         self.assertNotIn("PRIVATE-VALUE", repr(report))
+        self.assertNotIn("OTHER-SECRET", repr(report))
 
     def test_empty_config_and_writer_inventory_produce_empty_evidence(self):
         config = parse_word_config(
