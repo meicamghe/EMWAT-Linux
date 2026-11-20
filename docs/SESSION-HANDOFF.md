@@ -1209,3 +1209,15 @@ Do not implement guessed `signData` joining or claim end-to-end Almas registrati
 - Native run `44796996414`: build/CTest, staged install, Debian package install/upgrade/removal lifecycle, and ASan/UBSan passed. Both normal and sanitizer CTest report 4/4 passed.
 - Docs-only UNO run `44797006712` passed. Later commits through `bb1d920` only update status/handoff documentation after the verified code/test head.
 - PR #2 remains open, Draft and unmerged. Do not claim live Almas E2E, automatic WordConfig field mapping, visible Save/Don't Save/Cancel parity, complete desktop installer, or physical scanner/ADF/duplex validation.
+
+
+## 2026-11-20 — expanded evidence report and close retry tests
+
+- Evidence report now includes field indices, twin delimiter members, duplicate/case-fold collision groups, root/permission attribute names, optional attribute type/encoding and content-element presence, plus Writer property collision metadata. No values or document text are exposed.
+- `OptionalAttribute.has_content_element` preserves the distinction between no `<content>` node and an explicitly empty node.
+- Added tests for missing optional IDs, empty content nodes, twin identifiers, collision handling, and redaction.
+- Added a close listener regression proving that a successful snapshot from a cancelled attempt is replaced on the next attempt and that terminal close notification is required.
+- Python run `44798087534` on `491ca49a`: 224 tests, 222 passed, 2 optional skips. Native run `44798087414`: build/CTest 4/4, sanitizer CTest 4/4, package lifecycle success.
+- UNO run `44797952771` on `226e0205`: 19 tests passed. New adapter integration coverage for twin metadata and empty optional content is in commit `41e15bbe`; poll its Python/UNO/Native workflows `44798367250`, `44798367221`, and `44798367187`.
+- An intermediate evidence-report test run failed because one assertion still referenced a removed report attribute; corrected immediately and verified by the subsequent 224-test green run.
+- Keep all automatic field writes disabled until the real sanitized Almas fixture and expected output are available. PR #2 stays open, Draft, unmerged.
