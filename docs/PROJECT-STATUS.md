@@ -2806,3 +2806,12 @@ CI for the new E2E test and CMake install rules is pending on the latest code/te
 - Python CI run `44796731919` passed **219 tests, 217 passed, 2 optional skips** for the initial evidence-report commit. The subsequent adapter integration/test commit `4c571a74` has fresh Python, Native, and UNO workflows queued; do not mark those newer tests verified until their runs finish.
 - The previous current-head UNO run `44796732049` and Native run `44796731888` completed successfully, but they predate the adapter entry-point follow-up.
 - The evidence report is diagnostic only. It does not establish Word/Writer field equivalence or enable automatic writes. Visible Save / Don't Save / Cancel behavior remains unverified.
+
+## Follow-up verification — adapter evidence audit integration
+
+- Added `LibreOfficeAdapter.audit_word_writer_evidence()`, protected by the document snapshot lock and requiring a parsed `WordDocumentConfig`.
+- Python bridge run `44796996459` for code/test commit `4c571a74be9c75ad6fa0b7b823bcd6a3e8d88f28` passed **220 tests, 218 passed, 2 optional skips**.
+- LibreOffice UNO run `44796996426` on the same code/test commit passed **18 tests**, including the new adapter audit regression and the real Writer roundtrip.
+- The separate docs-triggered UNO run `44797006712` also passed.
+- Native build/CTest and staged install passed in run `44796996414`; its Debian package lifecycle and ASan/UBSan jobs were still running at this checkpoint.
+- An earlier intermediate push had failed Python/UNO CI before the adapter test imports were corrected. The corrected code/test head above is green for Python and UNO; do not conflate the intermediate failures with the corrected head.
