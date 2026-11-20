@@ -2850,3 +2850,11 @@ CI for the new E2E test and CMake install rules is pending on the latest code/te
 - Added unit tests for event ordering, attempt ordinals, event-name allowlisting, adapter exposure, and redaction.
 - Python run `44798818684` on code/test commit `2feff5bf`: **227 tests, 225 passed, 2 optional skips**.
 - UNO run `44798818677` and Native run `44798818848` were still running at this checkpoint; poll before claiming their results.
+
+
+## Latest close-trace CI update — 2026-11-20
+
+- Python run `44798818684`: **227 tests, 225 passed, 2 optional skips**.
+- Native run `44798818848`: build/CTest, ASan/UBSan, and Debian package lifecycle all completed successfully.
+- UNO run `44798818677` has completed package installation and runtime verification; its adapter/unit and real UNO roundtrip test step remains in progress. Do not mark the trace integration as UNO-verified until this run completes.
+- Current PR head is documentation-only commit `e2e3719`; code/test head for the trace is `2feff5bf`.
