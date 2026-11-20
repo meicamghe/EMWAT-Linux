@@ -2840,3 +2840,13 @@ CI for the new E2E test and CMake install rules is pending on the latest code/te
 - UNO run `44797952771` on close-retry test commit `226e0205`: **19 tests passed**. A further adapter integration test now checks twin metadata and explicitly empty optional content; fresh Python, UNO, and Native workflows for commit `41e15bbe` are queued.
 - An intermediate Python run failed on an obsolete assertion after the evidence schema changed; the assertion was corrected, and the subsequent 224-test run passed. No unresolved test failure is being hidden.
 - Automatic WordConfig writes remain disabled pending a sanitized matching Almas Word + wordConfig fixture and verified expected output. Visible Save / Don't Save / Cancel remains an outstanding interactive acceptance test.
+
+
+## Privacy-safe Writer callback trace — 2026-11-20
+
+- Added `close_trace.py`: an in-memory trace of fixed callback names, close-attempt ordinal, sequence number, and monotonic timestamp only.
+- Wired the trace into `_DocumentCloseListener` and `_DocumentEventListener`, and exposed it through `LibreOfficeAdapter.inspect_close_lifecycle_trace(handle)`.
+- Trace events include query/snapshot success or failure/notify-closing/notify-closed/disposing/save-done/save-as-done. It deliberately does not infer Save/Don't Save/Cancel and stores no document content, field values, file paths, or exception messages.
+- Added unit tests for event ordering, attempt ordinals, event-name allowlisting, adapter exposure, and redaction.
+- Python run `44798818684` on code/test commit `2feff5bf`: **227 tests, 225 passed, 2 optional skips**.
+- UNO run `44798818677` and Native run `44798818848` were still running at this checkpoint; poll before claiming their results.
