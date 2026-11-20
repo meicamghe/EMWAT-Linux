@@ -13,6 +13,8 @@ Use a disposable document with:
 - one unique marker inserted after opening and deliberately left unsaved;
 - a unique run/session identifier that is not embedded in document text.
 
+Use `LibreOfficeAdapter.inspect_close_lifecycle_trace(handle)` to retrieve the in-memory callback trace. It records only fixed event names, attempt ordinals, sequence numbers, and monotonic timestamps. It does not infer the user's choice and does not include document content, field values, file paths, or exception messages.
+
 Capture only diagnostic metadata:
 - monotonic timestamp and callback name;
 - close-attempt ordinal;
@@ -36,7 +38,7 @@ Do not log letter text, field values, image bytes, signatures, or `signData`.
 
 1. Run with a visible Writer instance on each supported Ubuntu/LibreOffice version.
 2. Close using the actual window close control, not `document.close(True)` or a headless test.
-3. Record the callback order for every attempt, including `queryClosing`, `notifyClosing`, `disposing`, `OnSaveDone`, and `OnSaveAsDone` when observed.
+3. Record the callback order for every attempt, including `queryClosing`, `notifyClosing`, `disposing`, `OnSaveDone`, and `OnSaveAsDone` when observed. The in-memory trace uses normalized fixed names such as `query_closing`, `notify_closed`, `save_done`, and `save_as_done`.
 4. Verify the final output content against the expected markers; callback order alone is not a pass.
 5. Verify Cancel does not complete the bridge request and a subsequent close attempt can complete it exactly once.
 6. Repeat the test to rule out timing-dependent behavior.
