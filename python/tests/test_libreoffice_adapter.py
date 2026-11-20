@@ -1,10 +1,12 @@
 import tempfile
 import unittest
+from unittest.mock import patch
 from threading import Event, Lock
 from pathlib import Path
 
 from emwat_linux.libreoffice_adapter import (
     LibreOfficeAdapter,
+    _OfficeHandle,
     _CFB_SIGNATURE,
     _DocumentCloseListener,
     _ModifyListener,
@@ -73,6 +75,38 @@ class FakeProcess:
 
 
 class LibreOfficeAdapterUnitTests(unittest.TestCase):
+    def test_adapter_exposes_read_only_word_writer_evidence_audit(self):
+        handle = _OfficeHandle(
+            process=FakeProcess(),
+            document=object(),
+            close_listener=None,
+            work_dir=Path("."),
+            recovery_session_id="audit-session",
+        )
+        config = parse_word_config(
+            __import__("base64").b64encode(
+                b'<word-document><fields><field id="subject" mimetype="text/plain">secret</field></fields></word-document>'
+            ).decode()
+        )
+        catalog = WriterDocumentCatalog(
+            bookmarks=("LetterSubject",), named_ranges=(), text_sections=(),
+            text_tables=(), text_frames=(), graphic_objects=(), document_indexes=(),
+            text_fields=(), custom_document_properties=("LetterSubject",),
+            custom_document_properties_in_info_order=("LetterSubject",),
+        )
+        adapter = LibreOfficeAdapter()
+        with patch(
+            "emwat_linux.libreoffice_adapter.inspect_writer_document",
+            return_value=catalog,
+        ):
+            report = adapter.audit_word_writer_evidence(handle, config)
+
+        self.assertEqual(report.fields[0].field_id, "subject")
+        self.assertEqual(report.writer_bookmark_names, ("LetterSubject",))
+        self.assertNotIn("secret", repr(report))
+        with self.assertRaisesRegex(TypeError, "invalid_word_document_config"):
+            adapter.audit_word_writer_evidence(handle, object())
+
     def test_adapter_timeouts_must_be_finite_positive_numbers(self):
         invalid_values = (True, False, float("nan"), float("inf"), float("-inf"), 10 ** 1000, 0, -1, "1")
         for parameter in (
