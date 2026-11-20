@@ -40,6 +40,13 @@ workflow is close-driven, and the final close-time document is returned even
 when no explicit Save event was observed. This avoids returning an intermediate
 saved copy while the user still has the document open.
 
+The reference workflow reported by the operator is that closing the Word
+window without pressing Save returns control to Almas. This is recorded as a
+close-driven handoff requirement. It does not, by itself, establish whether
+Word displayed a Save / Don't Save / Cancel prompt or which choice was made.
+A focused adapter regression now verifies that the final close snapshot and
+terminal-close signal do not depend on an earlier SaveDone event.
+
 ## 3. Close attempts and cancellation
 
 A close attempt vetoed by the office engine is non-terminal. The adapter must
