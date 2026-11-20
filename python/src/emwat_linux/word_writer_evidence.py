@@ -121,7 +121,7 @@ def build_word_writer_evidence_report(
             )
             for attribute in config.optional_attributes
         ),
-        duplicate_optional_attribute_ids=_duplicates(optional_ids),
+        duplicate_optional_attribute_ids=_duplicates(tuple(name for name in optional_ids if name)),
         requested_type_attributes=tuple(
             tuple(sorted(attributes.items())) for attributes in config.requested_types
         ),
