@@ -2826,3 +2826,17 @@ CI for the new E2E test and CMake install rules is pending on the latest code/te
 - Documentation-only follow-up UNO run `44797006712` passed.
 - Later commits `315cb5d`, `c327662`, and `bb1d920` update documentation only; the verified code/test tree is unchanged.
 - PR #2 remains open, Draft, unmerged. This verification does not establish Almas end-to-end compatibility, automatic WordConfig mapping, visible Save/Don't Save/Cancel behavior, full application packaging, or physical scanner support.
+
+
+## Expanded Word/Writer evidence and close-retry coverage — 2026-11-20
+
+- Expanded the metadata-only evidence report to include WordConfig root/permission attribute names, field indices, declared twin-delimiter members, duplicate/case-fold collision groups, duplicate setting names, optional-attribute type/encoding and content-element presence, requested-type metadata, and Writer custom-property case-fold collisions.
+- The report continues to exclude all field/settings/optional-attribute values, document text, image bytes, and custom-property values. Twin syntax is parsed, but no twin-to-Writer association or automatic mapping is inferred.
+- Updated `OptionalAttribute` parsing to preserve whether a `<content>` element exists independently of whether it contains text. This distinguishes absent content from an explicitly empty content element; the new field has a default for compatibility with direct constructors.
+- Added tests for duplicate and case-fold collisions, empty versus missing optional content, missing optional IDs, declared twin syntax, invalid input types, and sensitive-value exclusion.
+- Added a Writer close regression test: after a successful snapshot on a cancelled close attempt, a subsequent attempt must take a fresh snapshot and must not mark the session closed until `notifyClosed`.
+- Python run `44798087534` on code/test commit `491ca49a`: **224 tests, 222 passed, 2 optional skips**.
+- Native run `44798087414` on the same code/test commit: normal CTest **4/4**, ASan/UBSan CTest **4/4**, and Debian package lifecycle all passed.
+- UNO run `44797952771` on close-retry test commit `226e0205`: **19 tests passed**. A further adapter integration test now checks twin metadata and explicitly empty optional content; fresh Python, UNO, and Native workflows for commit `41e15bbe` are queued.
+- An intermediate Python run failed on an obsolete assertion after the evidence schema changed; the assertion was corrected, and the subsequent 224-test run passed. No unresolved test failure is being hidden.
+- Automatic WordConfig writes remain disabled pending a sanitized matching Almas Word + wordConfig fixture and verified expected output. Visible Save / Don't Save / Cancel remains an outstanding interactive acceptance test.
