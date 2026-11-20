@@ -4,6 +4,9 @@ from unittest.mock import patch
 from threading import Event, Lock
 from pathlib import Path
 
+from emwat_linux.word_config import parse_word_config
+from emwat_linux.writer_inspector import WriterDocumentCatalog
+
 from emwat_linux.libreoffice_adapter import (
     LibreOfficeAdapter,
     _OfficeHandle,
