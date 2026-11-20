@@ -1199,3 +1199,13 @@ Do not implement guessed `signData` joining or claim end-to-end Almas registrati
 - Corrected head `4c571a74be9c75ad6fa0b7b823bcd6a3e8d88f28`: Python run `44796996459` passed 220 tests (218 passed, 2 optional skips); UNO run `44796996426` passed 18 tests including the new audit regression and real Writer roundtrip.
 - Docs-triggered UNO run `44797006712` also passed. Native build/CTest/staged install passed; package lifecycle and ASan/UBSan were still running at last poll.
 - Continue polling Native run `44796996414`; keep PR #2 open, Draft and unmerged.
+
+
+## 2026-11-20 — complete CI checkpoint
+
+- Verified code/test head: `4c571a74be9c75ad6fa0b7b823bcd6a3e8d88f28`.
+- Python run `44796996459`: 220 tests, 218 passed, 2 optional skips.
+- UNO run `44796996426`: 18 tests passed, including the new read-only adapter evidence audit and real Writer roundtrip.
+- Native run `44796996414`: build/CTest, staged install, Debian package install/upgrade/removal lifecycle, and ASan/UBSan passed. Both normal and sanitizer CTest report 4/4 passed.
+- Docs-only UNO run `44797006712` passed. Later commits through `bb1d920` only update status/handoff documentation after the verified code/test head.
+- PR #2 remains open, Draft and unmerged. Do not claim live Almas E2E, automatic WordConfig field mapping, visible Save/Don't Save/Cancel parity, complete desktop installer, or physical scanner/ADF/duplex validation.
