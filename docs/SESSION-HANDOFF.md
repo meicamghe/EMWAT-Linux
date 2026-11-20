@@ -1221,3 +1221,12 @@ Do not implement guessed `signData` joining or claim end-to-end Almas registrati
 - UNO run `44797952771` on `226e0205`: 19 tests passed. New adapter integration coverage for twin metadata and empty optional content is in commit `41e15bbe`; poll its Python/UNO/Native workflows `44798367250`, `44798367221`, and `44798367187`.
 - An intermediate evidence-report test run failed because one assertion still referenced a removed report attribute; corrected immediately and verified by the subsequent 224-test green run.
 - Keep all automatic field writes disabled until the real sanitized Almas fixture and expected output are available. PR #2 stays open, Draft, unmerged.
+
+
+## 2026-11-20 — privacy-safe close trace
+
+- Added `CloseLifecycleTrace` and wired it into Writer close and save listeners. It stores fixed callback names, attempt ordinal, sequence, and monotonic timestamp only; it never stores document or field data and does not infer user choice.
+- Exposed read-only in-memory trace retrieval via `LibreOfficeAdapter.inspect_close_lifecycle_trace(handle)`.
+- Added tests for callback order, retry attempt numbering, allowlisted event names, and absence of payload/path data.
+- Python run `44798818684` on `2feff5bf`: 227 tests, 225 passed, 2 optional skips. UNO `44798818677` and Native `44798818848` still running at last poll.
+- The trace supports the visible Save / Don't Save / Cancel acceptance matrix; it does not itself prove the selected outcome.
