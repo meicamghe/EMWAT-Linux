@@ -4,7 +4,7 @@ Date: 2026-11-20
 
 ## Purpose
 
-`build_word_writer_evidence_report()` creates a metadata-only summary of one parsed `wordConfig` and one Writer structural catalog. It is intended for sanitized fixture analysis before implementing any automatic field mapping.
+`LibreOfficeAdapter.audit_word_writer_evidence(handle, config)` uses `build_word_writer_evidence_report()` to create a metadata-only summary of one parsed `wordConfig` and one Writer structural catalog. It is intended for sanitized fixture analysis before implementing any automatic field mapping.
 
 ## What it reports
 
