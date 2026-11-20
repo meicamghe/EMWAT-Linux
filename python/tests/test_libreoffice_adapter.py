@@ -225,6 +225,33 @@ class LibreOfficeAdapterUnitTests(unittest.TestCase):
         listener.notifyClosed(object())
         self.assertTrue(closed.is_set())
 
+    def test_successful_snapshot_from_cancelled_close_is_replaced_on_retry(self):
+        document = FakeDocument()
+        closed = Event()
+        listener = _DocumentCloseListener(
+            document,
+            "file:///tmp/final.doc",
+            closed.set,
+            fake_snapshot_properties(),
+            Lock(),
+            Event(),
+        )
+
+        listener.queryClosing(object(), False)
+        self.assertTrue(listener.snapshot_ready.is_set())
+        self.assertFalse(closed.is_set())
+
+        # Simulate a cancelled first close; a later close attempt must take a
+        # new snapshot rather than reusing the earlier attempt's result.
+        listener.queryClosing(object(), False)
+        self.assertTrue(listener.snapshot_ready.is_set())
+        self.assertIsNone(listener.snapshot_error)
+        self.assertEqual(len(document.calls), 2)
+        self.assertFalse(closed.is_set())
+
+        listener.notifyClosed(object())
+        self.assertTrue(closed.is_set())
+
     def test_close_returns_final_snapshot_without_an_explicit_save_event(self):
         from emwat_linux.libreoffice_adapter import _DocumentEventListener
 
