@@ -102,6 +102,40 @@ class EditWordHandlerTests(unittest.TestCase):
         self.assertEqual(response.body, b"capture-specific-non-success")
         self.assertEqual(observed, [(DocumentState.DISCARDED, "invoke=per-request-nonce")])
 
+    def test_success_serializer_uses_configured_response_limit(self):
+        service = FakeService(returned_result())
+        call = parse_method_call(
+            b'<emwat version="1.0"><method class="EditWordDocument"/></emwat>'
+        )
+        too_small = create_editword_handler(
+            service,
+            cancel_response_factory=lambda _result, _request: BridgeResponse(b"cancel"),
+            max_response_bytes=8,
+        )
+        from emwat_linux.protocol import ProtocolError
+        with self.assertRaises(ProtocolError):
+            too_small(call, request())
+
+        sufficient = create_editword_handler(
+            service,
+            cancel_response_factory=lambda _result, _request: BridgeResponse(b"cancel"),
+            max_response_bytes=1024,
+        )
+        response = sufficient(call, request())
+        self.assertEqual(response.status, 200)
+        self.assertIn(b"<response-word", response.body)
+
+    def test_response_limit_requires_positive_builtin_integer(self):
+        for value in (True, False, 1.5, 16.0, "16", 0, -1, None):
+            with self.subTest(value=value), self.assertRaisesRegex(
+                ValueError, "max_response_bytes must be a positive integer"
+            ):
+                create_editword_handler(
+                    FakeService(returned_result()),
+                    cancel_response_factory=lambda _result, _request: BridgeResponse(b"cancel"),
+                    max_response_bytes=value,
+                )
+
     def test_invalid_cancel_factory_response_is_rejected(self):
         service = FakeService(cancelled_result())
         handler = create_editword_handler(

@@ -31,8 +31,8 @@ def parse_method_call(payload: bytes, *, max_bytes: int = 16 * 1024 * 1024) -> M
     """
     if not isinstance(payload, bytes):
         raise TypeError("payload must be bytes")
-    if max_bytes <= 0:
-        raise ValueError("max_bytes must be positive")
+    if type(max_bytes) is not int or max_bytes <= 0:
+        raise ValueError("max_bytes must be a positive integer")
     if not payload or len(payload) > max_bytes:
         raise ProtocolError("payload_size_invalid")
 
@@ -99,8 +99,8 @@ def serialize_word_document_response(
         raise TypeError("document must be bytes")
     if not document:
         raise ProtocolError("empty_document")
-    if max_response_bytes <= 0:
-        raise ValueError("max_response_bytes must be positive")
+    if type(max_response_bytes) is not int or max_response_bytes <= 0:
+        raise ValueError("max_response_bytes must be a positive integer")
 
     root = ET.Element("response-word", {"status": "success"})
     return_types = ET.SubElement(root, "return-types")
@@ -109,8 +109,17 @@ def serialize_word_document_response(
         "type",
         {"mimetype": "application/msword", "encryption": "base64"},
     )
+
+    # Base64 output is ASCII and needs no XML escaping. Compute its exact
+    # envelope size before allocating the expanded encoded document.
+    empty_envelope = ET.tostring(root, encoding="utf-8")
+    encoded_size = 4 * ((len(document) + 2) // 3)
+    expected_response_size = len(empty_envelope) + encoded_size + 5
+    if expected_response_size > max_response_bytes:
+        raise ProtocolError("response_size_invalid")
+
     node.text = base64.b64encode(document).decode("ascii")
     response = ET.tostring(root, encoding="utf-8")
-    if len(response) > max_response_bytes:
-        raise ProtocolError("response_size_invalid")
+    if len(response) != expected_response_size:
+        raise ProtocolError("response_size_calculation_mismatch")
     return response

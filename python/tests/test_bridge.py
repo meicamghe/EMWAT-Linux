@@ -36,11 +36,52 @@ class BridgeHTTPServerTests(unittest.TestCase):
         conn.close()
         return result
 
+    def test_origin_allowlists_must_be_sets_of_strings(self):
+        handler = lambda _request: BridgeResponse(b"")
+        for value in ("https://office.example", ["https://office.example"], {None}):
+            with self.subTest(allowed_origins=value), self.assertRaisesRegex(
+                ValueError, "allowed_origins must be a set of non-empty origin strings"
+            ):
+                BridgeHTTPServer(handler, allowed_origins=value)
+        for value in ("https://office.example", ["https://office.example"], {None}):
+            with self.subTest(allowed_parent_origins=value), self.assertRaisesRegex(
+                ValueError, "allowed_parent_origins must be a set of non-empty origin strings"
+            ):
+                BridgeHTTPServer(handler, allowed_parent_origins=value)
+
     def test_only_loopback_bind_is_allowed(self):
         with self.assertRaises(ValueError):
             BridgeHTTPServer(lambda _request: BridgeResponse(b""), host="0.0.0.0")
         with self.assertRaises(ValueError):
             BridgeHTTPServer(lambda _request: BridgeResponse(b""), host="::1")
+
+    def test_constructor_rejects_invalid_integer_bounds(self):
+        factory = lambda **kwargs: BridgeHTTPServer(
+            lambda _request: BridgeResponse(b""), **kwargs
+        )
+        for parameter in ("port", "max_body_bytes", "max_response_bytes"):
+            for value in (True, False, 1.5, 16.0, "16", None):
+                with self.subTest(parameter=parameter, value=value):
+                    with self.assertRaises(ValueError):
+                        factory(**{parameter: value})
+        for parameter in ("max_body_bytes", "max_response_bytes"):
+            for value in (0, -1):
+                with self.subTest(parameter=parameter, value=value):
+                    with self.assertRaises(ValueError):
+                        factory(**{parameter: value})
+
+    def test_constructor_rejects_non_finite_or_invalid_socket_timeouts(self):
+        invalid = (True, False, float("nan"), float("inf"), float("-inf"), 0, -1, "1", 10 ** 1000)
+        for value in invalid:
+            with self.subTest(value=value), self.assertRaises(ValueError):
+                BridgeHTTPServer(
+                    lambda _request: BridgeResponse(b""),
+                    socket_timeout_seconds=value,
+                )
+
+    def test_host_must_be_an_address_string(self):
+        with self.assertRaises(ValueError):
+            BridgeHTTPServer(lambda _request: BridgeResponse(b""), host=2130706433)
 
 
     def test_init_endpoint_returns_captured_bridge_script(self):
@@ -107,6 +148,17 @@ class BridgeHTTPServerTests(unittest.TestCase):
                 )
                 self.assertEqual(status, 400)
                 self.assertEqual(body, b"invalid_invoke_query")
+        self.assertEqual(self.seen, [])
+
+    def test_post_bounds_invoke_query_field_count(self):
+        status, body, _ = self.request(
+            "POST",
+            "/?invoke=1&extra=2&another=3",
+            b"<emwat/>",
+            {"Content-Type": "text/plain", "Origin": "https://office.example"},
+        )
+        self.assertEqual(status, 400)
+        self.assertEqual(body, b"invalid_invoke_query")
         self.assertEqual(self.seen, [])
 
     def test_post_rejects_malformed_invoke_query(self):
@@ -227,6 +279,21 @@ class BridgeHTTPServerTests(unittest.TestCase):
         self.assertEqual(response.status, 411)
         self.assertEqual(response.read(), b"content_length_required")
         conn.close()
+
+    def test_invalid_handler_status_types_are_rejected(self):
+        for status_value in (True, False, 200.5, "200", None, 199, 600):
+            with self.subTest(status=status_value):
+                self.server._handler = lambda _request, value=status_value: BridgeResponse(
+                    b"invalid-status", status=value
+                )
+                status, body, _ = self.request(
+                    "POST",
+                    "/?invoke=invalid-status",
+                    b"x",
+                    {"Origin": "https://office.example"},
+                )
+                self.assertEqual(status, 500)
+                self.assertEqual(body, b"internal_bridge_error")
 
     def test_oversized_handler_response_is_not_sent(self):
         self.server.shutdown()
@@ -361,6 +428,30 @@ class BridgeHTTPServerTests(unittest.TestCase):
         conn.close()
         self.assertEqual(self.seen, [])
 
+
+    def test_constructor_rejects_non_callable_handler(self):
+        for handler in (None, "handler", object()):
+            with self.subTest(handler=handler), self.assertRaisesRegex(
+                ValueError, "handler must be callable"
+            ):
+                BridgeHTTPServer(handler)
+
+    def test_constructor_requires_boolean_origin_policy(self):
+        for value in (None, 0, 1, "false", [], object()):
+            with self.subTest(value=value), self.assertRaisesRegex(
+                ValueError, "require_origin must be a boolean"
+            ):
+                BridgeHTTPServer(
+                    lambda _request: BridgeResponse(b""),
+                    require_origin=value,
+                )
+        # Both explicit boolean settings remain supported.
+        for value in (True, False):
+            server = BridgeHTTPServer(
+                lambda _request: BridgeResponse(b""),
+                require_origin=value,
+            )
+            server.server_close()
 
 if __name__ == "__main__":
     unittest.main()

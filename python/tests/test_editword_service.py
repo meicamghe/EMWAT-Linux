@@ -94,6 +94,29 @@ class EditWordDocumentServiceTests(unittest.TestCase):
             service.process(call)
         self.assertIsNone(office.opened_bytes)
 
+    def test_all_request_limits_require_positive_builtin_integers(self):
+        invalid_values = (True, False, 1.5, 16.0, "16", 0, -1, None)
+        for parameter in (
+            "max_document_bytes",
+            "max_encoded_document_chars",
+            "max_config_bytes",
+            "max_encoded_config_chars",
+        ):
+            for value in invalid_values:
+                with self.subTest(parameter=parameter, value=value):
+                    with self.assertRaisesRegex(ValueError, f"{parameter} must be a positive integer"):
+                        EditWordDocumentService(FakeOffice(), **{parameter: value})
+
+    def test_configured_encoded_config_limit_is_applied_before_office_open(self):
+        office = FakeOffice()
+        service = EditWordDocumentService(
+            office,
+            max_encoded_config_chars=4,
+        )
+        with self.assertRaisesRegex(ValueError, "word_config_invalid"):
+            service.process(make_call())
+        self.assertIsNone(office.opened_bytes)
+
 
 if __name__ == "__main__":
     unittest.main()

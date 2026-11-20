@@ -1,3 +1,17 @@
+## 2026 11 18 — scanner input validation test
+
+- Added hardware-independent regression checks that `SaneScannerBackend.get_capabilities("")` and `scan_one("")` reject an empty device identifier before entering SANE.
+- Native image core workflow `44244437647` completed successfully on `ed811a14f9d151a8a386c67b80b26b3d155f5c24`: build-test and ASan/UBSan sanitizer-test both passed, including their test steps.
+- Included in draft PR #2; this does not claim validation against a physical scanner, ADF, or duplex device.
+
+## 2026-11-18 — opt-in recovery retention implementation (PR #2)
+
+- Added `recovery_retention.py` with explicit age and/or snapshot-count limits. It keeps the newest valid snapshots, removes expired/excess sessions only when explicitly invoked, and returns removed session IDs.
+- Exposed the policy through `RecoverySnapshotService.apply_retention()`; there is no default policy, background timer, or implicit deletion. At least one positive limit is required and count limits cannot be zero.
+- Added unit tests for policy validation, age pruning, newest-N retention, service integration, and no-op behavior. Invalid/unverifiable entries are not enumerated by the store and are not deleted by this policy.
+- Python bridge CI passed on the final PR head `f1a8260589d6f5fbd8fda0a2e45bd29c7741ff4e`: runs `44244362768` and `44244353561` both completed successfully.
+- Draft PR: https://github.com/meicamghe/EMWAT-Linux/pull/2. This is not merged to main. Retention is not encryption; encryption-at-rest, user-facing policy controls, and a real Recovery UI remain open.
+
 ## 2026-11-18 — CI verification and recovery trigger coverage
 
 - Native image core run `44240525477` completed successfully on `ecf4fa8a8784b2403272ecd79186fd073e1a8e1b`: both `build-test` and `sanitizer-test` passed, including the ASan/UBSan test step.
@@ -1145,3 +1159,82 @@ Do not implement guessed `signData` joining or claim end-to-end Almas registrati
 - It wraps `TWordViwer.LoadDocument` in `CoInitialize`/`CoUninitialize`, passes the `TEmwatInvokeParam` pointer and output string, stores the returned method result, and sets `bResultSet=1`.
 - `LoadDocument` extracts `DocFileName` from `wordBody`, writes document data to a local `TFileStream(fmCreate)`, parses `wordConfig` XML, then calls `OnTmrAutoSave` with that file path. The path is stored in viewer `+0xA0` and later packaged as `.easd` inside `.easz`.
 - Next priority: determine how the returned string and `bResultSet` become the actual HTTP response body, and trace the full `wordConfig`/`letterImages`/`signData` handling.
+
+
+## Accepted product decisions — 2026-11-18 (do not reopen implicitly)
+
+- Linux only. Do not develop a new Windows app, UI, or installer; Windows is an analysis/compatibility reference only.
+- GTK 4 + Python/PyGObject is selected for a small, free/open-source Linux control UI. Do not use Qt/PySide unless the owner explicitly changes the decision.
+- LibreOffice Writer via UNO is the document editor. GTK is only for EMWAT status, settings, recovery, scanner entry points, and diagnostics.
+- Main product workflow: Almas request/document → local EMWAT protocol bridge → LibreOffice Writer editing → final document returned to Almas in the verified response format.
+- Keep bridge, document coordinator, UNO adapter, recovery, and scanner core independent from GTK; core and tests must run headlessly.
+- No paid toolkit, subscription, or mandatory cloud service. Check license obligations for all distributed dependencies.
+- Source of truth: `docs/LINUX-PRODUCT-DECISIONS.md`; also reflected in README, PROJECT-STATUS, Ubuntu installation guide, and recovery picker UX.
+- Next implementation priority remains real Almas/browser wire-contract evidence and full Writer document roundtrip, not GTK screen proliferation.
+
+
+## EMWAT Linux — Writer close evidence and CI handoff (2026-11-20)
+
+- Latest branch checkpoint: `79c017e757485dbd5fb19b7a7e1fd13beb05353c`; PR #2 remains open/Draft/unmerged.
+- Added `docs/WRITER-CLOSE-DISCARD-INVESTIGATION.md`: UNO `queryClosing`/terminal-close semantics are documented, but interactive Writer Save / Don't Save / Cancel ordering remains unverified. Do not infer discard from `notifyClosed` or `disposing`.
+- Python CI run `44784556864`: success.
+- LibreOffice UNO CI run `44784556817`: success; 17 tests passed, including real UNO open/close/export and EditWord response-handler integration.
+- Native CI run `44784556764`: package lifecycle and normal build/CTest/staged install passed; ASan/UBSan was still running at the checkpoint.
+- Next: poll Native sanitizer job, then record final combined CI status. Continue the Writer visible-UI Save / Don't Save / Cancel test design. Do not ship a daemon/desktop entrypoint or claim production readiness until Origin allowlists, verified close response policy, lifecycle supervision, secure recovery key custody and Almas wire fixtures are resolved.
+
+
+## 2026-11-20 — parallel Word/Writer evidence and close acceptance work
+
+- Added `python/src/emwat_linux/word_writer_evidence.py`: metadata-only summary of WordConfig field IDs, declared MIME/encoding, external parameter IDs, duplicates, settings, optional attributes and requested types, alongside Writer structural and custom-property names. It excludes field values, body text, image bytes and property values.
+- Exposed `LibreOfficeAdapter.audit_word_writer_evidence(handle, config)` under the document snapshot lock. It is read-only; no inferred mapping is applied.
+- Added tests for the report and adapter entry point. Initial report-only Python CI run `44796731919` passed 219 tests (217 passed, 2 optional skips). Newer adapter integration/test commit `4c571a74` has fresh CI runs queued.
+- Added `docs/WORD-WRITER-EVIDENCE-REPORT.md` and `docs/WRITER-VISIBLE-CLOSE-ACCEPTANCE.md`. The latter defines visible Writer Save, Don't Save, Cancel and retry acceptance, including output-marker checks and non-sensitive callback diagnostics.
+- Keep automatic WordConfig mapping disabled until a sanitized matching Word + wordConfig fixture and expected output are supplied and independently verified. Do not infer signData separators or property ordering.
+- Next: poll CI runs for commit `4c571a74be9c75ad6fa0b7b823bcd6a3e8d88f28` (Python `44796996459`, Native `44796996414`, UNO `44796996426`); then poll docs-triggered UNO run `44797006712`. PR #2 stays open, Draft and unmerged.
+
+## 2026-11-20 — corrected adapter evidence audit verification
+
+- Added a lock-protected, read-only `LibreOfficeAdapter.audit_word_writer_evidence()` entry point for the metadata-only report.
+- Corrected the test module imports after the first intermediate push; that intermediate CI attempt failed and is superseded by the corrected code/test head.
+- Corrected head `4c571a74be9c75ad6fa0b7b823bcd6a3e8d88f28`: Python run `44796996459` passed 220 tests (218 passed, 2 optional skips); UNO run `44796996426` passed 18 tests including the new audit regression and real Writer roundtrip.
+- Docs-triggered UNO run `44797006712` also passed. Native build/CTest/staged install passed; package lifecycle and ASan/UBSan were still running at last poll.
+- Continue polling Native run `44796996414`; keep PR #2 open, Draft and unmerged.
+
+
+## 2026-11-20 — complete CI checkpoint
+
+- Verified code/test head: `4c571a74be9c75ad6fa0b7b823bcd6a3e8d88f28`.
+- Python run `44796996459`: 220 tests, 218 passed, 2 optional skips.
+- UNO run `44796996426`: 18 tests passed, including the new read-only adapter evidence audit and real Writer roundtrip.
+- Native run `44796996414`: build/CTest, staged install, Debian package install/upgrade/removal lifecycle, and ASan/UBSan passed. Both normal and sanitizer CTest report 4/4 passed.
+- Docs-only UNO run `44797006712` passed. Later commits through `bb1d920` only update status/handoff documentation after the verified code/test head.
+- PR #2 remains open, Draft and unmerged. Do not claim live Almas E2E, automatic WordConfig field mapping, visible Save/Don't Save/Cancel parity, complete desktop installer, or physical scanner/ADF/duplex validation.
+
+
+## 2026-11-20 — expanded evidence report and close retry tests
+
+- Evidence report now includes field indices, twin delimiter members, duplicate/case-fold collision groups, root/permission attribute names, optional attribute type/encoding and content-element presence, plus Writer property collision metadata. No values or document text are exposed.
+- `OptionalAttribute.has_content_element` preserves the distinction between no `<content>` node and an explicitly empty node.
+- Added tests for missing optional IDs, empty content nodes, twin identifiers, collision handling, and redaction.
+- Added a close listener regression proving that a successful snapshot from a cancelled attempt is replaced on the next attempt and that terminal close notification is required.
+- Python run `44798087534` on `491ca49a`: 224 tests, 222 passed, 2 optional skips. Native run `44798087414`: build/CTest 4/4, sanitizer CTest 4/4, package lifecycle success.
+- UNO run `44797952771` on `226e0205`: 19 tests passed. New adapter integration coverage for twin metadata and empty optional content is in commit `41e15bbe`; poll its Python/UNO/Native workflows `44798367250`, `44798367221`, and `44798367187`.
+- An intermediate evidence-report test run failed because one assertion still referenced a removed report attribute; corrected immediately and verified by the subsequent 224-test green run.
+- Keep all automatic field writes disabled until the real sanitized Almas fixture and expected output are available. PR #2 stays open, Draft, unmerged.
+
+
+## 2026-11-20 — privacy-safe close trace
+
+- Added `CloseLifecycleTrace` and wired it into Writer close and save listeners. It stores fixed callback names, attempt ordinal, sequence, and monotonic timestamp only; it never stores document or field data and does not infer user choice.
+- Exposed read-only in-memory trace retrieval via `LibreOfficeAdapter.inspect_close_lifecycle_trace(handle)`.
+- Added tests for callback order, retry attempt numbering, allowlisted event names, and absence of payload/path data.
+- Python run `44798818684` on `2feff5bf`: 227 tests, 225 passed, 2 optional skips. UNO `44798818677` and Native `44798818848` still running at last poll.
+- The trace supports the visible Save / Don't Save / Cancel acceptance matrix; it does not itself prove the selected outcome.
+
+
+## Latest close-trace CI state
+
+- Python `44798818684`: 227 tests, 225 passed, 2 optional skips.
+- Native `44798818848`: normal build/CTest, ASan/UBSan and DEB package lifecycle all passed.
+- UNO `44798818677`: LibreOffice installation and runtime verification passed; the test step remains in progress. Poll it before claiming close-trace integration is UNO-verified.
+- PR #2 remains open, Draft, unmerged.

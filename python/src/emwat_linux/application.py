@@ -8,6 +8,7 @@ implicitly.
 from __future__ import annotations
 
 from collections.abc import Mapping
+from pathlib import Path
 
 from emwat_linux.bridge import BridgeHTTPServer
 from emwat_linux.dispatcher import MethodHandler, XMLMethodDispatcher
@@ -24,8 +25,8 @@ def create_bridge_server(
     allowed_parent_origins: frozenset[str] = frozenset(),
     host: str = "127.0.0.1",
     port: int = 1984,
-    max_request_bytes: int = 16 * 1024 * 1024,
-    max_response_bytes: int = 16 * 1024 * 1024,
+    max_request_bytes: int = 128 * 1024 * 1024,
+    max_response_bytes: int = 96 * 1024 * 1024,
     socket_timeout_seconds: float = 10.0,
 ) -> BridgeHTTPServer:
     """Build the loopback HTTP server with an explicit XML method registry."""
@@ -51,11 +52,13 @@ def create_libreoffice_bridge_server(
     cancel_response_factory: Callable[[DocumentRunResult, BridgeRequest], BridgeResponse],
     allowed_parent_origins: frozenset[str] = frozenset(),
     office_adapter: OfficeAdapter | None = None,
+    encrypt_recovery: bool = False,
+    recovery_root: str | Path | None = None,
     additional_handlers: Mapping[str, MethodHandler] | None = None,
     host: str = "127.0.0.1",
     port: int = 1984,
-    max_request_bytes: int = 16 * 1024 * 1024,
-    max_response_bytes: int = 16 * 1024 * 1024,
+    max_request_bytes: int = 128 * 1024 * 1024,
+    max_response_bytes: int = 96 * 1024 * 1024,
     socket_timeout_seconds: float = 10.0,
 ) -> BridgeHTTPServer:
     """Compose the captured EditWordDocument route with LibreOffice UNO.
@@ -63,16 +66,41 @@ def create_libreoffice_bridge_server(
     The cancellation response remains a required injection because its exact
     Windows wire envelope has not been captured. Additional method handlers
     may be supplied, but cannot replace EditWordDocument.
+
+    The bounded defaults support the service's 64 MiB decoded document limit:
+    a 128 MiB request cap accommodates Base64 document/config payloads and XML
+    framing, while a 96 MiB response cap accommodates Base64 expansion of a
+    64 MiB final document plus its XML envelope. Deployments may lower either
+    limit explicitly; the HTTP, dispatcher, and response serializer share them.
+
+    Set ``encrypt_recovery=True`` to explicitly obtain the AES key from the
+    freedesktop Secret Service and inject an encrypted recovery store. This
+    option is rejected when a caller supplies its own adapter; the default
+    configuration remains the plaintext store.
     """
     from emwat_linux.editword_handler import create_editword_handler
     from emwat_linux.editword_service import EditWordDocumentService
     from emwat_linux.libreoffice_adapter import LibreOfficeAdapter
 
-    office = office_adapter if office_adapter is not None else LibreOfficeAdapter()
+    if office_adapter is not None and encrypt_recovery:
+        raise ValueError(
+            "encrypt_recovery cannot be combined with a caller-supplied office_adapter; "
+            "construct that adapter with an encrypted recovery_store explicitly"
+        )
+    if office_adapter is not None:
+        office = office_adapter
+    elif encrypt_recovery:
+        from emwat_linux.recovery_key_provider import create_secret_service_encrypted_store
+
+        recovery_store = create_secret_service_encrypted_store(recovery_root)
+        office = LibreOfficeAdapter(recovery_store=recovery_store)
+    else:
+        office = LibreOfficeAdapter()
     service = EditWordDocumentService(office)
     edit_word_handler = create_editword_handler(
         service,
         cancel_response_factory=cancel_response_factory,
+        max_response_bytes=max_response_bytes,
     )
     registered_handlers = dict(additional_handlers or {})
     registered_handlers["EditWordDocument"] = edit_word_handler

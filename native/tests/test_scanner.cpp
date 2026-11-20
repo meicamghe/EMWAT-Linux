@@ -1,6 +1,8 @@
 #include "emwat/scanner.hpp"
+#include "emwat/scanner_detail.hpp"
 
 #include <stdexcept>
+#include <limits>
 #include <utility>
 
 #ifdef NDEBUG
@@ -39,6 +41,53 @@ public:
 };
 
 int main() {
+    // Fixed-point DPI conversion must not overflow signed 16.16 SANE_Word.
+
+    // SANE_TYPE_FIXED uses a signed 16.16 SANE_Word. Keep conversion in range
+    // and reject non-finite values without relying on an overflowing SANE_FIX.
+    assert(detail::encode_sane_fixed_resolution(300.0).value() == 300 * 65536);
+    assert(detail::encode_sane_fixed_resolution(32767.0).has_value());
+    assert(!detail::encode_sane_fixed_resolution(32768.0).has_value());
+    assert(!detail::encode_sane_fixed_resolution(
+        std::numeric_limits<double>::infinity()).has_value());
+    assert(!detail::encode_sane_fixed_resolution(
+        std::numeric_limits<double>::quiet_NaN()).has_value());
+
+    // Invalid identifiers must be rejected before touching the SANE runtime.
+    SaneScannerBackend sane_backend;
+    bool invalid_id_rejected = false;
+    try { (void)sane_backend.get_capabilities(""); }
+    catch (const ScannerError&) { invalid_id_rejected = true; }
+    assert(invalid_id_rejected);
+    invalid_id_rejected = false;
+    try { (void)sane_backend.scan_one(""); }
+    catch (const ScannerError&) { invalid_id_rejected = true; }
+    assert(invalid_id_rejected);
+
+    invalid_id_rejected = false;
+    try { (void)sane_backend.get_capabilities("test:\nscanner"); }
+    catch (const ScannerError&) { invalid_id_rejected = true; }
+    assert(invalid_id_rejected);
+    invalid_id_rejected = false;
+    try { (void)sane_backend.scan_one(std::string("test:scanner\0hidden", 19)); }
+    catch (const ScannerError&) { invalid_id_rejected = true; }
+    assert(invalid_id_rejected);
+
+    // Invalid scan options are rejected before SANE initialization/open.
+    const auto expect_invalid_options = [&](const ScanOptions& options) {
+        bool rejected = false;
+        try { (void)sane_backend.scan_one("test:nonexistent", options); }
+        catch (const ScannerError&) { rejected = true; }
+        assert(rejected);
+    };
+    expect_invalid_options(ScanOptions{std::numeric_limits<double>::quiet_NaN(), {}, {}});
+    expect_invalid_options(ScanOptions{std::numeric_limits<double>::infinity(), {}, {}});
+    expect_invalid_options(ScanOptions{0.0, {}, {}});
+    expect_invalid_options(ScanOptions{100001.0, {}, {}});
+    expect_invalid_options(ScanOptions{{}, std::string{}, {}});
+    expect_invalid_options(ScanOptions{{}, std::string("Color\n"), {}});
+    expect_invalid_options(ScanOptions{{}, {}, std::string("Flatbed\0hidden", 15)});
+
     FakeScannerBackend backend;
     backend.devices.push_back({"test:scanner0", "Example", "Virtual Scanner", "flatbed"});
     const auto devices = backend.list_devices();

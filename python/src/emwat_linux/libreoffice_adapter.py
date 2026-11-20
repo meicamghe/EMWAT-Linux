@@ -12,6 +12,7 @@ are intentionally not guessed here. Those mappings require verified fixtures.
 from __future__ import annotations
 
 import importlib
+import math
 from pathlib import Path
 import shutil
 import socket
@@ -21,12 +22,18 @@ from threading import Event, Lock, Thread
 import time
 from typing import Callable
 
+from emwat_linux.close_trace import CloseLifecycleEvent, CloseLifecycleTrace
 from emwat_linux.editword_request import EditWordDocumentRequest
 from emwat_linux.office_adapter import CloseDisposition, OfficeCloseEvent
 from emwat_linux.recovery_store import RecoverySnapshotStore
 from emwat_linux.writer_fields import refresh_writer_text_fields
 from emwat_linux.writer_inspector import WriterDocumentCatalog, inspect_writer_document
 from emwat_linux.writer_properties import set_custom_document_properties
+from emwat_linux.word_config import WordDocumentConfig
+from emwat_linux.word_writer_evidence import (
+    WordWriterEvidenceReport,
+    build_word_writer_evidence_report,
+)
 
 
 _CFB_SIGNATURE = bytes.fromhex("D0CF11E0A1B11AE1")
@@ -135,6 +142,7 @@ class _DocumentCloseListener:
         snapshot_properties: tuple[object, ...],
         snapshot_lock: Lock,
         recovery_stop: Event,
+        trace: CloseLifecycleTrace | None = None,
     ) -> None:
         self._document = document
         self._output_url = output_url
@@ -142,10 +150,13 @@ class _DocumentCloseListener:
         self._snapshot_properties = snapshot_properties
         self._snapshot_lock = snapshot_lock
         self._recovery_stop = recovery_stop
+        self._trace = trace
         self.snapshot_error: Exception | None = None
         self.snapshot_ready = Event()
 
     def queryClosing(self, _event: object, _gets_ownership: bool) -> None:
+        if self._trace is not None:
+            self._trace.record("query_closing")
         # A close attempt can be vetoed/cancelled by the office UI and retried.
         # Reset only this attempt's result; periodic recovery remains active until
         # notifyClosed confirms that the document really closed.
@@ -155,19 +166,28 @@ class _DocumentCloseListener:
             # storeToURL writes a copy and does not change the document's URL.
             with self._snapshot_lock:
                 self._document.storeToURL(self._output_url, self._snapshot_properties)
+            if self._trace is not None:
+                self._trace.record("snapshot_succeeded")
         except Exception as exc:  # retained internally; never returned to browser
             self.snapshot_error = exc
+            if self._trace is not None:
+                self._trace.record("snapshot_failed")
         finally:
             self.snapshot_ready.set()
 
     def notifyClosing(self, _event: object) -> None:
-        return
+        if self._trace is not None:
+            self._trace.record("notify_closing")
 
     def notifyClosed(self, _event: object) -> None:
+        if self._trace is not None:
+            self._trace.record("notify_closed")
         self._recovery_stop.set()
         self._on_closed()
 
     def disposing(self, _event: object) -> None:
+        if self._trace is not None:
+            self._trace.record("disposing")
         self._recovery_stop.set()
         self._on_closed()
 
@@ -177,11 +197,21 @@ class _DocumentEventListener:
 
     _SAVE_EVENTS = frozenset({"OnSaveDone", "OnSaveAsDone"})
 
-    def __init__(self, callback: Callable[[], None]) -> None:
+    def __init__(
+        self,
+        callback: Callable[[], None],
+        trace: CloseLifecycleTrace | None = None,
+    ) -> None:
         self._callback = callback
+        self._trace = trace
 
     def documentEventOccured(self, event: object) -> None:
-        if getattr(event, "EventName", "") in self._SAVE_EVENTS:
+        event_name = getattr(event, "EventName", "")
+        if event_name in self._SAVE_EVENTS:
+            if self._trace is not None:
+                self._trace.record(
+                    "save_done" if event_name == "OnSaveDone" else "save_as_done"
+                )
             self._callback()
 
     def disposing(self, _event: object) -> None:
@@ -210,6 +240,7 @@ class _OfficeHandle:
         self.recovery_error: Exception | None = None
         self.snapshot_properties: tuple[object, ...] = ()
         self._closed_once = False
+        self.close_trace = CloseLifecycleTrace()
 
     def mark_closed(self) -> None:
         if not self._closed_once:
@@ -238,12 +269,21 @@ class LibreOfficeAdapter:
         recovery_store: RecoverySnapshotStore | None = None,
         recovery_interval_seconds: float = 10.0,
     ) -> None:
-        if connect_timeout_seconds <= 0 or poll_interval_seconds <= 0:
-            raise ValueError("connection and polling timeouts must be positive")
-        if close_timeout_seconds is not None and close_timeout_seconds <= 0:
-            raise ValueError("close timeout must be positive when configured")
-        if recovery_interval_seconds <= 0:
-            raise ValueError("recovery interval must be positive")
+        def positive_finite_seconds(value: object) -> bool:
+            if isinstance(value, bool) or not isinstance(value, (int, float)):
+                return False
+            try:
+                finite = math.isfinite(float(value))
+            except (OverflowError, ValueError):
+                return False
+            return finite and value > 0
+
+        if not positive_finite_seconds(connect_timeout_seconds) or not positive_finite_seconds(poll_interval_seconds):
+            raise ValueError("connection and polling timeouts must be finite positive numbers")
+        if close_timeout_seconds is not None and not positive_finite_seconds(close_timeout_seconds):
+            raise ValueError("close timeout must be a finite positive number when configured")
+        if not positive_finite_seconds(recovery_interval_seconds):
+            raise ValueError("recovery interval must be a finite positive number")
         self._soffice_path = soffice_path
         self._connect_timeout = connect_timeout_seconds
         self._poll_interval = poll_interval_seconds
@@ -367,10 +407,11 @@ class LibreOfficeAdapter:
                 snapshot_properties,
                 handle.snapshot_lock,
                 handle.recovery_stop,
+                handle.close_trace,
             )
             handle.close_listener = close_listener
             modify_listener = _ModifyListener(on_modified)
-            save_listener = _DocumentEventListener(on_saved)
+            save_listener = _DocumentEventListener(on_saved, handle.close_trace)
             modify_proxy = _uno_listener_proxy(
                 modify_listener,
                 uno_module=uno,
@@ -457,12 +498,35 @@ class LibreOfficeAdapter:
         prop.Value = value
         return prop
 
+    def inspect_close_lifecycle_trace(
+        self,
+        handle: object,
+    ) -> tuple[CloseLifecycleEvent, ...]:
+        """Return fixed-name close/save callback metadata without document data."""
+        if not isinstance(handle, _OfficeHandle):
+            raise TypeError("invalid_libreoffice_handle")
+        return handle.close_trace.snapshot()
+
     def inspect_document(self, handle: object) -> WriterDocumentCatalog:
         """Inventory Writer structure without exposing document text or values."""
         if not isinstance(handle, _OfficeHandle):
             raise TypeError("invalid_libreoffice_handle")
         with handle.snapshot_lock:
             return inspect_writer_document(handle.document)
+
+    def audit_word_writer_evidence(
+        self,
+        handle: object,
+        config: WordDocumentConfig,
+    ) -> WordWriterEvidenceReport:
+        """Compare request metadata with Writer structure without mutation."""
+        if not isinstance(handle, _OfficeHandle):
+            raise TypeError("invalid_libreoffice_handle")
+        if not isinstance(config, WordDocumentConfig):
+            raise TypeError("invalid_word_document_config")
+        with handle.snapshot_lock:
+            catalog = inspect_writer_document(handle.document)
+            return build_word_writer_evidence_report(config, catalog)
 
     def apply_custom_property_updates(
         self,

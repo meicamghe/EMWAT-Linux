@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import json
+import math
 import re
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from ipaddress import ip_address
@@ -50,17 +51,41 @@ class BridgeHTTPServer:
         socket_timeout_seconds: float = 10.0,
         require_origin: bool = True,
     ) -> None:
+        if not callable(handler):
+            raise ValueError("handler must be callable")
+        if type(require_origin) is not bool:
+            raise ValueError("require_origin must be a boolean")
+        if not isinstance(host, str):
+            raise ValueError("host must be an IPv4 loopback address string")
         address = ip_address(host)
         if address.version != 4 or not address.is_loopback:
             raise ValueError("EMWAT bridge must bind to an IPv4 loopback address")
-        if not 0 <= port <= 65535:
-            raise ValueError("invalid TCP port")
-        if max_body_bytes <= 0:
-            raise ValueError("max_body_bytes must be positive")
-        if max_response_bytes <= 0:
-            raise ValueError("max_response_bytes must be positive")
-        if socket_timeout_seconds <= 0:
-            raise ValueError("socket_timeout_seconds must be positive")
+        if type(port) is not int or not 0 <= port <= 65535:
+            raise ValueError("port must be an integer in the TCP port range")
+        if type(max_body_bytes) is not int or max_body_bytes <= 0:
+            raise ValueError("max_body_bytes must be a positive integer")
+        if type(max_response_bytes) is not int or max_response_bytes <= 0:
+            raise ValueError("max_response_bytes must be a positive integer")
+        if (
+            isinstance(socket_timeout_seconds, bool)
+            or not isinstance(socket_timeout_seconds, (int, float))
+        ):
+            raise ValueError("socket_timeout_seconds must be a finite positive number")
+        try:
+            timeout_is_finite = math.isfinite(float(socket_timeout_seconds))
+        except (OverflowError, ValueError):
+            timeout_is_finite = False
+        if not timeout_is_finite or socket_timeout_seconds <= 0:
+            raise ValueError("socket_timeout_seconds must be a finite positive number")
+
+        if not isinstance(allowed_origins, (set, frozenset)) or any(
+            not isinstance(origin, str) or not origin for origin in allowed_origins
+        ):
+            raise ValueError("allowed_origins must be a set of non-empty origin strings")
+        if not isinstance(allowed_parent_origins, (set, frozenset)) or any(
+            not isinstance(origin, str) or not origin for origin in allowed_parent_origins
+        ):
+            raise ValueError("allowed_parent_origins must be a set of non-empty origin strings")
 
         self._handler = handler
         self._max_body_bytes = max_body_bytes
@@ -217,6 +242,7 @@ class BridgeHTTPServer:
                         parsed.query,
                         keep_blank_values=True,
                         strict_parsing=True,
+                        max_num_fields=1,
                     )
                 except ValueError:
                     self._send(400, b"invalid_invoke_query", "text/plain; charset=utf-8")
@@ -249,7 +275,7 @@ class BridgeHTTPServer:
                     response = owner._handler(request)
                     if not isinstance(response, BridgeResponse):
                         raise TypeError("bridge handler must return BridgeResponse")
-                    if not 200 <= response.status <= 599:
+                    if type(response.status) is not int or not 200 <= response.status <= 599:
                         raise ValueError("invalid HTTP response status")
                     if not isinstance(response.body, bytes) or len(response.body) > owner._max_response_bytes:
                         raise ValueError("invalid or oversized response body")

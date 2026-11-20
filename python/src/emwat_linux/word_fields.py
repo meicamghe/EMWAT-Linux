@@ -117,6 +117,8 @@ def build_word_custom_property_field_maps(
     If omitted, the reference remains None. When supplied, the two sequences
     must have equal lengths so index alignment cannot silently drift.
     """
+    if any(not isinstance(name, str) for name in property_names):
+        raise ValueError("custom_property_names_must_be_strings")
     if xml_fields is not None and len(xml_fields) != len(property_names):
         raise ValueError("xml_fields_must_match_property_names_length")
 

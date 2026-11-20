@@ -1,4 +1,5 @@
 #include "emwat/scanner.hpp"
+#include "emwat/scanner_detail.hpp"
 
 #include <sane/sane.h>
 
@@ -6,6 +7,7 @@
 #include <cmath>
 #include <cstring>
 #include <array>
+#include <cctype>
 #include <limits>
 #include <mutex>
 #include <string>
@@ -54,6 +56,36 @@ private:
     bool active_{};
 };
 
+void validate_device_id(const std::string& device_id) {
+    if (device_id.empty())
+        throw ScannerError("scanner device id cannot be empty");
+    if (std::any_of(device_id.begin(), device_id.end(), [](unsigned char value) {
+            return std::iscntrl(value) != 0;
+        }))
+        throw ScannerError("scanner device id contains a control character");
+}
+
+void validate_scan_options(const ScanOptions& options) {
+    if (options.resolution_dpi &&
+        (!std::isfinite(*options.resolution_dpi) ||
+         *options.resolution_dpi <= 0.0 ||
+         *options.resolution_dpi > 100000.0)) {
+        throw ScannerError("Scan resolution must be finite and between 0 and 100000 DPI");
+    }
+    const auto validate_text = [](const std::optional<std::string>& value,
+                                  const char* option_name) {
+        if (!value) return;
+        if (value->empty() ||
+            std::any_of(value->begin(), value->end(), [](unsigned char ch) {
+                return std::iscntrl(ch) != 0;
+            })) {
+            throw ScannerError(std::string("Invalid scanner ") + option_name + " option");
+        }
+    };
+    validate_text(options.mode, "mode");
+    validate_text(options.source, "source");
+}
+
 void set_string_option(SANE_Handle handle, const char* name, const std::string& value) {
     SANE_Int index = 0;
     const SANE_Option_Descriptor* descriptor = nullptr;
@@ -89,8 +121,15 @@ void set_resolution_option(SANE_Handle handle, double dpi) {
         (descriptor->cap & SANE_CAP_INACTIVE) || descriptor->size != static_cast<SANE_Int>(sizeof(SANE_Word)) ||
         (descriptor->type != SANE_TYPE_INT && descriptor->type != SANE_TYPE_FIXED))
         throw ScannerError("Scanner resolution option is unavailable or incompatible");
-    SANE_Word value = descriptor->type == SANE_TYPE_FIXED
-        ? SANE_FIX(dpi) : static_cast<SANE_Word>(std::lround(dpi));
+    SANE_Word value = 0;
+    if (descriptor->type == SANE_TYPE_FIXED) {
+        const auto fixed_value = detail::encode_sane_fixed_resolution(dpi);
+        if (!fixed_value)
+            throw ScannerError("Scan resolution cannot be represented by the scanner fixed-point option");
+        value = static_cast<SANE_Word>(*fixed_value);
+    } else {
+        value = static_cast<SANE_Word>(std::lround(dpi));
+    }
     SANE_Int info = 0;
     const auto status = sane_control_option(handle, index, SANE_ACTION_SET_VALUE, &value, &info);
     if (status != SANE_STATUS_GOOD)
@@ -219,7 +258,7 @@ std::vector<ScannerDevice> SaneScannerBackend::list_devices() {
 }
 
 ScannerCapabilities SaneScannerBackend::get_capabilities(const std::string& device_id) {
-    if (device_id.empty()) throw ScannerError("scanner device id cannot be empty");
+    validate_device_id(device_id);
     std::lock_guard<std::mutex> lock(sane_mutex());
     SaneSession session;
     SaneHandle device(device_id);
@@ -231,7 +270,8 @@ ScannerCapabilities SaneScannerBackend::get_capabilities(const std::string& devi
 }
 
 ImagePage SaneScannerBackend::scan_one(const std::string& device_id, const ScanOptions& options) {
-    if (device_id.empty()) throw ScannerError("scanner device id cannot be empty");
+    validate_device_id(device_id);
+    validate_scan_options(options);
     std::lock_guard<std::mutex> lock(sane_mutex());
     SaneSession session;
     SaneHandle device(device_id);

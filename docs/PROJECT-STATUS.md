@@ -1,3 +1,185 @@
+## Four parallel implementation tracks — 2026 11 18
+
+- **Almas ↔ Writer contract:** added `docs/ALMAS-WRITER-LIFECYCLE-CONTRACT.md` to separate the implemented synthetic success path from unverified live Almas behavior. It records that Save, accepted Close, close-veto/Cancel, and confirmed Discard are distinct; no unknown Cancel/Discard HTTP/XML response is guessed.
+- **Word/Writer mapping:** hardened custom-property descriptor construction to reject non-string property keys before parsing. Added regression coverage for `None`, integers, booleans, and bytes. This is input-contract hardening only; it does not claim full semantic field/signature mapping.
+- **Save/Close/Cancel:** documented the known close-driven behavior and the remaining evidence needed for Cancel/Don't Save. A vetoed close remains non-terminal; engine Save does not return the document; only accepted close finalization exports bytes. The current UNO adapter still lacks a verified distinct discard/cancel path.
+- **GTK 4 / Ubuntu:** added an optional GTK 4 recovery picker view over `RecoveryPickerController`. It displays metadata only, supports refresh/selection, uses a native Save chooser for restore, and asks for explicit confirmation before discard. GTK imports lazily, preserving headless service operation. Added an import-boundary test and documented Ubuntu runtime packages.
+- **Packaging boundary:** the existing Debian package remains the native-core development package only. No production Python bridge entrypoint, supervised user service, desktop launcher, or complete EMWAT .deb is claimed.
+- Commits: GTK view `ba54acd`; GTK import test `048db89`; mapping validation `71dc461`; mapping tests `0585b1d`; Almas/Writer lifecycle contract `323edb0`; Ubuntu GTK integration docs `52d8ea6`; README refresh follows.
+- CI for this new combined code head must be checked before calling these changes verified. The GTK window itself still requires a real Ubuntu GTK 4 desktop runtime test.
+
+## EditWordDocument transport capacity alignment — 2026-11-18
+
+- Found and fixed a real configuration mismatch: the EditWordDocument service accepted up to 64 MiB decoded Word documents and up to 24 MiB encoded configuration, but the default HTTP body and XML dispatcher caps were only 16 MiB. Such documents could never reach the service.
+- Default application bridge request cap is now 128 MiB. This is bounded and accommodates Base64 expansion of the 64 MiB document, encoded config, and XML framing.
+- Default HTTP and serialized response cap is now 96 MiB, enough for Base64 expansion of a 64 MiB final document plus the observed response XML envelope.
+- Both `create_bridge_server` and `create_libreoffice_bridge_server` pass the same request cap to HTTP and XML parsing, and the same response cap to HTTP and the response serializer.
+- Added regression tests asserting the defaults at the HTTP and dispatcher boundaries.
+- This changes only configured upper bounds; it does not claim that real Almas documents of this size have been tested. Deployments can explicitly lower either cap.
+- Fresh CI is required before treating this change as verified.
+
+## Accepted Linux product decisions — 2026-11-18
+
+- Project owner confirmed the product target is **Linux only**. The existing Windows implementation is a compatibility/reference source; no new Windows application, GUI, or installer is in scope.
+- **GTK 4 + Python/PyGObject** is the selected lightweight, free/open-source control UI. Qt/PySide is not selected and must not be introduced unless the owner explicitly changes this decision.
+- **LibreOffice Writer via UNO** is the Linux document editor. GTK is not a Word replacement or document editor; it is limited to EMWAT status, settings, recovery, scanner entry points, and diagnostics.
+- EMWAT's primary purpose is to bridge the Almas correspondence system to Writer: receive the Almas document/request, validate and coordinate the editing workflow, obtain the final document, and return it using the evidenced Almas-compatible response contract.
+- Keep the protocol bridge, document coordinator, UNO adapter, recovery, and scanner services independent of GTK. GUI dependencies must not be required by headless protocol tests or core services.
+- No paid toolkit, subscription, or mandatory cloud service is acceptable. Record and comply with all dependency licenses; zero purchase cost does not remove license obligations.
+- Authoritative decision record: [LINUX-PRODUCT-DECISIONS.md](LINUX-PRODUCT-DECISIONS.md).
+
+## Latest PR-head verification — 2026-11-18
+
+- PR #2 head checked before this documentation update: `6bedd5c64019c77d3a3fc09f6936d139e3095e29`.
+- Python bridge run [44327516656](https://github.com/meicamghe/EMWAT-Linux/actions/runs/44327516656): completed successfully.
+- LibreOffice UNO run [44327516796](https://github.com/meicamghe/EMWAT-Linux/actions/runs/44327516796): completed successfully.
+- Native image core run [44327516916](https://github.com/meicamghe/EMWAT-Linux/actions/runs/44327516916): completed successfully.
+- These are results for the checked head before the new documentation-only commits. New documentation commits do not change code, but no new CI result is claimed for the later documentation head until queried.
+- PR #2 remains open, Draft, and unmerged.
+
+## Recovery picker state and current-head validation — 2026-11-18
+
+- The immutable picker view-state implementation and regression tests are on the current PR head.
+- Python bridge CI on current head `61a0a80860603053050a689ea75c705326baa5ac` passed: run `44326008488`, **209 tests run, 207 passed, 2 optional skips**.
+- LibreOffice UNO integration on the same current head passed: run `44326008410`; UNO runtime verification and real Writer roundtrip steps completed successfully.
+- Native image core run `44326008415` was still executing its build and sanitizer jobs at this status update. Earlier native run `44324686807` passed on the prior head, including the staged CMake install check.
+- The PR remains Draft/open/unmerged. No claim of complete application packaging or GUI is made.
+
+## Recovery picker view-state contract — 2026-11-18
+
+- Added immutable `RecoveryPickerState` and `RecoveryPickerController.state()` as a toolkit-neutral presentation boundary.
+- Empty catalogs are explicit; the newest snapshot is selected by default; a still-valid caller selection is preserved; stale/unknown selection IDs are cleared rather than silently selecting a different document.
+- The projection contains only the service's safe metadata and never exposes the private store path or document bytes.
+- Added tests for default selection, explicit selection, stale selection, empty state, restore behavior, and strict discard confirmation.
+- Implementation commit: `86bf845ea0df19aa40e470856a53034763ce3e90`; tests commit: `a3d6b06afdfdae092c39e6468b6d24fc635e2682`.
+- This remains a view-state contract, not a graphical UI; no toolkit has been selected.
+
+## Parallel follow-up: staged native install and recovery confirmation — 2026-11-18
+
+- Native CI now exercises the CMake install rules instead of only compiling the library: it installs into a temporary staging prefix and asserts that the static library plus public image/scanner headers are present.
+- The staged install step passed in Native image core run `44324464761` on commit `f4edf25549d3a613a671a52de281047a1715cc22`; both normal build/CTest and ASan/UBSan jobs passed.
+- Recovery picker discard tests now verify that only the literal boolean `True` is accepted as confirmation; `False`, `None`, integer `1`, and string `"yes"` are rejected without deleting the snapshot.
+- Python bridge run `44324505028` on the combined code/test head `6aa0af6bfea79451e60826602a315dce901baa3a` passed: **206 tests run, 204 passed, 2 optional LibreOffice tests skipped**.
+- Native CI on the same head passed both build/CTest and ASan/UBSan jobs (run `44324505210`). The separate LibreOffice UNO workflow for that exact head was still running when this entry was written; do not treat it as passed until it completes.
+- The install check proves staging installation of the reusable native library and headers only. It does not create a .deb, daemon, GUI, desktop launcher, or service unit.
+
+## Preflight Base64 response-size calculation — 2026-11-18
+
+- The observed Word success response Base64-expands the final document. The serializer now calculates the exact XML envelope length before allocating the encoded copy and rejects over-limit responses before expansion.
+- The emitted XML byte length is checked against the precomputed exact size to detect serializer behavior drift.
+- Added a regression test using a synthetic 1 MiB document and a deliberately small response cap.
+- Implementation/test commits: `2b5f6d3`, `abe1ed5`; documentation: `9f3f67e`.
+- CI for response-size code commit `abe1ed5ea514372331bbc7407c8ebac5305cf49d` passed: Python `44301296592`, Native build + ASan/UBSan `44301296564`, and LibreOffice UNO `44301296574`. The later PR head `646bcad` contains documentation-only updates.
+
+## Document session boundary validation — 2026-11-18
+
+- Document session IDs now require text, non-empty and already-trimmed values; non-string inputs fail with a stable ValueError instead of leaking AttributeError.
+- A final document return now rejects empty bytes. The session remains FINALIZING on this validation error and the coordinator marks the operation failed rather than reporting an empty file as a successful return.
+- Added session and coordinator regression tests for non-string IDs and empty final documents.
+- Implementation/test commits: `8e651b7`, `d46a6be`, `b8e0189`.
+- Latest full CI result predates this follow-up; fresh verification is pending.
+
+## Scanner preflight option validation — 2026-11-18
+
+- SANE scan options are now validated before SANE initialization or opening a physical device.
+- Requested resolution must be finite and within the supported safety interval (greater than zero and at most 100000 DPI).
+- Explicit mode/source strings must be non-empty and contain no control characters; invalid values are rejected before hardware access.
+- Added native regression cases for NaN, infinity, zero, over-limit resolution, empty mode, newline-containing mode and embedded-NUL source.
+- Implementation/test commits: `06ad29f`, `f4e7054`, `628ffad`, `cd6d6a8`.
+- This is preflight validation only. It does not establish physical scanner compatibility, ADF, duplex or multi-frame support; native CI for this newest head is pending.
+
+## Loopback transport and EditWord response-bound hardening — 2026-11-18
+
+- Bridge constructor rejects non-built-in-integer TCP ports and body/response byte limits, invalid/non-string bind hosts, and non-finite/non-positive socket timeouts (including bool, NaN, infinities and oversized integers).
+- Added constructor regression tests for all rejected input classes.
+- EditWord success response serialization now receives the configured `max_response_bytes` from `create_libreoffice_bridge_server`, so the serializer and HTTP transport enforce the same configured cap instead of the serializer silently retaining its default 16 MiB ceiling.
+- Added handler tests for configured response bounds and strict limit typing.
+- Design and validation notes: `docs/EDITWORD-INPUT-VALIDATION.md`.
+- Bridge constructor implementation/test commits: `f76d01c`, `7f1c0e6`; response cap wiring/tests: `8a00051`, `a37ec60`, `abf3520`; documentation: `94cb903`.
+- CI for bridge constructor changes at `7f1c0e6`: Python run `44300445278`, Native run `44300445365`, and UNO run `44300445339` passed. The newer response-cap changes are awaiting Python CI; do not infer their result from the prior head.
+- This remains transport/input hardening. No live Almas origin, actual customer document, or Windows cancel/discard response contract is claimed.
+
+## Recovery manifest and input-validation hardening — 2026-11-18
+
+- Recovery manifest loading now explicitly rejects valid JSON scalars/arrays instead of allowing an AttributeError to escape the catalog path. The catalog skips malformed non-object manifests and continues listing other valid sessions.
+- Added regression cases for JSON array, null, and string manifests.
+- Retention numeric inputs now reject booleans and non-numeric values instead of accepting bool as an integer/time value.
+- Scanner device IDs are checked for control characters before SANE initialization/open, for both capability lookup and scan; regression tests include newline and embedded NUL.
+- Word/Writer audit exposes only unique one-to-one case-folded name differences as review candidates; exact matching remains case-sensitive and ambiguous collisions are not suggested.
+- Latest Python manifest tests were added after the latest observed CI run; final-head verification is still pending. Runs 44252073741/44252073807/44252073729 were queued at the last poll for the earlier scanner/mapping changes.
+
+## Parallel hardening follow-up — 2026-11-18
+
+- Recovery retention now rejects booleans and non-numeric values for age limits and the supplied current-time argument; this avoids Python's bool-is-int behavior silently accepting invalid policy input.
+- SANE scanner identifiers are validated before entering the runtime: empty IDs and embedded control characters (including NUL/newline) are rejected for both capability lookup and scan operations.
+- Word/Writer audit now reports a case-only candidate only when the folded identifier is unique on both sides. It excludes ambiguous case-fold collisions and never converts these candidates into mappings.
+- Added regression tests for all three hardening areas. Final-head CI is pending.
+
+## Secret Service application integration and nonce validation — 2026-11-18
+
+- Added a strict freedesktop Secret Service key provider with get-or-create, read-after-write persistence verification, malformed/short key rejection, and refusal of plaintext fallback backends.
+- Added create_libreoffice_bridge_server(encrypt_recovery=True, recovery_root=...) to inject an encrypted recovery store into the default LibreOffice adapter. Default remains plaintext; a caller-supplied adapter cannot be combined with this flag.
+- Added regression coverage for Secret Service persistence failure, backend rejection, key reuse, encrypted store construction, application injection, and ambiguous custom-adapter rejection.
+- Added AES-GCM envelope/manifest nonce equality validation and its tampering regression test.
+- Latest branch head at this status update: ab304921215fb84a3bddb68a1f27a8ddb436b5dc. Python/Native/UNO CI runs 44249093187, 44249093242, and 44249093182 were still queued; they predate the last two key-provider test commits and must not be treated as validation of the final head.
+- The live DBus Secret Service backend has not been exercised in a desktop session. CI mocks the backend and validates the fail-closed policy.
+
+## Application-level encrypted recovery opt-in — 2026-11-18
+
+- `create_libreoffice_bridge_server(encrypt_recovery=True, recovery_root=...)` now explicitly creates the Secret Service-backed encrypted store and injects it into `LibreOfficeAdapter`.
+- Default behavior remains unchanged (plaintext recovery). A caller-supplied office adapter combined with `encrypt_recovery=True` is rejected to avoid a false security guarantee.
+- Added composition tests verifying store injection and rejection of the ambiguous custom-adapter combination.
+- The key provider's real DBus/Secret Service behavior remains unverified in a live desktop session; CI uses a strict mocked Secret Service backend.
+
+## Secret Service key-provider integration — 2026-11-18
+
+- Added `recovery_key_provider.py` with explicit Secret Service get-or-create behavior for a stable 256-bit AES key.
+- The provider accepts only the freedesktop Secret Service backend; it refuses plaintext/file fallback and other unreviewed backends.
+- Existing malformed or wrong-length secrets fail closed and are not silently replaced. Newly created keys are read back to verify persistence.
+- Added an explicit factory to construct an encrypted `RecoverySnapshotStore`; the LibreOffice adapter's default remains unchanged and plaintext unless the application calls the factory and injects the returned store.
+- Added mock-backed tests for key persistence, backend rejection, malformed/short secrets, and encrypted-store roundtrip.
+- Added optional package extras for encryption and keyring support. Actual desktop DBus/Secret Service integration still requires a live Linux desktop session and has not been exercised in CI.
+
+## Recovery encryption hardening follow-up — 2026-11-18
+
+- Encrypted snapshot filenames now use opaque random identifiers instead of exposing the plaintext SHA-256 in the path. The SHA-256 is bound into AES-GCM associated data and verified after decryption.
+- Plaintext snapshot filenames retain the SHA-256 prefix plus a unique per-write suffix to keep writes immutable and crash-safe.
+- Manifest schema version is checked with strict integer typing; booleans are rejected.
+- Added a regression assertion that encrypted filenames do not disclose the plaintext digest.
+- Fresh Python bridge CI run `44248272905` passed after the opaque encrypted-filename and strict-schema changes. Native build-test and ASan/UBSan run `44248272884` also passed. LibreOffice UNO integration run `44248272886` was still running at the last check.
+
+## Optional AES-256-GCM recovery encryption — 2026-11-18
+
+- `RecoverySnapshotStore` now supports opt-in AES-256-GCM encryption when a trusted caller injects a 32-byte key. The key is never stored in the recovery directory or manifest.
+- Encrypted snapshots use a versioned envelope, random 96-bit nonce, authenticated encryption, and associated data binding the session ID, document name, plaintext size, and plaintext SHA-256. The plaintext SHA-256 is checked after decryption.
+- Encrypted snapshots use opaque random filenames, fail closed when the key is absent or incorrect, and reject legacy plaintext snapshots when a key is configured rather than silently mixing formats.
+- Added tests for plaintext confidentiality, round-trip, wrong/missing key, tampering, legacy plaintext rejection, and crash-safe repeated writes.
+- Python CI run 44247873577 exposed two issues (AES-GCM envelope offset and a stale catalog filename assertion); both have been corrected in subsequent commits. Do not claim the correction is green until a fresh Python run completes.
+- Encryption remains opt-in. The application can now opt into the strict freedesktop Secret Service provider through create_libreoffice_bridge_server(encrypt_recovery=True); key rotation, migration of existing plaintext snapshots, and default activation are not implemented.
+- `LibreOfficeAdapter` can already receive a configured `RecoverySnapshotStore`; the current default construction remains plaintext until the application supplies an encrypted store.
+
+## Recovery manifest integrity and Windows archive evidence — 2026-11-18
+
+- Recovery snapshot loading now validates that the manifest timestamp is a finite, non-negative numeric value and that the content-addressed filename hash matches the verified snapshot bytes. Invalid metadata is rejected and excluded from the recovery catalog.
+- Added regression tests for malformed timestamps and a manifest filename that does not match the content hash.
+- Added `docs/EASZ-ARCHIVE-FORMAT.md` documenting the evidence-bounded Windows archive path: password-protected 7z output, `.easd` entry, and `.easz` output file.
+- This documentation does not claim Linux `.easz` read/write compatibility. Linux recovery remains a separate DOC/DOCX snapshot format with optional AES-256-GCM encryption when a trusted application injects an external key.
+- Python bridge CI run `44246971008` completed successfully after the manifest hardening and regression tests. Native image core run `44246938174` passed build-test and ASan/UBSan; LibreOffice UNO integration run `44246938243` passed the real UNO roundtrip job. These native/UNO runs validate the corresponding workflow commits; the new manifest code is covered by the Python run.
+
+## تست ورودی اسکنر و CI — 2026-11-18 (PR #2)
+
+- تست‌های بدون سخت‌افزار اضافه شدند: شناسه خالی در `SaneScannerBackend.get_capabilities` و `scan_one` پیش از تماس با runtime مربوط به SANE رد می‌شود.
+- Native image core run `44244437647` روی commit `ed811a14f9d151a8a386c67b80b26b3d155f5c24` کامل و موفق شد؛ هر دو job یعنی build-test و ASan/UBSan sanitizer-test، شامل مرحله Test، سبز شدند.
+- این نتیجه فقط قرارداد ورودی و build/test backend را تأیید می‌کند؛ اسکنر فیزیکی، ADF و Duplex هنوز تست نشده‌اند.
+
+## پیاده‌سازی retention بازیابی — 2026-11-18 (PR #2)
+
+- ماژول `recovery_retention.py` محدودیت سن snapshot و/یا حداکثر تعداد را فقط با فراخوانی صریح اعمال می‌کند؛ snapshotهای معتبر جدیدتر حفظ می‌شوند و شناسه‌های حذف‌شده برگردانده می‌شوند.
+- `RecoverySnapshotService.apply_retention()` این قابلیت را در لایه سرویس در دسترس قرار می‌دهد. هیچ سیاست پیش‌فرض، timer پس‌زمینه یا حذف ضمنی وجود ندارد؛ حداقل یک محدودیت مثبت لازم است و تعداد snapshotها نمی‌تواند صفر باشد.
+- تست‌های اعتبارسنجی policy، حذف بر اساس سن، حفظ جدیدترین‌ها، اتصال service و حالت بدون حذف اضافه شدند.
+- Python CI روی head نهایی PR با SHA برابر `f1a8260589d6f5fbd8fda0a2e45bd29c7741ff4e` موفق شد: runهای `44244362768` و `44244353561` هر دو موفق.
+- این تغییر در PR پیش‌نویس #2 است و هنوز وارد main نشده. retention جایگزین رمزنگاری نیست؛ رمزنگاری at-rest، کنترل کاربر و UI واقعی Recovery همچنان باز هستند.
+
 ## تکمیل موازی Native scanner و اعتبارسنجی — 2026-11-18
 
 - سند scanner اکنون مرز دقیق کد SANE موجود و قابلیت‌های هنوز تأییدنشده را تفکیک می‌کند: یک frame هشت‌بیتی Gray/RGB، محدودیت 1 GiB، گزینه‌های mode/source/DPI و نبود تأیید ADF/duplex/multi-frame یا سخت‌افزار واقعی.
@@ -2393,3 +2575,286 @@ Python bridge CI در run `44031548179` موفق شد: **111 تست موفق، 2
 - Added `build_indexed_signer_slots()` / `IndexedSignerSlot` to align recognized signer fields by numeric index, preserve capture order within each slot, and report absent families without synthesizing values or guessing mappings.
 - The first CI attempt found an incorrect expectation in the new test (the fixture included `SignNumberOfSigner3`); the assertion was corrected. The corrected run `44105991823` on `ef95c118111a4e2909657e9e06f75a87a68a326b` passed: **142 tests run, 140 passed, 2 optional LibreOffice tests skipped**.
 - Added `docs/RECOVERY-CATALOG.md` specifying the in-process JSON consumer contract, explicit save-dialog restore flow, confirmation requirement for discard, and prohibition on exposing the service as an unauthenticated HTTP endpoint.
+
+
+## Recovery snapshot bound validation — 2026-11-18
+
+- `RecoverySnapshotStore` now requires `max_snapshot_bytes` to be a positive built-in integer; booleans, floats, strings, zero, negative values, and `None` are rejected before filesystem access.
+- Added constructor regression coverage for all rejected input classes and documented the bound contract in `docs/RECOVERY-RETENTION.md`.
+- Implementation commit: `1a9cd2843c2fd37d6b547ddd668668ec116d5d6f` (restores the full prior implementation and applies the strict validation as a one-condition change); regression tests: `2d16580d94c6c4a8021799464d2d31d0c2fb16b0`; documentation commits: `3df46fcbfafdbf3d7abd4f4abb12bbe99f272c19` and this status update.
+- CI for this follow-up is pending; no test pass is claimed until the new branch head completes all relevant workflows.
+
+
+## EditWord request bounds and dispatcher validation — 2026-11-18
+
+- The EditWord request parser exposes independent positive-integer limits for decoded Word bytes, encoded Word characters, decoded wordConfig bytes and encoded wordConfig characters. The service constructor now exposes and forwards all four limits instead of silently relying on parser defaults.
+- Public `MethodCall` input is checked for expected class/parameter container and text values; `signData` remains opaque text because its complete wire encoding has not been established.
+- The XML dispatcher now rejects non-built-in-integer payload limits (including bool/float/string), non-text/blank class names and non-callable handlers at registration time.
+- Regression tests cover malformed request objects, every invalid limit category, configured encoded-config bounds, service forwarding, and dispatcher registration validation.
+- Implementation and test changes are committed in the EditWord request parser, service and dispatcher modules; documentation commits include `75573fa` and `df39bb9`. Service commits: `120f7fc` / `dcfab72`; dispatcher commits: `f8a6edf` / `5487ef4`.
+- CI verified before service and dispatcher follow-ups: Python bridge `44302976157`, Native image core including ASan/UBSan `44302976163`, and LibreOffice UNO `44302976143` all passed. Service/dispatcher follow-up commits are not yet covered by those earlier runs; new CI status must be checked separately.
+
+
+### Dispatcher request-boundary validation — 2026-11-18
+- `XMLMethodDispatcher` now rejects non-`BridgeRequest` inputs and non-bytes request bodies with the same sanitized HTTP 400 response used for malformed XML, rather than leaking AttributeError/TypeError from the public callable boundary.
+- Added regression cases for None, arbitrary objects and a BridgeRequest carrying a non-bytes body.
+- Implementation commit: `7956525e4974256dd726ae19cb1363cb694a53a5`; tests: `0e3a590b3419d0846ad9cbb7d7fb4a01125e38f5`.
+- Full CI on the combined branch head `0231f31705ce2a9e97f932161d07a6acf71dae14` passed: Python bridge run `44304965568` (**196 tests, 194 passed, 2 optional LibreOffice skips**); Native image core run `44304965055` (build and ASan/UBSan jobs passed); LibreOffice UNO roundtrip run `44304965075` (UNO runtime and real Writer roundtrip job passed).
+
+
+### HTTP response status type validation — 2026-11-18
+- The loopback transport now requires response status codes to be built-in integers in the HTTP 200–599 range. Floats, strings, booleans, null and out-of-range values are rejected and converted to the existing sanitized 500 response.
+- Added transport regression coverage for all invalid status classes.
+- Implementation commit: `104aa3181ae36df9db6c0dfce447dceb230f698f`; tests: `82f39637440b19d215491e2c90c4a0eebb6a63e2`.
+- This bridge follow-up is newer than the green combined CI above; fresh Python/native/UNO results are pending.
+
+
+### HTTP response and Origin allowlist boundary hardening — 2026-11-18
+- Bridge responses now require a built-in integer status code in the 200–599 range; malformed status values are sanitized to HTTP 500.
+- Both Origin allowlists now require set/frozenset containers containing only non-empty strings. This prevents accidentally passing a string as an allowlist, where Python substring membership could weaken exact Origin matching.
+- Parent-Origin allowlist entries are type-checked before URL parsing; malformed values fail at server construction.
+- Added regression coverage for invalid status types and malformed allowlist containers/entries.
+- Commits: status implementation `104aa318` / tests `82f3963`; allowlist implementation `9231fd6`, `95c735f` / tests `a978d0e`, `4ea99bb`.
+- Full CI on code/test head `4ea99bb3b1cf2b1ed664e5420c640d657e7df61a` passed: Python bridge run `44305529480` (**198 tests, 196 passed, 2 optional LibreOffice skips**); Native image core run `44305529408` (build and ASan/UBSan jobs passed); LibreOffice UNO run `44305529564` (runtime verification and real Writer roundtrip passed). The subsequent project-status commit is documentation-only.
+
+
+## Recovery manifest read hardening — 2026-11-18
+
+- Recovery metadata reads now have a strict 64 KiB ceiling and use a bounded read (limit + 1 byte) rather than unbounded `read_text()`.
+- Manifest access opens with `O_NOFOLLOW` where supported, checks the opened descriptor is a regular file, and parses strict UTF-8 JSON objects only.
+- Oversized, symlinked, malformed and non-regular manifests fail closed; catalog enumeration skips invalid entries.
+- Added regression tests for an oversized manifest and a symlinked manifest targeting a file outside the recovery session.
+- Implementation: `cced3b65a7485fcde9503c7df94f1abd773411d9`; tests: `513e6c819e0e7eb952cd75e02090199029c636c7`; documentation: `186e94b354583655b83a0bd716aac0e8dd30d184`.
+- Full CI on the combined code/test state through `26c831ebf80cb94178912158f1c712f93082582d` completed successfully: Python bridge run `44318451374` (**201 tests, 199 passed, 2 optional LibreOffice skips**); Native build + ASan/UBSan run `44318451310` (both jobs passed); LibreOffice UNO run `44318451381` (UNO runtime and real Writer roundtrip passed). The branch head `d93601fa0f418b378b73982d4c5a962b5a297ba0` is documentation-only beyond that tested code/test state.
+
+- Follow-up review also catches JSON parser recursion-depth failures inside the same bounded manifest reader; deeply nested metadata now fails closed with `recovery_manifest_invalid`. Commits: implementation `570fb8de7c22f73bda8e37f29adc058b699fc793`, regression test `26c831ebf80cb94178912158f1c712f93082582d`, documentation `b2e12ab948c638ac4c0e91d035927d5ccbc224c4`.
+
+## Recovery snapshot payload read hardening — 2026-11-18
+
+- Snapshot payloads now open with `O_NOFOLLOW` where supported and must be regular files.
+- The descriptor size is checked against the configured snapshot cap plus encryption envelope overhead; the actual read is also capped at limit + 1 byte to handle file growth after `fstat`.
+- Added regression tests for oversized payloads and a simulated symlink-replacement race between path precheck and descriptor open.
+- Implementation: `4e4bc2b4363ff69804f7bb219d15caace1fd45b6`; tests: `fb56e821129aa0ad665556f5e6fa3b434af0a0c7`. Python bridge run `44319343914` passed (**203 tests, 201 passed, 2 optional skips**); LibreOffice UNO run `44319344050` passed (**14 tests**, including real EditWord response-handler roundtrip); Native ASan/UBSan job in run `44319343995` passed. Native `build-test` job in that run was still installing dependencies at the time of this status update, so full native workflow completion remains pending.
+
+
+## تأیید نهایی CI روی سر فعلی PR — 2026-11-18
+
+- اجرای تازه روی commit فعلی PR یعنی `8b9f74dce8d7c5648bc53b4668212c76ae8e90d9` هر سه workflow را با موفقیت کامل کرد:
+  - Python Bridge، run `44319637922`: **203 تست اجرا شد؛ 201 موفق و 2 تست اختیاری skip**.
+  - Native image core، run `44319637947`: هر دو job ساخت/CTest و ASan/UBSan موفق؛ چهار CTest شامل image document، codec، scanner contract و document I/O همگی پاس شدند.
+  - LibreOffice UNO، run `44319637936`: **14 تست موفق**؛ شامل Writer roundtrip و اجرای سند واقعی از مسیر EditWord response handler.
+- این نتایج مستقیماً به head فعلی PR متصل‌اند؛ وضعیت قبلی مبنی بر pending بودن Native build-test دیگر معتبر نیست.
+- PR #2 همچنان Open، Draft و Unmerged است. مقایسه با `main`: 160 commit جلوتر و صفر commit عقب‌تر.
+- این CI هنوز سازگاری زنده با Almas، اسکنر فیزیکی، parity معنایی کامل Word/Writer، فرمت Windows `.easz` و قرارداد واقعی Cancel/Discard را اثبات نمی‌کند.
+
+
+## Native SANE fixed-point conversion safety — 2026-11-18
+
+- Review found that the generic 100000-DPI input ceiling could still reach `SANE_FIX(dpi)` for a scanner exposing a `SANE_TYPE_FIXED` resolution option. SANE fixed values are signed 16.16 `SANE_Word`; values above the representable range could overflow during floating-point-to-integer conversion.
+- Added `scanner_detail.hpp` with a checked conversion to signed 16.16, rejecting non-finite, non-positive and out-of-range values before casting. The scanner now uses this helper instead of invoking `SANE_FIX` on unbounded-by-format values. Integer-valued SANE resolution options retain their existing path.
+- Added native tests for normal conversion, the 32768-DPI overflow boundary, infinity and NaN. No physical scanner is required for these pure conversion tests.
+- Commits: helper `c020d17`, implementation `5b253e0`, tests `8360337`.
+- Fresh Python/Native/UNO CI for this follow-up is pending; do not treat the preceding green PR-head run as validation of these new native changes.
+
+
+## تأیید CI اصلاح fixed-point اسکنر — 2026-11-18
+
+- تغییر native در code/test commit `83603371b8cfbae3b1e7817a79b0d3e62ed0ca4a` در هر سه workflow موفق شد:
+  - Python Bridge run `44320784317`: **203 تست؛ 201 موفق، 2 تست اختیاری skip**.
+  - Native image core run `44320784491`: build-test و ASan/UBSan هر دو موفق؛ هر چهار CTest در هر دو پیکربندی پاس شدند.
+  - LibreOffice UNO run `44320784298`: **14 تست موفق**، شامل Writer roundtrip و EditWord response-handler.
+- بنابراین اصلاح fixed-point در build عادی و sanitizer تأیید شده است. UNO نیز روی همان کد/test commit سبز است.
+- PR head فعلی پس از مستندسازی `b35a3b8513abebd391bc5dc69aef7e7a71877f69` است؛ تغییرات پس از code/test commit صرفاً مستندات و metadata هستند.
+
+
+## Bridge constructor contract follow-up — 2026-11-18
+
+- `BridgeHTTPServer` now validates the request handler is callable and `require_origin` is an actual boolean at construction time. Invalid configuration fails immediately rather than producing a request-time 500 or relying on truthiness.
+- Added regression tests for non-callable handler values and non-boolean Origin policy values; both supported boolean settings are covered.
+- Implementation: `bb50f32fedb25e9d561c6886bdd36365058c9087`; tests: `966c666545ff9851e569ecffe0e57fcde44d1a5b`.
+- Fresh CI is running for the combined branch head; results are pending and are not claimed passed.
+
+
+## Invoke query parser field-count bound — 2026-11-18
+
+- The loopback bridge now calls `parse_qsl(..., max_num_fields=1)` because the captured route accepts exactly one non-empty `invoke` parameter. Extra query fields are rejected before dispatch without materializing an arbitrarily large parameter list.
+- Added a transport regression test proving a query with extra fields returns the existing sanitized 400 response and never invokes the application handler.
+- Implementation: `6e20a554e71db777aec8b133596814d45a800365`; test: `673eecda6f486eceda12447f9e53821ab2b2b2bc`.
+- CI for the updated code/test head is pending.
+
+
+## Parallel workstreams follow-up — 2026-11-18
+
+### Browser/Almas E2E
+- Strengthened the synthetic application composition test: it now parses the complete HTTP response, validates the observed `response-word`/MIME/Base64 structure, and decodes the returned bytes to assert byte-for-byte equality with the final Office adapter output.
+- This proves the mocked loopback → XML dispatch → EditWord service → Office adapter → response serializer path. It is not a live Almas Gam or physical LibreOffice UI test.
+- Test commit: `afb7e4d003d678f3bccbfb08fc26edf54e02d551`.
+
+### Ubuntu packaging
+- Added CMake install rules for the native image/scanner library and public headers, using GNUInstallDirs.
+- This is a staged library installation foundation only. There is still no production bridge daemon, desktop entry, GUI, service unit, or complete .deb package.
+- CMake commit: `34f23f303329c8781ba41af3dd6e75545e140522`; follow-up kept install rules dependency-neutral: `50044deab7259f17295824c9581421b6cecdae97`.
+
+### Recovery UI, Word mapping, EASZ and scanner
+- Confirmed existing toolkit-neutral RecoverySnapshotService/RecoveryPickerController supports metadata listing, explicit-destination restore, and confirmed discard; it is not a graphical UI.
+- Confirmed the Word field pipeline handles declared URL/Base64 encodings, indexed signer field families and evidence-bounded property audits. `signData` remains opaque because separator/concater semantics are not proven.
+- Confirmed .easz is still not implemented: no authorized synthetic encrypted archive fixture exists.
+- Confirmed SANE native support remains single-frame Gray/RGB; ADF, duplex, multi-page, cancellation and physical hardware are not validated.
+
+### Integration/install documentation
+- Added `docs/UBUNTU-INSTALLATION-AND-INTEGRATION.md` with reproducible native build/install commands, Python/UNO setup boundaries, synthetic E2E coverage, field/signData limits, recovery UI boundary, .easz fixture requirements, scanner acceptance criteria and release blockers.
+- Linked it from README.
+- Documentation commits: `b845e45f9b6da5d2c19874229f1f2c56f851f7de`, `8d7073a88615f3be71716c5124140d0b6666db5a`.
+
+CI for the new E2E test and CMake install rules is pending on the latest code/test head; no result is claimed until GitHub Actions completes.
+
+
+## E2E test correction — 2026-11-18
+
+- The first Python workflow for the strengthened E2E assertion exposed a test-only UnboundLocalError: a function-local import base64 shadowed the module-level import used earlier in that test.
+- Removed the redundant local import. The failure was in test setup, not the bridge or response implementation.
+- Correction commit: `3f2bf37d90fa12d8a828106263f794b4a812a61a`.
+- CI for the corrected head is pending; the earlier failed run is retained as evidence and is not represented as passing.
+
+
+## Debian native-core package lifecycle — 2026-11-18
+
+- Added CPack DEB metadata for `emwat-native-core-dev`, a host-architecture development package containing the native static library and public headers.
+- Package version follows the native CMake project version (currently 0.1.0); the CPack version is configurable for reproducible upgrade testing.
+- Declared package dependencies: `libpng-dev`, `libjpeg-dev`, `libtiff-dev`, `libsane-dev`. The package does not include the Python bridge, daemon, GUI, desktop entry, or user data.
+- Added a dedicated CI lifecycle job that builds 0.1.0 and 0.1.1 packages, installs the first, upgrades to the second, verifies the installed library/header, removes the package, and verifies the files are removed.
+- This is the first real Debian package lifecycle for the native development component only. A complete EMWAT desktop package remains blocked on the production entrypoint, selected GUI toolkit, service lifecycle, Python/UNO runtime policy, and desktop integration.
+- Implementation commits: CPack metadata `4e359951`; native-architecture correction `95291d4e`; package lifecycle CI `68291cdb` and version assertions `c654cb25`.
+
+
+## Recovery picker UX design — 2026-11-18
+
+- Added `docs/RECOVERY-PICKER-UX.md`: toolkit-neutral view states, newest-first list, selection preservation/stale-selection clearing, native Save-dialog restore, explicit destructive discard confirmation, accessibility, encryption/key-unavailable behavior, and opt-in retention boundaries.
+- The design maps the same contract to GTK ListView/ColumnView or Qt QListView/QTableView without selecting either toolkit or adding GUI dependencies.
+- Implementation commit: `bc363e2aa784afd84682a8fc568b93b24a5412d9`.
+
+
+### Debian package lifecycle CI result — 2026-11-18
+
+- Native workflow run `44327277244` completed the Debian package lifecycle job successfully.
+- CI generated `emwat-native-core-dev` packages for versions 0.1.0 and 0.1.1, installed 0.1.0, upgraded to 0.1.1, verified the package version and installed library/header, removed the package, and verified the installed files were gone.
+- The same run's native `build-test` and staged CMake install jobs passed. At the time of this note, the sanitizer job was still running; no sanitizer result is inferred from the package lifecycle result.
+- Python and UNO runs on code head `97c89c3` completed successfully: Python `44327277074`, UNO `44327277376`. The latest Recovery UX document commit is documentation-only beyond that code state.
+- This validates install/upgrade/remove for the native development package only. It does not validate a full desktop application's configuration migration, service restart, Python/UNO runtime, or user-data preservation.
+
+
+
+## GTK Recovery picker hardening — 2026-11-19
+
+- Recovery rows now use the supported GTK widget-name API for stable session identity rather than attaching arbitrary attributes to GI wrappers.
+- Catalog timestamps are formatted defensively; extreme but finite timestamps no longer crash the GTK refresh/render path.
+- Restore and discard refresh stale selections and show a bounded user-facing error if the selected snapshot disappears between listing and action.
+- Added a headless regression test for extreme timestamp formatting while preserving lazy PyGObject import.
+- Commits: GTK implementation `3660bdf`, follow-up stale-selection handling `88fa00e`; tests `fa008a6`; Ubuntu integration documentation `8182dec`.
+- These changes do not establish a live GTK window/runtime test. The Python/Native/UNO CI for the new head is pending and will be recorded only after completion.
+- The Debian package remains `emwat-native-core-dev` only; no full desktop installer or production user-service entrypoint is claimed.
+
+
+## Writer lifecycle regression coverage — 2026-11-19
+
+- Added adapter tests proving a failed close-time snapshot attempt is reset on a later close attempt, and that the session is not marked closed until UNO reports `notifyClosed`.
+- Added save-event tests: only `OnSaveDone` and `OnSaveAsDone` are treated as confirmed engine saves; pre-save and generic save notifications are ignored.
+- Updated the Almas/Writer lifecycle contract to record these boundaries and keep Cancel/Discard response semantics explicitly unresolved pending a sanitized reference capture.
+- Test commit: `33adcbfc18886933c6e4e47f52d1f359a10ec568`; contract update: `b3a22d10c2be0e14f4fb8caed7c07fa07cf6193b`.
+- Previous head `6ce47620` CI completed successfully: Python run `44549072545`, UNO run `44549072601`, Native run `44549072522`; all jobs passed. At the time of this update, GitHub reported no workflow runs associated with exact head `8da682e9`; the new lifecycle tests are committed but their CI result is not yet available.
+- No live Almas fixture, confirmed Writer discard/cancel implementation, or full desktop package is claimed.
+
+
+## Close-driven Writer handoff regression — 2026-11-20
+
+- Recorded the operator-confirmed reference behavior: closing the Word window without pressing Save returns control to Almas. This establishes a close-driven handoff requirement, but does not identify whether a Save/Don't Save/Cancel prompt appeared or which choice was selected.
+- Added a focused adapter regression proving that final close-time snapshot creation and terminal-close signaling do not require a preceding `OnSaveDone`/`OnSaveAsDone` event.
+- Test commit: `2776d889b330b88177ce7caeb86f659df56e4934`; lifecycle contract commit: `ddc95ce24bd6b7185fcb4b2c073d9f53e293ebdb`.
+- No workflow runs are currently associated with the latest PR head `ddc95ce24bd6b7185fcb4b2c073d9f53e293ebdb`; the new regression is committed but not yet CI-verified. No live Almas or interactive Writer prompt test is claimed.
+
+
+## Writer close/discard evidence checkpoint — 2026-11-20
+
+- Added `docs/WRITER-CLOSE-DISCARD-INVESTIGATION.md` to separate the documented UNO close-listener contract from the still-unverified interactive Writer Save / Don't Save / Cancel prompt ordering.
+- Guardrail: `queryClosing` snapshot creation plus `notifyClosed` is not proof that the user chose Save or Don't Save. Do not infer `DISCARDED` from close/disposal callbacks.
+- Required visible-Writer acceptance cases are now explicit: Save must return the edited marker; Don't Save must omit the unsaved marker; Cancel must leave Writer open and the Almas request pending. Capture callback order and returned bytes.
+- Latest PR head at this checkpoint: `79c017e757485dbd5fb19b7a7e1fd13beb05353c`.
+- CI for that head:
+  - Python bridge run `44784556864`: completed successfully.
+  - LibreOffice UNO run `44784556817`: completed successfully; the job log reports **17 tests passed**, including the real UNO roundtrip through the EditWord response handler and Word 97 export.
+  - Native run `44784556764`: Debian package lifecycle and normal build/CTest/staged install jobs passed; ASan/UBSan job was still running at this checkpoint.
+- The native package lifecycle remains limited to `emwat-native-core-dev`; it is not a complete EMWAT desktop installer.
+- These CI results do not prove interactive Save / Don't Save / Cancel behavior, live Almas/browser compatibility, full semantic Word/Writer field parity, physical scanner support, or Windows `.easz` interoperability.
+- PR #2 remains open, Draft, and unmerged. No release-readiness claim is made.
+
+
+## Word/Writer runtime mapping boundary — 2026-11-20
+
+- Source review confirmed that the current `EditWordDocumentService` parses and retains `wordConfig`, then passes the request to the coordinator; `LibreOfficeAdapter.open_document()` opens the Word payload but explicitly does not apply the config fields.
+- `decode_word_fields()`, native-shaped descriptor construction, Writer metadata inspection, and exact custom-property updates exist as separate building blocks. They are not yet composed into an automatic request-to-Writer mapping step.
+- Consequently, current real UNO CI validates open/close/export and the synthetic response path, not complete population of Almas-provided fields, signatures, or `signData`.
+- Updated `docs/WORD-WRITER-MAPPING-AUDIT.md` with the exact runtime boundary and safe fixture gate.
+- Release blocker: obtain one sanitized matching Word document + `wordConfig` fixture and expected field results; verify property enumeration, twin-field associations, image/signature handling and output roundtrip before enabling automatic writes. Do not infer order or `signData` encoding.
+
+
+## Read-only Word/Writer evidence audit and visible close matrix — 2026-11-20
+
+- Added `word_writer_evidence.py` with a metadata-only report of WordConfig field IDs, MIME/encoding declarations, external parameter IDs, duplicate IDs, settings/optional attributes/requested types, and Writer structural/property names.
+- Added `LibreOfficeAdapter.audit_word_writer_evidence(handle, config)` as a lock-protected, read-only entry point. It does not read field values or body text and does not mutate Writer.
+- Added regression tests for sensitive-value exclusion, duplicate IDs, image/text metadata, external parameter metadata, empty inputs, and adapter integration.
+- Added `docs/WORD-WRITER-EVIDENCE-REPORT.md` and `docs/WRITER-VISIBLE-CLOSE-ACCEPTANCE.md`.
+- Python CI run `44796731919` passed **219 tests, 217 passed, 2 optional skips** for the initial evidence-report commit. The subsequent adapter integration/test commit `4c571a74` has fresh Python, Native, and UNO workflows queued; do not mark those newer tests verified until their runs finish.
+- The previous current-head UNO run `44796732049` and Native run `44796731888` completed successfully, but they predate the adapter entry-point follow-up.
+- The evidence report is diagnostic only. It does not establish Word/Writer field equivalence or enable automatic writes. Visible Save / Don't Save / Cancel behavior remains unverified.
+
+## Follow-up verification — adapter evidence audit integration
+
+- Added `LibreOfficeAdapter.audit_word_writer_evidence()`, protected by the document snapshot lock and requiring a parsed `WordDocumentConfig`.
+- Python bridge run `44796996459` for code/test commit `4c571a74be9c75ad6fa0b7b823bcd6a3e8d88f28` passed **220 tests, 218 passed, 2 optional skips**.
+- LibreOffice UNO run `44796996426` on the same code/test commit passed **18 tests**, including the new adapter audit regression and the real Writer roundtrip.
+- The separate docs-triggered UNO run `44797006712` also passed.
+- Native build/CTest and staged install passed in run `44796996414`; its Debian package lifecycle and ASan/UBSan jobs were still running at this checkpoint.
+- An earlier intermediate push had failed Python/UNO CI before the adapter test imports were corrected. The corrected code/test head above is green for Python and UNO; do not conflate the intermediate failures with the corrected head.
+
+
+## Full CI verification for read-only evidence audit — 2026-11-20
+
+- Code/test head `4c571a74be9c75ad6fa0b7b823bcd6a3e8d88f28` passed all three workflows:
+  - Python Bridge run `44796996459`: **220 tests, 218 passed, 2 optional skips**.
+  - LibreOffice UNO run `44796996426`: **18 tests passed**, including adapter evidence audit and real Writer roundtrip.
+  - Native run `44796996414`: build/CTest, staged install, Debian package lifecycle, and ASan/UBSan all passed; normal and sanitizer CTest each report **4/4 tests passed**.
+- Documentation-only follow-up UNO run `44797006712` passed.
+- Later commits `315cb5d`, `c327662`, and `bb1d920` update documentation only; the verified code/test tree is unchanged.
+- PR #2 remains open, Draft, unmerged. This verification does not establish Almas end-to-end compatibility, automatic WordConfig mapping, visible Save/Don't Save/Cancel behavior, full application packaging, or physical scanner support.
+
+
+## Expanded Word/Writer evidence and close-retry coverage — 2026-11-20
+
+- Expanded the metadata-only evidence report to include WordConfig root/permission attribute names, field indices, declared twin-delimiter members, duplicate/case-fold collision groups, duplicate setting names, optional-attribute type/encoding and content-element presence, requested-type metadata, and Writer custom-property case-fold collisions.
+- The report continues to exclude all field/settings/optional-attribute values, document text, image bytes, and custom-property values. Twin syntax is parsed, but no twin-to-Writer association or automatic mapping is inferred.
+- Updated `OptionalAttribute` parsing to preserve whether a `<content>` element exists independently of whether it contains text. This distinguishes absent content from an explicitly empty content element; the new field has a default for compatibility with direct constructors.
+- Added tests for duplicate and case-fold collisions, empty versus missing optional content, missing optional IDs, declared twin syntax, invalid input types, and sensitive-value exclusion.
+- Added a Writer close regression test: after a successful snapshot on a cancelled close attempt, a subsequent attempt must take a fresh snapshot and must not mark the session closed until `notifyClosed`.
+- Python run `44798087534` on code/test commit `491ca49a`: **224 tests, 222 passed, 2 optional skips**.
+- Native run `44798087414` on the same code/test commit: normal CTest **4/4**, ASan/UBSan CTest **4/4**, and Debian package lifecycle all passed.
+- UNO run `44797952771` on close-retry test commit `226e0205`: **19 tests passed**. A further adapter integration test now checks twin metadata and explicitly empty optional content; fresh Python, UNO, and Native workflows for commit `41e15bbe` are queued.
+- An intermediate Python run failed on an obsolete assertion after the evidence schema changed; the assertion was corrected, and the subsequent 224-test run passed. No unresolved test failure is being hidden.
+- Automatic WordConfig writes remain disabled pending a sanitized matching Almas Word + wordConfig fixture and verified expected output. Visible Save / Don't Save / Cancel remains an outstanding interactive acceptance test.
+
+
+## Privacy-safe Writer callback trace — 2026-11-20
+
+- Added `close_trace.py`: an in-memory trace of fixed callback names, close-attempt ordinal, sequence number, and monotonic timestamp only.
+- Wired the trace into `_DocumentCloseListener` and `_DocumentEventListener`, and exposed it through `LibreOfficeAdapter.inspect_close_lifecycle_trace(handle)`.
+- Trace events include query/snapshot success or failure/notify-closing/notify-closed/disposing/save-done/save-as-done. It deliberately does not infer Save/Don't Save/Cancel and stores no document content, field values, file paths, or exception messages.
+- Added unit tests for event ordering, attempt ordinals, event-name allowlisting, adapter exposure, and redaction.
+- Python run `44798818684` on code/test commit `2feff5bf`: **227 tests, 225 passed, 2 optional skips**.
+- UNO run `44798818677` and Native run `44798818848` were still running at this checkpoint; poll before claiming their results.
+
+
+## Latest close-trace CI update — 2026-11-20
+
+- Python run `44798818684`: **227 tests, 225 passed, 2 optional skips**.
+- Native run `44798818848`: build/CTest, ASan/UBSan, and Debian package lifecycle all completed successfully.
+- UNO run `44798818677` has completed package installation and runtime verification; its adapter/unit and real UNO roundtrip test step remains in progress. Do not mark the trace integration as UNO-verified until this run completes.
+- Current PR head is documentation-only commit `e2e3719`; code/test head for the trace is `2feff5bf`.
