@@ -2763,3 +2763,11 @@ CI for the new E2E test and CMake install rules is pending on the latest code/te
 - Test commit: `33adcbfc18886933c6e4e47f52d1f359a10ec568`; contract update: `b3a22d10c2be0e14f4fb8caed7c07fa07cf6193b`.
 - Previous head `6ce47620` CI completed successfully: Python run `44549072545`, UNO run `44549072601`, Native run `44549072522`; all jobs passed. At the time of this update, GitHub reported no workflow runs associated with exact head `8da682e9`; the new lifecycle tests are committed but their CI result is not yet available.
 - No live Almas fixture, confirmed Writer discard/cancel implementation, or full desktop package is claimed.
+
+
+## Close-driven Writer handoff regression — 2026-11-20
+
+- Recorded the operator-confirmed reference behavior: closing the Word window without pressing Save returns control to Almas. This establishes a close-driven handoff requirement, but does not identify whether a Save/Don't Save/Cancel prompt appeared or which choice was selected.
+- Added a focused adapter regression proving that final close-time snapshot creation and terminal-close signaling do not require a preceding `OnSaveDone`/`OnSaveAsDone` event.
+- Test commit: `2776d889b330b88177ce7caeb86f659df56e4934`; lifecycle contract commit: `ddc95ce24bd6b7185fcb4b2c073d9f53e293ebdb`.
+- No workflow runs are currently associated with the latest PR head `ddc95ce24bd6b7185fcb4b2c073d9f53e293ebdb`; the new regression is committed but not yet CI-verified. No live Almas or interactive Writer prompt test is claimed.
