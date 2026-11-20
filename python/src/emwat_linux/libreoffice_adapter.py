@@ -22,6 +22,7 @@ from threading import Event, Lock, Thread
 import time
 from typing import Callable
 
+from emwat_linux.close_trace import CloseLifecycleEvent, CloseLifecycleTrace
 from emwat_linux.editword_request import EditWordDocumentRequest
 from emwat_linux.office_adapter import CloseDisposition, OfficeCloseEvent
 from emwat_linux.recovery_store import RecoverySnapshotStore
@@ -141,6 +142,7 @@ class _DocumentCloseListener:
         snapshot_properties: tuple[object, ...],
         snapshot_lock: Lock,
         recovery_stop: Event,
+        trace: CloseLifecycleTrace | None = None,
     ) -> None:
         self._document = document
         self._output_url = output_url
@@ -148,10 +150,13 @@ class _DocumentCloseListener:
         self._snapshot_properties = snapshot_properties
         self._snapshot_lock = snapshot_lock
         self._recovery_stop = recovery_stop
+        self._trace = trace
         self.snapshot_error: Exception | None = None
         self.snapshot_ready = Event()
 
     def queryClosing(self, _event: object, _gets_ownership: bool) -> None:
+        if self._trace is not None:
+            self._trace.record("query_closing")
         # A close attempt can be vetoed/cancelled by the office UI and retried.
         # Reset only this attempt's result; periodic recovery remains active until
         # notifyClosed confirms that the document really closed.
@@ -161,19 +166,28 @@ class _DocumentCloseListener:
             # storeToURL writes a copy and does not change the document's URL.
             with self._snapshot_lock:
                 self._document.storeToURL(self._output_url, self._snapshot_properties)
+            if self._trace is not None:
+                self._trace.record("snapshot_succeeded")
         except Exception as exc:  # retained internally; never returned to browser
             self.snapshot_error = exc
+            if self._trace is not None:
+                self._trace.record("snapshot_failed")
         finally:
             self.snapshot_ready.set()
 
     def notifyClosing(self, _event: object) -> None:
-        return
+        if self._trace is not None:
+            self._trace.record("notify_closing")
 
     def notifyClosed(self, _event: object) -> None:
+        if self._trace is not None:
+            self._trace.record("notify_closed")
         self._recovery_stop.set()
         self._on_closed()
 
     def disposing(self, _event: object) -> None:
+        if self._trace is not None:
+            self._trace.record("disposing")
         self._recovery_stop.set()
         self._on_closed()
 
@@ -183,11 +197,21 @@ class _DocumentEventListener:
 
     _SAVE_EVENTS = frozenset({"OnSaveDone", "OnSaveAsDone"})
 
-    def __init__(self, callback: Callable[[], None]) -> None:
+    def __init__(
+        self,
+        callback: Callable[[], None],
+        trace: CloseLifecycleTrace | None = None,
+    ) -> None:
         self._callback = callback
+        self._trace = trace
 
     def documentEventOccured(self, event: object) -> None:
-        if getattr(event, "EventName", "") in self._SAVE_EVENTS:
+        event_name = getattr(event, "EventName", "")
+        if event_name in self._SAVE_EVENTS:
+            if self._trace is not None:
+                self._trace.record(
+                    "save_done" if event_name == "OnSaveDone" else "save_as_done"
+                )
             self._callback()
 
     def disposing(self, _event: object) -> None:
@@ -216,6 +240,7 @@ class _OfficeHandle:
         self.recovery_error: Exception | None = None
         self.snapshot_properties: tuple[object, ...] = ()
         self._closed_once = False
+        self.close_trace = CloseLifecycleTrace()
 
     def mark_closed(self) -> None:
         if not self._closed_once:
@@ -382,10 +407,11 @@ class LibreOfficeAdapter:
                 snapshot_properties,
                 handle.snapshot_lock,
                 handle.recovery_stop,
+                handle.close_trace,
             )
             handle.close_listener = close_listener
             modify_listener = _ModifyListener(on_modified)
-            save_listener = _DocumentEventListener(on_saved)
+            save_listener = _DocumentEventListener(on_saved, handle.close_trace)
             modify_proxy = _uno_listener_proxy(
                 modify_listener,
                 uno_module=uno,
@@ -471,6 +497,15 @@ class LibreOfficeAdapter:
         prop.Name = name
         prop.Value = value
         return prop
+
+    def inspect_close_lifecycle_trace(
+        self,
+        handle: object,
+    ) -> tuple[CloseLifecycleEvent, ...]:
+        """Return fixed-name close/save callback metadata without document data."""
+        if not isinstance(handle, _OfficeHandle):
+            raise TypeError("invalid_libreoffice_handle")
+        return handle.close_trace.snapshot()
 
     def inspect_document(self, handle: object) -> WriterDocumentCatalog:
         """Inventory Writer structure without exposing document text or values."""
