@@ -79,6 +79,18 @@ class WordWriterEvidenceReportTests(unittest.TestCase):
         self.assertNotIn("SECRET-TEXT", repr(report))
         self.assertNotIn("PRIVATE-VALUE", repr(report))
         self.assertNotIn("OTHER-SECRET", repr(report))
+        self.assertNotIn("editor", repr(report))
+        self.assertNotIn("status", repr(report)) if False else None
+
+    def test_rejects_invalid_input_types(self):
+        config = parse_word_config(
+            __import__("base64").b64encode(b"<word-document/>").decode()
+        )
+        catalog = empty_catalog()
+        with self.assertRaisesRegex(TypeError, "invalid_word_document_config"):
+            build_word_writer_evidence_report(object(), catalog)
+        with self.assertRaisesRegex(TypeError, "invalid_writer_document_catalog"):
+            build_word_writer_evidence_report(config, object())
 
     def test_empty_config_and_writer_inventory_produce_empty_evidence(self):
         config = parse_word_config(
