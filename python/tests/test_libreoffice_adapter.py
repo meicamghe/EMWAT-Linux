@@ -88,7 +88,7 @@ class LibreOfficeAdapterUnitTests(unittest.TestCase):
         )
         config = parse_word_config(
             __import__("base64").b64encode(
-                b'<word-document><fields><field id="subject" mimetype="text/plain">secret</field></fields></word-document>'
+                b'<word-document><fields><field id="subject" mimetype="text/plain">secret</field><field id="primary&#8224;secondary" mimetype="text/plain">opaque</field></fields><optional-attributes><attribute id="optional"><content/></attribute></optional-attributes></word-document>'
             ).decode()
         )
         catalog = WriterDocumentCatalog(
@@ -105,6 +105,9 @@ class LibreOfficeAdapterUnitTests(unittest.TestCase):
             report = adapter.audit_word_writer_evidence(handle, config)
 
         self.assertEqual(report.fields[0].field_id, "subject")
+        self.assertEqual(report.fields[1].twin_first_member, "primary")
+        self.assertEqual(report.fields[1].twin_second_member, "secondary")
+        self.assertTrue(report.optional_attributes[0].has_content)
         self.assertEqual(report.writer_bookmark_names, ("LetterSubject",))
         self.assertNotIn("secret", repr(report))
         with self.assertRaisesRegex(TypeError, "invalid_word_document_config"):
