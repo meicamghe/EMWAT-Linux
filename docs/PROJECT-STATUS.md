@@ -2786,3 +2786,12 @@ CI for the new E2E test and CMake install rules is pending on the latest code/te
 - The native package lifecycle remains limited to `emwat-native-core-dev`; it is not a complete EMWAT desktop installer.
 - These CI results do not prove interactive Save / Don't Save / Cancel behavior, live Almas/browser compatibility, full semantic Word/Writer field parity, physical scanner support, or Windows `.easz` interoperability.
 - PR #2 remains open, Draft, and unmerged. No release-readiness claim is made.
+
+
+## Word/Writer runtime mapping boundary — 2026-11-20
+
+- Source review confirmed that the current `EditWordDocumentService` parses and retains `wordConfig`, then passes the request to the coordinator; `LibreOfficeAdapter.open_document()` opens the Word payload but explicitly does not apply the config fields.
+- `decode_word_fields()`, native-shaped descriptor construction, Writer metadata inspection, and exact custom-property updates exist as separate building blocks. They are not yet composed into an automatic request-to-Writer mapping step.
+- Consequently, current real UNO CI validates open/close/export and the synthetic response path, not complete population of Almas-provided fields, signatures, or `signData`.
+- Updated `docs/WORD-WRITER-MAPPING-AUDIT.md` with the exact runtime boundary and safe fixture gate.
+- Release blocker: obtain one sanitized matching Word document + `wordConfig` fixture and expected field results; verify property enumeration, twin-field associations, image/signature handling and output roundtrip before enabling automatic writes. Do not infer order or `signData` encoding.
