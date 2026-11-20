@@ -39,6 +39,7 @@ class OptionalAttribute:
     attributes: Mapping[str, str]
     content_attributes: Mapping[str, str]
     content: str
+    has_content_element: bool = False
 
 
 @dataclass(frozen=True)
@@ -145,6 +146,7 @@ def parse_word_config(
                         attributes=_immutable(attribute.attrib),
                         content_attributes=_immutable(content_node.attrib if content_node is not None else {}),
                         content=(content_node.text or "") if content_node is not None else (attribute.text or ""),
+                        has_content_element=content_node is not None,
                     )
                 )
         elif section.tag == "requested-types":
