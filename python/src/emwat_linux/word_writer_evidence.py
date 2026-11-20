@@ -123,7 +123,7 @@ def build_word_writer_evidence_report(
                 attribute_id=attribute.attributes.get("id", ""),
                 value_type=attribute.attributes.get("type"),
                 content_encoding=attribute.content_attributes.get("encryption"),
-                has_content=bool(attribute.content),
+                has_content=attribute.has_content_element,
             )
             for attribute in config.optional_attributes
         ),
