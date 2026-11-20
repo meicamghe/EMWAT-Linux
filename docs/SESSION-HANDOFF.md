@@ -1191,3 +1191,11 @@ Do not implement guessed `signData` joining or claim end-to-end Almas registrati
 - Added `docs/WORD-WRITER-EVIDENCE-REPORT.md` and `docs/WRITER-VISIBLE-CLOSE-ACCEPTANCE.md`. The latter defines visible Writer Save, Don't Save, Cancel and retry acceptance, including output-marker checks and non-sensitive callback diagnostics.
 - Keep automatic WordConfig mapping disabled until a sanitized matching Word + wordConfig fixture and expected output are supplied and independently verified. Do not infer signData separators or property ordering.
 - Next: poll CI runs for commit `4c571a74be9c75ad6fa0b7b823bcd6a3e8d88f28` (Python `44796996459`, Native `44796996414`, UNO `44796996426`); then poll docs-triggered UNO run `44797006712`. PR #2 stays open, Draft and unmerged.
+
+## 2026-11-20 — corrected adapter evidence audit verification
+
+- Added a lock-protected, read-only `LibreOfficeAdapter.audit_word_writer_evidence()` entry point for the metadata-only report.
+- Corrected the test module imports after the first intermediate push; that intermediate CI attempt failed and is superseded by the corrected code/test head.
+- Corrected head `4c571a74be9c75ad6fa0b7b823bcd6a3e8d88f28`: Python run `44796996459` passed 220 tests (218 passed, 2 optional skips); UNO run `44796996426` passed 18 tests including the new audit regression and real Writer roundtrip.
+- Docs-triggered UNO run `44797006712` also passed. Native build/CTest/staged install passed; package lifecycle and ASan/UBSan were still running at last poll.
+- Continue polling Native run `44796996414`; keep PR #2 open, Draft and unmerged.
