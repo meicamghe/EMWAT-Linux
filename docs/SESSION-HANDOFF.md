@@ -1171,3 +1171,13 @@ Do not implement guessed `signData` joining or claim end-to-end Almas registrati
 - No paid toolkit, subscription, or mandatory cloud service. Check license obligations for all distributed dependencies.
 - Source of truth: `docs/LINUX-PRODUCT-DECISIONS.md`; also reflected in README, PROJECT-STATUS, Ubuntu installation guide, and recovery picker UX.
 - Next implementation priority remains real Almas/browser wire-contract evidence and full Writer document roundtrip, not GTK screen proliferation.
+
+
+## EMWAT Linux — Writer close evidence and CI handoff (2026-11-20)
+
+- Latest branch checkpoint: `79c017e757485dbd5fb19b7a7e1fd13beb05353c`; PR #2 remains open/Draft/unmerged.
+- Added `docs/WRITER-CLOSE-DISCARD-INVESTIGATION.md`: UNO `queryClosing`/terminal-close semantics are documented, but interactive Writer Save / Don't Save / Cancel ordering remains unverified. Do not infer discard from `notifyClosed` or `disposing`.
+- Python CI run `44784556864`: success.
+- LibreOffice UNO CI run `44784556817`: success; 17 tests passed, including real UNO open/close/export and EditWord response-handler integration.
+- Native CI run `44784556764`: package lifecycle and normal build/CTest/staged install passed; ASan/UBSan was still running at the checkpoint.
+- Next: poll Native sanitizer job, then record final combined CI status. Continue the Writer visible-UI Save / Don't Save / Cancel test design. Do not ship a daemon/desktop entrypoint or claim production readiness until Origin allowlists, verified close response policy, lifecycle supervision, secure recovery key custody and Almas wire fixtures are resolved.
