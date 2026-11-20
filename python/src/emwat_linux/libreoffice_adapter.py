@@ -28,6 +28,11 @@ from emwat_linux.recovery_store import RecoverySnapshotStore
 from emwat_linux.writer_fields import refresh_writer_text_fields
 from emwat_linux.writer_inspector import WriterDocumentCatalog, inspect_writer_document
 from emwat_linux.writer_properties import set_custom_document_properties
+from emwat_linux.word_config import WordDocumentConfig
+from emwat_linux.word_writer_evidence import (
+    WordWriterEvidenceReport,
+    build_word_writer_evidence_report,
+)
 
 
 _CFB_SIGNATURE = bytes.fromhex("D0CF11E0A1B11AE1")
@@ -473,6 +478,20 @@ class LibreOfficeAdapter:
             raise TypeError("invalid_libreoffice_handle")
         with handle.snapshot_lock:
             return inspect_writer_document(handle.document)
+
+    def audit_word_writer_evidence(
+        self,
+        handle: object,
+        config: WordDocumentConfig,
+    ) -> WordWriterEvidenceReport:
+        """Compare request metadata with Writer structure without mutation."""
+        if not isinstance(handle, _OfficeHandle):
+            raise TypeError("invalid_libreoffice_handle")
+        if not isinstance(config, WordDocumentConfig):
+            raise TypeError("invalid_word_document_config")
+        with handle.snapshot_lock:
+            catalog = inspect_writer_document(handle.document)
+            return build_word_writer_evidence_report(config, catalog)
 
     def apply_custom_property_updates(
         self,
