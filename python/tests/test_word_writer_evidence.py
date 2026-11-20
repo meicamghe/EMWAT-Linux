@@ -41,7 +41,7 @@ class WordWriterEvidenceReportTests(unittest.TestCase):
                     "<field id='signature' mimetype='image/png' paramId='signData'></field>""<field id='Subject' mimetype='TEXT/PLAIN'>OTHER-SECRET</field>"
                     "</fields>"
                     "<optional-attributes><attribute id='tokenizedReceivers' type='compInfo'>"
-                    "<content encryption='urlencoded'>PRIVATE-VALUE</content></attribute>""<attribute id='tokenizedReceivers' type='compInfo'/></optional-attributes>"
+                    "<content encryption='urlencoded'>PRIVATE-VALUE</content></attribute>""<attribute id='tokenizedReceivers' type='compInfo'/>""<attribute id='emptyValue'><content/></attribute></optional-attributes>"
                     "<requested-types><type name='document' mimetype='application/msword'/></requested-types>"
                     "</word-document>"
                 ).encode()
@@ -62,13 +62,15 @@ class WordWriterEvidenceReportTests(unittest.TestCase):
         self.assertEqual(report.optional_attributes[0].content_encoding, "urlencoded")
         self.assertTrue(report.optional_attributes[0].has_content)
         self.assertFalse(report.optional_attributes[1].has_content)
+        self.assertTrue(report.optional_attributes[2].has_content)
+        self.assertEqual(report.optional_attributes[2].attribute_id, "emptyValue")
         self.assertEqual(report.writer_custom_property_casefold_collisions, (("LetterSubject", "lettersubject"),))
         self.assertEqual(report.fields[0].encoding, "urlencoded")
         self.assertTrue(report.fields[0].is_plain_text)
         self.assertTrue(report.fields[1].is_image)
         self.assertEqual(report.fields[2].external_parameter, "signData")
         self.assertEqual(report.settings_names, ("readOnly", "readOnly"))
-        self.assertEqual(tuple(item.attribute_id for item in report.optional_attributes), ("tokenizedReceivers", "tokenizedReceivers"))
+        self.assertEqual(tuple(item.attribute_id for item in report.optional_attributes), ("tokenizedReceivers", "tokenizedReceivers", "emptyValue"))
         self.assertEqual(
             report.requested_type_attributes,
             ((("mimetype", "application/msword"), ("name", "document")),),
