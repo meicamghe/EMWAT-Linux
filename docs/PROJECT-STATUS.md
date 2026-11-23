@@ -1,3 +1,13 @@
+
+## GTK Bridge controls — 2026-11-23
+
+- Added GTK runtime regression coverage for the explicit Bridge controls introduced in the desktop shell.
+- The unconfigured application must display Start/Stop controls as disabled and state clearly that the Bridge is not configured; creating the window must not start a listener.
+- An injected fake supervisor is exercised through both controls. The test verifies that start/stop run on worker threads, GTK remains responsive while the operation completes, and the status/buttons refresh on the GTK main context.
+- This validates the GUI-to-supervisor control boundary only. The production `main()` still injects no supervisor; no real Almas Origin, Cancel response contract, or production bridge startup is configured by this test.
+- Current PR head `4eeb68ba02247cae1a3c830d546fe19afbddf59d` has passed Python, GTK, Native (build, sanitizer, and DEB package lifecycle), and LibreOffice UNO workflows. The added regression tests require a new CI run before they can be considered verified.
+- PR #2 remains open, Draft, and unmerged.
+
 ## Headless bridge supervisor — 2026-11-23
 
 - Added `BridgeSupervisor`, an application-level lifecycle owner independent of GTK. It receives an injected factory for a fully configured bridge server; it does not guess Almas origins, method handlers, or Cancel/Discard response envelopes.
