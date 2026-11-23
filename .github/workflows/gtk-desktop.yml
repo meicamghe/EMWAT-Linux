@@ -43,7 +43,7 @@ jobs:
           printf '#!/bin/sh\\nexit 0\\n' > "$temp_root/bin/emwat-linux"
           chmod +x "$temp_root/bin/emwat-linux"
           PATH="$temp_root/bin:$PATH" XDG_DATA_HOME="$temp_root/data" sh packaging/install-desktop-entry.sh
-          grep -F "Exec=$temp_root/bin/emwat-linux" "$temp_root/data/applications/org.emwat.Linux.desktop"
+          grep -F "Exec=\\\"$temp_root/bin/emwat-linux\\\"" "$temp_root/data/applications/org.emwat.Linux.desktop"
       - name: Run GTK application smoke tests
         env:
           PYTHONPATH: python/src
