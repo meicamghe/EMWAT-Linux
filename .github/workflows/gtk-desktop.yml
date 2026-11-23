@@ -50,10 +50,10 @@ jobs:
           temp_base=$(mktemp -d)
           temp_root="$temp_base/with space"
           mkdir -p "$temp_root/bin"
-          printf '#!/bin/sh\\nexit 0\\n' > "$temp_root/bin/emwat-linux"
-          cat > "$temp_root/bin/emwat-linux-desktop-entry" <<'HELPER'
+          printf '%s\n' '#!/bin/sh' 'exit 0' > "$temp_root/bin/emwat-linux"
+          cat > "$temp_root/bin/emwat-linux-desktop-entry" <<HELPER
           #!/bin/sh
-          PYTHONPATH="$GITHUB_WORKSPACE/python/src${PYTHONPATH:+:$PYTHONPATH}" /usr/bin/python3 -m emwat_linux.desktop_entry "$@"
+          PYTHONPATH="$GITHUB_WORKSPACE/python/src" /usr/bin/python3 -m emwat_linux.desktop_entry "\$@"
           HELPER
           chmod +x "$temp_root/bin/emwat-linux" "$temp_root/bin/emwat-linux-desktop-entry"
           PATH="$temp_root/bin:$PATH" XDG_DATA_HOME="$temp_root/data" sh packaging/install-desktop-entry.sh
