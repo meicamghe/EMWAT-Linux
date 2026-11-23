@@ -502,7 +502,10 @@ std::vector<ImagePage> SaneScannerBackend::scan_pages(
     validate_scan_options(options);
 
     // Never repeatedly start a flatbed. Batch acquisition is enabled only when
-    // the caller explicitly selected a source whose name identifies an ADF.
+    // the caller explicitly selected a source whose name identifies a simplex ADF.
+    // A duplex feeder is rejected rather than silently returning only one side.
+    if (options.source && detail::is_duplex_source(*options.source))
+        throw ScannerError("duplex_adf_batch_not_supported");
     if (!options.source || !detail::is_adf_source(*options.source)) {
         return {scan_one(device_id, options)};
     }
