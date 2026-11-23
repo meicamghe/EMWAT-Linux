@@ -1,7 +1,7 @@
 import threading
 import unittest
 
-from emwat_linux.application_runtime import BridgeRuntimeState
+from emwat_linux.application_runtime import BridgeRuntime, BridgeRuntimeState
 from emwat_linux.bridge_supervisor import (
     BridgeSupervisor,
     BridgeSupervisorState,
@@ -87,7 +87,10 @@ class BridgeSupervisorTests(unittest.TestCase):
                 self.stopped.set()
 
         server = RetryServer()
-        supervisor = BridgeSupervisor(lambda: server)
+        supervisor = BridgeSupervisor(
+            lambda: server,
+            runtime_factory=lambda item: BridgeRuntime(item, join_timeout_seconds=0.01),
+        )
         supervisor.start()
 
         with self.assertRaisesRegex(RuntimeError, "transient shutdown failure"):
