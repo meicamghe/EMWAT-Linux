@@ -76,8 +76,20 @@ class BridgeSupervisor:
         """Start a fresh configured server, or return the active runtime."""
         with self._lock:
             if self._state is BridgeSupervisorState.RUNNING:
-                assert self._runtime is not None
-                return self._runtime
+                if (
+                    self._runtime is not None
+                    and self._runtime.state is BridgeRuntimeState.RUNNING
+                ):
+                    return self._runtime
+                self._failure = (
+                    self._runtime.failure
+                    if self._runtime is not None
+                    else None
+                ) or RuntimeError("bridge_runtime_exited_while_supervisor_was_running")
+                self._state = BridgeSupervisorState.FAILED
+                raise RuntimeError(
+                    "bridge_supervisor_detected_unexpected_runtime_exit"
+                ) from self._failure
             if self._state in (
                 BridgeSupervisorState.STARTING,
                 BridgeSupervisorState.STOPPING,
@@ -96,7 +108,13 @@ class BridgeSupervisor:
         runtime: BridgeRuntime | None = None
         try:
             server = self._server_factory()
-            runtime = self._runtime_factory(server)
+            try:
+                runtime = self._runtime_factory(server)
+            except BaseException:
+                close_server = getattr(server, "server_close", None)
+                if callable(close_server):
+                    close_server()
+                raise
             with self._lock:
                 self._runtime = runtime
             runtime.start()
