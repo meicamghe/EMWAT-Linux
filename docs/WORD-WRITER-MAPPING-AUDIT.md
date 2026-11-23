@@ -40,3 +40,14 @@ Before enabling automatic field writes, obtain a sanitized real Word fixture plu
 - output roundtrip equivalence for text, images, bookmarks, and signatures.
 
 Until this fixture exists, keep property updates explicit and exact-name-only. Do not auto-create properties, infer positional alignment from Writer metadata order, or guess `signData` concatenation.
+
+
+## Indexed signer catalog ordering hardening — 2026-11-23
+
+The indexed signer-slot audit now records each recognized field's actual input
+position in a single pass. This preserves repeated occurrences of an identical
+field ID in their original order and avoids the previous repeated
+`field_ids.index()` scan (quadratic behavior on large catalogs). This is still
+structural evidence only: duplicate IDs remain visible for investigation, no
+missing field is synthesized, and no Word-to-Writer mapping is inferred.
+A regression test covers an interleaved duplicate signer field.
