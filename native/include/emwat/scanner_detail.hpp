@@ -194,13 +194,31 @@ inline bool is_adf_source(const std::string& source) {
                         has_token_prefix("automatic document feeder");
     if (!feeder) return false;
 
-    // A feeder name alone does not prove simplex operation. Only enable
-    // automatic multi-page acquisition when the selected source explicitly
-    // identifies a front-only or simplex path.
-    return normalized.find("simplex") != std::string::npos ||
-           normalized.find("front") != std::string::npos ||
-           normalized.find("one-sided") != std::string::npos ||
-           normalized.find("single-sided") != std::string::npos;
+    // A feeder name alone does not prove simplex operation. Match the
+    // mode markers as complete label tokens, not arbitrary substrings such
+    // as "nonsimplex" or "frontline".
+    const auto has_label_token = [&](const char* marker) {
+        const std::string token(marker);
+        std::size_t position = normalized.find(token);
+        while (position != std::string::npos) {
+            const bool left_boundary = position == 0 ||
+                std::isspace(static_cast<unsigned char>(normalized[position - 1])) != 0 ||
+                normalized[position - 1] == '(' || normalized[position - 1] == '[' ||
+                normalized[position - 1] == '-' || normalized[position - 1] == '_' ||
+                normalized[position - 1] == ':';
+            const std::size_t end = position + token.size();
+            const bool right_boundary = end == normalized.size() ||
+                std::isspace(static_cast<unsigned char>(normalized[end])) != 0 ||
+                normalized[end] == ')' || normalized[end] == ']' ||
+                normalized[end] == '-' || normalized[end] == '_' ||
+                normalized[end] == ':';
+            if (left_boundary && right_boundary) return true;
+            position = normalized.find(token, position + 1);
+        }
+        return false;
+    };
+    return has_label_token("simplex") || has_label_token("front") ||
+           has_label_token("one-sided") || has_label_token("single-sided");
 }
 
 } // namespace emwat::detail
