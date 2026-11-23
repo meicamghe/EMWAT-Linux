@@ -146,11 +146,12 @@ class BridgeSupervisor:
                 )
             runtime = self._runtime
             if runtime is None:
-                self._state = BridgeSupervisorState.FAILED
-                self._failure = RuntimeError(
-                    "bridge_supervisor_missing_runtime_during_cleanup"
-                )
-                raise self._failure
+                # Server construction failed before a runtime existed; there
+                # is no thread or socket to clean up, so permit an explicit
+                # stop to acknowledge the failure and allow a later retry.
+                self._failure = None
+                self._state = BridgeSupervisorState.STOPPED
+                return
             self._state = BridgeSupervisorState.STOPPING
 
         try:
