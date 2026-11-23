@@ -12,6 +12,7 @@ from typing import Any, Sequence
 
 
 APPLICATION_ID = "org.emwat.Linux"
+BRIDGE_STATUS_POLL_SECONDS = 1
 
 
 def create_desktop_application(
@@ -161,7 +162,7 @@ def create_desktop_application(
 
             # A serving thread can fail without a button action. Poll the
             # supervisor on GTK's main context so the failure is visible.
-            GLib.timeout_add_seconds(1, poll_bridge_state)
+            GLib.timeout_add_seconds(BRIDGE_STATUS_POLL_SECONDS, poll_bridge_state)
 
             def run_bridge_operation(operation: Any) -> None:
                 bridge_start.set_sensitive(False)
