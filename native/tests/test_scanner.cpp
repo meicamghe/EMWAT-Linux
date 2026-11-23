@@ -1,9 +1,13 @@
 #include "emwat/scanner.hpp"
 #include "emwat/scanner_detail.hpp"
 
-#include <stdexcept>
+#include <array>
+#include <cstdint>
 #include <limits>
+#include <stdexcept>
+#include <string>
 #include <utility>
+#include <vector>
 
 #ifdef NDEBUG
 #undef NDEBUG
