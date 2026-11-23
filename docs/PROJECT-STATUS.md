@@ -2966,3 +2966,22 @@ The next meaningful Almas acceptance input is a sanitized, synthetic-or-test-acc
   a production bridge launcher. The product remains blocked on the real Almas
   request/response fixtures and a verified non-success response contract,
   plus supervised desktop runtime and complete end-user packaging.
+
+## Release acceptance matrix and fixture gates — 2026-11-23
+
+- Added `docs/RELEASE-ACCEPTANCE-MATRIX.md` and linked it from the README.
+- The matrix separates Python/native/UNO CI, real Writer close acceptance,
+  headless GTK checks, physical scanner acceptance, semantic field mapping,
+  live Almas integration, Cancel/Discard response compatibility, and final
+  desktop packaging. Passing one layer is not represented as passing another.
+- It records the exact evidence needed before Almas integration: sanitized
+  complete request/response fixtures from a controlled test account, including
+  Save, Don't Save and application-level Cancel where applicable.
+- No protocol response was guessed and no production launcher was added:
+  those would require the real Almas wire contract and explicit Origin
+  configuration.
+- This is documentation-only after the verified code/workflow head
+  `4422083a7a16a318efe1b191dc96914d9d31cb03`; the latest CI evidence remains
+  the Python (239 tests), Native (build/test, sanitizer and package lifecycle),
+  and LibreOffice UNO workflows recorded above.
+- PR #2 remains open, Draft and unmerged.
