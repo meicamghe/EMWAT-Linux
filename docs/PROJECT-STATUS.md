@@ -1,3 +1,13 @@
+## Current verified state — 2026-11-23 (latest branch head)
+
+- Latest branch head: `a1067bd4923dd4a448b37f754484ec9dc638ff7f`.
+- Recovery retention ordering now has a stable `session_id` tie-breaker when snapshot timestamps are equal. A regression test covers the count-limit case with identical timestamps.
+- Python bridge workflow [45143990955](https://github.com/meicamghe/EMWAT-Linux/actions/runs/45143990955): success; **243 tests run, 241 passed, 2 optional skips**. Package build/install and `emwat-linux-doctor --help` also passed.
+- LibreOffice UNO workflow [45143990759](https://github.com/meicamghe/EMWAT-Linux/actions/runs/45143990759): success.
+- Native core workflow [45143991103](https://github.com/meicamghe/EMWAT-Linux/actions/runs/45143991103): success; normal build/test, AddressSanitizer + UndefinedBehaviorSanitizer build/test, and Debian package lifecycle all passed.
+- These are automated component-level results. They do not establish live Almas browser integration, real Almas cancellation/discard response semantics, physical scanner compatibility, or a complete desktop installer.
+- PR #2 remains open, Draft, and unmerged. Do not merge without explicit owner approval.
+
 ## Four parallel implementation tracks — 2026 11 18
 
 - **Almas ↔ Writer contract:** added `docs/ALMAS-WRITER-LIFECYCLE-CONTRACT.md` to separate the implemented synthetic success path from unverified live Almas behavior. It records that Save, accepted Close, close-veto/Cancel, and confirmed Discard are distinct; no unknown Cancel/Discard HTTP/XML response is guessed.
