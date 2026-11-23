@@ -83,7 +83,7 @@ void fake_sane_cancel(SANE_Handle handle) {
 }
 
 const SANE_Char* fake_sane_status_string(SANE_Status) {
-    return reinterpret_cast<const SANE_Char*>("fake SANE status");
+    return "fake SANE status";
 }
 
 const sane_detail::SaneScanApi fake_sane_api{
