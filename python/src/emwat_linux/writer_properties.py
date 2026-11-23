@@ -41,10 +41,32 @@ def set_custom_document_properties(
         )
         if missing:
             raise KeyError("custom_property_not_found:" + ",".join(missing))
+
+        # Capture previous values before the first mutation. UNO has no
+        # transaction primitive for user-defined properties, so roll back
+        # already-applied entries if a later setter fails.
+        previous = tuple(
+            (name, properties.getPropertyValue(name)) for name, _value in items
+        )
+        applied: list[str] = []
         for property_name, value in items:
             try:
                 properties.setPropertyValue(property_name, value)
+                applied.append(property_name)
             except Exception as exc:
+                rollback_failed = False
+                previous_by_name = dict(previous)
+                for applied_name in reversed(applied):
+                    try:
+                        properties.setPropertyValue(
+                            applied_name, previous_by_name[applied_name]
+                        )
+                    except Exception:
+                        rollback_failed = True
+                if rollback_failed:
+                    raise WriterPropertyUpdateError(
+                        "custom_property_update_failed_and_rollback_incomplete"
+                    ) from exc
                 raise WriterPropertyUpdateError(
                     f"custom_property_update_failed:{property_name}"
                 ) from exc
