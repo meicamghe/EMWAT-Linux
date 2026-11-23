@@ -345,7 +345,7 @@ ImagePage read_started_sane_page(
     SANE_Parameters params{};
     auto status = api.get_parameters(handle, &params);
     if (status != SANE_STATUS_GOOD)
-        throw ScannerError(std::string("Cannot read scan parameters: ") + sane_strstatus(status));
+        throw ScannerError(std::string("Cannot read scan parameters: ") + api.status_string(status));
 
     const auto page_byte_limit = std::min<std::uint64_t>(
         remaining_batch_bytes, static_cast<std::uint64_t>(max_scan_bytes)
@@ -458,7 +458,7 @@ ImagePage read_started_sane_page(
 } // namespace sane_detail
 
 const sane_detail::SaneScanApi& sane_detail::real_sane_scan_api() noexcept {
-    static const SaneScanApi api{
+    static const sane_detail::SaneScanApi api{
         &sane_start, &sane_get_parameters, &sane_read, &sane_cancel, &sane_strstatus
     };
     return api;
@@ -476,16 +476,19 @@ ImagePage SaneScannerBackend::scan_one(const std::string& device_id, const ScanO
     if (options.source) set_string_option(device.get(), "source", *options.source);
 
     const auto [dpi_x, dpi_y] = read_scan_dpi(device.get());
-    const auto status = sane_start(device.get());
+    const auto& api = sane_detail::real_sane_scan_api();
+    const auto status = api.start(device.get());
     if (status != SANE_STATUS_GOOD)
-        throw ScannerError(std::string("Cannot start scan: ") + sane_strstatus(status));
+        throw ScannerError(std::string("Cannot start scan: ") + api.status_string(status));
     try {
-        auto page = read_started_sane_page(device.get(), dpi_x, dpi_y);
+        auto page = sane_detail::read_started_sane_page(
+            device.get(), dpi_x, dpi_y, api, max_scan_bytes, false
+        );
         // SANE requires cancellation/reset after a completed single-image transfer.
-        sane_cancel(device.get());
+        api.cancel(device.get());
         return page;
     } catch (...) {
-        sane_cancel(device.get());
+        api.cancel(device.get());
         throw;
     }
 }
@@ -514,23 +517,24 @@ std::vector<ImagePage> SaneScannerBackend::scan_pages(
     set_string_option(device.get(), "source", *options.source);
 
     const auto [dpi_x, dpi_y] = read_scan_dpi(device.get());
+    const auto& api = sane_detail::real_sane_scan_api();
     return detail::collect_bounded_pages<ImagePage>(
         [&]() {
-            const auto status = sane_start(device.get());
+            const auto status = api.start(device.get());
             if (status == SANE_STATUS_NO_DOCS) return false;
             if (status != SANE_STATUS_GOOD)
                 throw ScannerError(
-                    std::string("Cannot continue ADF scan: ") + sane_strstatus(status)
+                    std::string("Cannot continue ADF scan: ") + api.status_string(status)
                 );
             return true;
         },
         [&](std::uint64_t remaining_bytes) {
-            return read_started_sane_page(
-                device.get(), dpi_x, dpi_y, remaining_bytes, true
+            return sane_detail::read_started_sane_page(
+                device.get(), dpi_x, dpi_y, api, remaining_bytes, true
             );
         },
         [](const ImagePage& page) { return page.pixels.bytes.size(); },
-        [&]() { sane_cancel(device.get()); },
+        [&]() { api.cancel(device.get()); },
         max_adf_pages,
         max_batch_bytes
     );
