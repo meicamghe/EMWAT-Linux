@@ -65,6 +65,40 @@ class BridgeHTTPServerTests(unittest.TestCase):
         finally:
             server.server_close()
 
+    def test_parent_origins_and_referers_share_browser_origin_canonicalization(self):
+        self.assertEqual(
+            BridgeHTTPServer._normalize_parent_origins(frozenset({
+                "HTTPS://Office.Example:443",
+                "http://localhost:80",
+                "https://office.example:8443",
+            })),
+            frozenset({
+                "https://office.example",
+                "http://localhost",
+                "https://office.example:8443",
+            }),
+        )
+        self.assertEqual(
+            BridgeHTTPServer._referer_origin("HTTPS://OFFICE.EXAMPLE:443/letters/open"),
+            "https://office.example",
+        )
+        self.assertEqual(
+            BridgeHTTPServer._referer_origin("http://LOCALHOST:80/home"),
+            "http://localhost",
+        )
+        self.assertIsNone(
+            BridgeHTTPServer._referer_origin("https://office.example:/letters")
+        )
+
+    def test_parent_origin_rejects_empty_explicit_port(self):
+        with self.assertRaisesRegex(
+            ValueError, "allowed parent origins must be bare HTTP(S) origins"
+        ):
+            BridgeHTTPServer(
+                lambda _request: BridgeResponse(b""),
+                allowed_parent_origins=frozenset({"https://office.example:"}),
+            )
+
     def test_allowed_origins_reject_non_origin_urls_and_malformed_ports(self):
         invalid = (
             "ftp://office.example",
