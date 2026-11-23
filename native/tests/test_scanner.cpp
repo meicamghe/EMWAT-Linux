@@ -142,6 +142,128 @@ public:
 };
 
 int main() {
+    // The production page reader consumes ordered planar RGB frames through an injectable SANE API.
+    {
+        FakeSaneState state;
+        state.frames = {
+            fake_frame(SANE_FRAME_RED, false, {1, 2}),
+            fake_frame(SANE_FRAME_GREEN, false, {3, 4}),
+            fake_frame(SANE_FRAME_BLUE, true, {5, 6}),
+        };
+        const auto handle = reinterpret_cast<SANE_Handle>(&state);
+        assert(fake_sane_api.start(handle) == SANE_STATUS_GOOD);
+        const auto page = sane_detail::read_started_sane_page(
+            handle, 300.0, 300.0, fake_sane_api, 1024 * 1024, false
+        );
+        assert(page.pixels.format == PixelFormat::RGB8);
+        assert(page.pixels.width == 2 && page.pixels.height == 1);
+        assert((page.pixels.bytes == std::vector<std::uint8_t>{1, 3, 5, 2, 4, 6}));
+        assert(state.start_calls == 3);
+    }
+
+    // The production page reader and bounded collector cooperate across ADF pages.
+    {
+        FakeSaneState state;
+        state.frames = {
+            fake_frame(SANE_FRAME_GRAY, true, {10, 11}),
+            fake_frame(SANE_FRAME_GRAY, true, {12, 13}),
+        };
+        const auto handle = reinterpret_cast<SANE_Handle>(&state);
+        const auto pages = detail::collect_bounded_pages<ImagePage>(
+            [&]() {
+                const auto status = fake_sane_api.start(handle);
+                if (status == SANE_STATUS_NO_DOCS) return false;
+                if (status != SANE_STATUS_GOOD) throw ScannerError("fake_start_failed");
+                return true;
+            },
+            [&](std::uint64_t remaining) {
+                return sane_detail::read_started_sane_page(
+                    handle, std::nullopt, std::nullopt, fake_sane_api, remaining, true
+                );
+            },
+            [](const ImagePage& page) { return page.pixels.bytes.size(); },
+            [&]() { fake_sane_api.cancel(handle); },
+            10, 1024
+        );
+        assert(pages.size() == 2);
+        assert((pages[0].pixels.bytes == std::vector<std::uint8_t>{10, 11}));
+        assert((pages[1].pixels.bytes == std::vector<std::uint8_t>{12, 13}));
+        assert(state.start_calls == 3);
+        assert(state.cancel_calls == 1);
+    }
+
+    // Feeder-empty from sane_read before any bytes is a normal batch terminator.
+    {
+        FakeSaneState state;
+        state.frames = {
+            fake_frame(SANE_FRAME_GRAY, true, {}, SANE_STATUS_NO_DOCS),
+        };
+        const auto handle = reinterpret_cast<SANE_Handle>(&state);
+        assert(fake_sane_api.start(handle) == SANE_STATUS_GOOD);
+        bool feeder_empty = false;
+        try {
+            (void)sane_detail::read_started_sane_page(
+                handle, std::nullopt, std::nullopt, fake_sane_api, 1024, true
+            );
+        } catch (const detail::ScanBatchEnd&) {
+            feeder_empty = true;
+        }
+        assert(feeder_empty);
+    }
+
+    // NO_DOCS after partial bytes is not silently accepted as an empty feeder.
+    {
+        FakeSaneState state;
+        state.frames = {
+            fake_frame(SANE_FRAME_GRAY, true, {42}, SANE_STATUS_NO_DOCS),
+        };
+        const auto handle = reinterpret_cast<SANE_Handle>(&state);
+        assert(fake_sane_api.start(handle) == SANE_STATUS_GOOD);
+        bool rejected = false;
+        try {
+            (void)sane_detail::read_started_sane_page(
+                handle, std::nullopt, std::nullopt, fake_sane_api, 1024, true
+            );
+        } catch (const ScannerError&) {
+            rejected = true;
+        }
+        assert(rejected);
+    }
+
+    // An out-of-order planar channel fails the real reader and cancels the batch.
+    {
+        FakeSaneState state;
+        state.frames = {
+            fake_frame(SANE_FRAME_RED, false, {1, 2}),
+            fake_frame(SANE_FRAME_BLUE, false, {3, 4}),
+            fake_frame(SANE_FRAME_BLUE, true, {5, 6}),
+        };
+        const auto handle = reinterpret_cast<SANE_Handle>(&state);
+        bool rejected = false;
+        try {
+            (void)detail::collect_bounded_pages<ImagePage>(
+                [&]() {
+                    const auto status = fake_sane_api.start(handle);
+                    if (status == SANE_STATUS_NO_DOCS) return false;
+                    if (status != SANE_STATUS_GOOD) throw ScannerError("fake_start_failed");
+                    return true;
+                },
+                [&](std::uint64_t remaining) {
+                    return sane_detail::read_started_sane_page(
+                        handle, std::nullopt, std::nullopt, fake_sane_api, remaining, true
+                    );
+                },
+                [](const ImagePage& page) { return page.pixels.bytes.size(); },
+                [&]() { fake_sane_api.cancel(handle); },
+                10, 1024
+            );
+        } catch (const ScannerError&) {
+            rejected = true;
+        }
+        assert(rejected);
+        assert(state.cancel_calls == 1);
+    }
+
     // SANE backend string-option sizes are untrusted; reject oversized allocations.
     assert(detail::sane_string_option_size_valid(16, 15));
     assert(!detail::sane_string_option_size_valid(16, 16));
