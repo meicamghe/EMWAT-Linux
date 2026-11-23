@@ -7,6 +7,10 @@ on:
       - 'python/src/emwat_linux/gtk_desktop.py'
       - 'python/src/emwat_linux/gtk_recovery_view.py'
       - 'python/src/emwat_linux/doctor.py'
+      - 'python/src/emwat_linux/desktop_entry.py'
+      - 'python/tests/test_desktop_entry.py'
+      - 'python/pyproject.toml'
+      - 'packaging/**'
       - 'python/tests/test_gtk*.py'
       - '.github/workflows/gtk-desktop.yml'
   pull_request:
@@ -37,14 +41,22 @@ jobs:
       - name: Validate per-user desktop launcher installer
         run: |
           sh -n packaging/install-desktop-entry.sh
+          sh -n packaging/uninstall-desktop-entry.sh
           desktop-file-validate packaging/org.emwat.Linux.desktop
           temp_base=$(mktemp -d)
           temp_root="$temp_base/with space"
           mkdir -p "$temp_root/bin"
           printf '#!/bin/sh\\nexit 0\\n' > "$temp_root/bin/emwat-linux"
-          chmod +x "$temp_root/bin/emwat-linux"
+          cat > "$temp_root/bin/emwat-linux-desktop-entry" <<'HELPER'
+          #!/bin/sh
+          PYTHONPATH="$GITHUB_WORKSPACE/python/src${PYTHONPATH:+:$PYTHONPATH}" /usr/bin/python3 -m emwat_linux.desktop_entry "$@"
+          HELPER
+          chmod +x "$temp_root/bin/emwat-linux" "$temp_root/bin/emwat-linux-desktop-entry"
           PATH="$temp_root/bin:$PATH" XDG_DATA_HOME="$temp_root/data" sh packaging/install-desktop-entry.sh
           grep -F 'Exec="'"$temp_root"'/bin/emwat-linux"' "$temp_root/data/applications/org.emwat.Linux.desktop"
+          desktop-file-validate "$temp_root/data/applications/org.emwat.Linux.desktop"
+          PATH="$temp_root/bin:$PATH" XDG_DATA_HOME="$temp_root/data" sh packaging/uninstall-desktop-entry.sh
+          test ! -e "$temp_root/data/applications/org.emwat.Linux.desktop"
       - name: Run GTK application smoke tests
         env:
           PYTHONPATH: python/src
