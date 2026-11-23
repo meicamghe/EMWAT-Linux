@@ -5,6 +5,8 @@
 #include <cstdint>
 #include <limits>
 #include <optional>
+#include <string>
+#include <cctype>
 
 namespace emwat::detail {
 
@@ -32,6 +34,15 @@ inline std::optional<std::int32_t> encode_sane_fixed_resolution(double dpi) noex
         return std::nullopt;
     }
     return static_cast<std::int32_t>(rounded);
+}
+
+inline bool is_adf_source(const std::string& source) noexcept {
+    std::string folded;
+    folded.reserve(source.size());
+    for (const unsigned char ch : source)
+        folded.push_back(static_cast<char>(std::tolower(ch)));
+    return folded.find("adf") != std::string::npos ||
+           folded.find("automatic document feeder") != std::string::npos;
 }
 
 } // namespace emwat::detail
