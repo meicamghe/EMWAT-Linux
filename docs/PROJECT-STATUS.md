@@ -3087,9 +3087,34 @@ The next meaningful Almas acceptance input is a sanitized, synthetic-or-test-acc
 - Recovery view remains opt-in through an injected controller; no default
   recovery root, encryption key, or retention policy is invented.
 - Added a freedesktop `.desktop` launcher and per-user installer that resolves the active `emwat-linux` executable (including a virtual-environment path). The GTK workflow validates the desktop file and exercises installation into a temporary user data directory.
-- The new GTK activation workflow is the first real GTK runtime validation
-  path. Until it completes successfully on the current branch head, no GTK
-  runtime pass is claimed. The shell is not yet a full production desktop
-  application: persistent configuration, configured bridge supervision,
-  desktop file/installer integration, session shutdown handling, and
-  Almas/browser E2E remain outstanding.
+- GTK runtime smoke run `45152724036` on code/test head `72c7b6e5`
+  passed on Ubuntu 24.04 under Xvfb: both the main control window and the empty
+  Recovery picker window were created successfully. This validates GTK widget
+  construction in CI, not a user's Wayland/X11 session or accessibility flow.
+- Follow-up code now resets the main-window reference on close and tests
+  reactivation while the Recovery window remains open. The desktop-entry
+  installer is also validated by the GTK workflow. These newer changes are
+  pending their own current-head CI results.
+- The shell is not yet a full production desktop application: persistent
+  configuration, configured bridge supervision, desktop-session shutdown
+  handling, and Almas/browser E2E remain outstanding.
+
+
+## Bounded BridgeRuntime shutdown retry — 2026-11-23
+
+- A follow-up review found that a failing server `shutdown()` could be followed
+  by an unbounded `thread.join()`. If the server had not signaled its loop to
+  stop, this could block the desktop caller indefinitely even though socket
+  closure had been attempted.
+- `BridgeRuntime` now has a validated, finite `join_timeout_seconds`
+  (default five seconds). A failed shutdown performs socket cleanup and a
+  bounded join, records FAILED, and raises. A later `close()` retries shutdown
+  if the serve thread remains alive; a successful retry clears a resolved
+  cleanup failure and reaches STOPPED. A real serve-thread failure remains
+  FAILED and is retained.
+- Added regression coverage for a shutdown failure that initially leaves the
+  serve thread alive, a successful second shutdown attempt, and invalid timeout
+  values including an overflowing integer.
+- Current code/test CI for this follow-up is pending. The previous successful
+  runtime tests predate this bounded-join change; do not claim it verified
+  until the new Python run completes.
