@@ -606,13 +606,6 @@ class LibreOfficeAdapter:
         if handle.close_listener is None:
             self._cleanup(handle)
             raise RuntimeError("libreoffice_close_listener_missing")
-        if not handle.close_listener.snapshot_ready.wait(self._connect_timeout):
-            self._cleanup(handle)
-            raise RuntimeError("libreoffice_final_snapshot_timeout")
-        if handle.close_listener.snapshot_error is not None:
-            error = handle.close_listener.snapshot_error
-            self._cleanup(handle)
-            raise RuntimeError("libreoffice_final_snapshot_failed") from error
         if handle.saved_snapshot_error is not None:
             error = handle.saved_snapshot_error
             self._cleanup(handle)
