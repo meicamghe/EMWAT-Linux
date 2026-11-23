@@ -269,28 +269,16 @@ ScannerCapabilities SaneScannerBackend::get_capabilities(const std::string& devi
     return result;
 }
 
-ImagePage SaneScannerBackend::scan_one(const std::string& device_id, const ScanOptions& options) {
-    validate_device_id(device_id);
-    validate_scan_options(options);
-    std::lock_guard<std::mutex> lock(sane_mutex());
-    SaneSession session;
-    SaneHandle device(device_id);
-
-    if (options.resolution_dpi) set_resolution_option(device.get(), *options.resolution_dpi);
-    if (options.mode) set_string_option(device.get(), "mode", *options.mode);
-    if (options.source) set_string_option(device.get(), "source", *options.source);
-
-    // Read the device-selected DPI after applying options; never infer it from a request.
-    const auto [dpi_x, dpi_y] = read_scan_dpi(device.get());
-
-    auto status = sane_start(device.get());
-    if (status != SANE_STATUS_GOOD)
-        throw ScannerError(std::string("Cannot start scan: ") + sane_strstatus(status));
-
+namespace {
+ImagePage read_started_sane_page(
+    SANE_Handle handle,
+    const std::optional<double>& dpi_x,
+    const std::optional<double>& dpi_y
+) {
     SANE_Parameters params{};
-    status = sane_get_parameters(device.get(), &params);
+    auto status = sane_get_parameters(handle, &params);
     if (status != SANE_STATUS_GOOD) {
-        sane_cancel(device.get());
+        sane_cancel(handle);
         throw ScannerError(std::string("Cannot read scan parameters: ") + sane_strstatus(status));
     }
 
@@ -303,14 +291,14 @@ ImagePage SaneScannerBackend::scan_one(const std::string& device_id, const ScanO
         format = PixelFormat::RGB8;
         channels = 3;
     } else {
-        sane_cancel(device.get());
+        sane_cancel(handle);
         throw ScannerError("Scanner output must be 8-bit grayscale or 8-bit RGB");
     }
 
     if (params.pixels_per_line <= 0 || params.lines <= 0 || params.bytes_per_line <= 0 ||
         static_cast<std::size_t>(params.pixels_per_line) >
             std::numeric_limits<std::size_t>::max() / channels) {
-        sane_cancel(device.get());
+        sane_cancel(handle);
         throw ScannerError("Scanner returned invalid or variable scan dimensions");
     }
 
@@ -319,7 +307,7 @@ ImagePage SaneScannerBackend::scan_one(const std::string& device_id, const ScanO
     const auto row_bytes = width * channels;
     const auto stride = static_cast<std::size_t>(params.bytes_per_line);
     if (stride < row_bytes || height > max_scan_bytes / stride) {
-        sane_cancel(device.get());
+        sane_cancel(handle);
         throw ScannerError("Scanner image exceeds the 1 GiB safety limit or has invalid stride");
     }
 
@@ -333,42 +321,119 @@ ImagePage SaneScannerBackend::scan_one(const std::string& device_id, const ScanO
     std::array<SANE_Byte, 64 * 1024> chunk{};
     for (;;) {
         SANE_Int received = 0;
-        status = sane_read(device.get(), chunk.data(), static_cast<SANE_Int>(chunk.size()), &received);
+        status = sane_read(handle, chunk.data(), static_cast<SANE_Int>(chunk.size()), &received);
         if (received < 0 || static_cast<std::size_t>(received) > chunk.size()) {
-            sane_cancel(device.get());
+            sane_cancel(handle);
             throw ScannerError("Scanner returned an invalid read length");
         }
         if (received > 0) {
             if (static_cast<std::size_t>(received) > stride * height - pixels.bytes.size()) {
-                sane_cancel(device.get());
+                sane_cancel(handle);
                 throw ScannerError("Scanner returned more image data than declared");
             }
             pixels.bytes.insert(pixels.bytes.end(), chunk.begin(), chunk.begin() + received);
         }
         if (status == SANE_STATUS_EOF) break;
         if (status != SANE_STATUS_GOOD) {
-            sane_cancel(device.get());
+            sane_cancel(handle);
             throw ScannerError(std::string("Scanner read failed: ") + sane_strstatus(status));
         }
         if (received == 0) {
-            sane_cancel(device.get());
+            sane_cancel(handle);
             throw ScannerError("Scanner returned no data before end-of-frame");
         }
     }
 
     if (pixels.bytes.size() != stride * height) {
-        sane_cancel(device.get());
+        sane_cancel(handle);
         throw ScannerError("Scanner returned an incomplete image frame");
     }
-    // scan_one() is deliberately a single-frame API. Returning a non-terminal
-    // frame as a complete page would silently corrupt planar/multi-frame scans.
-    // The batch API will own the full frame-sequence state machine.
     if (!params.last_frame) {
-        sane_cancel(device.get());
+        sane_cancel(handle);
         throw ScannerError("Scanner returned a multi-frame page; use scan_pages()");
     }
-    if (!pixels.valid()) throw ScannerError("Scanner produced an invalid pixel buffer");
+    if (!pixels.valid()) {
+        sane_cancel(handle);
+        throw ScannerError("Scanner produced an invalid pixel buffer");
+    }
     return ImagePage{std::move(pixels), dpi_x, dpi_y};
+}
+} // namespace
+
+ImagePage SaneScannerBackend::scan_one(const std::string& device_id, const ScanOptions& options) {
+    validate_device_id(device_id);
+    validate_scan_options(options);
+    std::lock_guard<std::mutex> lock(sane_mutex());
+    SaneSession session;
+    SaneHandle device(device_id);
+
+    if (options.resolution_dpi) set_resolution_option(device.get(), *options.resolution_dpi);
+    if (options.mode) set_string_option(device.get(), "mode", *options.mode);
+    if (options.source) set_string_option(device.get(), "source", *options.source);
+
+    const auto [dpi_x, dpi_y] = read_scan_dpi(device.get());
+    const auto status = sane_start(device.get());
+    if (status != SANE_STATUS_GOOD)
+        throw ScannerError(std::string("Cannot start scan: ") + sane_strstatus(status));
+    return read_started_sane_page(device.get(), dpi_x, dpi_y);
+}
+
+std::vector<ImagePage> SaneScannerBackend::scan_pages(
+    const std::string& device_id,
+    const ScanOptions& options
+) {
+    validate_device_id(device_id);
+    validate_scan_options(options);
+
+    // Never repeatedly start a flatbed. Batch acquisition is enabled only when
+    // the caller explicitly selected a source whose name identifies an ADF.
+    if (!options.source || !detail::is_adf_source(*options.source)) {
+        return {scan_one(device_id, options)};
+    }
+
+    constexpr std::size_t max_adf_pages = 100;
+    constexpr std::size_t max_batch_bytes = 4ULL * 1024ULL * 1024ULL * 1024ULL;
+    std::lock_guard<std::mutex> lock(sane_mutex());
+    SaneSession session;
+    SaneHandle device(device_id);
+
+    if (options.resolution_dpi) set_resolution_option(device.get(), *options.resolution_dpi);
+    if (options.mode) set_string_option(device.get(), "mode", *options.mode);
+    set_string_option(device.get(), "source", *options.source);
+
+    const auto [dpi_x, dpi_y] = read_scan_dpi(device.get());
+    std::vector<ImagePage> pages;
+    std::size_t total_bytes = 0;
+
+    for (std::size_t index = 0; index < max_adf_pages; ++index) {
+        const auto status = sane_start(device.get());
+        if (status == SANE_STATUS_NO_DOCS) {
+            sane_cancel(device.get());
+            return pages;
+        }
+        if (status != SANE_STATUS_GOOD) {
+            sane_cancel(device.get());
+            throw ScannerError(std::string("Cannot continue ADF scan: ") + sane_strstatus(status));
+        }
+
+        auto page = read_started_sane_page(device.get(), dpi_x, dpi_y);
+        const auto page_bytes = page.pixels.bytes.size();
+        if (page_bytes > max_batch_bytes - total_bytes) {
+            sane_cancel(device.get());
+            throw ScannerError("ADF batch exceeds the 4 GiB safety limit");
+        }
+        total_bytes += page_bytes;
+        pages.push_back(std::move(page));
+    }
+
+    // Probe once beyond the page cap: exactly 100 pages is valid if the feeder
+    // reports NO_DOCS; a 101st page is rejected rather than silently truncated.
+    const auto status = sane_start(device.get());
+    sane_cancel(device.get());
+    if (status == SANE_STATUS_NO_DOCS) return pages;
+    if (status == SANE_STATUS_GOOD)
+        throw ScannerError("ADF batch exceeds the 100-page safety limit");
+    throw ScannerError(std::string("Cannot finish ADF scan: ") + sane_strstatus(status));
 }
 
 } // namespace emwat
