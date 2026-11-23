@@ -2,13 +2,13 @@
 
 #include <cmath>
 #include <cstddef>
+#include <cctype>
+#include <cstddef>
 #include <cstdint>
 #include <limits>
 #include <optional>
-#include <string>
-#include <cctype>
-#include <cstdint>
 #include <stdexcept>
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -88,13 +88,16 @@ std::vector<Page> collect_bounded_pages(
     }
 }
 
-inline bool is_adf_source(const std::string& source) noexcept {
+inline bool is_adf_source(const std::string& source) {
     std::string folded;
     folded.reserve(source.size());
     for (const unsigned char ch : source)
         folded.push_back(static_cast<char>(std::tolower(ch)));
-    return folded.find("adf") != std::string::npos ||
-           folded.find("automatic document feeder") != std::string::npos;
+    const auto first = folded.find_first_not_of(" \\t");
+    if (first == std::string::npos) return false;
+    const auto normalized = folded.substr(first);
+    return normalized.rfind("adf", 0) == 0 ||
+           normalized.rfind("automatic document feeder", 0) == 0;
 }
 
 } // namespace emwat::detail
