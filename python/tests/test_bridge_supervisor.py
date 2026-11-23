@@ -137,6 +137,49 @@ class BridgeSupervisorTests(unittest.TestCase):
         self.assertEqual(supervisor.state, BridgeSupervisorState.STOPPED)
         self.assertIsNone(supervisor.runtime)
 
+
+    def test_runtime_factory_failure_closes_created_server(self):
+        server = FakeServer()
+
+        def broken_runtime_factory(_server):
+            raise ValueError("invalid server configuration")
+
+        supervisor = BridgeSupervisor(
+            lambda: server,
+            runtime_factory=broken_runtime_factory,
+        )
+        with self.assertRaisesRegex(ValueError, "invalid server configuration"):
+            supervisor.start()
+        self.assertTrue(server.closed)
+        self.assertEqual(supervisor.state, BridgeSupervisorState.FAILED)
+        supervisor.stop()
+        self.assertEqual(supervisor.state, BridgeSupervisorState.STOPPED)
+
+    def test_unexpected_runtime_exit_is_reported_and_cleanup_allows_restart(self):
+        server = FakeServer()
+        servers = [server]
+
+        def factory():
+            if servers:
+                return servers.pop(0)
+            return FakeServer()
+
+        supervisor = BridgeSupervisor(factory)
+        runtime = supervisor.start()
+        server.stopped.set()
+        runtime._thread.join(2)
+
+        with self.assertRaisesRegex(RuntimeError, "unexpected_runtime_exit"):
+            supervisor.start()
+        self.assertEqual(supervisor.state, BridgeSupervisorState.FAILED)
+
+        supervisor.stop()
+        self.assertEqual(supervisor.state, BridgeSupervisorState.STOPPED)
+        self.assertIsNotNone(supervisor.failure)
+        replacement = supervisor.start()
+        self.assertIsNot(replacement, runtime)
+        supervisor.stop()
+
     def test_invalid_factories_are_rejected(self):
         with self.assertRaisesRegex(TypeError, "server_factory"):
             BridgeSupervisor(None)
