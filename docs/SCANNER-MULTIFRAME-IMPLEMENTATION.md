@@ -18,8 +18,8 @@ Status: bounded ADF page batching and ordered 8-bit planar RGB assembly are impl
 2. Acquire the process-wide SANE mutex, initialize SANE, open the selected device, and apply supported options once before the first page.
 3. Read device-selected DPI after options are applied.
 4. For each page, call `sane_start()`, then `sane_get_parameters()`, validate frame format/depth/dimensions/stride and bounded byte arithmetic, and read until `SANE_STATUS_EOF`.
-5. The current backend accepts only 8-bit `SANE_FRAME_GRAY` and interleaved `SANE_FRAME_RGB` with `last_frame=true`. Other frame formats and non-terminal frames are rejected and cancelled.
-6. For ADF batches only, after a complete page call `sane_start()` again on the same handle. `SANE_STATUS_NO_DOCS` is normal completion; other statuses fail the batch.
+5. The current backend accepts 8-bit `SANE_FRAME_GRAY` and interleaved `SANE_FRAME_RGB` only as terminal frames. It also accepts the exact 8-bit planar `RED` → `GREEN` → `BLUE` sequence, checking geometry, depth and terminal flags on every frame.
+6. For ADF batches only, after a complete page call `sane_start()` again on the same handle. `SANE_STATUS_NO_DOCS` from `sane_start()`, or from `sane_read()` before any bytes of the next page, is normal completion; the same status after a partial page/frame is an error. Other statuses fail the batch.
 7. On normal batch completion or any failure, call `sane_cancel()` before closing the handle and exiting SANE.
 8. Preserve acquisition order. Do not infer front/back labels from page parity.
 
@@ -29,13 +29,12 @@ Status: bounded ADF page batching and ordered 8-bit planar RGB assembly are impl
 - ADF batches are capped at 100 pages and 4 GiB of accumulated image bytes. The remaining batch budget is passed into the page reader, so the next page is rejected before its pixel buffer is reserved if it cannot fit; the batch does not intentionally allocate a full extra page beyond the total budget.
 - Read lengths, zero-progress reads, excess bytes, incomplete payloads and stride arithmetic are validated.
 - If a later page fails, the API throws rather than presenting a partial batch as a complete successful scan.
-- Feeder-empty is recognized only as `SANE_STATUS_NO_DOCS` from the next `sane_start()` boundary. Paper jam, cover open, I/O errors and cancellation remain explicit failures.
+- Feeder-empty is recognized as `SANE_STATUS_NO_DOCS` from the next `sane_start()` boundary or from `sane_read()` before any bytes of the next page. The same status after a partial page/frame is an error. Paper jam, cover open, I/O errors and cancellation remain explicit failures.
 - The ADF classifier is intentionally conservative: only an explicitly supplied source string containing `ADF` or `Automatic Document Feeder` activates batch mode. The normal SANE option setter still verifies that the device actually exposes a compatible `source` option.
 
 ## Remaining implementation work
 
-- Add a narrow injectable SANE function table/frame-reader seam so the real acquisition loop can be exercised with deterministic fake frames.
-- Add an injectable SANE function-table/frame-reader seam so the actual multi-frame sequence can be tested without physical hardware. The pure planar channel interleaver and padded-stride handling now have deterministic unit tests.
+- Add a narrow injectable SANE function-table/frame-reader seam so the actual multi-frame and ADF acquisition loops can be exercised with deterministic fake frames. The pure planar channel interleaver and padded-stride handling already have deterministic unit tests.
 - Add a configurable page/byte limit with API-level validation if product requirements call for it.
 - Expose feeder/duplex capabilities only when the SANE device descriptors or backend metadata support them.
 - Verify exact feeder-empty and error behavior against physical ADF devices and record scanner model, backend/version, source option, frame sequence and resulting page count.
