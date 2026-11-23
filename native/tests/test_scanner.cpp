@@ -618,6 +618,8 @@ int main() {
 
     // Only explicit feeder-source names may activate repeated page acquisition.
     assert(detail::is_adf_source("ADF"));
+    assert(detail::is_adf_source("\tADF Front"));
+    assert(!detail::is_adf_source("\t"));
     assert(detail::is_adf_source("ADF Front"));
     assert(!detail::is_adf_source("ADF Duplex"));
     assert(!detail::is_adf_source("Automatic Document Feeder (Duplex)"));
