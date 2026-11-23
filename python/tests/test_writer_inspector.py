@@ -130,6 +130,16 @@ class FakeDocument:
 
 
 class WriterInspectorTests(unittest.TestCase):
+    def test_reports_unavailable_writer_containers_instead_of_silently_omitting_them(self):
+        class PartiallyUnavailableDocument(FakeDocument):
+            def getBookmarks(self):
+                raise RuntimeError("UNO container unavailable")
+
+        catalog = inspect_writer_document(PartiallyUnavailableDocument())
+        self.assertEqual(catalog.bookmarks, ())
+        self.assertIn("getBookmarks_unavailable", catalog.inspection_warnings)
+        self.assertEqual(len(catalog.inspection_warnings), 1)
+
     def test_returns_sorted_structural_metadata_without_document_text(self):
         catalog = inspect_writer_document(FakeDocument())
         self.assertEqual(catalog.bookmarks, ("LetterNumber", "LetterSubject"))
