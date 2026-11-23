@@ -396,6 +396,17 @@ class LibreOfficeAdapter:
             )
             handle.snapshot_properties = snapshot_properties
             handle.saved_document_path = saved_state_path
+            # Stage-A WordConfig/Writer inventory is read-only. A catalog failure
+            # must never prevent opening the user's document; retain only a
+            # value-free status code for diagnostics.
+            handle.word_writer_evidence = None
+            handle.word_writer_evidence_error = None
+            try:
+                handle.word_writer_evidence = self.audit_word_writer_evidence(
+                    handle, request.config
+                )
+            except Exception:
+                handle.word_writer_evidence_error = "writer_inventory_unavailable"
             close_listener = _DocumentCloseListener(
                 document,
                 _file_url(saved_state_path),
