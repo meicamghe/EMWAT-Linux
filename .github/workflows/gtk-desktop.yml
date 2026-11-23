@@ -31,4 +31,6 @@ jobs:
       - name: Run GTK application smoke tests
         env:
           PYTHONPATH: python/src
+          GTK_A11Y: "none"
+          GSK_RENDERER: "cairo"
         run: xvfb-run -a /usr/bin/python3 -m unittest discover -s python/tests -p 'test_gtk_desktop_runtime.py' -v
