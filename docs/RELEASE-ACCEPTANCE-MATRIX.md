@@ -12,11 +12,11 @@ proof of live Almas compatibility.
 
 | Layer | What is covered | Evidence / current status | Release interpretation |
 |---|---|---|---|
-| Python bridge and protocol | HTTP loopback transport, Origin/Host validation, XML dispatch, EditWord parsing/serialization, recovery and doctor tests | Current branch CI: Python workflow succeeded; 239 tests passed at code head `4422083a7a16a318efe1b191dc96914d9d31cb03` | Automated component evidence only |
-| Native core | CMake build, native tests, sanitizer checks, Debian development-package lifecycle | Current branch CI: Native workflow succeeded, including build/test, sanitizer and package lifecycle jobs | Native library/package evidence only; not desktop installer |
-| LibreOffice UNO | UNO runtime checks and Writer roundtrip integration | Current branch CI: UNO workflow succeeded | Does not prove Almas browser integration |
+| Python bridge and protocol | HTTP loopback transport, Origin/Host validation, XML dispatch, EditWord parsing/serialization, recovery and doctor tests | Latest branch head `a1067bd4923dd4a448b37f754484ec9dc638ff7f`: Python workflow `45143990955` succeeded; 243 tests run, 241 passed, 2 optional skips | Automated component evidence only |
+| Native core | CMake build, native tests, sanitizer checks, Debian development-package lifecycle | Latest branch head `a1067bd4923dd4a448b37f754484ec9dc638ff7f`: Native workflow `45143991103` succeeded, including build/test, ASan/UBSan and package lifecycle jobs | Native library/package evidence only; not desktop installer |
+| LibreOffice UNO | UNO runtime checks and Writer roundtrip integration | Latest branch head `a1067bd4923dd4a448b37f754484ec9dc638ff7f`: UNO workflow `45143990759` succeeded | Does not prove Almas browser integration |
 | Writer close decisions | Save, Don't Save and Cancel behavior in a real Writer session | Manual acceptance on 2026-11-23: saved marker persisted; discarded marker did not; Cancel left Writer open and pending until a later close | Confirms the observed Writer close boundary, not Almas response semantics |
-| Runtime doctor | Installed `emwat-linux-doctor` console entrypoint and help invocation | Verified in Python CI at code head `4422083a7a16a318efe1b191dc96914d9d31cb03` | Dependency preflight only; not a bridge launcher |
+| Runtime doctor | Installed `emwat-linux-doctor` console entrypoint and help invocation | Verified in Python CI `45143990955` on latest branch head; package install and `--help` passed | Dependency preflight only; not a bridge launcher |
 | GTK Recovery view | Headless import boundary and controller behavior | Headless tests exist; live GTK desktop session not yet accepted | Optional UI component, not a complete application |
 | Physical scanner | SANE device discovery and option/frame validation | Contract/fake tests only | Physical USB/network scanner, ADF and duplex remain unverified |
 | Word-to-Writer semantic mapping | Candidate field audit and indexed signer catalog | Read-only audit tooling; no authoritative sanitized Word + WordConfig fixture | No automatic mapping should be enabled from candidates alone |
