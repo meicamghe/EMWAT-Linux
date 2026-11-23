@@ -113,6 +113,46 @@ class LibreOfficeAdapterUnitTests(unittest.TestCase):
         with self.assertRaisesRegex(TypeError, "invalid_word_document_config"):
             adapter.audit_word_writer_evidence(handle, object())
 
+    def test_open_inventory_capture_is_read_only_and_value_free(self):
+        handle = _OfficeHandle(
+            process=FakeProcess(), document=object(), close_listener=None,
+            work_dir=Path("."), recovery_session_id="inventory-capture",
+        )
+        config = parse_word_config(
+            __import__("base64").b64encode(
+                b'<word-document><fields><field id="subject">private-value</field></fields></word-document>'
+            ).decode()
+        )
+        catalog = WriterDocumentCatalog(
+            bookmarks=(), named_ranges=(), text_sections=(), text_tables=(),
+            text_frames=(), graphic_objects=(), document_indexes=(), text_fields=(),
+            custom_document_properties=(),
+            custom_document_properties_in_info_order=(),
+        )
+        adapter = LibreOfficeAdapter()
+        with patch("emwat_linux.libreoffice_adapter.inspect_writer_document", return_value=catalog):
+            adapter._capture_word_writer_evidence(handle, config)
+        self.assertIsNotNone(handle.word_writer_evidence)
+        self.assertIsNone(handle.word_writer_evidence_error)
+        self.assertNotIn("private-value", repr(handle.word_writer_evidence))
+
+    def test_open_inventory_failure_does_not_block_document_open(self):
+        handle = _OfficeHandle(
+            process=FakeProcess(), document=object(), close_listener=None,
+            work_dir=Path("."), recovery_session_id="inventory-failure",
+        )
+        config = parse_word_config(
+            __import__("base64").b64encode(b"<word-document/>").decode()
+        )
+        with patch(
+            "emwat_linux.libreoffice_adapter.inspect_writer_document",
+            side_effect=RuntimeError("sensitive UNO diagnostic"),
+        ):
+            LibreOfficeAdapter()._capture_word_writer_evidence(handle, config)
+        self.assertIsNone(handle.word_writer_evidence)
+        self.assertEqual(handle.word_writer_evidence_error, "writer_inventory_unavailable")
+        self.assertNotIn("sensitive UNO diagnostic", repr(handle.word_writer_evidence_error))
+
     def test_adapter_timeouts_must_be_finite_positive_numbers(self):
         invalid_values = (True, False, float("nan"), float("inf"), float("-inf"), 10 ** 1000, 0, -1, "1")
         for parameter in (
