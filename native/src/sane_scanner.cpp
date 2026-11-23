@@ -404,7 +404,7 @@ ImagePage read_started_sane_page(
     copy_planar_channel(plane, plane_stride, pixels, 0);
     std::vector<std::uint8_t>().swap(plane);
 
-    for (const auto [expected_format, channel, should_be_last] : {
+    for (const auto& [expected_format, channel, should_be_last] : {
              std::tuple<SANE_Frame, std::size_t, bool>{SANE_FRAME_GREEN, 1, false},
              std::tuple<SANE_Frame, std::size_t, bool>{SANE_FRAME_BLUE, 2, true}}) {
         status = sane_start(handle);
