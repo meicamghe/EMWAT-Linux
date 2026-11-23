@@ -181,5 +181,11 @@ class BridgeSupervisor:
             raise
 
         with self._lock:
-            self._failure = None
+            # Cleanup succeeded even if the serving loop had previously
+            # failed. Preserve that diagnostic, but permit a fresh server.
+            self._failure = (
+                runtime.failure
+                if runtime.state is BridgeRuntimeState.FAILED
+                else None
+            )
             self._state = BridgeSupervisorState.STOPPED
