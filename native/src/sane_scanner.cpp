@@ -273,7 +273,8 @@ namespace {
 ImagePage read_started_sane_page(
     SANE_Handle handle,
     const std::optional<double>& dpi_x,
-    const std::optional<double>& dpi_y
+    const std::optional<double>& dpi_y,
+    std::uint64_t remaining_batch_bytes = max_scan_bytes
 ) {
     SANE_Parameters params{};
     auto status = sane_get_parameters(handle, &params);
@@ -303,8 +304,13 @@ ImagePage read_started_sane_page(
     const auto height = static_cast<std::size_t>(params.lines);
     const auto row_bytes = width * channels;
     const auto stride = static_cast<std::size_t>(params.bytes_per_line);
-    if (stride < row_bytes || height > max_scan_bytes / stride) {
-        throw ScannerError("Scanner image exceeds the 1 GiB safety limit or has invalid stride");
+    const auto page_byte_limit = std::min<std::uint64_t>(
+        remaining_batch_bytes, static_cast<std::uint64_t>(max_scan_bytes)
+    );
+    if (stride < row_bytes || page_byte_limit == 0 ||
+        static_cast<std::uint64_t>(height) >
+            page_byte_limit / static_cast<std::uint64_t>(stride)) {
+        throw ScannerError("Scanner image exceeds the active safety limit or has invalid stride");
     }
 
     PixelBuffer pixels;
@@ -409,7 +415,11 @@ std::vector<ImagePage> SaneScannerBackend::scan_pages(
                 );
             return true;
         },
-        [&]() { return read_started_sane_page(device.get(), dpi_x, dpi_y); },
+        [&](std::uint64_t remaining_bytes) {
+            return read_started_sane_page(
+                device.get(), dpi_x, dpi_y, remaining_bytes
+            );
+        },
         [](const ImagePage& page) { return page.pixels.bytes.size(); },
         [&]() { sane_cancel(device.get()); },
         max_adf_pages,
