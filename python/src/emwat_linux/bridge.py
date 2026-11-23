@@ -91,7 +91,7 @@ class BridgeHTTPServer:
         self._max_body_bytes = max_body_bytes
         self._max_response_bytes = max_response_bytes
         self._socket_timeout_seconds = socket_timeout_seconds
-        self._allowed_origins = allowed_origins
+        self._allowed_origins = self._normalize_origins(allowed_origins)
         self._allowed_parent_origins = self._normalize_parent_origins(allowed_parent_origins)
         self._require_origin = require_origin
         owner = self
@@ -318,6 +318,45 @@ class BridgeHTTPServer:
         self._server = ThreadingHTTPServer((host, port), Handler)
         self._server.daemon_threads = True
         self._server.request_queue_size = 32
+
+    @staticmethod
+    def _normalize_origins(origins: frozenset[str]) -> frozenset[str]:
+        """Validate and canonicalize configured browser XHR origins.
+
+        Browser Origin values contain only scheme, host and an optional
+        non-default port. Normalize scheme/host case and elide default ports
+        so equivalent configuration spellings match the browser header.
+        Paths, credentials, query strings and fragments are never origins.
+        """
+        normalized: set[str] = set()
+        for value in origins:
+            try:
+                parsed = urlsplit(value)
+                port = parsed.port
+            except ValueError as exc:
+                raise ValueError(
+                    "allowed_origins must contain bare HTTP(S) origins"
+                ) from exc
+            if (
+                parsed.scheme.lower() not in {"http", "https"}
+                or not parsed.netloc
+                or parsed.hostname is None
+                or parsed.username is not None
+                or parsed.password is not None
+                or parsed.path
+                or parsed.query
+                or parsed.fragment
+                or any(character.isspace() for character in parsed.hostname)
+            ):
+                raise ValueError("allowed_origins must contain bare HTTP(S) origins")
+            scheme = parsed.scheme.lower()
+            hostname = parsed.hostname.lower()
+            if ":" in hostname:
+                hostname = f"[{hostname}]"
+            default_port = 80 if scheme == "http" else 443
+            authority = hostname if port in (None, default_port) else f"{hostname}:{port}"
+            normalized.add(f"{scheme}://{authority}")
+        return frozenset(normalized)
 
     @staticmethod
     def _normalize_parent_origins(origins: frozenset[str]) -> frozenset[str]:

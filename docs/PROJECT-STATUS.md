@@ -2902,3 +2902,9 @@ production desktop packaging. Do not mark the product production-ready.
 ### Immediate integration gate
 
 The next meaningful Almas acceptance input is a sanitized, synthetic-or-test-account request fixture containing the complete outer request structure and a matching expected successful response. Separate fixtures are required for Save, Don't Save and application-level Cancel if those branches are exposed by Almas. Do not infer missing wire envelopes from the local Writer close dialog.
+
+## Browser XHR Origin configuration hardening — 2026-11-23
+
+- The loopback bridge now validates configured XHR allowlist entries as bare HTTP(S) origins (no path, credentials, query or fragment) and canonicalizes scheme/host case plus default ports to match browser Origin serialization.
+- Added constructor regressions for canonical equivalence and malformed/non-origin values. The request-side allowlist remains exact after canonicalization; no wildcard or relaxed origin matching is introduced.
+- This is configuration validation only. It does not establish a live Almas deployment origin; deployments must still supply the actual local browser XHR Origin explicitly.

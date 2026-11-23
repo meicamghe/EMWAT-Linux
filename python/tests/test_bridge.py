@@ -49,6 +49,41 @@ class BridgeHTTPServerTests(unittest.TestCase):
             ):
                 BridgeHTTPServer(handler, allowed_parent_origins=value)
 
+    def test_allowed_origins_are_canonicalized_like_browser_origin_values(self):
+        server = BridgeHTTPServer(
+            lambda _request: BridgeResponse(b""),
+            allowed_origins=frozenset({
+                "HTTPS://Office.Example:443",
+                "http://localhost:80",
+            }),
+        )
+        try:
+            self.assertEqual(
+                server._allowed_origins,
+                frozenset({"https://office.example", "http://localhost"}),
+            )
+        finally:
+            server.server_close()
+
+    def test_allowed_origins_reject_non_origin_urls_and_malformed_ports(self):
+        invalid = (
+            "ftp://office.example",
+            "https://office.example/path",
+            "https://user@office.example",
+            "https://office.example?query=1",
+            "https://office.example#fragment",
+            "https://office.example:not-a-port",
+            "https://",
+        )
+        for origin in invalid:
+            with self.subTest(origin=origin), self.assertRaisesRegex(
+                ValueError, "allowed_origins must contain bare HTTP(S) origins"
+            ):
+                BridgeHTTPServer(
+                    lambda _request: BridgeResponse(b""),
+                    allowed_origins=frozenset({origin}),
+                )
+
     def test_only_loopback_bind_is_allowed(self):
         with self.assertRaises(ValueError):
             BridgeHTTPServer(lambda _request: BridgeResponse(b""), host="0.0.0.0")
