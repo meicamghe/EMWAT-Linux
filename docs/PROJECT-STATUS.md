@@ -2881,3 +2881,24 @@ This closes the local Writer Save / Don't Save / Cancel-retry acceptance item.
 It does **not** close live Almas/browser HTTP integration, exact Windows
 discard/cancel response envelopes, full WordConfig semantic mapping, or
 production desktop packaging. Do not mark the product production-ready.
+
+## Current-head verification and parallel work queue — 2026-11-23
+
+- Branch head at this check: `0029482142a29331f9ce59c07f83d81ba55594cc`.
+- GitHub Actions for this exact commit completed successfully:
+  - Python bridge transport: run `45130315312` — success.
+  - LibreOffice UNO integration: run `45130315321` — success.
+  - Native image core: run `45130315395` — success.
+- The successful workflows validate the repository's automated suites at this commit. They do not replace interactive GTK acceptance or live Almas/browser interoperability.
+- The operator's 2026-11-23 Writer Save / Don't Save / Cancel-retry acceptance is recorded in `docs/WRITER-CLOSE-ACCEPTANCE-TEST.md`; it validates the local Writer close behavior only.
+
+### Parallel work queue (do not conflate evidence levels)
+
+1. **Almas browser bridge:** compare heartbeat/init/invoke behavior against the captured HTTP/JavaScript evidence; keep live Origin, parent-page and response-envelope assumptions explicit.
+2. **WordConfig → Writer:** keep automatic field writes disabled until a sanitized matching Word + WordConfig fixture and expected output are available. Continue read-only metadata auditing and test fixture tooling.
+3. **Desktop/runtime packaging:** GTK recovery picker exists as an optional view, but a supervised production entrypoint, settings/origin configuration, desktop launcher and complete install/uninstall lifecycle remain unfinished.
+4. **Recovery/scanner/native:** retain the headless service boundaries; scanner preflight and native package CI are not physical hardware acceptance.
+
+### Immediate integration gate
+
+The next meaningful Almas acceptance input is a sanitized, synthetic-or-test-account request fixture containing the complete outer request structure and a matching expected successful response. Separate fixtures are required for Save, Don't Save and application-level Cancel if those branches are exposed by Almas. Do not infer missing wire envelopes from the local Writer close dialog.
