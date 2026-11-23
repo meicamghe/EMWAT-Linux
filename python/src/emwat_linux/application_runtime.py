@@ -31,8 +31,10 @@ class BridgeRuntime:
     """Run one configured bridge server in a supervised, non-daemon thread.
 
     The runtime is intentionally one-shot: a closed HTTPServer cannot safely
-    be restarted. close() waits for active request workers because the
-    underlying BridgeHTTPServer uses non-daemon request threads.
+    be restarted. A successful close joins the serving thread. If shutdown
+    fails, the join is bounded and the caller receives a failure instead of
+    waiting forever; a later close may retry shutdown. The underlying server's
+    server_close() can still wait for active non-daemon request workers.
     """
 
     def __init__(
@@ -111,8 +113,9 @@ class BridgeRuntime:
             # unhandled-thread traceback into the desktop application's stderr.
 
     def close(self) -> None:
-        # Serialize concurrent callers so every close() return guarantees that
-        # socket closure and worker-thread joining have both completed.
+        # Serialize concurrent callers. A successful return guarantees socket
+        # closure and serving-thread join; failed attempts raise after a bounded
+        # join and leave FAILED state for the supervisor to surface or retry.
         with self._close_lock:
             self._close_once()
 
