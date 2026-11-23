@@ -12,9 +12,9 @@ proof of live Almas compatibility.
 
 | Layer | What is covered | Evidence / current status | Release interpretation |
 |---|---|---|---|
-| Python bridge and protocol | HTTP loopback transport, Origin/Host validation, XML dispatch, EditWord parsing/serialization, recovery and doctor tests | Latest branch head `a1067bd4923dd4a448b37f754484ec9dc638ff7f`: Python workflow `45143990955` succeeded; 243 tests run, 241 passed, 2 optional skips | Automated component evidence only |
-| Native core | CMake build, native tests, sanitizer checks, Debian development-package lifecycle | Latest branch head `a1067bd4923dd4a448b37f754484ec9dc638ff7f`: Native workflow `45143991103` succeeded, including build/test, ASan/UBSan and package lifecycle jobs | Native library/package evidence only; not desktop installer |
-| LibreOffice UNO | UNO runtime checks and Writer roundtrip integration | Latest branch head `a1067bd4923dd4a448b37f754484ec9dc638ff7f`: UNO workflow `45143990759` succeeded | Does not prove Almas browser integration |
+| Python bridge and protocol | HTTP loopback transport, Origin/Host validation, XML dispatch, EditWord parsing/serialization, recovery and doctor tests | Latest code head `3a8a2d96ad08fcc2194f0534e87fcdb4785e2040`: Python workflow `45144669416` succeeded; 245 tests run, 243 passed, 2 optional skips; includes recovery concurrent-writer and graceful-shutdown regressions | Automated component evidence only |
+| Native core | CMake build, native tests, sanitizer checks, Debian development-package lifecycle | Python-only follow-up head `b2e80cd0378611d982bb6cfb3a2bd27374204ee8`: Native workflow `45144581554` succeeded, including build/test, ASan/UBSan and package lifecycle jobs | Native library/package evidence only; not desktop installer |
+| LibreOffice UNO | UNO runtime checks and Writer roundtrip integration | UNO workflow `45143990759` succeeded on code head `a1067bd4923dd4a448b37f754484ec9dc638ff7f`; a newer UNO run on `b2e80cd` was still in progress at this review | Does not prove Almas browser integration |
 | Writer close decisions | Save, Don't Save and Cancel behavior in a real Writer session | Manual acceptance on 2026-11-23: saved marker persisted; discarded marker did not; Cancel left Writer open and pending until a later close | Confirms the observed Writer close boundary, not Almas response semantics |
 | Runtime doctor | Installed `emwat-linux-doctor` console entrypoint and help invocation | Verified in Python CI `45143990955` on latest branch head; package install and `--help` passed | Dependency preflight only; not a bridge launcher |
 | GTK Recovery view | Headless import boundary and controller behavior | Headless tests exist; live GTK desktop session not yet accepted | Optional UI component, not a complete application |
@@ -82,3 +82,9 @@ The Python bridge workflow on commit
 cases and runtime-doctor minimum-Python / missing-dependency JSON cases. The
 installed package console-entrypoint check also passed. This remains automated
 component evidence, not live Almas end-to-end acceptance.
+
+## Latest runtime-safety regressions
+
+- Recovery store operations are serialized by a process-local reentrant lock shared by store instances using the same canonical root. Concurrent writer regression passed in Python workflow `45144581638` (244 tests, 2 optional skips). This is not an inter-process lock; do not share one recovery root across multiple EMWAT processes yet.
+- HTTP request worker threads are non-daemon so `shutdown()` followed by `server_close()` waits for in-flight requests. The active-request shutdown regression passed in Python workflow `45144669416`.
+- Neither change provides a production daemon, launcher, or Almas end-to-end acceptance.
