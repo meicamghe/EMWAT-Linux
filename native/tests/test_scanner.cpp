@@ -190,6 +190,66 @@ int main() {
         assert(cancelled);
     }
 
+    // Exercise the ordered planar frame consumer with deterministic fake metadata.
+    {
+        struct FakeFrame {
+            int format;
+            int depth;
+            int width;
+            int lines;
+            int stride;
+            bool last;
+        };
+        const std::array<int, 3> formats{10, 11, 12};
+        const std::array<FakeFrame, 3> frames{{
+            {10, 8, 2, 1, 3, false},
+            {11, 8, 2, 1, 3, false},
+            {12, 8, 2, 1, 3, true},
+        }};
+        std::size_t next = 1;
+        std::vector<std::size_t> consumed;
+        detail::consume_planar_rgb_sequence<FakeFrame>(
+            frames[0], formats,
+            [&]() { return frames.at(next++); },
+            [](const FakeFrame& frame, int expected_format, bool should_be_last) {
+                if (!detail::planar_rgb_frame_matches(
+                        frame.format, expected_format, frame.depth, 8,
+                        frame.width, 2, frame.lines, 1, frame.stride,
+                        frame.last, should_be_last
+                    ))
+                    throw std::runtime_error("invalid_fake_planar_frame");
+            },
+            [&](const FakeFrame&, std::size_t channel) { consumed.push_back(channel); }
+        );
+        assert((consumed == std::vector<std::size_t>{0, 1, 2}));
+        assert(next == 3);
+    }
+    {
+        struct FakeFrame { int format; bool last; };
+        const std::array<int, 3> formats{10, 11, 12};
+        const std::array<FakeFrame, 3> frames{{
+            {10, false}, {12, false}, {12, true},
+        }};
+        std::size_t next = 1;
+        std::vector<std::size_t> consumed;
+        bool rejected = false;
+        try {
+            detail::consume_planar_rgb_sequence<FakeFrame>(
+                frames[0], formats,
+                [&]() { return frames.at(next++); },
+                [](const FakeFrame& frame, int expected_format, bool should_be_last) {
+                    if (frame.format != expected_format || frame.last != should_be_last)
+                        throw std::runtime_error("invalid_fake_planar_frame");
+                },
+                [&](const FakeFrame&, std::size_t channel) { consumed.push_back(channel); }
+            );
+        } catch (const std::runtime_error& error) {
+            rejected = std::string(error.what()) == "invalid_fake_planar_frame";
+        }
+        assert(rejected);
+        assert((consumed == std::vector<std::size_t>{0}));
+    }
+
     // Planar RGB page metadata must preserve exact RED/GREEN/BLUE order and flags.
     {
         constexpr int green = 3;
