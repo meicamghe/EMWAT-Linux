@@ -44,6 +44,8 @@ def collect_checks() -> list[Check]:
     """Return local runtime checks without starting services or touching user data."""
     python_ok = sys.version_info >= (3, 10)
     office = shutil.which("libreoffice") or shutil.which("soffice")
+    uno_ok = _module_available("uno")
+    gtk_ok = _gtk4_available()
     return [
         Check(
             "python",
@@ -60,15 +62,15 @@ def collect_checks() -> list[Check]:
         Check(
             "uno",
             True,
-            _module_available("uno"),
-            "Python UNO bindings available" if _module_available("uno")
+            uno_ok,
+            "Python UNO bindings available" if uno_ok
             else "not importable by this Python interpreter (check distro python3-uno binding)",
         ),
         Check(
             "gtk4",
             False,
-            _gtk4_available(),
-            "GTK 4 / PyGObject available" if _gtk4_available()
+            gtk_ok,
+            "GTK 4 / PyGObject available" if gtk_ok
             else "optional recovery UI unavailable (install gir1.2-gtk-4.0 and python3-gi)",
         ),
     ]
