@@ -22,7 +22,7 @@ EMWAT واسط محلی بین اتوماسیون تحت وب الماس گام 
 
 ## وضعیت فعلی
 
-پروژه از مرحله تحلیل اولیه عبور کرده و اکنون هسته‌های Python، پل HTTP محلی، parser/dispatcher، مسیر EditWordDocument، اتصال LibreOffice UNO، بازیابی دوره‌ای، ذخیره‌سازی اختیاری رمزگذاری‌شده و backend اولیه اسکن SANE را دارد. یک نمای اولیه GTK4 برای Recovery نیز به‌صورت لایه اختیاری اضافه شده است؛ اما هنوز رابط کامل برنامه، اجرای واقعی در مرورگر الماس گام، mapping کامل فیلدهای Word، قراردادهای Cancel/Discard و بسته‌بندی اجرایی نهایی باقی مانده‌اند.
+پروژه از مرحله تحلیل اولیه عبور کرده و اکنون هسته‌های Python، پل HTTP محلی، parser/dispatcher، مسیر EditWordDocument، اتصال LibreOffice UNO، بازیابی دوره‌ای، ذخیره‌سازی اختیاری رمزگذاری‌شده و backend اسکن SANE با پشتیبانی از صفحات چندفریمی RGB و batch محدود ADF simplex را دارد. یک نمای اولیه GTK4 برای Recovery نیز به‌صورت لایه اختیاری اضافه شده است؛ اما هنوز رابط کامل برنامه، اجرای واقعی در مرورگر الماس گام، mapping کامل فیلدهای Word، قراردادهای Cancel/Discard و بسته‌بندی اجرایی نهایی باقی مانده‌اند.
 
 گزارش کامل وضعیت، شواهد، موارد نامشخص و گام‌های بعدی در این فایل نگهداری می‌شود:
 
@@ -93,7 +93,7 @@ For the current project decisions, implementation boundaries, and next-session c
 - **EditWordDocument:** decode کردن Base64 تأییدشده‌ی `wordConfig` و `wordBody`، اعتبارسنجی حدود اندازه و نگه‌داشتن `signData` به‌صورت opaque text تا زمان اثبات encoding کامل آن.
 - **Writer:** اجرای close-driven با LibreOffice UNO، snapshot نهایی DOC و بازگرداندن پاسخ موفق با envelope مشاهده‌شده‌ی `response-word`.
 - **Recovery:** snapshot دوره‌ای محلی، catalog و restore صریح؛ retention و AES-256-GCM رمزگذاری‌شده opt-in هستند و کلید رمزگذاری از Secret Service گرفته می‌شود.
-- **Scanner:** backend مبتنی بر SANE با اعتبارسنجی گزینه‌ها و محدودیت اندازه‌ی frame؛ سخت‌افزار واقعی، ADF و duplex هنوز تأیید نشده‌اند.
+- **Scanner:** backend مبتنی بر SANE با اعتبارسنجی گزینه‌ها، ترکیب planar RGB و batch محدود ADF simplex؛ سخت‌افزار واقعی هنوز آزمایش نشده و duplex عمداً فعال نشده است.
 
 تست‌ها شامل Python unit/transport، build و ASan/UBSan برای native core و roundtrip واقعی LibreOffice UNO هستند. آخرین ترکیب کد تأییدشده در 2026-11-18:
 
