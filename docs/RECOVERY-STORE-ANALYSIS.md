@@ -455,3 +455,17 @@ The close/response-chain artifact `14200889822` and its follow-up static BPL art
 3. Compare the generated `.easd/.easz` pair with the recovery Delete reader path without assuming their formats or password values are interchangeable.
 
 Evidence: runs `43815900214` and `43815900243`, artifacts `14200889822` and `14201769656`.
+
+## 27. Writer archive path — reconciled interface evidence (2026-11-23)
+
+This section supersedes the unresolved writer-direction notes in section 26 and the earlier password interpretation in sections 15–16 where they conflict.
+
+- The controller-notify path constructs two TStringList inputs for the archive writer. The first contains the temporary document path held by the Word viewer; the second contains the archive entry name derived from the viewer base path with the `.easd` suffix.
+- The writer-facing interface dispatch resolves `+0x10` to `T7zOutArchive.AddFiles` and `+0x18` to `T7zOutArchive.SaveToStream`. The `.easz` path is passed to the latter.
+- `SaveToStream` creates/truncates the `.easz` output through a `TFileStream` opened with `fmCreate`; the file-output path is therefore established by static call evidence.
+- The same interface's `+0x28` target is the progress-callback method body, despite an earlier TD32 label suggesting otherwise. It must not be treated as a password setter.
+- `T7zOutArchive.SetPassword` remains a no-op stub. The resolved `CryptoGetTextPassword2` body initializes an internal object list; the password text/provider returned at runtime has not been established.
+- Consequently, the output path and entry-name construction are better understood, but the archive's actual runtime encryption flag, password source, header profile, compression settings and cross-platform interoperability remain unverified.
+- Do not transfer constructor/configuration strings from the separate recovery-reader path into the writer password model. Reader and writer call paths must remain separate until a synthetic runtime archive is captured and inspected.
+
+Evidence: static archive trace artifact 14227611377; paired input/path trace artifact 14226742624; file-stream constructor trace artifact 14227002967. Current compatibility boundary: docs/EASZ-ARCHIVE-FORMAT.md.
