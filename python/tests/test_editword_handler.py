@@ -125,6 +125,16 @@ class EditWordHandlerTests(unittest.TestCase):
         self.assertEqual(response.status, 200)
         self.assertIn(b"<response-word", response.body)
 
+    def test_non_callable_cancel_factory_is_rejected_at_construction(self):
+        for value in (None, False, "factory", object()):
+            with self.subTest(value=value), self.assertRaisesRegex(
+                ValueError, "cancel_response_factory must be callable"
+            ):
+                create_editword_handler(
+                    FakeService(cancelled_result()),
+                    cancel_response_factory=value,
+                )
+
     def test_response_limit_requires_positive_builtin_integer(self):
         for value in (True, False, 1.5, 16.0, "16", 0, -1, None):
             with self.subTest(value=value), self.assertRaisesRegex(
