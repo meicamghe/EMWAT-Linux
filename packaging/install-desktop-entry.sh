@@ -12,7 +12,7 @@ launcher=$(command -v emwat-linux) || {
 mkdir -p "$applications_dir"
 temporary_file=$(mktemp)
 trap 'rm -f "$temporary_file"' EXIT HUP INT TERM
-sed "s|^Exec=.*|Exec=\\\"$launcher\\\"|" "$desktop_file" > "$temporary_file"
+sed 's|^Exec=.*|Exec="'"$launcher"'"|' "$desktop_file" > "$temporary_file"
 install -m644 "$temporary_file" "$applications_dir/org.emwat.Linux.desktop"
 if command -v update-desktop-database >/dev/null 2>&1; then
     update-desktop-database "$applications_dir" || true
