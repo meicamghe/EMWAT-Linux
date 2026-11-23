@@ -67,7 +67,7 @@ class DoctorTests(unittest.TestCase):
 
     def test_python_below_minimum_version_is_required_failure(self):
         with (
-            patch.object(doctor.sys, "version_info", (3, 9, 18)),
+            patch.object(doctor.sys, "version_info", doctor.sys.version_info._replace(major=3, minor=9, micro=18)),
             patch.object(doctor.shutil, "which", return_value="/usr/bin/libreoffice"),
             patch.object(doctor, "_module_available", return_value=True),
             patch.object(doctor, "_gtk4_available", return_value=True),
@@ -84,7 +84,7 @@ class DoctorTests(unittest.TestCase):
         import json
 
         with (
-            patch.object(doctor.sys, "version_info", (3, 12, 0)),
+            patch.object(doctor.sys, "version_info", doctor.sys.version_info._replace(major=3, minor=12, micro=0)),
             patch.object(doctor.shutil, "which", return_value=None),
             patch.object(doctor, "_module_available", return_value=False),
             patch.object(doctor, "_gtk4_available", return_value=False),
