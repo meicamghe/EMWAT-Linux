@@ -477,8 +477,10 @@ ImagePage SaneScannerBackend::scan_one(const std::string& device_id, const ScanO
     const auto [dpi_x, dpi_y] = read_scan_dpi(device.get());
     const auto& api = sane_detail::real_sane_scan_api();
     const auto status = api.start(device.get());
-    if (status != SANE_STATUS_GOOD)
+    if (status != SANE_STATUS_GOOD) {
+        api.cancel(device.get());
         throw ScannerError(std::string("Cannot start scan: ") + api.status_string(status));
+    }
     try {
         auto page = sane_detail::read_started_sane_page(
             device.get(), dpi_x, dpi_y, api, max_scan_bytes, false
