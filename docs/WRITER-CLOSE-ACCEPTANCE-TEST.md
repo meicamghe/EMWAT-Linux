@@ -1,91 +1,107 @@
-# Visible Writer close acceptance probe
+# Visible Writer close acceptance probe and results
 
 Date: 2026-11-23
 Branch: `feature/recovery-retention-policy`
+Probe: `scripts/writer_close_acceptance.py`
 
-## Purpose
+## Purpose and boundary
 
-This is a focused diagnostic probe for the unresolved Save / Don't Save / Cancel
-behavior. It launches a visible LibreOffice Writer document through the actual
-`LibreOfficeAdapter`, records the adapter's UNO close/save event trace, and
-writes the bytes returned by the adapter to a local `.doc` file.
+This probe launches a disposable DOCX through the real `LibreOfficeAdapter`,
+records UNO save/close callbacks, waits for the interactive Writer close
+decision, and writes the Word-compatible bytes returned by the adapter.
 
-It is **not** a complete EMWAT application, installer, or Almas end-to-end
-build. It does not contact Almas or change the production close behavior.
+It does **not** contact Almas, run the complete desktop application, or prove
+the Windows/Almas HTTP response contract. It validates the Writer adapter's
+visible close/save behavior only.
 
-## Requirements
+## Environment and run command
 
-- Ubuntu/Linux with LibreOffice Writer installed.
-- The distro Python interpreter with PyUNO available (commonly
-  `python3-uno` from the distribution package manager).
-- Repository source checked out at the branch containing this probe.
+Requirements:
 
-## Run
+- Ubuntu/Linux with LibreOffice Writer.
+- The distro Python interpreter with PyUNO available.
+- The repository checked out at this branch.
 
-From the repository root:
+Run from the repository root:
 
 ```bash
 PYTHONPATH=python/src /usr/bin/python3 scripts/writer_close_acceptance.py --output /tmp/emwat-save.doc
 ```
 
-Use a different output path for each run, for example `/tmp/emwat-discard.doc`
-and `/tmp/emwat-cancel-then-save.doc`. If your system's UNO-capable Python is
-not `/usr/bin/python3`, substitute its path.
+Use a distinct output path for each run. The generated document contains the
+baseline marker `EMWAT_BASELINE_KEEP_20261123`. Add a separate unsaved marker
+in Writer before closing so the returned file can be checked without using a
+real letter or customer data.
 
-The script creates a disposable DOCX containing the baseline marker
-`EMWAT_BASELINE_KEEP_20261123`, opens it in visible Writer, and waits for the
-document to close. In Writer, add a distinct unsaved marker such as
-`EMWAT_UNSAVED_TEST_001` before closing.
+## Manual acceptance results — 2026-11-23
 
-## Required manual runs
+All three interactive cases were run by the operator against the branch code.
 
-Perform these as separate script invocations:
+### Save
 
-1. **Save:** add the unsaved marker, close Writer, choose Save, and wait for the
-   script to write its returned `.doc` file.
-2. **Don't Save:** add a different unsaved marker, close Writer, choose Don't
-   Save, and wait for the returned `.doc` file.
-3. **Cancel:** add a third marker, close Writer, choose Cancel. Confirm Writer
-   remains open and the terminal remains waiting (no returned file and no
-   terminal close result). Then close again and choose Save or Don't Save so
-   this diagnostic run can finish. Record which final choice you made.
+- Operator selected **Save** in Writer.
+- Observed callback trace:
+  `save_done -> saved_state_succeeded -> query_closing -> notify_closing -> disposing`.
+- Returned document contained the test marker `EMWAT_SAVE_FIXED_004`.
+- Result: **passed**. The saved content was present in the returned Word file.
 
-After each run, open the returned `.doc` in Writer and inspect whether the
-baseline marker and that run's unsaved marker are present. Do not use a real
-Almas document; this probe uses only generated disposable content.
+### Don't Save
 
-## Send back
+- Operator selected **Don't Save** in Writer after adding a distinct unsaved marker.
+- Observed close trace:
+  `query_closing -> notify_closing -> disposing`.
+- Returned document retained `EMWAT_BASELINE_KEEP_20261123`.
+- The unsaved marker was absent from the returned document.
+- Result: **passed**. Unsaved edits did not leak into the returned Word file.
 
-For each run, provide:
+### Cancel, then Don't Save
 
-- The terminal output, including the UNO event trace.
-- Which prompt choice you made (including the intermediate Cancel).
-- Whether Writer stayed open after Cancel.
-- Whether the baseline marker is present in the returned file.
-- Whether the unsaved marker is present in the returned file.
+- Operator selected **Cancel** in the Writer prompt.
+- Writer remained open and the terminal continued waiting; no terminal close
+  result was produced for the cancelled attempt.
+- Operator then closed Writer again and selected **Don't Save**.
+- Final trace:
+  `query_closing -> notify_closing -> disposing`.
+- The returned file contained no newly added test information.
+- Result: **passed** for the observed retry behavior. Cancel itself did not
+  complete the session; the later accepted close did.
 
-If practical, attach the returned `.doc` files too. The marker comparison is
-the key evidence for whether a discarded edit leaked into the returned output.
+## Implementation behavior now under test
 
-## Current known limitation
+The adapter keeps the last confirmed saved Word document separately from its
+recovery snapshots and from the live Writer document:
 
-The current adapter snapshots `final.doc` from `XCloseListener.queryClosing`
-and later accepts that snapshot after terminal close. The visible Writer prompt
-ordering is not yet established. Therefore the **Don't Save** result may expose
-the known bug: an unsaved marker can be present in the returned file even after
-choosing Don't Save. This probe is diagnostic; do not treat its output as a
-safe production build or send real documents through it.
+- A baseline Word-compatible file is established before editing.
+- Only successful UNO `OnSaveDone` / `OnSaveAsDone` callbacks replace the
+  confirmed saved-state file.
+- The replacement is staged and validated before atomic publication.
+- `queryClosing` records lifecycle evidence only; it does not snapshot live,
+  potentially dirty edits.
+- After terminal close, the adapter returns the last confirmed saved-state
+  file. A cancelled close attempt remains pending.
+- Periodic recovery data is not used as the final Almas response payload.
 
-A Cancel choice should leave the Writer document and bridge-side wait pending.
-This standalone probe has no Almas HTTP request, so it can only demonstrate
-that the adapter's close wait remains pending while Writer stays open.
+This is why Save returns the newly saved marker, while Don't Save returns the
+baseline/last saved version without the discarded marker.
 
-## Acceptance criteria
+## Acceptance status and remaining boundary
 
-- Save: baseline and saved marker both appear in the returned document.
-- Don't Save: baseline appears; the unsaved marker is absent.
-- Cancel: Writer remains open and no terminal close result is produced until a
-  later accepted close choice.
+| Case | Observed result | Status |
+|---|---|---|
+| Save | Confirmed saved marker returned | Passed |
+| Don't Save | Baseline retained; unsaved marker absent | Passed |
+| Cancel | Writer stayed open; wait remained pending until a later accepted close | Passed |
 
-A failure of any criterion blocks release. Do not infer the user's choice from
-`notifyClosed`, `disposing`, or absence of a save callback.
+Do not infer the user's choice from `notifyClosed`, `disposing`, or the
+absence of a save callback alone. The behavior above is established by the
+interactive marker checks together with the saved-state implementation.
+
+Still **not validated** by this probe:
+
+- live Almas browser/HTTP request and response;
+- the exact Windows Save/Don't Save/Cancel wire envelopes;
+- the full installed GTK application lifecycle;
+- automatic WordConfig field mapping or full Word/Writer semantic parity.
+
+A successful Writer acceptance run is not a production-readiness or Almas
+end-to-end claim.
