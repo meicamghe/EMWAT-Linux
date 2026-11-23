@@ -9,6 +9,7 @@ import base64
 import binascii
 import secrets
 from pathlib import Path
+from types import ModuleType
 
 from emwat_linux.recovery_store import RecoverySnapshotStore
 
