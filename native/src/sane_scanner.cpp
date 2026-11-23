@@ -1,5 +1,6 @@
 #include "emwat/scanner.hpp"
 #include "emwat/scanner_detail.hpp"
+#include "sane_scanner_test_support.hpp"
 
 #include <sane/sane.h>
 
@@ -29,7 +30,7 @@ public:
         SANE_Int version = 0;
         const auto status = sane_init(&version, nullptr);
         if (status != SANE_STATUS_GOOD)
-            throw ScannerError(std::string("SANE initialization failed: ") + sane_strstatus(status));
+            throw ScannerError(std::string("SANE initialization failed: ") + api.status_string(status));
         active_ = true;
     }
     ~SaneSession() { if (active_) sane_exit(); }
@@ -44,7 +45,7 @@ public:
     explicit SaneHandle(const std::string& id) {
         const auto status = sane_open(reinterpret_cast<const SANE_Char*>(id.c_str()), &handle_);
         if (status != SANE_STATUS_GOOD)
-            throw ScannerError(std::string("Cannot open scanner: ") + sane_strstatus(status));
+            throw ScannerError(std::string("Cannot open scanner: ") + api.status_string(status));
         active_ = true;
     }
     ~SaneHandle() { if (active_) sane_close(handle_); }
@@ -269,11 +270,13 @@ ScannerCapabilities SaneScannerBackend::get_capabilities(const std::string& devi
     return result;
 }
 
+namespace sane_detail {
 namespace {
 std::vector<std::uint8_t> read_sane_frame_bytes(
     SANE_Handle handle,
     const SANE_Parameters& params,
     std::uint64_t max_frame_bytes,
+    const SaneScanApi& api,
     bool allow_feeder_empty = false
 ) {
     if (params.pixels_per_line <= 0 || params.lines <= 0 || params.bytes_per_line <= 0)
@@ -294,7 +297,7 @@ std::vector<std::uint8_t> read_sane_frame_bytes(
     std::array<SANE_Byte, 64 * 1024> chunk{};
     for (;;) {
         SANE_Int received = 0;
-        const auto status = sane_read(
+        const auto status = api.read(
             handle, chunk.data(), static_cast<SANE_Int>(chunk.size()), &received
         );
         if (received < 0 || static_cast<std::size_t>(received) > chunk.size())
@@ -333,11 +336,12 @@ ImagePage read_started_sane_page(
     SANE_Handle handle,
     const std::optional<double>& dpi_x,
     const std::optional<double>& dpi_y,
-    std::uint64_t remaining_batch_bytes = max_scan_bytes,
-    bool allow_feeder_empty = false
+    const SaneScanApi& api,
+    std::uint64_t remaining_batch_bytes,
+    bool allow_feeder_empty
 ) {
     SANE_Parameters params{};
-    auto status = sane_get_parameters(handle, &params);
+    auto status = api.get_parameters(handle, &params);
     if (status != SANE_STATUS_GOOD)
         throw ScannerError(std::string("Cannot read scan parameters: ") + sane_strstatus(status));
 
@@ -371,7 +375,7 @@ ImagePage read_started_sane_page(
         pixels.stride = stride;
         pixels.format = channels == 1 ? PixelFormat::Gray8 : PixelFormat::RGB8;
         pixels.bytes = read_sane_frame_bytes(
-            handle, params, page_byte_limit, allow_feeder_empty
+            handle, params, page_byte_limit, api, allow_feeder_empty
         );
         if (!pixels.valid())
             throw ScannerError("Scanner produced an invalid pixel buffer");
@@ -411,13 +415,13 @@ ImagePage read_started_sane_page(
         params,
         expected_formats,
         [&]() {
-            status = sane_start(handle);
+            status = api.start(handle);
             if (status != SANE_STATUS_GOOD)
                 throw ScannerError(
                     std::string("Cannot start next planar RGB frame: ") + sane_strstatus(status)
                 );
             SANE_Parameters next{};
-            status = sane_get_parameters(handle, &next);
+            status = api.get_parameters(handle, &next);
             if (status != SANE_STATUS_GOOD)
                 throw ScannerError(
                     std::string("Cannot read planar RGB parameters: ") + sane_strstatus(status)
@@ -437,7 +441,7 @@ ImagePage read_started_sane_page(
             const auto frame_stride = static_cast<std::size_t>(frame.bytes_per_line);
             auto plane = read_sane_frame_bytes(
                 handle, frame,
-                page_byte_limit - static_cast<std::uint64_t>(output_bytes),
+                page_byte_limit - static_cast<std::uint64_t>(output_bytes), api,
                 channel == 0 && allow_feeder_empty
             );
             copy_planar_channel(plane, frame_stride, pixels, channel);
@@ -448,8 +452,15 @@ ImagePage read_started_sane_page(
         throw ScannerError("Scanner produced an invalid planar RGB image");
     return ImagePage{std::move(pixels), dpi_x, dpi_y};
 }
-
 } // namespace
+} // namespace sane_detail
+
+const sane_detail::SaneScanApi& sane_detail::real_sane_scan_api() noexcept {
+    static const SaneScanApi api{
+        &sane_start, &sane_get_parameters, &sane_read, &sane_cancel, &sane_strstatus
+    };
+    return api;
+}
 
 ImagePage SaneScannerBackend::scan_one(const std::string& device_id, const ScanOptions& options) {
     validate_device_id(device_id);
