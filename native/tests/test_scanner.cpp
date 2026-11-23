@@ -221,7 +221,7 @@ int main() {
     assert(!detail::is_adf_source("ADF Duplex"));
     assert(!detail::is_adf_source("Automatic Document Feeder (Duplex)"));
     assert(detail::is_adf_source("Automatic Document Feeder"));
-    assert(detail::is_adf_source("automatic document feeder (duplex)"));
+    assert(!detail::is_adf_source("automatic document feeder (duplex)"));
     assert(!detail::is_adf_source("Flatbed"));
     assert(!detail::is_adf_source("Not ADF"));
     assert(!detail::is_adf_source("Document Table"));
