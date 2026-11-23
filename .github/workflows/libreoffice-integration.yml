@@ -1,6 +1,8 @@
 name: LibreOffice UNO integration
 on:
   push:
+    branches:
+      - main
     paths:
       - 'python/src/emwat_linux/libreoffice_adapter.py'
       - 'python/src/emwat_linux/writer_inspector.py'
