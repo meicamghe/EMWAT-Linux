@@ -132,7 +132,7 @@ class _ModifyListener:
 
 
 class _DocumentCloseListener:
-    """Snapshot the final document before close and stop periodic recovery after close."""
+    """Observe close lifecycle and stop recovery without exporting live edits."""
 
     def __init__(
         self,
