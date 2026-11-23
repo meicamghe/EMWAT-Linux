@@ -123,6 +123,12 @@ int main() {
     assert(scanned.dpi_x == 300.0);
     assert(scanned.dpi_y == 300.0);
 
+    // Legacy backends inherit a safe one-page batch fallback.
+    const auto scanned_pages = backend.scan_pages("test:scanner0");
+    assert(scanned_pages.size() == 1);
+    assert(scanned_pages[0].pixels.valid());
+    assert(scanned_pages[0].pixels.bytes[0] == 42);
+
     backend.fail = true;
     bool threw = false;
     try { (void)backend.list_devices(); }
