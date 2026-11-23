@@ -6,4 +6,4 @@ Comment=Local Almas and LibreOffice Writer control and diagnostics
 Exec=emwat-linux
 Terminal=false
 StartupNotify=true
-Categories=Office;Utility;
+Categories=Office;
