@@ -95,10 +95,19 @@ application injects a factory that returns a fully configured loopback server:
   Cancel/Discard response envelopes. Those remain deployment-specific and must
   be based on captured Almas behavior.
 
-This is a headless lifecycle component, not yet a system service or a GTK
-start/stop control. The GTK shell remains diagnostics/recovery-only until
-persistent deployment settings and user-visible runtime error handling are
-implemented. See `docs/BRIDGE-SUPERVISOR-LIFECYCLE.md` for the state contract.
+The GTK 4 shell can control an explicitly injected supervisor: Start/Stop
+operations run off the GTK main thread, asynchronous supervisor failures are
+polled and shown in the status area, and Stop remains available for cleanup.
+Application shutdown serializes with those operations and requests cleanup of
+a running or failed supervisor before the UI exits. A queued Start is prevented
+from running after shutdown begins.
+
+The normal `emwat-linux` entry point still injects no supervisor. Its service
+controls are therefore disabled and no listener starts automatically. This is
+intentional: a production factory must still be supplied with evidence-backed
+Almas Origin allowlists, request handlers, and the exact Cancel/Discard response
+contract. The lifecycle UI is not a substitute for that configuration or a
+system service. See `docs/BRIDGE-SUPERVISOR-LIFECYCLE.md` for the state contract.
 
 ## 3. End-to-end acceptance boundary
 
