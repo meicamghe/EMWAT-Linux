@@ -96,7 +96,7 @@ void set_string_option(SANE_Handle handle, const char* name, const std::string& 
     if (!descriptor) throw ScannerError(std::string("Scanner does not support option: ") + name);
     if (!(descriptor->cap & SANE_CAP_SOFT_SELECT) || !(descriptor->cap & SANE_CAP_SOFT_DETECT) ||
         (descriptor->cap & SANE_CAP_INACTIVE) || descriptor->type != SANE_TYPE_STRING ||
-        descriptor->size <= 0 || value.size() >= static_cast<std::size_t>(descriptor->size))
+        !detail::sane_string_option_size_valid(descriptor->size, value.size()))
         throw ScannerError(std::string("Scanner option is unavailable or incompatible: ") + name);
     std::vector<SANE_Char> buffer(static_cast<std::size_t>(descriptor->size), 0);
     std::memcpy(buffer.data(), value.c_str(), value.size() + 1);
