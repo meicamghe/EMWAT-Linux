@@ -36,6 +36,68 @@ class BridgeHTTPServerTests(unittest.TestCase):
         conn.close()
         return result
 
+    def test_server_close_waits_for_active_document_request(self):
+        entered = threading.Event()
+        release = threading.Event()
+        closed = threading.Event()
+
+        def blocking_handler(_request):
+            entered.set()
+            if not release.wait(3):
+                raise TimeoutError("test handler release timed out")
+            return BridgeResponse(b"completed")
+
+        server = BridgeHTTPServer(
+            blocking_handler,
+            allowed_origins=frozenset({"https://office.example"}),
+        )
+        host, port = server.address
+        serving = threading.Thread(target=server.serve_forever)
+        serving.start()
+
+        def send_request():
+            connection = http.client.HTTPConnection(host, port, timeout=4)
+            try:
+                connection.request(
+                    "POST",
+                    "/?invoke=active",
+                    body=b"request",
+                    headers={
+                        "Origin": "https://office.example",
+                        "Content-Length": "7",
+                    },
+                )
+                response = connection.getresponse()
+                self.assertEqual(response.status, 200)
+                self.assertEqual(response.read(), b"completed")
+            finally:
+                connection.close()
+
+        request_thread = threading.Thread(target=send_request)
+        request_thread.start()
+        self.assertTrue(entered.wait(2), "request handler did not start")
+
+        def close_server():
+            server.shutdown()
+            server.server_close()
+            closed.set()
+
+        closing = threading.Thread(target=close_server)
+        closing.start()
+        self.assertFalse(
+            closed.wait(0.1),
+            "server_close returned while a document request was still active",
+        )
+
+        release.set()
+        self.assertTrue(closed.wait(3), "server did not close after request completed")
+        request_thread.join(timeout=2)
+        serving.join(timeout=2)
+        closing.join(timeout=2)
+        self.assertFalse(request_thread.is_alive())
+        self.assertFalse(serving.is_alive())
+        self.assertFalse(closing.is_alive())
+
     def test_origin_allowlists_must_be_sets_of_strings(self):
         handler = lambda _request: BridgeResponse(b"")
         for value in ("https://office.example", ["https://office.example"], {None}):
