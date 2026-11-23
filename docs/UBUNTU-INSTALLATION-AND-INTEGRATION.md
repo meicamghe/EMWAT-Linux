@@ -270,13 +270,16 @@ acceptance.
 
 
 Shutdown is also failure-aware: if server shutdown raises, the runtime still
-attempts socket closure and joins the serving thread; it records the first
-cleanup error and reports FAILED rather than claiming a clean stop. If socket
-closure itself fails, a later `close()` retries it because closure has not
-been confirmed. A never-started runtime is not marked STOPPED until its bound
-socket is actually closed. This does not provide a safe way to forcibly kill a
-Python thread if the underlying server cannot stop; that remains a fatal
-runtime failure to surface to the desktop supervisor.
+attempts socket closure and performs a bounded serving-thread join (five
+seconds by default). It records the cleanup error and reports FAILED rather
+than claiming a clean stop. If the thread remains alive, `close()` raises
+after the timeout so the desktop supervisor can surface the failure; a later
+`close()` retries shutdown while that thread is still alive. If socket closure
+itself fails, a later `close()` retries it because closure has not been
+confirmed. A never-started runtime is not marked STOPPED until its bound socket
+is actually closed. The underlying HTTP server may still wait for active
+request workers during `server_close()`; Python threads cannot be forcibly
+killed safely, so a stuck request remains a fatal condition to surface.
 
 
 
