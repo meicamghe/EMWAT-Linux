@@ -1,6 +1,6 @@
 # SANE multi-frame and ADF implementation contract
 
-Status: bounded ADF page batching and ordered 8-bit planar RGB assembly are implemented. Duplex semantics and physical hardware acceptance remain open.
+Status: bounded ADF page batching, ordered 8-bit planar RGB assembly, and an injectable SANE page-reader seam are implemented. Duplex semantics and physical hardware acceptance remain open.
 
 ## Current implementation
 
@@ -34,7 +34,6 @@ Status: bounded ADF page batching and ordered 8-bit planar RGB assembly are impl
 
 ## Remaining implementation work
 
-- Add a narrow injectable SANE function-table/frame-reader seam so the actual SANE API calls and ADF acquisition loop can be exercised with deterministic fake frames. The extracted ordered planar sequence consumer, metadata validator, channel interleaver and padded-stride handling already have deterministic unit tests.
 - Add a configurable page/byte limit with API-level validation if product requirements call for it.
 - Expose feeder/duplex capabilities only when the SANE device descriptors or backend metadata support them.
 - Verify exact feeder-empty and error behavior against physical ADF devices and record scanner model, backend/version, source option, frame sequence and resulting page count.
@@ -43,8 +42,8 @@ Status: bounded ADF page batching and ordered 8-bit planar RGB assembly are impl
 
 - ADF source classifier: explicit ADF values accepted; flatbed and generic document-table values rejected.
 - Single-page fallback when no ADF source is selected.
-- Fake SANE function-table tests for one-page success, multiple ADF pages, feeder-empty completion, start/read failure, cancellation, 100-page cap, 4 GiB cap and short/oversized/no-progress reads.
-- Ordered planar RGB sequence success and reordered/mismatched-frame rejection are covered by fake metadata tests; full SANE API call sequencing still needs the future fake function table.
+- Fake SANE function-table tests exercise the production page reader for interleaved RGB, planar RED/GREEN/BLUE, multiple ADF pages, feeder-empty from read, partial-page NO_DOCS rejection, and invalid channel order.
+- The bounded collector tests cover start/read failure, cancellation, empty feeder, exact/over page limits and byte-budget enforcement; the pure frame/interleaver tests cover geometry, terminal flags and padded stride.
 - Native build, CTest and ASan/UBSan.
 
 CI tests do not replace physical scanner acceptance. No physical scanner has been validated by this change.
