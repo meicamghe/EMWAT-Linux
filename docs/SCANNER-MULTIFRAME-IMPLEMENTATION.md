@@ -47,3 +47,6 @@ Status: bounded simplex ADF page batching, ordered 8-bit planar RGB assembly, an
 - Native build, CTest and ASan/UBSan.
 
 CI tests do not replace physical scanner acceptance. No physical scanner has been validated by this change.
+
+
+Safety note: generic `ADF` and `Automatic Document Feeder` source names are ambiguous. They do not enable batch acquisition; only explicit front-only, one-sided, single-sided, or simplex source labels do.
