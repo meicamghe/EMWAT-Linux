@@ -332,6 +332,11 @@ class LibreOfficeIntegrationTests(unittest.TestCase):
             self.assertEqual(saved_events, [])
             with handle.snapshot_lock:
                 self.assertEqual(handle.document.isModified(), modified_before_recovery)
+
+            # Explicitly save the edited document. The adapter must capture
+            # this confirmed state before the later close handoff.
+            handle.document.store()
+            self.assertEqual(saved_events, ["saved"])
             handle.document.close(True)
             close_event = adapter.wait_for_close(handle)
             self.assertEqual(close_event.disposition, CloseDisposition.CLOSED)
