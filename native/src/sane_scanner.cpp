@@ -403,39 +403,47 @@ ImagePage read_started_sane_page(
     pixels.format = PixelFormat::RGB8;
     pixels.bytes.resize(output_bytes);
 
-    auto plane_stride = static_cast<std::size_t>(params.bytes_per_line);
-    auto plane = read_sane_frame_bytes(
-        handle, params, page_byte_limit - static_cast<std::uint64_t>(output_bytes),
-        allow_feeder_empty
+    const std::array<int, 3> expected_formats{
+        static_cast<int>(SANE_FRAME_RED),
+        static_cast<int>(SANE_FRAME_GREEN),
+        static_cast<int>(SANE_FRAME_BLUE),
+    };
+    detail::consume_planar_rgb_sequence<SANE_Parameters>(
+        params,
+        expected_formats,
+        [&]() {
+            status = sane_start(handle);
+            if (status != SANE_STATUS_GOOD)
+                throw ScannerError(
+                    std::string("Cannot start next planar RGB frame: ") + sane_strstatus(status)
+                );
+            SANE_Parameters next{};
+            status = sane_get_parameters(handle, &next);
+            if (status != SANE_STATUS_GOOD)
+                throw ScannerError(
+                    std::string("Cannot read planar RGB parameters: ") + sane_strstatus(status)
+                );
+            return next;
+        },
+        [&](const SANE_Parameters& frame, int expected_format, bool should_be_last) {
+            if (!detail::planar_rgb_frame_matches(
+                    static_cast<int>(frame.format), expected_format,
+                    frame.depth, 8, frame.pixels_per_line, params.pixels_per_line,
+                    frame.lines, params.lines, frame.bytes_per_line,
+                    frame.last_frame != SANE_FALSE, should_be_last
+                ))
+                throw ScannerError("Scanner returned an inconsistent planar RGB frame sequence");
+        },
+        [&](const SANE_Parameters& frame, std::size_t channel) {
+            const auto frame_stride = static_cast<std::size_t>(frame.bytes_per_line);
+            auto plane = read_sane_frame_bytes(
+                handle, frame,
+                page_byte_limit - static_cast<std::uint64_t>(output_bytes),
+                channel == 0 && allow_feeder_empty
+            );
+            copy_planar_channel(plane, frame_stride, pixels, channel);
+        }
     );
-    copy_planar_channel(plane, plane_stride, pixels, 0);
-    std::vector<std::uint8_t>().swap(plane);
-
-    for (const auto& [expected_format, channel, should_be_last] : {
-             std::tuple<SANE_Frame, std::size_t, bool>{SANE_FRAME_GREEN, 1, false},
-             std::tuple<SANE_Frame, std::size_t, bool>{SANE_FRAME_BLUE, 2, true}}) {
-        status = sane_start(handle);
-        if (status != SANE_STATUS_GOOD)
-            throw ScannerError(std::string("Cannot start next planar RGB frame: ") + sane_strstatus(status));
-        SANE_Parameters next{};
-        status = sane_get_parameters(handle, &next);
-        if (status != SANE_STATUS_GOOD)
-            throw ScannerError(std::string("Cannot read planar RGB parameters: ") + sane_strstatus(status));
-        if (!detail::planar_rgb_frame_matches(
-                static_cast<int>(next.format), static_cast<int>(expected_format),
-                next.depth, 8, next.pixels_per_line, params.pixels_per_line,
-                next.lines, params.lines, next.bytes_per_line,
-                next.last_frame != SANE_FALSE, should_be_last
-            ))
-            throw ScannerError("Scanner returned an inconsistent planar RGB frame sequence");
-
-        plane_stride = static_cast<std::size_t>(next.bytes_per_line);
-        plane = read_sane_frame_bytes(
-            handle, next, page_byte_limit - static_cast<std::uint64_t>(output_bytes)
-        );
-        copy_planar_channel(plane, plane_stride, pixels, channel);
-        std::vector<std::uint8_t>().swap(plane);
-    }
 
     if (!pixels.valid())
         throw ScannerError("Scanner produced an invalid planar RGB image");
