@@ -259,8 +259,7 @@ desktop logout, real LibreOffice, or Almas end-to-end acceptance.
 
 
 Startup synchronization is explicit: the HTTP server exposes a readiness
-handshake from its actual `serve_forever` loop, and `BridgeRuntime.start()
-` waits for that handshake before allowing a concurrent `close()` to call
+handshake from its actual `serve_forever` loop, and `BridgeRuntime.start()` waits for that handshake before allowing a concurrent `close()` to call
 `shutdown()`. This avoids the Python `socketserver.BaseServer` ordering hazard
 where calling `shutdown()` before `serve_forever()` enters its loop can block
 indefinitely. The readiness event is also released if the serve loop exits
