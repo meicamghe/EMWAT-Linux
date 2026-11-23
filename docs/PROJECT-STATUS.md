@@ -1,3 +1,13 @@
+## Headless bridge supervisor — 2026-11-23
+
+- Added `BridgeSupervisor`, an application-level lifecycle owner independent of GTK. It receives an injected factory for a fully configured bridge server; it does not guess Almas origins, method handlers, or Cancel/Discard response envelopes.
+- Start is idempotent while running; a successful stop allows a fresh one-shot runtime/server to be created on the next start.
+- Failed start/stop is surfaced as FAILED. A failed cleanup must be retried before a new server can be created, preventing silent replacement of a possibly live listener. A factory failure before runtime creation can be explicitly acknowledged with stop and retried.
+- Added headless tests for idempotent start, fresh-server restart, cleanup retry, factory failure, safe stop-before-start, and invalid factories.
+- Design and lifecycle contract: `docs/BRIDGE-SUPERVISOR-LIFECYCLE.md`.
+- CI for the combined head containing this work is running; no test pass is claimed until all workflows finish.
+- The GTK shell is not yet wired to start the supervisor. Deployment-specific persistent settings, user-visible runtime controls, crash notifications, and verified Almas configuration remain prerequisites.
+
 ## Latest verified runtime-safety changes — 2026-11-23
 
 - Latest code head: `3a8a2d96ad08fcc2194f0534e87fcdb4785e2040`.
