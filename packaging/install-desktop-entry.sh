@@ -38,7 +38,7 @@ for index, line in enumerate(lines):
         break
 else:
     raise SystemExit("Desktop entry has no Exec key.")
-destination.write_text("\\n".join(lines) + "\\n", encoding="utf-8")
+destination.write_text("\n".join(lines) + "\n", encoding="utf-8")
 PY
 install -m644 "$temporary_file" "$applications_dir/org.emwat.Linux.desktop"
 if command -v update-desktop-database >/dev/null 2>&1; then
