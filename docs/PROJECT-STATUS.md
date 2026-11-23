@@ -1,3 +1,13 @@
+## Latest verified runtime-safety changes — 2026-11-23
+
+- Latest code head: `3a8a2d96ad08fcc2194f0534e87fcdb4785e2040`.
+- Recovery snapshot operations now serialize within one process across store instances sharing the same canonical recovery root. This prevents concurrent writers/readers from interleaving manifest replacement and old-snapshot cleanup. Regression test: `test_concurrent_store_instances_keep_manifest_and_snapshot_consistent`.
+- Bridge HTTP request worker threads are now non-daemon. A caller performing the documented shutdown sequence (`shutdown()`, then `server_close()`) waits for active requests to finish instead of abandoning an in-flight document-edit request. Regression test: `test_server_close_waits_for_active_document_request`.
+- Python workflow [45144669416](https://github.com/meicamghe/EMWAT-Linux/actions/runs/45144669416) on the latest code head passed: **245 tests run, 243 passed, 2 optional skips**. Package installation and `emwat-linux-doctor --help` also passed.
+- Native workflow [45144581554](https://github.com/meicamghe/EMWAT-Linux/actions/runs/45144581554) passed on the immediately preceding Python-only code head `b2e80cd0378611d982bb6cfb3a2bd27374204ee8`, including build/test, ASan/UBSan, and DEB package lifecycle. UNO workflow [45144581655](https://github.com/meicamghe/EMWAT-Linux/actions/runs/45144581655) was still running when this note was prepared; prior UNO run [45143990759](https://github.com/meicamghe/EMWAT-Linux/actions/runs/45143990759) passed on `a1067bd`.
+- The recovery lock is process-local, not an inter-process file lock. A future multi-process deployment must use a single recovery-owning process or add OS-level locking before sharing one recovery root across processes.
+- These tests do not establish live Almas integration or a production-ready desktop launcher/service. PR #2 remains open, Draft, and unmerged.
+
 ## Current verified state — 2026-11-23 (latest branch head)
 
 - Latest branch head: `a1067bd4923dd4a448b37f754484ec9dc638ff7f`.
