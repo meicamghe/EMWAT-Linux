@@ -50,6 +50,94 @@ int main() {
     assert(!detail::sane_string_option_size_valid(257, 1));
     assert(!detail::sane_string_option_size_valid(256, 256));
 
+    // Exercise the real bounded batch state machine without a physical scanner.
+    {
+        const std::vector<bool> starts{true, true, false};
+        std::size_t start_index = 0;
+        std::size_t read_index = 0;
+        bool cancelled = false;
+        const auto pages = detail::collect_bounded_pages<int>(
+            [&]() { return starts.at(start_index++); },
+            [&]() { return read_index++ == 0 ? 4 : 6; },
+            [](int bytes) { return static_cast<std::size_t>(bytes); },
+            [&]() { cancelled = true; },
+            10, 32
+        );
+        assert((pages == std::vector<int>{4, 6}));
+        assert(start_index == 3);
+        assert(read_index == 2);
+        assert(cancelled);
+    }
+    {
+        const std::vector<bool> starts{true, true, false};
+        std::size_t start_index = 0;
+        bool cancelled = false;
+        const auto pages = detail::collect_bounded_pages<int>(
+            [&]() { return starts.at(start_index++); },
+            []() { return 1; },
+            [](int bytes) { return static_cast<std::size_t>(bytes); },
+            [&]() { cancelled = true; },
+            2, 2
+        );
+        assert(pages.size() == 2);
+        assert(cancelled);
+    }
+    {
+        const std::vector<bool> starts{true, true, true};
+        std::size_t start_index = 0;
+        bool cancelled = false;
+        bool rejected = false;
+        try {
+            (void)detail::collect_bounded_pages<int>(
+                [&]() { return starts.at(start_index++); },
+                []() { return 1; },
+                [](int bytes) { return static_cast<std::size_t>(bytes); },
+                [&]() { cancelled = true; },
+                2, 8
+            );
+        } catch (const std::runtime_error& error) {
+            rejected = std::string(error.what()) == "scan_batch_page_limit_exceeded";
+        }
+        assert(rejected);
+        assert(cancelled);
+    }
+    {
+        const std::vector<bool> starts{true, true};
+        std::size_t start_index = 0;
+        bool cancelled = false;
+        bool rejected = false;
+        try {
+            (void)detail::collect_bounded_pages<int>(
+                [&]() { return starts.at(start_index++); },
+                [&]() { return start_index == 1 ? 4 : 2; },
+                [](int bytes) { return static_cast<std::size_t>(bytes); },
+                [&]() { cancelled = true; },
+                10, 5
+            );
+        } catch (const std::runtime_error& error) {
+            rejected = std::string(error.what()) == "scan_batch_byte_limit_exceeded";
+        }
+        assert(rejected);
+        assert(cancelled);
+    }
+    {
+        bool cancelled = false;
+        bool rejected = false;
+        try {
+            (void)detail::collect_bounded_pages<int>(
+                []() { return true; },
+                []() { throw std::runtime_error("synthetic_read_failure"); return 0; },
+                [](int bytes) { return static_cast<std::size_t>(bytes); },
+                [&]() { cancelled = true; },
+                10, 32
+            );
+        } catch (const std::runtime_error& error) {
+            rejected = std::string(error.what()) == "synthetic_read_failure";
+        }
+        assert(rejected);
+        assert(cancelled);
+    }
+
     // Only explicit feeder-source names may activate repeated page acquisition.
     assert(detail::is_adf_source("ADF"));
     assert(detail::is_adf_source("ADF Front"));
