@@ -190,8 +190,17 @@ inline bool is_adf_source(const std::string& source) {
         return std::isspace(next) != 0 || next == '(' || next == '[' ||
                next == '-' || next == '_' || next == ':';
     };
-    return has_token_prefix("adf") ||
-           has_token_prefix("automatic document feeder");
+    const bool feeder = has_token_prefix("adf") ||
+                        has_token_prefix("automatic document feeder");
+    if (!feeder) return false;
+
+    // A feeder name alone does not prove simplex operation. Only enable
+    // automatic multi-page acquisition when the selected source explicitly
+    // identifies a front-only or simplex path.
+    return normalized.find("simplex") != std::string::npos ||
+           normalized.find("front") != std::string::npos ||
+           normalized.find("one-sided") != std::string::npos ||
+           normalized.find("single-sided") != std::string::npos;
 }
 
 } // namespace emwat::detail
