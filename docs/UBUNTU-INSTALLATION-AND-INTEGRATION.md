@@ -125,9 +125,12 @@ The current implementation:
 - preserves XML field order and per-field metadata;
 - decodes only declared `urlencoded` and `base64` field encodings;
 - recognizes the seven captured indexed signer families;
-- builds Word custom-property single/twin descriptors using the observed
-  dagger delimiter and ordered XML field association;
-- audits Writer property names without assuming enumeration order is equivalent;
+- can build native-shaped single/twin descriptors from caller-supplied ordered
+  property names and XML fields using the observed dagger delimiter;
+- keeps the native Word COM same-index association separate from Linux Writer
+  inventory; LibreOffice enumeration order has not been proven equivalent to
+  Word COM order, so the current Writer audit reports candidates only and does
+  not attach XML fields to property indices;
 - preserves `signData` as opaque text and exposes external parameter bindings.
 
 The current parser deliberately does not split or concatenate `signData`.
@@ -165,9 +168,12 @@ filesystem/business logic into GTK callbacks.
 
 ## 6. Windows .easz compatibility
 
-Static analysis indicates a password-protected 7z output with an `.easd` entry,
-but no authorized synthetic fixture has been captured. The Linux recovery store
-is a separate format and must remain usable independently.
+Static analysis identifies a SevenZip-related output path, an `.easd` entry name,
+and an `.easz` output path. It does **not** currently prove that encryption is
+enabled for every output, identify an effective writer password, or establish
+archive interoperability. The `CryptoGetTextPassword2` method name and a
+credential-like static string are not sufficient proof. The Linux recovery
+store is a separate format and must remain usable independently.
 
 Required fixture evidence before implementing an adapter:
 - synthetic DOC/DOCX input and known test password;
@@ -180,18 +186,23 @@ Until this exists, the Ubuntu package must not advertise .easz import/export.
 
 ## 7. Scanner compatibility
 
-The native SANE backend currently supports device discovery, capability
-inspection, and a single 8-bit Gray/RGB frame. It validates option types,
-resolution representation, frame dimensions/stride, and a 1 GiB frame cap.
-Native fake/contract tests do not prove a physical scanner works.
+The native SANE backend supports device discovery, capability inspection,
+8-bit grayscale/interleaved RGB pages, validated RED → GREEN → BLUE planar RGB
+assembly, and bounded ADF simplex batches when an ADF source is explicitly
+selected. It validates option types, resolution representation, frame
+sequence, dimensions/stride, and byte/page limits. Flatbed operation remains
+single-page unless explicitly configured otherwise; duplex is intentionally
+not enabled. Native fake/contract tests exercise the page reader and bounded
+batch state machine, but do not prove a physical scanner works.
 
-Before release, test at least one USB flatbed and one network scanner where
+Before release, test at least one USB flatbed and one ADF-capable device where
 available, then separately verify:
 - source selection and supported resolution/mode options;
-- ADF and multi-page acquisition;
+- actual feeder page boundary behavior on supported drivers;
 - cancellation and unplug/device-loss behavior;
-- page order, partial scans, and output encoding;
-- preview/edit/export handoff.
+- page order, partial scans, feeder-empty and jam behavior;
+- preview/edit/export handoff;
+- duplex only after front/back ordering and source semantics are proven.
 
 Do not map undocumented ImageGear integer modes to SANE options by guesswork.
 
