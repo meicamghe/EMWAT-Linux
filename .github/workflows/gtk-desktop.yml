@@ -38,7 +38,8 @@ jobs:
         run: |
           sh -n packaging/install-desktop-entry.sh
           desktop-file-validate packaging/org.emwat.Linux.desktop
-          temp_root=$(mktemp -d)
+          temp_base=$(mktemp -d)
+          temp_root="$temp_base/with space"
           mkdir -p "$temp_root/bin"
           printf '#!/bin/sh\\nexit 0\\n' > "$temp_root/bin/emwat-linux"
           chmod +x "$temp_root/bin/emwat-linux"
