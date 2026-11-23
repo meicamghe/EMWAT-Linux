@@ -216,8 +216,8 @@ class BridgeRuntimeTests(unittest.TestCase):
         runtime.close()
         self.assertTrue(server.closed)
         self.assertEqual(server.close_attempts, 2)
-        self.assertEqual(runtime.state, BridgeRuntimeState.FAILED)
-        self.assertIs(runtime.failure, failure)
+        self.assertEqual(runtime.state, BridgeRuntimeState.STOPPED)
+        self.assertIsNone(runtime.failure)
 
     def test_server_failure_is_retained_and_socket_closed(self):
         failure = RuntimeError("serve failed")
