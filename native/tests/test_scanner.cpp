@@ -138,6 +138,36 @@ int main() {
         assert(cancelled);
     }
 
+    {
+        bool cancelled = false;
+        const auto pages = detail::collect_bounded_pages<int>(
+            []() { return false; },
+            []() { return 1; },
+            [](int bytes) { return static_cast<std::size_t>(bytes); },
+            [&]() { cancelled = true; },
+            10, 32
+        );
+        assert(pages.empty());
+        assert(cancelled);
+    }
+    {
+        bool cancelled = false;
+        bool rejected = false;
+        try {
+            (void)detail::collect_bounded_pages<int>(
+                []() -> bool { throw ScannerError("synthetic_feeder_jam"); },
+                []() { return 1; },
+                [](int bytes) { return static_cast<std::size_t>(bytes); },
+                [&]() { cancelled = true; },
+                10, 32
+            );
+        } catch (const ScannerError& error) {
+            rejected = std::string(error.what()) == "synthetic_feeder_jam";
+        }
+        assert(rejected);
+        assert(cancelled);
+    }
+
     // Only explicit feeder-source names may activate repeated page acquisition.
     assert(detail::is_adf_source("ADF"));
     assert(detail::is_adf_source("ADF Front"));
