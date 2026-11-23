@@ -278,7 +278,6 @@ ImagePage read_started_sane_page(
     SANE_Parameters params{};
     auto status = sane_get_parameters(handle, &params);
     if (status != SANE_STATUS_GOOD) {
-        sane_cancel(handle);
         throw ScannerError(std::string("Cannot read scan parameters: ") + sane_strstatus(status));
     }
 
@@ -291,14 +290,12 @@ ImagePage read_started_sane_page(
         format = PixelFormat::RGB8;
         channels = 3;
     } else {
-        sane_cancel(handle);
         throw ScannerError("Scanner output must be 8-bit grayscale or 8-bit RGB");
     }
 
     if (params.pixels_per_line <= 0 || params.lines <= 0 || params.bytes_per_line <= 0 ||
         static_cast<std::size_t>(params.pixels_per_line) >
             std::numeric_limits<std::size_t>::max() / channels) {
-        sane_cancel(handle);
         throw ScannerError("Scanner returned invalid or variable scan dimensions");
     }
 
@@ -307,7 +304,6 @@ ImagePage read_started_sane_page(
     const auto row_bytes = width * channels;
     const auto stride = static_cast<std::size_t>(params.bytes_per_line);
     if (stride < row_bytes || height > max_scan_bytes / stride) {
-        sane_cancel(handle);
         throw ScannerError("Scanner image exceeds the 1 GiB safety limit or has invalid stride");
     }
 
@@ -323,37 +319,30 @@ ImagePage read_started_sane_page(
         SANE_Int received = 0;
         status = sane_read(handle, chunk.data(), static_cast<SANE_Int>(chunk.size()), &received);
         if (received < 0 || static_cast<std::size_t>(received) > chunk.size()) {
-            sane_cancel(handle);
             throw ScannerError("Scanner returned an invalid read length");
         }
         if (received > 0) {
             if (static_cast<std::size_t>(received) > stride * height - pixels.bytes.size()) {
-                sane_cancel(handle);
                 throw ScannerError("Scanner returned more image data than declared");
             }
             pixels.bytes.insert(pixels.bytes.end(), chunk.begin(), chunk.begin() + received);
         }
         if (status == SANE_STATUS_EOF) break;
         if (status != SANE_STATUS_GOOD) {
-            sane_cancel(handle);
             throw ScannerError(std::string("Scanner read failed: ") + sane_strstatus(status));
         }
         if (received == 0) {
-            sane_cancel(handle);
             throw ScannerError("Scanner returned no data before end-of-frame");
         }
     }
 
     if (pixels.bytes.size() != stride * height) {
-        sane_cancel(handle);
         throw ScannerError("Scanner returned an incomplete image frame");
     }
     if (!params.last_frame) {
-        sane_cancel(handle);
         throw ScannerError("Scanner returned a multi-frame page; use scan_pages()");
     }
     if (!pixels.valid()) {
-        sane_cancel(handle);
         throw ScannerError("Scanner produced an invalid pixel buffer");
     }
     return ImagePage{std::move(pixels), dpi_x, dpi_y};
@@ -375,10 +364,15 @@ ImagePage SaneScannerBackend::scan_one(const std::string& device_id, const ScanO
     const auto status = sane_start(device.get());
     if (status != SANE_STATUS_GOOD)
         throw ScannerError(std::string("Cannot start scan: ") + sane_strstatus(status));
-    auto page = read_started_sane_page(device.get(), dpi_x, dpi_y);
-    // SANE requires cancellation/reset after a completed single-image transfer.
-    sane_cancel(device.get());
-    return page;
+    try {
+        auto page = read_started_sane_page(device.get(), dpi_x, dpi_y);
+        // SANE requires cancellation/reset after a completed single-image transfer.
+        sane_cancel(device.get());
+        return page;
+    } catch (...) {
+        sane_cancel(device.get());
+        throw;
+    }
 }
 
 std::vector<ImagePage> SaneScannerBackend::scan_pages(
