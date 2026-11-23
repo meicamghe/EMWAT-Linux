@@ -88,3 +88,30 @@ component evidence, not live Almas end-to-end acceptance.
 - Recovery store operations are serialized by a process-local reentrant lock shared by store instances using the same canonical root. Concurrent writer regression passed in Python workflow `45144581638` (244 tests, 2 optional skips). This is not an inter-process lock; do not share one recovery root across multiple EMWAT processes yet.
 - HTTP request worker threads are non-daemon so `shutdown()` followed by `server_close()` waits for in-flight requests. The active-request shutdown regression passed in Python workflow `45144669416`.
 - Neither change provides a production daemon, launcher, or Almas end-to-end acceptance.
+
+
+## Verified PR head — 2026-11-23 (80fa1ec)
+
+The current pull-request head was rechecked against GitHub's commit check-runs
+API. All six checks attached to this exact commit completed successfully:
+
+| Check | Result |
+|---|---|
+| Python bridge test | Success |
+| GTK activation smoke test | Success |
+| LibreOffice UNO roundtrip | Success |
+| Native build/test | Success |
+| Native ASan/UBSan | Success |
+| Debian package lifecycle | Success |
+
+Workflow runs:
+- Python bridge: [45163915417](https://github.com/meicamghe/EMWAT-Linux/actions/runs/45163915417)
+- GTK desktop: [45163915499](https://github.com/meicamghe/EMWAT-Linux/actions/runs/45163915499)
+- LibreOffice UNO: [45163915318](https://github.com/meicamghe/EMWAT-Linux/actions/runs/45163915318)
+- Native build, sanitizer and package lifecycle: [45163915407](https://github.com/meicamghe/EMWAT-Linux/actions/runs/45163915407)
+
+This verification applies to commit `80fa1ec256f98622b80bc86d5b32425213e8b807`
+only. It does not change the release blockers in this matrix: live Almas
+integration, verified WordConfig semantic mapping, physical scanner/ADF/duplex,
+Windows `.easz` interoperability, and complete desktop runtime packaging.
+PR #2 remains open, Draft and unmerged.
