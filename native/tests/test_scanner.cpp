@@ -656,6 +656,12 @@ int main() {
     assert(!detail::is_adf_source("Not ADF"));
     assert(!detail::is_adf_source("Document Table"));
     assert(!detail::is_adf_source(""));
+    assert(detail::is_duplex_source("ADF Duplex"));
+    assert(detail::is_duplex_source("Automatic Document Feeder (Duplex)"));
+    assert(detail::is_duplex_source("Double-Sided ADF"));
+    assert(detail::is_duplex_source("two-sided feeder"));
+    assert(!detail::is_duplex_source("ADF Front"));
+    assert(!detail::is_duplex_source("Flatbed"));
 
     // Fixed-point DPI conversion must not overflow signed 16.16 SANE_Word.
 
