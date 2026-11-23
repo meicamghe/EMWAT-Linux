@@ -254,5 +254,97 @@ class GtkDesktopRuntimeTests(unittest.TestCase):
         window.close()
 
 
+    def test_application_shutdown_waits_for_inflight_start_then_stops_bridge(self):
+        import threading
+        import time
+        from types import SimpleNamespace
+        import emwat_linux.gtk_desktop as gtk_desktop
+
+        class FakeSupervisor:
+            def __init__(self):
+                self._state = "idle"
+                self._failure = None
+                self.started = threading.Event()
+                self.release_start = threading.Event()
+                self.stopped = threading.Event()
+                self.operations = []
+
+            @property
+            def state(self):
+                return SimpleNamespace(value=self._state)
+
+            @property
+            def failure(self):
+                return self._failure
+
+            def start(self):
+                self.operations.append("start")
+                self._state = "starting"
+                self.started.set()
+                if not self.release_start.wait(3.0):
+                    raise TimeoutError("test_start_release_timed_out")
+                self._state = "running"
+
+            def stop(self):
+                self.operations.append("stop")
+                if self._state in ("running", "failed"):
+                    self._state = "stopped"
+                    self.stopped.set()
+
+        supervisor = FakeSupervisor()
+        original_application_id = gtk_desktop.APPLICATION_ID
+        gtk_desktop.APPLICATION_ID = "org.emwat.Linux.ShutdownRaceTest"
+        try:
+            application = gtk_desktop.create_desktop_application(
+                bridge_supervisor=supervisor
+            )
+        finally:
+            gtk_desktop.APPLICATION_ID = original_application_id
+
+        application.register(None)
+        application.activate()
+        window = application.get_active_window()
+        self.extra_windows.append(window)
+        self.addCleanup(application.quit)
+
+        widgets = tuple(self._walk_widgets(window.get_child()))
+        start_button = next(
+            widget for widget in widgets
+            if isinstance(widget, self.Gtk.Button)
+            and widget.get_label() == "شروع سرویس"
+        )
+        start_button.emit("clicked")
+        self.assertTrue(
+            supervisor.started.wait(3.0),
+            "bridge start worker did not enter the operation",
+        )
+
+        shutdown_finished = threading.Event()
+
+        def emit_shutdown():
+            application.emit("shutdown")
+            shutdown_finished.set()
+
+        shutdown_thread = threading.Thread(
+            target=emit_shutdown,
+            name="emwat-test-gtk-shutdown",
+            daemon=True,
+        )
+        shutdown_thread.start()
+        time.sleep(0.05)
+        self.assertFalse(
+            shutdown_finished.is_set(),
+            "shutdown must wait for the in-flight start operation",
+        )
+
+        supervisor.release_start.set()
+        shutdown_thread.join(timeout=3.0)
+        self.assertFalse(shutdown_thread.is_alive(), "shutdown callback did not finish")
+        self.assertTrue(shutdown_finished.is_set())
+        self.assertTrue(supervisor.stopped.is_set())
+        self.assertEqual(supervisor.operations, ["start", "stop"])
+        self.assertEqual(supervisor.state.value, "stopped")
+
+
 if __name__ == "__main__":
     unittest.main()
