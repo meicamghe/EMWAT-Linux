@@ -66,6 +66,42 @@ class BridgeRuntimeTests(unittest.TestCase):
         self.assertEqual(runtime.state, BridgeRuntimeState.STOPPED)
 
 
+    def test_close_cannot_race_a_server_that_has_not_entered_serve_loop(self):
+        allow_serve = threading.Event()
+        shutdown_called = threading.Event()
+
+        class SlowStartingServer(FakeServer):
+            def serve_forever(self):
+                self.entered.set()
+                allow_serve.wait(2)
+                self.serving.set()
+                self.stopped.wait()
+
+            def shutdown(self):
+                shutdown_called.set()
+                self.stopped.set()
+
+        server = SlowStartingServer()
+        runtime = BridgeRuntime(server)
+        start_done = threading.Event()
+        close_done = threading.Event()
+        starter = threading.Thread(target=lambda: (runtime.start(), start_done.set()))
+        starter.start()
+        self.assertTrue(server.entered.wait(2))
+
+        closer = threading.Thread(target=lambda: (runtime.close(), close_done.set()))
+        closer.start()
+        self.assertFalse(shutdown_called.wait(0.05))
+        self.assertFalse(close_done.is_set())
+
+        allow_serve.set()
+        starter.join(2)
+        closer.join(2)
+        self.assertTrue(start_done.is_set())
+        self.assertTrue(close_done.is_set())
+        self.assertTrue(shutdown_called.is_set())
+        self.assertEqual(runtime.state, BridgeRuntimeState.STOPPED)
+
     def test_concurrent_close_callers_all_wait_for_socket_close(self):
         entered_shutdown = threading.Event()
         release_shutdown = threading.Event()
