@@ -89,15 +89,18 @@ def build_indexed_signer_slots(
     Slots are ordered by numeric index. Fields inside each slot retain their
     original capture order. Missing families are reported, never synthesized.
     """
-    grouped = group_indexed_signer_fields(field_ids)
-    by_index: dict[int, list[IndexedSignerField]] = {}
-    for fields in grouped.values():
-        for field in fields:
-            by_index.setdefault(field.index, []).append(field)
+    # Record each occurrence's actual position in one pass. Using
+    # field_ids.index(field_id) loses the position of repeated identifiers
+    # (it always returns the first occurrence) and makes this audit O(n²).
+    by_index: dict[int, list[tuple[int, IndexedSignerField]]] = {}
+    for position, field_id in enumerate(field_ids):
+        parsed = parse_indexed_signer_field(field_id)
+        if parsed is not None:
+            by_index.setdefault(parsed.index, []).append((position, parsed))
     expected_families = tuple(family for family, _pattern in _SIGNER_PATTERNS)
     slots = []
     for index in sorted(by_index):
-        fields = tuple(sorted(by_index[index], key=lambda item: field_ids.index(item.field_id)))
+        fields = tuple(field for _position, field in sorted(by_index[index], key=lambda item: item[0]))
         present = {field.family for field in fields}
         slots.append(IndexedSignerSlot(
             index=index,
