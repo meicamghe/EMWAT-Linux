@@ -116,6 +116,14 @@ class BridgeRuntime:
                 self._state = BridgeRuntimeState.FAILED
             # Keep the exception available through failure without emitting an
             # unhandled-thread traceback into the desktop application's stderr.
+        else:
+            with self._lock:
+                if self._state is BridgeRuntimeState.RUNNING:
+                    self._failure = RuntimeError(
+                        "bridge_server_stopped_without_a_shutdown_request"
+                    )
+                    self._serve_failed = True
+                    self._state = BridgeRuntimeState.FAILED
 
     def close(self) -> None:
         # Serialize concurrent callers. A successful return guarantees socket
