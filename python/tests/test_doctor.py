@@ -81,7 +81,7 @@ class DoctorTests(unittest.TestCase):
                 result = doctor.main([])
 
         self.assertEqual(result, 1)
-        self.assertIn("MISSING   python: 3.9.18", output.getvalue())
+        self.assertIn("MISSING  python: 3.9.18", output.getvalue())
         self.assertIn("Required runtime dependencies are missing: python", output.getvalue())
 
     def test_json_reports_missing_required_runtime_with_failure_exit_code(self):
