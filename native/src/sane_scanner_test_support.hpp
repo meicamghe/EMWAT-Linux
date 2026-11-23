@@ -21,6 +21,7 @@ struct SaneScanApi {
 
 [[nodiscard]] const SaneScanApi& real_sane_scan_api() noexcept;
 
+// The caller owns SANE cancellation on both success and failure.
 [[nodiscard]] ImagePage read_started_sane_page(
     SANE_Handle handle,
     const std::optional<double>& dpi_x,
