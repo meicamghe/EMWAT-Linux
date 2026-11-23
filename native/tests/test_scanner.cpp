@@ -50,6 +50,16 @@ int main() {
     assert(!detail::sane_string_option_size_valid(257, 1));
     assert(!detail::sane_string_option_size_valid(256, 256));
 
+    // Only explicit feeder-source names may activate repeated page acquisition.
+    assert(detail::is_adf_source("ADF"));
+    assert(detail::is_adf_source("ADF Front"));
+    assert(detail::is_adf_source("ADF Duplex"));
+    assert(detail::is_adf_source("Automatic Document Feeder"));
+    assert(detail::is_adf_source("automatic document feeder (duplex)"));
+    assert(!detail::is_adf_source("Flatbed"));
+    assert(!detail::is_adf_source("Document Table"));
+    assert(!detail::is_adf_source(""));
+
     // Fixed-point DPI conversion must not overflow signed 16.16 SANE_Word.
 
     // SANE_TYPE_FIXED uses a signed 16.16 SANE_Word. Keep conversion in range
