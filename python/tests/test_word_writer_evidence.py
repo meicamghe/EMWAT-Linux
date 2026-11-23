@@ -122,6 +122,16 @@ class WordWriterEvidenceReportTests(unittest.TestCase):
         with self.assertRaisesRegex(TypeError, "invalid_writer_document_catalog"):
             build_word_writer_evidence_report(config, object())
 
+    def test_preserves_writer_inventory_warnings(self):
+        config = parse_word_config(
+            __import__("base64").b64encode(b"<word-document/>").decode()
+        )
+        catalog = empty_catalog(inspection_warnings=("getBookmarks_unavailable",))
+        report = build_word_writer_evidence_report(config, catalog)
+        self.assertEqual(
+            report.writer_inventory_warnings, ("getBookmarks_unavailable",)
+        )
+
     def test_empty_config_and_writer_inventory_produce_empty_evidence(self):
         config = parse_word_config(
             __import__("base64").b64encode(b"<word-document/>").decode()
