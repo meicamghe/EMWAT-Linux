@@ -1130,7 +1130,7 @@ Do not implement guessed `signData` joining or claim end-to-end Almas registrati
 - Artifact `14227611377` establishes the output writer path and SevenZip wrapper, but does not prove that the resulting archive is encrypted.
 - Interface `+0x10` → `T7zOutArchive.AddFiles` (`0x453F34`): first TStringList value is the source file path (`TWordViwer+0xA0`); second is the archive entry name (base path + `.easd`).
 - Interface `+0x18` → `T7zOutArchive.SaveToStream` (`0x454668`): saves to base path + `.easz`.
-- Interface `+0x28` → `0x4547E8`: mapped as the progress-callback method. The earlier inference that its input was definitively the writer password is withdrawn. `T7zOutArchive.SetPassword` at `0x4547DC` is a no-op stub. No confirmed writer password value/provider is established. Therefore
+- Interface `+0x28` → `0x4547E8`: mapped as the progress-callback method. The earlier inference that its input was definitively the writer password is withdrawn. `T7zOutArchive.SetPassword` at `0x4547DC` is a no-op stub. No confirmed writer password value/provider is established.
 - Remaining: resolve the output stream and callback semantics, determine actual runtime encryption flags/password source, and capture a synthetic runtime archive if possible. Do not claim encryption or interoperability is validated.
 
 
