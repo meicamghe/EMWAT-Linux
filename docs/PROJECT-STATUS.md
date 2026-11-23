@@ -2908,3 +2908,10 @@ The next meaningful Almas acceptance input is a sanitized, synthetic-or-test-acc
 - The loopback bridge now validates configured XHR allowlist entries as bare HTTP(S) origins (no path, credentials, query or fragment) and canonicalizes scheme/host case plus default ports to match browser Origin serialization.
 - Added constructor regressions for canonical equivalence and malformed/non-origin values. The request-side allowlist remains exact after canonicalization; no wildcard or relaxed origin matching is introduced.
 - This is configuration validation only. It does not establish a live Almas deployment origin; deployments must still supply the actual local browser XHR Origin explicitly.
+
+## Explicit empty-port rejection in browser Origin allowlist — 2026-11-23
+
+- Follow-up review found that Python's URL parser reports `None` for both an omitted port and an explicitly empty port (for example, `https://office.example:`). The previous normalization therefore accepted a malformed authority as if no port had been supplied.
+- The XHR Origin allowlist validator now rejects an authority ending in a colon, including bracketed IPv6 authorities with an empty port.
+- Added regression inputs for empty ports on DNS and IPv6 hosts. This is strict configuration validation; it does not change the allowlist matching policy or infer a deployment Origin.
+- Fresh CI for this follow-up is pending; do not treat the code as verified until the Python, UNO and Native workflows finish.
