@@ -1,3 +1,4 @@
+from concurrent.futures import ThreadPoolExecutor
 import hashlib
 import os
 from pathlib import Path
@@ -30,6 +31,38 @@ class RecoverySnapshotStoreTests(unittest.TestCase):
 
             store.remove_session(session_id)
             self.assertEqual(store.list_snapshots(), ())
+
+    def test_concurrent_store_instances_keep_manifest_and_snapshot_consistent(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary) / "recovery"
+            writer = RecoverySnapshotStore(root)
+            reader = RecoverySnapshotStore(root)
+            session_id = writer.create_session()
+            payloads = [
+                bytes.fromhex("D0CF11E0A1B11AE1") + f"concurrent-{index}".encode()
+                for index in range(24)
+            ]
+
+            with ThreadPoolExecutor(max_workers=8) as executor:
+                futures = [
+                    executor.submit(
+                        (writer if index % 2 else reader).save_snapshot,
+                        session_id,
+                        payload,
+                    )
+                    for index, payload in enumerate(payloads)
+                ]
+                for future in futures:
+                    future.result()
+
+            recovered = reader.load_snapshot(session_id)
+            self.assertIn(recovered, payloads)
+            self.assertEqual(len(reader.list_snapshots()), 1)
+            session_files = list((root / session_id).iterdir())
+            self.assertEqual(
+                len([path for path in session_files if path.name.startswith("document-")]),
+                1,
+            )
 
     def test_docx_container_is_recognized(self):
         with tempfile.TemporaryDirectory() as temporary:
