@@ -7,6 +7,7 @@ is available when a trusted caller injects an externally managed key.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from functools import wraps
 import base64
 import hashlib
 import json
@@ -17,6 +18,7 @@ import re
 import shutil
 import stat
 import tempfile
+import threading
 import time
 import uuid
 
@@ -28,6 +30,31 @@ _ENCRYPTED_MAGIC = b"EMWATREC\x01"
 _GCM_NONCE_BYTES = 12
 _GCM_TAG_BYTES = 16
 _MAX_MANIFEST_BYTES = 64 * 1024
+
+# A session may be accessed through more than one store instance in the same
+# process (for example, the bridge and recovery UI). Serialize mutations and
+# reads by canonical recovery root so manifest publication and old-file
+# cleanup cannot interleave and leave a manifest pointing at a deleted file.
+_ROOT_LOCKS_GUARD = threading.Lock()
+_ROOT_LOCKS: dict[str, threading.RLock] = {}
+
+
+def _root_lock(root: Path) -> threading.RLock:
+    key = os.path.abspath(os.fspath(root))
+    with _ROOT_LOCKS_GUARD:
+        lock = _ROOT_LOCKS.get(key)
+        if lock is None:
+            lock = threading.RLock()
+            _ROOT_LOCKS[key] = lock
+        return lock
+
+
+def _store_locked(method):
+    @wraps(method)
+    def synchronized(self, *args, **kwargs):
+        with self._lock:
+            return method(self, *args, **kwargs)
+    return synchronized
 
 
 class RecoveryStoreError(RuntimeError):
@@ -132,7 +159,9 @@ class RecoverySnapshotStore:
             base = Path(state_home).expanduser() if state_home else Path.home() / ".local" / "state"
             root = base / "emwat-linux" / "recovery"
         self.root = Path(root).expanduser()
+        self._lock = _root_lock(self.root)
 
+    @_store_locked
     def create_session(self) -> str:
         self._ensure_root()
         session_id = uuid.uuid4().hex
@@ -142,6 +171,7 @@ class RecoverySnapshotStore:
         self._fsync_directory(self.root)
         return session_id
 
+    @_store_locked
     def save_snapshot(self, session_id: str, payload: bytes) -> RecoverySnapshotInfo:
         if not isinstance(payload, bytes) or not payload:
             raise RecoveryStoreError("recovery_snapshot_empty_or_invalid")
@@ -215,6 +245,7 @@ class RecoverySnapshotStore:
             document_path=document_path,
         )
 
+    @_store_locked
     def load_snapshot(self, session_id: str) -> bytes:
         folder = self._session_dir(session_id)
         try:
@@ -296,6 +327,7 @@ class RecoverySnapshotStore:
         except (OSError, ValueError, KeyError, TypeError) as exc:
             raise RecoveryStoreError("recovery_snapshot_unavailable") from exc
 
+    @_store_locked
     def list_snapshots(self) -> tuple[RecoverySnapshotInfo, ...]:
         # Never follow a replaced/symlinked state directory while enumerating
         # snapshots. A symlink here could otherwise expose another directory.
@@ -373,6 +405,7 @@ class RecoverySnapshotStore:
             except FileNotFoundError:
                 pass
 
+    @_store_locked
     def remove_session(self, session_id: str) -> None:
         folder = self._session_dir(session_id)
         if folder.is_symlink():
