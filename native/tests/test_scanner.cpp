@@ -652,7 +652,7 @@ int main() {
     }
 
     // Only explicit feeder-source names may activate repeated page acquisition.
-    assert(detail::is_adf_source("ADF"));
+    assert(!detail::is_adf_source("ADF")); // ambiguous feeder mode is not assumed simplex
     assert(detail::is_adf_source("\tADF Front"));
     assert(!detail::is_adf_source("\t"));
     assert(detail::is_adf_source("ADF Front"));
@@ -663,8 +663,10 @@ int main() {
     assert(!detail::is_adf_source("ADFScanner"));
     assert(!detail::is_adf_source("ADF Duplex"));
     assert(!detail::is_adf_source("Automatic Document Feeder (Duplex)"));
-    assert(detail::is_adf_source("Automatic Document Feeder"));
+    assert(!detail::is_adf_source("Automatic Document Feeder"));
     assert(detail::is_adf_source("Automatic Document Feeder - Simplex"));
+    assert(detail::is_adf_source("ADF one-sided"));
+    assert(detail::is_adf_source("ADF single-sided"));
     assert(!detail::is_adf_source("Automatic Document FeederX"));
     assert(!detail::is_adf_source("automatic document feeder (duplex)"));
     assert(!detail::is_adf_source("Flatbed"));
