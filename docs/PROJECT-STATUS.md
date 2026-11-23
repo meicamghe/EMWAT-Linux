@@ -2949,3 +2949,20 @@ The next meaningful Almas acceptance input is a sanitized, synthetic-or-test-acc
   Almas bridge daemon, desktop launcher, service supervisor, or installer.
 - Fresh CI for this new code is pending; do not mark it verified until all
   Python, UNO, and Native workflows for the updated PR head complete.
+
+
+## Runtime doctor and package-entrypoint CI — 2026-11-23
+
+- Latest code/workflow head before this status note:
+  `4422083a7a16a318efe1b191dc96914d9d31cb03`.
+- Python bridge run `45135940090`: success; **239 tests passed**, including
+  all four new doctor tests. The workflow also builds/installs the Python
+  package and verifies `emwat-linux-doctor --help` resolves as an installed
+  console command.
+- LibreOffice UNO run `45135940200`: success.
+- Native image core run `45135940438`: success; build/test, sanitizer, and
+  Debian package lifecycle jobs all passed.
+- The doctor command is verified as a packaged diagnostic entrypoint, not as
+  a production bridge launcher. The product remains blocked on the real Almas
+  request/response fixtures and a verified non-success response contract,
+  plus supervised desktop runtime and complete end-user packaging.
