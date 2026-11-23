@@ -13,6 +13,7 @@ from typing import Protocol
 
 class _Server(Protocol):
     def serve_forever(self) -> None: ...
+    def wait_until_serving(self) -> None: ...
     def shutdown(self) -> None: ...
     def server_close(self) -> None: ...
 
@@ -35,9 +36,9 @@ class BridgeRuntime:
 
     def __init__(self, server: _Server, *, thread_name: str = "emwat-bridge") -> None:
         if not all(callable(getattr(server, name, None)) for name in (
-            "serve_forever", "shutdown", "server_close"
+            "serve_forever", "wait_until_serving", "shutdown", "server_close"
         )):
-            raise TypeError("server must provide serve_forever, shutdown and server_close")
+            raise TypeError("server must provide serve_forever, wait_until_serving, shutdown and server_close")
         if not isinstance(thread_name, str) or not thread_name.strip():
             raise ValueError("thread_name must be a non-empty string")
         self._server = server
@@ -72,6 +73,10 @@ class BridgeRuntime:
             self._state = BridgeRuntimeState.RUNNING
             try:
                 thread.start()
+                # Do not allow close() to call BaseServer.shutdown() before
+                # serve_forever has entered its loop: that ordering can block
+                # forever because BaseServer starts with its shutdown Event unset.
+                self._server.wait_until_serving()
             except BaseException as exc:
                 self._failure = exc
                 self._state = BridgeRuntimeState.FAILED
