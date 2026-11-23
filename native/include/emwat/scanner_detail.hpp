@@ -171,8 +171,17 @@ inline bool is_adf_source(const std::string& source) {
         normalized.find("double-sided") != std::string::npos ||
         normalized.find("two-sided") != std::string::npos)
         return false;
-    return normalized.rfind("adf", 0) == 0 ||
-           normalized.rfind("automatic document feeder", 0) == 0;
+
+    const auto has_token_prefix = [&](const char* prefix) {
+        const std::string token(prefix);
+        if (normalized.compare(0, token.size(), token) != 0) return false;
+        if (normalized.size() == token.size()) return true;
+        const unsigned char next = static_cast<unsigned char>(normalized[token.size()]);
+        return std::isspace(next) != 0 || next == '(' || next == '[' ||
+               next == '-' || next == '_' || next == ':';
+    };
+    return has_token_prefix("adf") ||
+           has_token_prefix("automatic document feeder");
 }
 
 } // namespace emwat::detail
