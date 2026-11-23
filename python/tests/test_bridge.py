@@ -91,13 +91,15 @@ class BridgeHTTPServerTests(unittest.TestCase):
         )
 
     def test_parent_origin_rejects_empty_explicit_port(self):
-        with self.assertRaisesRegex(
-            ValueError, "allowed parent origins must be bare HTTP(S) origins"
-        ):
+        with self.assertRaises(ValueError) as raised:
             BridgeHTTPServer(
                 lambda _request: BridgeResponse(b""),
                 allowed_parent_origins=frozenset({"https://office.example:"}),
             )
+        self.assertEqual(
+            str(raised.exception),
+            "allowed parent origins must be bare HTTP(S) origins",
+        )
 
     def test_allowed_origins_reject_non_origin_urls_and_malformed_ports(self):
         invalid = (
