@@ -157,7 +157,41 @@ class LibreOfficeAdapterUnitTests(unittest.TestCase):
             LibreOfficeAdapter()._capture_word_writer_evidence(handle, config)
         self.assertIsNone(handle.word_writer_evidence)
         self.assertEqual(handle.word_writer_evidence_error, "writer_inventory_unavailable")
+        self.assertEqual(
+            handle.template_mapping_inventory_error, "writer_inventory_unavailable"
+        )
         self.assertNotIn("sensitive UNO diagnostic", repr(handle.word_writer_evidence_error))
+
+    def test_template_inventory_failure_does_not_discard_writer_evidence(self):
+        handle = _OfficeHandle(
+            process=FakeProcess(), document=object(), close_listener=None,
+            work_dir=Path("."), recovery_session_id="template-inventory-failure",
+        )
+        config = parse_word_config(
+            __import__("base64").b64encode(b"<word-document/>").decode()
+        )
+        catalog = WriterDocumentCatalog(
+            bookmarks=(), named_ranges=(), text_sections=(), text_tables=(),
+            text_frames=(), graphic_objects=(), document_indexes=(), text_fields=(),
+            custom_document_properties=(),
+            custom_document_properties_in_info_order=(),
+        )
+        with patch(
+            "emwat_linux.libreoffice_adapter.inspect_writer_document",
+            return_value=catalog,
+        ), patch(
+            "emwat_linux.libreoffice_adapter.inspect_template_mapping",
+            side_effect=RuntimeError("sensitive mapping diagnostic"),
+        ):
+            LibreOfficeAdapter()._capture_word_writer_evidence(handle, config)
+        self.assertIsNotNone(handle.word_writer_evidence)
+        self.assertIsNone(handle.word_writer_evidence_error)
+        self.assertIsNone(handle.template_mapping_inventory)
+        self.assertEqual(
+            handle.template_mapping_inventory_error,
+            "template_mapping_inventory_unavailable",
+        )
+        self.assertNotIn("sensitive mapping diagnostic", repr(handle))
 
     def test_adapter_timeouts_must_be_finite_positive_numbers(self):
         invalid_values = (True, False, float("nan"), float("inf"), float("-inf"), 10 ** 1000, 0, -1, "1")
