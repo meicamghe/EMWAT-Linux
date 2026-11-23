@@ -35,6 +35,7 @@ target_compile_options(emwat_image_codec_tests PRIVATE -Wall -Wextra -Wpedantic 
 add_test(NAME image_codec COMMAND emwat_image_codec_tests)
 
 add_executable(emwat_scanner_tests tests/test_scanner.cpp)
+target_include_directories(emwat_scanner_tests PRIVATE src ${SANE_INCLUDE_DIR})
 target_link_libraries(emwat_scanner_tests PRIVATE emwat_image_core)
 target_compile_options(emwat_scanner_tests PRIVATE -Wall -Wextra -Wpedantic -Werror)
 add_test(NAME scanner_backend_contract COMMAND emwat_scanner_tests)
