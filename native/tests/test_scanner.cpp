@@ -173,6 +173,23 @@ int main() {
         assert(cancelled);
     }
 
+    {
+        std::size_t reads = 0;
+        bool cancelled = false;
+        const auto pages = detail::collect_bounded_pages<int>(
+            []() { return true; },
+            [&](std::uint64_t) -> int {
+                if (reads++ == 0) return 7;
+                throw detail::ScanBatchEnd{};
+            },
+            [](int bytes) { return static_cast<std::size_t>(bytes); },
+            [&]() { cancelled = true; },
+            10, 32
+        );
+        assert((pages == std::vector<int>{7}));
+        assert(cancelled);
+    }
+
     // Planar RGB frames are interleaved by channel and row; padding is ignored.
     {
         const std::vector<std::uint8_t> red{1, 2, 99, 3, 4, 99};
