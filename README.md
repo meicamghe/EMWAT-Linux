@@ -127,3 +127,12 @@ Cancel-سپس-بستن دوباره، روی Ubuntu آزمایش شده و مو�
 قرارداد دقیق پاسخ‌های Windows برای Cancel/Discard، mapping کامل فیلدهای Word،
 رابط کامل دسکتاپ و بسته نصب نهایی هنوز تکمیل نشده‌اند. پروژه هنوز آماده انتشار
 یا استفاده عملیاتی نیست.
+
+## Latest component verification — 2026-11-23
+
+- Python bridge: [workflow 45184251311](https://github.com/meicamghe/EMWAT-Linux/actions/runs/45184251311) passed **289 tests**; package install and the doctor, GTK application and desktop-entry helper console commands passed.
+- Native image core: [workflow 45184251505](https://github.com/meicamghe/EMWAT-Linux/actions/runs/45184251505) passed build/CTest (**4/4**), ASan/UBSan (**4/4**) and Debian package lifecycle.
+- GTK desktop: [workflow 45184251362](https://github.com/meicamghe/EMWAT-Linux/actions/runs/45184251362) passed **6 smoke tests**; per-user launcher install, desktop-file validation and uninstall passed.
+- LibreOffice UNO: [workflow 45182739787](https://github.com/meicamghe/EMWAT-Linux/actions/runs/45182739787) passed **25 tests** on a code-equivalent head; subsequent changes were scanner-native tests and documentation/workflow updates.
+
+These are component-level CI results, not release acceptance. Live Almas browser integration, verified Cancel/Discard response semantics, complete WordConfig/signature/image mapping, Windows .easz interoperability, physical scanner acceptance, and complete production bridge packaging/supervision remain open. PR #2 remains Draft and unmerged.
