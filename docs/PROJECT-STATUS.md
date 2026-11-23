@@ -1,3 +1,9 @@
+## GTK smoke-test correction — 2026-11-23
+
+- The first GTK run exposed a test-fixture issue, not a product-code failure: the test attempted to register a second `Gtk.Application` under the same D-Bus application ID already owned by the class fixture.
+- Updated the isolated supervisor-control test to use a distinct test-only application ID, restoring the production constant immediately after application construction. The production application ID and runtime behavior are unchanged.
+- The corrected GTK test and the full workflow set have been retriggered on the new head; results are pending.
+
 ## GTK Bridge lifecycle visibility — 2026-11-23
 
 - Added a one-second GTK-main-context poll for an injected `BridgeSupervisor`. Unexpected serving-loop exits are now reflected in the visible status without requiring the user to click Start or Stop.
