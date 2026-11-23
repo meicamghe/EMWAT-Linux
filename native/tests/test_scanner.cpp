@@ -41,6 +41,15 @@ public:
 };
 
 int main() {
+    // SANE backend string-option sizes are untrusted; reject oversized allocations.
+    assert(detail::sane_string_option_size_valid(16, 15));
+    assert(!detail::sane_string_option_size_valid(16, 16));
+    assert(!detail::sane_string_option_size_valid(0, 0));
+    assert(!detail::sane_string_option_size_valid(-1, 0));
+    assert(detail::sane_string_option_size_valid(256, 255));
+    assert(!detail::sane_string_option_size_valid(257, 1));
+    assert(!detail::sane_string_option_size_valid(256, 256));
+
     // Fixed-point DPI conversion must not overflow signed 16.16 SANE_Word.
 
     // SANE_TYPE_FIXED uses a signed 16.16 SANE_Word. Keep conversion in range
