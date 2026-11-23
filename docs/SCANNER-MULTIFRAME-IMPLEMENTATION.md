@@ -21,12 +21,20 @@ The desktop/controller layer should append returned pages to `ImageDocument` in 
 
 1. Validate device identifier and options before initializing SANE.
 2. Acquire the process-wide SANE mutex, initialize SANE, open the selected device, and apply supported options once before the first frame.
-3. For each frame, call `sane_start()`, then `sane_get_parameters()`.
+3. Treat one `sane_start()` through its terminal frame (`last_frame=true`) as one page-acquisition cycle. Call `sane_get_parameters()` for every frame in that cycle.
 4. Validate frame format, depth, dimensions, stride, byte-count arithmetic and configured resource limits before allocating memory.
-5. Read until `SANE_STATUS_EOF`; reject negative/oversized read lengths, excess bytes, zero-progress reads and incomplete frames.
-6. If `SANE_Parameters.last_frame` is true, finish the document. Otherwise start the next frame using the same open device handle.
-7. On any failure, call `sane_cancel()` for the active frame before closing the handle and exiting SANE.
-8. Preserve frame order exactly as reported by the backend. Do not infer front/back labels from frame parity unless the device's duplex contract is independently established.
+5. Read each frame until `SANE_STATUS_EOF`; reject negative/oversized read lengths, excess bytes, zero-progress reads and incomplete frames.
+6. If `last_frame` is false, call `sane_start()` again on the same open handle to obtain the next frame of the *same page*. If it is true, finish assembling that page.
+7. Do not equate SANE frames with pages. Planar RGB backends may emit RED/GREEN/BLUE frames for one page; combine only a verified, correctly ordered channel set into one RGB page. Preserve Gray/RGB interleaved frames as one page. Reject unknown or inconsistent frame sequences rather than returning color planes as separate pages.
+8. Only after a page's final frame, and only when an explicitly selected source is positively identified as a feeder, start the next page cycle. Treat `SANE_STATUS_NO_DOCS` at that boundary as normal feeder completion; propagate other statuses. A flatbed source must not be repeatedly started.
+9. On any failure, call `sane_cancel()` for the active frame before closing the handle and exiting SANE.
+10. Preserve page order and within-page frame order exactly as reported by the backend. Do not infer front/back labels from frame parity unless the device's duplex contract is independently established.
+
+
+
+### Important frame/page distinction
+
+SANE's `last_frame` marks the end of a frame sequence, not necessarily the end of a feeder batch. A multi-frame sequence can encode one image (for example, planar RGB); it must be assembled into one `ImagePage`. ADF batch acquisition is a separate outer loop that starts another scan cycle after the previous page is complete, and is safe only for an explicitly selected, positively identified feeder source. The public `scan_pages()` API returns pages, never raw SANE frames.
 
 ## Resource and failure policy
 
