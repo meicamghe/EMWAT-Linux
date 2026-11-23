@@ -3091,10 +3091,14 @@ The next meaningful Almas acceptance input is a sanitized, synthetic-or-test-acc
   passed on Ubuntu 24.04 under Xvfb: both the main control window and the empty
   Recovery picker window were created successfully. This validates GTK widget
   construction in CI, not a user's Wayland/X11 session or accessibility flow.
-- Follow-up code now resets the main-window reference on close and tests
-  reactivation while the Recovery window remains open. The desktop-entry
-  installer is also validated by the GTK workflow. These newer changes are
-  pending their own current-head CI results.
+- GTK workflow run `45152999912` on head `1664f661` passed: the
+  freedesktop desktop file validated, the per-user installer wrote the
+  resolved executable path into a temporary XDG applications directory, and
+  both GTK window-construction tests passed.
+- A later regression test now also covers main-window reactivation while the
+  Recovery window remains open. The separate bounded BridgeRuntime shutdown
+  changes and this additional GTK test are newer than that successful GTK run
+  and remain pending current-head CI.
 - The shell is not yet a full production desktop application: persistent
   configuration, configured bridge supervision, desktop-session shutdown
   handling, and Almas/browser E2E remain outstanding.
