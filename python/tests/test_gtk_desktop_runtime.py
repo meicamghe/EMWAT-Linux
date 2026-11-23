@@ -33,7 +33,7 @@ class GtkDesktopRuntimeTests(unittest.TestCase):
         self.assertIsInstance(self.main_window, self.Gtk.ApplicationWindow)
         self.assertEqual(self.main_window.get_title(), "EMWAT Linux")
 
-    def test_main_window_can_reopen_while_recovery_window_is_open(self):
+    def test_z_main_window_can_reopen_while_recovery_window_is_open(self):
         self.assertTrue(self.extra_windows)
         self.main_window.close()
         self.application.activate()
