@@ -4,7 +4,7 @@
 
 The reverse-engineering notes in `docs/SESSION-HANDOFF.md` record the following findings from the Windows EMWAT BPL analysis:
 
-- The observed archive path constructs a 7z output-archive writer. Static analysis identifies a password-retrieval callback path (`CryptoGetTextPassword2`) that reads a global password value; this alone does not prove that encryption is enabled for every archive produced.
+- The observed archive path constructs a 7z output-archive writer and exposes a method named `CryptoGetTextPassword2`. The currently resolved method body initializes an internal object list; static evidence has not yet established a returned password value or its provider. The callback name alone does not prove that encryption is enabled.
 - The source file passed to the archive writer is the temporary document path held by the Word viewer (field `+0xA0`).
 - The archive entry name is derived from the viewer base path (field `+0x80`) with the `.easd` suffix.
 - The output file path uses the same base path with the `.easz` suffix.
