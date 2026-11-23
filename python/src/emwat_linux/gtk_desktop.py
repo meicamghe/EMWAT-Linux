@@ -59,13 +59,16 @@ def create_desktop_application(
     )
     windows: dict[str, Any] = {"main": None, "recovery": None}
     bridge_operation_lock = threading.RLock()
+    shutting_down = False
 
     def shutdown_bridge(_app: Any) -> None:
+        nonlocal shutting_down
         if bridge_supervisor is None:
             return
-        # Serialize shutdown with button-triggered start/stop workers. If a
-        # start is already in progress, it must finish before we can stop it.
+        # Serialize shutdown with button-triggered start/stop workers. Mark
+        # shutdown first so a worker not yet scheduled cannot start afterward.
         with bridge_operation_lock:
+            shutting_down = True
             _stop_bridge_supervisor_on_shutdown(bridge_supervisor)
 
     application.connect("shutdown", shutdown_bridge)
@@ -203,6 +206,8 @@ def create_desktop_application(
                 def worker() -> None:
                     try:
                         with bridge_operation_lock:
+                            if shutting_down:
+                                return
                             operation()
                     except BaseException:
                         # The supervisor retains the authoritative exception.
