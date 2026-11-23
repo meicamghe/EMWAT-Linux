@@ -87,6 +87,31 @@ class WriterPropertyUpdateTests(unittest.TestCase):
         self.assertEqual(document.properties.values["LetterSubject"], "new")
         self.assertEqual(document.properties.values["LetterNumber"], "42")
 
+    def test_batch_rolls_back_prior_properties_when_later_update_fails(self):
+        class FailsOnSecondProperty(FakeUserProperties):
+            def setPropertyValue(self, name, value):
+                if name == "LetterNumber":
+                    raise RuntimeError("UNO failure")
+                super().setPropertyValue(name, value)
+
+        document = FakeDocument()
+        document.properties = FailsOnSecondProperty()
+        document.properties.values["LetterNumber"] = "old-number"
+        document.properties.info = FakePropertyInfo(document.properties.values)
+
+        with self.assertRaises(WriterPropertyUpdateError):
+            set_custom_document_properties(
+                document,
+                {"LetterSubject": "new", "LetterNumber": "new-number"},
+            )
+
+        self.assertEqual(
+            document.properties.getPropertyValue("LetterSubject"), "old"
+        )
+        self.assertEqual(
+            document.properties.getPropertyValue("LetterNumber"), "old-number"
+        )
+
     def test_batch_rejects_non_text_values(self):
         with self.assertRaisesRegex(TypeError, "custom_property_value_must_be_text"):
             set_custom_document_properties(FakeDocument(), {"LetterSubject": b"binary"})
