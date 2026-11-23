@@ -1,9 +1,19 @@
+## Latest desktop lifecycle regression — 2026-11-23
+
+- Code/test head: `4c43ae3c836f845751b4e9d8c462758ab6a1a2c1`.
+- Python Bridge workflow [45195106455](https://github.com/meicamghe/EMWAT-Linux/actions/runs/45195106455): success; **292 tests run, 289 passed, 3 optional skips**. Package install and console-entrypoint checks passed.
+- GTK workflow [45195106572](https://github.com/meicamghe/EMWAT-Linux/actions/runs/45195106572): success; **7/7 runtime smoke tests passed**. The per-user launcher installer was exercised with an executable path containing spaces; desktop-file validation, install and uninstall passed.
+- The new GTK regression confirms application shutdown waits for an active Start operation and then stops the injected supervisor. The normal entry point still injects no production supervisor.
+- Native workflow [45194063291](https://github.com/meicamghe/EMWAT-Linux/actions/runs/45194063291) on code head `424dec86e3840fbe32700c08028d52e4ab9972a0`: normal build/CTest **4/4**, ASan/UBSan **4/4**, staged install and Debian package lifecycle passed. The newer `4c43ae3` commit changes only GTK runtime tests; native sources are unchanged. On `4c43ae3`, ASan/UBSan and Debian package lifecycle also passed; the normal build job is still pending.
+- LibreOffice UNO workflow [45194019476](https://github.com/meicamghe/EMWAT-Linux/actions/runs/45194019476): **25 tests passed** on parent code head `4c521f0de592bf1a9e5fab2fabf85699e70bfa65`; subsequent commits changed GTK lifecycle code/tests and documentation only, not UNO adapter sources. A current-head rerun is queued.
+- These are component and integration-test results, not a release declaration. Live Almas browser E2E, exact Cancel/Discard wire behavior, full WordConfig/signature/image mapping, `.easz` fixture interoperability, physical scanner acceptance, and complete application packaging remain release blockers.
+
 ## GTK bridge shutdown lifecycle — 2026-11-23
 
 - The GTK shell now serializes bridge Start/Stop operations against application shutdown. Shutdown marks the UI as closing while holding the same operation lock, preventing a queued Start worker from launching a listener after shutdown has begun.
 - If an explicitly injected supervisor is RUNNING or FAILED, the application shutdown handler requests cleanup before GTK exits. A failed cleanup remains surfaced by the supervisor; the UI does not pretend a still-running worker was forcibly terminated.
 - This is lifecycle protection for an injected supervisor, not production bridge configuration. The normal `emwat-linux` entry point still injects no supervisor, so the service controls remain disabled until evidence-backed Almas Origin and response configuration exists.
-- The shutdown helper has headless unit coverage, and the shared lock/flag enforce worker serialization in the GTK callback path. A dedicated race-stress test of the full GTK shutdown signal remains additional acceptance work; current-head workflow results are tracked separately.
+- The GTK runtime suite now includes a deterministic shutdown-race regression: an in-flight Start is held while the application shutdown signal is emitted from another thread; shutdown must wait for Start to finish, then stop the supervisor in order. This test passed in GTK workflow 45195106572 on code/test head 4c43ae3c836f845751b4e9d8c462758ab6a1a2c1.
 
 ## Parallel implementation checkpoint — 2026-11-23
 
