@@ -194,7 +194,7 @@ class BridgeRuntimeTests(unittest.TestCase):
         self.assertIsNone(runtime.failure)
 
     def test_join_timeout_must_be_finite_and_non_negative(self):
-        for invalid in (-1, float("inf"), float("nan"), True):
+        for invalid in (-1, float("inf"), float("nan"), True, 10**1000):
             with self.subTest(invalid=invalid):
                 with self.assertRaisesRegex(ValueError, "join_timeout_seconds"):
                     BridgeRuntime(FakeServer(), join_timeout_seconds=invalid)
