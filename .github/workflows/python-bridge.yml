@@ -36,6 +36,7 @@ jobs:
           python -m pip install --no-deps .
           emwat-linux-doctor --help
           emwat-linux --help
+          emwat-linux-desktop-entry --help
       - name: Run bridge transport tests
         working-directory: python
         run: |
