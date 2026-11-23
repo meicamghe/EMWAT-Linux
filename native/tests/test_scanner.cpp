@@ -33,6 +33,7 @@ struct FakeSaneState {
     std::size_t offset{};
     std::size_t start_calls{};
     std::size_t cancel_calls{};
+    SANE_Status next_start_status{SANE_STATUS_GOOD};
 };
 
 FakeSaneState& fake_sane_state(SANE_Handle handle) {
@@ -42,6 +43,11 @@ FakeSaneState& fake_sane_state(SANE_Handle handle) {
 SANE_Status fake_sane_start(SANE_Handle handle) {
     auto& state = fake_sane_state(handle);
     ++state.start_calls;
+    if (state.next_start_status != SANE_STATUS_GOOD) {
+        const auto status = state.next_start_status;
+        state.next_start_status = SANE_STATUS_GOOD;
+        return status;
+    }
     if (state.next_frame >= state.frames.size()) return SANE_STATUS_NO_DOCS;
     state.current_frame = state.next_frame++;
     state.offset = 0;
@@ -208,6 +214,68 @@ int main() {
         assert((pages[0].pixels.bytes == std::vector<std::uint8_t>{10, 11}));
         assert((pages[1].pixels.bytes == std::vector<std::uint8_t>{12, 13}));
         assert(state.start_calls == 3);
+        assert(state.cancel_calls == 1);
+    }
+
+    // SANE start failures propagate and still trigger one batch cancellation.
+    {
+        FakeSaneState state;
+        state.next_start_status = SANE_STATUS_IO_ERROR;
+        const auto handle = reinterpret_cast<SANE_Handle>(&state);
+        bool rejected = false;
+        try {
+            (void)detail::collect_bounded_pages<ImagePage>(
+                [&]() {
+                    const auto status = fake_sane_api.start(handle);
+                    if (status == SANE_STATUS_NO_DOCS) return false;
+                    if (status != SANE_STATUS_GOOD) throw ScannerError("fake_start_failed");
+                    return true;
+                },
+                [&](std::uint64_t remaining) {
+                    return sane_detail::read_started_sane_page(
+                        handle, std::nullopt, std::nullopt, fake_sane_api, remaining, true
+                    );
+                },
+                [](const ImagePage& page) { return page.pixels.bytes.size(); },
+                [&]() { fake_sane_api.cancel(handle); },
+                10, 1024
+            );
+        } catch (const ScannerError&) {
+            rejected = true;
+        }
+        assert(rejected);
+        assert(state.cancel_calls == 1);
+    }
+
+    // A scanner I/O failure during frame read is not confused with feeder-empty.
+    {
+        FakeSaneState state;
+        state.frames = {
+            fake_frame(SANE_FRAME_GRAY, true, {42}, SANE_STATUS_IO_ERROR),
+        };
+        const auto handle = reinterpret_cast<SANE_Handle>(&state);
+        bool rejected = false;
+        try {
+            (void)detail::collect_bounded_pages<ImagePage>(
+                [&]() {
+                    const auto status = fake_sane_api.start(handle);
+                    if (status == SANE_STATUS_NO_DOCS) return false;
+                    if (status != SANE_STATUS_GOOD) throw ScannerError("fake_start_failed");
+                    return true;
+                },
+                [&](std::uint64_t remaining) {
+                    return sane_detail::read_started_sane_page(
+                        handle, std::nullopt, std::nullopt, fake_sane_api, remaining, true
+                    );
+                },
+                [](const ImagePage& page) { return page.pixels.bytes.size(); },
+                [&]() { fake_sane_api.cancel(handle); },
+                10, 1024
+            );
+        } catch (const ScannerError&) {
+            rejected = true;
+        }
+        assert(rejected);
         assert(state.cancel_calls == 1);
     }
 
