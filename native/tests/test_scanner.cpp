@@ -58,7 +58,7 @@ int main() {
         bool cancelled = false;
         const auto pages = detail::collect_bounded_pages<int>(
             [&]() { return starts.at(start_index++); },
-            [&]() { return read_index++ == 0 ? 4 : 6; },
+            [&](std::uint64_t) { return read_index++ == 0 ? 4 : 6; },
             [](int bytes) { return static_cast<std::size_t>(bytes); },
             [&]() { cancelled = true; },
             10, 32
@@ -74,7 +74,7 @@ int main() {
         bool cancelled = false;
         const auto pages = detail::collect_bounded_pages<int>(
             [&]() { return starts.at(start_index++); },
-            []() { return 1; },
+            [](std::uint64_t) { return 1; },
             [](int bytes) { return static_cast<std::size_t>(bytes); },
             [&]() { cancelled = true; },
             2, 2
@@ -90,7 +90,7 @@ int main() {
         try {
             (void)detail::collect_bounded_pages<int>(
                 [&]() { return starts.at(start_index++); },
-                []() { return 1; },
+                [](std::uint64_t) { return 1; },
                 [](int bytes) { return static_cast<std::size_t>(bytes); },
                 [&]() { cancelled = true; },
                 2, 8
@@ -109,7 +109,10 @@ int main() {
         try {
             (void)detail::collect_bounded_pages<int>(
                 [&]() { return starts.at(start_index++); },
-                [&]() { return start_index == 1 ? 4 : 2; },
+                [&](std::uint64_t remaining) {
+                    assert(remaining == (start_index == 1 ? 5U : 1U));
+                    return start_index == 1 ? 4 : 2;
+                },
                 [](int bytes) { return static_cast<std::size_t>(bytes); },
                 [&]() { cancelled = true; },
                 10, 5
@@ -126,7 +129,9 @@ int main() {
         try {
             (void)detail::collect_bounded_pages<int>(
                 []() { return true; },
-                []() { throw std::runtime_error("synthetic_read_failure"); return 0; },
+                [](std::uint64_t) -> int {
+                    throw std::runtime_error("synthetic_read_failure");
+                },
                 [](int bytes) { return static_cast<std::size_t>(bytes); },
                 [&]() { cancelled = true; },
                 10, 32
@@ -142,7 +147,7 @@ int main() {
         bool cancelled = false;
         const auto pages = detail::collect_bounded_pages<int>(
             []() { return false; },
-            []() { return 1; },
+            [](std::uint64_t) { return 1; },
             [](int bytes) { return static_cast<std::size_t>(bytes); },
             [&]() { cancelled = true; },
             10, 32
@@ -156,7 +161,7 @@ int main() {
         try {
             (void)detail::collect_bounded_pages<int>(
                 []() -> bool { throw ScannerError("synthetic_feeder_jam"); },
-                []() { return 1; },
+                [](std::uint64_t) { return 1; },
                 [](int bytes) { return static_cast<std::size_t>(bytes); },
                 [&]() { cancelled = true; },
                 10, 32
