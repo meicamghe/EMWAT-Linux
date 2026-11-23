@@ -135,6 +135,12 @@ class LibreOfficeAdapterUnitTests(unittest.TestCase):
         self.assertIsNotNone(handle.word_writer_evidence)
         self.assertIsNone(handle.word_writer_evidence_error)
         self.assertNotIn("private-value", repr(handle.word_writer_evidence))
+        self.assertIsNotNone(handle.template_mapping_inventory)
+        self.assertIsNone(handle.template_mapping_inventory_error)
+        self.assertEqual(
+            handle.template_mapping_inventory.unassociated_config_field_ids,
+            ("subject",),
+        )
 
     def test_open_inventory_failure_does_not_block_document_open(self):
         handle = _OfficeHandle(
