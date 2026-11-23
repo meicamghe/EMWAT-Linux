@@ -691,7 +691,7 @@ The 20 addresses extracted from `0x00627B74` are not Word event callback pointer
 
 ## Recovery archive password correction — 2026-11-15
 
-Do not treat the Windows username or `@25*gamsign*25@` as the confirmed `.easz` archive password. `euGetAutoSavePass` returns the account name (or fallback) and `DoClearOldAutoSaveFiles` concatenates it with `@25*gamsign*25@`, but the exact archive consumer is unresolved. The recovery `Delete` path constructs a `Sevenzip.T7zInArchive` object; `euResetMemory` passes `mW@Tlogs43end_+` to virtual slot `+0x44` when its optional password string is null. The exact slot/property mapping and archive open/extract sequence remain pending. See `docs/RECOVERY-STORE-ANALYSIS.md`.
+Do not treat the Windows username or `@25*gamsign*25@` as the confirmed `.easz` archive password. `euGetAutoSavePass` returns the account name (or fallback) and `DoClearOldAutoSaveFiles` concatenates it with `@25*gamsign*25@`, but the exact archive consumer is unresolved. The recovery `Delete` path constructs a `Sevenzip.T7zInArchive` object; `euResetMemory` passes `[redacted candidate string]` to virtual slot `+0x44` when its optional password string is null. The exact slot/property mapping and archive open/extract sequence remain pending. See `docs/RECOVERY-STORE-ANALYSIS.md`.
 
 ## EditWordDocument request adapter — 2026-11-15
 
@@ -707,7 +707,7 @@ Do not treat the Windows username or `@25*gamsign*25@` as the confirmed `.easz` 
 
 ## Recovery / AutoSave findings — 2026-11-15
 
-The recovery subsystem now has a dedicated analysis report: `docs/RECOVERY-STORE-ANALYSIS.md`. Two additional recovery-path runs (#9 and #10; artifacts `14163436366` and `14163367757`) traced the SevenZip reader class. `euResetMemory` (`0x00456F00`) calls a helper named `CreateOutArchive` and passes the fallback password `mW@Tlogs43end_+` through virtual/interface slot `+0x44`. The call sequence strongly aligns with `T7zInArchive.SetPassword` → `OpenFile` → `ExtractTo`, but the slot-to-method mapping remains unproven. `T7zInArchive.SetPassword` (`0x00453860`) stores the string at `+0x58` and invokes an extraction-style interface call with a callback-like helper. The username / `@25*gamsign*25@` value returned by `euGetAutoSavePass` belongs to a separate cleanup/logging path and is not established as the recovery archive password.
+The recovery subsystem now has a dedicated analysis report: `docs/RECOVERY-STORE-ANALYSIS.md`. Two additional recovery-path runs (#9 and #10; artifacts `14163436366` and `14163367757`) traced the SevenZip reader class. `euResetMemory` (`0x00456F00`) calls a helper named `CreateOutArchive` and passes the fallback password `[redacted candidate string]` through virtual/interface slot `+0x44`. The call sequence strongly aligns with `T7zInArchive.SetPassword` → `OpenFile` → `ExtractTo`, but the slot-to-method mapping remains unproven. `T7zInArchive.SetPassword` (`0x00453860`) stores the string at `+0x58` and invokes an extraction-style interface call with a callback-like helper. The username / `@25*gamsign*25@` value returned by `euGetAutoSavePass` belongs to a separate cleanup/logging path and is not established as the recovery archive password.
 
 The reader exposes archive open, item-query and extraction methods. Do not yet name the `euResetMemory` path arguments as a proven OpenFile/ExtractTo pair: VMT slots `+0x0C` and `+0x3C` still need exact mapping. The `.easd` file's content and lifecycle, the SevenZip archive variant, and the writer-side `.easz` creation settings remain unresolved. Continue from `docs/RECOVERY-STORE-ANALYSIS.md`; do not repeat the completed class-method trace.
 
@@ -720,7 +720,7 @@ The reader exposes archive open, item-query and extraction methods. Do not yet n
 - New engine-neutral files: `office_adapter.py`, `document_coordinator.py`, and `editword_service.py`. They model request normalization → open → track modifications and engine saves independently → wait for user close → export final bytes. They are not a LibreOffice implementation. `editword_handler.py` now adapts the service to the XML dispatcher and uses the observed success serializer, but the factory is not yet registered in the application.
 - `EditWordDocument` request normalization exists, including Base64 document decoding and conservative preservation of signData as opaque text.
 - Heartbeat response and init-script generation are implemented against the captured exchange; production allowlists must still be configured.
-- Recovery analysis identifies `T7zInArchive` as the reader wrapper relevant to recovery. Its SetPassword implementation at `0x00453860` stores the supplied Unicode password at instance offset `+0x58` and invokes an extraction-style interface call with a callback-like helper. `euResetMemory` supplies `mW@Tlogs43end_+` to virtual/interface slot `+0x44` when its optional password is absent and the flag selects the fallback. The likely SetPassword → OpenFile → ExtractTo mapping remains unproven. Do not substitute the Windows username or `@25*gamsign*25@`, which belong to a separate cleanup/logging path.
+- Recovery analysis identifies `T7zInArchive` as the reader wrapper relevant to recovery. Its SetPassword implementation at `0x00453860` stores the supplied Unicode password at instance offset `+0x58` and invokes an extraction-style interface call with a callback-like helper. `euResetMemory` supplies `[redacted candidate string]` to virtual/interface slot `+0x44` when its optional password is absent and the flag selects the fallback. The likely SetPassword → OpenFile → ExtractTo mapping remains unproven. Do not substitute the Windows username or `@25*gamsign*25@`, which belong to a separate cleanup/logging path.
 - The reader exposes archive open, item metadata and extraction methods. Exact standard archive format, euResetMemory path-slot VMT mapping, .easd contents, and writer password callback remain unresolved. `T7zOutArchive.SetPassword` is a no-op stub; writer callback tracing is a separate task.
 - Word error strings were decoded and documented separately from the unresolved COM event dispatch map. Do not interpret the error string table as event callback metadata.
 
@@ -853,7 +853,7 @@ Run `43719180035` succeeded; artifact `14164088249` was inspected. Additional ev
 - Plugin run `43722990639` succeeded; artifact `14165676602` includes 20 interface vtable slots.
 - On custom interface vtable `0x00452420`: `+0x0C` forwards to `OpenStream(UnicodeString) -> IInStream` (`0x00452FDC`); `+0x3C` forwards to `SetPassword(UnicodeString)` (`0x00453860`); `+0x44` forwards to virtual constructor `T7zArchive.$bctr` (`0x0045392C`).
 - `SetPassword` stores its string at `Self+0x58`, creates an extraction callback interface from `Self+8`, and invokes `IInArchive.Extract` (`+0x1C`) with `indices=NULL`, `numItems=-1`, `testMode=0`. This is an all-items archive operation; callback output semantics are not yet proven.
-- The autosave Delete trace shows `euResetMemory` takes the selected `.easz` path as its first UnicodeString, a second string from helper `0x0044A998` as the `SetPassword` argument, and a null optional third string. Two true Boolean flags select the constructor fallback `mW@Tlogs43end_+`. The meaning of the second string and callback output path remain open. `ExtractTo` is a separate wrapper, not one of the three direct slots.
+- The autosave Delete trace shows `euResetMemory` takes the selected `.easz` path as its first UnicodeString, a second string from helper `0x0044A998` as the `SetPassword` argument, and a null optional third string. Two true Boolean flags select the constructor fallback `[redacted candidate string]`. The meaning of the second string and callback output path remain open. `ExtractTo` is a separate wrapper, not one of the three direct slots.
 
 
 ### SevenZip extraction callback comparison — 2026-11-15
@@ -870,7 +870,7 @@ Run `43719180035` succeeded; artifact `14164088249` was inspected. Additional ev
 
 - Run `43723328264` / artifact `14165058222` traces `TfrmShowAutoSaveFiles.Delete` (`0x005EB828`). The selected archive path is copied from the selected item record's `+0x20` field into `[ebp-4]` via `UStrLAsg`; this is the first `euResetMemory` argument.
 - `[ebp-8]`, the second argument, is produced by helper `0x0044A998` and passed to `SetPassword`. Its source semantics remain unknown.
-- The call passes `ECX=0` and two stack Boolean flags set to 1, selecting the `mW@Tlogs43end_+` constructor fallback.
+- The call passes `ECX=0` and two stack Boolean flags set to 1, selecting the `[redacted candidate string]` constructor fallback.
 - After `euResetMemory`, the caller invokes `0x004563A8` with the same two strings, then `0x004565DC` and `0x004555D8`. These helpers are the next targets for identifying the `.easd` output path and cleanup.
 
 
@@ -896,7 +896,7 @@ Run `43719180035` succeeded; artifact `14164088249` was inspected. Additional ev
 
 ### Latest callback-contract findings — 2026-11-15
 
-- Callback-contract run 2 (`43725294172`, artifact `14165994624`) confirms `T7zArchive.$bctr` at `0x0045392C` stores its string at `Self+0x44` and sets `Self+0x40` according to whether it is nonempty. The recovery fallback `mW@Tlogs43end_+` is passed to this constructor, not to `SetPassword`.
+- Callback-contract run 2 (`43725294172`, artifact `14165994624`) confirms `T7zArchive.$bctr` at `0x0045392C` stores its string at `Self+0x44` and sets `Self+0x40` according to whether it is nonempty. The recovery fallback `[redacted candidate string]` is passed to this constructor, not to `SetPassword`.
 - The `MyMessageDialog` result is a separate string passed to `T7zInArchive.SetPassword` via slot `+0x3C`.
 - Callback references `0x00453850` and `0x0045391C` contain the same `IArchiveExtractCallback` IID. Their construction contexts differ, but they implement the same COM callback interface.
 - `PrepareOperation` has distinct branches using `Self+0x3C`, `Self+0x50/+0x54`, and `Self+0x58`; exact property mapping and final output destination remain open. See `docs/RECOVERY-STORE-ANALYSIS.md` sections 24–25.
@@ -1111,7 +1111,7 @@ Do not implement guessed `signData` joining or claim end-to-end Almas registrati
 ### SevenZip interface correction
 - Exact VMT inspection shows `T7zPlugin.$bctr` obtains an interface pointer at `T7zOutArchive` object offset `+0x44`, IID `baa9d5dc-9ff4-4382-9bfd-ec9065bd0125`.
 - Through this interface: `+0x10 → AddFiles (0x453F34)`, `+0x18 → SaveToStream (0x454668)`, `+0x28 → SetProgressCallback (0x4547E8)`.
-- Therefore do not call `mW@Tlogs43end_+` a confirmed password; it is passed to SetProgressCallback through the observed interface. `SetPassword` exists separately at `0x4547DC`, but is not the mapped target.
+- Therefore do not call `[redacted candidate string]` a confirmed password; it is passed to SetProgressCallback through the observed interface. `SetPassword` exists separately at `0x4547DC`, but is not the mapped target.
 - `euUnArchive` passes two TStringList values to AddFiles and a `.easz` UnicodeString to SaveToStream; these do not obviously match the TD32 signatures. The archive direction and exact argument types remain unresolved. Next inspect target method bodies and the wrapper/factory.
 - Expanded archive workflow run `43869599848` was queued for those method-body traces at the last check.
 
