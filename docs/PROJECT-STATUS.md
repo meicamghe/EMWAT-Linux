@@ -3,7 +3,7 @@
 - The GTK shell now serializes bridge Start/Stop operations against application shutdown. Shutdown marks the UI as closing while holding the same operation lock, preventing a queued Start worker from launching a listener after shutdown has begun.
 - If an explicitly injected supervisor is RUNNING or FAILED, the application shutdown handler requests cleanup before GTK exits. A failed cleanup remains surfaced by the supervisor; the UI does not pretend a still-running worker was forcibly terminated.
 - This is lifecycle protection for an injected supervisor, not production bridge configuration. The normal `emwat-linux` entry point still injects no supervisor, so the service controls remain disabled until evidence-backed Almas Origin and response configuration exists.
-- Regression coverage for the shutdown helper and worker/shutdown serialization is part of the GTK/Python test suites; current-head workflow results are tracked separately and must finish before release acceptance.
+- The shutdown helper has headless unit coverage, and the shared lock/flag enforce worker serialization in the GTK callback path. A dedicated race-stress test of the full GTK shutdown signal remains additional acceptance work; current-head workflow results are tracked separately.
 
 ## Parallel implementation checkpoint — 2026-11-23
 
