@@ -44,6 +44,15 @@ public:
     // Captures one 8-bit grayscale or RGB frame using the device's current defaults.
     [[nodiscard]] virtual ImagePage scan_one(const std::string& device_id,
                                              const ScanOptions& options = {}) = 0;
+    // Batch API for document scanners. The compatibility fallback captures one
+    // page through scan_one(); feeder-capable backends must override this method
+    // to acquire every page and enforce their own bounded batch policy.
+    [[nodiscard]] virtual std::vector<ImagePage> scan_pages(
+        const std::string& device_id, const ScanOptions& options = {}) {
+        std::vector<ImagePage> pages;
+        pages.push_back(scan_one(device_id, options));
+        return pages;
+    }
 };
 
 // SANE-backed discovery. Each call owns a complete SANE init/exit lifetime.
