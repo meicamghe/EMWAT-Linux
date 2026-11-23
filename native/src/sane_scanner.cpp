@@ -420,13 +420,13 @@ ImagePage read_started_sane_page(
             status = api.start(handle);
             if (status != SANE_STATUS_GOOD)
                 throw ScannerError(
-                    std::string("Cannot start next planar RGB frame: ") + sane_strstatus(status)
+                    std::string("Cannot start next planar RGB frame: ") + api.status_string(status)
                 );
             SANE_Parameters next{};
             status = api.get_parameters(handle, &next);
             if (status != SANE_STATUS_GOOD)
                 throw ScannerError(
-                    std::string("Cannot read planar RGB parameters: ") + sane_strstatus(status)
+                    std::string("Cannot read planar RGB parameters: ") + api.status_string(status)
                 );
             return next;
         },
