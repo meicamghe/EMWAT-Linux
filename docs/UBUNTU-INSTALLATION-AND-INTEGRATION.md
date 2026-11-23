@@ -80,6 +80,26 @@ Almas Origin allowlists, a verified Cancel/Discard response policy, and an
 application lifecycle supervisor. Do not expose the bridge on a non-loopback
 interface.
 
+## 2.1 Headless bridge lifecycle supervisor
+
+`BridgeSupervisor` now provides a GTK-independent lifecycle owner. The
+application injects a factory that returns a fully configured loopback server:
+
+- `start()` is idempotent while the bridge is running.
+- `stop()` closes the current one-shot runtime.
+- A later start creates a fresh server rather than attempting to restart a
+  closed `HTTPServer`.
+- Failed cleanup remains visible and blocks replacement until `stop()` retries
+  and completes cleanup.
+- The supervisor does not supply Origin allowlists, method handlers, or
+  Cancel/Discard response envelopes. Those remain deployment-specific and must
+  be based on captured Almas behavior.
+
+This is a headless lifecycle component, not yet a system service or a GTK
+start/stop control. The GTK shell remains diagnostics/recovery-only until
+persistent deployment settings and user-visible runtime error handling are
+implemented. See `docs/BRIDGE-SUPERVISOR-LIFECYCLE.md` for the state contract.
+
 ## 3. End-to-end acceptance boundary
 
 The automated application composition test now verifies the full synthetic
