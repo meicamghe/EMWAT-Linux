@@ -667,6 +667,9 @@ int main() {
     assert(detail::is_adf_source("Automatic Document Feeder - Simplex"));
     assert(detail::is_adf_source("ADF one-sided"));
     assert(detail::is_adf_source("ADF single-sided"));
+    assert(!detail::is_adf_source("ADF nonsimplex"));
+    assert(!detail::is_adf_source("ADF frontline"));
+    assert(!detail::is_adf_source("ADF one-sidedness"));
     assert(!detail::is_adf_source("Automatic Document FeederX"));
     assert(!detail::is_adf_source("automatic document feeder (duplex)"));
     assert(!detail::is_adf_source("Flatbed"));
