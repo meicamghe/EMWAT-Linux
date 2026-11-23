@@ -6,7 +6,7 @@
 - Python bridge workflow [45184251311](https://github.com/meicamghe/EMWAT-Linux/actions/runs/45184251311) on code head 05dacb1e00ad0ab26b145d2e63c462c9036695fd: success, **289 tests**; package installation and all three console-entrypoint help checks passed.
 - GTK desktop workflows [45184020754](https://github.com/meicamghe/EMWAT-Linux/actions/runs/45184020754) and [45184251362](https://github.com/meicamghe/EMWAT-Linux/actions/runs/45184251362): success, **6 smoke tests** each; per-user launcher install, desktop-file validation and uninstall also passed.
 - LibreOffice UNO workflow [45182739787](https://github.com/meicamghe/EMWAT-Linux/actions/runs/45182739787): success, **25 tests** on the preceding code-equivalent head.
-- Native build/CTest, ASan/UBSan and Debian package lifecycle were still running on the exact code head at this checkpoint. Do not call the latest scanner changes fully verified until that run completes.
+- Native workflow [45184251505](https://github.com/meicamghe/EMWAT-Linux/actions/runs/45184251505) on code head 05dacb1e00ad0ab26b145d2e63c462c9036695fd: success; normal build/CTest passed **4/4**, ASan/UBSan passed **4/4**, and Debian package lifecycle passed. This validates the latest scanner code at the native CI level, not physical scanner hardware.
 - Remaining release blockers are unchanged: live Almas browser end-to-end and exact Cancel/Discard wire contract, full WordConfig/signature/image mapping with a sanitized Windows fixture, .easz interoperability, physical scanner/duplex acceptance, and complete production bridge packaging/supervision.
 - PR #2 remains open, Draft and unmerged.
 ## GTK smoke-test correction — 2026-11-23
