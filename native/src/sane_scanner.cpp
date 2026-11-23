@@ -4,14 +4,13 @@
 #include <sane/sane.h>
 
 #include <algorithm>
-#include <cmath>
-#include <cstring>
 #include <array>
 #include <cctype>
+#include <cmath>
+#include <cstring>
 #include <limits>
 #include <mutex>
 #include <string>
-#include <tuple>
 #include <utility>
 
 namespace emwat {
