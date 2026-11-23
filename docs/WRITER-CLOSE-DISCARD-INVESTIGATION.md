@@ -38,3 +38,25 @@ Record callback order and the final bytes for each case. Run this against the su
 ## Implementation guardrail
 
 Do not infer `DISCARDED` from `notifyClosing` or `disposing`; both describe closure/disposal, not the user's choice. Do not change the current snapshot timing or map a close to a discard response until the visible-UI acceptance test or an equivalent verified interaction contract establishes the behavior.
+
+## Current branch implementation audit — 2026-11-23
+
+Inspected on branch `feature/recovery-retention-policy` at head `944ec9f3f34c355a7d20e49e7fd734e56e955ee1`:
+
+- `LibreOfficeAdapter.open_document()` creates `final.doc` as a separate output path and registers `_DocumentCloseListener`.
+- `_DocumentCloseListener.queryClosing()` calls `document.storeToURL(final.doc, ...)` immediately when a close attempt is queried. This is before the implementation has established which button the visible Writer prompt will resolve to.
+- `_DocumentEventListener` recognizes `OnSaveDone` and `OnSaveAsDone`, but its callback only calls the coordinator's `session.record_engine_save()`. It does not refresh or replace `final.doc`.
+- `wait_for_close()` waits for the closed event, then accepts the queryClosing snapshot as the final document. It always returns `CloseDisposition.CLOSED`; it does not produce `DISCARDED`.
+- `DocumentCoordinator` has a `DISCARDED` branch, but the current LibreOffice adapter does not emit that disposition.
+
+### Consequence
+
+The current visible-UI result is not proven correct for **Don't Save**. If `queryClosing` runs before the user chooses Don't Save, the file already written to `final.doc` can contain edits the user explicitly discarded. The existing fake-document tests only prove that `storeToURL` is called and that listener callbacks are traced; they do not prove the native Writer prompt ordering or final bytes.
+
+The Save event callback is currently observational only; it does not fix this gap. Therefore this branch must not claim Save/Don't Save parity or release readiness.
+
+### Safe implementation direction (not yet implemented)
+
+Before changing the adapter, establish the actual visible Writer event order and file behavior on the supported LibreOffice version. The candidate design must preserve the last **confirmed saved** state separately from recovery snapshots, and must only return that saved state after an accepted close when the user chose Don't Save. Save must return the newly confirmed saved state. Cancel must leave the document and bridge request pending. A save event alone is not sufficient unless its ordering and the bytes it confirms are validated in the visible acceptance test.
+
+Do not implement a heuristic such as “no save event means discard” or “notifyClosed means save/discard”; neither has been proven. Do not alter the HTTP/XML cancellation response until its Almas contract is known.
