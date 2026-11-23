@@ -277,3 +277,30 @@ been confirmed. A never-started runtime is not marked STOPPED until its bound
 socket is actually closed. This does not provide a safe way to forcibly kill a
 Python thread if the underlying server cannot stop; that remains a fatal
 runtime failure to surface to the desktop supervisor.
+
+
+
+## GTK desktop control shell (initial)
+
+Install the optional desktop dependencies on Ubuntu:
+
+```bash
+sudo apt install python3-gi gir1.2-gtk-4.0
+python3 -m pip install .
+emwat-linux
+```
+
+The `emwat-linux` entrypoint opens a GTK 4 control/diagnostics window and
+reports the availability of Python, LibreOffice, UNO, and optional GTK 4.
+Importing the GTK modules remains lazy, so headless bridge/test processes do
+not require PyGObject. The current shell does **not** start the HTTP bridge:
+deployment-specific Almas Origin allowlists and the observed Cancel response
+factory are mandatory inputs and are not guessed. Recovery navigation is
+enabled only when a validated `RecoveryPickerController` is injected by a
+future configured desktop composition root.
+
+A dedicated GTK CI workflow installs GTK 4/PyGObject and runs an activation
+smoke test under Xvfb. Passing that smoke test proves the application can
+create its GTK window in CI; it does not establish desktop-session packaging,
+Wayland/X11 behavior on target machines, accessibility acceptance, or Almas
+end-to-end compatibility.
