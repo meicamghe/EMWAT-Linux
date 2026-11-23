@@ -164,7 +164,7 @@ inline bool is_adf_source(const std::string& source) {
     folded.reserve(source.size());
     for (const unsigned char ch : source)
         folded.push_back(static_cast<char>(std::tolower(ch)));
-    const auto first = folded.find_first_not_of(" \\t");
+    const auto first = folded.find_first_not_of(" \t");
     if (first == std::string::npos) return false;
     const auto normalized = folded.substr(first);
     if (normalized.find("duplex") != std::string::npos ||
