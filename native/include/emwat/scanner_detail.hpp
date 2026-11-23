@@ -87,6 +87,30 @@ std::vector<Page> collect_bounded_pages(
     }
 }
 
+inline void interleave_planar_rgb_channel(
+    const std::vector<std::uint8_t>& plane,
+    std::size_t plane_stride,
+    std::size_t width,
+    std::size_t height,
+    std::vector<std::uint8_t>& output,
+    std::size_t output_stride,
+    std::size_t channel
+) {
+    if (width == 0 || height == 0 || width > std::numeric_limits<std::size_t>::max() / 3 ||
+        plane_stride < width || output_stride < width * 3 || channel >= 3 ||
+        plane_stride > std::numeric_limits<std::size_t>::max() / height ||
+        output_stride > std::numeric_limits<std::size_t>::max() / height ||
+        plane.size() < plane_stride * height || output.size() < output_stride * height)
+        throw std::invalid_argument("invalid_planar_rgb_channel_buffer");
+
+    for (std::size_t y = 0; y < height; ++y) {
+        const auto source_offset = y * plane_stride;
+        const auto target_offset = y * output_stride;
+        for (std::size_t x = 0; x < width; ++x)
+            output[target_offset + x * 3 + channel] = plane[source_offset + x];
+    }
+}
+
 inline bool is_adf_source(const std::string& source) {
     std::string folded;
     folded.reserve(source.size());
