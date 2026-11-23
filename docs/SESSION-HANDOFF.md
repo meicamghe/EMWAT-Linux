@@ -1238,3 +1238,31 @@ Do not implement guessed `signData` joining or claim end-to-end Almas registrati
 - Native `44798818848`: normal build/CTest, ASan/UBSan and DEB package lifecycle all passed.
 - UNO `44798818677`: LibreOffice installation and runtime verification passed; the test step remains in progress. Poll it before claiming close-trace integration is UNO-verified.
 - PR #2 remains open, Draft, unmerged.
+
+## EMWAT Linux — corrected parallel-work checkpoint (2026-11-23)
+
+### CI at commit 8a29d56bdf366039882555cee92853b180eb5a04
+
+- Python Bridge run 45172202794: success.
+- LibreOffice UNO run 45172202821: success.
+- GTK desktop smoke test run 45172202655: success.
+- Native Image Core run 45172202648: build/CTest and staged install passed; Debian package install/upgrade/removal lifecycle passed; ASan/UBSan job also completed successfully.
+- These workflows validate the CI jobs at this exact branch head. They do not validate a physical scanner, live Almas browser integration, or Windows archive interoperability.
+
+### Archive evidence correction — supersedes older handoff wording
+
+- The .easz output-file path and .easd entry-name construction are supported by static call traces.
+- Do not describe the writer password or encryption state as confirmed. The writer CryptoGetTextPassword2 trace initializes an internal object list; it does not reveal a password value/provider. The mapped SetPassword implementation is a no-op, and interface slot +0x28 maps to the progress-callback method, not to a proven password setter.
+- Older notes in this handoff that label a fallback/configuration string as the archive password are superseded. Do not reuse any such string as an archive password.
+- The actual runtime encryption flags, password source, archive header profile and interoperability remain unverified. The current evidence boundary is documented in docs/EASZ-ARCHIVE-FORMAT.md.
+
+### Scanner implementation boundary
+
+- ImageDocument stores multiple pages, but ScannerBackend exposes only scan_one(); the SANE implementation reads one frame per call.
+- ADF/multi-frame and duplex are not implemented or hardware-verified. The design contract is in docs/SCANNER-MULTIFRAME-IMPLEMENTATION.md.
+
+### WordConfig / Writer boundary
+
+- The adapter opens the incoming document and exposes a read-only WordConfig-to-Writer evidence audit. It does not automatically apply WordConfig fields.
+- Exact-name intersections and case-only matches remain candidates, not verified semantic mappings. No positional mapping, signature-image substitution or unverified twin-field writes are permitted.
+- See docs/WORDCONFIG-WRITER-APPLICATION-PLAN.md.
