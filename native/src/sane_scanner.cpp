@@ -274,7 +274,8 @@ namespace {
 std::vector<std::uint8_t> read_sane_frame_bytes(
     SANE_Handle handle,
     const SANE_Parameters& params,
-    std::uint64_t max_frame_bytes
+    std::uint64_t max_frame_bytes,
+    bool allow_feeder_empty = false
 ) {
     if (params.pixels_per_line <= 0 || params.lines <= 0 || params.bytes_per_line <= 0)
         throw ScannerError("Scanner returned invalid or variable scan dimensions");
@@ -305,6 +306,8 @@ std::vector<std::uint8_t> read_sane_frame_bytes(
             bytes.insert(bytes.end(), chunk.begin(), chunk.begin() + received);
         }
         if (status == SANE_STATUS_EOF) break;
+        if (status == SANE_STATUS_NO_DOCS && allow_feeder_empty && bytes.empty())
+            throw detail::ScanBatchEnd{};
         if (status != SANE_STATUS_GOOD)
             throw ScannerError(std::string("Scanner read failed: ") + sane_strstatus(status));
         if (received == 0)
@@ -331,7 +334,8 @@ ImagePage read_started_sane_page(
     SANE_Handle handle,
     const std::optional<double>& dpi_x,
     const std::optional<double>& dpi_y,
-    std::uint64_t remaining_batch_bytes = max_scan_bytes
+    std::uint64_t remaining_batch_bytes = max_scan_bytes,
+    bool allow_feeder_empty = false
 ) {
     SANE_Parameters params{};
     auto status = sane_get_parameters(handle, &params);
@@ -367,7 +371,9 @@ ImagePage read_started_sane_page(
         pixels.height = static_cast<std::uint32_t>(params.lines);
         pixels.stride = stride;
         pixels.format = channels == 1 ? PixelFormat::Gray8 : PixelFormat::RGB8;
-        pixels.bytes = read_sane_frame_bytes(handle, params, page_byte_limit);
+        pixels.bytes = read_sane_frame_bytes(
+            handle, params, page_byte_limit, allow_feeder_empty
+        );
         if (!pixels.valid())
             throw ScannerError("Scanner produced an invalid pixel buffer");
         return ImagePage{std::move(pixels), dpi_x, dpi_y};
@@ -399,7 +405,8 @@ ImagePage read_started_sane_page(
 
     auto plane_stride = static_cast<std::size_t>(params.bytes_per_line);
     auto plane = read_sane_frame_bytes(
-        handle, params, page_byte_limit - static_cast<std::uint64_t>(output_bytes)
+        handle, params, page_byte_limit - static_cast<std::uint64_t>(output_bytes),
+        allow_feeder_empty
     );
     copy_planar_channel(plane, plane_stride, pixels, 0);
     std::vector<std::uint8_t>().swap(plane);
@@ -497,7 +504,7 @@ std::vector<ImagePage> SaneScannerBackend::scan_pages(
         },
         [&](std::uint64_t remaining_bytes) {
             return read_started_sane_page(
-                device.get(), dpi_x, dpi_y, remaining_bytes
+                device.get(), dpi_x, dpi_y, remaining_bytes, true
             );
         },
         [](const ImagePage& page) { return page.pixels.bytes.size(); },
