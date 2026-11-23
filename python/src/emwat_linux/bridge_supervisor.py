@@ -57,9 +57,22 @@ class BridgeSupervisor:
         self._runtime: BridgeRuntime | None = None
         self._failure: BaseException | None = None
 
+    def _sync_runtime_state_locked(self) -> None:
+        """Reflect an asynchronous serving-thread failure in supervisor state."""
+        if self._state is not BridgeSupervisorState.RUNNING:
+            return
+        runtime = self._runtime
+        if runtime is None or runtime.state is BridgeRuntimeState.RUNNING:
+            return
+        self._failure = runtime.failure or RuntimeError(
+            "bridge_runtime_exited_while_supervisor_was_running"
+        )
+        self._state = BridgeSupervisorState.FAILED
+
     @property
     def state(self) -> BridgeSupervisorState:
         with self._lock:
+            self._sync_runtime_state_locked()
             return self._state
 
     @property
@@ -70,6 +83,7 @@ class BridgeSupervisor:
     @property
     def failure(self) -> BaseException | None:
         with self._lock:
+            self._sync_runtime_state_locked()
             return self._failure
 
     def start(self) -> BridgeRuntime:
