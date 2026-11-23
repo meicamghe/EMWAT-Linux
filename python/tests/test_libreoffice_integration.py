@@ -279,6 +279,9 @@ class LibreOfficeIntegrationTests(unittest.TestCase):
             on_saved=lambda: saved_events.append("saved"),
         )
         try:
+            self.assertIsNotNone(handle.word_writer_evidence)
+            self.assertIsNone(handle.word_writer_evidence_error)
+            self.assertEqual(handle.word_writer_evidence.fields, ())
             user_properties = handle.document.getDocumentProperties().getUserDefinedProperties()
             self.assertEqual(
                 user_properties.getPropertyValue("EMWATIntegrationMarker"),
