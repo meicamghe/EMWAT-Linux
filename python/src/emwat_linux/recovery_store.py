@@ -40,7 +40,9 @@ _ROOT_LOCKS: dict[str, threading.RLock] = {}
 
 
 def _root_lock(root: Path) -> threading.RLock:
-    key = os.path.abspath(os.fspath(root))
+    # Resolve existing parent symlinks so two lexical paths to the same
+    # recovery directory cannot acquire independent in-process locks.
+    key = os.path.realpath(os.fspath(root))
     with _ROOT_LOCKS_GUARD:
         lock = _ROOT_LOCKS.get(key)
         if lock is None:
