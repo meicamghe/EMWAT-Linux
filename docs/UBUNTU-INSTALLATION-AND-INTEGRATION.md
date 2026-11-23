@@ -256,3 +256,15 @@ supervisor, systemd user unit, or installer. The runtime is one-shot; create a
 new configured server/runtime after shutdown rather than attempting restart.
 Its automated tests use a controlled fake server and do not replace signal,
 desktop logout, real LibreOffice, or Almas end-to-end acceptance.
+
+
+Startup synchronization is explicit: the HTTP server exposes a readiness
+handshake from its actual `serve_forever` loop, and `BridgeRuntime.start()
+` waits for that handshake before allowing a concurrent `close()` to call
+`shutdown()`. This avoids the Python `socketserver.BaseServer` ordering hazard
+where calling `shutdown()` before `serve_forever()` enters its loop can block
+indefinitely. The readiness event is also released if the serve loop exits
+before its first poll. Regression coverage includes a deliberately delayed
+server start, concurrent close, and immediate start/close against the real
+loopback bridge. These tests do not replace desktop logout or signal handling
+acceptance.
