@@ -29,7 +29,7 @@ Never use list position alone to map Word custom properties to Writer custom pro
 
 Generate a deterministic report from the incoming WordConfig and a Writer catalog. Keep document values, signatory data, image bytes and optional-attribute contents out of logs and reports. This stage is safe to run on arbitrary documents.
 
-The LibreOffice adapter now attempts this inventory automatically after opening the document and capturing its baseline. The report is retained on the in-memory office handle as `word_writer_evidence`; if catalog inspection fails, opening continues and only the value-free status `writer_inventory_unavailable` is retained. This is diagnostic inventory only: it does not mutate Writer content, apply field mappings, or guarantee that the report is externally surfaced.
+The LibreOffice adapter now attempts this inventory automatically after opening the document and capturing its baseline. The report is retained on the in-memory office handle as `word_writer_evidence`; if the overall catalog inspection raises, opening continues and only the value-free status `writer_inventory_unavailable` is retained. Individual UNO containers can also fail independently: the catalog and report now preserve stable, value-free `writer_inventory_warnings` codes instead of silently representing an unavailable container as an empty one. This is diagnostic inventory only: it does not mutate Writer content, apply field mappings, or guarantee that the report is externally surfaced.
 
 ### Stage B — explicit mapping registry
 
