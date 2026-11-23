@@ -135,7 +135,7 @@ class GtkDesktopRuntimeTests(unittest.TestCase):
         import threading
         import time
         from types import SimpleNamespace
-        from emwat_linux.gtk_desktop import create_desktop_application
+        import emwat_linux.gtk_desktop as gtk_desktop
 
         class FakeSupervisor:
             def __init__(self):
@@ -164,7 +164,17 @@ class GtkDesktopRuntimeTests(unittest.TestCase):
                 self.stopped.set()
 
         supervisor = FakeSupervisor()
-        application = create_desktop_application(bridge_supervisor=supervisor)
+        # The test fixture already owns the normal application ID. Give this
+        # independent application a distinct D-Bus object path while keeping
+        # the production application ID unchanged.
+        original_application_id = gtk_desktop.APPLICATION_ID
+        gtk_desktop.APPLICATION_ID = "org.emwat.Linux.BridgeControlTest"
+        try:
+            application = gtk_desktop.create_desktop_application(
+                bridge_supervisor=supervisor
+            )
+        finally:
+            gtk_desktop.APPLICATION_ID = original_application_id
         application.register(None)
         application.activate()
         window = application.get_active_window()
