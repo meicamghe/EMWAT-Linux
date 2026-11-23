@@ -23,7 +23,8 @@ mkdir -p \
     "$root/usr/lib/python3/dist-packages" \
     "$root/usr/lib/emwat-linux/packaging" \
     "$root/usr/bin" \
-    "$root/usr/share/doc/emwat-linux"
+    "$root/usr/share/doc/emwat-linux" \
+    "$root/DEBIAN"
 
 cp -a "$repo_root/python/src/emwat_linux" "$root/usr/lib/python3/dist-packages/"
 cp "$repo_root/packaging/install-desktop-entry.sh" \
