@@ -173,6 +173,31 @@ int main() {
         assert(cancelled);
     }
 
+    // Planar RGB frames are interleaved by channel and row; padding is ignored.
+    {
+        const std::vector<std::uint8_t> red{1, 2, 99, 3, 4, 99};
+        const std::vector<std::uint8_t> green{5, 6, 99, 7, 8, 99};
+        const std::vector<std::uint8_t> blue{9, 10, 99, 11, 12, 99};
+        std::vector<std::uint8_t> rgb(12, 0);
+        detail::interleave_planar_rgb_channel(red, 3, 2, 2, rgb, 6, 0);
+        detail::interleave_planar_rgb_channel(green, 3, 2, 2, rgb, 6, 1);
+        detail::interleave_planar_rgb_channel(blue, 3, 2, 2, rgb, 6, 2);
+        assert((rgb == std::vector<std::uint8_t>{
+            1, 5, 9, 2, 6, 10, 3, 7, 11, 4, 8, 12
+        }));
+    }
+    {
+        bool rejected = false;
+        try {
+            const std::vector<std::uint8_t> short_plane{1, 2};
+            std::vector<std::uint8_t> rgb(6, 0);
+            detail::interleave_planar_rgb_channel(short_plane, 2, 2, 1, rgb, 6, 0);
+        } catch (const std::invalid_argument&) {
+            rejected = true;
+        }
+        assert(rejected);
+    }
+
     // Only explicit feeder-source names may activate repeated page acquisition.
     assert(detail::is_adf_source("ADF"));
     assert(detail::is_adf_source("ADF Front"));
