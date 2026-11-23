@@ -3021,3 +3021,31 @@ The next meaningful Almas acceptance input is a sanitized, synthetic-or-test-acc
 - Earlier runs for the first draft of these new tests exposed fixture and
   assertion mistakes; the tests were corrected and the final run above is
   green. No production protocol behavior was changed.
+
+
+## Bridge runtime startup/shutdown race hardening — 2026-11-23
+
+- Review found a real lifecycle hazard: Python `socketserver.BaseServer.shutdown()`
+  may wait indefinitely if called before its `serve_forever()` loop has entered.
+  Starting a thread is not, by itself, proof that the loop has begun.
+- `BridgeHTTPServer` now exposes a readiness handshake signaled from the actual
+  serve loop (and released if the loop exits before its first poll).
+  `BridgeRuntime.start()` waits for this handshake while holding its lifecycle
+  lock, so a concurrent `close()` cannot call shutdown too early.
+- Added deterministic coverage for a deliberately delayed server startup,
+  close-vs-start ordering, and immediate start/close against a real loopback
+  `BridgeHTTPServer`.
+- An intermediate Python run on commit `d8f17f1` correctly exposed incomplete
+  fake-server test doubles that lacked the new readiness method. The fixtures
+  were corrected; the final code/test head `e9b4818` passed **253 tests, 251
+  passed and 2 optional skips**.
+- Final current workflow head `5b439509` passed all three workflows:
+  - Python bridge run `45150413887`: **253 tests, 2 optional skips**.
+  - LibreOffice UNO run `45150413911`: success.
+  - Native image core run `45150413915`: build/CTest, ASan/UBSan, and Debian
+    package lifecycle all passed; normal and sanitizer CTest each report 4/4.
+- The Ubuntu integration guide records the readiness contract and its limits.
+  These results validate automated startup/shutdown regression coverage, not
+  desktop logout/signal handling or live Almas/browser integration.
+- PR #2 remains open, Draft, and unmerged. No production launcher, service
+  unit, or complete desktop installer is claimed.
