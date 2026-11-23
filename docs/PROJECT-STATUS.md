@@ -1,3 +1,14 @@
+## Parallel implementation checkpoint — 2026-11-23
+
+- **Word/Writer inventory:** opening a Writer document now captures metadata-only WordConfig evidence and a separate exact-name template candidate inventory from one UNO catalog snapshot. Partial UNO inventory failures are represented by value-free warning codes. No XML field index is associated with a Writer property index because Word COM/UNO enumeration equivalence is still unproven.
+- **SANE scanner:** added bounded simplex ADF page batching (100-page / 4-GiB batch limits, with remaining memory budget passed into the page reader), feeder-empty handling from start/read boundaries, and ordered 8-bit RED → GREEN → BLUE planar RGB assembly. Duplex-labelled sources are excluded. The batch collector, metadata sequence validator and padded-stride channel interleaver have deterministic fake tests. Full SANE API injection and physical scanner acceptance remain open.
+- **Desktop launcher:** added a tested emwat-linux-desktop-entry console helper, safe Desktop Entry Exec quoting, per-user install/uninstall scripts, and GTK workflow coverage for actual install, validation and removal. This remains a launcher helper, not a complete bridge package or production service.
+- Python bridge workflow [45184251311](https://github.com/meicamghe/EMWAT-Linux/actions/runs/45184251311) on code head 05dacb1e00ad0ab26b145d2e63c462c9036695fd: success, **289 tests**; package installation and all three console-entrypoint help checks passed.
+- GTK desktop workflow [45184020754](https://github.com/meicamghe/EMWAT-Linux/actions/runs/45184020754): success, **6 smoke tests**; per-user launcher install, desktop-file validation and uninstall also passed. A second exact-head GTK run was still in progress at this checkpoint.
+- LibreOffice UNO workflow [45182739787](https://github.com/meicamghe/EMWAT-Linux/actions/runs/45182739787): success, **25 tests** on the preceding code-equivalent head.
+- Native build/CTest, ASan/UBSan and Debian package lifecycle were still running on the exact code head at this checkpoint. Do not call the latest scanner changes fully verified until that run completes.
+- Remaining release blockers are unchanged: live Almas browser end-to-end and exact Cancel/Discard wire contract, full WordConfig/signature/image mapping with a sanitized Windows fixture, .easz interoperability, physical scanner/duplex acceptance, and complete production bridge packaging/supervision.
+- PR #2 remains open, Draft and unmerged.
 ## GTK smoke-test correction — 2026-11-23
 
 - The first GTK run exposed a test-fixture issue, not a product-code failure: the test attempted to register a second `Gtk.Application` under the same D-Bus application ID already owned by the class fixture.
