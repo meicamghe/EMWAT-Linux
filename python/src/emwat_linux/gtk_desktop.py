@@ -41,6 +41,10 @@ def create_desktop_application(*, recovery_controller: Any | None = None) -> Any
         windows["main"] = window
         window.set_title("EMWAT Linux")
         window.set_default_size(620, 460)
+        window.connect(
+            "close-request",
+            lambda *_args: windows.__setitem__("main", None) or False,
+        )
 
         root = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=12)
         root.set_margin_top(20)
