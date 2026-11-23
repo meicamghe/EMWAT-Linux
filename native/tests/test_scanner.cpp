@@ -148,6 +148,21 @@ public:
 };
 
 int main() {
+    // Duplex sources fail before SANE initialization/device access; a one-sided
+    // result must never be reported as a successful duplex batch.
+    {
+        SaneScannerBackend backend;
+        ScanOptions options;
+        options.source = "ADF Duplex";
+        bool rejected = false;
+        try {
+            (void)backend.scan_pages("synthetic-device", options);
+        } catch (const ScannerError& error) {
+            rejected = std::string(error.what()) == "duplex_adf_batch_not_supported";
+        }
+        assert(rejected);
+    }
+
     // The production page reader consumes ordered planar RGB frames through an injectable SANE API.
     {
         FakeSaneState state;
