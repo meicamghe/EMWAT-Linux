@@ -15,6 +15,18 @@ APPLICATION_ID = "org.emwat.Linux"
 BRIDGE_STATUS_POLL_SECONDS = 1
 
 
+
+def create_default_recovery_controller() -> Any:
+    """Connect the desktop picker to the default per-user recovery store."""
+    from emwat_linux.recovery_controller import RecoveryPickerController
+    from emwat_linux.recovery_service import RecoverySnapshotService
+    from emwat_linux.recovery_store import RecoverySnapshotStore
+
+    return RecoveryPickerController(
+        RecoverySnapshotService(RecoverySnapshotStore())
+    )
+
+
 def create_desktop_application(
     *,
     recovery_controller: Any | None = None,
@@ -235,7 +247,9 @@ def main(argv: Sequence[str] | None = None) -> int:
         description="Open EMWAT Linux diagnostics and recovery controls.",
     )
     parser.parse_args(argv)
-    application = create_desktop_application()
+    application = create_desktop_application(
+        recovery_controller=create_default_recovery_controller()
+    )
     return int(application.run([]))
 
 
