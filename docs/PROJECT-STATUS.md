@@ -2858,3 +2858,26 @@ CI for the new E2E test and CMake install rules is pending on the latest code/te
 - Native run `44798818848`: build/CTest, ASan/UBSan, and Debian package lifecycle all completed successfully.
 - UNO run `44798818677` has completed package installation and runtime verification; its adapter/unit and real UNO roundtrip test step remains in progress. Do not mark the trace integration as UNO-verified until this run completes.
 - Current PR head is documentation-only commit `e2e3719`; code/test head for the trace is `2feff5bf`.
+
+
+## Writer interactive close acceptance — 2026-11-23
+
+The visible LibreOffice Writer acceptance probe has now been run by the operator
+on the Linux branch. All three cases passed:
+
+- Save returned the confirmed saved marker `EMWAT_SAVE_FIXED_004`.
+- Don't Save retained baseline `EMWAT_BASELINE_KEEP_20261123` and excluded
+  the unsaved marker.
+- Cancel left Writer open and the adapter wait pending; a later Don't Save
+  completed the run without returning the new test information.
+
+The adapter implementation now returns a separately maintained last-confirmed
+saved-state file. `queryClosing` records close lifecycle only and no longer
+snapshots dirty live edits. Periodic recovery remains separate from the final
+bridge response. See `docs/WRITER-CLOSE-ACCEPTANCE-TEST.md` and
+`docs/ALMAS-WRITER-LIFECYCLE-CONTRACT.md`.
+
+This closes the local Writer Save / Don't Save / Cancel-retry acceptance item.
+It does **not** close live Almas/browser HTTP integration, exact Windows
+discard/cancel response envelopes, full WordConfig semantic mapping, or
+production desktop packaging. Do not mark the product production-ready.
