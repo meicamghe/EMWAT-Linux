@@ -159,6 +159,8 @@ int main() {
         assert(page.pixels.width == 2 && page.pixels.height == 1);
         assert((page.pixels.bytes == std::vector<std::uint8_t>{1, 3, 5, 2, 4, 6}));
         assert(state.start_calls == 3);
+        fake_sane_api.cancel(handle);
+        assert(state.cancel_calls == 1);
     }
 
     // Interleaved RGB is preserved without channel reordering.
@@ -174,6 +176,8 @@ int main() {
         );
         assert(page.pixels.format == PixelFormat::RGB8);
         assert((page.pixels.bytes == std::vector<std::uint8_t>{1, 2, 3, 4, 5, 6}));
+        fake_sane_api.cancel(handle);
+        assert(state.cancel_calls == 1);
     }
 
     // The production page reader and bounded collector cooperate across ADF pages.
@@ -223,7 +227,9 @@ int main() {
         } catch (const detail::ScanBatchEnd&) {
             feeder_empty = true;
         }
+        fake_sane_api.cancel(handle);
         assert(feeder_empty);
+        assert(state.cancel_calls == 1);
     }
 
     // NO_DOCS after partial bytes is not silently accepted as an empty feeder.
@@ -242,7 +248,9 @@ int main() {
         } catch (const ScannerError&) {
             rejected = true;
         }
+        fake_sane_api.cancel(handle);
         assert(rejected);
+        assert(state.cancel_calls == 1);
     }
 
     // An out-of-order planar channel fails the real reader and cancels the batch.
