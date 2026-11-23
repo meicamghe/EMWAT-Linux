@@ -225,6 +225,24 @@ class BridgeRuntimeTests(unittest.TestCase):
         self.assertEqual(runtime.state, BridgeRuntimeState.STOPPED)
         self.assertIsNone(runtime.failure)
 
+    def test_unrequested_serve_loop_exit_is_reported_as_failure(self):
+        class UnexpectedExitServer(FakeServer):
+            def serve_forever(self):
+                self.serving.set()
+
+        server = UnexpectedExitServer()
+        runtime = BridgeRuntime(server)
+        runtime.start()
+        runtime._thread.join(2)
+        self.assertEqual(runtime.state, BridgeRuntimeState.FAILED)
+        self.assertRegex(
+            str(runtime.failure),
+            "stopped_without_a_shutdown_request",
+        )
+        runtime.close()
+        self.assertTrue(server.closed)
+        self.assertEqual(runtime.state, BridgeRuntimeState.FAILED)
+
     def test_server_failure_is_retained_and_socket_closed(self):
         failure = RuntimeError("serve failed")
 
