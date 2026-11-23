@@ -62,6 +62,8 @@ public:
     [[nodiscard]] ScannerCapabilities get_capabilities(const std::string& device_id) override;
     [[nodiscard]] ImagePage scan_one(const std::string& device_id,
                                      const ScanOptions& options = {}) override;
+    [[nodiscard]] std::vector<ImagePage> scan_pages(
+        const std::string& device_id, const ScanOptions& options = {}) override;
 };
 
 } // namespace emwat
