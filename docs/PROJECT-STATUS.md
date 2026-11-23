@@ -1,3 +1,10 @@
+## GTK bridge shutdown lifecycle — 2026-11-23
+
+- The GTK shell now serializes bridge Start/Stop operations against application shutdown. Shutdown marks the UI as closing while holding the same operation lock, preventing a queued Start worker from launching a listener after shutdown has begun.
+- If an explicitly injected supervisor is RUNNING or FAILED, the application shutdown handler requests cleanup before GTK exits. A failed cleanup remains surfaced by the supervisor; the UI does not pretend a still-running worker was forcibly terminated.
+- This is lifecycle protection for an injected supervisor, not production bridge configuration. The normal `emwat-linux` entry point still injects no supervisor, so the service controls remain disabled until evidence-backed Almas Origin and response configuration exists.
+- Regression coverage for the shutdown helper and worker/shutdown serialization is part of the GTK/Python test suites; current-head workflow results are tracked separately and must finish before release acceptance.
+
 ## Parallel implementation checkpoint — 2026-11-23
 
 - **Word/Writer inventory:** opening a Writer document now captures metadata-only WordConfig evidence and a separate exact-name template candidate inventory from one UNO catalog snapshot. Partial UNO inventory failures are represented by value-free warning codes. No XML field index is associated with a Writer property index because Word COM/UNO enumeration equivalence is still unproven.
