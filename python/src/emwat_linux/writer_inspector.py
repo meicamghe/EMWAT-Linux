@@ -117,14 +117,12 @@ def _custom_document_property_names_in_info_order(document: object, warnings: li
         return ()
 
 
-def _custom_document_property_names(document: object, warnings: list[str]) -> tuple[str, ...]:
-    """Return sorted custom-property names only; never retrieve property values."""
-    return tuple(sorted(_custom_document_property_names_in_info_order(document, warnings)))
-
-
 def inspect_writer_document(document: object) -> WriterDocumentCatalog:
     """Return structural names and text-field metadata without document values."""
     warnings: list[str] = []
+    custom_names_in_info_order = _custom_document_property_names_in_info_order(
+        document, warnings
+    )
     return WriterDocumentCatalog(
         bookmarks=_container_names(document, "getBookmarks", warnings),
         named_ranges=_container_names(document, "getNamedRanges", warnings),
@@ -134,8 +132,8 @@ def inspect_writer_document(document: object) -> WriterDocumentCatalog:
         graphic_objects=_container_names(document, "getGraphicObjects", warnings),
         document_indexes=_container_names(document, "getDocumentIndexes", warnings),
         text_fields=_text_fields(document, warnings),
-        custom_document_properties=_custom_document_property_names(document, warnings),
-        custom_document_properties_in_info_order=_custom_document_property_names_in_info_order(document, warnings),
+        custom_document_properties=tuple(sorted(custom_names_in_info_order)),
+        custom_document_properties_in_info_order=custom_names_in_info_order,
         inspection_warnings=tuple(dict.fromkeys(warnings)),
     )
 
