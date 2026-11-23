@@ -127,6 +127,10 @@ inline bool is_adf_source(const std::string& source) {
     const auto first = folded.find_first_not_of(" \\t");
     if (first == std::string::npos) return false;
     const auto normalized = folded.substr(first);
+    if (normalized.find("duplex") != std::string::npos ||
+        normalized.find("double-sided") != std::string::npos ||
+        normalized.find("two-sided") != std::string::npos)
+        return false;
     return normalized.rfind("adf", 0) == 0 ||
            normalized.rfind("automatic document feeder", 0) == 0;
 }
