@@ -530,5 +530,23 @@ class BridgeHTTPServerTests(unittest.TestCase):
             )
             server.server_close()
 
+    def test_host_header_must_match_exact_loopback_address_and_bound_port(self):
+        invalid_hosts = (
+            f"127.0.0.2:{self.port}",
+            f"localhost:{self.port}",
+            f"127.0.0.1:{self.port + 1}",
+            f"127.0.0.1:",
+            f"user@127.0.0.1:{self.port}",
+            f"127.0.0.1:{self.port}/extra",
+        )
+        for host in invalid_hosts:
+            with self.subTest(host=host):
+                status, body, _ = self.request(
+                    "GET", "/healthz", headers={"Host": host}
+                )
+                self.assertEqual(status, 400)
+                self.assertEqual(body, b"invalid_host_header")
+
+
 if __name__ == "__main__":
     unittest.main()
