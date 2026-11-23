@@ -199,7 +199,8 @@ A supported Ubuntu desktop release requires all of the following:
 - real Almas Origin and complete editable-letter fixtures;
 - verified Cancel/Discard wire envelopes;
 - real LibreOffice UNO close/save/cancel behavior on supported Ubuntu versions;
-- selected native GUI toolkit and recovery picker implementation;
+- production GTK control UI and Recovery acceptance (keyboard, accessibility,
+  target desktop session, and restore/discard interaction);
 - tested package install/upgrade/remove and desktop integration;
 - synthetic .easz interoperability fixture if that compatibility is advertised;
 - physical scanner validation for every advertised acquisition mode.
