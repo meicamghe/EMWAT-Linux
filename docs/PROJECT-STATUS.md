@@ -2915,3 +2915,11 @@ The next meaningful Almas acceptance input is a sanitized, synthetic-or-test-acc
 - The XHR Origin allowlist validator now rejects an authority ending in a colon, including bracketed IPv6 authorities with an empty port.
 - Added regression inputs for empty ports on DNS and IPv6 hosts. This is strict configuration validation; it does not change the allowlist matching policy or infer a deployment Origin.
 - Fresh CI for this follow-up is pending; do not treat the code as verified until the Python, UNO and Native workflows finish.
+
+
+## Almas parent-page Origin canonicalization — 2026-11-23
+
+- The init route's Referer-derived parent Origin now uses the same canonical form as its configured allowlist: lowercase scheme/host, omitted default ports, retained non-default ports, and bracketed IPv6 literals.
+- Parent allowlist configuration now rejects malformed/empty ports and whitespace hostnames instead of preserving an authority that cannot match the browser's serialized Origin.
+- Added regression tests for default-port equivalence, case normalization, non-default ports and empty-port rejection.
+- The HTTP bridge still requires the deployment to provide the real Almas parent-page Origin; this change only makes exact allowlist matching consistent.
