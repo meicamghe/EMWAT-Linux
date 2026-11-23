@@ -29,6 +29,10 @@ from emwat_linux.recovery_store import RecoverySnapshotStore
 from emwat_linux.writer_fields import refresh_writer_text_fields
 from emwat_linux.writer_inspector import WriterDocumentCatalog, inspect_writer_document
 from emwat_linux.writer_properties import set_custom_document_properties
+from emwat_linux.template_mapping import (
+    TemplateMappingInventory,
+    inspect_template_mapping,
+)
 from emwat_linux.word_config import WordDocumentConfig
 from emwat_linux.word_writer_evidence import (
     WordWriterEvidenceReport,
@@ -230,6 +234,10 @@ class _OfficeHandle:
         self.saved_snapshot_in_progress = False
         self._closed_once = False
         self.close_trace = CloseLifecycleTrace()
+        self.word_writer_evidence: WordWriterEvidenceReport | None = None
+        self.word_writer_evidence_error: str | None = None
+        self.template_mapping_inventory: TemplateMappingInventory | None = None
+        self.template_mapping_inventory_error: str | None = None
 
     def mark_closed(self) -> None:
         if not self._closed_once:
@@ -562,13 +570,31 @@ class LibreOfficeAdapter:
         """Attach a value-free Stage-A inventory without blocking document open."""
         handle.word_writer_evidence = None
         handle.word_writer_evidence_error = None
+        handle.template_mapping_inventory = None
+        handle.template_mapping_inventory_error = None
         try:
-            handle.word_writer_evidence = self.audit_word_writer_evidence(
-                handle, config
-            )
+            with handle.snapshot_lock:
+                catalog = inspect_writer_document(handle.document)
         except Exception:
             # Do not retain UNO exception text: it can contain document details.
             handle.word_writer_evidence_error = "writer_inventory_unavailable"
+            handle.template_mapping_inventory_error = "writer_inventory_unavailable"
+            return
+
+        try:
+            handle.word_writer_evidence = build_word_writer_evidence_report(
+                config, catalog
+            )
+        except Exception:
+            handle.word_writer_evidence_error = "writer_evidence_unavailable"
+
+        try:
+            handle.template_mapping_inventory = inspect_template_mapping(
+                config, catalog
+            )
+        except Exception:
+            # Keep diagnostic status value-free; never retain document content.
+            handle.template_mapping_inventory_error = "template_mapping_inventory_unavailable"
 
     def audit_word_writer_evidence(
         self,
