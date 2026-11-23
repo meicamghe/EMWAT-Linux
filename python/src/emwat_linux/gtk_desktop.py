@@ -7,14 +7,19 @@ deployment-specific, evidence-backed configuration before a bridge can start.
 from __future__ import annotations
 
 import argparse
+import threading
 from typing import Any, Sequence
 
 
 APPLICATION_ID = "org.emwat.Linux"
 
 
-def create_desktop_application(*, recovery_controller: Any | None = None) -> Any:
-    """Create the GTK application; import GTK only when the desktop is launched."""
+def create_desktop_application(
+    *,
+    recovery_controller: Any | None = None,
+    bridge_supervisor: Any | None = None,
+) -> Any:
+    """Create GTK; a deployment must explicitly inject any bridge supervisor."""
     try:
         import gi
         gi.require_version("Gtk", "4.0")
@@ -97,6 +102,80 @@ def create_desktop_application(*, recovery_controller: Any | None = None) -> Any
         summary.set_wrap(True)
         root.append(summary)
 
+        bridge_heading = Gtk.Label(label="سرویس ارتباط با الماس گام")
+        bridge_heading.set_xalign(0)
+        bridge_heading.add_css_class("heading")
+        root.append(bridge_heading)
+
+        bridge_status = Gtk.Label(
+            label=(
+                f"وضعیت: {bridge_supervisor.state.value}"
+                if bridge_supervisor is not None
+                else "وضعیت: پیکربندی نشده؛ سرویس اجرا نمی‌شود"
+            )
+        )
+        bridge_status.set_xalign(0)
+        bridge_status.set_wrap(True)
+        root.append(bridge_status)
+
+        bridge_actions = Gtk.Box(
+            orientation=Gtk.Orientation.HORIZONTAL, spacing=8
+        )
+        root.append(bridge_actions)
+        bridge_start = Gtk.Button(label="شروع سرویس")
+        bridge_stop = Gtk.Button(label="توقف سرویس")
+        bridge_actions.append(bridge_start)
+        bridge_actions.append(bridge_stop)
+        bridge_start.set_sensitive(bridge_supervisor is not None)
+        bridge_stop.set_sensitive(
+            bridge_supervisor is not None
+            and bridge_supervisor.state.value in ("running", "failed")
+        )
+
+        if bridge_supervisor is not None:
+            from gi.repository import GLib
+
+            def refresh_bridge_controls() -> bool:
+                state = bridge_supervisor.state
+                failure = bridge_supervisor.failure
+                bridge_status.set_text(
+                    f"وضعیت: {state.value}"
+                    + (f" — خطا: {failure}" if failure is not None else "")
+                )
+                busy = state.value in ("starting", "stopping")
+                bridge_start.set_sensitive(
+                    not busy and state.value in ("idle", "stopped")
+                )
+                bridge_stop.set_sensitive(
+                    not busy and state.value in ("running", "failed")
+                )
+                return GLib.SOURCE_REMOVE
+
+            def run_bridge_operation(operation: Any) -> None:
+                bridge_start.set_sensitive(False)
+                bridge_stop.set_sensitive(False)
+
+                def worker() -> None:
+                    try:
+                        operation()
+                    except BaseException:
+                        # The supervisor retains the authoritative exception.
+                        pass
+                    GLib.idle_add(refresh_bridge_controls)
+
+                threading.Thread(
+                    target=worker,
+                    name="emwat-bridge-ui-operation",
+                    daemon=True,
+                ).start()
+
+            bridge_start.connect(
+                "clicked", lambda _button: run_bridge_operation(bridge_supervisor.start)
+            )
+            bridge_stop.connect(
+                "clicked", lambda _button: run_bridge_operation(bridge_supervisor.stop)
+            )
+
         if recovery_controller is None:
             recovery = Gtk.Button(label="بازیابی اسناد — هنوز پیکربندی نشده")
             recovery.set_sensitive(False)
@@ -121,8 +200,8 @@ def create_desktop_application(*, recovery_controller: Any | None = None) -> Any
 
         note = Gtk.Label(
             label=(
-                "راه‌اندازی Bridge تا زمان ارائه تنظیمات معتبر Origin و قرارداد "
-                "پاسخ Cancel فعال نمی‌شود."
+                "Bridge فقط با پیکربندی صریح و معتبر قابل اجراست؛ Origin و قرارداد "
+                "پاسخ Cancel حدس زده نمی‌شوند. بدون Supervisor تزریق‌شده، سرویس غیرفعال است."
             )
         )
         note.set_xalign(0)
