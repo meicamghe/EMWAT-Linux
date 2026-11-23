@@ -34,6 +34,8 @@ def create_editword_handler(
     response without conflating "No" with "Cancel".
     """
 
+    if not callable(cancel_response_factory):
+        raise ValueError("cancel_response_factory must be callable")
     if type(max_response_bytes) is not int or max_response_bytes <= 0:
         raise ValueError("max_response_bytes must be a positive integer")
 
