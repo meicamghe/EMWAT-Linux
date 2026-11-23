@@ -159,6 +159,16 @@ inline void interleave_planar_rgb_channel(
     }
 }
 
+inline bool is_duplex_source(const std::string& source) {
+    std::string folded;
+    folded.reserve(source.size());
+    for (const unsigned char ch : source)
+        folded.push_back(static_cast<char>(std::tolower(ch)));
+    return folded.find("duplex") != std::string::npos ||
+           folded.find("double-sided") != std::string::npos ||
+           folded.find("two-sided") != std::string::npos;
+}
+
 inline bool is_adf_source(const std::string& source) {
     std::string folded;
     folded.reserve(source.size());
