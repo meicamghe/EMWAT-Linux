@@ -30,7 +30,7 @@ Status: bounded ADF page batching and ordered 8-bit planar RGB assembly are impl
 - Read lengths, zero-progress reads, excess bytes, incomplete payloads and stride arithmetic are validated.
 - If a later page fails, the API throws rather than presenting a partial batch as a complete successful scan.
 - Feeder-empty is recognized as `SANE_STATUS_NO_DOCS` from the next `sane_start()` boundary or from `sane_read()` before any bytes of the next page. The same status after a partial page/frame is an error. Paper jam, cover open, I/O errors and cancellation remain explicit failures.
-- The ADF classifier is intentionally conservative: only an explicitly supplied source string containing `ADF` or `Automatic Document Feeder` activates batch mode. The normal SANE option setter still verifies that the device actually exposes a compatible `source` option.
+- The ADF classifier is intentionally conservative: only an explicitly supplied source string beginning with `ADF` or `Automatic Document Feeder` activates batch mode. Source labels containing `duplex`, `double-sided` or `two-sided` are excluded until side-order semantics are verified. The normal SANE option setter still verifies that the device actually exposes a compatible `source` option.
 
 ## Remaining implementation work
 
