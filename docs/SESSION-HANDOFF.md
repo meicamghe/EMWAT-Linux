@@ -1083,7 +1083,7 @@ Do not implement guessed `signData` joining or claim end-to-end Almas registrati
 ### Important corrections
 1. `0x004563A8` is `FixDirectionInFarsiNumericMode`, not a list constructor. The two objects in `OnControlerNotify` are created by helper `0x0040414C` using global/class reference `0x0062F810`.
 2. Strings `0x004BB754` and `0x004BB76C` decode to `.easd` and `.easz`. The path at `TWordViwer+0x80` is direction-normalized and these suffixes are appended.
-3. `0x00452C10` constructs the `T7zOutArchive` interface returned by `T7zPlugin`; `0x00456DFC` is `Emwatutils.euUnArchive`. Its two inputs are `TStringList` instances. Interface slot `+0x10` reaches `AddFiles` (`0x453F34`), slot `+0x18` reaches `SaveToStream` (`0x454668`), and slot `+0x28` reaches `0x4547E8`, which stores the input string in field `+0x38` = `FPassword`. Thus `mW@Tlogs43end_+` is the archive password. The path `.easd` is the archive entry name and `.easz` is the output archive path.
+3. SUPERSEDED: the earlier interpretation of output interface slot `+0x28` as assigning `FPassword` was based on an incorrect field/method attribution. Current VMT evidence maps `+0x28` to the progress-callback method; it is not a confirmed password setter.
 4. The exact VMT inspection proves `TEmwatMethod` slot `+0x0C` is the shared public Invoke wrapper `0x0046C9E0` (TD32 label `Finalization`); slot `+0x10` is the abstract/error stub `0x00401068`. The wrapper calls the inner dictionary/XML helper `0x0046C82C`, then dispatches the concrete subclass through VMT slot `+0x10`.
 5. `TEditWordDocument` inherits `TEmwatMethod`; its VMT slot `+0x10` points to `0x005EE82C`, TD32-decorated as `TScanDocument.PerformMethod`. `TScanDocument` VMT slot `+0x10` points to `0x005EEB48`, TD32-decorated as `TFaxDocument.PerformMethod`. Class resolution and the wrapper-to-subclass VMT dispatch are confirmed; preserve the pointer/name discrepancies.
 
@@ -1127,11 +1127,11 @@ Do not implement guessed `signData` joining or claim end-to-end Almas registrati
 
 
 ### Archive path resolved (Run 148)
-- Artifact `14227611377` proves the `euUnArchive` path is building a password-protected 7z output archive, despite its helper name.
+- Artifact `14227611377` establishes the output writer path and SevenZip wrapper, but does not prove that the resulting archive is encrypted.
 - Interface `+0x10` → `T7zOutArchive.AddFiles` (`0x453F34`): first TStringList value is the source file path (`TWordViwer+0xA0`); second is the archive entry name (base path + `.easd`).
 - Interface `+0x18` → `T7zOutArchive.SaveToStream` (`0x454668`): saves to base path + `.easz`.
-- Interface `+0x28` → `0x4547E8`: despite TD32 label `SetProgressCallback`, body stores the input string in field `+0x38`, identified by the T7zOutArchive field table as `FPassword`. Therefore `mW@Tlogs43end_+` is the archive password assigned in this path. The separate `SetPassword` at `0x4547DC` is a no-op.
-- Remaining: resolve global `0x62F800` to exact stream class; trace the callback that consumes FPassword; then capture a synthetic runtime archive if possible. Do not claim the archive has been validated at runtime.
+- Interface `+0x28` → `0x4547E8`: mapped as the progress-callback method. The earlier inference that its input was definitively the writer password is withdrawn. `T7zOutArchive.SetPassword` at `0x4547DC` is a no-op stub. No confirmed writer password value/provider is established. Therefore
+- Remaining: resolve the output stream and callback semantics, determine actual runtime encryption flags/password source, and capture a synthetic runtime archive if possible. Do not claim encryption or interoperability is validated.
 
 
 ### Confirmed service-to-BPL dispatch correction
