@@ -454,7 +454,6 @@ ImagePage read_started_sane_page(
         throw ScannerError("Scanner produced an invalid planar RGB image");
     return ImagePage{std::move(pixels), dpi_x, dpi_y};
 }
-} // namespace
 } // namespace sane_detail
 
 const sane_detail::SaneScanApi& sane_detail::real_sane_scan_api() noexcept {
