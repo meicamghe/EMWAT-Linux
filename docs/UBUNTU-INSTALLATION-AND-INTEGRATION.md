@@ -282,11 +282,16 @@ runtime failure to surface to the desktop supervisor.
 
 ## GTK desktop control shell (initial)
 
-Install the optional desktop dependencies on Ubuntu:
+Install the optional desktop dependencies on Ubuntu. A virtual environment
+with system site packages keeps Ubuntu's PyGObject bindings visible while
+avoiding a system-wide pip install:
 
 ```bash
-sudo apt install python3-gi gir1.2-gtk-4.0
-python3 -m pip install .
+sudo apt install python3-venv python3-gi gir1.2-gtk-4.0 desktop-file-utils
+python3 -m venv --system-site-packages "$HOME/.local/share/emwat/venv"
+"$HOME/.local/share/emwat/venv/bin/pip" install ./python
+. "$HOME/.local/share/emwat/venv/bin/activate"
+sh packaging/install-desktop-entry.sh
 emwat-linux
 ```
 
