@@ -2,6 +2,7 @@ import threading
 import unittest
 
 from emwat_linux.application_runtime import BridgeRuntime, BridgeRuntimeState
+from emwat_linux.bridge import BridgeHTTPServer, BridgeResponse
 
 
 class FakeServer:
@@ -38,6 +39,16 @@ class BridgeRuntimeTests(unittest.TestCase):
         self.assertEqual(runtime.state, BridgeRuntimeState.RUNNING)
         runtime.close()
         self.assertTrue(server.closed)
+        self.assertEqual(runtime.state, BridgeRuntimeState.STOPPED)
+
+    def test_immediate_close_after_real_bridge_start_is_safe(self):
+        server = BridgeHTTPServer(
+            lambda _request: BridgeResponse(b""),
+            require_origin=False,
+        )
+        runtime = BridgeRuntime(server)
+        runtime.start()
+        runtime.close()
         self.assertEqual(runtime.state, BridgeRuntimeState.STOPPED)
 
     def test_runtime_is_one_shot(self):
