@@ -11,6 +11,7 @@ requires-python = ">=3.10"
 [project.scripts]
 emwat-linux-doctor = "emwat_linux.doctor:main"
 emwat-linux = "emwat_linux.gtk_desktop:main"
+emwat-linux-desktop-entry = "emwat_linux.desktop_entry:main"
 
 [project.optional-dependencies]
 recovery-encryption = ["cryptography>=42,<47"]
