@@ -3049,3 +3049,23 @@ The next meaningful Almas acceptance input is a sanitized, synthetic-or-test-acc
   desktop logout/signal handling or live Almas/browser integration.
 - PR #2 remains open, Draft, and unmerged. No production launcher, service
   unit, or complete desktop installer is claimed.
+
+
+## Bridge runtime cleanup failure handling — 2026-11-23
+
+- Hardened `BridgeRuntime.close()` so an exception from `shutdown()` does not
+  skip the attempt to close the listening socket or join the serve thread.
+  Cleanup failures are retained on the runtime and transition it to FAILED.
+- A socket-close failure is no longer mislabeled as STOPPED. A later close
+  attempt retries socket closure when the socket has not been confirmed closed.
+  Closing a never-started runtime follows the same confirmed-close rule.
+- Added regression tests for shutdown failure with continued cleanup and
+  retrying a failed close-before-start.
+- Python bridge run `45150705819` on code/test head `a300e25f`: **255 tests,
+  253 passed and 2 optional skips**.
+- LibreOffice UNO run `45150705730`: success.
+- Native image core run `45150705790`: build/CTest, ASan/UBSan, and Debian
+  package lifecycle all passed.
+- The cleanup logic is headless lifecycle infrastructure; it does not add
+  desktop signal handling, a GTK application entrypoint, or a production
+  launcher. PR #2 remains open, Draft, and unmerged.
