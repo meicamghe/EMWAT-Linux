@@ -31,6 +31,8 @@ class CloseLifecycleTrace:
             "disposing",
             "save_done",
             "save_as_done",
+            "saved_state_succeeded",
+            "saved_state_failed",
         }
     )
 
