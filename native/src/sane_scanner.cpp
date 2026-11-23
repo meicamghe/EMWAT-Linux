@@ -321,13 +321,10 @@ void copy_planar_channel(
     PixelBuffer& output,
     std::size_t channel
 ) {
-    const auto width = static_cast<std::size_t>(output.width);
-    for (std::size_t y = 0; y < output.height; ++y) {
-        const auto source_offset = y * plane_stride;
-        const auto target_offset = y * output.stride;
-        for (std::size_t x = 0; x < width; ++x)
-            output.bytes[target_offset + x * 3 + channel] = plane[source_offset + x];
-    }
+    detail::interleave_planar_rgb_channel(
+        plane, plane_stride, output.width, output.height,
+        output.bytes, output.stride, channel
+    );
 }
 
 ImagePage read_started_sane_page(
@@ -405,7 +402,7 @@ ImagePage read_started_sane_page(
         handle, params, page_byte_limit - static_cast<std::uint64_t>(output_bytes)
     );
     copy_planar_channel(plane, plane_stride, pixels, 0);
-    plane.clear();
+    std::vector<std::uint8_t>().swap(plane);
 
     for (const auto [expected_format, channel, should_be_last] : {
              std::tuple<SANE_Frame, std::size_t, bool>{SANE_FRAME_GREEN, 1, false},
@@ -428,7 +425,7 @@ ImagePage read_started_sane_page(
             handle, next, page_byte_limit - static_cast<std::uint64_t>(output_bytes)
         );
         copy_planar_channel(plane, plane_stride, pixels, channel);
-        plane.clear();
+        std::vector<std::uint8_t>().swap(plane);
     }
 
     if (!pixels.valid())
