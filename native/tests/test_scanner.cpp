@@ -169,6 +169,26 @@ int main() {
         assert(state.cancel_calls == 1);
     }
 
+    // Planar output is rejected before allocation/read when the remaining budget is too small.
+    {
+        FakeSaneState state;
+        state.frames = {fake_frame(SANE_FRAME_RED, false, {1, 2})};
+        const auto handle = reinterpret_cast<SANE_Handle>(&state);
+        assert(fake_sane_api.start(handle) == SANE_STATUS_GOOD);
+        bool rejected = false;
+        try {
+            (void)sane_detail::read_started_sane_page(
+                handle, std::nullopt, std::nullopt, fake_sane_api, 5, false
+            );
+        } catch (const ScannerError&) {
+            rejected = true;
+        }
+        fake_sane_api.cancel(handle);
+        assert(rejected);
+        assert(state.offset == 0);
+        assert(state.cancel_calls == 1);
+    }
+
     // Interleaved RGB is preserved without channel reordering.
     {
         FakeSaneState state;
