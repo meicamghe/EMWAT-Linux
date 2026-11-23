@@ -3125,3 +3125,14 @@ The next meaningful Almas acceptance input is a sanitized, synthetic-or-test-acc
 - Current code/test CI for this follow-up is pending. The previous successful
   runtime tests predate this bounded-join change; do not claim it verified
   until the new Python run completes.
+
+
+## Recovery picker UX follow-up — 2026-11-23
+
+- The GTK Recovery view now explicitly states that local recovery snapshots are
+  working copies, not the final document registered in Almas.
+- Discard confirmation uses Cancel as its default response.
+- After a confirmed discard, the view requests a fresh state with no stale
+  selection so the controller selects the newest remaining valid snapshot.
+- Added a GTK smoke test for rendering a populated catalog and selecting the
+  controller-provided newest entry. Current-head GTK CI is pending.
