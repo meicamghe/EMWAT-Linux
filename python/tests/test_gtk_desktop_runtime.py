@@ -65,6 +65,11 @@ class GtkDesktopRuntimeTests(unittest.TestCase):
         selected = listing.get_selected_row()
         self.assertIsNotNone(selected)
         self.assertEqual(selected.get_name(), "session-newest")
+        actions = root.get_last_child()
+        restore_button = actions.get_first_child().get_next_sibling()
+        discard_button = restore_button.get_next_sibling()
+        self.assertTrue(restore_button.get_sensitive())
+        self.assertTrue(discard_button.get_sensitive())
 
     def test_z_main_window_can_reopen_while_recovery_window_is_open(self):
         self.assertTrue(self.extra_windows)
@@ -89,6 +94,11 @@ class GtkDesktopRuntimeTests(unittest.TestCase):
         window = build_recovery_picker(self.application, controller)
         self.extra_windows.append(window)
         self.assertEqual(window.get_title(), "EMWAT — Recovery")
+        actions = window.get_child().get_last_child()
+        restore_button = actions.get_first_child().get_next_sibling()
+        discard_button = restore_button.get_next_sibling()
+        self.assertFalse(restore_button.get_sensitive())
+        self.assertFalse(discard_button.get_sensitive())
         window.present()
 
 
