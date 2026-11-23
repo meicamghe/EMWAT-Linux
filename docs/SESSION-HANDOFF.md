@@ -1279,3 +1279,13 @@ Do not implement guessed `signData` joining or claim end-to-end Almas registrati
 - Python run `45177757461` on prior code head `2f8ce039d0395c2870cdd743600e91bdf18e0b21` passed 277 tests; UNO run `45177756605` on that prior head passed 24 tests. These are not a substitute for final-head CI.
 - The SANE `scan_one()` terminal-frame guard and archive evidence correction are also present on the branch. No ADF/duplex or `.easz` interoperability claim is made.
 - PR #2 remains open, Draft and unmerged.
+
+
+## 2026-11-23 — automatic evidence-bounded template inventory
+
+- Added `emwat_linux.template_mapping.inspect_template_mapping(config, catalog)` and unit tests.
+- The inventory compares custom-property names with Writer bookmarks, named ranges, sections, tables, frames, graphic objects, document indexes and `DocInfo.Custom` text fields using case-insensitive exact matches only.
+- Critical safety correction: the report does **not** attach a Writer property index to a WordConfig XML field index. Equal counts are only a count observation; Word COM and LibreOffice property enumeration order equivalence remains unproven. All XML field IDs remain explicitly unassociated.
+- The inventory is captured automatically alongside the existing metadata-only Word/Writer evidence from a single UNO catalog snapshot. It neither reads property values nor modifies the document.
+- Added unit coverage and a live UNO integration assertion that the report preserves the unassociated-field boundary.
+- CI for the current branch head is triggered by the latest commits; do not claim it passed until all four workflows complete on the same head.
