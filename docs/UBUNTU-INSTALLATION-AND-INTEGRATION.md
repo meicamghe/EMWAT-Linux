@@ -226,3 +226,33 @@ The command is read-only: it does not start the bridge, create configuration,
 inspect documents, or modify recovery data. A successful report is a local
 dependency preflight only; it does not establish Almas compatibility or mean
 that the production bridge service/desktop launcher is available.
+
+## 10. Supervised bridge runtime
+
+A small, one-shot `BridgeRuntime` now owns the thread lifecycle for an
+already-configured `BridgeHTTPServer`. It starts the server on a named
+non-daemon thread, exposes a read-only lifecycle state, supports a context
+manager, and performs shutdown followed by socket close and thread join.
+The runtime deliberately does not invent Origin allowlists, Almas method
+handlers, or the unresolved Cancel response factory.
+
+Example for an integration that already has verified deployment settings:
+
+```python
+from emwat_linux.application import create_libreoffice_bridge_server
+from emwat_linux.application_runtime import BridgeRuntime
+
+server = create_libreoffice_bridge_server(
+    allowed_origins=verified_local_origins,
+    allowed_parent_origins=verified_almas_origins,
+    cancel_response_factory=verified_cancel_response_factory,
+)
+with BridgeRuntime(server):
+    run_desktop_event_loop()
+```
+
+This is lifecycle infrastructure, not yet a production CLI, desktop session
+supervisor, systemd user unit, or installer. The runtime is one-shot; create a
+new configured server/runtime after shutdown rather than attempting restart.
+Its automated tests use a controlled fake server and do not replace signal,
+desktop logout, real LibreOffice, or Almas end-to-end acceptance.
