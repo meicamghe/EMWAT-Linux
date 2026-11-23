@@ -399,14 +399,7 @@ class LibreOfficeAdapter:
             # Stage-A WordConfig/Writer inventory is read-only. A catalog failure
             # must never prevent opening the user's document; retain only a
             # value-free status code for diagnostics.
-            handle.word_writer_evidence = None
-            handle.word_writer_evidence_error = None
-            try:
-                handle.word_writer_evidence = self.audit_word_writer_evidence(
-                    handle, request.config
-                )
-            except Exception:
-                handle.word_writer_evidence_error = "writer_inventory_unavailable"
+            self._capture_word_writer_evidence(handle, request.config)
             close_listener = _DocumentCloseListener(
                 document,
                 _file_url(saved_state_path),
@@ -560,6 +553,22 @@ class LibreOfficeAdapter:
             raise TypeError("invalid_libreoffice_handle")
         with handle.snapshot_lock:
             return inspect_writer_document(handle.document)
+
+    def _capture_word_writer_evidence(
+        self,
+        handle: _OfficeHandle,
+        config: WordDocumentConfig,
+    ) -> None:
+        """Attach a value-free Stage-A inventory without blocking document open."""
+        handle.word_writer_evidence = None
+        handle.word_writer_evidence_error = None
+        try:
+            handle.word_writer_evidence = self.audit_word_writer_evidence(
+                handle, config
+            )
+        except Exception:
+            # Do not retain UNO exception text: it can contain document details.
+            handle.word_writer_evidence_error = "writer_inventory_unavailable"
 
     def audit_word_writer_evidence(
         self,
