@@ -3086,6 +3086,7 @@ The next meaningful Almas acceptance input is a sanitized, synthetic-or-test-acc
   activation smoke test for environments with PyGObject installed.
 - Recovery view remains opt-in through an injected controller; no default
   recovery root, encryption key, or retention policy is invented.
+- Added a freedesktop `.desktop` launcher and per-user installer that resolves the active `emwat-linux` executable (including a virtual-environment path). The GTK workflow validates the desktop file and exercises installation into a temporary user data directory.
 - The new GTK activation workflow is the first real GTK runtime validation
   path. Until it completes successfully on the current branch head, no GTK
   runtime pass is claimed. The shell is not yet a full production desktop
