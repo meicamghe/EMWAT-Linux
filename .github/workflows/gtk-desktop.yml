@@ -27,7 +27,17 @@ jobs:
       - name: Install GTK 4, PyGObject, and headless display
         run: |
           sudo apt-get update
-          sudo apt-get install -y python3-gi gir1.2-gtk-4.0 python3-cryptography xvfb
+          sudo apt-get install -y python3-gi gir1.2-gtk-4.0 python3-cryptography xvfb desktop-file-utils
+      - name: Validate per-user desktop launcher installer
+        run: |
+          sh -n packaging/install-desktop-entry.sh
+          desktop-file-validate packaging/org.emwat.Linux.desktop
+          temp_root=$(mktemp -d)
+          mkdir -p "$temp_root/bin"
+          printf '#!/bin/sh\\nexit 0\\n' > "$temp_root/bin/emwat-linux"
+          chmod +x "$temp_root/bin/emwat-linux"
+          PATH="$temp_root/bin:$PATH" XDG_DATA_HOME="$temp_root/data" sh packaging/install-desktop-entry.sh
+          grep -F "Exec=$temp_root/bin/emwat-linux" "$temp_root/data/applications/org.emwat.Linux.desktop"
       - name: Run GTK application smoke tests
         env:
           PYTHONPATH: python/src
