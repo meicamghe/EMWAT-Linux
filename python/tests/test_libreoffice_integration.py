@@ -282,6 +282,14 @@ class LibreOfficeIntegrationTests(unittest.TestCase):
             self.assertIsNotNone(handle.word_writer_evidence)
             self.assertIsNone(handle.word_writer_evidence_error)
             self.assertEqual(handle.word_writer_evidence.fields, ())
+            self.assertIsNotNone(handle.template_mapping_inventory)
+            self.assertIsNone(handle.template_mapping_inventory_error)
+            self.assertFalse(
+                handle.template_mapping_inventory.property_order_equivalence_verified
+            )
+            self.assertEqual(
+                handle.template_mapping_inventory.unassociated_config_field_ids, ()
+            )
             user_properties = handle.document.getDocumentProperties().getUserDefinedProperties()
             self.assertEqual(
                 user_properties.getPropertyValue("EMWATIntegrationMarker"),
