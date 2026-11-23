@@ -130,8 +130,8 @@ Cancel-سپس-بستن دوباره، روی Ubuntu آزمایش شده و مو�
 
 ## Latest component verification — 2026-11-23
 
-- Python bridge: [workflow 45184251311](https://github.com/meicamghe/EMWAT-Linux/actions/runs/45184251311) passed **289 tests**; package install and the doctor, GTK application and desktop-entry helper console commands passed.
-- Native image core: [workflow 45184251505](https://github.com/meicamghe/EMWAT-Linux/actions/runs/45184251505) passed build/CTest (**4/4**), ASan/UBSan (**4/4**) and Debian package lifecycle.
+- Python bridge: [workflow 45186092495](https://github.com/meicamghe/EMWAT-Linux/actions/runs/45186092495) passed **289 tests**; package install and the doctor, GTK application and desktop-entry helper console commands passed.
+- Native image core: [workflow 45186091897](https://github.com/meicamghe/EMWAT-Linux/actions/runs/45186091897) passed build/CTest (**4/4**), ASan/UBSan (**4/4**) and Debian package lifecycle, including fake SANE page-reader tests.
 - GTK desktop: [workflow 45184251362](https://github.com/meicamghe/EMWAT-Linux/actions/runs/45184251362) passed **6 smoke tests**; per-user launcher install, desktop-file validation and uninstall passed.
 - LibreOffice UNO: [workflow 45182739787](https://github.com/meicamghe/EMWAT-Linux/actions/runs/45182739787) passed **25 tests** on a code-equivalent head; subsequent changes were scanner-native tests and documentation/workflow updates.
 
