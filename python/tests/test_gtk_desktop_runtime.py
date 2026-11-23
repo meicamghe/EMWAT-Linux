@@ -33,6 +33,15 @@ class GtkDesktopRuntimeTests(unittest.TestCase):
         self.assertIsInstance(self.main_window, self.Gtk.ApplicationWindow)
         self.assertEqual(self.main_window.get_title(), "EMWAT Linux")
 
+    def test_main_window_can_reopen_while_recovery_window_is_open(self):
+        self.assertTrue(self.extra_windows)
+        self.main_window.close()
+        self.application.activate()
+        reopened = self.application.get_active_window()
+        self.assertIsNotNone(reopened)
+        self.assertEqual(reopened.get_title(), "EMWAT Linux")
+        self.extra_windows.append(reopened)
+
     def test_recovery_picker_builds_with_empty_catalog(self):
         from types import SimpleNamespace
         from emwat_linux.gtk_recovery_view import build_recovery_picker
