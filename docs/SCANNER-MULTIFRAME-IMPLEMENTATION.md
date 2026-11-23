@@ -42,7 +42,7 @@ Status: bounded ADF page batching, ordered 8-bit planar RGB assembly, and an inj
 
 - ADF source classifier: explicit ADF values accepted; flatbed and generic document-table values rejected.
 - Single-page fallback when no ADF source is selected.
-- Fake SANE function-table tests exercise the production page reader for interleaved RGB, planar RED/GREEN/BLUE, multiple ADF pages, feeder-empty from read, partial-page NO_DOCS rejection, and invalid channel order.
+- Fake SANE function-table tests exercise the production page reader for interleaved RGB, planar RED/GREEN/BLUE, multiple ADF pages, feeder-empty from read, partial-page NO_DOCS rejection, start/read I/O failures, cleanup, and invalid channel order.
 - The bounded collector tests cover start/read failure, cancellation, empty feeder, exact/over page limits and byte-budget enforcement; the pure frame/interleaver tests cover geometry, terminal flags and padded stride.
 - Native build, CTest and ASan/UBSan.
 
