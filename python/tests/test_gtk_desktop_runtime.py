@@ -33,6 +33,34 @@ class GtkDesktopRuntimeTests(unittest.TestCase):
         self.assertIsInstance(self.main_window, self.Gtk.ApplicationWindow)
         self.assertEqual(self.main_window.get_title(), "EMWAT Linux")
 
+    def test_recovery_picker_selects_newest_metadata_row(self):
+        from types import SimpleNamespace
+        from emwat_linux.gtk_recovery_view import build_recovery_picker
+
+        entry = SimpleNamespace(
+            session_id="session-newest",
+            document_name="letter.doc",
+            size_bytes=128,
+            updated_at=1_800_000_000.0,
+        )
+        state = SimpleNamespace(
+            entries=(entry,),
+            selected_session_id=entry.session_id,
+            selected_entry=entry,
+            is_empty=False,
+        )
+        controller = SimpleNamespace(state=lambda _selected=None: state)
+        window = build_recovery_picker(self.application, controller)
+        self.extra_windows.append(window)
+
+        root = window.get_child()
+        status = root.get_first_child().get_next_sibling().get_next_sibling()
+        scroller = status.get_next_sibling()
+        listing = scroller.get_child()
+        selected = listing.get_selected_row()
+        self.assertIsNotNone(selected)
+        self.assertEqual(selected.get_name(), "session-newest")
+
     def test_z_main_window_can_reopen_while_recovery_window_is_open(self):
         self.assertTrue(self.extra_windows)
         self.main_window.close()
