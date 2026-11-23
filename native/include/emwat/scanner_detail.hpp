@@ -95,6 +95,27 @@ std::vector<Page> collect_bounded_pages(
     }
 }
 
+inline bool planar_rgb_frame_matches(
+    int actual_format,
+    int expected_format,
+    int actual_depth,
+    int expected_depth,
+    int actual_width,
+    int expected_width,
+    int actual_lines,
+    int expected_lines,
+    int actual_stride,
+    bool actual_last_frame,
+    bool expected_last_frame
+) noexcept {
+    return actual_format == expected_format &&
+           actual_depth == expected_depth &&
+           actual_width > 0 && actual_width == expected_width &&
+           actual_lines > 0 && actual_lines == expected_lines &&
+           actual_stride >= actual_width &&
+           actual_last_frame == expected_last_frame;
+}
+
 inline void interleave_planar_rgb_channel(
     const std::vector<std::uint8_t>& plane,
     std::size_t plane_stride,
