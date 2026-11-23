@@ -59,6 +59,17 @@ def build_recovery_picker(application: Any, controller: Any) -> Any:
     heading.set_xalign(0)
     outer.append(heading)
 
+    explanation = Gtk.Label(
+        label=(
+            "این نسخه‌ها فقط کپی‌های بازیابی محلی هستند و جایگزین سند نهایی "
+            "ثبت‌شده در الماس گام نیستند."
+        )
+    )
+    explanation.set_xalign(0)
+    explanation.set_wrap(True)
+    explanation.add_css_class("dim-label")
+    outer.append(explanation)
+
     status = Gtk.Label(label="")
     status.set_xalign(0)
     outer.append(status)
@@ -91,9 +102,9 @@ def build_recovery_picker(application: Any, controller: Any) -> Any:
         restore_button.set_sensitive(has_selection)
         discard_button.set_sensitive(has_selection)
 
-    def refresh(_button: Any = None) -> None:
+    def refresh(_button: Any = None, *, prefer_newest: bool = False) -> None:
         nonlocal selected_session
-        previous = selected_id() or selected_session
+        previous = None if prefer_newest else (selected_id() or selected_session)
         try:
             state = controller.state(previous)
         except Exception:
@@ -200,11 +211,12 @@ def build_recovery_picker(application: Any, controller: Any) -> Any:
             try:
                 if response == Gtk.ResponseType.OK:
                     controller.discard(session_id, confirmed=True)
-                    refresh()
+                    refresh(prefer_newest=True)
             except Exception:
                 _show_error(Gtk, window, "حذف نسخه بازیابی انجام نشد.")
             finally:
                 widget.destroy()
+        dialog.set_default_response(Gtk.ResponseType.CANCEL)
         dialog.connect("response", on_confirm)
         dialog.show()
 
