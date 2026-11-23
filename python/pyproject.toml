@@ -8,6 +8,9 @@ version = "0.1.0"
 description = "Native Linux loopback transport foundation for EMWAT"
 requires-python = ">=3.10"
 
+[project.scripts]
+emwat-linux-doctor = "emwat_linux.doctor:main"
+
 [project.optional-dependencies]
 recovery-encryption = ["cryptography>=42,<47"]
 recovery-keyring = ["keyring>=25,<27"]
