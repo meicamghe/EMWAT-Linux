@@ -169,9 +169,11 @@ class BridgeSupervisorTests(unittest.TestCase):
         server.stopped.set()
         runtime._thread.join(2)
 
-        with self.assertRaisesRegex(RuntimeError, "unexpected_runtime_exit"):
-            supervisor.start()
+        # Observe the asynchronous exit without issuing a second start.
         self.assertEqual(supervisor.state, BridgeSupervisorState.FAILED)
+        self.assertIsNotNone(supervisor.failure)
+        with self.assertRaisesRegex(RuntimeError, "requires_successful_cleanup"):
+            supervisor.start()
 
         supervisor.stop()
         self.assertEqual(supervisor.state, BridgeSupervisorState.STOPPED)
