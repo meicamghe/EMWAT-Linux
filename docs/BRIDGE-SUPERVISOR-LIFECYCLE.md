@@ -33,6 +33,16 @@ or guessed Cancel/Discard responses.
   next start clears it.
 - `stop()` before the first start is safe and idempotent.
 
-The supervisor does not yet own a persistent settings store, desktop-session
-notifications, automatic crash restart, or a GTK start/stop control. Those
-require deployment configuration and user-visible failure handling first.
+## GTK control boundary
+
+The GTK shell accepts an optional, explicitly injected supervisor. When one is
+provided, Start and Stop invoke it on worker threads; the GTK main thread is not
+blocked by lifecycle operations. The displayed state is refreshed after each
+operation and polled on the GTK main context so an unexpected serving-thread
+exit can become visible without requiring another button click. Closing the
+window stops the poll on its next tick.
+
+The normal `main()` entrypoint still injects no supervisor. Consequently the
+controls are intentionally disabled in the shipped default shell and no
+listener starts automatically. Persistent deployment settings, a verified
+Almas configuration, and desktop-session notifications remain future work.
