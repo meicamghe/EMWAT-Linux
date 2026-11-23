@@ -1,6 +1,7 @@
 import base64
 import tempfile
 import unittest
+from typing import get_type_hints
 from pathlib import Path
 
 from emwat_linux.recovery_key_provider import (
@@ -30,6 +31,13 @@ class _FakeKeyring:
 
 
 class RecoveryKeyProviderTests(unittest.TestCase):
+    def test_public_factory_annotations_are_resolvable(self):
+        from emwat_linux.recovery_key_provider import create_secret_service_encrypted_store
+
+        hints = get_type_hints(create_secret_service_encrypted_store)
+        self.assertIn("keyring_module", hints)
+        self.assertIn("return", hints)
+
     def test_secret_service_key_is_created_once_and_reused(self):
         keyring = _FakeKeyring()
         first = get_or_create_secret_service_key(keyring_module=keyring)
