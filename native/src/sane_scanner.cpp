@@ -30,7 +30,7 @@ public:
         SANE_Int version = 0;
         const auto status = sane_init(&version, nullptr);
         if (status != SANE_STATUS_GOOD)
-            throw ScannerError(std::string("SANE initialization failed: ") + api.status_string(status));
+            throw ScannerError(std::string("SANE initialization failed: ") + sane_strstatus(status));
         active_ = true;
     }
     ~SaneSession() { if (active_) sane_exit(); }
@@ -45,7 +45,7 @@ public:
     explicit SaneHandle(const std::string& id) {
         const auto status = sane_open(reinterpret_cast<const SANE_Char*>(id.c_str()), &handle_);
         if (status != SANE_STATUS_GOOD)
-            throw ScannerError(std::string("Cannot open scanner: ") + api.status_string(status));
+            throw ScannerError(std::string("Cannot open scanner: ") + sane_strstatus(status));
         active_ = true;
     }
     ~SaneHandle() { if (active_) sane_close(handle_); }
@@ -311,7 +311,7 @@ std::vector<std::uint8_t> read_sane_frame_bytes(
         if (status == SANE_STATUS_NO_DOCS && allow_feeder_empty && bytes.empty())
             throw detail::ScanBatchEnd{};
         if (status != SANE_STATUS_GOOD)
-            throw ScannerError(std::string("Scanner read failed: ") + sane_strstatus(status));
+            throw ScannerError(std::string("Scanner read failed: ") + api.status_string(status));
         if (received == 0)
             throw ScannerError("Scanner returned no data before end-of-frame");
     }
@@ -331,6 +331,8 @@ void copy_planar_channel(
         output.bytes, output.stride, channel
     );
 }
+
+} // namespace
 
 ImagePage read_started_sane_page(
     SANE_Handle handle,
