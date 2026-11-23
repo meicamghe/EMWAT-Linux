@@ -103,8 +103,7 @@ class BridgeRuntime:
             state = self._state
             thread = self._thread
             if state is BridgeRuntimeState.CREATED:
-                self._state = BridgeRuntimeState.STOPPED
-                self._closed_socket = True
+                self._state = BridgeRuntimeState.STOPPING
                 close_socket = True
                 shutdown_server = False
             elif state is BridgeRuntimeState.RUNNING:
@@ -112,26 +111,44 @@ class BridgeRuntime:
                 close_socket = True
                 shutdown_server = True
             elif state is BridgeRuntimeState.STOPPING:
-                close_socket = False
+                close_socket = not self._closed_socket
                 shutdown_server = False
             elif state is BridgeRuntimeState.FAILED:
                 close_socket = not self._closed_socket
-                self._closed_socket = True
                 shutdown_server = False
             else:
                 return
 
+        close_error: BaseException | None = None
         if shutdown_server:
-            self._server.shutdown()
+            try:
+                self._server.shutdown()
+            except BaseException as exc:
+                close_error = exc
+
         if close_socket:
-            self._server.server_close()
-            with self._lock:
-                self._closed_socket = True
+            try:
+                self._server.server_close()
+            except BaseException as exc:
+                if close_error is None:
+                    close_error = exc
+            else:
+                with self._lock:
+                    self._closed_socket = True
+
         if thread is not None:
             thread.join()
+
         with self._lock:
-            if self._state is BridgeRuntimeState.STOPPING:
+            if close_error is not None:
+                if self._failure is None:
+                    self._failure = close_error
+                self._state = BridgeRuntimeState.FAILED
+            elif self._state is BridgeRuntimeState.STOPPING:
                 self._state = BridgeRuntimeState.STOPPED
+
+        if close_error is not None:
+            raise close_error
 
     def __enter__(self) -> "BridgeRuntime":
         self.start()
