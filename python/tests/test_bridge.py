@@ -73,6 +73,9 @@ class BridgeHTTPServerTests(unittest.TestCase):
             "https://office.example?query=1",
             "https://office.example#fragment",
             "https://office.example:not-a-port",
+            "https://office.example:",
+            "http://localhost:",
+            "https://[::1]:",
             "https://",
         )
         for origin in invalid:
