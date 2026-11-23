@@ -78,6 +78,29 @@ class EmwatFieldCatalogTests(unittest.TestCase):
             ["LetterSignerPer3", "SignNumberOfSigner3", "LetterSignerDep3"],
         )
 
+    def test_builds_duplicate_field_occurrences_in_original_order(self):
+        fields = (
+            "LetterSignerPer2",
+            "LetterSignerDep2",
+            "LetterSignerPer2",
+            "SignNumberOfSigner2",
+        )
+        slots = build_indexed_signer_slots(fields)
+        self.assertEqual(len(slots), 1)
+        self.assertEqual(
+            [field.field_id for field in slots[0].fields],
+            [
+                "LetterSignerPer2",
+                "LetterSignerDep2",
+                "LetterSignerPer2",
+                "SignNumberOfSigner2",
+            ],
+        )
+        self.assertEqual(
+            [field.family for field in slots[0].fields],
+            ["person", "department", "person", "signature_number"],
+        )
+
     def test_rejects_non_text_field_ids(self):
         with self.assertRaisesRegex(TypeError, "field_id_must_be_text"):
             parse_indexed_signer_field(None)
