@@ -32,6 +32,17 @@ class RecoverySnapshotStoreTests(unittest.TestCase):
             store.remove_session(session_id)
             self.assertEqual(store.list_snapshots(), ())
 
+    def test_symlink_aliases_share_the_same_in_process_root_lock(self):
+        from emwat_linux.recovery_store import _root_lock
+
+        with tempfile.TemporaryDirectory() as temporary:
+            real_root = Path(temporary) / "real-recovery"
+            real_root.mkdir()
+            alias_root = Path(temporary) / "recovery-alias"
+            alias_root.symlink_to(real_root, target_is_directory=True)
+
+            self.assertIs(_root_lock(real_root), _root_lock(alias_root))
+
     def test_concurrent_store_instances_keep_manifest_and_snapshot_consistent(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary) / "recovery"
