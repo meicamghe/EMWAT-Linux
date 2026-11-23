@@ -7,6 +7,10 @@
 #include <optional>
 #include <string>
 #include <cctype>
+#include <cstdint>
+#include <stdexcept>
+#include <utility>
+#include <vector>
 
 namespace emwat::detail {
 
@@ -34,6 +38,54 @@ inline std::optional<std::int32_t> encode_sane_fixed_resolution(double dpi) noex
         return std::nullopt;
     }
     return static_cast<std::int32_t>(rounded);
+}
+
+template <typename Page, typename StartNext, typename ReadPage, typename PageSize, typename Cancel>
+std::vector<Page> collect_bounded_pages(
+    StartNext&& start_next,
+    ReadPage&& read_page,
+    PageSize&& page_size,
+    Cancel&& cancel,
+    std::size_t max_pages,
+    std::uint64_t max_total_bytes
+) {
+    if (max_pages == 0 || max_total_bytes == 0)
+        throw std::invalid_argument("invalid_scan_batch_limits");
+
+    std::vector<Page> pages;
+    std::uint64_t total_bytes = 0;
+    bool cancel_called = false;
+    const auto cancel_once = [&]() {
+        if (!cancel_called) {
+            cancel_called = true;
+            cancel();
+        }
+    };
+
+    try {
+        while (pages.size() < max_pages) {
+            if (!start_next()) {
+                cancel_once();
+                return pages;
+            }
+            Page page = read_page();
+            const auto bytes = static_cast<std::uint64_t>(page_size(page));
+            if (bytes > max_total_bytes - total_bytes)
+                throw std::runtime_error("scan_batch_byte_limit_exceeded");
+            total_bytes += bytes;
+            pages.push_back(std::move(page));
+        }
+
+        // A final probe distinguishes exactly-at-limit completion from truncation.
+        if (!start_next()) {
+            cancel_once();
+            return pages;
+        }
+        throw std::runtime_error("scan_batch_page_limit_exceeded");
+    } catch (...) {
+        cancel_once();
+        throw;
+    }
 }
 
 inline bool is_adf_source(const std::string& source) noexcept {
