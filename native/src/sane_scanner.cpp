@@ -357,7 +357,15 @@ ImagePage SaneScannerBackend::scan_one(const std::string& device_id, const ScanO
     }
 
     if (pixels.bytes.size() != stride * height) {
+        sane_cancel(device.get());
         throw ScannerError("Scanner returned an incomplete image frame");
+    }
+    // scan_one() is deliberately a single-frame API. Returning a non-terminal
+    // frame as a complete page would silently corrupt planar/multi-frame scans.
+    // The batch API will own the full frame-sequence state machine.
+    if (!params.last_frame) {
+        sane_cancel(device.get());
+        throw ScannerError("Scanner returned a multi-frame page; use scan_pages()");
     }
     if (!pixels.valid()) throw ScannerError("Scanner produced an invalid pixel buffer");
     return ImagePage{std::move(pixels), dpi_x, dpi_y};
