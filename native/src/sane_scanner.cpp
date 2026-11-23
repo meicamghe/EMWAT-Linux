@@ -375,7 +375,10 @@ ImagePage SaneScannerBackend::scan_one(const std::string& device_id, const ScanO
     const auto status = sane_start(device.get());
     if (status != SANE_STATUS_GOOD)
         throw ScannerError(std::string("Cannot start scan: ") + sane_strstatus(status));
-    return read_started_sane_page(device.get(), dpi_x, dpi_y);
+    auto page = read_started_sane_page(device.get(), dpi_x, dpi_y);
+    // SANE requires cancellation/reset after a completed single-image transfer.
+    sane_cancel(device.get());
+    return page;
 }
 
 std::vector<ImagePage> SaneScannerBackend::scan_pages(
@@ -392,7 +395,7 @@ std::vector<ImagePage> SaneScannerBackend::scan_pages(
     }
 
     constexpr std::size_t max_adf_pages = 100;
-    constexpr std::size_t max_batch_bytes = 4ULL * 1024ULL * 1024ULL * 1024ULL;
+    constexpr std::uint64_t max_batch_bytes = 4ULL * 1024ULL * 1024ULL * 1024ULL;
     std::lock_guard<std::mutex> lock(sane_mutex());
     SaneSession session;
     SaneHandle device(device_id);
@@ -403,7 +406,7 @@ std::vector<ImagePage> SaneScannerBackend::scan_pages(
 
     const auto [dpi_x, dpi_y] = read_scan_dpi(device.get());
     std::vector<ImagePage> pages;
-    std::size_t total_bytes = 0;
+    std::uint64_t total_bytes = 0;
 
     for (std::size_t index = 0; index < max_adf_pages; ++index) {
         const auto status = sane_start(device.get());
@@ -417,7 +420,7 @@ std::vector<ImagePage> SaneScannerBackend::scan_pages(
         }
 
         auto page = read_started_sane_page(device.get(), dpi_x, dpi_y);
-        const auto page_bytes = page.pixels.bytes.size();
+        const auto page_bytes = static_cast<std::uint64_t>(page.pixels.bytes.size());
         if (page_bytes > max_batch_bytes - total_bytes) {
             sane_cancel(device.get());
             throw ScannerError("ADF batch exceeds the 4 GiB safety limit");
