@@ -1,7 +1,10 @@
 #include "emwat/scanner.hpp"
 #include "emwat/scanner_detail.hpp"
+#include "sane_scanner_test_support.hpp"
 
+#include <algorithm>
 #include <array>
+#include <cstring>
 #include <cstdint>
 #include <limits>
 #include <stdexcept>
@@ -15,6 +18,100 @@
 #include <cassert>
 
 using namespace emwat;
+
+namespace {
+struct FakeSaneFrame {
+    SANE_Parameters parameters{};
+    std::vector<std::uint8_t> bytes;
+    SANE_Status terminal_status{SANE_STATUS_EOF};
+};
+
+struct FakeSaneState {
+    std::vector<FakeSaneFrame> frames;
+    std::size_t next_frame{};
+    std::size_t current_frame{std::numeric_limits<std::size_t>::max()};
+    std::size_t offset{};
+    std::size_t start_calls{};
+    std::size_t cancel_calls{};
+};
+
+FakeSaneState& fake_sane_state(SANE_Handle handle) {
+    return *static_cast<FakeSaneState*>(handle);
+}
+
+SANE_Status fake_sane_start(SANE_Handle handle) {
+    auto& state = fake_sane_state(handle);
+    ++state.start_calls;
+    if (state.next_frame >= state.frames.size()) return SANE_STATUS_NO_DOCS;
+    state.current_frame = state.next_frame++;
+    state.offset = 0;
+    return SANE_STATUS_GOOD;
+}
+
+SANE_Status fake_sane_get_parameters(SANE_Handle handle, SANE_Parameters* params) {
+    auto& state = fake_sane_state(handle);
+    if (!params || state.current_frame >= state.frames.size())
+        return SANE_STATUS_INVAL;
+    *params = state.frames[state.current_frame].parameters;
+    return SANE_STATUS_GOOD;
+}
+
+SANE_Status fake_sane_read(
+    SANE_Handle handle, SANE_Byte* buffer, SANE_Int length, SANE_Int* received
+) {
+    auto& state = fake_sane_state(handle);
+    if (!buffer || !received || length <= 0 ||
+        state.current_frame >= state.frames.size())
+        return SANE_STATUS_INVAL;
+    const auto& frame = state.frames[state.current_frame];
+    const auto remaining = frame.bytes.size() - state.offset;
+    if (remaining == 0) {
+        *received = 0;
+        return frame.terminal_status;
+    }
+    const auto count = std::min<std::size_t>(
+        static_cast<std::size_t>(length), remaining
+    );
+    std::memcpy(buffer, frame.bytes.data() + state.offset, count);
+    state.offset += count;
+    *received = static_cast<SANE_Int>(count);
+    return state.offset == frame.bytes.size() ? frame.terminal_status : SANE_STATUS_GOOD;
+}
+
+void fake_sane_cancel(SANE_Handle handle) {
+    ++fake_sane_state(handle).cancel_calls;
+}
+
+const SANE_Char* fake_sane_status_string(SANE_Status) {
+    return reinterpret_cast<const SANE_Char*>("fake SANE status");
+}
+
+const sane_detail::SaneScanApi fake_sane_api{
+    &fake_sane_start,
+    &fake_sane_get_parameters,
+    &fake_sane_read,
+    &fake_sane_cancel,
+    &fake_sane_status_string,
+};
+
+FakeSaneFrame fake_frame(
+    SANE_Frame format,
+    bool last_frame,
+    std::vector<std::uint8_t> bytes,
+    SANE_Status terminal_status = SANE_STATUS_EOF
+) {
+    FakeSaneFrame frame;
+    frame.parameters.format = format;
+    frame.parameters.last_frame = last_frame ? SANE_TRUE : SANE_FALSE;
+    frame.parameters.depth = 8;
+    frame.parameters.pixels_per_line = 2;
+    frame.parameters.lines = 1;
+    frame.parameters.bytes_per_line = 2;
+    frame.bytes = std::move(bytes);
+    frame.terminal_status = terminal_status;
+    return frame;
+}
+} // namespace
 
 class FakeScannerBackend final : public ScannerBackend {
 public:
