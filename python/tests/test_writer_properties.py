@@ -112,6 +112,28 @@ class WriterPropertyUpdateTests(unittest.TestCase):
             document.properties.getPropertyValue("LetterNumber"), "old-number"
         )
 
+    def test_rolls_back_a_property_that_mutates_before_raising(self):
+        class MutatesThenFails(FakeUserProperties):
+            def setPropertyValue(self, name, value):
+                if name == "LetterNumber" and value == "new-number":
+                    self.values[name] = value
+                    raise RuntimeError("UNO setter failed after mutation")
+                super().setPropertyValue(name, value)
+
+        document = FakeDocument()
+        document.properties = MutatesThenFails()
+        document.properties.values["LetterNumber"] = "old-number"
+        document.properties.info = FakePropertyInfo(document.properties.values)
+
+        with self.assertRaises(WriterPropertyUpdateError):
+            set_custom_document_properties(
+                document,
+                {"LetterSubject": "new", "LetterNumber": "new-number"},
+            )
+
+        self.assertEqual(document.properties.values["LetterSubject"], "old")
+        self.assertEqual(document.properties.values["LetterNumber"], "old-number")
+
     def test_reports_incomplete_rollback_without_exposing_property_values(self):
         class FailsDuringUpdateAndRollback(FakeUserProperties):
             def __init__(self):
