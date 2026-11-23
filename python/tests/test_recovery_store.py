@@ -36,10 +36,13 @@ class RecoverySnapshotStoreTests(unittest.TestCase):
         from emwat_linux.recovery_store import _root_lock
 
         with tempfile.TemporaryDirectory() as temporary:
-            real_root = Path(temporary) / "real-recovery"
+            real_parent = Path(temporary) / "real-parent"
+            real_parent.mkdir()
+            real_root = real_parent / "recovery"
             real_root.mkdir()
-            alias_root = Path(temporary) / "recovery-alias"
-            alias_root.symlink_to(real_root, target_is_directory=True)
+            alias_parent = Path(temporary) / "parent-alias"
+            alias_parent.symlink_to(real_parent, target_is_directory=True)
+            alias_root = alias_parent / "recovery"
 
             self.assertIs(_root_lock(real_root), _root_lock(alias_root))
 
