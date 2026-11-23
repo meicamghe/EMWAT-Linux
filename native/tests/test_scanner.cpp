@@ -189,7 +189,7 @@ int main() {
     {
         bool rejected = false;
         try {
-            const std::vector<std::uint8_t> short_plane{1, 2};
+            const std::vector<std::uint8_t> short_plane{1};
             std::vector<std::uint8_t> rgb(6, 0);
             detail::interleave_planar_rgb_channel(short_plane, 2, 2, 1, rgb, 6, 0);
         } catch (const std::invalid_argument&) {
