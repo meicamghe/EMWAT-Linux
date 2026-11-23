@@ -7,6 +7,15 @@
 
 namespace emwat::detail {
 
+// SANE option descriptors originate in backend drivers. Bound string-buffer
+// allocations so a malformed driver cannot request an unbounded allocation.
+inline bool sane_string_option_size_valid(std::int32_t descriptor_size,
+                                          std::size_t value_size) noexcept {
+    constexpr std::int32_t max_option_bytes = 256;
+    return descriptor_size > 0 && descriptor_size <= max_option_bytes &&
+           value_size < static_cast<std::size_t>(descriptor_size);
+}
+
 // SANE fixed-point values are signed 16.16 integers. Convert without invoking
 // SANE_FIX on values that would overflow its signed SANE_Word representation.
 inline std::optional<std::int32_t> encode_sane_fixed_resolution(double dpi) noexcept {
