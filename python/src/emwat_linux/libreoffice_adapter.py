@@ -18,7 +18,7 @@ import shutil
 import socket
 import subprocess
 import tempfile
-from threading import Event, Lock, Thread
+from threading import Event, Lock, RLock, Thread
 import time
 from typing import Callable
 
@@ -151,29 +151,15 @@ class _DocumentCloseListener:
         self._snapshot_lock = snapshot_lock
         self._recovery_stop = recovery_stop
         self._trace = trace
+        # The native Save / Don't Save choice is not resolved at queryClosing.
+        # Never export the live document here: that could capture edits discarded
+        # by the user's subsequent Don't Save choice.
         self.snapshot_error: Exception | None = None
         self.snapshot_ready = Event()
 
     def queryClosing(self, _event: object, _gets_ownership: bool) -> None:
         if self._trace is not None:
             self._trace.record("query_closing")
-        # A close attempt can be vetoed/cancelled by the office UI and retried.
-        # Reset only this attempt's result; periodic recovery remains active until
-        # notifyClosed confirms that the document really closed.
-        self.snapshot_error = None
-        self.snapshot_ready.clear()
-        try:
-            # storeToURL writes a copy and does not change the document's URL.
-            with self._snapshot_lock:
-                self._document.storeToURL(self._output_url, self._snapshot_properties)
-            if self._trace is not None:
-                self._trace.record("snapshot_succeeded")
-        except Exception as exc:  # retained internally; never returned to browser
-            self.snapshot_error = exc
-            if self._trace is not None:
-                self._trace.record("snapshot_failed")
-        finally:
-            self.snapshot_ready.set()
 
     def notifyClosing(self, _event: object) -> None:
         if self._trace is not None:
@@ -235,10 +221,13 @@ class _OfficeHandle:
         self.recovery_session_id = recovery_session_id
         self.closed = Event()
         self.recovery_stop = Event()
-        self.snapshot_lock = Lock()
+        self.snapshot_lock = RLock()
         self.recovery_thread: Thread | None = None
         self.recovery_error: Exception | None = None
         self.snapshot_properties: tuple[object, ...] = ()
+        self.saved_document_path: Path | None = None
+        self.saved_snapshot_error: Exception | None = None
+        self.saved_snapshot_in_progress = False
         self._closed_once = False
         self.close_trace = CloseLifecycleTrace()
 
@@ -347,7 +336,7 @@ class LibreOfficeAdapter:
             recovery_session_id = self._recovery_store.create_session()
             extension = _source_extension(request.document_bytes)
             source_path = work_dir / ("incoming" + extension)
-            output_path = work_dir / "final.doc"
+            saved_state_path = work_dir / "last-saved.doc"
             profile_path = work_dir / "profile"
             source_path.write_bytes(request.document_bytes)
             port = _unused_loopback_port()
@@ -392,6 +381,12 @@ class LibreOfficeAdapter:
                 self._property(uno, "FilterName", "MS Word 97"),
                 self._property(uno, "Overwrite", True),
             )
+            # Capture a known-good baseline before the user can make edits.
+            document.storeToURL(_file_url(saved_state_path), snapshot_properties)
+            if not saved_state_path.is_file():
+                raise RuntimeError("libreoffice_initial_saved_state_missing")
+            if not saved_state_path.read_bytes().startswith(_CFB_SIGNATURE):
+                raise RuntimeError("libreoffice_initial_saved_state_invalid")
             handle = _OfficeHandle(
                 process=process,
                 document=document,
@@ -400,9 +395,10 @@ class LibreOfficeAdapter:
                 recovery_session_id=recovery_session_id,
             )
             handle.snapshot_properties = snapshot_properties
+            handle.saved_document_path = saved_state_path
             close_listener = _DocumentCloseListener(
                 document,
-                _file_url(output_path),
+                _file_url(saved_state_path),
                 handle.mark_closed,
                 snapshot_properties,
                 handle.snapshot_lock,
@@ -411,7 +407,10 @@ class LibreOfficeAdapter:
             )
             handle.close_listener = close_listener
             modify_listener = _ModifyListener(on_modified)
-            save_listener = _DocumentEventListener(on_saved, handle.close_trace)
+            save_listener = _DocumentEventListener(
+                lambda: self._capture_confirmed_saved_state(handle, on_saved),
+                handle.close_trace,
+            )
             modify_proxy = _uno_listener_proxy(
                 modify_listener,
                 uno_module=uno,
@@ -440,7 +439,6 @@ class LibreOfficeAdapter:
             handle.save_proxy = save_proxy
             handle.close_proxy = close_proxy
             handle.desktop = desktop
-            handle.output_path = output_path
             handle.source_path = source_path
             handle.profile_path = profile_path
             handle.context = context
@@ -466,6 +464,44 @@ class LibreOfficeAdapter:
                 except Exception:
                     pass
             raise
+
+    def _capture_confirmed_saved_state(
+        self,
+        handle: _OfficeHandle,
+        on_saved: Callable[[], None],
+    ) -> None:
+        """Atomically retain the document bytes after a confirmed Writer save."""
+        destination = handle.saved_document_path
+        if destination is None:
+            handle.saved_snapshot_error = RuntimeError("saved_state_path_missing")
+            return
+        temporary = destination.with_name("last-saved.pending.doc")
+        try:
+            with handle.snapshot_lock:
+                if handle.saved_snapshot_in_progress:
+                    return
+                handle.saved_snapshot_in_progress = True
+                try:
+                    handle.document.storeToURL(_file_url(temporary), handle.snapshot_properties)
+                    if not temporary.is_file():
+                        raise RuntimeError("confirmed_saved_state_export_missing")
+                    if not temporary.read_bytes().startswith(_CFB_SIGNATURE):
+                        raise RuntimeError("confirmed_saved_state_export_invalid")
+                    temporary.replace(destination)
+                    handle.saved_snapshot_error = None
+                finally:
+                    handle.saved_snapshot_in_progress = False
+            handle.close_trace.record("saved_state_succeeded")
+        except Exception as exc:
+            handle.saved_snapshot_error = exc
+            handle.close_trace.record("saved_state_failed")
+            return
+        finally:
+            try:
+                temporary.unlink()
+            except FileNotFoundError:
+                pass
+        on_saved()
 
     def _recovery_loop(self, handle: _OfficeHandle) -> None:
         """Persist an owner-only snapshot every interval while the document is open."""
@@ -577,15 +613,21 @@ class LibreOfficeAdapter:
             error = handle.close_listener.snapshot_error
             self._cleanup(handle)
             raise RuntimeError("libreoffice_final_snapshot_failed") from error
-        if not (handle.work_dir / "final.doc").is_file():
+        if handle.saved_snapshot_error is not None:
+            error = handle.saved_snapshot_error
             self._cleanup(handle)
-            raise RuntimeError("libreoffice_final_document_missing")
+            raise RuntimeError("libreoffice_confirmed_saved_state_failed") from error
+        if handle.saved_document_path is None or not handle.saved_document_path.is_file():
+            self._cleanup(handle)
+            raise RuntimeError("libreoffice_confirmed_saved_state_missing")
         return OfficeCloseEvent(CloseDisposition.CLOSED)
 
     def export_final_document(self, handle: object) -> bytes:
         if not isinstance(handle, _OfficeHandle):
             raise TypeError("invalid_libreoffice_handle")
-        output_path = handle.work_dir / "final.doc"
+        output_path = handle.saved_document_path
+        if output_path is None:
+            raise RuntimeError("libreoffice_confirmed_saved_state_missing")
         try:
             payload = output_path.read_bytes()
             if not payload.startswith(_CFB_SIGNATURE):
