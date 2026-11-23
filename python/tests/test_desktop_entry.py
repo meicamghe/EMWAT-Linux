@@ -26,7 +26,7 @@ class DesktopEntryTests(unittest.TestCase):
     def test_escapes_backtick_in_executable_path(self):
         path = "/opt/EMWAT" + chr(96) + "tools/emwat-linux"
         rendered = render_desktop_entry("[Desktop Entry]\nExec=emwat-linux\n", path)
-        expected = 'Exec="/opt/EMWAT\\\\' + chr(96) + 'tools/emwat-linux"'
+        expected = 'Exec="/opt/EMWAT\\' + chr(96) + 'tools/emwat-linux"'
         self.assertIn(expected, rendered)
 
     def test_rejects_control_characters(self):
