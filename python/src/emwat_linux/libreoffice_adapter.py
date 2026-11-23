@@ -2,9 +2,9 @@
 
 This is the first concrete office-engine adapter. It opens the captured
 Word document in a visible LibreOffice instance, writes private periodic
-recovery snapshots while it is open, snapshots a Word-compatible final copy
-during close, and returns those bytes after close. Recovery snapshots use the
-Linux-native owner-only store, not the Windows .easz archive format.
+recovery snapshots while it is open, tracks the last confirmed-saved Word
+copy separately, and returns that copy after close. Recovery snapshots use
+the Linux-native owner-only store, not the Windows .easz archive format.
 
 EMWAT-specific field IDs, signData, permissions, and cancellation semantics
 are intentionally not guessed here. Those mappings require verified fixtures.
