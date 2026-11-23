@@ -364,20 +364,36 @@ class BridgeHTTPServer:
 
     @staticmethod
     def _normalize_parent_origins(origins: frozenset[str]) -> frozenset[str]:
-        normalized = set()
+        """Canonicalize the Almas parent-page origins used by the init route."""
+        normalized: set[str] = set()
         for value in origins:
-            parsed = urlsplit(value)
+            try:
+                parsed = urlsplit(value)
+                port = parsed.port
+            except ValueError as exc:
+                raise ValueError(
+                    "allowed parent origins must be bare HTTP(S) origins"
+                ) from exc
             if (
-                parsed.scheme not in {"http", "https"}
+                parsed.scheme.lower() not in {"http", "https"}
                 or not parsed.netloc
+                or parsed.hostname is None
+                or parsed.netloc.endswith(":")
                 or parsed.username is not None
                 or parsed.password is not None
                 or parsed.path
                 or parsed.query
                 or parsed.fragment
+                or any(character.isspace() for character in parsed.hostname)
             ):
                 raise ValueError("allowed parent origins must be bare HTTP(S) origins")
-            normalized.add(f"{parsed.scheme.lower()}://{parsed.netloc.lower()}")
+            scheme = parsed.scheme.lower()
+            hostname = parsed.hostname.lower()
+            if ":" in hostname:
+                hostname = f"[{hostname}]"
+            default_port = 80 if scheme == "http" else 443
+            authority = hostname if port in (None, default_port) else f"{hostname}:{port}"
+            normalized.add(f"{scheme}://{authority}")
         return frozenset(normalized)
 
     @staticmethod
@@ -387,16 +403,18 @@ class BridgeHTTPServer:
         try:
             parsed = urlsplit(referer)
             if (
-                parsed.scheme not in {"http", "https"}
+                parsed.scheme.lower() not in {"http", "https"}
                 or not parsed.netloc
                 or parsed.username is not None
                 or parsed.password is not None
                 or parsed.hostname is None
             ):
                 return None
-            _ = parsed.port
-            return f"{parsed.scheme.lower()}://{parsed.netloc.lower()}"
-        except ValueError:
+            # Reuse the same canonicalization as the configured allowlist so
+            # host case and explicit default ports cannot cause false rejects.
+            candidate = f"{parsed.scheme}://{parsed.netloc}"
+            return next(iter(BridgeHTTPServer._normalize_parent_origins(frozenset({candidate}))))
+        except (StopIteration, ValueError):
             return None
 
     def _build_init_response(self, parent_origin: str) -> bytes:
