@@ -3115,6 +3115,9 @@ The next meaningful Almas acceptance input is a sanitized, synthetic-or-test-acc
 - Added regression coverage for a shutdown failure that initially leaves the
   serve thread alive, a successful second shutdown attempt, and invalid timeout
   values including an overflowing integer.
+- The serving thread now also reports an unexpected normal return (without a
+  shutdown request) as FAILED instead of leaving a stale RUNNING state; a
+  regression test verifies the retained diagnostic.
 - Current code/test CI for this follow-up is pending. The previous successful
   runtime tests predate this bounded-join change; do not claim it verified
   until the new Python run completes.
