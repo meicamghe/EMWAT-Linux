@@ -267,3 +267,13 @@ before its first poll. Regression coverage includes a deliberately delayed
 server start, concurrent close, and immediate start/close against the real
 loopback bridge. These tests do not replace desktop logout or signal handling
 acceptance.
+
+
+Shutdown is also failure-aware: if server shutdown raises, the runtime still
+attempts socket closure and joins the serving thread; it records the first
+cleanup error and reports FAILED rather than claiming a clean stop. If socket
+closure itself fails, a later `close()` retries it because closure has not
+been confirmed. A never-started runtime is not marked STOPPED until its bound
+socket is actually closed. This does not provide a safe way to forcibly kill a
+Python thread if the underlying server cannot stop; that remains a fatal
+runtime failure to surface to the desktop supervisor.
