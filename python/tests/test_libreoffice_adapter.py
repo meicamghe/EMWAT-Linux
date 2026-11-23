@@ -190,46 +190,35 @@ class LibreOfficeAdapterUnitTests(unittest.TestCase):
         events = LibreOfficeAdapter().inspect_close_lifecycle_trace(handle)
         self.assertEqual(
             [event.name for event in events],
-            ["query_closing", "snapshot_succeeded", "notify_closing", "save_done", "notify_closed"],
+            ["query_closing", "notify_closing", "save_done", "notify_closed"],
         )
         self.assertTrue(all(event.attempt == 1 for event in events))
         self.assertTrue(closed.is_set())
         self.assertNotIn("final.doc", repr(events))
         self.assertNotIn("document", repr(events))
 
-    def test_close_listener_snapshots_word_97_before_close(self):
+    def test_close_listener_does_not_snapshot_before_native_save_choice(self):
         document = FakeDocument()
         closed = []
         listener = _DocumentCloseListener(
-            document,
-            "file:///tmp/final.doc",
-            lambda: closed.append(True),
-            fake_snapshot_properties(),
-            Lock(),
-            Event(),
+            document, "file:///tmp/last-saved.doc", lambda: closed.append(True),
+            fake_snapshot_properties(), Lock(), Event(),
         )
         listener.queryClosing(object(), False)
-        self.assertTrue(listener.snapshot_ready.is_set())
-        self.assertIsNone(listener.snapshot_error)
-        self.assertEqual(
-            document.calls,
-            [("file:///tmp/final.doc", [("FilterName", "MS Word 97"), ("Overwrite", True)])],
-        )
+        self.assertEqual(document.calls, [])
+        self.assertFalse(listener.snapshot_ready.is_set())
         listener.notifyClosed(object())
         self.assertEqual(closed, [True])
 
-    def test_close_listener_retains_snapshot_error_for_caller(self):
+    def test_close_listener_query_does_not_export_even_if_export_would_fail(self):
+        document = FakeDocument(fail=True)
         listener = _DocumentCloseListener(
-            FakeDocument(fail=True),
-            "file:///tmp/final.doc",
-            lambda: None,
-            (FakeUno().createUnoStruct("com.sun.star.beans.PropertyValue"),),
-            Lock(),
-            Event(),
+            document, "file:///tmp/last-saved.doc", lambda: None,
+            (FakeUno().createUnoStruct("com.sun.star.beans.PropertyValue"),), Lock(), Event(),
         )
         listener.queryClosing(object(), False)
-        self.assertTrue(listener.snapshot_ready.is_set())
-        self.assertIsInstance(listener.snapshot_error, RuntimeError)
+        self.assertIsNone(listener.snapshot_error)
+        self.assertEqual(document.calls, [])
 
     def test_modify_listener_forwards_document_change(self):
         changes = []
@@ -238,59 +227,34 @@ class LibreOfficeAdapterUnitTests(unittest.TestCase):
         listener.disposing(object())
         self.assertEqual(changes, ["changed"])
 
-    def test_close_listener_retries_after_a_vetoed_or_cancelled_attempt(self):
+    def test_close_listener_cancelled_attempt_can_be_retried_without_snapshot_side_effect(self):
         document = FakeDocument(fail=True)
         closed = Event()
         listener = _DocumentCloseListener(
-            document,
-            "file:///tmp/final.doc",
-            closed.set,
-            fake_snapshot_properties(),
-            Lock(),
-            Event(),
+            document, "file:///tmp/last-saved.doc", closed.set,
+            fake_snapshot_properties(), Lock(), Event(),
         )
-
         listener.queryClosing(object(), False)
-        self.assertTrue(listener.snapshot_ready.is_set())
-        self.assertIsInstance(listener.snapshot_error, RuntimeError)
+        self.assertEqual(document.calls, [])
         self.assertFalse(closed.is_set())
-
-        # The office UI can keep the document open after this close attempt.
-        # A later attempt must clear the prior error and produce a fresh snapshot.
         document.fail = False
         listener.queryClosing(object(), False)
-        self.assertTrue(listener.snapshot_ready.is_set())
-        self.assertIsNone(listener.snapshot_error)
-        self.assertEqual(len(document.calls), 1)
+        self.assertEqual(document.calls, [])
         self.assertFalse(closed.is_set())
-
         listener.notifyClosed(object())
         self.assertTrue(closed.is_set())
 
-    def test_successful_snapshot_from_cancelled_close_is_replaced_on_retry(self):
+    def test_cancelled_close_attempts_never_snapshot_dirty_document(self):
         document = FakeDocument()
         closed = Event()
         listener = _DocumentCloseListener(
-            document,
-            "file:///tmp/final.doc",
-            closed.set,
-            fake_snapshot_properties(),
-            Lock(),
-            Event(),
+            document, "file:///tmp/last-saved.doc", closed.set,
+            fake_snapshot_properties(), Lock(), Event(),
         )
-
         listener.queryClosing(object(), False)
-        self.assertTrue(listener.snapshot_ready.is_set())
-        self.assertFalse(closed.is_set())
-
-        # Simulate a cancelled first close; a later close attempt must take a
-        # new snapshot rather than reusing the earlier attempt's result.
         listener.queryClosing(object(), False)
-        self.assertTrue(listener.snapshot_ready.is_set())
-        self.assertIsNone(listener.snapshot_error)
-        self.assertEqual(len(document.calls), 2)
+        self.assertEqual(document.calls, [])
         self.assertFalse(closed.is_set())
-
         listener.notifyClosed(object())
         self.assertTrue(closed.is_set())
 
@@ -319,6 +283,48 @@ class LibreOfficeAdapterUnitTests(unittest.TestCase):
         self.assertTrue(close_listener.snapshot_ready.is_set())
         self.assertIsNone(close_listener.snapshot_error)
         self.assertTrue(closed.is_set())
+
+    def test_confirmed_save_snapshot_replaces_baseline_atomically(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            destination = root / "last-saved.doc"
+            destination.write_bytes(_CFB_SIGNATURE + b"baseline")
+
+            class ExportDocument:
+                def storeToURL(self, url, _properties):
+                    from urllib.parse import unquote, urlparse
+                    Path(unquote(urlparse(url).path)).write_bytes(_CFB_SIGNATURE + b"newly-saved")
+
+            handle = _OfficeHandle(
+                process=FakeProcess(), document=ExportDocument(), close_listener=None,
+                work_dir=root, recovery_session_id="saved-state-session",
+            )
+            handle.saved_document_path = destination
+            handle.snapshot_properties = fake_snapshot_properties()
+            saved = []
+            LibreOfficeAdapter()._capture_confirmed_saved_state(handle, lambda: saved.append(True))
+            self.assertEqual(destination.read_bytes(), _CFB_SIGNATURE + b"newly-saved")
+            self.assertEqual(saved, [True])
+            self.assertIsNone(handle.saved_snapshot_error)
+            self.assertFalse((root / "last-saved.pending.doc").exists())
+
+    def test_failed_confirmed_save_snapshot_preserves_previous_baseline(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            destination = root / "last-saved.doc"
+            baseline = _CFB_SIGNATURE + b"baseline"
+            destination.write_bytes(baseline)
+            handle = _OfficeHandle(
+                process=FakeProcess(), document=FakeDocument(fail=True), close_listener=None,
+                work_dir=root, recovery_session_id="saved-state-failure",
+            )
+            handle.saved_document_path = destination
+            handle.snapshot_properties = fake_snapshot_properties()
+            saved = []
+            LibreOfficeAdapter()._capture_confirmed_saved_state(handle, lambda: saved.append(True))
+            self.assertEqual(destination.read_bytes(), baseline)
+            self.assertEqual(saved, [])
+            self.assertIsInstance(handle.saved_snapshot_error, RuntimeError)
 
     def test_document_event_listener_only_reports_confirmed_save_events(self):
         from emwat_linux.libreoffice_adapter import _DocumentEventListener
