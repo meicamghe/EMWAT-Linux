@@ -205,6 +205,28 @@ class GtkDesktopRuntimeTests(unittest.TestCase):
         )
         self.assertTrue(buttons["توقف سرویس"].get_sensitive())
 
+        # Simulate an unexpected serving-thread exit without a button action.
+        # The periodic GTK-main-context poll must surface it and retain Stop.
+        supervisor._state = "failed"
+        supervisor._failure = RuntimeError("simulated serve-loop exit")
+        deadline = time.monotonic() + 3.0
+        while time.monotonic() < deadline:
+            while main_context.pending():
+                main_context.iteration(False)
+            labels = [
+                item.get_text()
+                for item in self._walk_widgets(window.get_child())
+                if isinstance(item, self.Gtk.Label)
+            ]
+            if any("simulated serve-loop exit" in label for label in labels):
+                break
+            time.sleep(0.01)
+        self.assertTrue(
+            any("simulated serve-loop exit" in label for label in labels),
+            labels,
+        )
+        self.assertTrue(buttons["توقف سرویس"].get_sensitive())
+
         buttons["توقف سرویس"].emit("clicked")
         deadline = time.monotonic() + 3.0
         while time.monotonic() < deadline:
