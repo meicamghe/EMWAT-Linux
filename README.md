@@ -22,7 +22,7 @@ EMWAT واسط محلی بین اتوماسیون تحت وب الماس گام 
 
 ## وضعیت فعلی
 
-پروژه از مرحله تحلیل اولیه عبور کرده و اکنون هسته‌های Python، پل HTTP محلی، parser/dispatcher، مسیر EditWordDocument، اتصال LibreOffice UNO، بازیابی دوره‌ای، ذخیره‌سازی اختیاری رمزگذاری‌شده و backend اسکن SANE با پشتیبانی از صفحات چندفریمی RGB و batch محدود ADF simplex را دارد. یک نمای اولیه GTK4 برای Recovery نیز به‌صورت لایه اختیاری اضافه شده است؛ اما هنوز رابط کامل برنامه، اجرای واقعی در مرورگر الماس گام، mapping کامل فیلدهای Word، قراردادهای Cancel/Discard و بسته‌بندی اجرایی نهایی باقی مانده‌اند.
+پروژه از مرحله تحلیل اولیه عبور کرده و اکنون هسته‌های Python، پل HTTP محلی، parser/dispatcher، مسیر EditWordDocument، اتصال LibreOffice UNO، بازیابی دوره‌ای، ذخیره‌سازی اختیاری رمزگذاری‌شده و backend اسکن SANE با پشتیبانی از صفحات چندفریمی RGB و batch محدود ADF simplex را دارد. یک پوسته کنترلی GTK4 با diagnostics، پنجره Recovery و کنترل‌های Supervisor تزریق‌شده اضافه شده و لانچر per-user نیز نصب/حذف‌پذیر است. در اجرای عادی، چون پیکربندی معتبر Almas هنوز فراهم نشده، Supervisor تزریق نمی‌شود و listener خودکار شروع نمی‌شود. رابط تنظیمات و مدیریت کامل سرویس، اجرای واقعی در مرورگر الماس گام، mapping کامل فیلدهای Word، قراردادهای Cancel/Discard و بسته‌بندی اجرایی نهایی همچنان باقی مانده‌اند.
 
 گزارش کامل وضعیت، شواهد، موارد نامشخص و گام‌های بعدی در این فایل نگهداری می‌شود:
 
@@ -102,14 +102,23 @@ For the current project decisions, implementation boundaries, and next-session c
 - Native build + ASan/UBSan: [run 44305529408](https://github.com/meicamghe/EMWAT-Linux/actions/runs/44304965055) — هر دو job موفق.
 - LibreOffice UNO: [run 44305529564](https://github.com/meicamghe/EMWAT-Linux/actions/runs/44304965075) — runtime و roundtrip واقعی Writer موفق.
 
+
+### آخرین تأییدهای اجرایی — 2026-11-23
+
+- Python bridge در head `4c43ae3c836f845751b4e9d8c462758ab6a1a2c1`: [workflow 45195106455](https://github.com/meicamghe/EMWAT-Linux/actions/runs/45195106455)، 292 تست اجرا شد؛ 289 موفق و 3 مورد اختیاری skip.
+- GTK 4 در همان head: [workflow 45195106572](https://github.com/meicamghe/EMWAT-Linux/actions/runs/45195106572)، هر 7 تست runtime موفق؛ تست رقابت Start/Shutdown نیز موفق شد. نصب/اعتبارسنجی/حذف لانچر per-user با مسیر دارای فاصله نیز موفق بود.
+- Native در همان head: [workflow 45195106435](https://github.com/meicamghe/EMWAT-Linux/actions/runs/45195106435)، build/CTest برابر 4/4، ASan/UBSan برابر 4/4، staged install و چرخه نصب/ارتقای بسته توسعه Debian موفق.
+- LibreOffice UNO: [workflow 45194019476](https://github.com/meicamghe/EMWAT-Linux/actions/runs/45194019476)، 25 تست موفق روی والد کد معادل؛ تغییرات بعدی فقط GTK و مستندات بوده‌اند و کد UNO تغییر نکرده است.
+- این نتایج پذیرش end-to-end الماس گام یا آمادگی انتشار را ثابت نمی‌کنند؛ موانع انتشار در [ماتریس پذیرش](docs/RELEASE-ACCEPTANCE-MATRIX.md) آمده‌اند.
+
 ### مواردی که هنوز تکمیل نشده‌اند
 
 - اجرای end-to-end از صفحه واقعی الماس گام و بررسی دقیق Origin، پیام‌ها و پاسخ‌ها.
 - mapping معنایی همه فیلدهای Word به Writer و آزمون با fixture بی‌خطر و واقعی.
 - encoding و association کامل `signData`، تصویر/امضا و فیلدهای سفارشی.
 - قرارداد wire response برای Cancel و Discard؛ این سیاست هنوز تزریق‌شدنی است و حدس زده نشده.
-- GUI واقعی برای انتخاب/بازیابی snapshot، تنظیمات و مدیریت اسکن.
-- entrypoint اجرایی، بسته‌بندی نصب/حذف و integration با session دسکتاپ.
+- تکمیل GUI یکپارچه برای تنظیمات، مدیریت اسکن و پیکربندی/مدیریت سرویس؛ پوسته GTK4 و Recovery picker اولیه موجودند.
+- بسته‌بندی کامل برنامه (Python bridge + UNO + GTK + سرویس و سیاست ارتقا/مهاجرت)؛ entrypoint و اسکریپت نصب/حذف لانچر per-user موجودند.
 - آزمون سخت‌افزار اسکنر، ADF/duplex و سازگاری Windows `.easz`.
 
 **وضعیت انتشار:** تغییرات روی PR شماره ۲ در حالت Draft نگه داشته شده‌اند و هنوز به main ادغام نشده‌اند. این مخزن یک هسته‌ی در حال توسعه است، نه محصول آماده‌ی نصب و استفاده‌ی روزمره.

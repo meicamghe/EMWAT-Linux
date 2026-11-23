@@ -1,3 +1,11 @@
+## Latest desktop lifecycle verification — 2026-11-23
+
+- Python workflow [45195106455](https://github.com/meicamghe/EMWAT-Linux/actions/runs/45195106455) on code/test head `4c43ae3c836f845751b4e9d8c462758ab6a1a2c1`: success, 292 tests run, 289 passed and 3 optional skips.
+- GTK workflow [45195106572](https://github.com/meicamghe/EMWAT-Linux/actions/runs/45195106572) on the same head: success, 7/7 runtime tests passed, including deterministic Start-versus-shutdown serialization. Per-user launcher install, desktop-file validation and uninstall passed.
+- Native workflow [45195106435](https://github.com/meicamghe/EMWAT-Linux/actions/runs/45195106435) on the same head: build/CTest 4/4, ASan/UBSan 4/4, staged install and Debian package lifecycle passed.
+- LibreOffice UNO workflow [45194019476](https://github.com/meicamghe/EMWAT-Linux/actions/runs/45194019476): 25 tests passed on parent head `4c521f0de592bf1a9e5fab2fabf85699e70bfa65`; no UNO source changed afterward. A current-head rerun is queued.
+- This evidence does not close the product-level release blockers listed above.
+
 # EMWAT Linux release acceptance matrix
 
 Status: engineering checklist; this document does not declare a release.
@@ -12,18 +20,18 @@ proof of live Almas compatibility.
 
 | Layer | What is covered | Evidence / current status | Release interpretation |
 |---|---|---|---|
-| Python bridge and protocol | HTTP loopback transport, Origin/Host validation, XML dispatch, EditWord parsing/serialization, recovery and doctor tests | Code head `05dacb1e00ad0ab26b145d2e63c462c9036695fd`: Python workflow `45186092495` succeeded; **289 tests** passed, package install and doctor/GTK/desktop-entry console help checks passed | Automated component evidence only |
-| Native core | CMake build, native tests, sanitizer checks, Debian development-package lifecycle | Code head `05dacb1e00ad0ab26b145d2e63c462c9036695fd`: Native workflow `45186091897` succeeded; build/CTest **4/4**, ASan/UBSan **4/4**, Debian package lifecycle passed | Native library/package evidence only; not complete application package |
-| LibreOffice UNO | UNO runtime checks and Writer roundtrip integration | UNO workflow `45182739787` succeeded with **25 tests** on code-equivalent head `4eb039bba073a0ddb344099b442fad3d53b4217d`; later changes before `05dacb1` were native scanner/test and packaging workflow changes | Does not prove Almas browser integration |
+| Python bridge and protocol | HTTP loopback transport, Origin/Host validation, XML dispatch, EditWord parsing/serialization, recovery and doctor tests | Code/test head `4c43ae3c836f845751b4e9d8c462758ab6a1a2c1`: Python workflow `45195106455` succeeded; **292 tests run, 289 passed, 3 optional skips**; package install and console-entrypoint checks passed | Automated component evidence only |
+| Native core | CMake build, native tests, sanitizer checks, Debian development-package lifecycle | Code/test head `4c43ae3c836f845751b4e9d8c462758ab6a1a2c1`: Native workflow `45195106435` succeeded; build/CTest **4/4**, ASan/UBSan **4/4**, staged install and Debian package lifecycle passed | Native library/package evidence only; not complete application package |
+| LibreOffice UNO | UNO runtime checks and Writer roundtrip integration | UNO workflow `45194019476` succeeded with **25 tests** on parent head `4c521f0de592bf1a9e5fab2fabf85699e70bfa65`; subsequent commits to `4c43ae3` changed GTK lifecycle and tests only, not UNO adapter sources. Current-head rerun is queued. | Does not prove Almas browser integration |
 | Writer close decisions | Save, Don't Save and Cancel behavior in a real Writer session | Manual acceptance on 2026-11-23: saved marker persisted; discarded marker did not; Cancel left Writer open and pending until a later close | Confirms the observed Writer close boundary, not Almas response semantics |
 | Runtime doctor | Installed `emwat-linux-doctor` console entrypoint and help invocation | Verified in Python workflow `45184251311`; package install and `emwat-linux-doctor --help` passed | Dependency preflight only; not a bridge launcher |
-| GTK Recovery view | Headless import boundary and controller behavior | GTK workflow `45184251362` succeeded with **6 smoke tests**; per-user launcher install/validate/uninstall passed | Optional UI component, not a complete application |
+| GTK desktop shell and Recovery | Real GTK 4 runtime, recovery picker, injected supervisor controls, shutdown ordering, and per-user launcher lifecycle | GTK workflow `45195106572` on `4c43ae3` succeeded with **7/7 smoke tests**; installer path-with-spaces, desktop-file validation, install and uninstall passed | UI component evidence only; default entry point still has no production supervisor configuration |
 | Physical scanner | SANE discovery/options, planar RGB frame assembly, bounded simplex ADF batching and cleanup/resource limits | Automated tests cover bounded batch sequencing, feeder-empty/error cleanup, planar RGB interleaving/metadata validation; no physical device fixture | Physical USB/network scanner acceptance remains open; duplex source labels are deliberately excluded from batch mode |
 | Word-to-Writer semantic mapping | Candidate field audit and indexed signer catalog | Read-only audit tooling; no authoritative sanitized Word + WordConfig fixture | No automatic mapping should be enabled from candidates alone |
 | Almas end-to-end | Real browser Origin, init, heartbeat, request, Writer lifecycle and returned response | Not yet accepted; requires controlled test account and sanitized complete request/response fixtures | Release blocker |
 | Cancel / discard wire response | Exact response envelope Almas expects for each non-success close decision | Not yet established; factory intentionally remains injected | Release blocker; do not invent the response |
 | Windows `.easz` interoperability | Archive creation/opening and password/error behavior | Static trace only; no validated interoperability fixture | Not implemented/verified |
-| Desktop packaging and supervision | Per-user .desktop install/uninstall scripts with tested Exec-path quoting; no complete Python bridge .deb, persistent user service, deployment settings or configured production supervisor | Partial launcher lifecycle only | Release blocker |
+| Desktop packaging and supervision | Per-user .desktop install/uninstall scripts with tested Exec-path quoting; GTK controls for explicitly injected supervisor; no complete Python bridge .deb, persistent user service, deployment settings or configured production supervisor | Partial launcher and lifecycle controls only | Release blocker |
 
 ## Required Almas acceptance fixture
 
