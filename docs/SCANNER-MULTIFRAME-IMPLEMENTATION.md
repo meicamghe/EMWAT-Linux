@@ -26,7 +26,7 @@ Status: bounded ADF page batching is implemented for explicitly selected ADF sou
 ## Resource and failure policy
 
 - Per-page image allocation is capped at 1 GiB.
-- ADF batches are capped at 100 pages and 4 GiB of accumulated image bytes.
+- ADF batches are capped at 100 pages and 4 GiB of accumulated image bytes. The remaining batch budget is passed into the page reader, so the next page is rejected before its pixel buffer is reserved if it cannot fit; the batch does not intentionally allocate a full extra page beyond the total budget.
 - Read lengths, zero-progress reads, excess bytes, incomplete payloads and stride arithmetic are validated.
 - If a later page fails, the API throws rather than presenting a partial batch as a complete successful scan.
 - Feeder-empty is recognized only as `SANE_STATUS_NO_DOCS` from the next `sane_start()` boundary. Paper jam, cover open, I/O errors and cancellation remain explicit failures.
