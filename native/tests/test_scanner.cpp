@@ -161,6 +161,21 @@ int main() {
         assert(state.start_calls == 3);
     }
 
+    // Interleaved RGB is preserved without channel reordering.
+    {
+        FakeSaneState state;
+        auto frame = fake_frame(SANE_FRAME_RGB, true, {1, 2, 3, 4, 5, 6});
+        frame.parameters.bytes_per_line = 6;
+        state.frames = {std::move(frame)};
+        const auto handle = reinterpret_cast<SANE_Handle>(&state);
+        assert(fake_sane_api.start(handle) == SANE_STATUS_GOOD);
+        const auto page = sane_detail::read_started_sane_page(
+            handle, std::nullopt, std::nullopt, fake_sane_api, 1024, false
+        );
+        assert(page.pixels.format == PixelFormat::RGB8);
+        assert((page.pixels.bytes == std::vector<std::uint8_t>{1, 2, 3, 4, 5, 6}));
+    }
+
     // The production page reader and bounded collector cooperate across ADF pages.
     {
         FakeSaneState state;
