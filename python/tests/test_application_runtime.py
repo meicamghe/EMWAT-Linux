@@ -7,12 +7,20 @@ from emwat_linux.application_runtime import BridgeRuntime, BridgeRuntimeState
 class FakeServer:
     def __init__(self):
         self.entered = threading.Event()
+        self.serving = threading.Event()
         self.stopped = threading.Event()
         self.closed = False
 
     def serve_forever(self):
-        self.entered.set()
-        self.stopped.wait()
+        try:
+            self.entered.set()
+            self.serving.set()
+            self.stopped.wait()
+        finally:
+            self.serving.set()
+
+    def wait_until_serving(self):
+        self.serving.wait()
 
     def shutdown(self):
         self.stopped.set()
@@ -93,7 +101,10 @@ class BridgeRuntimeTests(unittest.TestCase):
 
         class BrokenServer(FakeServer):
             def serve_forever(self):
-                raise failure
+                try:
+                    raise failure
+                finally:
+                    self.serving.set()
 
         server = BrokenServer()
         runtime = BridgeRuntime(server)
