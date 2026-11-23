@@ -116,6 +116,24 @@ inline bool planar_rgb_frame_matches(
            actual_last_frame == expected_last_frame;
 }
 
+template <typename Frame, typename NextFrame, typename Validate, typename Consume>
+void consume_planar_rgb_sequence(
+    const Frame& first_frame,
+    const std::array<int, 3>& expected_formats,
+    NextFrame&& next_frame,
+    Validate&& validate,
+    Consume&& consume
+) {
+    validate(first_frame, expected_formats[0], false);
+    consume(first_frame, 0);
+    for (std::size_t channel = 1; channel < expected_formats.size(); ++channel) {
+        Frame frame = next_frame();
+        const bool should_be_last = channel == expected_formats.size() - 1;
+        validate(frame, expected_formats[channel], should_be_last);
+        consume(frame, channel);
+    }
+}
+
 inline void interleave_planar_rgb_channel(
     const std::vector<std::uint8_t>& plane,
     std::size_t plane_stride,
