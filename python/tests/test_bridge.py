@@ -76,12 +76,15 @@ class BridgeHTTPServerTests(unittest.TestCase):
             "https://",
         )
         for origin in invalid:
-            with self.subTest(origin=origin), self.assertRaisesRegex(
-                ValueError, "allowed_origins must contain bare HTTP(S) origins"
-            ):
-                BridgeHTTPServer(
-                    lambda _request: BridgeResponse(b""),
-                    allowed_origins=frozenset({origin}),
+            with self.subTest(origin=origin):
+                with self.assertRaises(ValueError) as raised:
+                    BridgeHTTPServer(
+                        lambda _request: BridgeResponse(b""),
+                        allowed_origins=frozenset({origin}),
+                    )
+                self.assertEqual(
+                    str(raised.exception),
+                    "allowed_origins must contain bare HTTP(S) origins",
                 )
 
     def test_only_loopback_bind_is_allowed(self):
