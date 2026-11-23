@@ -16,6 +16,15 @@ BRIDGE_STATUS_POLL_SECONDS = 1
 
 
 
+def _stop_bridge_supervisor_on_shutdown(bridge_supervisor: Any | None) -> None:
+    """Stop an injected bridge before GTK exits, including after a failed run."""
+    if bridge_supervisor is None:
+        return
+    state = bridge_supervisor.state
+    if getattr(state, "value", state) in ("running", "failed"):
+        bridge_supervisor.stop()
+
+
 def create_default_recovery_controller() -> Any:
     """Connect the desktop picker to the default per-user recovery store."""
     from emwat_linux.recovery_controller import RecoveryPickerController
@@ -49,6 +58,17 @@ def create_desktop_application(
         flags=Gio.ApplicationFlags.NON_UNIQUE,
     )
     windows: dict[str, Any] = {"main": None, "recovery": None}
+    bridge_operation_lock = threading.RLock()
+
+    def shutdown_bridge(_app: Any) -> None:
+        if bridge_supervisor is None:
+            return
+        # Serialize shutdown with button-triggered start/stop workers. If a
+        # start is already in progress, it must finish before we can stop it.
+        with bridge_operation_lock:
+            _stop_bridge_supervisor_on_shutdown(bridge_supervisor)
+
+    application.connect("shutdown", shutdown_bridge)
 
     def activate(app: Any) -> None:
         if windows["main"] is not None:
@@ -182,7 +202,8 @@ def create_desktop_application(
 
                 def worker() -> None:
                     try:
-                        operation()
+                        with bridge_operation_lock:
+                            operation()
                     except BaseException:
                         # The supervisor retains the authoritative exception.
                         pass
