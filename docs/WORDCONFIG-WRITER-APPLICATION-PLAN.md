@@ -76,3 +76,7 @@ A previously analyzed PCAP had missing TCP payload bytes and cannot serve as a b
 - Live Almas browser integration is tested separately from local Writer roundtrip.
 
 Until these gates pass, describe WordConfig support as parsed and audited, not applied or fully compatible.
+
+## Controlled Writer property updates
+
+The low-level custom-property setter accepts only an explicit caller-supplied mapping and updates existing exact-name properties; it does not create missing properties or infer mappings from WordConfig. Before mutation it validates every target and captures the previous values. If a later UNO setter fails, it attempts reverse-order rollback of earlier updates and reports separately when rollback is incomplete. This is best-effort compensation, not a true UNO transaction; callers must treat an incomplete rollback as a failed document operation and avoid returning the document as a successful EMWAT roundtrip.
