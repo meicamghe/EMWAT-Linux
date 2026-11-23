@@ -1,6 +1,8 @@
 name: Python bridge transport
 on:
   push:
+    branches:
+      - main
     paths:
       - 'python/**'
       - '.github/workflows/python-bridge.yml'
