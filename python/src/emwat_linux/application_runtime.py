@@ -50,16 +50,21 @@ class BridgeRuntime:
             raise TypeError("server must provide serve_forever, wait_until_serving, shutdown and server_close")
         if not isinstance(thread_name, str) or not thread_name.strip():
             raise ValueError("thread_name must be a non-empty string")
-        if (
-            isinstance(join_timeout_seconds, bool)
-            or not isinstance(join_timeout_seconds, (int, float))
-            or not math.isfinite(join_timeout_seconds)
-            or join_timeout_seconds < 0
+        if isinstance(join_timeout_seconds, bool) or not isinstance(
+            join_timeout_seconds, (int, float)
         ):
+            raise ValueError("join_timeout_seconds must be a finite non-negative number")
+        try:
+            timeout_value = float(join_timeout_seconds)
+        except OverflowError as exc:
+            raise ValueError(
+                "join_timeout_seconds must be a finite non-negative number"
+            ) from exc
+        if not math.isfinite(timeout_value) or timeout_value < 0:
             raise ValueError("join_timeout_seconds must be a finite non-negative number")
         self._server = server
         self._thread_name = thread_name
-        self._join_timeout_seconds = float(join_timeout_seconds)
+        self._join_timeout_seconds = timeout_value
         self._lock = threading.RLock()
         self._close_lock = threading.Lock()
         self._state = BridgeRuntimeState.CREATED
