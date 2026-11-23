@@ -43,8 +43,8 @@ def set_custom_document_properties(
             raise KeyError("custom_property_not_found:" + ",".join(missing))
 
         # Capture previous values before the first mutation. UNO has no
-        # transaction primitive for user-defined properties, so roll back
-        # already-applied entries if a later setter fails.
+        # transaction primitive for user-defined properties, so compensate
+        # all attempted entries if a setter fails.
         previous = tuple(
             (name, properties.getPropertyValue(name)) for name, _value in items
         )
