@@ -102,5 +102,123 @@ class GtkDesktopRuntimeTests(unittest.TestCase):
         window.present()
 
 
+    @staticmethod
+    def _walk_widgets(widget):
+        yield widget
+        child = widget.get_first_child()
+        while child is not None:
+            yield from GtkDesktopRuntimeTests._walk_widgets(child)
+            child = child.get_next_sibling()
+
+    def test_bridge_controls_are_visible_but_disabled_without_supervisor(self):
+        widgets = tuple(self._walk_widgets(self.main_window.get_child()))
+        buttons = {
+            widget.get_label(): widget
+            for widget in widgets
+            if isinstance(widget, self.Gtk.Button)
+        }
+        self.assertIn("شروع سرویس", buttons)
+        self.assertIn("توقف سرویس", buttons)
+        self.assertFalse(buttons["شروع سرویس"].get_sensitive())
+        self.assertFalse(buttons["توقف سرویس"].get_sensitive())
+        labels = [
+            widget.get_text()
+            for widget in widgets
+            if isinstance(widget, self.Gtk.Label)
+        ]
+        self.assertTrue(
+            any("پیکربندی نشده" in label for label in labels),
+            labels,
+        )
+
+    def test_injected_bridge_supervisor_controls_run_off_gtk_thread(self):
+        import threading
+        import time
+        from types import SimpleNamespace
+        from emwat_linux.gtk_desktop import create_desktop_application
+
+        class FakeSupervisor:
+            def __init__(self):
+                self._state = "idle"
+                self._failure = None
+                self.started = threading.Event()
+                self.stopped = threading.Event()
+                self.operation_threads = []
+
+            @property
+            def state(self):
+                return SimpleNamespace(value=self._state)
+
+            @property
+            def failure(self):
+                return self._failure
+
+            def start(self):
+                self.operation_threads.append(threading.current_thread())
+                self._state = "running"
+                self.started.set()
+
+            def stop(self):
+                self.operation_threads.append(threading.current_thread())
+                self._state = "stopped"
+                self.stopped.set()
+
+        supervisor = FakeSupervisor()
+        application = create_desktop_application(bridge_supervisor=supervisor)
+        application.register(None)
+        application.activate()
+        window = application.get_active_window()
+        self.extra_windows.append(window)
+        self.addCleanup(application.quit)
+
+        widgets = tuple(self._walk_widgets(window.get_child()))
+        buttons = {
+            widget.get_label(): widget
+            for widget in widgets
+            if isinstance(widget, self.Gtk.Button)
+        }
+        self.assertTrue(buttons["شروع سرویس"].get_sensitive())
+        self.assertFalse(buttons["توقف سرویس"].get_sensitive())
+
+        buttons["شروع سرویس"].emit("clicked")
+        deadline = time.monotonic() + 3.0
+        from gi.repository import GLib
+        main_context = GLib.MainContext.default()
+        while time.monotonic() < deadline:
+            while main_context.pending():
+                main_context.iteration(False)
+            if supervisor.started.is_set() and "running" in [
+                item.get_text()
+                for item in self._walk_widgets(window.get_child())
+                if isinstance(item, self.Gtk.Label)
+            ]:
+                break
+            time.sleep(0.005)
+        self.assertTrue(supervisor.started.is_set(), "start operation did not run")
+        self.assertTrue(supervisor.operation_threads)
+        self.assertNotEqual(
+            supervisor.operation_threads[0],
+            threading.current_thread(),
+            "supervisor operation blocked the GTK thread",
+        )
+        self.assertTrue(buttons["توقف سرویس"].get_sensitive())
+
+        buttons["توقف سرویس"].emit("clicked")
+        deadline = time.monotonic() + 3.0
+        while time.monotonic() < deadline:
+            while main_context.pending():
+                main_context.iteration(False)
+            if supervisor.stopped.is_set() and "stopped" in [
+                item.get_text()
+                for item in self._walk_widgets(window.get_child())
+                if isinstance(item, self.Gtk.Label)
+            ]:
+                break
+            time.sleep(0.005)
+        self.assertTrue(supervisor.stopped.is_set(), "stop operation did not run")
+        self.assertTrue(buttons["شروع سرویس"].get_sensitive())
+        window.close()
+
+
 if __name__ == "__main__":
     unittest.main()
