@@ -4,7 +4,7 @@ Status: design contract for the next scanner implementation; no claim of ADF or 
 
 ## Current implementation boundary
 
-`SaneScannerBackend::scan_one()` performs one `sane_start()`, reads one frame until `SANE_STATUS_EOF`, and returns one `ImagePage`. It accepts only 8-bit Gray and RGB frames. `ImageDocument` stores multiple pages. The public `ScannerBackend` now also exposes `scan_pages()` as a non-pure virtual compatibility method; its default implementation wraps `scan_one()` in a one-element vector. This establishes a source-compatible batch API, but the current SANE backend does not yet override it, so actual ADF/multi-page acquisition is still unavailable.
+`SaneScannerBackend::scan_one()` performs one `sane_start()`, reads one frame until `SANE_STATUS_EOF`, checks `last_frame`, and returns one `ImagePage` only when that frame is terminal. It accepts only 8-bit Gray and RGB frames. `ImageDocument` stores multiple pages. The public `ScannerBackend` now also exposes `scan_pages()` as a non-pure virtual compatibility method; its default implementation wraps `scan_one()` in a one-element vector. This establishes a source-compatible batch API, but the current SANE backend does not yet override it, so actual ADF/multi-page acquisition is still unavailable.
 
 ## API evolution
 
@@ -13,7 +13,7 @@ The first API-evolution step is now implemented as a non-pure virtual method on 
 - `scan_pages(device_id, options)` returns an ordered `std::vector<ImagePage>`.
 - Implemented compatibility default calls `scan_one()` and returns a one-element vector; the fake-backend test covers this fallback. Existing test doubles and downstream backends remain source-compatible.
 - **Not yet implemented:** `SaneScannerBackend` must override it and perform the SANE multi-frame/feeder protocol.
-- Keep `scan_one()` as the existing single-page contract. It must not silently discard later pages; if the selected source produces more than one frame, fail with a stable `ScannerError` code/message and require callers to use `scan_pages()`.
+- Keep `scan_one()` as the existing single-frame contract. It now cancels and rejects a non-terminal frame with `ScannerError("Scanner returned a multi-frame page; use scan_pages()")`; it must not return one plane as a complete page. It still acquires only one feeder page and does not implement ADF batching.
 
 The desktop/controller layer should append returned pages to `ImageDocument` in acquisition order. The scanner backend must not depend on GTK, Writer, or Almas request state.
 
