@@ -39,6 +39,11 @@ inline std::optional<std::int32_t> encode_sane_fixed_resolution(double dpi) noex
     return static_cast<std::int32_t>(rounded);
 }
 
+class ScanBatchEnd final : public std::runtime_error {
+public:
+    ScanBatchEnd() : std::runtime_error("scan_batch_end_of_feeder") {}
+};
+
 template <typename Page, typename StartNext, typename ReadPage, typename PageSize, typename Cancel>
 std::vector<Page> collect_bounded_pages(
     StartNext&& start_next,
@@ -81,6 +86,9 @@ std::vector<Page> collect_bounded_pages(
             return pages;
         }
         throw std::runtime_error("scan_batch_page_limit_exceeded");
+    } catch (const ScanBatchEnd&) {
+        cancel_once();
+        return pages;
     } catch (...) {
         cancel_once();
         throw;
