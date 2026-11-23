@@ -170,6 +170,8 @@ class GtkDesktopRuntimeTests(unittest.TestCase):
         window = application.get_active_window()
         self.extra_windows.append(window)
         self.addCleanup(application.quit)
+        self.assertFalse(supervisor.started.is_set(), "window activation must not auto-start the Bridge")
+        self.assertEqual(supervisor.state.value, "idle")
 
         widgets = tuple(self._walk_widgets(window.get_child()))
         buttons = {
