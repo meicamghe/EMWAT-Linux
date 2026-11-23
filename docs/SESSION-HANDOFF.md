@@ -1260,7 +1260,7 @@ Do not implement guessed `signData` joining or claim end-to-end Almas registrati
 
 - ImageDocument stores multiple pages. ScannerBackend exposes scan_one() and a source-compatible scan_pages() fallback; SaneScannerBackend overrides scan_pages() for explicitly selected ADF sources.
 - SANE ADF batches keep one device/session open, use NO_DOCS at page boundaries as normal completion, cap batches at 100 pages / 4 GiB, and reject a 101st page rather than silently truncate. Flatbed and unspecified sources remain single-page only. The bounded collection state machine has deterministic fake tests for page order, exact-limit completion, over-limit failure, byte limits and cleanup.
-- Each page currently must be one terminal 8-bit Gray or interleaved RGB frame. Planar RED/GREEN/BLUE assembly, duplex front/back semantics and physical scanner hardware acceptance remain open. See docs/SCANNER-MULTIFRAME-IMPLEMENTATION.md.
+- Each page accepts one terminal 8-bit Gray/interleaved RGB frame or a validated planar RED → GREEN → BLUE sequence, interleaved into one RGB page. Duplex front/back semantics and physical scanner hardware acceptance remain open. The pure channel interleaver has padded-stride and invalid-buffer tests; the full SANE function sequence still needs an injectable fake SANE seam. See docs/SCANNER-MULTIFRAME-IMPLEMENTATION.md.
 
 ### WordConfig / Writer boundary
 
