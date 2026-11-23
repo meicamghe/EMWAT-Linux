@@ -641,9 +641,16 @@ int main() {
     assert(detail::is_adf_source("\tADF Front"));
     assert(!detail::is_adf_source("\t"));
     assert(detail::is_adf_source("ADF Front"));
+    assert(detail::is_adf_source("ADF (Simplex)"));
+    assert(detail::is_adf_source("ADF-Simplex"));
+    assert(detail::is_adf_source("ADF: Front"));
+    assert(!detail::is_adf_source("ADFree"));
+    assert(!detail::is_adf_source("ADFScanner"));
     assert(!detail::is_adf_source("ADF Duplex"));
     assert(!detail::is_adf_source("Automatic Document Feeder (Duplex)"));
     assert(detail::is_adf_source("Automatic Document Feeder"));
+    assert(detail::is_adf_source("Automatic Document Feeder - Simplex"));
+    assert(!detail::is_adf_source("Automatic Document FeederX"));
     assert(!detail::is_adf_source("automatic document feeder (duplex)"));
     assert(!detail::is_adf_source("Flatbed"));
     assert(!detail::is_adf_source("Not ADF"));
