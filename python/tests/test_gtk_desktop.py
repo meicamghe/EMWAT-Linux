@@ -4,6 +4,32 @@ import unittest
 
 
 class GtkDesktopEntryTests(unittest.TestCase):
+    def test_shutdown_stops_running_or_failed_bridge_but_not_idle(self):
+        from types import SimpleNamespace
+        from emwat_linux.gtk_desktop import _stop_bridge_supervisor_on_shutdown
+
+        class Supervisor:
+            def __init__(self, state):
+                self.state = SimpleNamespace(value=state)
+                self.stop_calls = 0
+
+            def stop(self):
+                self.stop_calls += 1
+                self.state = SimpleNamespace(value="stopped")
+
+        for state in ("running", "failed"):
+            supervisor = Supervisor(state)
+            _stop_bridge_supervisor_on_shutdown(supervisor)
+            self.assertEqual(supervisor.stop_calls, 1)
+            self.assertEqual(supervisor.state.value, "stopped")
+
+        for state in ("idle", "stopped"):
+            supervisor = Supervisor(state)
+            _stop_bridge_supervisor_on_shutdown(supervisor)
+            self.assertEqual(supervisor.stop_calls, 0)
+
+        _stop_bridge_supervisor_on_shutdown(None)
+
     def test_import_does_not_load_gi_or_gtk(self):
         from emwat_linux import gtk_desktop
 
