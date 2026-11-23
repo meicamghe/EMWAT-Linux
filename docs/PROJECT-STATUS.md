@@ -2985,3 +2985,19 @@ The next meaningful Almas acceptance input is a sanitized, synthetic-or-test-acc
   the Python (239 tests), Native (build/test, sanitizer and package lifecycle),
   and LibreOffice UNO workflows recorded above.
 - PR #2 remains open, Draft and unmerged.
+
+## Bridge Host and runtime doctor regression coverage — 2026-11-23
+
+- Added negative HTTP Host-header cases for wrong loopback address, hostname
+  substitution, wrong port, empty port, userinfo, and appended path. The
+  transport must reject these before routing to the application handler.
+- Added runtime-doctor coverage for Python below the supported 3.10 minimum
+  and JSON output when required dependencies are missing; optional GTK absence
+  remains non-fatal.
+- Latest Python bridge workflow run `45143243027` succeeded on commit
+  `d3f2333dc24e38c706415b14d0be4cff8d195a9e`: 242 tests passed, 2 skipped;
+  package installation and the installed `emwat-linux-doctor --help`
+  entrypoint check also succeeded.
+- Earlier runs for the first draft of these new tests exposed fixture and
+  assertion mistakes; the tests were corrected and the final run above is
+  green. No production protocol behavior was changed.
