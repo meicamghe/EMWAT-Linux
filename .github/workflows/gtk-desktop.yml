@@ -1,0 +1,34 @@
+name: GTK desktop smoke test
+on:
+  push:
+    paths:
+      - 'python/src/emwat_linux/gtk_desktop.py'
+      - 'python/src/emwat_linux/gtk_recovery_view.py'
+      - 'python/src/emwat_linux/doctor.py'
+      - 'python/tests/test_gtk*.py'
+      - '.github/workflows/gtk-desktop.yml'
+  pull_request:
+    paths:
+      - 'python/src/emwat_linux/gtk_desktop.py'
+      - 'python/src/emwat_linux/gtk_recovery_view.py'
+      - 'python/src/emwat_linux/doctor.py'
+      - 'python/tests/test_gtk*.py'
+      - '.github/workflows/gtk-desktop.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  gtk-activation:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install GTK 4, PyGObject, and headless display
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y python3-gi gir1.2-gtk-4.0 python3-cryptography xvfb
+      - name: Run GTK application smoke tests
+        env:
+          PYTHONPATH: python/src
+        run: xvfb-run -a /usr/bin/python3 -m unittest python.tests.test_gtk_desktop_runtime -v
