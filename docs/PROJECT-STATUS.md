@@ -2931,3 +2931,21 @@ The next meaningful Almas acceptance input is a sanitized, synthetic-or-test-acc
 - The EditWordDocument handler now validates that its required non-success response factory is callable during construction. A misconfigured deployment fails at startup instead of waiting for a user to close/discard a document before surfacing an internal method error.
 - Added regression tests for interleaved duplicate signer IDs and invalid response-factory inputs.
 - CI for this head is pending; these changes are not yet declared verified.
+
+
+## Read-only runtime diagnostics — 2026-11-23
+
+- Added `emwat-linux-doctor` as a Python package console command, with
+  `python -m emwat_linux.doctor` as an equivalent module invocation.
+- The diagnostic checks Python version, LibreOffice executable discovery,
+  importability of the UNO module in the active interpreter, and optional
+  GTK 4/PyGObject availability. It supports human-readable and JSON output.
+- The command is read-only and does not start a bridge, inspect documents,
+  create settings, or touch recovery files. Missing required Python/LibreOffice/
+  UNO dependencies produce a non-zero exit status; missing GTK is informational.
+- Added unit coverage for successful/missing dependencies, optional GTK behavior,
+  and JSON output.
+- This is a dependency preflight utility only. It does not add the production
+  Almas bridge daemon, desktop launcher, service supervisor, or installer.
+- Fresh CI for this new code is pending; do not mark it verified until all
+  Python, UNO, and Native workflows for the updated PR head complete.
