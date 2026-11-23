@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=EMWAT Linux
+Comment=Local Almas and LibreOffice Writer control and diagnostics
+Exec=emwat-linux
+Terminal=false
+StartupNotify=true
+Categories=Office;Utility;
