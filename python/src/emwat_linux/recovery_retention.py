@@ -63,12 +63,19 @@ def apply_recovery_retention(
 
     survivors = [item for item in snapshots if item.session_id not in expired]
     if policy.max_snapshots is not None and len(survivors) > policy.max_snapshots:
-        survivors.sort(key=lambda item: item.updated_at, reverse=True)
+        # Use the session ID as a stable tie-breaker when timestamps match.
+        # Directory iteration order is not a persistence contract.
+        survivors.sort(
+            key=lambda item: (item.updated_at, item.session_id), reverse=True
+        )
         expired.update(item.session_id for item in survivors[policy.max_snapshots:])
 
-    # Delete oldest first for deterministic behavior; the store validates IDs.
+    # Delete oldest first with the same stable tie-breaker; the store validates IDs.
     removed = tuple(
-        item.session_id for item in sorted(snapshots, key=lambda item: item.updated_at)
+        item.session_id
+        for item in sorted(
+            snapshots, key=lambda item: (item.updated_at, item.session_id)
+        )
         if item.session_id in expired
     )
     for session_id in removed:
