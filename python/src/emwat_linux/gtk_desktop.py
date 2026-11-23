@@ -136,6 +136,8 @@ def create_desktop_application(
             from gi.repository import GLib
 
             def refresh_bridge_controls() -> bool:
+                if not window.get_visible():
+                    return GLib.SOURCE_REMOVE
                 state = bridge_supervisor.state
                 failure = bridge_supervisor.failure
                 bridge_status.set_text(
@@ -150,6 +152,16 @@ def create_desktop_application(
                     not busy and state.value in ("running", "failed")
                 )
                 return GLib.SOURCE_REMOVE
+
+            def poll_bridge_state() -> bool:
+                if not window.get_visible():
+                    return GLib.SOURCE_REMOVE
+                refresh_bridge_controls()
+                return GLib.SOURCE_CONTINUE
+
+            # A serving thread can fail without a button action. Poll the
+            # supervisor on GTK's main context so the failure is visible.
+            GLib.timeout_add_seconds(1, poll_bridge_state)
 
             def run_bridge_operation(operation: Any) -> None:
                 bridge_start.set_sensitive(False)
