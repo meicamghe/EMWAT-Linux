@@ -2923,3 +2923,11 @@ The next meaningful Almas acceptance input is a sanitized, synthetic-or-test-acc
 - Parent allowlist configuration now rejects malformed/empty ports and whitespace hostnames instead of preserving an authority that cannot match the browser's serialized Origin.
 - Added regression tests for default-port equivalence, case normalization, non-default ports and empty-port rejection.
 - The HTTP bridge still requires the deployment to provide the real Almas parent-page Origin; this change only makes exact allowlist matching consistent.
+
+
+## Parallel hardening: signer catalog order and handler startup validation — 2026-11-23
+
+- Indexed signer slot construction now records each recognized field's actual input position in one pass. Repeated identical field IDs retain every occurrence and original order; the previous `field_ids.index()` implementation could collapse duplicate positions and perform quadratic repeated scans. This is structural audit behavior only and does not infer Word-to-Writer mappings.
+- The EditWordDocument handler now validates that its required non-success response factory is callable during construction. A misconfigured deployment fails at startup instead of waiting for a user to close/discard a document before surfacing an internal method error.
+- Added regression tests for interleaved duplicate signer IDs and invalid response-factory inputs.
+- CI for this head is pending; these changes are not yet declared verified.
