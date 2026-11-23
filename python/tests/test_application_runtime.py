@@ -164,11 +164,18 @@ class BridgeRuntimeTests(unittest.TestCase):
     def test_shutdown_failure_has_bounded_join_and_can_be_retried(self):
         failure = RuntimeError("shutdown failed before stop signal")
 
-        class StuckShutdownServer(FakeServer):
-            def shutdown(self):
-                raise failure
+        class RetryShutdownServer(FakeServer):
+            def __init__(self):
+                super().__init__()
+                self.shutdown_attempts = 0
 
-        server = StuckShutdownServer()
+            def shutdown(self):
+                self.shutdown_attempts += 1
+                if self.shutdown_attempts == 1:
+                    raise failure
+                self.stopped.set()
+
+        server = RetryShutdownServer()
         runtime = BridgeRuntime(server, join_timeout_seconds=0.01)
         runtime.start()
         with self.assertRaisesRegex(RuntimeError, "before stop signal"):
@@ -180,9 +187,8 @@ class BridgeRuntimeTests(unittest.TestCase):
         self.assertIs(runtime.failure, failure)
 
         # A later close retries shutdown while the serve thread is still alive.
-        server.stopped.set()
-        runtime._thread.join(2)
         runtime.close()
+        self.assertEqual(server.shutdown_attempts, 2)
         self.assertFalse(runtime._thread.is_alive())
         self.assertEqual(runtime.state, BridgeRuntimeState.STOPPED)
         self.assertIsNone(runtime.failure)
