@@ -23,7 +23,7 @@ proof of live Almas compatibility.
 | Almas end-to-end | Real browser Origin, init, heartbeat, request, Writer lifecycle and returned response | Not yet accepted; requires controlled test account and sanitized complete request/response fixtures | Release blocker |
 | Cancel / discard wire response | Exact response envelope Almas expects for each non-success close decision | Not yet established; factory intentionally remains injected | Release blocker; do not invent the response |
 | Windows `.easz` interoperability | Archive creation/opening and password/error behavior | Static trace only; no validated interoperability fixture | Not implemented/verified |
-| Desktop packaging and supervision | User-facing app entrypoint, settings, launcher, lifecycle supervision, install/upgrade/uninstall | Not complete | Release blocker |
+| Desktop packaging and supervision | Per-user .desktop install/uninstall scripts with tested Exec-path quoting; no complete Python bridge .deb, persistent user service, deployment settings or configured production supervisor | Partial launcher lifecycle only | Release blocker |
 
 ## Required Almas acceptance fixture
 
