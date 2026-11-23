@@ -57,6 +57,11 @@ class GtkDesktopRuntimeTests(unittest.TestCase):
         status = root.get_first_child().get_next_sibling().get_next_sibling()
         scroller = status.get_next_sibling()
         listing = scroller.get_child()
+        # Gtk.ScrolledWindow may insert a Gtk.Viewport around a non-scrollable
+        # child. Unwrap it rather than assuming get_child() is always ListBox.
+        if isinstance(listing, self.Gtk.Viewport):
+            listing = listing.get_child()
+        self.assertIsInstance(listing, self.Gtk.ListBox)
         selected = listing.get_selected_row()
         self.assertIsNotNone(selected)
         self.assertEqual(selected.get_name(), "session-newest")
