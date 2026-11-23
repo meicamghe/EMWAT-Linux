@@ -27,7 +27,7 @@ from emwat_linux.word_config import WordDocumentConfig
 
 
 class DocumentCloseListenerRetryTests(unittest.TestCase):
-    def test_snapshot_failure_is_cleared_when_close_is_retried(self):
+    def test_cancelled_close_retries_never_export_live_document(self):
         from threading import Event, Lock
         from emwat_linux.libreoffice_adapter import _DocumentCloseListener
 
@@ -37,27 +37,30 @@ class DocumentCloseListenerRetryTests(unittest.TestCase):
 
             def storeToURL(self, _url, _properties):
                 self.attempts += 1
-                if self.attempts == 1:
-                    raise RuntimeError("simulated_close_attempt_cancelled")
+                raise RuntimeError("must_not_be_called_from_query_closing")
 
         document = FlakyDocument()
+        closed = Event()
         listener = _DocumentCloseListener(
             document,
-            "file:///tmp/emwat-final.doc",
-            lambda: None,
+            "file:///tmp/emwat-last-saved.doc",
+            closed.set,
             (),
             Lock(),
             Event(),
         )
 
         listener.queryClosing(None, False)
-        self.assertIsInstance(listener.snapshot_error, RuntimeError)
-        self.assertTrue(listener.snapshot_ready.is_set())
+        self.assertEqual(document.attempts, 0)
+        self.assertFalse(closed.is_set())
 
+        # A Cancel leaves Writer alive; a subsequent close attempt still must
+        # not export uncommitted document bytes.
         listener.queryClosing(None, False)
-        self.assertIsNone(listener.snapshot_error)
-        self.assertTrue(listener.snapshot_ready.is_set())
-        self.assertEqual(document.attempts, 2)
+        self.assertEqual(document.attempts, 0)
+        self.assertFalse(closed.is_set())
+        listener.notifyClosed(None)
+        self.assertTrue(closed.is_set())
 
 
 class RecoveryWorkerTests(unittest.TestCase):
