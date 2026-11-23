@@ -143,6 +143,50 @@ class BridgeRuntimeTests(unittest.TestCase):
         self.assertTrue(server.closed)
         self.assertEqual(runtime.state, BridgeRuntimeState.STOPPED)
 
+    def test_shutdown_failure_still_closes_socket_and_joins_thread(self):
+        failure = RuntimeError("shutdown failed")
+
+        class FailingShutdownServer(FakeServer):
+            def shutdown(self):
+                self.stopped.set()
+                raise failure
+
+        server = FailingShutdownServer()
+        runtime = BridgeRuntime(server)
+        runtime.start()
+        with self.assertRaisesRegex(RuntimeError, "shutdown failed"):
+            runtime.close()
+        self.assertTrue(server.closed)
+        self.assertFalse(runtime._thread.is_alive())
+        self.assertIs(runtime.failure, failure)
+        self.assertEqual(runtime.state, BridgeRuntimeState.FAILED)
+
+    def test_close_before_start_retries_socket_close_after_failure(self):
+        failure = RuntimeError("server_close failed")
+
+        class RetryCloseServer(FakeServer):
+            def __init__(self):
+                super().__init__()
+                self.close_attempts = 0
+
+            def server_close(self):
+                self.close_attempts += 1
+                if self.close_attempts == 1:
+                    raise failure
+                self.closed = True
+
+        server = RetryCloseServer()
+        runtime = BridgeRuntime(server)
+        with self.assertRaisesRegex(RuntimeError, "server_close failed"):
+            runtime.close()
+        self.assertEqual(runtime.state, BridgeRuntimeState.FAILED)
+        self.assertFalse(server.closed)
+        runtime.close()
+        self.assertTrue(server.closed)
+        self.assertEqual(server.close_attempts, 2)
+        self.assertEqual(runtime.state, BridgeRuntimeState.FAILED)
+        self.assertIs(runtime.failure, failure)
+
     def test_server_failure_is_retained_and_socket_closed(self):
         failure = RuntimeError("serve failed")
 
