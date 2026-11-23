@@ -83,7 +83,8 @@ class BridgeRuntime:
             with self._lock:
                 self._failure = exc
                 self._state = BridgeRuntimeState.FAILED
-            raise
+            # Keep the exception available through failure without emitting an
+            # unhandled-thread traceback into the desktop application's stderr.
 
     def close(self) -> None:
         with self._lock:
