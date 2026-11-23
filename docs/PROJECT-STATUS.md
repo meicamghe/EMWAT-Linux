@@ -3069,3 +3069,26 @@ The next meaningful Almas acceptance input is a sanitized, synthetic-or-test-acc
 - The cleanup logic is headless lifecycle infrastructure; it does not add
   desktop signal handling, a GTK application entrypoint, or a production
   launcher. PR #2 remains open, Draft, and unmerged.
+
+
+## GTK desktop control shell — 2026-11-23
+
+- Added `emwat_linux.gtk_desktop`: a lazy-import GTK 4 application shell with
+  local dependency diagnostics and an optional Recovery-window injection
+  point. Added the `emwat-linux` Python console entrypoint.
+- The shell deliberately does not start `BridgeRuntime` or compose the
+  LibreOffice bridge. It displays that startup is not configured until a
+  deployment supplies the actual Almas Origin allowlist and captured Cancel
+  response behavior. This avoids silently creating an unusable or unsafe
+  local listener from guessed values.
+- Added headless tests for lazy imports, CLI help, and the no-bridge-start
+  boundary; added a separate GTK 4/Xvfb workflow and a real application
+  activation smoke test for environments with PyGObject installed.
+- Recovery view remains opt-in through an injected controller; no default
+  recovery root, encryption key, or retention policy is invented.
+- The new GTK activation workflow is the first real GTK runtime validation
+  path. Until it completes successfully on the current branch head, no GTK
+  runtime pass is claimed. The shell is not yet a full production desktop
+  application: persistent configuration, configured bridge supervision,
+  desktop file/installer integration, session shutdown handling, and
+  Almas/browser E2E remain outstanding.
