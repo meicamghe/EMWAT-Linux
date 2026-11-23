@@ -73,3 +73,12 @@ Do not mark the project production-ready until all release blockers above have
 either passed acceptance with recorded evidence or been explicitly removed from
 the product scope by a documented decision. Keep the pull request Draft until
 the live integration contract, user-facing runtime and packaging are reviewed.
+
+## Latest bridge regression run — 2026-11-23
+
+The Python bridge workflow on commit
+`d3f2333dc24e38c706415b14d0be4cff8d195a9e` completed successfully:
+242 tests passed, 2 skipped. This run includes strict Host-header rejection
+cases and runtime-doctor minimum-Python / missing-dependency JSON cases. The
+installed package console-entrypoint check also passed. This remains automated
+component evidence, not live Almas end-to-end acceptance.
