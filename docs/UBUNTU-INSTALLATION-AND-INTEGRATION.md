@@ -204,3 +204,25 @@ A supported Ubuntu desktop release requires all of the following:
 - synthetic .easz interoperability fixture if that compatibility is advertised;
 - physical scanner validation for every advertised acquisition mode.
 
+
+
+## Read-only runtime diagnostics
+
+The Python package now exposes `emwat-linux-doctor` (also available as
+`python -m emwat_linux.doctor`). It checks the active Python version, a
+LibreOffice executable, whether the active interpreter can import UNO, and
+whether GTK 4/PyGObject can build the optional recovery UI. GTK is reported as
+optional and does not cause a failed diagnostic exit status. Missing Python,
+LibreOffice, or UNO support produces a non-zero exit status.
+
+Run it after installing the Python package:
+
+```sh
+emwat-linux-doctor
+emwat-linux-doctor --json
+```
+
+The command is read-only: it does not start the bridge, create configuration,
+inspect documents, or modify recovery data. A successful report is a local
+dependency preflight only; it does not establish Almas compatibility or mean
+that the production bridge service/desktop launcher is available.
