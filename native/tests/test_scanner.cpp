@@ -192,7 +192,6 @@ int main() {
 
     // Planar RGB page metadata must preserve exact RED/GREEN/BLUE order and flags.
     {
-        constexpr int red = 2;
         constexpr int green = 3;
         constexpr int blue = 4;
         assert(detail::planar_rgb_frame_matches(
@@ -216,7 +215,6 @@ int main() {
         assert(!detail::planar_rgb_frame_matches(
             green, green, 8, 8, 2, 2, 3, 3, 4, true, false
         ));
-        (void)red;
     }
 
     // Planar RGB frames are interleaved by channel and row; padding is ignored.
