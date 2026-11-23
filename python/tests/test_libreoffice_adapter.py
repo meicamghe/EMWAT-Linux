@@ -279,8 +279,8 @@ class LibreOfficeAdapterUnitTests(unittest.TestCase):
         close_listener.notifyClosed(object())
 
         self.assertEqual(saved, [])
-        self.assertEqual(len(document.calls), 1)
-        self.assertTrue(close_listener.snapshot_ready.is_set())
+        self.assertEqual(document.calls, [])
+        self.assertFalse(close_listener.snapshot_ready.is_set())
         self.assertIsNone(close_listener.snapshot_error)
         self.assertTrue(closed.is_set())
 
