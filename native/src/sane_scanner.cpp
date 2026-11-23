@@ -421,10 +421,12 @@ ImagePage read_started_sane_page(
         status = sane_get_parameters(handle, &next);
         if (status != SANE_STATUS_GOOD)
             throw ScannerError(std::string("Cannot read planar RGB parameters: ") + sane_strstatus(status));
-        if (next.format != expected_format || next.depth != 8 ||
-            next.pixels_per_line != params.pixels_per_line ||
-            next.lines != params.lines || next.last_frame != should_be_last ||
-            next.bytes_per_line < next.pixels_per_line)
+        if (!detail::planar_rgb_frame_matches(
+                static_cast<int>(next.format), static_cast<int>(expected_format),
+                next.depth, 8, next.pixels_per_line, params.pixels_per_line,
+                next.lines, params.lines, next.bytes_per_line,
+                next.last_frame != SANE_FALSE, should_be_last
+            ))
             throw ScannerError("Scanner returned an inconsistent planar RGB frame sequence");
 
         plane_stride = static_cast<std::size_t>(next.bytes_per_line);
