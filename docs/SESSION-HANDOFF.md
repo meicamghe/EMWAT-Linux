@@ -1258,11 +1258,24 @@ Do not implement guessed `signData` joining or claim end-to-end Almas registrati
 
 ### Scanner implementation boundary
 
-- ImageDocument stores multiple pages, but ScannerBackend exposes only scan_one(); the SANE implementation reads one frame per call.
-- ADF/multi-frame and duplex are not implemented or hardware-verified. The design contract is in docs/SCANNER-MULTIFRAME-IMPLEMENTATION.md.
+- ImageDocument stores multiple pages. ScannerBackend exposes scan_one() and a source-compatible scan_pages() fallback; SaneScannerBackend currently implements only scan_one().
+- scan_one() now rejects non-terminal SANE frames instead of returning a potentially incomplete page. The SANE backend still does not override scan_pages(); ADF/multi-frame assembly and duplex are not implemented or hardware-verified. The design contract is in docs/SCANNER-MULTIFRAME-IMPLEMENTATION.md.
 
 ### WordConfig / Writer boundary
 
 - The adapter opens the incoming document and exposes a read-only WordConfig-to-Writer evidence audit. It does not automatically apply WordConfig fields.
 - Exact-name intersections and case-only matches remain candidates, not verified semantic mappings. No positional mapping, signature-image substitution or unverified twin-field writes are permitted.
 - See docs/WORDCONFIG-WRITER-APPLICATION-PLAN.md.
+
+
+## 2026-11-23 — automatic Writer inventory and partial-inspection diagnostics
+
+- `LibreOfficeAdapter.open_document()` now captures a metadata-only WordConfig/Writer inventory automatically after opening the document and recording its baseline. The report is retained in-memory on the office handle as `word_writer_evidence`; no field values or body text are written and no mappings are applied.
+- Overall inventory failure does not block document open; only the stable status `writer_inventory_unavailable` is retained.
+- Writer catalog inspection now records stable, value-free `inspection_warnings` for individual UNO structures that cannot be enumerated. The evidence report exposes these as `writer_inventory_warnings`, preventing an unavailable container from being silently mistaken for a genuinely empty one.
+- Custom document-property metadata is now read once per inventory pass, preserving its UNO-reported order and producing the sorted view from the same snapshot.
+- Added unit coverage for unavailable containers and propagation of warning codes into the evidence report.
+- Latest verified CI at commit `7f92fdd0b1e293a34b73105e48a0f8b896ca0726`: LibreOffice UNO run `45177847225` passed 24 tests. Python, GTK and Native workflows for this exact head were still running/queued at the time of this handoff update; do not reuse earlier-head counts as proof for this commit.
+- Python run `45177757461` on prior code head `2f8ce039d0395c2870cdd743600e91bdf18e0b21` passed 277 tests; UNO run `45177756605` on that prior head passed 24 tests. These are not a substitute for final-head CI.
+- The SANE `scan_one()` terminal-frame guard and archive evidence correction are also present on the branch. No ADF/duplex or `.easz` interoperability claim is made.
+- PR #2 remains open, Draft and unmerged.
