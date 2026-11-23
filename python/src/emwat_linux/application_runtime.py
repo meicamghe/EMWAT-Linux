@@ -43,6 +43,7 @@ class BridgeRuntime:
         self._server = server
         self._thread_name = thread_name
         self._lock = threading.RLock()
+        self._close_lock = threading.Lock()
         self._state = BridgeRuntimeState.CREATED
         self._thread: threading.Thread | None = None
         self._failure: BaseException | None = None
@@ -87,6 +88,12 @@ class BridgeRuntime:
             # unhandled-thread traceback into the desktop application's stderr.
 
     def close(self) -> None:
+        # Serialize concurrent callers so every close() return guarantees that
+        # socket closure and worker-thread joining have both completed.
+        with self._close_lock:
+            self._close_once()
+
+    def _close_once(self) -> None:
         with self._lock:
             state = self._state
             thread = self._thread
