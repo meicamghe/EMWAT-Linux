@@ -7,6 +7,7 @@ before handing it to the runtime.
 from __future__ import annotations
 
 from enum import Enum
+import math
 import threading
 from typing import Protocol
 
@@ -34,21 +35,37 @@ class BridgeRuntime:
     underlying BridgeHTTPServer uses non-daemon request threads.
     """
 
-    def __init__(self, server: _Server, *, thread_name: str = "emwat-bridge") -> None:
+    def __init__(
+        self,
+        server: _Server,
+        *,
+        thread_name: str = "emwat-bridge",
+        join_timeout_seconds: float = 5.0,
+    ) -> None:
         if not all(callable(getattr(server, name, None)) for name in (
             "serve_forever", "wait_until_serving", "shutdown", "server_close"
         )):
             raise TypeError("server must provide serve_forever, wait_until_serving, shutdown and server_close")
         if not isinstance(thread_name, str) or not thread_name.strip():
             raise ValueError("thread_name must be a non-empty string")
+        if (
+            isinstance(join_timeout_seconds, bool)
+            or not isinstance(join_timeout_seconds, (int, float))
+            or not math.isfinite(join_timeout_seconds)
+            or join_timeout_seconds < 0
+        ):
+            raise ValueError("join_timeout_seconds must be a finite non-negative number")
         self._server = server
         self._thread_name = thread_name
+        self._join_timeout_seconds = float(join_timeout_seconds)
         self._lock = threading.RLock()
         self._close_lock = threading.Lock()
         self._state = BridgeRuntimeState.CREATED
         self._thread: threading.Thread | None = None
         self._failure: BaseException | None = None
         self._closed_socket = False
+        self._shutdown_complete = False
+        self._serve_failed = False
 
     @property
     def state(self) -> BridgeRuntimeState:
@@ -88,6 +105,7 @@ class BridgeRuntime:
         except BaseException as exc:
             with self._lock:
                 self._failure = exc
+                self._serve_failed = True
                 self._state = BridgeRuntimeState.FAILED
             # Keep the exception available through failure without emitting an
             # unhandled-thread traceback into the desktop application's stderr.
@@ -104,20 +122,17 @@ class BridgeRuntime:
             thread = self._thread
             if state is BridgeRuntimeState.CREATED:
                 self._state = BridgeRuntimeState.STOPPING
-                close_socket = True
-                shutdown_server = False
             elif state is BridgeRuntimeState.RUNNING:
                 self._state = BridgeRuntimeState.STOPPING
-                close_socket = True
-                shutdown_server = True
-            elif state is BridgeRuntimeState.STOPPING:
-                close_socket = not self._closed_socket
-                shutdown_server = False
-            elif state is BridgeRuntimeState.FAILED:
-                close_socket = not self._closed_socket
-                shutdown_server = False
-            else:
+            elif state not in (BridgeRuntimeState.STOPPING, BridgeRuntimeState.FAILED):
                 return
+
+            close_socket = not self._closed_socket
+            shutdown_server = (
+                thread is not None
+                and thread.is_alive()
+                and not self._shutdown_complete
+            )
 
         close_error: BaseException | None = None
         if shutdown_server:
@@ -125,6 +140,9 @@ class BridgeRuntime:
                 self._server.shutdown()
             except BaseException as exc:
                 close_error = exc
+            else:
+                with self._lock:
+                    self._shutdown_complete = True
 
         if close_socket:
             try:
@@ -137,15 +155,23 @@ class BridgeRuntime:
                     self._closed_socket = True
 
         if thread is not None:
-            thread.join()
+            thread.join(timeout=self._join_timeout_seconds)
+            if thread.is_alive() and close_error is None:
+                close_error = TimeoutError(
+                    "bridge_server_thread_did_not_stop_before_join_timeout"
+                )
 
         with self._lock:
             if close_error is not None:
                 if self._failure is None:
                     self._failure = close_error
                 self._state = BridgeRuntimeState.FAILED
-            elif self._state is BridgeRuntimeState.STOPPING:
-                self._state = BridgeRuntimeState.STOPPED
+            elif self._closed_socket and (thread is None or not thread.is_alive()):
+                if self._serve_failed:
+                    self._state = BridgeRuntimeState.FAILED
+                else:
+                    self._failure = None
+                    self._state = BridgeRuntimeState.STOPPED
 
         if close_error is not None:
             raise close_error
