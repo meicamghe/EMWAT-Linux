@@ -11,6 +11,7 @@ import json
 import math
 import re
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+import threading
 from ipaddress import ip_address
 from typing import Callable
 from urllib.parse import parse_qsl, urlsplit
@@ -33,6 +34,29 @@ class BridgeResponse:
 
 
 RequestHandler = Callable[[BridgeRequest], BridgeResponse]
+
+
+class _ServingThreadingHTTPServer(ThreadingHTTPServer):
+    """ThreadingHTTPServer with a reliable serve-loop readiness handshake."""
+
+    def __init__(self, *args: object, **kwargs: object) -> None:
+        self._serving_event = threading.Event()
+        super().__init__(*args, **kwargs)
+
+    def service_actions(self) -> None:
+        # BaseServer calls this only after serve_forever has entered its loop.
+        self._serving_event.set()
+        super().service_actions()
+
+    def serve_forever(self, poll_interval: float = 0.5) -> None:
+        try:
+            super().serve_forever(poll_interval=poll_interval)
+        finally:
+            # Also release waiters if startup fails before the first loop tick.
+            self._serving_event.set()
+
+    def wait_until_serving(self) -> None:
+        self._serving_event.wait()
 
 
 class BridgeHTTPServer:
@@ -315,7 +339,7 @@ class BridgeHTTPServer:
             do_DELETE = _unsupported
             do_HEAD = _unsupported
 
-        self._server = ThreadingHTTPServer((host, port), Handler)
+        self._server = _ServingThreadingHTTPServer((host, port), Handler)
         # Do not abandon active document requests during shutdown. The caller
         # must call shutdown() and then server_close(); ThreadingMixIn will join
         # request workers before server_close() returns.
@@ -439,6 +463,10 @@ class BridgeHTTPServer:
 
     def serve_forever(self) -> None:
         self._server.serve_forever(poll_interval=0.2)
+
+    def wait_until_serving(self) -> None:
+        """Block until the HTTP serve loop has entered or exited during startup."""
+        self._server.wait_until_serving()
 
     def shutdown(self) -> None:
         self._server.shutdown()
