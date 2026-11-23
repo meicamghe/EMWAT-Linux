@@ -67,7 +67,7 @@ std::vector<Page> collect_bounded_pages(
                 cancel_once();
                 return pages;
             }
-            Page page = read_page();
+            Page page = read_page(max_total_bytes - total_bytes);
             const auto bytes = static_cast<std::uint64_t>(page_size(page));
             if (bytes > max_total_bytes - total_bytes)
                 throw std::runtime_error("scan_batch_byte_limit_exceeded");
