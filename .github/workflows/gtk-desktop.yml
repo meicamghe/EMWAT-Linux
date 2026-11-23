@@ -18,6 +18,10 @@ on:
       - 'python/src/emwat_linux/gtk_desktop.py'
       - 'python/src/emwat_linux/gtk_recovery_view.py'
       - 'python/src/emwat_linux/doctor.py'
+      - 'python/src/emwat_linux/desktop_entry.py'
+      - 'python/tests/test_desktop_entry.py'
+      - 'python/pyproject.toml'
+      - 'packaging/**'
       - 'python/tests/test_gtk*.py'
       - '.github/workflows/gtk-desktop.yml'
   workflow_dispatch:
