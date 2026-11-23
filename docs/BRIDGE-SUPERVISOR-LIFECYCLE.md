@@ -25,7 +25,9 @@ or guessed Cancel/Discard responses.
 - A failed start or stop is surfaced as `FAILED`. A failed cleanup must be
   retried with `stop()` before a new start is allowed. The supervisor
   never hides a potentially live serving thread by silently replacing it.
-- An unexpected serving-loop exit is detected on the next `start()` call.
+- An unexpected serving-loop exit is reflected as `FAILED` when the
+  supervisor's `state` or `failure` property is next read; callers do not
+  need to issue a second `start()` merely to discover the failure.
   Once `stop()` confirms cleanup, the supervisor may start a fresh server;
   the previous runtime failure remains available diagnostically until that
   next start clears it.
