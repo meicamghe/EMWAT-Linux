@@ -63,6 +63,33 @@ class RecoveryRetentionTests(unittest.TestCase):
             remaining = store.list_snapshots()
             self.assertEqual({item.session_id for item in remaining}, expected_kept)
 
+    def test_count_limit_uses_session_id_as_stable_timestamp_tie_breaker(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            store = RecoverySnapshotStore(Path(temporary) / "recovery")
+            sessions = []
+            for _ in range(3):
+                session = store.create_session()
+                store.save_snapshot(session, DOC)
+                sessions.append(session)
+
+            import json
+            for session in sessions:
+                manifest = store.root / session / "manifest.json"
+                data = json.loads(manifest.read_text())
+                data["updated_at"] = 500.0
+                manifest.write_text(json.dumps(data))
+
+            keep = set(sorted(sessions, reverse=True)[:2])
+            expected_removed = (sorted(sessions)[0],)
+            removed = apply_recovery_retention(
+                store, RecoveryRetentionPolicy(max_snapshots=2), now=1000
+            )
+
+            self.assertEqual(removed, expected_removed)
+            self.assertEqual(
+                {item.session_id for item in store.list_snapshots()}, keep
+            )
+
     def test_age_limit_removes_only_expired_valid_snapshots(self):
         with tempfile.TemporaryDirectory() as temporary:
             store = RecoverySnapshotStore(Path(temporary) / "recovery")
