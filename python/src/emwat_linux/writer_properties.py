@@ -1,7 +1,7 @@
 """Strict Writer custom-document-property updates for mapped EMWAT fields.
 
 The caller must supply verified property names. This module never creates
-properties implicitly and never reads their current values.
+properties implicitly and captures old values to compensate partial updates.
 """
 from __future__ import annotations
 
@@ -48,18 +48,20 @@ def set_custom_document_properties(
         previous = tuple(
             (name, properties.getPropertyValue(name)) for name, _value in items
         )
-        applied: list[str] = []
+        attempted: list[str] = []
         for property_name, value in items:
+            # Include the currently failing setter in compensation: an UNO
+            # implementation may mutate before surfacing an exception.
+            attempted.append(property_name)
             try:
                 properties.setPropertyValue(property_name, value)
-                applied.append(property_name)
             except Exception as exc:
                 rollback_failed = False
                 previous_by_name = dict(previous)
-                for applied_name in reversed(applied):
+                for attempted_name in reversed(attempted):
                     try:
                         properties.setPropertyValue(
-                            applied_name, previous_by_name[applied_name]
+                            attempted_name, previous_by_name[attempted_name]
                         )
                     except Exception:
                         rollback_failed = True
