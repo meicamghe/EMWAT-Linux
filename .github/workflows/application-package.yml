@@ -1,0 +1,83 @@
+name: Linux application Debian package
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'packaging/**'
+      - 'python/src/emwat_linux/**'
+      - '.github/workflows/application-package.yml'
+  pull_request:
+    paths:
+      - 'packaging/**'
+      - 'python/src/emwat_linux/**'
+      - '.github/workflows/application-package.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  application-package-lifecycle:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install application runtime dependencies and package tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            dpkg-dev desktop-file-utils \
+            python3-gi gir1.2-gtk-4.0 \
+            libreoffice-writer python3-uno \
+            python3-cryptography python3-keyring
+      - name: Build two application package versions
+        env:
+          PACKAGE_OUTPUT: ${{ runner.temp }}/emwat-application-packages
+        run: |
+          mkdir -p "$PACKAGE_OUTPUT"
+          sh packaging/build-application-package.sh 0.1.0 "$PACKAGE_OUTPUT/v1"
+          sh packaging/build-application-package.sh 0.1.1 "$PACKAGE_OUTPUT/v2"
+          test -f "$PACKAGE_OUTPUT/v1/emwat-linux_0.1.0_all.deb"
+          test -f "$PACKAGE_OUTPUT/v2/emwat-linux_0.1.1_all.deb"
+          dpkg-deb --info "$PACKAGE_OUTPUT/v1/emwat-linux_0.1.0_all.deb"
+          dpkg-deb --contents "$PACKAGE_OUTPUT/v1/emwat-linux_0.1.0_all.deb"
+      - name: Install and exercise the application package
+        env:
+          PACKAGE_OUTPUT: ${{ runner.temp }}/emwat-application-packages
+          XDG_DATA_HOME: ${{ runner.temp }}/emwat-xdg-data
+        run: |
+          sudo dpkg -i "$PACKAGE_OUTPUT/v1/emwat-linux_0.1.0_all.deb"
+          test "$(dpkg-query -W -f='${Version}' emwat-linux)" = "0.1.0"
+          python3 -c "import emwat_linux; import emwat_linux.gtk_desktop"
+          emwat-linux --help
+          emwat-linux-doctor --json > "$RUNNER_TEMP/doctor.json"
+          grep -F '"name": "uno"' "$RUNNER_TEMP/doctor.json"
+          mkdir -p "$XDG_DATA_HOME"
+          emwat-linux-install-desktop-entry
+          desktop_file="$XDG_DATA_HOME/applications/org.emwat.Linux.desktop"
+          test -f "$desktop_file"
+          desktop-file-validate "$desktop_file"
+          grep -F 'Exec="/usr/bin/emwat-linux"' "$desktop_file"
+          emwat-linux-uninstall-desktop-entry
+          test ! -e "$desktop_file"
+      - name: Upgrade and remove the application package
+        env:
+          PACKAGE_OUTPUT: ${{ runner.temp }}/emwat-application-packages
+        run: |
+          sudo dpkg -i "$PACKAGE_OUTPUT/v2/emwat-linux_0.1.1_all.deb"
+          test "$(dpkg-query -W -f='${Version}' emwat-linux)" = "0.1.1"
+          test -x /usr/bin/emwat-linux
+          test -x /usr/bin/emwat-linux-doctor
+          sudo dpkg -r emwat-linux
+          if dpkg-query -W emwat-linux >/dev/null 2>&1; then
+            echo "application package remains installed after removal" >&2
+            exit 1
+          fi
+          test ! -e /usr/bin/emwat-linux
+          test ! -e /usr/bin/emwat-linux-doctor
+          test ! -e /usr/lib/emwat-linux/packaging/install-desktop-entry.sh
+          test ! -e /usr/lib/python3/dist-packages/emwat_linux/gtk_desktop.py
