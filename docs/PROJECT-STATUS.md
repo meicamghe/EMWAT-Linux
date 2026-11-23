@@ -1,3 +1,11 @@
+## GTK Bridge lifecycle visibility — 2026-11-23
+
+- Added a one-second GTK-main-context poll for an injected `BridgeSupervisor`. Unexpected serving-loop exits are now reflected in the visible status without requiring the user to click Start or Stop.
+- The poll stops when the main window is closed. Start/Stop work remains on worker threads, and state refresh remains on GTK's main context.
+- Extended the GTK smoke test to simulate an asynchronous supervisor failure, verify the error appears, and confirm Stop remains available for cleanup.
+- The default `main()` still injects no supervisor, so controls remain disabled and no listener auto-starts. This is intentional until verified deployment configuration (especially Almas Origin and Cancel response) exists.
+- New GTK/Python/Native/UNO CI for this combined head is pending; do not treat the added polling/test changes as verified until those workflows finish.
+
 
 ## GTK Bridge controls — 2026-11-23
 
