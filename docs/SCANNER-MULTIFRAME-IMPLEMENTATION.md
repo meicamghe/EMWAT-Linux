@@ -30,7 +30,7 @@ Status: bounded simplex ADF page batching, ordered 8-bit planar RGB assembly, an
 - Read lengths, zero-progress reads, excess bytes, incomplete payloads and stride arithmetic are validated.
 - If a later page fails, the API throws rather than presenting a partial batch as a complete successful scan.
 - Feeder-empty is recognized as `SANE_STATUS_NO_DOCS` from the next `sane_start()` boundary or from `sane_read()` before any bytes of the next page. The same status after a partial page/frame is an error. Paper jam, cover open, I/O errors and cancellation remain explicit failures.
-- The ADF classifier is intentionally conservative: only an explicitly supplied source string beginning with `ADF` or `Automatic Document Feeder` and a token boundary activates batch mode. Partial matches such as `ADFree` are rejected. Duplex/double-sided/two-sided labels are separately detected and rejected before device access until side-order semantics are verified. The normal SANE option setter still verifies that the device actually exposes a compatible `source` option.
+- The ADF classifier is intentionally conservative: the explicitly selected source must begin with `ADF` or `Automatic Document Feeder` at a token boundary **and** contain a separate `Front`, `Simplex`, `One-sided`, or `Single-sided` mode token. Generic feeder names and partial marker matches such as `ADFree`, `nonsimplex`, and `frontline` do not activate batch mode. Duplex/double-sided/two-sided labels are separately detected and rejected before device access until side-order semantics are verified. The normal SANE option setter still verifies that the device actually exposes a compatible `source` option.
 
 ## Remaining implementation work
 
