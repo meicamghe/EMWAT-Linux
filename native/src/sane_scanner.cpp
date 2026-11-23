@@ -405,38 +405,22 @@ std::vector<ImagePage> SaneScannerBackend::scan_pages(
     set_string_option(device.get(), "source", *options.source);
 
     const auto [dpi_x, dpi_y] = read_scan_dpi(device.get());
-    std::vector<ImagePage> pages;
-    std::uint64_t total_bytes = 0;
-
-    for (std::size_t index = 0; index < max_adf_pages; ++index) {
-        const auto status = sane_start(device.get());
-        if (status == SANE_STATUS_NO_DOCS) {
-            sane_cancel(device.get());
-            return pages;
-        }
-        if (status != SANE_STATUS_GOOD) {
-            sane_cancel(device.get());
-            throw ScannerError(std::string("Cannot continue ADF scan: ") + sane_strstatus(status));
-        }
-
-        auto page = read_started_sane_page(device.get(), dpi_x, dpi_y);
-        const auto page_bytes = static_cast<std::uint64_t>(page.pixels.bytes.size());
-        if (page_bytes > max_batch_bytes - total_bytes) {
-            sane_cancel(device.get());
-            throw ScannerError("ADF batch exceeds the 4 GiB safety limit");
-        }
-        total_bytes += page_bytes;
-        pages.push_back(std::move(page));
-    }
-
-    // Probe once beyond the page cap: exactly 100 pages is valid if the feeder
-    // reports NO_DOCS; a 101st page is rejected rather than silently truncated.
-    const auto status = sane_start(device.get());
-    sane_cancel(device.get());
-    if (status == SANE_STATUS_NO_DOCS) return pages;
-    if (status == SANE_STATUS_GOOD)
-        throw ScannerError("ADF batch exceeds the 100-page safety limit");
-    throw ScannerError(std::string("Cannot finish ADF scan: ") + sane_strstatus(status));
+    return detail::collect_bounded_pages<ImagePage>(
+        [&]() {
+            const auto status = sane_start(device.get());
+            if (status == SANE_STATUS_NO_DOCS) return false;
+            if (status != SANE_STATUS_GOOD)
+                throw ScannerError(
+                    std::string("Cannot continue ADF scan: ") + sane_strstatus(status)
+                );
+            return true;
+        },
+        [&]() { return read_started_sane_page(device.get(), dpi_x, dpi_y); },
+        [](const ImagePage& page) { return page.pixels.bytes.size(); },
+        [&]() { sane_cancel(device.get()); },
+        max_adf_pages,
+        max_batch_bytes
+    );
 }
 
 } // namespace emwat
