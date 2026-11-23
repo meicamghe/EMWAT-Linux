@@ -57,6 +57,37 @@ class BridgeRuntimeTests(unittest.TestCase):
         self.assertTrue(server.closed)
         self.assertEqual(runtime.state, BridgeRuntimeState.STOPPED)
 
+
+    def test_concurrent_close_callers_all_wait_for_socket_close(self):
+        entered_shutdown = threading.Event()
+        release_shutdown = threading.Event()
+
+        class SlowCloseServer(FakeServer):
+            def shutdown(self):
+                entered_shutdown.set()
+                release_shutdown.wait(2)
+                self.stopped.set()
+
+        server = SlowCloseServer()
+        runtime = BridgeRuntime(server)
+        runtime.start()
+        self.assertTrue(server.entered.wait(2))
+        first_done = threading.Event()
+        second_done = threading.Event()
+        first = threading.Thread(target=lambda: (runtime.close(), first_done.set()))
+        second = threading.Thread(target=lambda: (runtime.close(), second_done.set()))
+        first.start()
+        self.assertTrue(entered_shutdown.wait(2))
+        second.start()
+        self.assertFalse(second_done.wait(0.05))
+        release_shutdown.set()
+        first.join(2)
+        second.join(2)
+        self.assertTrue(first_done.is_set())
+        self.assertTrue(second_done.is_set())
+        self.assertTrue(server.closed)
+        self.assertEqual(runtime.state, BridgeRuntimeState.STOPPED)
+
     def test_server_failure_is_retained_and_socket_closed(self):
         failure = RuntimeError("serve failed")
 
