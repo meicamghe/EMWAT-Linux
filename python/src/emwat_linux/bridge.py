@@ -341,6 +341,10 @@ class BridgeHTTPServer:
                 parsed.scheme.lower() not in {"http", "https"}
                 or not parsed.netloc
                 or parsed.hostname is None
+                # An explicit empty port (for example, https://host:) is not
+                # equivalent to omitting the port, even though urlsplit.port
+                # returns None for both forms.
+                or parsed.netloc.endswith(":")
                 or parsed.username is not None
                 or parsed.password is not None
                 or parsed.path
