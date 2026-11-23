@@ -1,6 +1,8 @@
 name: GTK desktop smoke test
 on:
   push:
+    branches:
+      - main
     paths:
       - 'python/src/emwat_linux/gtk_desktop.py'
       - 'python/src/emwat_linux/gtk_recovery_view.py'
