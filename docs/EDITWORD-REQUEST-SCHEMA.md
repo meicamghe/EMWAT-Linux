@@ -206,3 +206,8 @@ The new `emwat_linux.emwat_field_catalog` helper recognizes the seven repeated s
 ## Linux field-catalog implementation — 2026-11-24
 
 The Python catalog now recognizes all 40 non-indexed identifiers documented above by exact name and all seven indexed signer families. It retains each source position, duplicate occurrence, and unknown future ID. Known base categories distinguish letter content, producer/sender, registration/classification, To/CC recipients, sender-signature metadata, sender signature image, QR, barcode, slogan asset (kept unclassified), and the external `signData` parameter field. This is a schema catalog only: it does not assert Writer anchors or silently convert unknown fields.
+
+
+### External signature parameter versus indexed signer images
+
+The external image parameter placeholder is `SignsStart†SignsEnd` with `paramId="signData"`; it is not the same field family as indexed signer image placeholders `SignOfSignerStartN†SignOfSignerEndN`. Linux inventory retains both independently. The raw `separator`, `concater`, and `concator` attributes are preserved without normalizing the two spellings or interpreting the outer parameter.

@@ -96,3 +96,8 @@ This closes the **asset decoding, signer-slot normalization, and controlled imag
 ### External image parameters and signData
 
 Image fields with an empty inline body and a non-empty `paramId` are now classified as unresolved external-parameter assets rather than malformed Base64 images. The inventory retains the exact parameter key (for example `signData`) and signer-slot association, but does not split, decode, or apply that parameter. This reflects the native request's separate `letterImages` and `signData` arguments while keeping their byte/concatenation contract unguessed.
+
+
+### External `signData` reference metadata — 2026-11-24
+
+The observed external parameter field is `SignsStart†SignsEnd`, distinct from the indexed per-signer image fields `SignOfSignerStartN†SignOfSignerEndN`. The inventory now preserves its field index, exact `paramId`, `separator`, both raw spellings `concater` and `concator`, MIME type, and encryption label independently. This is deliberate: static analysis found a spelling discrepancy between the captured XML attribute and the native `TXMLFieldType.Set_Concator` property reader. No aliasing, splitting, joining, or decoding of the outer `signData` value is performed until that discrepancy and the full native byte path are resolved.

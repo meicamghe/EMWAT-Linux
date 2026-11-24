@@ -97,21 +97,25 @@ class WordAssetMappingTests(unittest.TestCase):
     def test_preserves_external_signature_parameter_without_guessing_its_encoding(self):
         inventory = inspect_word_assets(config(
             "<word-document><fields>"
-            "<field id='SignOfSignerStart0&#8224;SignOfSignerEnd0' "
+            "<field id='SignsStart&#8224;SignsEnd' "
             "mimetype='image/png' paramId='signData' separator='&amp;' "
-            "concater='\\n' encryption='base64'/>"
+            "concater='\\n' concator='\\r' encryption='base64'/>"
+            "<field id='SignOfSignerStart0&#8224;SignOfSignerEnd0' "
+            "mimetype='image/png' encryption='base64'>AQID</field>"
             "</fields></word-document>"
         ))
         self.assertEqual(inventory.images[0].data, b"")
+        self.assertEqual(inventory.images[0].field_id, "SignsStart†SignsEnd")
         self.assertEqual(inventory.images[0].external_parameter, "signData")
-        self.assertEqual(inventory.signer_slots[0].signature_image_field_index, 0)
+        self.assertEqual(inventory.images[1].data, b"\\x01\\x02\\x03")
+        self.assertEqual(inventory.signer_slots[0].signature_image_field_index, 1)
         self.assertEqual(inventory.unresolved_external_parameter_fields, ((0, "signData"),))
         self.assertEqual(inventory.empty_image_field_indices, ())
         reference = inventory.external_image_parameters[0]
         self.assertEqual(reference.parameter_id, "signData")
         self.assertEqual(reference.separator, "&")
         self.assertEqual(reference.concater, "\\n")
-        self.assertIsNone(reference.concator)
+        self.assertEqual(reference.concator, "\\r")
         self.assertEqual(reference.encryption, "base64")
 
     def test_rejects_signature_twin_field_without_image_mime(self):
