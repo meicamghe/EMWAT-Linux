@@ -149,8 +149,8 @@ This is strong evidence of a TIFF LZW decode/decompression path. The export suff
 
 ## Remaining work
 
-- Dump the constant bytes around `0x1000904c` to identify the final one-byte trailer.
 - Recover the exact values/arguments passed to the two normal final bit-writer calls and prove which one emits EOI.
+- Inspect the GIF writer helper `0x10001000` to determine how the GIF signature, logical screen descriptor, palette, minimum code size, and image data blocks are emitted.
 - Validate code-width transition and dictionary-full reset boundaries against independent GIF decoders.
 - Inspect the 45 extension registration entries and identify supported formats/features.
 - Trace `GIF_read`, `GIF_header_read`, and `GIF_page_count` end-to-end, including interlace, transparency, animation frame control, and metadata preservation.
@@ -168,6 +168,19 @@ This is strong evidence of a TIFF LZW decode/decompression path. The export suff
 | Main LZW prefix/symbol loop and bit writer buffering | High |
 | TIFF routine is an LZW decompression path | High |
 | Exact EOI/final-code ordering | Unresolved |
-| Value at `0x1000904c` | Unresolved |
+| Value at `0x1000904c` is `0x00`, consistent with GIF zero-length sub-block terminator | High |
 | Full semantics of all 45 registrations | Unresolved |
 | Runtime effect of ImageGear evaluation strings | Unresolved |
+
+## Follow-up: finalization byte and GIF entry points (2026-11-24)
+
+The next user-supplied disassembly confirmed:
+
+- `GIF_write` is the export entry at VA `0x100020a0`. It obtains image/codec context through callbacks, reads a metadata field at `[esp+0x1e]`, rejects values greater than 8, then delegates the actual write to helper `0x10001000`.
+- The helper `0x10001000` receives the output context, image metadata/context and dimensions/palette-related arguments. Its body still needs a dedicated disassembly pass before assigning exact GIF header fields.
+- The one-byte constant at VA `0x1000904c` is `00`. The call at `0x10002615` passes pointer `0x1000904c` and length 1 to callback `0x100097d4`; this is consistent with the required zero-length GIF data sub-block terminator.
+- `GIF_detect` at VA `0x10002b30` first requires an input length of at least six bytes, then accepts exactly the six-byte signatures `GIF87a` or `GIF89a`.
+- The export `GIF_read` at VA `0x10002b80` delegates its parsing to helper `0x10002bd0`. The parser reads one byte at a time and dispatches on GIF markers: `0x21` (extension), `0x2c` (image descriptor), and `0x3b` (trailer). Any other marker enters an error path.
+- The header/page-count path at `0x100029c0` calls `0x10002d70` and, on success, `0x10003440`. The full semantic contracts of these helpers remain under investigation.
+
+Important correction: earlier notes described the value at `0x1000904c` as unknown. It is now confirmed as `0x00`; only the interpretation as GIF zero-length sub-block terminator is inferred from the call context and GIF format.
