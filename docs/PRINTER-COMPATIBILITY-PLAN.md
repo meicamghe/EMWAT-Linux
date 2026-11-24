@@ -134,3 +134,15 @@ Additional source: workflow runs 45345628398 (OnControlerNotify) and 45347505938
 - Dynamic settings are stored under `HKCU\Software\Emwat\Dynamic Config`. The setting form exposes `Background Priniting`, `Dont Ask Save On Print`, `Save Before Print` and `AutoSaveInterval`; the interval is converted from seconds to milliseconds and clamped to a minimum of 10 seconds.
 
 **Next print trace:** determine whether the three Document.PrintOutOld calls in CostumizeRecAndCC each reach the Word BeforePrint callback, map the 15-Variant COM call at `+0x3F0`, identify the active/default printer selection and correlate each resulting job with the GAM output file.
+
+
+### Word COM submission callsite details
+
+The expanded `BGPrintWithGamPrintOptions` trace resolves a two-stage Word Automation sequence:
+
+- At `0x004C70B6`, the routine invokes vtable slot `+0x3F0` after preparing 15 Variant arguments. This slot matches the generated `TWordDocument.PrintOut` wrapper's COM dispatch.
+- Immediately afterward, at `0x004C70CA`, it calls the generated `TWordApplication.PrintOutOld` wrapper at `0x00441E44` (the wrapper dispatches through the application's `+0x1E4` slot).
+
+This is stronger evidence than the mere presence of Word PrintOut wrappers: the GAM background-print routine itself reaches the Word COM print boundary. The exact semantics of all 15 optional arguments and the reason for the subsequent PrintOutOld call still require argument-by-argument tracing and a controlled print job.
+
+The separate `TEmwatDocPrintHandlerUnit.SeparteImages` caller at `0x004A02FB` invokes `CreateImageFile` (`0x004A0BA8`), which in turn calls `CreateTiff.PrintWordDoc` (`0x004A0A68`) for generated items. This is a second image-file preparation path; its extension, bytes and relationship to the final GAM spool output are not established by these names alone.
