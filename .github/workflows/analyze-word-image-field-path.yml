@@ -46,7 +46,7 @@ jobs:
         shell: bash
         run: |
           pids=()
-          for spec in "004BC2C4 500" "004BC30C 2400" "004BC980 600" "004C0410 700" "004C19C0 5200" "004C2B20 1000" "004C2DE0 500" "004C436C 1000" "004CFC74 1300" "004D08B4 1400" "004D34B0 1400" "004D3DF8 1400"; do
+          for spec in "004BC2C4 500" "004BC30C 2400" "004BC980 600" "004C009C 1800" "004C0410 700" "004C19C0 5200" "004C2B20 1000" "004C2DE0 500" "004C2EFC 900" "004C436C 1000" "004C4DBC 1800" "004CFC74 1300" "004D08B4 1400" "004D34B0 1400" "004D3DF8 1400"; do
             (
               set -e
               set -- $spec
@@ -90,6 +90,29 @@ jobs:
           status=0
           for pid in "${pids[@]}"; do wait "$pid" || status=1; done
           exit "$status"
+      - name: Decode GEAR32PD import surface and x87 resolution constants
+        run: |
+          python - <<'PY'
+          import math
+          import pefile
+          path = 'analysis-input/EmwatMethods.bpl1'
+          pe = pefile.PE(path, fast_load=False)
+          print('=== GEAR32PD.DLL imports ===')
+          for desc in pe.DIRECTORY_ENTRY_IMPORT:
+              if desc.dll.lower() == b'gear32pd.dll':
+                  for imp in desc.imports:
+                      print(f'IAT=0x{imp.address:08X} API={imp.name.decode(errors="replace") if imp.name else "ordinal:"+str(imp.ordinal)}')
+          print('=== x87 80-bit constants ===')
+          for va in (0x004C4590, 0x004C459C):
+              off = pe.get_offset_from_rva(va - pe.OPTIONAL_HEADER.ImageBase)
+              raw = pe.__data__[off:off+10]
+              mantissa = int.from_bytes(raw[:8], 'little')
+              se = int.from_bytes(raw[8:10], 'little')
+              sign, exp = se >> 15, se & 0x7FFF
+              value = 0.0 if exp == 0 and mantissa == 0 else math.ldexp(mantissa, exp - 16383 - 63)
+              if sign: value = -value
+              print(f'VA=0x{va:08X} bytes={raw.hex()} value={value:.12g}')
+          PY
       - uses: actions/upload-artifact@v4
         with:
           name: emwat-word-image-field-path
