@@ -270,6 +270,46 @@ This gives a strong default/range mapping:
 - `MakeLog`: Boolean checkbox; DFM does not set it checked, so the form's component default is unchecked unless `FormCreate` changes it.
 - `LogFilePath`: editable through the browse button but displayed in a read-only edit control; its runtime default still needs to be traced (the binary contains the filename `AgentLog.log`, but the assignment path is not yet proven).
 
-The heartbeat worker's field at offset `+0x40` is used as the interval threshold: after a 1000 ms sleep it increments a counter until the field threshold is reached, then sends the heartbeat request. This is consistent with `LifeCheckInterval` being seconds. Its field at `+0x4C` is compared with the sequential-failure counter and is consistent with `MaxSequentialFailure`. The exact constructor/copy assignment from the form/config object to those worker offsets remains to be recovered.
+The heartbeat worker's field at `+0x40` is used as the interval threshold: after 1000 ms sleeps it increments a counter until the field threshold is reached, then sends the heartbeat request. The exact `TManageForm.btnOkClick` update path copies `LifeCheckInterval` to worker `+0x40`, `LogFilePath` to `+0x44`, `MakeLog` to `+0x48`, and `MaxSequentialFailure` to `+0x4C`. The worker is temporarily suspended during this copy and its previous suspended/running state is restored afterward.
 
 **Important:** the DFM proves the UI defaults and allowed ranges, not that every headless startup path uses those same defaults. Preserve these values as the compatibility defaults but keep the form-to-worker copy path on the open-items list.
+
+
+## 14. Exact management-form → live watchdog update path
+
+The DFM's event names map to a Delphi method table in the Agent PE. The recovered method addresses and behavior are:
+
+| Method | VA | Behavior |
+|---|---:|---|
+| `FormCreate` | `0x00660E18` | Calls `0x00660E20` to populate controls from the global config record |
+| `btnOkClick` | `0x00660D90` | Reads controls into the config record, writes registry, then updates the running worker if present |
+| `btnStopAgentClick` | `0x00660DD8` | Sets the worker's termination state/waits for it, then posts the application quit path |
+| `FormCloseQuery` | `0x00660E08` | Forces the `CanClose` output to false |
+| `btnCancelClick` | `0x00660D88` | Closes the management dialog without the settings-save path |
+
+### Save and live-update sequence
+
+1. `btnOkClick` calls `0x00660E78`, which reads the four controls into the global config record at `0x00676DA8`.
+2. It calls the registry writer `0x0062D944`, which stores the record under `HKCU\SOFTWARE\Emwat\Agent`.
+3. If a worker object exists at global `0x00676E80`, it calls `0x006606E4` with the worker and config record.
+4. `0x006606E4` copies the record fields to the worker object:
+
+| Config record offset | Worker offset | Setting |
+|---:|---:|---|
+| `+0x00` | `+0x40` | `LifeCheckInterval` |
+| `+0x08` | `+0x44` | `LogFilePath` |
+| `+0x04` | `+0x48` | `MakeLog` |
+| `+0x10` | `+0x4C` | `MaxSequentialFailure` |
+
+5. Before writing those fields, `0x006606E4` records the worker's current suspended flag at `+0x0F` and calls `0x004BD7C8` to suspend it. After the field copies, it calls the same helper with the saved state, restoring whether the worker was previously suspended or running.
+
+This proves that the UI can change the live watchdog interval, log path/toggle and maximum failure count without recreating the Agent process.
+
+### Stop/close behavior
+
+- `btnStopAgentClick` calls the worker stop helper `0x004BD8A0` when the worker exists, then calls the application shutdown helper at `0x005C1B00` and closes the dialog.
+- `FormCloseQuery` calls its inherited/helper path and then explicitly writes zero to the `CanClose` output. The management form therefore vetoes ordinary close-query requests; use its explicit buttons/stop path rather than assuming the window close button terminates the Agent.
+
+### Startup config load
+
+The Agent startup routine at `0x006610B4` registers the two window messages, then calls `0x0062D6F8` with the global config record. This is the callsite that loads the registry values before the form/worker uses them. If the registry values are absent, the reader preserves the already initialized config-record fields. The exact initializer that seeds those fields before this call remains the last default-value question; the DFM separately proves the UI defaults/ranges listed in Section 13.
