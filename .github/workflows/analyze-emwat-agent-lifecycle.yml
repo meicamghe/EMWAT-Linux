@@ -83,7 +83,7 @@ jobs:
                       continue
                   code = sec.get_data()
                   for i in range(max(0, len(code)-5)):
-                      if code[i:i+2] == b"\\xff\\x25":
+                      if code[i:i+2] == b"\xff\x25":
                           slot = struct.unpack_from("<I", code, i+2)[0]
                           if slot in slots:
                               thunks[image+sec.VirtualAddress+i] = (slot, slots[slot])
@@ -102,7 +102,7 @@ jobs:
                               slot, (dll, name) = thunks[target]
                               calls.append((dll, name, ins.address, target, slot, "call thunk"))
                       else:
-                          m = re.search(r"\\[0x([0-9a-fA-F]+)\\]", ins.op_str)
+                          m = re.search(r"\[0x([0-9a-fA-F]+)\]", ins.op_str)
                           if m and int(m.group(1),16) in slots:
                               slot = int(m.group(1),16)
                               dll, name = slots[slot]
@@ -147,11 +147,11 @@ jobs:
               found_strings = []
               for sec in pe.sections:
                   data = sec.get_data()
-                  for m in re.finditer(rb"[\\x20-\\x7e]{5,}", data):
+                  for m in re.finditer(rb"[\x20-\x7e]{5,}", data):
                       value=m.group().decode("ascii","replace")
                       if patterns.search(value):
                           found_strings.append((image+sec.VirtualAddress+m.start(),value[:240]))
-                  for m in re.finditer(rb"(?:[\\x20-\\x7e]\\x00){5,}", data):
+                  for m in re.finditer(rb"(?:[\x20-\x7e]\x00){5,}", data):
                       value=m.group().decode("utf-16le","replace")
                       if patterns.search(value):
                           found_strings.append((image+sec.VirtualAddress+m.start(),value[:240]))
@@ -168,12 +168,12 @@ jobs:
                           site=image+cs.VirtualAddress+at
                           out.append(f"  - pointer reference near 0x{site:08X}")
                           hits+=1; pos=at+1
-              (root / f"{path.stem}-lifecycle-report.md").write_text("\\n".join(out)+"\\n",encoding="utf-8")
+              (root / f"{path.stem}-lifecycle-report.md").write_text("\n".join(out)+"\n",encoding="utf-8")
               all_strings[filename]=set(v for _,v in found_strings)
               print(f"{filename}: {len(imports)} imports, {len(calls)} focused callsites, {len(found_strings)} lifecycle strings")
           shared=sorted(all_strings.get("EmwatAgent.exe",set()) & all_strings.get("EmwatService.exe",set()))
           (root/"agent-service-shared-strings.md").write_text(
-              "# Shared Agent/Service strings\\n\\n" + "\\n".join(f"- {x}" for x in shared[:300]) + "\\n",
+              "# Shared Agent/Service strings\n\n" + "\n".join(f"- {x}" for x in shared[:300]) + "\n",
               encoding="utf-8")
           PY
       - uses: actions/upload-artifact@v4
