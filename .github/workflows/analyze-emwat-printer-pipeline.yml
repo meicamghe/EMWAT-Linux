@@ -29,7 +29,7 @@ jobs:
         run: |
           mkdir -p printer-pipeline/procedures
           python tools/find_td32_class_procedures.py analysis-input/EmwatMethods.bpl1 \
-            GetPrinterIndex SetPrinterIndex TEmwatDocPrintHandler \
+            GetPrinterIndex SetPrinterIndex TEmwatDocPrintHandler CostumizeRecAndCC OnControlerNotify GetDocFieldIndex GetXmlFieldInfo FillTextField FillImageField AddImagesToDoc \
             BGPrintWithGamPrintOptions WordAppDocumentBeforePrintBGPrint \
             PrintWordDoc PrintDocument PrintToPrinter CreateImageFile Zanprinter@GetPrinterName Zanprinter@Finalization getPrinterNumJobs ExtractFileNameEX euIsValidFileName TWordDocument@PrintOut TWordDocument@PrintOut2000 TWordApplication@PrintOut TWordApplication@PrintOut2000 \
             > printer-pipeline/printer-method-index.md
@@ -59,6 +59,14 @@ jobs:
           pathlib.Path("printer-pipeline/procedures/index.md").write_text("\n".join(index)+"\n", encoding="utf-8")
           print(f"Traced {len(rows)} matching method records")
           PY
+      - name: Trace timer-driven print callback and retry behavior
+        shell: bash
+        run: |
+          for spec in "004D281C 2600" "004BB3B0 1800" "004C0550 1800"; do
+            set -- $spec
+            python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x$1 printer-pipeline/procedures/timer-$1.md $2 ret
+            python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x$1 printer-pipeline/procedures/timer-$1-callers.md
+          done
       - name: Map spooler and GDI API callsites to TD32 procedures
         run: |
           python - <<'PY'
