@@ -131,6 +131,20 @@ The export `TIF_Proc_LZW_Comp` begins at RVA `0x5650` (VA `0x10005650`). Its bod
 
 This is strong evidence of a TIFF LZW decode/decompression path. The export suffix `Comp` alone does not establish whether it compresses or decompresses; do not infer encode direction from the name.
 
+### Export ABI and extension-info state — static evidence
+
+The disassembly for `GearExtInfoGet` (`0x10004bd0`) and `GearExtInfoSet` (`0x10004fc0`) ends its ordinary success and failure paths with `ret 0x8`. Both therefore use an x86 callee-cleaned, two-32-bit-stack-slot boundary. Each returns `1` in `EAX` on a handled/success path and `0` on an unsupported or rejected path. This establishes the machine-level boundary, not source-language typedefs or the semantic names of every selector.
+
+- `GearExtInfoGet` reads its selector from argument 1 and uses argument 2 as an output address. Depending on the selected branch it writes a DWORD, writes a byte-sized value, or copies a NUL-terminated static byte string to that address. The disassembly does not expose an output-capacity argument for that string-copy path.
+- `GearExtInfoSet` reads its selector from argument 1 and argument 2 as either a scalar or a pointer-shaped value. The decoded dispatch table accepts selector values 9, 11, 23, 24 and 27; other values in its checked 9–27 range take the failure path. Selector 9 stores argument 2 in global `0x100097cc`, selector 11 stores it in `0x100097c0`, selector 23 stores it in `0x100097bc` when the mode gate allows, selector 24 updates fields through the stored `0x100097cc` pointer according to the `0x10e`/`0x30e` mode, and selector 27 stores it in `0x100097c8`. These are numeric selector mappings only; their public names are unknown.
+- When global `0x100097c0` is exactly 1, `GearExtInfoGet` selector 14 writes function address `0x10005650` to argument 2. That is the exported `TIF_Proc_LZW_Comp` entry. This statically connects the extension-info negotiation path to the TIFF LZW procedure; it does not establish that EMWAT invokes that path for a given document.
+- The setter retains pointer-shaped values in globals and the getter later reads through stored state. Neither exported routine calls an allocator or deallocator in the inspected body. Pointer lifetime and ownership therefore remain unresolved; callers must not assume the extension copies or takes ownership of supplied pointers.
+- Selector dispatch and state gating are visible, but the complete public selector meaning, all state-field consumers, and thread-safety are not established.
+
+For the installed PE32 DLL, a complete entry-to-epilogue disassembly of `TIF_Proc_LZW_Comp` shows a single cleanup epilogue ending at `0x1000632d` with `ret 0x4c`. This establishes a callee-cleaned x86 boundary of 19 four-byte stack slots (76 bytes). Source-level argument types and semantic names are still unknown, so this is not yet a safe typed C prototype.
+
+The LZW procedure invokes a host callback at `0x10009838` with the third procedure stack argument and a requested allocation size; the returned pointer is checked for null. Non-null work buffers are later passed, with that same context value, to cleanup callback `0x10009840`. Allocation failures are reported through callback `0x10009848` with an error line/source context, and the common exit invokes callback `0x1000984c`. This is evidence of host-routed allocation/free/error/finalization boundaries, but not enough to assign complete callback prototypes or the final `EAX` status contract. Other callback targets at `0x10009824`, `0x10009860`, `0x10009878`, `0x1000987c` and `0x10009880` remain unnamed/unresolved.
+
 ## Other export caveats
 
 `GIF_thumbnail_read` at RVA `0x2bc0` is a short thunk through a callback pointer near `0x1000984c`; its full behavior has not been resolved. Do not label it a complete thumbnail decoder until the callback target and registration record are identified.

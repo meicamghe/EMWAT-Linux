@@ -34,6 +34,16 @@
 
 # EMWAT-Linux — Project Handoff
 
+## Current continuation checkpoint — 2026-11-24
+
+- Reference installation: `/home/m/.wine-emwat`, confirmed `wine-11.0`; the installed `IGLZW32S.DLL` SHA-256 is `5cbb9352d71b74836c99429a1eaf39f77db753bfae6d5307199aaffbdeeee6cd`. This pass used static disassembly only and did not launch EMWAT or modify the prefix.
+- Current repository branch head before local edits: `def0b9e55ca73cf9607abd60157489a3d7d12b31`, synchronized with `origin/feature/recovery-retention-policy`. Upstream Python, UNO, Native, GTK and application-package workflows all succeeded on that commit; local Python suite passed 326 tests with 2 optional skips after a test-only ephemeral-port fix.
+- New static ABI facts and evidence are in `docs/IMAGEGEAR-LZW-GIF-REVERSE-ENGINEERING.md`: `GearExtInfoGet/Set` each clean two x86 stack slots; `GearExtInfoGet` selector 14 returns `TIF_Proc_LZW_Comp` when mode state is 1; the TIFF routine cleans `0x4c` bytes (19 x86 stack slots) and uses host allocation/free/error/finalization callbacks.
+- **Next:** use the installed Wine 11 EMWAT binaries to resolve the nineteen TIF stack arguments and callback prototypes from actual callers/host negotiation. Do not invoke unverified DLL entry points. A controlled runtime probe needs an isolated copy of the valuable prefix and a harmless synthetic TIFF fixture; retain the original prefix unchanged.
+- Then test libtiff LZW read/write on synthetic single- and multi-page TIFF fixtures; separately continue GIF extension/metadata and LZW width/reset analysis. For printing, trace GAM's TIFF artifact path and queue/job correlation before adding a CUPS/IPP backend. The Windows spooler and GAM virtual printer remain separate analysis components.
+- Keep these boundaries explicit: no typed TIF wrapper, ImageGear runtime parity, full scanner/ADF/duplex, CUPS printing, or verified end-to-end GAM workflow is claimed. Wine 9 must not be introduced.
+
+
 ## Latest main-branch implementation — 2026-11-17
 
 - POST bridge requests now require exactly one non-empty `invoke` query parameter before the request body is read or a method is dispatched. Duplicate/missing/invalid query shapes return HTTP 400.

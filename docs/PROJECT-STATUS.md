@@ -1,3 +1,13 @@
+## 2026-11-24 — Wine 11 ImageGear ABI trace and current-head verification
+
+- Confirmed the existing reference prefix reports Wine **11.0** and inspected its installed `IGLZW32S.DLL` in place (PE32, SHA-256 `5cbb9352d71b74836c99429a1eaf39f77db753bfae6d5307199aaffbdeeee6cd`). The prefix was not launched or modified during this static pass.
+- Static disassembly now establishes the `GearExtInfoGet/Set` x86 boundary (`ret 8`, two stack slots), the setter's successful numeric selector cases (9, 11, 23, 24, 27), and that getter selector 14 in state value 1 returns `TIF_Proc_LZW_Comp` at `0x10005650`.
+- A complete installed-DLL trace establishes `TIF_Proc_LZW_Comp` callee cleanup of `0x4c` bytes: 19 four-byte x86 stack slots. It routes buffers through host allocation/release callbacks and reports allocation failures through the host error callback. Argument names/types, remaining callback prototypes, final return semantics, and runtime activation are still unknown; no wrapper is implemented.
+- Hardened two composition-root tests to bind an ephemeral port instead of occupying the default EMWAT port `1984`. This keeps policy-bound assertions independent of a running local service.
+- Local Python suite after that change: **326 tests, 324 passed, 2 optional skips**. Local CMake/Native tests were unavailable because CMake is not installed in this execution environment; no system package was installed.
+- GitHub Actions at upstream commit `def0b9e55ca73cf9607abd60157489a3d7d12b31` succeeded: Python `45376123624`, LibreOffice UNO `45376123603`, Native image core `45376123231`, GTK `45376123242`, and application Debian package `45376123408`. These results cover the upstream commit before the current local test-only change.
+- Reverse-engineering evidence and unresolved items are in [IMAGEGEAR-LZW-GIF-REVERSE-ENGINEERING.md](IMAGEGEAR-LZW-GIF-REVERSE-ENGINEERING.md). GAM printer profile evidence still identifies TIFF as the first native compatibility target; no native CUPS queue/job implementation or verified printer workflow is claimed.
+
 ## Latest desktop lifecycle regression — 2026-11-23
 
 - Code/test head: `4c43ae3c836f845751b4e9d8c462758ab6a1a2c1`.

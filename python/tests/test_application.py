@@ -230,6 +230,7 @@ class ApplicationCompositionTests(unittest.TestCase):
         server = create_bridge_server(
             allowed_origins=frozenset({"http://127.0.0.1"}),
             handlers={},
+            port=0,
         )
         try:
             self.assertEqual(server._max_body_bytes, 128 * 1024 * 1024)
@@ -246,6 +247,7 @@ class ApplicationCompositionTests(unittest.TestCase):
             allowed_origins=frozenset({"http://127.0.0.1"}),
             office_adapter=FakeOffice(),
             cancel_response_factory=lambda _result, _request: BridgeResponse(b"cancelled"),
+            port=0,
         )
         try:
             self.assertEqual(server._max_body_bytes, 128 * 1024 * 1024)
