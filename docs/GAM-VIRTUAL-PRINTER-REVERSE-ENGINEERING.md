@@ -215,3 +215,20 @@ Still unresolved:
 - Numeric meanings of `image.compression`, `image.imagecolor`, `image.pagetype`, and the remaining image enums.
 - Exact mapping of `save.filexistact` values to the displayed labels `Always overwrite` and `Append to existing file`.
 - `save.removeextension` behavior and its interaction with `save.basefilename`.
+
+
+## 2026-11-24 — TIFF compression enum correlation (provisional)
+
+The TIFF profile values correlate strongly with standard TIFF tag values:
+
+| INI setting | Value | Standard TIFF interpretation | Confidence |
+|---|---:|---|---|
+| Color `image.compression` | 6 | Compression tag 6: legacy JPEG-in-TIFF | Medium |
+| BW/Fax `image.compression` | 2 | Compression tag 2: CCITT Group 3 1-D | Medium |
+| Fax `tiff-fax.t4options` | 4 | T4Options bit 2: fill bits before EOL | Medium-high |
+| Fax `tiff-fax.fillorder` | 2 | FillOrder 2: least-significant bit first | Medium-high |
+| Color `image.qfactor` | 75 | Likely JPEG quality factor | Medium |
+
+This mapping is a standards-based correlation, not yet a binary-proven enum mapping. It is supported by the fact that `image.fileformat=1` is now confirmed as TIFF and that the Fax profile explicitly carries TIFF-FAX fields.
+
+**Validation required:** inspect a real output TIFF's tags (Compression 259, FillOrder 266, T4Options 292, X/YResolution 282/283 and ResolutionUnit 296). Until a real file is checked, retain these as candidate mappings rather than hardcoded implementation facts.

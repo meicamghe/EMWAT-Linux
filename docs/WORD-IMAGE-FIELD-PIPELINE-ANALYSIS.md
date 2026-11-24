@@ -65,7 +65,7 @@ Preserve MIME type, payload encoding, caption item metadata, and regular/twin fi
 
 1. Treat source image bytes, resolution metadata, caption styling, and Word insertion as separate stages.
 2. Preserve the original image and record the normalized DPI/dimension tuple rather than destructively overwriting source assets.
-3. Implement caption style tokens and the six position tokens as explicit enums; do not name the latter `resolution` in the Linux schema until confirmed.
+3. Implement caption style tokens and the six position tokens as explicit enums; preserve direction-specific font name/size/style slots, Tahoma/8 defaults, and the scale-factor rounding behavior. Do not name the six position tokens `resolution` in the Linux schema until confirmed.
 4. Use a replaceable native image backend. Do not port GEAR32PD DLL calls into Linux or assume ImageEn is the backend for this Word XML path.
 5. Keep Word document insertion behind a document-adapter interface so LibreOffice behavior can be validated independently.
 
@@ -133,3 +133,17 @@ The signature-width error branch formats a message and calls `0x0044ABE4`. That 
 The constant `0x004C5AE8=4` is passed as the dialog's control/argument count. It is **not** the image output format. The dialog labels include `تایید` and `ام وات`.
 
 The success branch of `0x004C4DBC` calls `TWordViwer.ClearClipboard` (`0x004C4D64`), measures and positions caption items using font metrics and image-view VMT calls, then records the success messages. The image output/save API remains to be identified. The GEAR import table contains `IG_save_file` (IAT `0x00630D30`, thunk `0x004AFE90`), but its use by this caption routine has not yet been established.
+
+
+## 10. Direction-aware caption font selection
+
+`GetCaptionItems` at `0x004C2B20` copies each `TCaptionItem` as eight DWORDs and builds a VCL `TFont` object.
+
+Observed behavior:
+- If the direction argument equals numeric value `2`, the routine selects the second font-name/size/style slot set from the record (local record words 1, 5 and 3).
+- For other direction values, it selects the first slot set (words 0, 4 and 2).
+- An empty font name is replaced with `Tahoma`.
+- A zero font size is replaced with `8`; the chosen size is then multiplied by the caller-supplied scale factor and rounded before being assigned to `TFont.Size`.
+- The style string is searched for `bold`, `italic`, `underline`, and `strikeout`; matching tokens set the corresponding Delphi font-style bits.
+
+This is consistent with the XML twin-field metadata that carries separate RTL/LTR font names. The exact mapping of direction value `2` to RTL or LTR is not yet proven; preserve the numeric direction and both font slots in the Linux model until the enum is confirmed.

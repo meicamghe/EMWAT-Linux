@@ -203,3 +203,10 @@ The `zvprtcfg` examples establish:
 - `image.fileformat=2` → JPEG (Example 6).
 
 The extracted color, BW and Fax INIs all use `fileformat=1`; therefore their base output format is TIFF. The Fax profile additionally enables TIFF-FAX-specific fields such as page number, width/height adjustment and T4 options. Do not infer the numeric compression enum meanings from these settings alone.
+
+
+## Output-format priority update
+
+Because the shipped GAM queue profiles all set `image.fileformat=1`, and the `zvprtcfg` usage examples explicitly define value 1 as TIFF, **TIFF is now the first compatibility-test output target** for the Linux virtual printer. The color, BW and Fax profiles all select TIFF; their compression/profile differences must be preserved.
+
+PDF may still be useful as an internal CUPS interchange format or an alternate output, but it must not be treated as the original GAM output contract. The exact EMWAT consumer hand-off (file path, stream, extension and whether it reads the TIFF directly) remains unresolved. Do not freeze the native architecture around PDF until that path is traced.

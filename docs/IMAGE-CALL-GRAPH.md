@@ -120,3 +120,6 @@ The helper `0x004C4DBC` logs `image saved to file. Params.Dpi: %d` and `Caption 
 
 
 The GEAR32PD helper's constants are now decoded: type 2 converts pixels/metre to DPI using 39.37 inches/metre; type 4 converts pixels/centimetre to DPI using 0.3937 inches/centimetre. The normalized values are written through `IG_image_resolution_set` mode 3.
+
+
+The caption font parser at `0x004C2B20` selects direction-dependent font name/size/style slots from an eight-DWORD `TCaptionItem` record. It defaults empty font names to Tahoma, zero font size to 8, applies the caller's scale factor, and recognizes bold/italic/underline/strikeout tokens. Direction value 2 selects the second slot set; its exact RTL/LTR identity remains unconfirmed.
