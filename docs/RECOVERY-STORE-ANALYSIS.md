@@ -469,3 +469,24 @@ This section supersedes the unresolved writer-direction notes in section 26 and 
 - Do not transfer constructor/configuration strings from the separate recovery-reader path into the writer password model. Reader and writer call paths must remain separate until a synthetic runtime archive is captured and inspected.
 
 Evidence: static archive trace artifact 14227611377; paired input/path trace artifact 14226742624; file-stream constructor trace artifact 14227002967. Current compatibility boundary: docs/EASZ-ARCHIVE-FORMAT.md.
+
+
+## Parallel trace update — autosave file patterns and account-derived helper (2026-11-24)
+
+New recovery-path artifacts add the following static evidence:
+
+- The `TFRMSHOWAUTOSAVEFILES` resource contains the file filter `*.easz` and the date/time display pattern `yyyy/mm/dd hh : nn : ss`. This is stronger than a generic extension string: the recovery picker is configured to enumerate `.easz` entries.
+- The controller-notify path contains the companion `.easd` value, and the existing `euUnArchive` path extracts archive content. The current evidence supports `.easz` as the picker-visible archive and `.easd` as an extracted/intermediate document name; exact archive entry names and lifecycle are still to be verified.
+- `euGetLocalAppDataPath` (`0x0044A300`) passes CSIDL `0x1C` to the shell-folder helper, consistent with Windows Local AppData. This identifies a path helper, not yet the complete autosave directory.
+- `euGetAutoSavePass` (`0x00456B78`) calls `advapi32!GetUserNameW` with a 0x400-character buffer and returns the current Windows account name. Despite its symbol name, the traced body does not itself implement a cryptographic derivation.
+- `DoClearOldAutoSaveFiles` references the literal `@25*gamsign*25@` and calls `euGetAutoSavePass` in one branch. The exact string composition and its relationship to archive encryption are not yet proven.
+- The `T7zOutArchive.CryptoGetTextPassword2` body inspected so far initializes object fields and a list; its presence alone does not establish that an output archive is encrypted or reveal its password.
+
+### Remaining recovery questions
+
+1. Trace `euClearOldAutoSaveFiles` and the caller arguments to determine what the marker-plus-username string is used for.
+2. Resolve the SevenZip VMT/interface slot that actually receives an archive password and prove whether the `.easz` writer enables header/data encryption.
+3. Identify the full Local AppData subdirectory and the writer that creates the picker-visible `.easz` file.
+4. Confirm archive entry names, timestamp metadata, and how the extracted `.easd` document is opened.
+
+Until these are resolved, do not hard-code the account name, marker string, directory, or encryption behavior in the Linux recovery implementation.
