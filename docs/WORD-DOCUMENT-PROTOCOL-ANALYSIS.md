@@ -1514,3 +1514,19 @@ Static callsite/string evidence now distinguishes the field fill paths:
 - The code emits `twin filling start/end` diagnostics, but the pairing algorithm and ordering are not yet fully established.
 
 For Linux parity, preserve MIME type and encoding metadata as part of the field model. Do not interpret the alignment enum as image DPI, and do not collapse CustomDocumentProperties and Field.Result.Text into one storage path.
+
+
+## Parallel lifecycle trace update — Yes / No / Cancel and response hand-off (2026-11-24)
+
+The fresh `WordAppDocumentBeforeSave` disassembly (`0x004CD154)) decodes the Persian confirmation prompt and its three branches:
+
+- Cancel (dialog result 2) sets the COM event Cancel value to `-1`.
+- Yes (result 6) prepares `-1` for the SaveChanges argument of a subsequent Document.Close dispatch.
+- No prepares `0` for that SaveChanges argument.
+- The close dispatch uses the Word document interface's `+0x29C` vtable slot, previously mapped by generated wrappers to Document.Close. The `-1` / `0` values align with Word's `wdSaveChanges` / `wdDoNotSaveChanges` constants.
+
+Separately, `TWordViwer.OnControlerNotify` (`0x004BB3B0)) calls the document interface's `+0xDC` slot after pushing `-1`. The generated wrapper at `0x0042BDF8` maps `+0xDC` to `TWordDocument.Get_Content`; the meaning of the `-1` argument is not yet resolved. That handler then enters the local AutoSave/recovery path. Do not mistake this Content-related operation for Document.Close.
+
+The LoadDocument response branch reaches Indy `TIdHTTPResponseInfo.WriteContent`. What remains unresolved is the exact release/correlation between the Word close event, controller notification, response payload and the Almas-side registration result. A static WriteContent call does not by itself establish the complete round-trip contract.
+
+**Linux state-machine requirement:** preserve three distinct outcomes: save-and-close, close-without-saving, and cancel/veto. Keep the local recovery snapshot independent from the final connector response.
