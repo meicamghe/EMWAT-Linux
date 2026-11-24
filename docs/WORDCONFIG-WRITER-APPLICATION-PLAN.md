@@ -101,3 +101,12 @@ Image fields with an empty inline body and a non-empty `paramId` are now classif
 ### External `signData` reference metadata — 2026-11-24
 
 The observed external parameter field is `SignsStart†SignsEnd`, distinct from the indexed per-signer image fields `SignOfSignerStartN†SignOfSignerEndN`. The inventory now preserves its field index, exact `paramId`, `separator`, both raw spellings `concater` and `concator`, MIME type, and encryption label independently. This is deliberate: static analysis found a spelling discrepancy between the captured XML attribute and the native `TXMLFieldType.Set_Concator` property reader. No aliasing, splitting, joining, or decoding of the outer `signData` value is performed until that discrepancy and the full native byte path are resolved.
+
+
+### Stage A3 — image-to-graphic candidate audit — 2026-11-24
+
+A separate read-only image matcher now compares image-bearing WordConfig IDs (including each side of a dagger twin ID) against Writer graphic-object names. It reports only exact or unique case-folded name intersections, preserves the source field index, and marks multi-member matches, case-fold collisions, or multiple source fields targeting one graphic as ambiguous. It is captured on document open alongside the metadata-only Writer inventory.
+
+This is deliberately a **candidate audit**, not a mapping registry: a name match does not prove the image belongs to that semantic field. No candidate is automatically applied. The Writer inventory also records each graphic object's supported property names (for example `GraphicURL`, `AnchorType`, and `Size`) without reading those property values or image bytes. This gives fixture reviewers more structure to compare while preserving document privacy.
+
+The separate `SignsStart†SignsEnd` / `signData` external reference is not conflated with indexed `SignOfSignerStartN†SignOfSignerEndN` inline image fields. Both are retained independently, and raw `separator`, `concater`, and `concator` attributes remain unnormalized.
