@@ -194,3 +194,24 @@ For the native Linux design, keep separate adapters for:
 - actual CUPS job submission and generated output handling.
 
 Do not assume that every Document.PrintOutOld call yields a separate GAM job until a controlled Windows trace confirms it.
+
+
+## 2026-11-24 — output format enum examples decoded
+
+The `zvprtcfg_x86.exe` usage examples directly map two `image.fileformat` values:
+
+| Setting | Documented example | Result |
+|---|---|---|
+| `image.fileformat=1` | Example 5: “Save as a TIFF file” | TIFF |
+| `image.fileformat=2` | Example 6: “Save as a JPEG file” | JPEG |
+
+The example commands are adjacent in the same usage block:
+- `zvprtcfg "Virtual Image Printer" image.fileformat=1 -silent`
+- `zvprtcfg Virtual Image Printer image.fileformat=2`
+
+This resolves the earlier ambiguity: the shipped `image_color.ini`, `image_bw.ini`, and `image_fax.ini` all specify `fileformat=1`, so all three profiles select TIFF output. The fax profile's `tiff-fax` section further configures its fax-specific TIFF metadata/options.
+
+Still unresolved:
+- Numeric meanings of `image.compression`, `image.imagecolor`, `image.pagetype`, and the remaining image enums.
+- Exact mapping of `save.filexistact` values to the displayed labels `Always overwrite` and `Append to existing file`.
+- `save.removeextension` behavior and its interaction with `save.basefilename`.

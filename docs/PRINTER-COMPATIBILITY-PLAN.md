@@ -194,3 +194,12 @@ The expanded static import map also confirms:
 4. Keep the Windows spooler job identity and the GAM-produced output artifact as separate objects until the final hand-off is proven.
 
 The evidence and limits above are also tracked in [the dedicated spooler analysis](EMWAT-PRINTER-SPOOLER-ANALYSIS.md).
+
+
+## 2026-11-24 — confirmed GAM output format values
+
+The `zvprtcfg` examples establish:
+- `image.fileformat=1` → TIFF (Example 5).
+- `image.fileformat=2` → JPEG (Example 6).
+
+The extracted color, BW and Fax INIs all use `fileformat=1`; therefore their base output format is TIFF. The Fax profile additionally enables TIFF-FAX-specific fields such as page number, width/height adjustment and T4 options. Do not infer the numeric compression enum meanings from these settings alone.
