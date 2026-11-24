@@ -1,8 +1,10 @@
 """Optional real LibreOffice UNO integration test (enabled in dedicated CI)."""
 import base64
+import http.client
 import io
 import os
 import shutil
+import socket
 import tempfile
 import time
 import unittest
@@ -12,10 +14,10 @@ from urllib.parse import unquote, urlparse
 import zipfile
 import xml.etree.ElementTree as ET
 
-from emwat_linux.bridge import BridgeRequest, BridgeResponse
-from emwat_linux.editword_handler import create_editword_handler
-from emwat_linux.editword_service import EditWordDocumentService
-from emwat_linux.protocol import WORD_RESPONSE_CONTENT_TYPE, parse_method_call
+from emwat_linux.application import create_libreoffice_bridge_server
+from emwat_linux.application_runtime import BridgeRuntime
+from emwat_linux.bridge import BridgeResponse
+from emwat_linux.protocol import WORD_RESPONSE_CONTENT_TYPE
 
 from emwat_linux.editword_request import EditWordDocumentRequest
 from emwat_linux.libreoffice_adapter import LibreOfficeAdapter, _CFB_SIGNATURE, _OfficeHandle
@@ -127,7 +129,7 @@ class RecoveryWorkerTests(unittest.TestCase):
     "LibreOffice integration dependencies are not installed",
 )
 class LibreOfficeIntegrationTests(unittest.TestCase):
-    def test_real_uno_document_flows_through_editword_response_handler(self):
+    def test_real_uno_document_flows_through_loopback_bridge(self):
         class AutoClosingAdapter(LibreOfficeAdapter):
             def wait_for_close(self, handle):
                 handle.document.close(True)
@@ -170,32 +172,60 @@ class LibreOfficeIntegrationTests(unittest.TestCase):
             '<param name="signData"></param>'
             '</method></emwat>'
         ).encode("utf-8")
-        call = parse_method_call(call_xml)
-        bridge_request = BridgeRequest(
-            path="/",
-            query="invoke=integration-nonce",
-            content_type="text/xml",
-            origin="https://almas.example.test",
-            body=call_xml,
-        )
-
         adapter = AutoClosingAdapter(
             headless=True,
             connect_timeout_seconds=30,
             close_timeout_seconds=10,
         )
-        service = EditWordDocumentService(adapter)
-        handler = create_editword_handler(
-            service,
-            cancel_response_factory=lambda _result, _request: BridgeResponse(
-                b"cancelled", content_type="text/plain", status=409
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as port_socket:
+            port_socket.bind(("127.0.0.1", 0))
+            port = int(port_socket.getsockname()[1])
+        local_origin = f"http://127.0.0.1:{port}"
+        cancel_calls = []
+        server = create_libreoffice_bridge_server(
+            allowed_origins=frozenset({local_origin}),
+            allowed_parent_origins=frozenset({"https://almas.example.test"}),
+            office_adapter=adapter,
+            # This synthetic-only branch must stay unreachable in the known
+            # successful fixture; it is not an Almas cancellation contract.
+            cancel_response_factory=lambda result, request: (
+                cancel_calls.append((result, request))
+                or BridgeResponse(
+                    b"synthetic-cancel",
+                    content_type="text/plain",
+                    status=409,
+                )
             ),
+            port=port,
         )
-        response = handler(call, bridge_request)
-        self.assertEqual(response.status, 200)
-        self.assertEqual(response.content_type, WORD_RESPONSE_CONTENT_TYPE)
+        runtime = BridgeRuntime(server)
+        connection = http.client.HTTPConnection("127.0.0.1", port, timeout=40)
+        try:
+            runtime.start()
+            connection.request(
+                "POST",
+                "/?invoke=integration-nonce",
+                body=call_xml,
+                headers={
+                    "Content-Type": "text/plain;charset=UTF-8",
+                    "Origin": local_origin,
+                },
+            )
+            response = connection.getresponse()
+            response_body = response.read()
+            self.assertEqual(response.status, 200)
+            self.assertEqual(
+                response.getheader("Content-Type"), WORD_RESPONSE_CONTENT_TYPE
+            )
+            self.assertEqual(
+                response.getheader("Access-Control-Allow-Origin"), local_origin
+            )
+            self.assertEqual(cancel_calls, [])
+        finally:
+            connection.close()
+            runtime.close()
 
-        root = ET.fromstring(response.body)
+        root = ET.fromstring(response_body)
         self.assertEqual(root.tag, "response-word")
         self.assertEqual(root.attrib.get("status"), "success")
         result_type = root.find("./return-types/type")

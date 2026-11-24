@@ -1,7 +1,7 @@
 # Almas ↔ EMWAT ↔ Writer lifecycle contract
 
-Status: synthetic bridge path implemented; interactive Writer close behavior manually accepted; Almas wire behavior unresolved  
-Date: 2026-11-23  
+Status: synthetic loopback HTTP → Writer → response path verified; interactive Writer close behavior manually accepted; live Almas wire behavior unresolved
+Date: 2026-11-24
 Scope: Linux implementation; LibreOffice Writer via UNO
 
 This document separates behavior implemented and tested in Linux from behavior
@@ -23,9 +23,19 @@ The implemented synthetic path is:
 7. The response serializer emits the observed `response-word` XML success
    envelope with Base64 document bytes.
 
-The application-composition regression test decodes the response payload and
-compares it byte-for-byte with the office adapter's output. This test uses a
-synthetic office adapter; it does not prove live Almas compatibility.
+The gated integration test POSTs a generated synthetic `EditWordDocument`
+envelope through the actual loopback HTTP server. The server dispatches the
+request to a real LibreOffice UNO process, exports a legacy Word/CFB result,
+serializes `response-word`, and returns it over HTTP. The test validates the
+status, content type, CORS origin, XML envelope, Base64 encoding, and CFB
+signature. It automatically closes the synthetic Writer document for a
+deterministic test; it does not simulate user interaction.
+
+The full Python suite passed **326 tests with no skips** when run with
+`EMWAT_RUN_LIBREOFFICE_INTEGRATION=1`. The fixture has an empty field list and
+empty `signData`. This proves the Linux transport/service/UNO success path for
+that synthetic request only; it does not validate Almas browser traffic,
+WordConfig field mapping, signature/image handling, or production startup.
 
 ## 2. Save, Don't Save, and bridge return
 

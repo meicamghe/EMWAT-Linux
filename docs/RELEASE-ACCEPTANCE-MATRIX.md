@@ -9,7 +9,7 @@
 # EMWAT Linux release acceptance matrix
 
 Status: engineering checklist; this document does not declare a release.
-Last reviewed: 2026-11-23
+Last reviewed: 2026-11-24
 Current development branch: `feature/recovery-retention-policy`
 
 This matrix separates automated evidence, manually observed component behavior,
@@ -20,9 +20,9 @@ proof of live Almas compatibility.
 
 | Layer | What is covered | Evidence / current status | Release interpretation |
 |---|---|---|---|
-| Python bridge and protocol | HTTP loopback transport, Origin/Host validation, XML dispatch, EditWord parsing/serialization, recovery and doctor tests | Code/test head `4c43ae3c836f845751b4e9d8c462758ab6a1a2c1`: Python workflow `45195106455` succeeded; **292 tests run, 289 passed, 3 optional skips**; package install and console-entrypoint checks passed | Automated component evidence only |
+| Python bridge and protocol | HTTP loopback transport, Origin/Host validation, XML dispatch, EditWord parsing/serialization, recovery and doctor tests | Python CI on `4c43ae3c836f845751b4e9d8c462758ab6a1a2c1`: **292 tests run, 289 passed, 3 optional skips**. Local full suite on 2026-11-24 with `EMWAT_RUN_LIBREOFFICE_INTEGRATION=1`: **326/326 passed**, including a synthetic HTTP → real Writer UNO → HTTP response roundtrip. | Automated component evidence only; not live Almas acceptance |
 | Native core | CMake build, native tests, sanitizer checks, Debian development-package lifecycle | Code/test head `4c43ae3c836f845751b4e9d8c462758ab6a1a2c1`: Native workflow `45195106435` succeeded; build/CTest **4/4**, ASan/UBSan **4/4**, staged install and Debian package lifecycle passed | Native library/package evidence only; not complete application package |
-| LibreOffice UNO | UNO runtime checks and Writer roundtrip integration | UNO workflow `45194019476` succeeded with **25 tests** on parent head `4c521f0de592bf1a9e5fab2fabf85699e70bfa65`; subsequent commits to `4c43ae3` changed GTK lifecycle and tests only, not UNO adapter sources. Current-head rerun is queued. | Does not prove Almas browser integration |
+| LibreOffice UNO | UNO runtime checks and Writer roundtrip integration | UNO workflow `45194019476` succeeded with **25 tests** on parent head `4c521f0de592bf1a9e5fab2fabf85699e70bfa65`. Local gated integration on 2026-11-24 passed **4/4**, including the synthetic loopback HTTP → actual LibreOffice UNO → `response-word` return. | Does not prove Almas browser integration |
 | Writer close decisions | Save, Don't Save and Cancel behavior in a real Writer session | Manual acceptance on 2026-11-23: saved marker persisted; discarded marker did not; Cancel left Writer open and pending until a later close | Confirms the observed Writer close boundary, not Almas response semantics |
 | Runtime doctor | Installed `emwat-linux-doctor` console entrypoint and help invocation | Verified in Python workflow `45184251311`; package install and `emwat-linux-doctor --help` passed | Dependency preflight only; not a bridge launcher |
 | GTK desktop shell and Recovery | Real GTK 4 runtime, recovery picker, injected supervisor controls, shutdown ordering, and per-user launcher lifecycle | GTK workflow `45195106572` on `4c43ae3` succeeded with **7/7 smoke tests**; installer path-with-spaces, desktop-file validation, install and uninstall passed | UI component evidence only; default entry point still has no production supervisor configuration |

@@ -1,3 +1,9 @@
+## 2026-11-24 — real LibreOffice path through loopback bridge
+
+- Extended the gated UNO integration to POST a generated, synthetic EditWordDocument request through the actual loopback HTTP server, run it through the service and a real LibreOffice UNO process, then validate the returned `response-word` envelope and legacy Word/CFB payload. The Writer close is automated only to keep this component test deterministic; it does not simulate a user's close choice.
+- Full Python suite with `EMWAT_RUN_LIBREOFFICE_INTEGRATION=1`: **326 tests passed, no skips**. The test uses an empty synthetic `wordConfig` and empty `signData`; it does not validate field mapping or live Almas behavior.
+- No current-head GitHub Actions run is claimed. The remaining product gates—matching Almas/Word fixture, semantic field mapping, live browser exchange, exact non-success response contract, and configured desktop startup—remain open.
+
 ## 2026-11-24 — Wine 11 ImageGear ABI trace and current-head verification
 
 - Confirmed the existing reference prefix reports Wine **11.0** and inspected its installed `IGLZW32S.DLL` in place (PE32, SHA-256 `5cbb9352d71b74836c99429a1eaf39f77db753bfae6d5307199aaffbdeeee6cd`). The prefix was not launched or modified during this static pass.
