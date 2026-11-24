@@ -427,3 +427,18 @@ The BPL side resolves the service's virtual call precisely:
 - For `TEditWordDocument`, VMT `0x005ED764` has `+0x10 = 0x005EE82C`; this concrete `PerformMethod` reads `wordConfig`, `wordBody`, `letterImages`, and `signData`, then calls `TWordViwer.LoadDocument` (`0x004B7724`).
 
 This closes the class-name construction and service→BPL→concrete `PerformMethod` edge. It does not close all document-field semantics or end-to-end Almas integration.
+
+
+## Parallel route and CORS-header trace (2026-11-24)
+
+A bounded disassembly of the service's `CommandGet` response path and its string references confirms that the handler writes these literal response headers:
+
+- `Access-Control-Allow-Origin:*`
+- `Access-Control-Allow-Headers:*`
+- `Access-Control-Allow-Method:*`
+
+The last header is singular (`Allow-Method`), unlike the standard plural `Access-Control-Allow-Methods`. The wildcard origin/header values are static evidence of a permissive CORS response; the inspected range does not establish whether a separate Origin, token, or session check exists elsewhere in the request path.
+
+The embedded bridge still posts to the loopback service and returns `responseText` to the original `postMessage` source/origin. That response routing is not equivalent to server-side authorization. The Linux replacement should use an explicit origin allowlist and request authentication rather than copying wildcard CORS behavior by default.
+
+The same route trace confirms that the service loads `EmwatMethods.bpl` and logs package-load success/failure around the dispatch path. XML parsing separately resolves the `method`, `class`, `param`, and `name` vocabulary; exact method schemas and all error responses remain open.
