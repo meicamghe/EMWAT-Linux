@@ -1,7 +1,8 @@
 """Structural catalog helpers for the captured EMWAT Word field schema.
 
-The catalog recognizes only the seven indexed signer-field families observed
-in the 180-field request capture. It does not infer Writer property mappings.
+The catalog recognizes the 40 exact base identifiers and seven indexed signer
+families observed in the 180-field request capture. It does not infer Writer
+property mappings.
 """
 from __future__ import annotations
 

@@ -116,10 +116,10 @@ class EmwatFieldCatalogTests(unittest.TestCase):
         self.assertEqual(len(catalog.indexed_signer_fields), 2)
         self.assertEqual(catalog.unknown_fields, ((42, "UnknownFutureField"),))
         self.assertEqual(
-            catalog.base_fields[-5].category, "sender_signature_metadata"
+            catalog.base_fields[-6].category, "sender_signature_metadata"
         )
         self.assertEqual(
-            catalog.base_fields[-4].category, "sender_signature_image"
+            catalog.base_fields[-5].category, "sender_signature_image"
         )
         self.assertEqual(
             catalog.base_fields[-1].category, "external_signature_parameter"
