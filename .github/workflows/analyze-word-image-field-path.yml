@@ -28,7 +28,7 @@ jobs:
         shell: bash
         run: |
           mkdir -p word-image-field-path
-          targets=(004BC2C4 004BC30C 004BC980 004C0410 004C19C0 004C2B20 004C2DE0 004C436C 004CFC74 004D08B4 004D34B0 004D3DF8)
+          targets=(004BC2C4 004BC30C 004BC980 004C009C 004C4D64 004C0410 004C19C0 004C2B20 004C2DE0 004C436C 004CFC74 004D08B4 004D34B0 004D3DF8)
           pids=()
           for target in "${targets[@]}"; do
             (
@@ -82,7 +82,7 @@ jobs:
         shell: bash
         run: |
           pids=()
-          for spec in "00404F64 1400" "00404894 1000" "004042B4 800" "004042AC 800" "00404E34 1000" "0044ABE4 1800" "004AFE88 700" "004AFF08 900" "004AFF10 900" "004AFEB8 700"; do
+          for spec in "00404F64 1400" "00404894 1000" "004042B4 800" "004042AC 800" "00404E34 1000" "0044ABE4 1800" "004B0304 900" "004B030C 900" "004AFE90 700" "004AFE88 700" "004AFF08 900" "004AFF10 900" "004AFEB8 700"; do
             (
               set -e
               set -- $spec
@@ -93,6 +93,9 @@ jobs:
           status=0
           for pid in "${pids[@]}"; do wait "$pid" || status=1; done
           exit "$status"
+      - name: Find callers of GEAR32PD image-save thunk
+        run: |
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004AFE90 word-image-field-path/callers-IG_save_file.md
       - name: Decode GEAR32PD import surface and x87 resolution constants
         run: |
           python - <<'PY' > word-image-field-path/gear32pd-imports-and-resolution-constants.md
