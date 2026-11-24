@@ -115,3 +115,10 @@ The separate `SignsStart†SignsEnd` / `signData` external reference is not conf
 ### Direct WordConfig-ID to Writer-structure audit — 2026-11-24
 
 The template inventory now also compares each incoming WordConfig field identifier directly with Writer bookmarks, named ranges, sections, tables, frames, graphic objects, document indexes, custom document properties, and `DocInfo.Custom` fields. Twin IDs are checked member-by-member. Only exact or unique case-folded name matches are emitted. It separately reports unmatched, partially matched twin, and ambiguous/reused targets. This path is independent of custom-property enumeration order and remains read-only; it does not write values or automatically accept candidates.
+
+
+### Explicit WordConfig text-field update builder — 2026-11-24
+
+A controlled builder now converts an explicitly supplied source-field-index → existing Writer custom-property-name map into decoded text updates. It accepts plain text and fields with no MIME declaration, preserves decoded empty strings, and rejects image payloads, external parameters such as `signData`, non-text MIME types, invalid indexes, duplicate/case-colliding targets and malformed mappings. Values are excluded from update-object representations. The adapter convenience method routes the result through the existing all-targets-first, rollback-capable Writer property setter and refreshes text fields once after a successful batch.
+
+This is an application mechanism, **not an automatic mapping**. It does not derive target names from field IDs or enumeration order. No default registry entries are enabled until a matching Word/Writer fixture proves them.

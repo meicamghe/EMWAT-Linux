@@ -41,6 +41,10 @@ from emwat_linux.template_mapping import (
 )
 from emwat_linux.image_mapping import ImageMappingInventory, inspect_word_image_mapping
 from emwat_linux.word_config import WordDocumentConfig
+from emwat_linux.word_config_updates import (
+    as_custom_property_update_mapping,
+    build_word_config_text_updates,
+)
 from emwat_linux.emwat_field_catalog import (
     WordConfigFieldCatalog,
     build_word_config_field_catalog,
@@ -671,6 +675,27 @@ class LibreOfficeAdapter:
             set_custom_document_properties(handle.document, updates)
             if updates:
                 refresh_writer_text_fields(handle.document)
+
+    def apply_word_config_text_fields(
+        self,
+        handle: object,
+        config: WordDocumentConfig,
+        target_names_by_field_index: object,
+    ) -> tuple[str, ...]:
+        """Apply explicitly mapped WordConfig text fields to existing Writer properties.
+
+        The field-index-to-property-name map must come from verified fixture
+        evidence. This method performs no name matching or positional pairing.
+        """
+        if not isinstance(handle, _OfficeHandle):
+            raise TypeError("invalid_libreoffice_handle")
+        updates = build_word_config_text_updates(
+            config, target_names_by_field_index
+        )
+        mapping = as_custom_property_update_mapping(updates)
+        if mapping:
+            self.apply_custom_property_updates(handle, mapping)
+        return tuple(mapping)
 
     def apply_writer_graphic_updates(
         self,
