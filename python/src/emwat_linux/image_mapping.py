@@ -72,10 +72,10 @@ def inspect_word_image_mapping(
                     ))
                 elif len(folded) > 1:
                     field_ambiguous = True
-        if len(matches) == 1:
-            candidates.append(matches[0])
-        elif len(matches) > 1:
+        if field_ambiguous or len(matches) > 1:
             ambiguous.append(field_index)
+        elif len(matches) == 1:
+            candidates.append(matches[0])
         else:
             unmatched.append(field_index)
 
