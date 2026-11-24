@@ -55,10 +55,10 @@ def build_word_config_text_updates(
         seen_targets.add(folded_target)
 
         source = decoded[field_index]
-        if source.is_image:
-            raise WordConfigTextUpdateError("image_field_not_text_property")
         if source.external_parameter:
             raise WordConfigTextUpdateError("external_parameter_not_text_property")
+        if source.is_image:
+            raise WordConfigTextUpdateError("image_field_not_text_property")
         if source.mimetype and source.mimetype.casefold() != "text/plain":
             raise WordConfigTextUpdateError("unsupported_text_field_mimetype")
         if not isinstance(source.value, str):
