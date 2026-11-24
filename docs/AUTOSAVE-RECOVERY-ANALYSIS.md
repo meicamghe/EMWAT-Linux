@@ -85,7 +85,7 @@ The output archive method T7zOutArchive.SetPassword at 0x004547DC is a stub: it 
 
 The input archive method T7zInArchive.SetPassword at 0x00453860 is implemented: it stores the supplied UnicodeString at object offset +0x58 and calls the underlying SevenZip interface at slot +0x1C. However, the bounded direct-call scan found no direct CALL xref to this method; an indirect/VMT call remains possible.
 
-T7zOutArchive.CryptoGetTextPassword2 at 0x004543C4 initializes an associated callback/interface object and clears adjacent state fields, but this trace does not reveal a literal password value. Neither mW@Tlogs43end_+ nor @25*gamsign*25@ should be labelled as the archive password without a proven data flow into the input archive's SetPassword or the CryptoGetTextPassword2 result.
+T7zOutArchive.CryptoGetTextPassword2 at 0x004543C4 initializes an associated callback/interface object and clears adjacent state fields, but this trace does not reveal a literal password value. The fixed 15-character literal used by euUnArchive is now a high-confidence archive-password candidate: it is passed to the archive object's +0x28 virtual dispatch, and T7zInArchive.SetPassword at 0x00453860 stores its UnicodeString input at object offset +0x58. The exact +0x28-to-SetPassword mapping is not yet proven. The separate @25*gamsign*25@ marker is combined with the Windows username by DoClearOldAutoSaveFiles and has not been traced into that input SetPassword path. The output T7zOutArchive.SetPassword method is a stub, so actual encryption remains unproven. See [the detailed SevenZip analysis](SEVENZIP-ARCHIVE-ANALYSIS.md).
 
 ### Linux implications
 
