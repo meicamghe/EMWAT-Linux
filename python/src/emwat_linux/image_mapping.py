@@ -70,6 +70,8 @@ def inspect_word_image_mapping(
                     matches.append(ImageStructureCandidate(
                         field_index, field.field_id, member, folded[0], "casefold"
                     ))
+                elif len(folded) > 1:
+                    field_ambiguous = True
         if len(matches) == 1:
             candidates.append(matches[0])
         elif len(matches) > 1:
