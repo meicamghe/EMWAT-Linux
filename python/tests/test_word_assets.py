@@ -74,11 +74,16 @@ class WordAssetMappingTests(unittest.TestCase):
         self.assertEqual(inventory.signer_slots[0].person, "A B")
         self.assertEqual(inventory.signer_slots[0].department, "Dept")
         self.assertEqual(inventory.signer_slots[19].unit, "Unit")
+        self.assertEqual(inventory.signer_slots[0].index_unit, "Index unit")
+        self.assertEqual(inventory.signer_slots[0].signature_number, "7")
+        self.assertEqual(inventory.signer_slots[0].behalf_name, "For another")
+        self.assertEqual(inventory.signer_slots[19].signature_image_field_index, 6)
         self.assertEqual(inventory.signer_slots[1].person, "")
         self.assertEqual(inventory.images[0].data, b"\x01\x02\x03")
         self.assertEqual(inventory.images[0].mimetype, "image/png")
-        self.assertEqual(inventory.images[1].mimetype, "image/tif")
-        self.assertEqual(inventory.empty_image_field_indices, (4,))
+        self.assertEqual(inventory.images[1].mimetype, "image/png")
+        self.assertEqual(inventory.images[2].mimetype, "image/tif")
+        self.assertEqual(inventory.empty_image_field_indices, (8,))
 
     def test_rejects_duplicate_signer_slot_members(self):
         with self.assertRaisesRegex(WriterAssetMappingError, "duplicate_signer_metadata_field"):

@@ -11,7 +11,6 @@ from __future__ import annotations
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
-import re
 
 from emwat_linux.emwat_field_catalog import parse_indexed_signer_field
 from emwat_linux.word_config import WordDocumentConfig
@@ -74,14 +73,6 @@ _IMAGE_EXTENSIONS = {
     "image/tif": ".tif",
     "image/tiff": ".tif",
     "image/bmp": ".bmp",
-}
-_SIGNER_FAMILY_ATTRIBUTES = {
-    "person": "person",
-    "department": "department",
-    "unit": "unit",
-    "index_unit": "index_unit",
-    "signature_number": "signature_number",
-    "behalf_name": "behalf_name",
 }
 _SIGNER_FAMILIES = (
     "department", "person", "unit", "index_unit",
