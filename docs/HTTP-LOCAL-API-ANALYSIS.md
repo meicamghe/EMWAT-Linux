@@ -628,3 +628,35 @@ This establishes the static server-to-BPL-to-Word-to-Indy response path. It does
 - No direct callsite proves that the HTTP response waits for Word close or for `ReadyToClose` to become true.
 
 Do not implement a guessed long-poll contract. The next trace must identify the exact object/event/COM call that keeps the request handler active, or show that the delay originates outside this BPL path.
+
+
+## 2026-11-24 — response headers/body writer and wait-API cross-reference
+
+The latest executable crosswalk adds detail to the already-established `LoadDocument → TIdHTTPResponseInfo.WriteContent` path.
+
+### Response construction
+
+- `LoadDocument` assigns its generated XML to `AResponseInfo.ContentText` at response-object offset `+0xBC`, calls the `WriteContent` thunk at `0x0040448C`, and sets `TEmwatInvokeParam.bResultSet` at record offset `+0x05`.
+- The Indy response-header builder at `0x00460840` conditionally emits `Server`, `Location`, and `Last-Modified` headers. When an authentication challenge value is present, it constructs `WWW-Authenticate: Basic realm="..."`.
+- The response content writer at `0x00460E48` has a branch that constructs a `Content-Disposition` value using the literal template `attachment; filename="%s";`. It then calls the response header writer at `0x004612F4` and transfers the body through the request connection's `TIdIOHandler` interface (the inspected dispatch is the stream/buffer output path).
+- This is concrete evidence that the response layer supports attachment-style content delivery in addition to XML/text response content. It does **not** prove that every `EditWordDocument` response uses the attachment branch; the exact branch conditions and endpoint-specific response headers still need to be correlated with a captured request.
+
+### Wait API audit — negative evidence with a boundary
+
+The static wait-thunk audit found:
+- The only direct TD32-bounded caller of the `WaitForSingleObject` thunk (`0x00402900`) is `GIFImage.FireEvent` at `0x00607448`. That routine compares the return value with `0x102` (`WAIT_TIMEOUT`) and belongs to the GIF image event path.
+- The direct `Sleep` callsites found by the same scan are in temporary-file cleanup, process-path lookup, TIFF/image printing, Zan printer installation lookup, document-printer initialization, recovery-form UI, and GIF drawing/cleanup paths.
+- `LoadDocument` itself has one direct call to `TApplication.ProcessMessages` at `0x004B7C1C`; the bounded procedure contains no direct `Sleep` or `WaitForSingleObject` call.
+
+This narrows the search: the 54.558-second transaction is **not explained by a direct wait loop in the traced `LoadDocument` body**. It does not exclude synchronous Word COM calls, VMT/indirect waits, Indy socket back-pressure, image decoder callbacks, or blocking inside external Word/Office processes. In particular, the GIF wait path is only a candidate if the specific document exercises animated-GIF decoding; no causal link to the observed HTTP transaction has been established.
+
+### Linux response implementation boundary
+
+Keep the response model explicit:
+1. response status and headers;
+2. XML/text payload;
+3. optional attachment disposition and filename;
+4. body stream transfer and completion;
+5. request-handler result ownership (`bResultSet`) and fallback suppression.
+
+Do not add a fixed 54-second delay, long-poll, or close-event wait to the Linux bridge without a trace proving that contract.

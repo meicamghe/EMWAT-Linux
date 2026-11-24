@@ -146,8 +146,8 @@ These are related workflows, but current evidence does **not** establish them as
 ## Immediate next execution order
 
 1. Trace the 15 Word PrintOut arguments, print-thread handoff, and GAM output file/consumer contract.
-2. In parallel, resolve the pending HTTP invoke release condition and close-to-response correlation.
+2. In parallel, resolve the remaining HTTP request-retention/release condition and correlate it with Word COM close; the response body/header writer is now statically mapped, while the 54.558-second delay remains unexplained.
 3. Trace the timer-driven CostumizeRecAndCC → Document.PrintOutOld → BeforePrint path and determine whether it generates GAM jobs.
-4. Trace the actual .easz writer; current evidence proves extraction and a hardcoded input-password argument, but not archive creation or output encryption.
+4. Resolve `euResetMemory` output slot `+0x44` to its concrete SevenZip output method, determine whether the shared fixed string enables output encryption, and validate a synthetic `.easz` archive; the application-level output helper and callers are now identified, but the encryption/writer contract is not.
 5. Complete WordConfig signature/twin/image field coverage.
 6. Continue Agent lifecycle, then ImageEn handlers, Excel and installer/updater details.

@@ -512,3 +512,17 @@ The `TWordViewer` VMT/field metadata from workflow run 45349331995 provides exac
 `OnControlerNotify` sets `ReadyToClose=0` while its work is in progress and restores `ReadyToClose=1` at completion. `WordAppDocumentBeforeSave` checks this flag and sets the COM Cancel parameter when the document is not ready. This is a close-safety gate around the timer callback, not proof that the HTTP request itself waits on the flag.
 
 The `WordAppDocumentBeforeSave` callback also branches on `OpenAsFree`; its exact effect on prompt/save behavior remains open. The timer callback invokes `CostumizeRecAndCC`, whose bounded body contains three calls through the Word Document vtable slot used by `TWordDocument.PrintOutOld`, then obtains `Get_Content(-1)` and invokes archive extraction. This links timer-driven recovery preparation with Word print operations; exact job count and BeforePrint coordination remain unresolved.
+
+
+## 2026-11-24 — direct wait audit and request-path boundary
+
+The wait-thunk cross-reference narrows the possible source of the long HTTP transaction:
+
+- `LoadDocument` calls `TApplication.ProcessMessages` once at `0x004B7C1C`.
+- The only direct TD32-bounded caller of the `WaitForSingleObject` thunk at `0x00402900` is `GIFImage.FireEvent` at `0x00607448`; that code checks for `WAIT_TIMEOUT` (`0x102`). It is not a direct call from `LoadDocument`.
+- Direct `Sleep` callsites are in TIFF/image printing, temporary-file cleanup, printer-install lookup, recovery UI and GIF drawing/cleanup. No direct `Sleep` callsite was found in the bounded `LoadDocument` procedure.
+- Word `ConnectTo` at `0x0043E0FC` obtains the application interface through the wrapper at `0x00404FAC`; the inspected connect/disconnect wrappers do not themselves contain a wait loop.
+
+**Interpretation:** do not attribute the observed 54.558-second response delay to a proven EMWAT `WaitForSingleObject` or `Sleep` loop in `LoadDocument`. Synchronous COM Automation calls, indirect VMT dispatches, Indy network writes, and work inside Word remain open possibilities. The GIF wait routine is relevant only if a document actually traverses animated-GIF decoding.
+
+The response path now has a separately documented attachment branch in Indy `TIdHTTPResponseInfo.WriteContent`; this must not be confused with the Word close/BeforeSave gate or the periodic AutoSave timer.
