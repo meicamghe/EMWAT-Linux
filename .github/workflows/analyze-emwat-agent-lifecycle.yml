@@ -87,89 +87,89 @@ jobs:
                           slot = struct.unpack_from("<I", code, i+2)[0]
                           if slot in slots:
                               thunks[image+sec.VirtualAddress+i] = (slot, slots[slot])
-          calls = []
-          for sec in pe.sections:
-              if not (sec.Characteristics & 0x20000000):
-                  continue
-              code = sec.get_data()
-              base_va = image + sec.VirtualAddress
-              # Scan encoded CALL instructions directly; Delphi RTTI/data can desynchronize linear disassembly.
-              for i in range(max(0, len(code)-5)):
-                  if code[i] == 0xE8:
-                      rel = struct.unpack_from("<i", code, i+1)[0]
-                      target = base_va + i + 5 + rel
-                      if target in thunks:
-                          slot, (dll, name) = thunks[target]
-                          calls.append((dll, name, base_va+i, target, slot, "relative CALL thunk"))
-                  elif code[i:i+2] == b"\xff\x15":
-                      slot = struct.unpack_from("<I", code, i+2)[0]
-                      if slot in slots:
-                          dll, name = slots[slot]
-                          calls.append((dll, name, base_va+i, 0, slot, "CALL [IAT]"))
-              out = [
-                  f"# {filename} lifecycle analysis", "",
-                  f"- SHA-256: {hashlib.sha256(blob).hexdigest()}",
-                  f"- ImageBase: 0x{image:08X}",
-                  f"- EntryPoint: 0x{image+pe.OPTIONAL_HEADER.AddressOfEntryPoint:08X}",
-                  f"- Architecture: {pe.FILE_HEADER.Machine:#06x}",
-                  "", "## Focused imports", ""
-              ]
-              out += [f"- {dll}!{name} (IAT 0x{slot:08X})" for dll,name,slot in imports if name in focus]
-              out += ["", "## TD32-independent callsite scan", "",
-                      f"- Focused imports: {len(slots)}",
-                      f"- Resolved import thunks: {len(thunks)}",
-                      f"- Attributed callsites: {len(calls)}", "",
-                      "| DLL | API | Callsite VA | Thunk VA | IAT VA | Kind |",
-                      "|---|---|---:|---:|---:|---|"]
-              for dll,name,site,thunk,slot,kind in sorted(calls,key=lambda x:(x[0],x[1],x[2])):
-                  out.append(f"| {dll} | {name} | 0x{site:08X} | 0x{thunk:08X} | 0x{slot:08X} | {kind} |")
-              out += ["", "## Callsite disassembly context", ""]
-              for dll,name,site,thunk,slot,kind in sorted(calls,key=lambda x:x[2]):
-                  sec = next((s for s in pe.sections if s.VirtualAddress <= site-image < s.VirtualAddress+s.Misc_VirtualSize), None)
-                  if not sec: continue
-                  code = sec.get_data()
-                  offset = site - (image + sec.VirtualAddress)
-                  start, end = max(0,offset-40), min(len(code),offset+48)
-                  out.append(f"### {dll}!{name} at 0x{site:08X}")
-                  for ins in md.disasm(code[start:end], image+sec.VirtualAddress+start):
-                      out.append(f"- {ins.address:08X} {ins.mnemonic} {ins.op_str}")
-                  out.append("")
-              out += ["## Resources", ""]
-              try:
-                  for entry in pe.DIRECTORY_ENTRY_RESOURCE.entries:
-                      name = str(entry.name) if entry.name else str(entry.id)
-                      out.append(f"- Resource {name}")
-              except Exception:
-                  out.append("- Resource directory unavailable")
-              out += ["", "## Lifecycle-related strings and absolute references", ""]
-              patterns = re.compile(r"agent|service|session|logon|logoff|mutex|heartbeat|tick.?tack|restart|shutdown|install|uninstall|admin|process|window|task|stop|start|registry|privilege|token|port|error", re.I)
-              found_strings = []
+              calls = []
               for sec in pe.sections:
-                  data = sec.get_data()
-                  for m in re.finditer(rb"[\x20-\x7e]{5,}", data):
-                      value=m.group().decode("ascii","replace")
-                      if patterns.search(value):
-                          found_strings.append((image+sec.VirtualAddress+m.start(),value[:240]))
-                  for m in re.finditer(rb"(?:[\x20-\x7e]\x00){5,}", data):
-                      value=m.group().decode("utf-16le","replace")
-                      if patterns.search(value):
-                          found_strings.append((image+sec.VirtualAddress+m.start(),value[:240]))
-              text_secs=[s for s in pe.sections if b".text" in s.Name]
-              for va,value in found_strings[:400]:
-                  out.append(f"- 0x{va:08X} {value}")
-                  ptr=struct.pack("<I",va)
-                  for cs in text_secs:
-                      code=cs.get_data()
-                      pos=0; hits=0
-                      while True:
-                          at=code.find(ptr,pos)
-                          if at<0 or hits>=3: break
-                          site=image+cs.VirtualAddress+at
-                          out.append(f"  - pointer reference near 0x{site:08X}")
-                          hits+=1; pos=at+1
-              (root / f"{path.stem}-lifecycle-report.md").write_text("\n".join(out)+"\n",encoding="utf-8")
-              all_strings[filename]=set(v for _,v in found_strings)
-              print(f"{filename}: {len(imports)} imports, {len(calls)} focused callsites, {len(found_strings)} lifecycle strings")
+                  if not (sec.Characteristics & 0x20000000):
+                      continue
+                  code = sec.get_data()
+                  base_va = image + sec.VirtualAddress
+                  # Scan encoded CALL instructions directly; Delphi RTTI/data can desynchronize linear disassembly.
+                  for i in range(max(0, len(code)-5)):
+                      if code[i] == 0xE8:
+                          rel = struct.unpack_from("<i", code, i+1)[0]
+                          target = base_va + i + 5 + rel
+                          if target in thunks:
+                              slot, (dll, name) = thunks[target]
+                              calls.append((dll, name, base_va+i, target, slot, "relative CALL thunk"))
+                      elif code[i:i+2] == b"\xff\x15":
+                          slot = struct.unpack_from("<I", code, i+2)[0]
+                          if slot in slots:
+                              dll, name = slots[slot]
+                              calls.append((dll, name, base_va+i, 0, slot, "CALL [IAT]"))
+                  out = [
+                      f"# {filename} lifecycle analysis", "",
+                      f"- SHA-256: {hashlib.sha256(blob).hexdigest()}",
+                      f"- ImageBase: 0x{image:08X}",
+                      f"- EntryPoint: 0x{image+pe.OPTIONAL_HEADER.AddressOfEntryPoint:08X}",
+                      f"- Architecture: {pe.FILE_HEADER.Machine:#06x}",
+                      "", "## Focused imports", ""
+                  ]
+                  out += [f"- {dll}!{name} (IAT 0x{slot:08X})" for dll,name,slot in imports if name in focus]
+                  out += ["", "## TD32-independent callsite scan", "",
+                          f"- Focused imports: {len(slots)}",
+                          f"- Resolved import thunks: {len(thunks)}",
+                          f"- Attributed callsites: {len(calls)}", "",
+                          "| DLL | API | Callsite VA | Thunk VA | IAT VA | Kind |",
+                          "|---|---|---:|---:|---:|---|"]
+                  for dll,name,site,thunk,slot,kind in sorted(calls,key=lambda x:(x[0],x[1],x[2])):
+                      out.append(f"| {dll} | {name} | 0x{site:08X} | 0x{thunk:08X} | 0x{slot:08X} | {kind} |")
+                  out += ["", "## Callsite disassembly context", ""]
+                  for dll,name,site,thunk,slot,kind in sorted(calls,key=lambda x:x[2]):
+                      sec = next((s for s in pe.sections if s.VirtualAddress <= site-image < s.VirtualAddress+s.Misc_VirtualSize), None)
+                      if not sec: continue
+                      code = sec.get_data()
+                      offset = site - (image + sec.VirtualAddress)
+                      start, end = max(0,offset-40), min(len(code),offset+48)
+                      out.append(f"### {dll}!{name} at 0x{site:08X}")
+                      for ins in md.disasm(code[start:end], image+sec.VirtualAddress+start):
+                          out.append(f"- {ins.address:08X} {ins.mnemonic} {ins.op_str}")
+                      out.append("")
+                  out += ["## Resources", ""]
+                  try:
+                      for entry in pe.DIRECTORY_ENTRY_RESOURCE.entries:
+                          name = str(entry.name) if entry.name else str(entry.id)
+                          out.append(f"- Resource {name}")
+                  except Exception:
+                      out.append("- Resource directory unavailable")
+                  out += ["", "## Lifecycle-related strings and absolute references", ""]
+                  patterns = re.compile(r"agent|service|session|logon|logoff|mutex|heartbeat|tick.?tack|restart|shutdown|install|uninstall|admin|process|window|task|stop|start|registry|privilege|token|port|error", re.I)
+                  found_strings = []
+                  for sec in pe.sections:
+                      data = sec.get_data()
+                      for m in re.finditer(rb"[\x20-\x7e]{5,}", data):
+                          value=m.group().decode("ascii","replace")
+                          if patterns.search(value):
+                              found_strings.append((image+sec.VirtualAddress+m.start(),value[:240]))
+                      for m in re.finditer(rb"(?:[\x20-\x7e]\x00){5,}", data):
+                          value=m.group().decode("utf-16le","replace")
+                          if patterns.search(value):
+                              found_strings.append((image+sec.VirtualAddress+m.start(),value[:240]))
+                  text_secs=[s for s in pe.sections if b".text" in s.Name]
+                  for va,value in found_strings[:400]:
+                      out.append(f"- 0x{va:08X} {value}")
+                      ptr=struct.pack("<I",va)
+                      for cs in text_secs:
+                          code=cs.get_data()
+                          pos=0; hits=0
+                          while True:
+                              at=code.find(ptr,pos)
+                              if at<0 or hits>=3: break
+                              site=image+cs.VirtualAddress+at
+                              out.append(f"  - pointer reference near 0x{site:08X}")
+                              hits+=1; pos=at+1
+                  (root / f"{path.stem}-lifecycle-report.md").write_text("\n".join(out)+"\n",encoding="utf-8")
+                  all_strings[filename]=set(v for _,v in found_strings)
+                  print(f"{filename}: {len(imports)} imports, {len(calls)} focused callsites, {len(found_strings)} lifecycle strings")
           shared=sorted(all_strings.get("EmwatAgent.exe",set()) & all_strings.get("EmwatService.exe",set()))
           (root/"agent-service-shared-strings.md").write_text(
               "# Shared Agent/Service strings\n\n" + "\n".join(f"- {x}" for x in shared[:300]) + "\n",
