@@ -177,3 +177,10 @@ The TD32 procedure `TWordViwer.EmbedTextToImage` at `0x004C436C` uses the GEAR32
 The method also returns a calculated value through its output parameter and updates a viewer-side property. The bounded body contains no direct text-drawing import. Despite the Delphi method name `EmbedTextToImage`, do not conclude that it rasterizes caption text; the current evidence proves image loading/resolution normalization and handle cleanup only.
 
 This helper is reached from `TWordViwer.GetCaptionItemFont` at `0x004C19C0` (callsite `0x004C2186`). See [WORD-IMAGE-FIELD-PIPELINE-ANALYSIS.md](WORD-IMAGE-FIELD-PIPELINE-ANALYSIS.md) for the complete field/caption path.
+
+
+### Caption processing is a separate path
+
+The Word image-field caller `GetCaptionItemFont` (`0x004C19C0`) invokes a separate helper at `0x004C4DBC` that uses an image-view object, `TCaptionItem` iteration, and font/text metrics. If that helper returns false, the caller invokes `TWordViwer.FillMSWFields` (`0x004C009C`), whose TD32 signature accepts a `Word.Fields` interface.
+
+Do not attribute this caption composition to GEAR32PD: the bounded GEAR helper `EmbedTextToImage` calls only image load/resolution-get/resolution-set/delete APIs. The pixel-write/save operation, if any, is still unresolved.

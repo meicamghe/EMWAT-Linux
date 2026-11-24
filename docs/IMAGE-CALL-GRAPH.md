@@ -103,3 +103,12 @@ The Word field path is distinct from the standalone GScan/ImageTools UI:
 - The `EmbedTextToImage` bounded body calls GEAR32PD `IG_load_file`, `IG_image_resolution_get`, `IG_image_resolution_set`, and `IG_image_delete`. It proves image metadata normalization and handle cleanup, not text rasterization.
 
 The separate [Word image-field pipeline analysis](WORD-IMAGE-FIELD-PIPELINE-ANALYSIS.md) records the exact boundaries and open questions.
+
+
+### Caption composition vs. resolution metadata
+
+The Word XML image path has two distinct helpers:
+- `EmbedTextToImage` uses GEAR32PD to load the image and normalize its resolution metadata.
+- `GetCaptionItemFont` calls helper `0x004C4DBC`, which iterates caption items, uses an image-view object and font/text metrics to calculate placement. If it returns false, the caller invokes `FillMSWFields` (`0x004C009C`) with a `Word.Fields` interface.
+
+The caption helper is therefore separate from the GEAR resolution helper. Its final pixel-write/save operation and the exact Word COM calls in `FillMSWFields` remain open.
