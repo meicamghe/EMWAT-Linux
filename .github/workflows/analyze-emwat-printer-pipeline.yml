@@ -8,6 +8,8 @@ on:
       - 'tools/trace_td32_procedure.py'
       - 'tools/trace_td32_callers.py'
       - 'tools/analyze_emwat_td32.py'
+      - 'tools/decode_pe_strings.py'
+      - 'tools/trace_pe_range.py'
   workflow_dispatch:
 
 permissions:
