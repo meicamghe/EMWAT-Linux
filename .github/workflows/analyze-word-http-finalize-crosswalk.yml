@@ -30,6 +30,23 @@ jobs:
         run: |
           mkdir -p finalize-crosswalk/word
           python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x004BB3B0 0x004BB777 finalize-crosswalk/word/OnControlerNotify.md
+          python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 \
+            0x004B7724 0x004B8A83 finalize-crosswalk/word/LoadDocument-full.md
+          python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 \
+            0x004B8A84 0x004BB3AF finalize-crosswalk/word/OnTmrAutoSave-full.md
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004B8A84 \
+            finalize-crosswalk/word/OnTmrAutoSave-callers.md
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004BB3B0 \
+            finalize-crosswalk/word/OnControlerNotify-callers.md
+          python tools/decode_pe_strings.py analysis-input/EmwatMethods.bpl1 \
+            0x004B81E4 0x004B8220 0x004B8238 0x004B8280 \
+            0x004B82C4 0x004B832C 0x004B8348 0x004B8364 \
+            0x004B83A0 0x004B83C0 0x004B83E0 0x004B843C \
+            0x004B8978 0x004B89B8 0x004B89FC 0x004B8A50 \
+            0x004BA304 0x004BA350 0x004BA368 0x004BA388 \
+            0x004BA3A8 0x004BA3C8 0x004BA414 0x004BA438 \
+            0x004BA4B4 0x004BA4CC 0x004BA508 0x004BA5EC \
+            > finalize-crosswalk/word/loaddocument-autosave-strings.md
           for target in 004BB3B0 004CD154 004D281C 00456DFC 0042ABA0 0042FFF4; do
             python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x$target finalize-crosswalk/word/target-$target.md 2600 ret
             python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 0x$target finalize-crosswalk/word/refs-$target.md
