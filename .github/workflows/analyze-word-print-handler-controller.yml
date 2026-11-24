@@ -9,6 +9,7 @@ on:
       - 'tools/trace_pe_target.py'
       - 'tools/scan_pe_pointer_refs.py'
       - 'tools/list_td32_symbols.py'
+      - 'tools/decode_pe_strings.py'
   workflow_dispatch:
 
 permissions:
