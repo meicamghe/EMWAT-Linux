@@ -136,7 +136,7 @@ def inspect_word_assets(
             # to an outer EditWord parameter (for example signData). Keep that
             # binding unresolved; its concatenation/encoding contract is not
             # inferred here.
-            if field.external_parameter and field.value == "":
+            if field.external_parameter and not field.value:
                 data = b""
                 unresolved_external.append((index, field.external_parameter))
             else:
