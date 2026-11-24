@@ -27,7 +27,7 @@ These are literal identifiers found in the code paths for the recipient/CC handl
 | SetReceiversValueForSelected | 0x004A9A08 | Applies recipient values to selected fields/documents |
 | TWordViwer.CostumizeRecAndCC | 0x004D281C | Controller-side recipient/CC customization invoked from OnControlerNotify |
 
-The main/archive paths use the Persian prefix "رونوشت: " followed by CRLF. The selected-item path also uses "رونوشت: ", with a separate decoded literal that has no trailing CRLF. Do not normalize these strings until output parity is tested.
+The main/archive paths use the Persian prefix "رونوشت: " followed by CRLF. The selected-item path uses the same prefix without an immediate CRLF and also references a separate single-CR delimiter literal. This suggests different line-joining behavior between the bulk and selected paths; confirm the exact rendered output with a fixture before normalizing.
 
 ## 3. Controller-notify ordering
 
