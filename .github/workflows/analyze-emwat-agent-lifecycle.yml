@@ -87,26 +87,25 @@ jobs:
                           slot = struct.unpack_from("<I", code, i+2)[0]
                           if slot in slots:
                               thunks[image+sec.VirtualAddress+i] = (slot, slots[slot])
-              calls = []
-              for sec in pe.sections:
-                  if not (sec.Characteristics & 0x20000000):
-                      continue
-                  code = sec.get_data()
-                  base_va = image + sec.VirtualAddress
-                  for ins in md.disasm(code, base_va):
-                      if ins.mnemonic != "call":
-                          continue
-                      if re.fullmatch(r"0x[0-9a-fA-F]+", ins.op_str.strip()):
-                          target = int(ins.op_str, 16)
-                          if target in thunks:
-                              slot, (dll, name) = thunks[target]
-                              calls.append((dll, name, ins.address, target, slot, "call thunk"))
-                      else:
-                          m = re.search(r"\[0x([0-9a-fA-F]+)\]", ins.op_str)
-                          if m and int(m.group(1),16) in slots:
-                              slot = int(m.group(1),16)
-                              dll, name = slots[slot]
-                              calls.append((dll, name, ins.address, 0, slot, "indirect IAT"))
+          calls = []
+          for sec in pe.sections:
+              if not (sec.Characteristics & 0x20000000):
+                  continue
+              code = sec.get_data()
+              base_va = image + sec.VirtualAddress
+              # Scan encoded CALL instructions directly; Delphi RTTI/data can desynchronize linear disassembly.
+              for i in range(max(0, len(code)-5)):
+                  if code[i] == 0xE8:
+                      rel = struct.unpack_from("<i", code, i+1)[0]
+                      target = base_va + i + 5 + rel
+                      if target in thunks:
+                          slot, (dll, name) = thunks[target]
+                          calls.append((dll, name, base_va+i, target, slot, "relative CALL thunk"))
+                  elif code[i:i+2] == b"\xff\x15":
+                      slot = struct.unpack_from("<I", code, i+2)[0]
+                      if slot in slots:
+                          dll, name = slots[slot]
+                          calls.append((dll, name, base_va+i, 0, slot, "CALL [IAT]"))
               out = [
                   f"# {filename} lifecycle analysis", "",
                   f"- SHA-256: {hashlib.sha256(blob).hexdigest()}",
