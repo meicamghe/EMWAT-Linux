@@ -65,3 +65,5 @@ jobs:
         with:
           name: emwat-word-print-handler-controller
           path: word-print-handler-controller/
+
+# Parallel RE dispatch marker: 2026-11-24 cross-subsystem analysis lane.

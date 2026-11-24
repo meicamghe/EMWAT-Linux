@@ -52,3 +52,5 @@ jobs:
         with:
           name: emwat-registry-settings-analysis
           path: registry-analysis/
+
+# Parallel RE dispatch marker: 2026-11-24 cross-subsystem analysis lane.

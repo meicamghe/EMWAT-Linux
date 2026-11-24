@@ -37,3 +37,5 @@ jobs:
           path: sevenzip-object-fields/
 
 # Parallel RE dispatch marker: 2026-11-24 independent analysis lane.
+
+# Parallel RE dispatch marker: 2026-11-24 cross-subsystem analysis lane.
