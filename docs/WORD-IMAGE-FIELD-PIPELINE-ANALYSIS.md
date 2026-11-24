@@ -73,9 +73,9 @@ Preserve MIME type, payload encoding, caption item metadata, and regular/twin fi
 
 1. Decode the two 80-bit extended constants at `0x004C4590` and `0x004C459C` and identify the two metadata-type branches.
 2. Resolve the argument contract of `IG_image_resolution_set` mode 3.
-3. Identify the pixel-write/save operation and the Boolean meaning of `0x004C4DBC`; map the internal Word COM field-update calls inside `FillMSWFields` (`0x004C009C`).
+3. Identify the pixel-write/save operation and the Boolean meaning of `0x004C4DBC`; trace callers of GEAR `IG_save_file` thunk `0x004AFE90` and helpers `0x004B0304`/`0x004B030C`; map the internal Word COM field-update calls inside `FillMSWFields` (`0x004C009C`).
 4. Resolve the consumer semantics of the six position values returned by `GetImageResolution`.
-5. Identify the save helper at `0x0044ABE4`, decode the output format constant at `0x004C5AE8`, and determine the temporary image/file naming and cleanup path.
+5. Identify the actual image-save API and output format (the nearby `0x0044ABE4` helper is only a modal dialog; `0x004C5AE8=4` is its control count), then determine the temporary image/file naming and cleanup path.
 6. Validate image field insertion against representative XML fixtures and real Word documents before choosing the native image backend.
 
 ## 7. Evidence status
@@ -84,7 +84,8 @@ Preserve MIME type, payload encoding, caption item metadata, and regular/twin fi
 - Caption font/style tokens: confirmed.
 - Six direction tokens and numeric values: confirmed; semantic category provisional.
 - GEAR32PD image load/resolution set/delete calls: confirmed.
-- Caption rasterization and final Word insertion operation: unresolved.
+- Captioned-image output: strongly supported by the success logs and caption-placement sequence; exact pixel-write/save API unresolved.
+- Final Word insertion operation: unresolved.
 
 
 ## 3. Caption composition helper and Word-field fallback
@@ -104,7 +105,7 @@ The caller then branches:
 
 The `FillMSWFields` TD32 signature explicitly accepts a `Word.Fields` COM interface, so this is a Word-side field fallback, not a GEAR32PD API. Its internal field/COM operations and the precise meaning of the Boolean return remain open.
 
-**Interpretation boundary:** the helper's image-view object, caption iteration and font metrics strongly indicate caption composition/placement. The bounded trace has not yet identified a definitive pixel-write or image-save call, so do not claim that text is certainly rasterized into the bitmap. The GEAR32PD `EmbedTextToImage` helper remains a separate resolution-metadata operation.
+**Interpretation boundary:** the helper's image-view object, caption iteration, font metrics, and success logs (`image saved to file` / `Caption embeded to image`) strongly indicate a captioned image output. The exact pixel-write/save call is not yet identified, so do not attribute it to `0x0044ABE4`. The GEAR32PD `EmbedTextToImage` helper remains a separate resolution-metadata operation.
 
 
 ## 8. Signature-image validation and save evidence
@@ -116,7 +117,7 @@ The caption helper `0x004C4DBC` contains these internal messages:
 - Persian validation error: signature image is invalid; check the signers' signature image in base information.
 - Persian width error: signature image width is too small; the message formats actual width and minimum width in pixels.
 
-Before the save call, the code obtains image width/height through view-object VMT methods. It calculates `width - 20` and compares that value with `40`; the user-facing error formatter passes the measured width and `40`. This indicates a 40-pixel usable-width threshold with an additional 20-pixel margin in the internal calculation. Preserve the exact formula and validate it with real signature fixtures before translating it into a simple minimum-width rule.
+The validation branch obtains image width/height through view-object VMT methods. It calculates `width - 20` and compares that value with `40`; the user-facing error formatter passes the measured width and `40`. Preserve the exact formula and validate it with real signature fixtures before translating it into a simple minimum-width rule. When the check fails, the modal-dialog helper is invoked; the success branch proceeds to caption placement and emits the image-saved/caption-embedded logs.
 
 At `0x004C51B4`, the helper `0x0044ABE4` is a custom modal-dialog routine, **not** an image-save routine. Its body calls VCL `TControl.SetText`, `TCustomForm.SetFormStyle`, `TComponent.GetComponentCount` and `TComponent.GetComponent`, then invokes a form VMT method and frees the form. It is reached from the invalid/too-narrow signature-image branch. The 16-bit value `4` at `0x004C5AE8` is the dialog's child-control/argument count, not an image-format enum. The dialog uses the Persian strings `تایید` (confirm) and `ام وات` (EMWAT).
 
