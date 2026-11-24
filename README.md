@@ -45,6 +45,8 @@ EMWAT واسط محلی بین اتوماسیون تحت وب الماس گام 
 - [تحلیل Office Automation و COM](docs/OFFICE-COM-ANALYSIS.md)
 - [تحلیل COM و PE Resourceهای استخراج‌شده](docs/RESOURCE-ANALYSIS.md)
 - [تحلیل ساختار فرم تنظیمات چاپ Word](docs/WORD-PRINT-OPTION-DFM.md)
+- [مهندسی معکوس GAM Virtual Printer و تنظیمات چاپگر مجازی](docs/GAM-VIRTUAL-PRINTER-REVERSE-ENGINEERING.md)
+- [طرح سازگاری چاپگر Linux و قرارداد CUPS/IPP](docs/PRINTER-COMPATIBILITY-PLAN.md)
 - [تحلیل فرم پیش‌نمایش اسکن و ابزارهای تصویر](docs/SCAN-PREVIEW-DFM.md)
 - [تحلیل فرم اصلی مدیریت و ویرایش تصاویر](docs/IMAGE-TOOLS-DFM.md)
 - [تحلیل ویرایشگر ساده تصویر و مقایسه سه فرم](docs/SIMPLE-IMAGE-EDITOR-DFM.md)
