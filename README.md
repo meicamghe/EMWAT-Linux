@@ -29,6 +29,7 @@ EMWAT واسط محلی بین اتوماسیون تحت وب الماس گام 
 - [گزارش وضعیت و نقطه ادامه پروژه](docs/PROJECT-STATUS.md)
 - [نقشه جامع پوشش مهندسی معکوس و اولویت‌بندی کارها](docs/REVERSE-ENGINEERING-MASTER-PLAN.md)
 - [تحلیل IPC و چرخه عمر Agent و Service](docs/AGENT-SERVICE-IPC-ANALYSIS.md)
+- [تحلیل آرشیو SevenZip و AutoSave](docs/SEVENZIP-ARCHIVE-ANALYSIS.md)
 - [ماتریس پذیرش و موانع انتشار](docs/RELEASE-ACCEPTANCE-MATRIX.md)
 - [قرارداد چرخه ارتباطی Almas و Writer و مرزهای Save/Close/Cancel](docs/ALMAS-WRITER-LIFECYCLE-CONTRACT.md)
 - [شواهد و مرز سازگاری آرشیو Windows .easz](docs/EASZ-ARCHIVE-FORMAT.md)
