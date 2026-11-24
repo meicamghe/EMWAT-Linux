@@ -31,7 +31,7 @@ The highest-value gaps are:
 | Printer management / GAM | Explicit BGPrint path reaches Word COM Application.PrintOutOld; timer callback CostumizeRecAndCC also calls Document.PrintOutOld slot +0x2BC three times; BeforePrint and print-handler/controller classes are identified; spooler calls enumerate queues/jobs; GAM OEM stack mapped | Determine whether timer calls produce separate jobs; identify +0x3F0 COM call and 15 Variant args; trace print-thread ownership, active/default queue and GAM hand-off; resolve .zan/final output and installer actions | P1 |
 | ImageGear / scanner | GEAR API imports, many callsites, TScanCommand state transitions, IIPEditor and some page/handle semantics; Linux SANE backend exists | Exact GEAR version/constants, remaining ABI arguments, frame/page lifecycle, cancellation/error mapping, metadata, save/load semantics and hardware comparison | P2 |
 | ImageEn / image tools | DFM forms and ImageEn/WIA/TWAIN dependencies identified | Handler bodies, acquisition source selection, multipage document model, undo/redo, crop/rotate/flip semantics, insert/remove/reorder pages, TIFF/JPEG export and callback/result contract | P2 |
-| Word print options | DFM reveals recipients/CC, page-range and copy-count controls | Event-handler logic, page-range parser, saved settings storage, recipient/CC copy rules, mapping to printer queue and actual output | P2 |
+| Word print options | DFM plus print-handler callsites confirm Receivers, ReceiverDeps, ccReceivers, ccReceiverDeps and Persian CC-prefix paths for main/archive/selected documents | Exact list separators/order/deduplication, selected-field mapping, page-range parser, copy-count and saved-setting semantics, mapping to queue/output | P2 |
 | Excel connector | Excel Automation wrappers and TEditExcelWorkBook class are identified | Method payload schema, workbook/sheet/range operations, formulas/styles, save/return behavior, error semantics and real fixture | P2 |
 | Installer / updater / COM | PE imports/resources, some Registry keys and COM infrastructure are documented | Installer custom actions, service registration/config defaults, uninstall/upgrade rollback, actual Office CLSID/ProgID/version, 32-bit registry view, browser host registration | P2 |
 | Database / external storage | No direct common SQL driver imports found in the inspected PE import report | Do not assume a database exists. Search configs, dynamically loaded modules, file formats and callsites only if a concrete storage read/write path appears | P3 |
@@ -127,6 +127,7 @@ These are related workflows, but current evidence does **not** establish them as
 - Product workflow (PRODUCT-WORKFLOW-ANALYSIS.md)
 - HTTP local API (HTTP-LOCAL-API-ANALYSIS.md)
 - Word document protocol (WORD-DOCUMENT-PROTOCOL-ANALYSIS.md)
+- Word recipient/CC print-handler analysis (WORD-RECIPIENT-CC-ANALYSIS.md)
 - Service executable analysis (EMWAT-SERVICE-EXECUTABLE-ANALYSIS.md)
 - Agent/Service IPC and lifecycle (AGENT-SERVICE-IPC-ANALYSIS.md)
 - Office COM analysis (OFFICE-COM-ANALYSIS.md)
