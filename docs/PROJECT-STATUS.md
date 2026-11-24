@@ -7,6 +7,7 @@
 - Local Python suite after that change: **326 tests, 324 passed, 2 optional skips**. Local CMake/Native tests were unavailable because CMake is not installed in this execution environment; no system package was installed.
 - GitHub Actions at upstream commit `def0b9e55ca73cf9607abd60157489a3d7d12b31` succeeded: Python `45376123624`, LibreOffice UNO `45376123603`, Native image core `45376123231`, GTK `45376123242`, and application Debian package `45376123408`. These results cover the upstream commit before the current local test-only change.
 - Reverse-engineering evidence and unresolved items are in [IMAGEGEAR-LZW-GIF-REVERSE-ENGINEERING.md](IMAGEGEAR-LZW-GIF-REVERSE-ENGINEERING.md). GAM printer profile evidence still identifies TIFF as the first native compatibility target; no native CUPS queue/job implementation or verified printer workflow is claimed.
+- The current Ubuntu execution host reports that the CUPS scheduler is not running and has no default destination. Printer acceptance could not be exercised, and no CUPS/Wine printer configuration was changed.
 
 ## Latest desktop lifecycle regression — 2026-11-23
 
