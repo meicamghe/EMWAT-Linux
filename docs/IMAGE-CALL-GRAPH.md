@@ -112,3 +112,8 @@ The Word XML image path has two distinct helpers:
 - `GetCaptionItemFont` calls helper `0x004C4DBC`, which iterates caption items, uses an image-view object and font/text metrics to calculate placement. If it returns false, the caller invokes `FillMSWFields` (`0x004C009C`) with a `Word.Fields` interface.
 
 The caption helper is therefore separate from the GEAR resolution helper. Its final pixel-write/save operation and the exact Word COM calls in `FillMSWFields` remain open.
+
+
+### Signature caption output confirmed
+
+The helper `0x004C4DBC` now has direct save evidence: it calls `0x0044ABE4` with an output path and format/options, then logs `image saved to file. Params.Dpi: %d` and `Caption embeded to image.`. It also validates signature-image dimensions and emits Persian errors for invalid or too-narrow signature images. The save helper's exact API and the 16-bit format value at `0x004C5AE8` remain under analysis.

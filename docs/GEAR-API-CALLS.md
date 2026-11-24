@@ -184,3 +184,6 @@ This helper is reached from `TWordViwer.GetCaptionItemFont` at `0x004C19C0` (cal
 The Word image-field caller `GetCaptionItemFont` (`0x004C19C0`) invokes a separate helper at `0x004C4DBC` that uses an image-view object, `TCaptionItem` iteration, and font/text metrics. If that helper returns false, the caller invokes `TWordViwer.FillMSWFields` (`0x004C009C`), whose TD32 signature accepts a `Word.Fields` interface.
 
 Do not attribute this caption composition to GEAR32PD: the bounded GEAR helper `EmbedTextToImage` calls only image load/resolution-get/resolution-set/delete APIs. The pixel-write/save operation, if any, is still unresolved.
+
+
+The Word signature-caption helper `0x004C4DBC` calls a save routine at `0x0044ABE4`. After the call, it logs `image saved to file. Params.Dpi: %d` and `Caption embeded to image.`. This confirms that the caption path writes a separate output image; it is not only a resolution metadata query. The exact save API and output format constant at `0x004C5AE8` are still being resolved.
