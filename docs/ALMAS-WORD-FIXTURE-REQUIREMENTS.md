@@ -6,6 +6,10 @@ The Linux adapter must reproduce the field behavior of the existing Almas-to-Wor
 workflow in LibreOffice Writer. Static metadata inventories and synthetic UNO
 roundtrips are not sufficient to infer this mapping safely.
 
+## Existing repository evidence reviewed (2026-11-24)
+
+The GitHub text reports contain extracted strings, static-analysis results, or packet metadata; they do not contain the matching editable Word fixture. `http-requests.txt` records request metadata and TCP payload lengths, not the HTTP request body. `EMWAT_Extracted.zip` contains installer/service binaries and GAM printer support files, but no `.doc`, `.docx`, HAR, PCAP, or matching `wordConfig` fixture. These files are useful reverse-engineering references, but cannot establish semantic field-to-Writer mappings or expected output.
+
 ## Minimum fixture set
 
 Provide one small, disposable, sanitized transaction containing:
