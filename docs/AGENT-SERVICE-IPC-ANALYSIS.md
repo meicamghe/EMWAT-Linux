@@ -272,7 +272,7 @@ This gives a strong default/range mapping:
 
 The heartbeat worker's field at `+0x40` is used as the interval threshold: after 1000 ms sleeps it increments a counter until the field threshold is reached, then sends the heartbeat request. The exact `TManageForm.btnOkClick` update path copies `LifeCheckInterval` to worker `+0x40`, `LogFilePath` to `+0x44`, `MakeLog` to `+0x48`, and `MaxSequentialFailure` to `+0x4C`. The worker is temporarily suspended during this copy and its previous suspended/running state is restored afterward.
 
-**Important:** the DFM proves the UI defaults and allowed ranges, not that every headless startup path uses those same defaults. Preserve these values as the compatibility defaults but keep the form-to-worker copy path on the open-items list.
+**Important:** the DFM proves the UI defaults and allowed ranges, not that every headless startup path uses those same defaults. The form-to-worker copy path is now resolved in Section 14; the remaining default question is the initializer that seeds the global config record before the registry reader runs.
 
 
 ## 14. Exact management-form → live watchdog update path
