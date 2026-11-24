@@ -1145,3 +1145,11 @@ Do not implement guessed `signData` joining or claim end-to-end Almas registrati
 - It wraps `TWordViwer.LoadDocument` in `CoInitialize`/`CoUninitialize`, passes the `TEmwatInvokeParam` pointer and output string, stores the returned method result, and sets `bResultSet=1`.
 - `LoadDocument` extracts `DocFileName` from `wordBody`, writes document data to a local `TFileStream(fmCreate)`, parses `wordConfig` XML, then calls `OnTmrAutoSave` with that file path. The path is stored in viewer `+0xA0` and later packaged as `.easd` inside `.easz`.
 - Next priority: determine how the returned string and `bResultSet` become the actual HTTP response body, and trace the full `wordConfig`/`letterImages`/`signData` handling.
+
+
+## 2026-11-24 — IGLZW32S reverse-engineering checkpoint
+
+- Added [IGLZW32S-REVERSE-ENGINEERING.md](IGLZW32S-REVERSE-ENGINEERING.md), linked from the README.
+- Static analysis identifies the PE32 module as an Accusoft ImageGear LZW extension. It records exports, the 45-slot extension initialization loop, GearExtInfo query behavior, GIF extension framing, and the TIFF LZW decode core.
+- TIFF decode evidence: 9–12-bit code extraction, Clear=0x100, EOI=0x101, dual MSB/LSB bit-reader branches, dictionary expansion including the special next-code case, and stride-based output padding.
+- No native codec implementation or runtime compatibility is claimed yet. Continue with the exported wrapper at 0x10005650, its callers/ABI, FillOrder selection, allocator/error callbacks, then implement isolated native codec tests.
