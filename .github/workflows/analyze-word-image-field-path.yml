@@ -74,7 +74,7 @@ jobs:
             0x004C2D4C 0x004C2D68 0x004C2D84 0x004C2DA4 0x004C2DC8 \
             0x004C4590 0x004C459C \
             0x004C57F4 0x004C5830 0x004C5898 0x004C5920 \
-            0x004C59D0 0x004C5A70 0x004C5AD8 0x004C5AE8 \
+            0x004C59D0 0x004C5A70 0x004C5AC0 0x004C5AD8 0x004C5AE8 \
             0x004C5BA4 0x004C5BB4 0x004C5BF4 \
             0x004C0410 0x004C2DE0 0x004C436C 0x004CFC74 \
             > word-image-field-path/image-field-strings.md
@@ -82,7 +82,7 @@ jobs:
         shell: bash
         run: |
           pids=()
-          for spec in "004AFE88 700" "004AFF08 900" "004AFF10 900" "004AFEB8 700"; do
+          for spec in "0044ABE4 1800" "004AFE88 700" "004AFF08 900" "004AFF10 900" "004AFEB8 700"; do
             (
               set -e
               set -- $spec
