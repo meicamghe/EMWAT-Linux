@@ -61,6 +61,7 @@ jobs:
         run: |
           python tools/list_td32_symbols.py analysis-input/EmwatMethods.bpl1 \
             TWordViwer TXmlWordConfigField TXmlWordConfigTwinField TCaptionItem TEmwatFieldType \
+            TImageEnView TImageEnIO TImageEnProc TImageEnVect \
             > word-image-field-path/image-field-symbols.md
       - name: Decode image-field and caption constants
         run: |
@@ -70,11 +71,27 @@ jobs:
             0x004BC82C 0x004BC8A8 0x004BC910 0x004BC938 0x004BC95C \
             0x004BFEE8 0x004BFF0C 0x004C04DC 0x004C0510 0x004C052C \
             0x004C2E70 0x004C2E88 0x004C2EA4 0x004C2EBC 0x004C2ED0 0x004C2EEC \
+            0x004C2D4C 0x004C2D68 0x004C2D84 0x004C2DA4 0x004C2DC8 \
+            0x004C4590 0x004C459C \
             0x004C0410 0x004C2DE0 0x004C436C 0x004CFC74 \
             > word-image-field-path/image-field-strings.md
+      - name: Trace image metadata and transform helper routines
+        shell: bash
+        run: |
+          pids=()
+          for spec in "004AFE88 700" "004AFF08 900" "004AFF10 900" "004AFEB8 700"; do
+            (
+              set -e
+              set -- $spec
+              python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x$1 word-image-field-path/image-helper-$1.md $2 ret
+            ) &
+            pids+=("$!")
+          done
+          status=0
+          for pid in "${pids[@]}"; do wait "$pid" || status=1; done
+          exit "$status"
       - uses: actions/upload-artifact@v4
         with:
           name: emwat-word-image-field-path
           path: word-image-field-path/
 
-# Parallel RE dispatch marker: 2026-11-24 independent analysis lane.
