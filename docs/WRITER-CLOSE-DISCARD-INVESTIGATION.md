@@ -16,11 +16,11 @@ References:
 
 ## What this does not establish
 
-The API contract and the model close implementation do not, by themselves, establish where the interactive Writer Save / Don't Save / Cancel dialog is handled relative to the UNO close-listener callbacks for a title-bar close. Therefore they do not prove whether the current `queryClosing` snapshot is captured before or after the user chooses Don't Save.
+The API contract and the model close implementation do not, by themselves, establish where the interactive Writer Save / Don't Save / Cancel dialog is handled relative to UNO close-listener callbacks for a title-bar close. The current adapter avoids relying on that ordering: `queryClosing` records lifecycle evidence only, and the final payload comes from the last confirmed-saved Word-compatible copy.
 
-The current adapter calls `storeToURL` from `queryClosing`, and later treats the file as the final output after terminal close. A unit test with a fake document proves that a snapshot can be produced without an earlier `OnSaveDone` event; it does not prove correct discard behavior in the real Writer UI.
+The visible acceptance run in [`WRITER-CLOSE-ACCEPTANCE-TEST.md`](WRITER-CLOSE-ACCEPTANCE-TEST.md) verified Save, Don't Save, and Cancel-then-retry against the current adapter. Save returned the saved marker; Don't Save returned the prior confirmed-saved version; Cancel kept Writer open and the bridge wait pending. This establishes local Writer behavior only, not Windows/Almas wire compatibility.
 
-## Required acceptance test
+## Visible acceptance test (completed)
 
 Use a visible Writer instance and a disposable document fixture containing a known baseline marker:
 
@@ -28,35 +28,33 @@ Use a visible Writer instance and a disposable document fixture containing a kno
 2. Add a unique unsaved marker in Writer.
 3. Close the Writer window through the title-bar close control.
 4. Choose **Don't Save** in the native prompt.
-5. Confirm the document closes and the bridge returns to Almas.
+5. Confirm the document closes and the adapter returns the expected Word-compatible payload.
 6. Decode the returned Word document and verify the unsaved marker is absent while the baseline marker remains.
 7. Repeat with **Cancel** and verify Writer remains open, the bridge request remains pending, and no final response is emitted.
 8. Repeat with **Save** and verify the saved marker is present in the returned document.
 
-Record callback order and the final bytes for each case. Run this against the supported Ubuntu/LibreOffice versions, not only a headless API close.
+The marker-based visible run is recorded in [`WRITER-CLOSE-ACCEPTANCE-TEST.md`](WRITER-CLOSE-ACCEPTANCE-TEST.md). It exercises the local adapter only; it is not a live Almas roundtrip. Repeat it when changing close behavior or when adding a supported LibreOffice version.
 
 ## Implementation guardrail
 
-Do not infer `DISCARDED` from `notifyClosing` or `disposing`; both describe closure/disposal, not the user's choice. Do not change the current snapshot timing or map a close to a discard response until the visible-UI acceptance test or an equivalent verified interaction contract establishes the behavior.
+Do not infer `DISCARDED` from `notifyClosing` or `disposing`; both describe closure/disposal, not the user's choice. Do not invent an Almas discard/cancel response or change the accepted local close semantics without a corresponding reference contract and visible-UI regression.
 
 ## Current branch implementation audit — 2026-11-23
 
-Inspected on branch `feature/recovery-retention-policy` at head `944ec9f3f34c355a7d20e49e7fd734e56e955ee1`:
+The following describes the implementation at branch head `8daee0566de6b6c49d4ab3e14b8e7379a57067bd`:
 
-- `LibreOfficeAdapter.open_document()` creates `final.doc` as a separate output path and registers `_DocumentCloseListener`.
-- `_DocumentCloseListener.queryClosing()` calls `document.storeToURL(final.doc, ...)` immediately when a close attempt is queried. This is before the implementation has established which button the visible Writer prompt will resolve to.
-- `_DocumentEventListener` recognizes `OnSaveDone` and `OnSaveAsDone`, but its callback only calls the coordinator's `session.record_engine_save()`. It does not refresh or replace `final.doc`.
-- `wait_for_close()` waits for the closed event, then accepts the queryClosing snapshot as the final document. It always returns `CloseDisposition.CLOSED`; it does not produce `DISCARDED`.
+- `LibreOfficeAdapter.open_document()` creates a private baseline Word-compatible `last-saved.doc` before editing and registers `_DocumentCloseListener`.
+- `_DocumentCloseListener.queryClosing()` records a callback only; it does not export or snapshot the live document.
+- `_DocumentEventListener` recognizes successful `OnSaveDone` and `OnSaveAsDone` events. Their callback stages an export, validates the legacy Word/CFB signature, then atomically replaces `last-saved.doc`.
+- `wait_for_close()` waits for terminal document closure and returns `CloseDisposition.CLOSED` with the last confirmed-saved state available for export. This adapter does not emit `DISCARDED`.
 - `DocumentCoordinator` has a `DISCARDED` branch, but the current LibreOffice adapter does not emit that disposition.
 
 ### Consequence
 
-The current visible-UI result is not proven correct for **Don't Save**. If `queryClosing` runs before the user chooses Don't Save, the file already written to `final.doc` can contain edits the user explicitly discarded. The existing fake-document tests only prove that `storeToURL` is called and that listener callbacks are traced; they do not prove the native Writer prompt ordering or final bytes.
+The current visible-UI probe has verified the local Save / Don't Save / Cancel-retry results using marker documents. It does not establish the exact Windows response for a discard, or whether Almas distinguishes that from a successful close. The user's reference behavior—closing Word returns control to Almas even when Save was not pressed beforehand—is consistent with choosing Save in the close prompt, but that interpretation is not assumed as the only Windows behavior.
 
-The Save event callback is currently observational only; it does not fix this gap. Therefore this branch must not claim Save/Don't Save parity or release readiness.
+### Remaining integration gate
 
-### Safe implementation direction (not yet implemented)
-
-Before changing the adapter, establish the actual visible Writer event order and file behavior on the supported LibreOffice version. The candidate design must preserve the last **confirmed saved** state separately from recovery snapshots, and must only return that saved state after an accepted close when the user chose Don't Save. Save must return the newly confirmed saved state. Cancel must leave the document and bridge request pending. A save event alone is not sufficient unless its ordering and the bytes it confirms are validated in the visible acceptance test.
+Keep the last **confirmed saved** state separate from periodic recovery snapshots. Preserve the verified local behavior: Save returns the new confirmed state; Don't Save returns the previous confirmed state; Cancel leaves the document and bridge request pending. Any change to these semantics requires a new visible Writer acceptance run and a sanitized Windows/Almas reference fixture for the corresponding response behavior.
 
 Do not implement a heuristic such as “no save event means discard” or “notifyClosed means save/discard”; neither has been proven. Do not alter the HTTP/XML cancellation response until its Almas contract is known.
