@@ -124,6 +124,15 @@ class TemplateMappingTests(unittest.TestCase):
             [(0, "Start")],
         )
 
+
+    def test_ambiguous_twin_does_not_leave_partial_target_candidate(self):
+        report = inspect_template_mapping(
+            config("Start†End"),
+            catalog((), bookmarks=("Start", "End"), ranges=("Start",)),
+        )
+        self.assertEqual(report.config_field_candidates, ())
+        self.assertEqual(report.ambiguous_config_field_indices, (0,))
+
     def test_prevents_two_config_fields_claiming_one_writer_structure(self):
         report = inspect_template_mapping(
             config("Signature", "signature"),

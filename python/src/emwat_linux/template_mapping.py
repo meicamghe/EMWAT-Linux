@@ -194,6 +194,10 @@ def inspect_template_mapping(
             if candidate.field_index not in reused_targets
         ]
     ambiguous_config_tuple = tuple(sorted(set(ambiguous_config)))
+    config_candidates = [
+        candidate for candidate in config_candidates
+        if candidate.field_index not in ambiguous_config_tuple
+    ]
     return TemplateMappingInventory(
         config_field_count=len(config.fields),
         custom_property_count=len(property_names),
