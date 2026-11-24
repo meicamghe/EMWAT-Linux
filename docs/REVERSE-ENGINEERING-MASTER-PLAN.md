@@ -144,6 +144,7 @@ These are related workflows, but current evidence does **not** establish them as
 - Printer compatibility plan (PRINTER-COMPATIBILITY-PLAN.md)
 - EMWAT Windows spooler selection/job matching (EMWAT-PRINTER-SPOOLER-ANALYSIS.md)
 - Agent/Service IPC, heartbeat and watchdog (AGENT-SERVICE-IPC-ANALYSIS.md)
+- Word XML image-field/caption and GEAR32PD resolution path (WORD-IMAGE-FIELD-PIPELINE-ANALYSIS.md)
 
 ## Immediate next execution order
 
@@ -152,4 +153,4 @@ These are related workflows, but current evidence does **not** establish them as
 3. Trace the normal timer-driven CostumizeRecAndCC → Document.PrintOutOld → BeforePrint path and correlate its document label with the spooler job and GAM artifact; the two exception retries are fallback attempts, not three unconditional jobs.
 4. Resolve `euResetMemory` output slot `+0x44` to its concrete SevenZip output method, determine whether the shared fixed string enables output encryption, and validate a synthetic `.easz` archive; the application-level output helper and callers are now identified, but the encryption/writer contract is not.
 5. Complete WordConfig signature/twin/image field coverage.
-6. Resolve the Agent config-record initializer and registered-message trailing-underscore mismatch. Also replace the Windows watchdog's process-wide `taskkill WINWORD.EXE` recovery side effect with document-session-scoped graceful recovery; then ImageEn handlers, Excel and installer/updater details. The heartbeat contract is implemented in the native bridge and passed CI run `45352644056`, including a concurrency test that keeps heartbeat responsive during a blocked document POST. The original Service DFM also confirms loopback binding at `127.0.0.1:1984`, queue 100, and a 15-second server shutdown wait.
+6. Resolve the Agent config-record initializer and registered-message trailing-underscore mismatch. Also replace the Windows watchdog's process-wide `taskkill WINWORD.EXE` recovery side effect with document-session-scoped graceful recovery; then Word image-field caption insertion/GEAR32PD metadata semantics, Excel and installer/updater details. The heartbeat contract is implemented in the native bridge and passed CI run `45352644056`, including a concurrency test that keeps heartbeat responsive during a blocked document POST. The original Service DFM also confirms loopback binding at `127.0.0.1:1984`, queue 100, and a 15-second server shutdown wait.
