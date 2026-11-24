@@ -164,6 +164,8 @@ The LZW procedure invokes a host callback at `0x10009838` with the third procedu
 ## Remaining work
 
 - Recover the exact values/arguments passed to the two normal final bit-writer calls and prove which one emits EOI.
+- Resolve source-level types/names for the 19 stack slots and all callback prototypes, then validate every return/error path against a controlled Wine 11 fixture before defining a typed wrapper.
+- Decode the `GearExtInfoGet/Set` selector tables and state layout, including pointer lifetime and whether any synchronization is provided.
 - Inspect the GIF writer helper `0x10001000` to determine how the GIF signature, logical screen descriptor, palette, minimum code size, and image data blocks are emitted.
 - Validate code-width transition and dictionary-full reset boundaries against independent GIF decoders.
 - Inspect the 45 extension registration entries and identify supported formats/features.

@@ -43,7 +43,6 @@
 - Then test libtiff LZW read/write on synthetic single- and multi-page TIFF fixtures; separately continue GIF extension/metadata and LZW width/reset analysis. For printing, trace GAM's TIFF artifact path and queue/job correlation before adding a CUPS/IPP backend. The Windows spooler and GAM virtual printer remain separate analysis components.
 - Keep these boundaries explicit: no typed TIF wrapper, ImageGear runtime parity, full scanner/ADF/duplex, CUPS printing, or verified end-to-end GAM workflow is claimed. Wine 9 must not be introduced.
 
-
 ## Latest main-branch implementation — 2026-11-17
 
 - POST bridge requests now require exactly one non-empty `invoke` query parameter before the request body is read or a method is dispatched. Duplicate/missing/invalid query shapes return HTTP 400.
