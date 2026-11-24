@@ -17,6 +17,10 @@ The repository currently contains `analysis-input/EmwatMethods.bpl1` and generat
 
 Detailed payload, INI, rendering, and uncertainty inventory: [GAM Virtual Printer reverse-engineering evidence](GAM-VIRTUAL-PRINTER-REVERSE-ENGINEERING.md). The extracted package confirms a GAMPrinter queue configured over a Zan Image Printer-derived OEM graphics-driver/port-monitor stack. It also exposes color/BW/Fax profiles, filename templating and optional FTP/email/event features. Numeric format/compression/collision enums and the exact EMWAT output hand-off remain unresolved; do not select a Linux output format from the current enum values.
 
+## Additional output-format evidence (2026-11-24)
+
+The `zvprtcfg_x86.exe` usage examples now explicitly decode `image.fileformat=1` as TIFF and `image.fileformat=2` as JPEG. Compression and save-collision enums remain unresolved; see [the detailed reverse-engineering evidence](GAM-VIRTUAL-PRINTER-REVERSE-ENGINEERING.md).
+
 ## What the Windows API evidence means
 
 - `EnumPrintersW` is a discovery/enumeration boundary. Its flags, name/server filters, returned level, and buffer handling determine which printers are visible to EMWAT.
