@@ -60,3 +60,5 @@ jobs:
           name: emwat-controller-content-unpack
           path: controller-unarchive/
           if-no-files-found: error
+
+# Parallel RE dispatch marker: 2026-11-24 cross-subsystem analysis lane.

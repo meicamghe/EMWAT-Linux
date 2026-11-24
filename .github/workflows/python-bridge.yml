@@ -1,6 +1,8 @@
 name: Python bridge transport
 on:
   push:
+    branches:
+      - main
     paths:
       - 'python/**'
       - '.github/workflows/python-bridge.yml'
@@ -9,6 +11,10 @@ on:
       - 'python/**'
       - '.github/workflows/python-bridge.yml'
   workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: false
 
 permissions:
   contents: read
@@ -21,6 +27,16 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - name: Install Python dependencies
+        working-directory: python
+        run: python -m pip install -r requirements.txt
+      - name: Install bridge package and verify console entrypoint
+        working-directory: python
+        run: |
+          python -m pip install --no-deps .
+          emwat-linux-doctor --help
+          emwat-linux --help
+          emwat-linux-desktop-entry --help
       - name: Run bridge transport tests
         working-directory: python
         run: |

@@ -21,19 +21,31 @@ class XMLMethodDispatcher:
     """
 
     def __init__(self, *, max_payload_bytes: int = 16 * 1024 * 1024) -> None:
-        if max_payload_bytes <= 0:
-            raise ValueError("max_payload_bytes must be positive")
+        if type(max_payload_bytes) is not int or max_payload_bytes <= 0:
+            raise ValueError("max_payload_bytes must be a positive integer")
         self._max_payload_bytes = max_payload_bytes
         self._handlers: dict[str, MethodHandler] = {}
 
     def register(self, class_name: str, handler: MethodHandler) -> None:
-        if not class_name or class_name != class_name.strip():
+        if (
+            not isinstance(class_name, str)
+            or not class_name
+            or class_name != class_name.strip()
+        ):
             raise ValueError("invalid method class name")
+        if not callable(handler):
+            raise ValueError("method handler must be callable")
         if class_name in self._handlers:
             raise ValueError(f"handler already registered: {class_name}")
         self._handlers[class_name] = handler
 
     def __call__(self, request: BridgeRequest) -> BridgeResponse:
+        if not isinstance(request, BridgeRequest) or not isinstance(request.body, bytes):
+            return BridgeResponse(
+                b"invalid_emwat_request",
+                content_type="text/plain; charset=utf-8",
+                status=400,
+            )
         try:
             call = parse_method_call(request.body, max_bytes=self._max_payload_bytes)
         except ProtocolError:

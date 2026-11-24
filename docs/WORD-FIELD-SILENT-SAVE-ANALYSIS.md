@@ -421,3 +421,113 @@ The expanded close/controller workflow (run 43814607589, artifact 14202031457) p
 This is direct evidence that OnControlerNotify participates in EMWAT's local auto-save/archive workflow. It is **not** evidence that this method posts the final letter to Almas or constructs the response-word HTTP envelope. Keep local .easd/.easz recovery distinct from the captured EditWordDocument request/response round-trip.
 
 The same artifact identifies TWordDocument.Save at 0x004309A4, which dispatches through _Document slot +0x2B8. No direct bounded CALL xref was found; the method may be reached through an interface/VMT path. The close wrappers remain separate: no-argument Close uses +0x4D4 and the OleVariant overloads use +0x29C.
+
+
+## 2026-11-24 — decoded BeforeSave / close callback and AutoSave timer
+
+Sources: workflow runs 45344080216 (close prompt/helper trace), 45345628398 (full controller-notify callback), 45345628359 (callback ownership), and 45344189012 (Word event sink).
+
+### BeforeSave / close decision
+
+TD32 procedure `TWordViwer.WordAppDocumentBeforeSave` at `0x004CD154–0x004CD54B`:
+
+1. The callback verifies that the incoming Word document is the document tracked at viewer offset `+0x48`. It checks viewer state bytes `+0x5E` and `+0x5F`.
+2. When the prompt flag is enabled, it opens `TMyMessageDialog` through helper `0x0044A998`.
+3. The dialog strings decode to:
+   - Title: `ام وات`
+   - Message: `محتویات این سند تغییر کرده است. آیا مایل به ثبت تغییرات می‌باشید؟`
+   - Yes: `موافقم`
+   - No: `خیر`
+   - Cancel: `انصراف`
+4. Modal result `2` (Delphi `mrCancel`) writes `0xFFFF` to the COM Cancel parameter and exits without the subsequent close call.
+5. Modal result `6` (Delphi `mrYes`) builds integer `-1`; the other non-cancel branch (the No result, `7`) builds integer `0`. Helper `0x004034E8` resolves to `OleVarFromInt`.
+6. The Boolean Variant is passed as the first argument to the three-argument Word `Document.Close` call through interface slot `+0x29C`. The wrapper `TWordDocument.Close(OleVariant, OleVariant, OleVariant)` at `0x0042FFF4` uses that same slot. Thus Yes means `SaveChanges=True`, No means `SaveChanges=False`, and Cancel aborts the close.
+7. Before showing the prompt, the callback also invokes the `Set_Saved` wrapper/interface slot `+0xD8` with a local Variant. Its precise intent/value lifecycle remains a separate trace item.
+8. The callback is installed in the Word event sink at viewer event-record offset `+0x80`. The diagnostic string `Document.OnBeforeClose Called.` remains present even though the TD32 method name is `WordAppDocumentBeforeSave`; the event DISPID mapping is not yet proven.
+
+This resolves the user-facing close choices and the `Document.Close.SaveChanges` value. It does **not** yet prove how the completed close callback releases the long-lived HTTP request or which exact response payload is returned to Almas.
+
+### AutoSave timer and archive callback
+
+`TWordViewer.OnTmrAutoSave` configures the timer object at viewer offset `+0x7C`:
+- `0x00404B94`: `TTimer.SetOnTimer`
+- `0x00404B8C`: `TTimer.SetInterval`
+- `0x00404B84`: `TTimer.SetEnabled`
+- It assigns `TWordViewer.OnControlerNotify` at `0x004BB3B0`, clamps the interval to at least `10,000 ms`, then enables the timer.
+
+The `OnControlerNotify` callback disables the timer on entry, checks the active-document state and a reentrancy flag, calls `CostumizeRecAndCC`, invokes Word `Get_Content(-1)`, normalizes path strings with `FixDirectionInFarsiNumericMode`, builds `.easd`/`.easz` path variants, calls `euUnArchive` at `0x00456DFC`, and re-enables the timer on exit. The exact meaning of the `-1` argument and the archive entry/path mapping remain open.
+
+`euUnArchive` is a **reader/extraction** path: it creates a `T7zPlugin`, enumerates archive items, obtains item paths and invokes extraction methods. Do not treat it as proof of the `.easz` writer. This periodic local AutoSave/archive path is distinct from the HTTP response writer.
+
+
+## 2026-11-24 — Dynamic Config and timer-driven print coupling
+
+Sources: workflow runs 45347505927 (registry settings), 45345628398 (timer callback), and 45347505941 (HTTP/controller crosswalk).
+
+The settings form reads/writes the registry key:
+
+`HKCU\Software\Emwat\Dynamic Config`
+
+Observed value names include the exact resource spellings:
+- `Background Priniting`
+- `Dont Ask Save On Print`
+- `Save Before Print`
+- `Logging Level`
+- `Save I/O Trace Files`
+- `AutoSaveInterval`
+- `Created IO Trace Count`
+
+The WordViewer lifecycle initializer at `0x004D0D24` reads three Boolean settings into viewer flags at offsets `+0x3C`, `+0x3D`, `+0x3E`, and reads `AutoSaveInterval` into `+0x88`. The settings form multiplies the selected interval by 1000 before storing it, so the registry value is milliseconds derived from a seconds-based UI choice. The timer setup uses this field and enforces a minimum of `10,000 ms`; the exact list of selectable interval values in the global array at `0x0062A808` has not yet been decoded. The exact one-to-one mapping of the three Boolean labels to viewer flag offsets remains a correlation to verify.
+
+A further cross-subsystem finding: `OnControlerNotify` calls `CostumizeRecAndCC` at `0x004D281C` before `Get_Content(-1)` and the `.easd/.easz` extraction path. The bounded `CostumizeRecAndCC` body contains **three calls through Word Document vtable slot `+0x2BC`**, the same slot used by the `TWordDocument.PrintOutOld` wrapper, with list operations between calls. This strongly suggests the timer/archive path can trigger Word print operations. Whether these become three separate spool jobs, or are internal print triggers coordinated by the BeforePrint callback, is not yet proven.
+
+Keep three paths separate in the Linux design until call ownership is resolved:
+1. Word BeforeSave close decision.
+2. Timer-driven AutoSave/print preparation and archive extraction.
+3. HTTP response serialization and completion.
+
+
+## 2026-11-24 — WordViewer state fields and close gate
+
+The `TWordViewer` VMT/field metadata from workflow run 45349331995 provides exact names for important state offsets:
+
+| Offset | Field |
+|---|---|
+| `+0x04` | `PrntThreadControler` |
+| `+0x08` | `tempPrntOptions` |
+| `+0x3C` | `fBG_Printing` |
+| `+0x3D` | `fDontAskSaveBeforePrint` |
+| `+0x3E` | `fSaveBeforePrint` |
+| `+0x40` | `XmlWordConfig` |
+| `+0x44` | `WordApp` |
+| `+0x48` | `EmwatDocument` |
+| `+0x5C` | `IsSavingNow` |
+| `+0x5D` | `AnySaveRequested` |
+| `+0x5E` | `ReadyToClose` |
+| `+0x5F` | `OpenAsFree` |
+| `+0x60` | `ActiveFields` |
+| `+0x64` | `docCustomDocumentProperties` |
+| `+0x68` | `XmlWordConfigFields` |
+
+`OnControlerNotify` sets `ReadyToClose=0` while its work is in progress and restores `ReadyToClose=1` at completion. `WordAppDocumentBeforeSave` checks this flag and sets the COM Cancel parameter when the document is not ready. This is a close-safety gate around the timer callback, not proof that the HTTP request itself waits on the flag.
+
+The `WordAppDocumentBeforeSave` callback also branches on `OpenAsFree`; its exact effect on prompt/save behavior remains open. The timer callback invokes `CostumizeRecAndCC`, whose bounded body contains up to three attempts through the Word Document vtable slot used by `TWordDocument.PrintOutOld`, then obtains `Get_Content(-1)` and invokes archive extraction. The complete `CostumizeRecAndCC` body shows the PrintOutOld call is retried only after an exception: one call on the normal successful path, with up to two fallback attempts. It is not three unconditional print jobs. The method sets `IsSavingNow` (+0x5C) while active and clears it on exit.
+
+
+## 2026-11-24 — direct wait audit and request-path boundary
+
+The wait-thunk cross-reference narrows the possible source of the long HTTP transaction:
+
+- `LoadDocument` calls `TApplication.ProcessMessages` once at `0x004B7C1C`.
+- The only direct TD32-bounded caller of the `WaitForSingleObject` thunk at `0x00402900` is `GIFImage.FireEvent` at `0x00607448`; that code checks for `WAIT_TIMEOUT` (`0x102`). It is not a direct call from `LoadDocument`.
+- Direct `Sleep` callsites are in TIFF/image printing, temporary-file cleanup, printer-install lookup, recovery UI and GIF drawing/cleanup. No direct `Sleep` callsite was found in the bounded `LoadDocument` procedure.
+- Word `ConnectTo` at `0x0043E0FC` obtains the application interface through the wrapper at `0x00404FAC`; the inspected connect/disconnect wrappers do not themselves contain a wait loop.
+
+**Interpretation:** do not attribute the observed 54.558-second response delay to a proven EMWAT `WaitForSingleObject` or `Sleep` loop in `LoadDocument`. Synchronous COM Automation calls, indirect VMT dispatches, Indy network writes, and work inside Word remain open possibilities. The GIF wait routine is relevant only if a document actually traverses animated-GIF decoding.
+
+The response path now has a separately documented attachment branch in Indy `TIdHTTPResponseInfo.WriteContent`; this must not be confused with the Word close/BeforeSave gate or the periodic AutoSave timer.
+
+
+## LoadDocument response is after OpenDoc, not after Word close
+
+The latest full bounded trace shows `LoadDocument` calls the `OpenDoc` helper, then constructs a `TEmError` status object, assigns its serialized text to `AResponseInfo.ContentText` and calls `WriteContent`. The temporary document file is then deleted. No direct wait-for-close loop was found in this method. The approximately 54.558-second duration is now a candidate Word COM/OpenDoc initialization delay, not a proven close-driven wait.

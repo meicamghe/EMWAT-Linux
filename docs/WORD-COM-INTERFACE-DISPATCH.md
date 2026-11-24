@@ -1121,9 +1121,9 @@ The callsite sits after the controller callback:
 4. It passes the base path at `TWordViwer+0x80` through `0x004563A8`, which TD32 identifies as `FixDirectionInFarsiNumericMode`, using two different flag combinations. The resulting strings have suffixes appended by helper `0x00401368`: the decoded constants are `.easd` (`0x004BB754`) and `.easz` (`0x004BB76C`).
 5. It passes the `.easd`-suffixed value to one of the constructed objects through its vtable slot `+0x3C`, then calls `euUnArchive` with the two constructed objects and the `.easz`-suffixed path.
 
-Inside `euUnArchive`, helper `0x00452C10` constructs a `T7zPlugin`. The code passes the hardcoded string `mW@Tlogs43end_+` to plugin slot `+0x28`, iterates the two indexed objects in lockstep, passes each pair of strings to plugin slot `+0x10`, and finally passes the `.easz` path to plugin slot `+0x18`. This is strong evidence that the controller path uses the SevenZip plugin to process a custom archive/sidecar representation. The hardcoded string is a likely archive password, but the exact meaning of slots `+0x28`, `+0x10`, and `+0x18` remains to be resolved from the `T7zPlugin` VMT/TD32 methods before assigning names such as SetPassword/AddFile/Extract.
+Inside `euUnArchive`, helper `0x00452C10` constructs a `T7zPlugin`. A string argument is passed to interface slot `+0x28`, two indexed string lists are passed through slot `+0x10`, and the `.easz` path is passed through slot `+0x18`. At this checkpoint, the exact semantics of those arguments and slots were unresolved. Any candidate credential-like literal is intentionally redacted and must not be treated as a confirmed archive password.
 
-The helper name, the `T7zPlugin` constructor, the two extensions, and the paired-entry loop together are much stronger evidence than the name `euUnArchive` alone. The exact mapping between the `.easd` and `.easz` paths and the content returned by Word still needs confirmation.
+The helper name, the `T7zPlugin` constructor, the two extensions, and the paired-entry loop together are evidence of a SevenZip-related transformation. The exact mapping between the `.easd` and `.easz` paths and the content returned by Word still needs confirmation.
 
 The new artifact confirms that the periodic controller-notify path performs a SevenZip-backed transformation after `Get_Content`; it does **not** yet connect the transformed object to the invoke HTTP response or prove that every timer tick is a close-time registration. The next trace batch targets `0x0040414C`, `0x004543C4`, and the `T7zPlugin` VMT/methods to resolve the two object types and the archive operations.
 
@@ -1145,7 +1145,7 @@ The interface thunk table maps the slots used by `euUnArchive` as follows:
 - interface slot `+0x18` → thunk `0x004528AD` → `T7zOutArchive.SaveToStream` at `0x00454668`;
 - interface slot `+0x28` → thunk `0x004528D5` → `T7zOutArchive.SetProgressCallback` at `0x004547E8`.
 
-**Correction:** the earlier hypothesis that the literal `mW@Tlogs43end_+` is directly passed to `SetPassword` is not supported by this interface mapping. The mapped slot is `SetProgressCallback`; the literal's role remains unknown. `T7zOutArchive.SetPassword` exists at `0x004547DC`, but it is not the target of the observed `+0x28` call through this interface.
+**Correction:** interface slot `+0x28` maps to the method labeled `SetProgressCallback`, not to the separately named `SetPassword` stub at `0x004547DC`. The method body stores its incoming string argument in an object field previously labeled `FPassword`, but this field/argument interpretation is not sufficient to establish that encryption is enabled or that the supplied value is the effective archive password. The candidate literal is redacted. Keep password source, callback behavior, encryption flags and runtime output unverified.
 
 There are still signature/argument-shape mismatches to resolve: `euUnArchive` passes two TStringList values through slot `+0x10`, and a `.easz` UnicodeString through slot `+0x18`, while TD32 labels the targets `AddFiles` and `SaveToStream`. The helper may be using a wrapper/interface layer with additional semantics, or the current interface-to-method association may need further verification. Do not rename `euUnArchive` as an archive writer or extractor yet. Trace the three target method bodies and the `T7zPlugin` factory path before assigning archive direction or password semantics.
 
@@ -1163,22 +1163,19 @@ The observed sequence is:
 This strengthens the archive-packaging interpretation, but the interface target bodies and the parameter-type mismatch still prevent a final claim about whether the method writes, transforms, or extracts the archive.
 
 
-## Run 148 — euUnArchive is a passworded archive-writer path
+## Run 148 — SevenZip output path; encryption remains unverified
 
 Source: controller-unarchive workflow run `43869599848`, artifact `14227611377`.
 
-The target method bodies resolve the earlier signature mismatch:
+The target method bodies refine the interface path:
 
-1. The `T7zPlugin` factory returns an interface pointer to a `T7zOutArchive` object at offset `+0x44`.
-2. `euUnArchive` calls interface slot `+0x28`, which reaches `0x004547E8`. Although TD32 decorates this procedure as `SetProgressCallback`, its body assigns the incoming UnicodeString to object field `+0x38`. The T7zOutArchive field table identifies `+0x38` as `FPassword`. Therefore the literal `mW@Tlogs43end_+` is the archive password value used by this path. The separately named `SetPassword` at `0x004547DC` is a no-op stub.
-3. Interface slot `+0x10` reaches `T7zOutArchive.AddFiles` at `0x00453F34`. Its body checks the first string as a source file path, reads its file attributes, and stores the first and second strings into a batch item before adding that item to the archive batch list.
-4. The caller supplies the first TStringList value (from `TWordViwer+0xA0`) as the source path and the second list value (base path + `.easd`) as the archive entry name.
-5. Interface slot `+0x18` reaches `T7zOutArchive.SaveToStream` at `0x00454668`. Its body constructs a stream object using the supplied UnicodeString path and then calls the archive save routine. The supplied path is base path + `.easz`.
+1. The `T7zPlugin` factory returns an interface pointer associated with a `T7zOutArchive` object at offset `+0x44`.
+2. Interface slot `+0x28` reaches `0x004547E8`, whose TD32 label is `SetProgressCallback`. Its body stores the incoming UnicodeString at object field `+0x38`; an earlier field-layout interpretation labeled this offset `FPassword`. This is not enough to prove that the argument is an effective archive password or that the output is encrypted. The candidate string is intentionally redacted.
+3. Interface slot `+0x10` reaches `T7zOutArchive.AddFiles` at `0x00453F34`. Its body checks a source path and stores paired strings in a batch item.
+4. The caller supplies the source path from `TWordViwer+0xA0` and a second string derived from the base path with `.easd` appended.
+5. Interface slot `+0x18` reaches `T7zOutArchive.SaveToStream` at `0x00454668`, which receives the base path with `.easz` appended.
 
-This establishes the direction much more strongly: despite its helper name, `euUnArchive` is assembling a password-protected 7z output archive from file entries and saving it to the `.easz` path. The `.easd` value is used as the archive entry name for the source file path held at `TWordViwer+0xA0`.
-
-Remaining verification: resolve the class pointer at `0x0062F800` used by `SaveToStream` to name the exact stream class, and trace the password callback path that consumes `FPassword`. The static evidence now supports the password and archive-writing interpretation; runtime archive bytes have not yet been captured.
-
+The evidence supports a SevenZip-related output path that packages a source file under an `.easd` entry name and writes to an `.easz` path. Run 149 further identifies file creation/truncation through a `TFileStream` using `fmCreate`. However, the password provider, effective credential, encryption flags and actual runtime archive bytes remain unverified. The presence of a method named `CryptoGetTextPassword2` is not proof that encryption is active for every output.
 
 ## Run 149 — .easz is created as a TFileStream output file
 

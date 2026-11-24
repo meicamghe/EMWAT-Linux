@@ -1,0 +1,82 @@
+# EditWord input size-limit validation
+
+Date: 2026-11-18
+
+## Contract
+
+Every caller-supplied size bound in the EditWord request path must be a
+positive built-in Python integer. The implementation deliberately uses
+`type(value) is int`, rather than `isinstance(value, int)`, so booleans are
+not accepted as integer limits. Floats, numeric strings, `None`, zero and
+negative values are rejected before decoding or office-engine work begins.
+
+The rule is applied consistently to:
+
+- `parse_editword_request`: decoded document bytes, encoded document
+  characters, decoded wordConfig bytes and encoded wordConfig characters;
+- `EditWordDocumentService`: all four request limits are configurable at
+  service construction and forwarded to the request parser;
+- `parse_method_call`: the outer XML request byte limit;
+- `serialize_word_document_response`: the serialized response byte limit;
+- `parse_word_config`: encoded Base64 character and decoded XML byte limits;
+- `LibreOfficeAdapter`: connection, polling, optional close and recovery
+  intervals must be finite positive numbers (booleans, NaN, infinities,
+  strings and non-positive values are rejected).
+
+The EditWord request adapter exposes a separate
+`max_encoded_config_chars` bound (default 24 MiB) and passes it directly to
+`parse_word_config`. The service exposes that setting together with the
+decoded config, encoded document and decoded document limits. This avoids a
+hidden parser default when applications need to tune request limits.
+
+The adapter also validates the public `MethodCall` boundary and requires
+`wordConfig`, `wordBody`, `signData` and extra parameter values to be text.
+Malformed manually-constructed calls now fail with stable
+`EditWordDocumentRequestError` codes rather than leaking incidental
+`TypeError`/attribute errors. Parsed wire calls already produce string
+parameters; this additionally hardens the reusable Python API.
+
+Invalid configuration raises `ValueError` with a stable, layer-specific
+message. Invalid request contents continue to use the existing protocol or
+request error types.
+
+## Regression coverage
+
+Synthetic unit tests reject `True`, `False`, floating-point values,
+numeric strings, zero, negative values and `None` for each public size-limit
+argument. Additional tests cover the encoded config ceiling, malformed
+MethodCall objects, non-text parameter values, service-level limit forwarding
+and the unchanged opaque `signData` handling.
+
+## Scope
+
+This change validates configuration types and request boundaries; it does not
+change the observed EMWAT wire format, document payload decoding, response
+envelope, or office lifecycle. No Windows runtime capture or Almas end-to-end
+test is implied.
+
+
+## Bridge transport and response bounds
+
+The loopback HTTP server now validates constructor configuration before binding:
+the TCP port must be a built-in integer in range, request/response byte limits
+must be positive built-in integers, and the socket timeout must be a finite
+positive number. Boolean values, floats/strings for integer limits, NaN,
+infinities, non-positive values and oversized integers that cannot be safely
+converted to a finite timeout are rejected. The bind host must be supplied as
+an IPv4 loopback address string.
+
+The EditWord success serializer receives the same configured
+`max_response_bytes` as the HTTP server. This removes the former hidden
+16 MiB serializer ceiling when an application explicitly configures a larger
+bounded response allowance. Both layers still enforce the bound independently.
+
+
+## Preflight response-size calculation
+
+The observed success envelope Base64-encodes the returned Word bytes. The
+serializer now computes the exact encoded payload/envelope length before
+allocating the Base64 expansion and rejects a response that exceeds the
+configured bound. It then verifies the emitted XML length against that
+precomputed value. This avoids allocating an oversized response merely to
+reject it afterward.

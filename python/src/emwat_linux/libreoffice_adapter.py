@@ -2,9 +2,9 @@
 
 This is the first concrete office-engine adapter. It opens the captured
 Word document in a visible LibreOffice instance, writes private periodic
-recovery snapshots while it is open, snapshots a Word-compatible final copy
-during close, and returns those bytes after close. Recovery snapshots use the
-Linux-native owner-only store, not the Windows .easz archive format.
+recovery snapshots while it is open, tracks the last confirmed-saved Word
+copy separately, and returns that copy after close. Recovery snapshots use
+the Linux-native owner-only store, not the Windows .easz archive format.
 
 EMWAT-specific field IDs, signData, permissions, and cancellation semantics
 are intentionally not guessed here. Those mappings require verified fixtures.
@@ -12,21 +12,47 @@ are intentionally not guessed here. Those mappings require verified fixtures.
 from __future__ import annotations
 
 import importlib
+import math
 from pathlib import Path
 import shutil
 import socket
 import subprocess
 import tempfile
-from threading import Event, Lock, Thread
+from threading import Event, Lock, RLock, Thread
 import time
 from typing import Callable
 
+from emwat_linux.close_trace import CloseLifecycleEvent, CloseLifecycleTrace
 from emwat_linux.editword_request import EditWordDocumentRequest
 from emwat_linux.office_adapter import CloseDisposition, OfficeCloseEvent
 from emwat_linux.recovery_store import RecoverySnapshotStore
 from emwat_linux.writer_fields import refresh_writer_text_fields
+from emwat_linux.word_assets import (
+    WordAssetInventory,
+    apply_writer_graphic_updates,
+    build_writer_graphic_updates,
+    inspect_word_assets,
+)
 from emwat_linux.writer_inspector import WriterDocumentCatalog, inspect_writer_document
 from emwat_linux.writer_properties import set_custom_document_properties
+from emwat_linux.template_mapping import (
+    TemplateMappingInventory,
+    inspect_template_mapping,
+)
+from emwat_linux.image_mapping import ImageMappingInventory, inspect_word_image_mapping
+from emwat_linux.word_config import WordDocumentConfig
+from emwat_linux.word_config_updates import (
+    as_custom_property_update_mapping,
+    build_word_config_text_updates,
+)
+from emwat_linux.emwat_field_catalog import (
+    WordConfigFieldCatalog,
+    build_word_config_field_catalog,
+)
+from emwat_linux.word_writer_evidence import (
+    WordWriterEvidenceReport,
+    build_word_writer_evidence_report,
+)
 
 
 _CFB_SIGNATURE = bytes.fromhex("D0CF11E0A1B11AE1")
@@ -125,7 +151,7 @@ class _ModifyListener:
 
 
 class _DocumentCloseListener:
-    """Snapshot the final document before close and stop periodic recovery after close."""
+    """Observe close lifecycle and stop recovery without exporting live edits."""
 
     def __init__(
         self,
@@ -135,6 +161,7 @@ class _DocumentCloseListener:
         snapshot_properties: tuple[object, ...],
         snapshot_lock: Lock,
         recovery_stop: Event,
+        trace: CloseLifecycleTrace | None = None,
     ) -> None:
         self._document = document
         self._output_url = output_url
@@ -142,32 +169,30 @@ class _DocumentCloseListener:
         self._snapshot_properties = snapshot_properties
         self._snapshot_lock = snapshot_lock
         self._recovery_stop = recovery_stop
+        self._trace = trace
+        # The native Save / Don't Save choice is not resolved at queryClosing.
+        # Never export the live document here: that could capture edits discarded
+        # by the user's subsequent Don't Save choice.
         self.snapshot_error: Exception | None = None
         self.snapshot_ready = Event()
 
     def queryClosing(self, _event: object, _gets_ownership: bool) -> None:
-        # A close attempt can be vetoed/cancelled by the office UI and retried.
-        # Reset only this attempt's result; periodic recovery remains active until
-        # notifyClosed confirms that the document really closed.
-        self.snapshot_error = None
-        self.snapshot_ready.clear()
-        try:
-            # storeToURL writes a copy and does not change the document's URL.
-            with self._snapshot_lock:
-                self._document.storeToURL(self._output_url, self._snapshot_properties)
-        except Exception as exc:  # retained internally; never returned to browser
-            self.snapshot_error = exc
-        finally:
-            self.snapshot_ready.set()
+        if self._trace is not None:
+            self._trace.record("query_closing")
 
     def notifyClosing(self, _event: object) -> None:
-        return
+        if self._trace is not None:
+            self._trace.record("notify_closing")
 
     def notifyClosed(self, _event: object) -> None:
+        if self._trace is not None:
+            self._trace.record("notify_closed")
         self._recovery_stop.set()
         self._on_closed()
 
     def disposing(self, _event: object) -> None:
+        if self._trace is not None:
+            self._trace.record("disposing")
         self._recovery_stop.set()
         self._on_closed()
 
@@ -177,11 +202,21 @@ class _DocumentEventListener:
 
     _SAVE_EVENTS = frozenset({"OnSaveDone", "OnSaveAsDone"})
 
-    def __init__(self, callback: Callable[[], None]) -> None:
+    def __init__(
+        self,
+        callback: Callable[[], None],
+        trace: CloseLifecycleTrace | None = None,
+    ) -> None:
         self._callback = callback
+        self._trace = trace
 
     def documentEventOccured(self, event: object) -> None:
-        if getattr(event, "EventName", "") in self._SAVE_EVENTS:
+        event_name = getattr(event, "EventName", "")
+        if event_name in self._SAVE_EVENTS:
+            if self._trace is not None:
+                self._trace.record(
+                    "save_done" if event_name == "OnSaveDone" else "save_as_done"
+                )
             self._callback()
 
     def disposing(self, _event: object) -> None:
@@ -205,11 +240,25 @@ class _OfficeHandle:
         self.recovery_session_id = recovery_session_id
         self.closed = Event()
         self.recovery_stop = Event()
-        self.snapshot_lock = Lock()
+        self.snapshot_lock = RLock()
         self.recovery_thread: Thread | None = None
         self.recovery_error: Exception | None = None
         self.snapshot_properties: tuple[object, ...] = ()
+        self.saved_document_path: Path | None = None
+        self.saved_snapshot_error: Exception | None = None
+        self.saved_snapshot_in_progress = False
         self._closed_once = False
+        self.close_trace = CloseLifecycleTrace()
+        self.word_writer_evidence: WordWriterEvidenceReport | None = None
+        self.word_writer_evidence_error: str | None = None
+        self.template_mapping_inventory: TemplateMappingInventory | None = None
+        self.template_mapping_inventory_error: str | None = None
+        self.word_image_mapping_inventory: ImageMappingInventory | None = None
+        self.word_image_mapping_inventory_error: str | None = None
+        self.word_asset_inventory: WordAssetInventory | None = None
+        self.word_asset_inventory_error: str | None = None
+        self.word_config_field_catalog: WordConfigFieldCatalog | None = None
+        self.word_config_field_catalog_error: str | None = None
 
     def mark_closed(self) -> None:
         if not self._closed_once:
@@ -238,12 +287,21 @@ class LibreOfficeAdapter:
         recovery_store: RecoverySnapshotStore | None = None,
         recovery_interval_seconds: float = 10.0,
     ) -> None:
-        if connect_timeout_seconds <= 0 or poll_interval_seconds <= 0:
-            raise ValueError("connection and polling timeouts must be positive")
-        if close_timeout_seconds is not None and close_timeout_seconds <= 0:
-            raise ValueError("close timeout must be positive when configured")
-        if recovery_interval_seconds <= 0:
-            raise ValueError("recovery interval must be positive")
+        def positive_finite_seconds(value: object) -> bool:
+            if isinstance(value, bool) or not isinstance(value, (int, float)):
+                return False
+            try:
+                finite = math.isfinite(float(value))
+            except (OverflowError, ValueError):
+                return False
+            return finite and value > 0
+
+        if not positive_finite_seconds(connect_timeout_seconds) or not positive_finite_seconds(poll_interval_seconds):
+            raise ValueError("connection and polling timeouts must be finite positive numbers")
+        if close_timeout_seconds is not None and not positive_finite_seconds(close_timeout_seconds):
+            raise ValueError("close timeout must be a finite positive number when configured")
+        if not positive_finite_seconds(recovery_interval_seconds):
+            raise ValueError("recovery interval must be a finite positive number")
         self._soffice_path = soffice_path
         self._connect_timeout = connect_timeout_seconds
         self._poll_interval = poll_interval_seconds
@@ -307,7 +365,7 @@ class LibreOfficeAdapter:
             recovery_session_id = self._recovery_store.create_session()
             extension = _source_extension(request.document_bytes)
             source_path = work_dir / ("incoming" + extension)
-            output_path = work_dir / "final.doc"
+            saved_state_path = work_dir / "last-saved.doc"
             profile_path = work_dir / "profile"
             source_path.write_bytes(request.document_bytes)
             port = _unused_loopback_port()
@@ -352,6 +410,12 @@ class LibreOfficeAdapter:
                 self._property(uno, "FilterName", "MS Word 97"),
                 self._property(uno, "Overwrite", True),
             )
+            # Capture a known-good baseline before the user can make edits.
+            document.storeToURL(_file_url(saved_state_path), snapshot_properties)
+            if not saved_state_path.is_file():
+                raise RuntimeError("libreoffice_initial_saved_state_missing")
+            if not saved_state_path.read_bytes().startswith(_CFB_SIGNATURE):
+                raise RuntimeError("libreoffice_initial_saved_state_invalid")
             handle = _OfficeHandle(
                 process=process,
                 document=document,
@@ -360,17 +424,26 @@ class LibreOfficeAdapter:
                 recovery_session_id=recovery_session_id,
             )
             handle.snapshot_properties = snapshot_properties
+            handle.saved_document_path = saved_state_path
+            # Stage-A WordConfig/Writer inventory is read-only. A catalog failure
+            # must never prevent opening the user's document; retain only a
+            # value-free status code for diagnostics.
+            self._capture_word_writer_evidence(handle, request.config)
             close_listener = _DocumentCloseListener(
                 document,
-                _file_url(output_path),
+                _file_url(saved_state_path),
                 handle.mark_closed,
                 snapshot_properties,
                 handle.snapshot_lock,
                 handle.recovery_stop,
+                handle.close_trace,
             )
             handle.close_listener = close_listener
             modify_listener = _ModifyListener(on_modified)
-            save_listener = _DocumentEventListener(on_saved)
+            save_listener = _DocumentEventListener(
+                lambda: self._capture_confirmed_saved_state(handle, on_saved),
+                handle.close_trace,
+            )
             modify_proxy = _uno_listener_proxy(
                 modify_listener,
                 uno_module=uno,
@@ -399,7 +472,6 @@ class LibreOfficeAdapter:
             handle.save_proxy = save_proxy
             handle.close_proxy = close_proxy
             handle.desktop = desktop
-            handle.output_path = output_path
             handle.source_path = source_path
             handle.profile_path = profile_path
             handle.context = context
@@ -425,6 +497,44 @@ class LibreOfficeAdapter:
                 except Exception:
                     pass
             raise
+
+    def _capture_confirmed_saved_state(
+        self,
+        handle: _OfficeHandle,
+        on_saved: Callable[[], None],
+    ) -> None:
+        """Atomically retain the document bytes after a confirmed Writer save."""
+        destination = handle.saved_document_path
+        if destination is None:
+            handle.saved_snapshot_error = RuntimeError("saved_state_path_missing")
+            return
+        temporary = destination.with_name("last-saved.pending.doc")
+        try:
+            with handle.snapshot_lock:
+                if handle.saved_snapshot_in_progress:
+                    return
+                handle.saved_snapshot_in_progress = True
+                try:
+                    handle.document.storeToURL(_file_url(temporary), handle.snapshot_properties)
+                    if not temporary.is_file():
+                        raise RuntimeError("confirmed_saved_state_export_missing")
+                    if not temporary.read_bytes().startswith(_CFB_SIGNATURE):
+                        raise RuntimeError("confirmed_saved_state_export_invalid")
+                    temporary.replace(destination)
+                    handle.saved_snapshot_error = None
+                finally:
+                    handle.saved_snapshot_in_progress = False
+            handle.close_trace.record("saved_state_succeeded")
+        except Exception as exc:
+            handle.saved_snapshot_error = exc
+            handle.close_trace.record("saved_state_failed")
+            return
+        finally:
+            try:
+                temporary.unlink()
+            except FileNotFoundError:
+                pass
+        on_saved()
 
     def _recovery_loop(self, handle: _OfficeHandle) -> None:
         """Persist an owner-only snapshot every interval while the document is open."""
@@ -457,12 +567,96 @@ class LibreOfficeAdapter:
         prop.Value = value
         return prop
 
+    def inspect_close_lifecycle_trace(
+        self,
+        handle: object,
+    ) -> tuple[CloseLifecycleEvent, ...]:
+        """Return fixed-name close/save callback metadata without document data."""
+        if not isinstance(handle, _OfficeHandle):
+            raise TypeError("invalid_libreoffice_handle")
+        return handle.close_trace.snapshot()
+
     def inspect_document(self, handle: object) -> WriterDocumentCatalog:
         """Inventory Writer structure without exposing document text or values."""
         if not isinstance(handle, _OfficeHandle):
             raise TypeError("invalid_libreoffice_handle")
         with handle.snapshot_lock:
             return inspect_writer_document(handle.document)
+
+    def _capture_word_writer_evidence(
+        self,
+        handle: _OfficeHandle,
+        config: WordDocumentConfig,
+    ) -> None:
+        """Attach a value-free Stage-A inventory without blocking document open."""
+        handle.word_writer_evidence = None
+        handle.word_writer_evidence_error = None
+        handle.template_mapping_inventory = None
+        handle.template_mapping_inventory_error = None
+        handle.word_image_mapping_inventory = None
+        handle.word_image_mapping_inventory_error = None
+        handle.word_asset_inventory = None
+        handle.word_asset_inventory_error = None
+        handle.word_config_field_catalog = None
+        handle.word_config_field_catalog_error = None
+        try:
+            handle.word_config_field_catalog = build_word_config_field_catalog(
+                tuple(field.field_id for field in config.fields)
+            )
+        except Exception:
+            handle.word_config_field_catalog_error = "word_config_field_catalog_unavailable"
+
+        try:
+            handle.word_asset_inventory = inspect_word_assets(config)
+        except Exception:
+            # Retain only a fixed status code; image bytes and signer metadata
+            # must never leak through diagnostic strings.
+            handle.word_asset_inventory_error = "word_asset_inventory_unavailable"
+
+        try:
+            with handle.snapshot_lock:
+                catalog = inspect_writer_document(handle.document)
+        except Exception:
+            # Do not retain UNO exception text: it can contain document details.
+            handle.word_writer_evidence_error = "writer_inventory_unavailable"
+            handle.template_mapping_inventory_error = "writer_inventory_unavailable"
+            return
+
+        try:
+            handle.word_writer_evidence = build_word_writer_evidence_report(
+                config, catalog
+            )
+        except Exception:
+            handle.word_writer_evidence_error = "writer_evidence_unavailable"
+
+        try:
+            handle.template_mapping_inventory = inspect_template_mapping(
+                config, catalog
+            )
+        except Exception:
+            # Keep diagnostic status value-free; never retain document content.
+            handle.template_mapping_inventory_error = "template_mapping_inventory_unavailable"
+
+        try:
+            handle.word_image_mapping_inventory = inspect_word_image_mapping(
+                config, catalog
+            )
+        except Exception:
+            handle.word_image_mapping_inventory_error = "word_image_mapping_inventory_unavailable"
+
+    def audit_word_writer_evidence(
+        self,
+        handle: object,
+        config: WordDocumentConfig,
+    ) -> WordWriterEvidenceReport:
+        """Compare request metadata with Writer structure without mutation."""
+        if not isinstance(handle, _OfficeHandle):
+            raise TypeError("invalid_libreoffice_handle")
+        if not isinstance(config, WordDocumentConfig):
+            raise TypeError("invalid_word_document_config")
+        with handle.snapshot_lock:
+            catalog = inspect_writer_document(handle.document)
+            return build_word_writer_evidence_report(config, catalog)
 
     def apply_custom_property_updates(
         self,
@@ -481,6 +675,68 @@ class LibreOfficeAdapter:
             set_custom_document_properties(handle.document, updates)
             if updates:
                 refresh_writer_text_fields(handle.document)
+
+    def apply_word_config_text_fields(
+        self,
+        handle: object,
+        config: WordDocumentConfig,
+        target_names_by_field_index: object,
+    ) -> tuple[str, ...]:
+        """Apply explicitly mapped WordConfig text fields to existing Writer properties.
+
+        The field-index-to-property-name map must come from verified fixture
+        evidence. This method performs no name matching or positional pairing.
+        """
+        if not isinstance(handle, _OfficeHandle):
+            raise TypeError("invalid_libreoffice_handle")
+        updates = build_word_config_text_updates(
+            config, target_names_by_field_index
+        )
+        mapping = as_custom_property_update_mapping(updates)
+        if mapping:
+            self.apply_custom_property_updates(handle, mapping)
+        return tuple(mapping)
+
+    def apply_writer_graphic_updates(
+        self,
+        handle: object,
+        updates: object,
+    ) -> tuple[str, ...]:
+        """Apply explicit image-field-to-existing-graphic bindings.
+
+        The caller must provide evidence-backed target names. This method
+        preserves the existing Writer graphic anchors and frame geometry.
+        Staged image files live inside the private office session directory.
+        """
+        if not isinstance(handle, _OfficeHandle):
+            raise TypeError("invalid_libreoffice_handle")
+        asset_directory = handle.work_dir / "mapped-assets"
+        with handle.snapshot_lock:
+            return apply_writer_graphic_updates(
+                handle.document, updates, asset_directory
+            )
+
+    def apply_word_image_fields(
+        self,
+        handle: object,
+        target_names_by_field_index: object,
+    ) -> tuple[str, ...]:
+        """Apply image fields through an explicit, evidence-backed target map.
+
+        Duplicate XML IDs are disambiguated by source field index. No target
+        is inferred from a field name, signer slot, or image position.
+        """
+        if not isinstance(handle, _OfficeHandle):
+            raise TypeError("invalid_libreoffice_handle")
+        inventory = handle.word_asset_inventory
+        if inventory is None:
+            raise RuntimeError(
+                handle.word_asset_inventory_error or "word_asset_inventory_unavailable"
+            )
+        updates = build_writer_graphic_updates(
+            inventory, target_names_by_field_index
+        )
+        return self.apply_writer_graphic_updates(handle, updates)
 
     def wait_for_close(self, handle: object) -> OfficeCloseEvent:
         if not isinstance(handle, _OfficeHandle):
@@ -506,22 +762,21 @@ class LibreOfficeAdapter:
         if handle.close_listener is None:
             self._cleanup(handle)
             raise RuntimeError("libreoffice_close_listener_missing")
-        if not handle.close_listener.snapshot_ready.wait(self._connect_timeout):
+        if handle.saved_snapshot_error is not None:
+            error = handle.saved_snapshot_error
             self._cleanup(handle)
-            raise RuntimeError("libreoffice_final_snapshot_timeout")
-        if handle.close_listener.snapshot_error is not None:
-            error = handle.close_listener.snapshot_error
+            raise RuntimeError("libreoffice_confirmed_saved_state_failed") from error
+        if handle.saved_document_path is None or not handle.saved_document_path.is_file():
             self._cleanup(handle)
-            raise RuntimeError("libreoffice_final_snapshot_failed") from error
-        if not (handle.work_dir / "final.doc").is_file():
-            self._cleanup(handle)
-            raise RuntimeError("libreoffice_final_document_missing")
+            raise RuntimeError("libreoffice_confirmed_saved_state_missing")
         return OfficeCloseEvent(CloseDisposition.CLOSED)
 
     def export_final_document(self, handle: object) -> bytes:
         if not isinstance(handle, _OfficeHandle):
             raise TypeError("invalid_libreoffice_handle")
-        output_path = handle.work_dir / "final.doc"
+        output_path = handle.saved_document_path
+        if output_path is None:
+            raise RuntimeError("libreoffice_confirmed_saved_state_missing")
         try:
             payload = output_path.read_bytes()
             if not payload.startswith(_CFB_SIGNATURE):

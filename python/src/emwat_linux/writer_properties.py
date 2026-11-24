@@ -1,7 +1,7 @@
 """Strict Writer custom-document-property updates for mapped EMWAT fields.
 
 The caller must supply verified property names. This module never creates
-properties implicitly and never reads their current values.
+properties implicitly and captures old values to compensate partial updates.
 """
 from __future__ import annotations
 
@@ -41,10 +41,34 @@ def set_custom_document_properties(
         )
         if missing:
             raise KeyError("custom_property_not_found:" + ",".join(missing))
+
+        # Capture previous values before the first mutation. UNO has no
+        # transaction primitive for user-defined properties, so compensate
+        # all attempted entries if a setter fails.
+        previous = tuple(
+            (name, properties.getPropertyValue(name)) for name, _value in items
+        )
+        attempted: list[str] = []
         for property_name, value in items:
+            # Include the currently failing setter in compensation: an UNO
+            # implementation may mutate before surfacing an exception.
+            attempted.append(property_name)
             try:
                 properties.setPropertyValue(property_name, value)
             except Exception as exc:
+                rollback_failed = False
+                previous_by_name = dict(previous)
+                for attempted_name in reversed(attempted):
+                    try:
+                        properties.setPropertyValue(
+                            attempted_name, previous_by_name[attempted_name]
+                        )
+                    except Exception:
+                        rollback_failed = True
+                if rollback_failed:
+                    raise WriterPropertyUpdateError(
+                        "custom_property_update_failed_and_rollback_incomplete"
+                    ) from exc
                 raise WriterPropertyUpdateError(
                     f"custom_property_update_failed:{property_name}"
                 ) from exc

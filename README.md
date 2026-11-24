@@ -1,8 +1,18 @@
 # EMWAT-Linux
 
-بازسازی بومی EMWAT برای Linux با هدف حفظ قابلیت‌ها و گردش‌کارهای واقعی نسخه Windows.
+بازسازی بومی EMWAT برای Linux با هدف حفظ گردش‌کار واقعی الماس گام از طریق LibreOffice Writer. هدف محصول فقط Linux است؛ Windows صرفاً مرجع تحلیل و سازگاری است.
 
 > نسخه نهایی قرار نیست با Wine اجرا شود. فایل‌های Windows فقط مرجع تحلیل و سازگاری هستند.
+
+## تصمیم‌های قطعی محصول و معماری
+
+- فقط Linux؛ توسعه نسخه یا نصب‌کننده Windows در دامنه پروژه نیست.
+- رابط کنترلی سبک: GTK 4 با Python/PyGObject؛ بدون Qt/PySide و بدون هزینه مجوز.
+- ویرایش سند: LibreOffice Writer از طریق UNO؛ GTK ویرایشگر سند نیست.
+- نقش EMWAT: پل محلی بین سامانه مکاتبات الماس و Writer؛ دریافت سند، اجرای گردش‌کار ویرایش و بازگرداندن نتیجه به الماس.
+- هسته پروتکل، هماهنگ‌کننده سند، UNO، Recovery و Scanner مستقل از GTK باقی می‌مانند؛ GUI فقط لایه نمایش است.
+
+مرجع قطعی و جزئیات تصمیم‌ها: [تصمیم‌های محصول Linux و معماری](docs/LINUX-PRODUCT-DECISIONS.md).
 
 ## کاربرد واقعی و هدف پروژه
 
@@ -12,12 +22,24 @@ EMWAT واسط محلی بین اتوماسیون تحت وب الماس گام 
 
 ## وضعیت فعلی
 
-تحلیل اولیه فایل‌های اجرایی و گزارش‌های رشته‌ای انجام شده است. شواهد فعلی نشان می‌دهند EMWAT از یک سرویس HTTP محلی مبتنی بر Indy استفاده می‌کند؛ Agent به سرویس روی localhost heartbeat می‌فرستد و یک bridge جاوااسکریپت پیام‌ها را از طریق HTTP POST به سرویس محلی منتقل می‌کند. جزئیات کامل API، دیتابیس و گردش‌کارها هنوز در حال بررسی‌اند.
+پروژه از مرحله تحلیل اولیه عبور کرده و اکنون هسته‌های Python، پل HTTP محلی، parser/dispatcher، مسیر EditWordDocument، اتصال LibreOffice UNO، بازیابی دوره‌ای، ذخیره‌سازی اختیاری رمزگذاری‌شده و backend اسکن SANE با پشتیبانی از صفحات چندفریمی RGB و batch محدود ADF simplex را دارد. یک پوسته کنترلی GTK4 با diagnostics، پنجره Recovery و کنترل‌های Supervisor تزریق‌شده اضافه شده و لانچر per-user نیز نصب/حذف‌پذیر است. در اجرای عادی، چون پیکربندی معتبر Almas هنوز فراهم نشده، Supervisor تزریق نمی‌شود و listener خودکار شروع نمی‌شود. رابط تنظیمات و مدیریت کامل سرویس، اجرای واقعی در مرورگر الماس گام، mapping کامل فیلدهای Word، قراردادهای Cancel/Discard و بسته‌بندی اجرایی نهایی همچنان باقی مانده‌اند.
 
 گزارش کامل وضعیت، شواهد، موارد نامشخص و گام‌های بعدی در این فایل نگهداری می‌شود:
 
 - [گزارش وضعیت و نقطه ادامه پروژه](docs/PROJECT-STATUS.md)
+- [نقشه جامع پوشش مهندسی معکوس و اولویت‌بندی کارها](docs/REVERSE-ENGINEERING-MASTER-PLAN.md)
+- [تحلیل IPC و چرخه عمر Agent و Service](docs/AGENT-SERVICE-IPC-ANALYSIS.md)
+- [تحلیل آرشیو SevenZip و AutoSave](docs/SEVENZIP-ARCHIVE-ANALYSIS.md)
+- [تحلیل گیرندگان و رونوشت در Word](docs/WORD-RECIPIENT-CC-ANALYSIS.md)
+- [ماتریس پذیرش و موانع انتشار](docs/RELEASE-ACCEPTANCE-MATRIX.md)
+- [قرارداد چرخه ارتباطی Almas و Writer و مرزهای Save/Close/Cancel](docs/ALMAS-WRITER-LIFECYCLE-CONTRACT.md)
+- [شواهد و مرز سازگاری آرشیو Windows .easz](docs/EASZ-ARCHIVE-FORMAT.md)
+- [قرارداد Recovery و رمزنگاری اختیاری AES-GCM](docs/RECOVERY-RETENTION.md)
+- [قرارداد کاتالوگ و بازیابی Recovery](docs/RECOVERY-CATALOG.md)
+- [طراحی UX انتخاب و بازیابی نسخه‌ها](docs/RECOVERY-PICKER-UX.md)
 - [نقشه پیاده‌سازی بومی لینوکس و مسیرهای موازی](docs/LINUX-NATIVE-IMPLEMENTATION-PLAN.md)
+- [راهنمای نصب Ubuntu و مرزهای پذیرش یکپارچه‌سازی](docs/UBUNTU-INSTALLATION-AND-INTEGRATION.md)
+- [نصب و حذف per-user لانچر دسکتاپ](packaging/README.md)
 - [اعتبارسنجی runtime نسخه Windows با Winux/Wine](docs/WINUX-RUNTIME-VALIDATION.md)
 - [تحلیل گردش‌کار واقعی EMWAT در الماس گام](docs/PRODUCT-WORKFLOW-ANALYSIS.md)
 - [تحلیل connector و ساختار XML گردش‌کار Word](docs/WORD-DOCUMENT-PROTOCOL-ANALYSIS.md)
@@ -27,12 +49,15 @@ EMWAT واسط محلی بین اتوماسیون تحت وب الماس گام 
 - [تحلیل Office Automation و COM](docs/OFFICE-COM-ANALYSIS.md)
 - [تحلیل COM و PE Resourceهای استخراج‌شده](docs/RESOURCE-ANALYSIS.md)
 - [تحلیل ساختار فرم تنظیمات چاپ Word](docs/WORD-PRINT-OPTION-DFM.md)
+- [مهندسی معکوس GAM Virtual Printer و تنظیمات چاپگر مجازی](docs/GAM-VIRTUAL-PRINTER-REVERSE-ENGINEERING.md)
+- [طرح سازگاری چاپگر Linux و قرارداد CUPS/IPP](docs/PRINTER-COMPATIBILITY-PLAN.md)
 - [تحلیل فرم پیش‌نمایش اسکن و ابزارهای تصویر](docs/SCAN-PREVIEW-DFM.md)
 - [تحلیل فرم اصلی مدیریت و ویرایش تصاویر](docs/IMAGE-TOOLS-DFM.md)
 - [تحلیل ویرایشگر ساده تصویر و مقایسه سه فرم](docs/SIMPLE-IMAGE-EDITOR-DFM.md)
 - [نقشه وابستگی‌های ImageGear و ImageEn](docs/Imaging-Dependency-Map.md)
 - [گراف فراخوانی‌های تصویر و اسکن](docs/IMAGE-CALL-GRAPH.md)
 - [تحلیل دقیق APIهای ImageGear](docs/GEAR-API-CALLS.md)
+- [مهندسی معکوس افزونه ImageGear GIF/LZW](docs/IMAGEGEAR-LZW-GIF-REVERSE-ENGINEERING.md)
 - [تحلیل قرارداد انتخاب اسکنر و رابط‌های callback](docs/SCANNER-INTERFACE-ANALYSIS.md)
 - ابزار [استخراج GUID/ProgID و Resourceها](tools/EMWAT-COM-Resource-Analyzer.py)
 
@@ -51,10 +76,11 @@ EMWAT واسط محلی بین اتوماسیون تحت وب الماس گام 
 
 1. هدف، نسخه مستقل و بومی Linux است؛ Wine بخشی از راهکار نهایی نیست.
 2. پیش از پیاده‌سازی، API، دیتابیس، فایل‌ها، فرمول‌ها و گردش‌کارهای نسخه اصلی مستند شوند.
-3. Python گزینه اولیه برای پیاده‌سازی است؛ انتخاب معماری نهایی پس از تکمیل تحلیل انجام می‌شود.
-4. LibreOffice برای سازگاری اسناد و صفحه‌گسترده‌ها بررسی می‌شود؛ سازگاری باید با تست واقعی تأیید شود.
-5. هیچ موتور دیتابیسی تا زمان شناسایی شواهد واقعی به‌عنوان انتخاب نهایی تثبیت نشود.
-6. فایل‌های اجرایی، داده‌های مشتریان، کلیدها و اطلاعات محرمانه نباید در مخزن عمومی قرار بگیرند. گزارش‌های خام نیز پیش از commit باید از نظر اطلاعات حساس بازبینی شوند.
+3. Python زبان اصلی پل و برنامه است؛ رابط گرافیکی سبک با GTK 4 و PyGObject ساخته می‌شود.
+4. LibreOffice Writer از طریق UNO موتور ویرایش سند در Linux است؛ سازگاری باید با تست واقعی تأیید شود.
+5. رابط GTK فقط کنترل/تنظیمات/Recovery/وضعیت را ارائه می‌کند و نباید منطق پروتکل یا سند را در خود جای دهد.
+6. هیچ موتور دیتابیسی تا زمان شناسایی شواهد واقعی به‌عنوان انتخاب نهایی تثبیت نشود.
+7. فایل‌های اجرایی، داده‌های مشتریان، کلیدها و اطلاعات محرمانه نباید در مخزن عمومی قرار بگیرند. گزارش‌های خام نیز پیش از commit باید از نظر اطلاعات حساس بازبینی شوند.
 
 ## نقطه ادامه پروژه
 
@@ -66,27 +92,63 @@ EMWAT واسط محلی بین اتوماسیون تحت وب الماس گام 
 
 For the current project decisions, implementation boundaries, and next-session checklist, see [docs/SESSION-HANDOFF.md](docs/SESSION-HANDOFF.md).
 
-## پل بومی HTTP در لینوکس — لایه انتقال اولیه
+## وضعیت پیاده‌سازی هسته Linux
 
-در شاخه فعلی، یک بسته Python اولیه در مسیر `python/` اضافه شده است. لایه انتقال HTTP بدنه را به‌صورت bytes خام نگه می‌دارد؛ parser و dispatcher در ماژول‌های جداگانه قرار دارند. parser پوسته تأییدشده `emwat → method → param` را می‌خواند و dispatcher فقط handlerهای صریحاً ثبت‌شده را اجرا می‌کند. schema محتوای `EditWordDocument` و پاسخ نهایی هنوز کامل نیست.
+در شاخه توسعه فعلی، اجزای زیر پیاده‌سازی شده‌اند:
 
-تست‌های واحد در `python/tests/test_bridge.py` و workflow مستقل `Python bridge transport` در GitHub Actions قرار دارند. این milestone فقط foundation انتقال است و هنوز با وب‌اپ الماس گام یا Word/LibreOffice یکپارچه نیست.
+- **HTTP bridge:** listener محدود به IPv4 loopback، heartbeat و init route، کنترل Origin/Host و framing، سقف درخواست/پاسخ و timeout.
+- **Protocol:** parser محافظه‌کارانه XML و dispatcher با allowlist؛ کلاس متد هرگز به‌صورت پویا import نمی‌شود.
+- **EditWordDocument:** decode کردن Base64 تأییدشده‌ی `wordConfig` و `wordBody`، اعتبارسنجی حدود اندازه و نگه‌داشتن `signData` به‌صورت opaque text تا زمان اثبات encoding کامل آن.
+- **Writer:** اجرای close-driven با LibreOffice UNO، snapshot نهایی DOC و بازگرداندن پاسخ موفق با envelope مشاهده‌شده‌ی `response-word`.
+- **Recovery:** snapshot دوره‌ای محلی، catalog و restore صریح؛ retention و AES-256-GCM رمزگذاری‌شده opt-in هستند و کلید رمزگذاری از Secret Service گرفته می‌شود.
+- **Scanner:** backend مبتنی بر SANE با اعتبارسنجی گزینه‌ها، ترکیب planar RGB و batch محدود ADF simplex؛ سخت‌افزار واقعی هنوز آزمایش نشده و duplex عمداً فعال نشده است.
 
-**CI verification (latest):** workflow `Python bridge transport` run #20 (`43592721635`) passed all 24 tests on commit `2fa217ae83f33b80a7799ede4c75f2cc58b40d76`. This verifies only the transport, envelope parser and explicit dispatcher—not compatibility with the production Almas Gam origin or the full Word workflow.
+تست‌ها شامل Python unit/transport، build و ASan/UBSan برای native core و roundtrip واقعی LibreOffice UNO هستند. آخرین ترکیب کد تأییدشده در 2026-11-18:
 
-### XML protocol foundation
-
-The Python package now contains a conservative parser for the runtime-confirmed `emwat version="1.0" → method class → param name` envelope (`python/src/emwat_linux/protocol.py`) and an explicit allowlisted dispatcher (`python/src/emwat_linux/dispatcher.py`). Unknown method classes return HTTP 501; malformed envelopes return HTTP 400. Method class names are never dynamically imported. No `EditWordDocument` handler or fabricated success response is registered yet.
-
-The loopback transport is hardened with IPv4-loopback-only binding, Host-header validation, required exact allowlisted Origin by default, bounded request/response bodies, socket read timeouts, duplicate Content-Length rejection, and sanitized errors. CI run #20 passes all 24 tests. This remains a transport/protocol foundation, not a usable Almas Gam connector.
-
-**Latest CI hardening:** Python bridge transport run #22 (`43593083176`) passed all 27 tests on commit `22a803912b0fa92c3bb5537fb1f0c7952fda7615`. Additional tests cover Host header path injection, duplicate Content-Length and non-decimal Content-Length. The listener now rejects malformed Host values and strict-invalid HTTP framing before dispatch.
-
-### Application composition factory
-
-`python/src/emwat_linux/application.py` now provides `create_bridge_server(...)`, wiring the loopback transport, XML parser and explicit method registry. The caller must provide the exact allowed Origin list and explicit method handlers; nothing is implicitly enabled. An integration test exercises the complete local HTTP → XML parser → registered handler → HTTP response path. Python bridge workflow run #24 (`43593185429`) passed all 29 tests on commit `27986ee96b45009283cd96eecde95110e1b9e448`. The only registered method in the integration test is a test fixture, not the real EMWAT document handler.
+- Python bridge: [run 44305529480](https://github.com/meicamghe/EMWAT-Linux/actions/runs/44304965568) — 198 تست، 196 موفق و 2 تست اختیاری UNO skip شدند.
+- Native build + ASan/UBSan: [run 44305529408](https://github.com/meicamghe/EMWAT-Linux/actions/runs/44304965055) — هر دو job موفق.
+- LibreOffice UNO: [run 44305529564](https://github.com/meicamghe/EMWAT-Linux/actions/runs/44304965075) — runtime و roundtrip واقعی Writer موفق.
 
 
-### Parallel implementation progress (2026-11-15)
+### آخرین تأییدهای اجرایی — 2026-11-23
 
-The native bridge now includes the observed Agent liveness route GET /?heartbeat (HTTP 200, empty response body) with a regression test. A separate office-independent document-session state machine is available at python/src/emwat_linux/sessions.py; it distinguishes office-engine Save from close-time finalization and supports safe idempotent return. Tests were added for lifecycle transitions and heartbeat behavior. These newest commits are not yet represented by a verified CI run, and no production Almas Gam handler or LibreOffice integration is claimed.
+- Python bridge در head `4c43ae3c836f845751b4e9d8c462758ab6a1a2c1`: [workflow 45195106455](https://github.com/meicamghe/EMWAT-Linux/actions/runs/45195106455)، 292 تست اجرا شد؛ 289 موفق و 3 مورد اختیاری skip.
+- GTK 4 در همان head: [workflow 45195106572](https://github.com/meicamghe/EMWAT-Linux/actions/runs/45195106572)، هر 7 تست runtime موفق؛ تست رقابت Start/Shutdown نیز موفق شد. نصب/اعتبارسنجی/حذف لانچر per-user با مسیر دارای فاصله نیز موفق بود.
+- Native در همان head: [workflow 45195106435](https://github.com/meicamghe/EMWAT-Linux/actions/runs/45195106435)، build/CTest برابر 4/4، ASan/UBSan برابر 4/4، staged install و چرخه نصب/ارتقای بسته توسعه Debian موفق.
+- LibreOffice UNO: [workflow 45194019476](https://github.com/meicamghe/EMWAT-Linux/actions/runs/45194019476)، 25 تست موفق روی والد کد معادل؛ تغییرات بعدی فقط GTK و مستندات بوده‌اند و کد UNO تغییر نکرده است.
+- این نتایج پذیرش end-to-end الماس گام یا آمادگی انتشار را ثابت نمی‌کنند؛ موانع انتشار در [ماتریس پذیرش](docs/RELEASE-ACCEPTANCE-MATRIX.md) آمده‌اند.
+
+### مواردی که هنوز تکمیل نشده‌اند
+
+- اجرای end-to-end از صفحه واقعی الماس گام و بررسی دقیق Origin، پیام‌ها و پاسخ‌ها.
+- mapping معنایی همه فیلدهای Word به Writer و آزمون با fixture بی‌خطر و واقعی.
+- encoding و association کامل `signData`، تصویر/امضا و فیلدهای سفارشی.
+- قرارداد wire response برای Cancel و Discard؛ این سیاست هنوز تزریق‌شدنی است و حدس زده نشده.
+- تکمیل GUI یکپارچه برای تنظیمات، مدیریت اسکن و پیکربندی/مدیریت سرویس؛ پوسته GTK4 و Recovery picker اولیه موجودند.
+- بسته‌بندی کامل برنامه (Python bridge + UNO + GTK + سرویس و سیاست ارتقا/مهاجرت)؛ entrypoint و اسکریپت نصب/حذف لانچر per-user موجودند.
+- آزمون سخت‌افزار اسکنر، ADF/duplex و سازگاری Windows `.easz`.
+
+**وضعیت انتشار:** تغییرات روی PR شماره ۲ در حالت Draft نگه داشته شده‌اند و هنوز به main ادغام نشده‌اند. این مخزن یک هسته‌ی در حال توسعه است، نه محصول آماده‌ی نصب و استفاده‌ی روزمره.
+
+
+## آخرین پذیرش دستی Writer — 2026-11-23
+
+رفتار قابل مشاهده‌ی LibreOffice Writer برای سه حالت Save، Don't Save و
+Cancel-سپس-بستن دوباره، روی Ubuntu آزمایش شده و موفق بوده است. نسخه برگشتی
+از آخرین وضعیت ذخیره‌شده‌ی تأییدشده ساخته می‌شود؛ snapshot بازیابی دوره‌ای
+جایگزین پاسخ نهایی نیست. جزئیات و شواهد markerها در
+[گزارش تست تعاملی Writer](docs/WRITER-CLOSE-ACCEPTANCE-TEST.md) آمده است.
+
+این نتیجه فقط رفتار محلی Writer/UNO را می‌پوشاند. اتصال زنده به صفحه الماس گام،
+قرارداد دقیق پاسخ‌های Windows برای Cancel/Discard، mapping کامل فیلدهای Word،
+رابط کامل دسکتاپ و بسته نصب نهایی هنوز تکمیل نشده‌اند. پروژه هنوز آماده انتشار
+یا استفاده عملیاتی نیست.
+
+## Latest component verification — 2026-11-23
+
+- Python bridge: [workflow 45186092495](https://github.com/meicamghe/EMWAT-Linux/actions/runs/45186092495) passed **289 tests**; package install and the doctor, GTK application and desktop-entry helper console commands passed.
+- Native image core: [workflow 45186091897](https://github.com/meicamghe/EMWAT-Linux/actions/runs/45186091897) passed build/CTest (**4/4**), ASan/UBSan (**4/4**) and Debian package lifecycle, including fake SANE page-reader tests.
+- GTK desktop: [workflow 45184251362](https://github.com/meicamghe/EMWAT-Linux/actions/runs/45184251362) passed **6 smoke tests**; per-user launcher install, desktop-file validation and uninstall passed.
+- LibreOffice UNO: [workflow 45182739787](https://github.com/meicamghe/EMWAT-Linux/actions/runs/45182739787) passed **25 tests** on a code-equivalent head; subsequent changes were scanner-native tests and documentation/workflow updates.
+
+These are component-level CI results, not release acceptance. Live Almas browser integration, verified Cancel/Discard response semantics, complete WordConfig/signature/image mapping, Windows .easz interoperability, physical scanner acceptance, and complete production bridge packaging/supervision remain open. PR #2 remains Draft and unmerged.

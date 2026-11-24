@@ -8,8 +8,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import json
+import math
 import re
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+import threading
 from ipaddress import ip_address
 from typing import Callable
 from urllib.parse import parse_qsl, urlsplit
@@ -34,6 +36,29 @@ class BridgeResponse:
 RequestHandler = Callable[[BridgeRequest], BridgeResponse]
 
 
+class _ServingThreadingHTTPServer(ThreadingHTTPServer):
+    """ThreadingHTTPServer with a reliable serve-loop readiness handshake."""
+
+    def __init__(self, *args: object, **kwargs: object) -> None:
+        self._serving_event = threading.Event()
+        super().__init__(*args, **kwargs)
+
+    def service_actions(self) -> None:
+        # BaseServer calls this only after serve_forever has entered its loop.
+        self._serving_event.set()
+        super().service_actions()
+
+    def serve_forever(self, poll_interval: float = 0.5) -> None:
+        try:
+            super().serve_forever(poll_interval=poll_interval)
+        finally:
+            # Also release waiters if startup fails before the first loop tick.
+            self._serving_event.set()
+
+    def wait_until_serving(self) -> None:
+        self._serving_event.wait()
+
+
 class BridgeHTTPServer:
     """Small, bounded HTTP server that can only listen on IPv4 loopback."""
 
@@ -50,23 +75,47 @@ class BridgeHTTPServer:
         socket_timeout_seconds: float = 10.0,
         require_origin: bool = True,
     ) -> None:
+        if not callable(handler):
+            raise ValueError("handler must be callable")
+        if type(require_origin) is not bool:
+            raise ValueError("require_origin must be a boolean")
+        if not isinstance(host, str):
+            raise ValueError("host must be an IPv4 loopback address string")
         address = ip_address(host)
         if address.version != 4 or not address.is_loopback:
             raise ValueError("EMWAT bridge must bind to an IPv4 loopback address")
-        if not 0 <= port <= 65535:
-            raise ValueError("invalid TCP port")
-        if max_body_bytes <= 0:
-            raise ValueError("max_body_bytes must be positive")
-        if max_response_bytes <= 0:
-            raise ValueError("max_response_bytes must be positive")
-        if socket_timeout_seconds <= 0:
-            raise ValueError("socket_timeout_seconds must be positive")
+        if type(port) is not int or not 0 <= port <= 65535:
+            raise ValueError("port must be an integer in the TCP port range")
+        if type(max_body_bytes) is not int or max_body_bytes <= 0:
+            raise ValueError("max_body_bytes must be a positive integer")
+        if type(max_response_bytes) is not int or max_response_bytes <= 0:
+            raise ValueError("max_response_bytes must be a positive integer")
+        if (
+            isinstance(socket_timeout_seconds, bool)
+            or not isinstance(socket_timeout_seconds, (int, float))
+        ):
+            raise ValueError("socket_timeout_seconds must be a finite positive number")
+        try:
+            timeout_is_finite = math.isfinite(float(socket_timeout_seconds))
+        except (OverflowError, ValueError):
+            timeout_is_finite = False
+        if not timeout_is_finite or socket_timeout_seconds <= 0:
+            raise ValueError("socket_timeout_seconds must be a finite positive number")
+
+        if not isinstance(allowed_origins, (set, frozenset)) or any(
+            not isinstance(origin, str) or not origin for origin in allowed_origins
+        ):
+            raise ValueError("allowed_origins must be a set of non-empty origin strings")
+        if not isinstance(allowed_parent_origins, (set, frozenset)) or any(
+            not isinstance(origin, str) or not origin for origin in allowed_parent_origins
+        ):
+            raise ValueError("allowed_parent_origins must be a set of non-empty origin strings")
 
         self._handler = handler
         self._max_body_bytes = max_body_bytes
         self._max_response_bytes = max_response_bytes
         self._socket_timeout_seconds = socket_timeout_seconds
-        self._allowed_origins = allowed_origins
+        self._allowed_origins = self._normalize_origins(allowed_origins)
         self._allowed_parent_origins = self._normalize_parent_origins(allowed_parent_origins)
         self._require_origin = require_origin
         owner = self
@@ -217,6 +266,7 @@ class BridgeHTTPServer:
                         parsed.query,
                         keep_blank_values=True,
                         strict_parsing=True,
+                        max_num_fields=1,
                     )
                 except ValueError:
                     self._send(400, b"invalid_invoke_query", "text/plain; charset=utf-8")
@@ -249,7 +299,7 @@ class BridgeHTTPServer:
                     response = owner._handler(request)
                     if not isinstance(response, BridgeResponse):
                         raise TypeError("bridge handler must return BridgeResponse")
-                    if not 200 <= response.status <= 599:
+                    if type(response.status) is not int or not 200 <= response.status <= 599:
                         raise ValueError("invalid HTTP response status")
                     if not isinstance(response.body, bytes) or len(response.body) > owner._max_response_bytes:
                         raise ValueError("invalid or oversized response body")
@@ -289,26 +339,88 @@ class BridgeHTTPServer:
             do_DELETE = _unsupported
             do_HEAD = _unsupported
 
-        self._server = ThreadingHTTPServer((host, port), Handler)
-        self._server.daemon_threads = True
+        self._server = _ServingThreadingHTTPServer((host, port), Handler)
+        # Do not abandon active document requests during shutdown. The caller
+        # must call shutdown() and then server_close(); ThreadingMixIn will join
+        # request workers before server_close() returns.
+        self._server.daemon_threads = False
         self._server.request_queue_size = 32
 
     @staticmethod
-    def _normalize_parent_origins(origins: frozenset[str]) -> frozenset[str]:
-        normalized = set()
+    def _normalize_origins(origins: frozenset[str]) -> frozenset[str]:
+        """Validate and canonicalize configured browser XHR origins.
+
+        Browser Origin values contain only scheme, host and an optional
+        non-default port. Normalize scheme/host case and elide default ports
+        so equivalent configuration spellings match the browser header.
+        Paths, credentials, query strings and fragments are never origins.
+        """
+        normalized: set[str] = set()
         for value in origins:
-            parsed = urlsplit(value)
+            try:
+                parsed = urlsplit(value)
+                port = parsed.port
+            except ValueError as exc:
+                raise ValueError(
+                    "allowed_origins must contain bare HTTP(S) origins"
+                ) from exc
             if (
-                parsed.scheme not in {"http", "https"}
+                parsed.scheme.lower() not in {"http", "https"}
                 or not parsed.netloc
+                or parsed.hostname is None
+                # An explicit empty port (for example, https://host:) is not
+                # equivalent to omitting the port, even though urlsplit.port
+                # returns None for both forms.
+                or parsed.netloc.endswith(":")
                 or parsed.username is not None
                 or parsed.password is not None
                 or parsed.path
                 or parsed.query
                 or parsed.fragment
+                or any(character.isspace() for character in parsed.hostname)
+            ):
+                raise ValueError("allowed_origins must contain bare HTTP(S) origins")
+            scheme = parsed.scheme.lower()
+            hostname = parsed.hostname.lower()
+            if ":" in hostname:
+                hostname = f"[{hostname}]"
+            default_port = 80 if scheme == "http" else 443
+            authority = hostname if port in (None, default_port) else f"{hostname}:{port}"
+            normalized.add(f"{scheme}://{authority}")
+        return frozenset(normalized)
+
+    @staticmethod
+    def _normalize_parent_origins(origins: frozenset[str]) -> frozenset[str]:
+        """Canonicalize the Almas parent-page origins used by the init route."""
+        normalized: set[str] = set()
+        for value in origins:
+            try:
+                parsed = urlsplit(value)
+                port = parsed.port
+            except ValueError as exc:
+                raise ValueError(
+                    "allowed parent origins must be bare HTTP(S) origins"
+                ) from exc
+            if (
+                parsed.scheme.lower() not in {"http", "https"}
+                or not parsed.netloc
+                or parsed.hostname is None
+                or parsed.netloc.endswith(":")
+                or parsed.username is not None
+                or parsed.password is not None
+                or parsed.path
+                or parsed.query
+                or parsed.fragment
+                or any(character.isspace() for character in parsed.hostname)
             ):
                 raise ValueError("allowed parent origins must be bare HTTP(S) origins")
-            normalized.add(f"{parsed.scheme.lower()}://{parsed.netloc.lower()}")
+            scheme = parsed.scheme.lower()
+            hostname = parsed.hostname.lower()
+            if ":" in hostname:
+                hostname = f"[{hostname}]"
+            default_port = 80 if scheme == "http" else 443
+            authority = hostname if port in (None, default_port) else f"{hostname}:{port}"
+            normalized.add(f"{scheme}://{authority}")
         return frozenset(normalized)
 
     @staticmethod
@@ -318,16 +430,18 @@ class BridgeHTTPServer:
         try:
             parsed = urlsplit(referer)
             if (
-                parsed.scheme not in {"http", "https"}
+                parsed.scheme.lower() not in {"http", "https"}
                 or not parsed.netloc
                 or parsed.username is not None
                 or parsed.password is not None
                 or parsed.hostname is None
             ):
                 return None
-            _ = parsed.port
-            return f"{parsed.scheme.lower()}://{parsed.netloc.lower()}"
-        except ValueError:
+            # Reuse the same canonicalization as the configured allowlist so
+            # host case and explicit default ports cannot cause false rejects.
+            candidate = f"{parsed.scheme}://{parsed.netloc}"
+            return next(iter(BridgeHTTPServer._normalize_parent_origins(frozenset({candidate}))))
+        except (StopIteration, ValueError):
             return None
 
     def _build_init_response(self, parent_origin: str) -> bytes:
@@ -349,6 +463,10 @@ class BridgeHTTPServer:
 
     def serve_forever(self) -> None:
         self._server.serve_forever(poll_interval=0.2)
+
+    def wait_until_serving(self) -> None:
+        """Block until the HTTP serve loop has entered or exited during startup."""
+        self._server.wait_until_serving()
 
     def shutdown(self) -> None:
         self._server.shutdown()

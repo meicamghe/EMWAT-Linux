@@ -94,3 +94,17 @@ COM/OLE تأیید شده، Office هنوز قطعی نیست. قدم بعدی �
 
 ## 8. محدودیت گزارش
 این سند از import table استخراج‌شده توسط pefile و شواهد strings قبلی ساخته شده است. این تحلیل dynamic API resolution را کامل پوشش نمی‌دهد؛ `LoadLibrary`/`GetProcAddress` در Service و Agent دیده شده‌اند، بنابراین برخی DLLها ممکن است در زمان اجرا بارگذاری شوند و در import table عادی دیده نشوند. همچنین بخش بزرگی از importها مربوط به Delphi RTL/VCL و packageهای همراه است و نباید به‌عنوان قابلیت مستقل محصول تفسیر شود.
+
+
+## Version-bound Agent/Service recheck (2026-11-24)
+
+The latest `EMWAT_Extracted.zip` contains these PE32 builds:
+
+- Agent SHA-256: `4553c4c65a5697b5e8121ac70e894a1b98a3def470a7165d931f078d258e4157`.
+- Service SHA-256: `9b07e270fa216095fe6648694a4896f6f8a190e69002c6742dc894c11a002659`.
+
+The current Agent import table includes `RegisterWindowMessageW`, `PostMessageW`, `SendMessageW`, `FindWindowW`, `GetWindowTextW`, `EnumWindows`, `CreateMutexW`, `CreateEventW`, `SetEvent`, `ResetEvent`, and `WaitForSingleObject`, alongside Registry and process/thread APIs. This supports a Win32 message/event/mutex coordination model.
+
+**Version discrepancy to resolve:** the earlier consolidated import report lists `WTSRegisterSessionNotification` / `WTSUnRegisterSessionNotification` for EmwatAgent, but these APIs are absent from the current hashed Agent executable extracted from `EMWAT_Extracted.zip`. The current Service build also lacks WTS and SCM service-control imports. Do not assume the older WTS finding applies to this exact build until the source binary/hash is matched. It may refer to another Agent version or another executable.
+
+A first linear-disassembly callsite scan undercounted Agent imports because Delphi RTTI/data inside executable sections desynchronizes linear instruction decoding. A corrected byte-level E8/FF15 scan is being used; import presence and callsite execution are kept as separate evidence levels.

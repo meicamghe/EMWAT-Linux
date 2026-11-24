@@ -587,3 +587,132 @@ Evidence and full trace details: `docs/WORD-RESPONSE-TIMER-CORRELATION-2026-11-1
 ### Long-lived invoke wait is mapped — 2026-11-16
 
 `TWordViwer.LoadDocument` calls `OnTmrAutoSave` at `0x004B7A58` and does not proceed to the HTTP response branch until it returns. `OnTmrAutoSave` loops at `0x004B9AE8`: `Sleep(5)`, `TApplication.ProcessMessages`, then test viewer `+0x58`. While the field remains nonzero, the loop continues; every 200 iterations it resets its counter and performs maintenance/check calls, then repeats. The close/registration callback at `0x004CD154` calls Word `Document.Close` and clears viewer `+0x58` at `0x004CD31C`. The wait then exits, and `LoadDocument` writes the `response-word` response. This static chain matches the observed ~54.558-second PCAP delay. The event callback's formal COM DISPID and the code that initially sets `+0x58` nonzero are still being traced.
+
+
+## Static Service/bridge follow-up — CORS headers and message forwarding (2026-11-24)
+
+Source: workflow run 45343331297, artifact 14896418153; Service executable trace around `0x0047BF30` and embedded JavaScript constant at `0x0047C59C`.
+
+- The traced request handler invokes the response-header setter three times with these exact header strings:
+  - `Access-Control-Allow-Origin:*`
+  - `Access-Control-Allow-Headers:*`
+  - `Access-Control-Allow-Method:*` (singular spelling in the binary)
+- The same handler then routes into the invoke/package-loading path. This is static evidence that the handler sets wildcard CORS-related response headers; it is not proof that every endpoint or every response uses the same handler.
+- The embedded bridge JavaScript registers a `message` listener (with an `attachEvent` fallback), captures `event.origin` and `event.source`, sends `event.data` as an XHR POST to `http://127.0.0.1:$V{myport}?invoke=<random>`, and posts `responseText` back to the captured source using the captured origin. The random query suffix is computed from `floor(random()*99999)`.
+- The script posts an initialization marker to its parent using the substituted `$V{host}` target origin. No inbound-origin allowlist check is visible in this embedded script fragment.
+
+Security boundary: these findings raise a concrete origin/CSRF review requirement, but do not by themselves prove an exploitable vulnerability or prove the server performs no additional request validation. Trace the server-side origin/token/session checks before making that claim. The Linux bridge must not copy wildcard CORS or accept arbitrary webpage messages; use a strict origin policy and a session-bound local capability/token.
+
+Related static targets: `0x0047BF30` (request handler), `0x0047E0EC` (EmwatMethods.bpl package load path), `0x00470B38` (XML request parser), and `0x0047C59C` (bridge script).
+
+
+## 2026-11-24 — Service → BPL → Word → Indy response crosswalk
+
+Sources: workflow runs 45349332094 (main-form request handler), 45349331995 (BPL method invoke), 45349331946 (service/BPL dispatch crosswalk), 45349332072 (Indy response methods), and 45349331991 (WriteContent helper chain).
+
+The static call chain is now substantially connected:
+
+1. The Service form's `EmwatServiceCommandGet` handler at `0x0047BF30` receives the Indy HTTP request.
+2. It dispatches the request into the BPL method layer through `TEmwatMethod.Invoke` (generic method-name dispatcher).
+3. The BPL routes the document method through `TScanDocument.PerformMethod`.
+4. The Word path reaches `TWordViewer.LoadDocument` at approximately `0x004B7724`.
+5. `LoadDocument` populates the `TIdHTTPResponseInfo` content response and invokes the response-writing path.
+6. Indy `TIdHTTPResponseInfo.WriteContent` at `0x004610FC` writes headers and body. Its header helper is at `0x004612F4`; body transfer uses the response's `TIdIOHandler` through `WriteBuffer`/`WriteStream`, then releases the content stream.
+
+This establishes the static server-to-BPL-to-Word-to-Indy response path. It does not explain the observed approximately 54.558-second transaction delay.
+
+### Wait/close correlation remains open
+
+- The traced `LoadDocument` body calls `TApplication.ProcessMessages` once at `0x004B7C1C`; the inspected path did not reveal an explicit `Sleep` or `WaitForSingleObject` loop.
+- The periodic `OnControlerNotify` timer and the Word close callback are separate paths. The timer toggles `ReadyToClose` while it runs; `WordAppDocumentBeforeSave` cancels close while that flag is false.
+- No direct callsite proves that the HTTP response waits for Word close or for `ReadyToClose` to become true.
+
+Do not implement a guessed long-poll contract. The next trace must identify the exact object/event/COM call that keeps the request handler active, or show that the delay originates outside this BPL path.
+
+
+## 2026-11-24 — response headers/body writer and wait-API cross-reference
+
+The latest executable crosswalk adds detail to the already-established `LoadDocument → TIdHTTPResponseInfo.WriteContent` path.
+
+### Response construction
+
+- `LoadDocument` assigns its generated XML to `AResponseInfo.ContentText` at response-object offset `+0xBC`, calls the `WriteContent` thunk at `0x0040448C`, and sets `TEmwatInvokeParam.bResultSet` at record offset `+0x05`.
+- The Indy response-header builder at `0x00460840` conditionally emits `Server`, `Location`, and `Last-Modified` headers. When an authentication challenge value is present, it constructs `WWW-Authenticate: Basic realm="..."`.
+- The response content writer at `0x00460E48` has a branch that constructs a `Content-Disposition` value using the literal template `attachment; filename="%s";`. It then calls the response header writer at `0x004612F4` and transfers the body through the request connection's `TIdIOHandler` interface (the inspected dispatch is the stream/buffer output path).
+- This is concrete evidence that the response layer supports attachment-style content delivery in addition to XML/text response content. It does **not** prove that every `EditWordDocument` response uses the attachment branch; the exact branch conditions and endpoint-specific response headers still need to be correlated with a captured request.
+
+### Wait API audit — negative evidence with a boundary
+
+The static wait-thunk audit found:
+- The only direct TD32-bounded caller of the `WaitForSingleObject` thunk (`0x00402900`) is `GIFImage.FireEvent` at `0x00607448`. That routine compares the return value with `0x102` (`WAIT_TIMEOUT`) and belongs to the GIF image event path.
+- The direct `Sleep` callsites found by the same scan are in temporary-file cleanup, process-path lookup, TIFF/image printing, Zan printer installation lookup, document-printer initialization, recovery-form UI, and GIF drawing/cleanup paths.
+- `LoadDocument` itself has one direct call to `TApplication.ProcessMessages` at `0x004B7C1C`; the bounded procedure contains no direct `Sleep` or `WaitForSingleObject` call.
+
+This narrows the search: the 54.558-second transaction is **not explained by a direct wait loop in the traced `LoadDocument` body**. It does not exclude synchronous Word COM calls, VMT/indirect waits, Indy socket back-pressure, image decoder callbacks, or blocking inside external Word/Office processes. In particular, the GIF wait path is only a candidate if the specific document exercises animated-GIF decoding; no causal link to the observed HTTP transaction has been established.
+
+### Linux response implementation boundary
+
+Keep the response model explicit:
+1. response status and headers;
+2. XML/text payload;
+3. optional attachment disposition and filename;
+4. body stream transfer and completion;
+5. request-handler result ownership (`bResultSet`) and fallback suppression.
+
+Do not add a fixed 54-second delay, long-poll, or close-event wait to the Linux bridge without a trace proving that contract.
+
+
+## 2026-11-24 — LoadDocument response timing refined
+
+The latest bounded trace of `TWordViewer.LoadDocument` (VA range `0x004B7724–0x004B8A83`) narrows the response timing:
+
+- `LoadDocument` logs “OpenDoc function called”, creates a local Word document file, loads the Word configuration and invokes the `OpenDoc` helper at `0x00457050`.
+- After the OpenDoc path returns, the method logs the result, builds a `TEmError` status object from the global error-type/message table, calls its virtual text serializer (slot `+0x54`), assigns that text to `TIdHTTPResponseInfo.ContentText`, and calls `WriteContent`.
+- The response tail then attempts to delete the temporary document file and logs success/failure.
+- The Indy response header writer at `0x0044E734` handles response metadata; `TIdHTTPResponseInfo.WriteContent` at `0x004610FC` sends the body through the IOHandler.
+
+This means the traced response is emitted after the local document-open operation returns; there is no evidence in this path that it waits for the user to close Word or for `ReadyToClose`. The close prompt/BeforeSave callback is a separate later event path.
+
+The observed approximately 54.558-second request duration should therefore be investigated inside the `OpenDoc`/Word COM activation path (or its caller) rather than assumed to be a close-driven long poll. The trace shows one `TApplication.ProcessMessages` call, not an explicit wait loop. The exact `TEmError` wire text/schema and the source of the long duration remain open.
+
+
+## 2026-11-24 — Agent health-check endpoint is now fully cross-referenced
+
+The Agent/Service static trace confirms both sides of the local heartbeat:
+
+- Agent sends HTTP `GET http://127.0.0.1:1984/?heartbeat`.
+- Agent compares the response body with exactly `TickTack`.
+- Service checks the query parameter `heartbeat`, writes `TickTack` to `ContentText`, and sends it through Indy `WriteContent`.
+- Service startup reports a port-binding error if port `1984` is occupied.
+
+For native Linux compatibility, expose a loopback-only `GET /?heartbeat` route on port `1984`, returning the exact body `TickTack` (no JSON envelope or appended newline). The heartbeat handler should not invoke Word, document parsing, scanning, or printing. Agent retry behavior and its even-failure `taskkill EmwatService.exe` branch are documented in `AGENT-SERVICE-IPC-ANALYSIS.md`.
+
+
+## 2026-11-24 — native heartbeat parity and concurrency test
+
+The current Linux bridge already implements the Windows heartbeat wire contract:
+
+- `BridgeHTTPServer.do_GET` handles `/?heartbeat` directly, returns status 200, body `TickTack`, `Content-Length: 8`, and `Content-Type: text/html; charset=ISO-8859-1`.
+- `create_bridge_server` and `create_libreoffice_bridge_server` default to loopback `127.0.0.1:1984`.
+- The unit test `test_legacy_agent_heartbeat_endpoint` asserts the exact response.
+- The test `test_document_post_waits_for_close_while_heartbeat_remains_responsive` blocks a document POST on a close-event gate and proves the heartbeat route still responds while that request remains active. This validates the threaded-server separation needed by the Windows Agent watchdog.
+
+Verification: Python bridge transport workflow `45352644056` passed on branch head `b54a414f37e91989b3fa7b615ce7bfc3b42d21cc`, including the package/console-entrypoint step and bridge transport tests.
+
+The bridge's transport contract is therefore implemented and CI-tested. The desktop shell still requires deployment-specific supervisor injection; do not infer that the GUI starts the bridge automatically.
+
+
+## 2026-11-24 — original Indy listener configuration recovered from DFM
+
+The embedded `TMAINFORM` DFM confirms the original `TIdHTTPServer` settings:
+
+- Binding IP: `127.0.0.1` only.
+- Both `Port` and `DefaultPort`: `1984`.
+- `ListenQueue`: 100.
+- `ReuseSocket`: false.
+- `TerminateWaitTime`: 15,000 ms.
+- `OnCommandGet`: `IdHTTPServerCommandGet` (method VA `0x0047BF30`).
+
+The Service `FormCreate` method at `0x0047CCD8` activates the `TIdHTTPServer` component at form offset `+0x3C0` by setting its `Active` property to true at `0x0047CE5E`.
+
+This confirms the native bridge's existing default `127.0.0.1:1984` is correct and that it must remain loopback-only. Do not confuse the server's 15-second `TerminateWaitTime` with a request timeout or the previously observed 54.558-second document transaction.

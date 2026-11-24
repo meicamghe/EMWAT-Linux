@@ -104,6 +104,12 @@ class WordFieldDecodingTests(unittest.TestCase):
             [(1, "SignStart", "SignEnd", "signatories")],
         )
 
+    def test_rejects_non_string_custom_property_names(self):
+        for invalid in (None, 1, True, b"LetterSubject"):
+            with self.subTest(invalid=invalid):
+                with self.assertRaisesRegex(ValueError, "custom_property_names_must_be_strings"):
+                    build_word_custom_property_field_maps(("LetterSubject", invalid))
+
     def test_rejects_misaligned_property_and_xml_field_sequences(self):
         with self.assertRaisesRegex(ValueError, "xml_fields_must_match_property_names_length"):
             build_word_custom_property_field_maps(

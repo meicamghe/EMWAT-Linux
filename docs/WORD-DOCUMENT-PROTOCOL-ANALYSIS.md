@@ -1496,3 +1496,75 @@ The parser-side property methods provide a clearer source of truth than the TD32
 The current request-schema transcription says `concater`, while the native parser-side XML property is unambiguously spelled `concator`. These are different strings; no alias between them is proven. The TD32 `Get_*` serializer-side symbols also show a name/literal offset (for example, `Get_Concator` writes `separator`), so the parser-side `Set_*` methods are the trusted evidence for incoming XML attribute names.
 
 The Python decoder preserves all field attributes and does not currently normalize either spelling, so no runtime behavior was changed. Keep the discrepancy explicit until the raw request XML is rechecked; do not silently treat `concater` and `concator` as interchangeable.
+
+
+## 2026-11-24 — Word text/image field fill paths
+
+Sources: workflow runs 45344189015 (Word field pipeline) and 45344189010 (image-field path).
+
+Static callsite/string evidence now distinguishes the field fill paths:
+
+- `FillTextField` checks the field content type. `text/plain` follows the text-field path; a missing field interface or a non-`text/plain` type routes into `FillImageField`.
+- `FillImageField` recognizes the `image/*` MIME family and contains branches for `urlencoded` and `base64` payload encodings.
+- The method named `GetImageResolution` is misleading: its traced body maps alignment strings, not DPI/resolution, to numeric values: `right=1`, `center=2`, `left=3`, `top=4`, `middle=5`, `bottom=6`.
+- `AddImagesToDoc` and `EmbedTextToImage` provide an image/caption overlay path; the exact caption layout and twin-field pairing rules still need controlled fixtures.
+- Text values are written through two observed Word mechanisms: `CustomDocumentProperties[index]` or `Field.Result.Text`. A `field locked` diagnostic exists, so locked fields need an explicit compatibility rule rather than unconditional overwrite.
+- Explicit special field names include `LetterRegistrationDate`, `LetterRegistrationNo`, `ProduceDate`, `Receivers`, `ReceiverDeps`, `ccReceivers` and `ccReceiverDeps`.
+- The field-name classifier includes the signature-like pattern `^sign.*end[0-2]?[0-9]?$`; this is a naming clue, not yet a complete signature payload contract.
+- The code emits `twin filling start/end` diagnostics, but the pairing algorithm and ordering are not yet fully established.
+
+For Linux parity, preserve MIME type and encoding metadata as part of the field model. Do not interpret the alignment enum as image DPI, and do not collapse CustomDocumentProperties and Field.Result.Text into one storage path.
+
+
+## Parallel lifecycle trace update — Yes / No / Cancel and response hand-off (2026-11-24)
+
+The fresh `WordAppDocumentBeforeSave` disassembly (`0x004CD154)) decodes the Persian confirmation prompt and its three branches:
+
+- Cancel (dialog result 2) sets the COM event Cancel value to `-1`.
+- Yes (result 6) prepares `-1` for the SaveChanges argument of a subsequent Document.Close dispatch.
+- No prepares `0` for that SaveChanges argument.
+- The close dispatch uses the Word document interface's `+0x29C` vtable slot, previously mapped by generated wrappers to Document.Close. The `-1` / `0` values align with Word's `wdSaveChanges` / `wdDoNotSaveChanges` constants.
+
+Separately, `TWordViwer.OnControlerNotify` (`0x004BB3B0)) calls the document interface's `+0xDC` slot after pushing `-1`. The generated wrapper at `0x0042BDF8` maps `+0xDC` to `TWordDocument.Get_Content`; the meaning of the `-1` argument is not yet resolved. That handler then enters the local AutoSave/recovery path. Do not mistake this Content-related operation for Document.Close.
+
+The LoadDocument response branch reaches Indy `TIdHTTPResponseInfo.WriteContent`. What remains unresolved is the exact release/correlation between the Word close event, controller notification, response payload and the Almas-side registration result. A static WriteContent call does not by itself establish the complete round-trip contract.
+
+**Linux state-machine requirement:** preserve three distinct outcomes: save-and-close, close-without-saving, and cancel/veto. Keep the local recovery snapshot independent from the final connector response.
+
+
+## 2026-11-24 — XML field mapping, encoding and twin-field metadata
+
+Source: workflow run 45347505909 (custom-property pipeline).
+
+- `GetXmlFieldInfo` at `0x004BFC18` searches two separate dictionaries (viewer offsets `+0x68` and `+0x6C`). The regular-field path returns the field index and field-name metadata; the second path checks both `Field1Name` and `Field2Name` on the mapped field object. This confirms separate regular/twin lookup paths.
+- `SetFieldValue` at `0x004BFDB0` explicitly recognizes `urlencoded` and `base64` encoding labels and routes the value through the corresponding decode helpers; other values follow the raw path. Preserve the encoding label in the Linux field model rather than guessing from payload bytes.
+- XML field metadata strings include `id`, `mimetype`, `paramId`, `separator`, `concator` and `encryption`. Their complete semantic behavior and the precise role of `separator/concator` are still being traced.
+- `TXmlWordConfigField` exposes `Index`, `Field1Name`, `Field2Name` and `Field`. `TXmlWordConfigTwinField` additionally exposes `CaptionItems`, RTL/LTR font name/style/size, `Align`, `VAlign` and `Text`. This is concrete evidence that twin-field rendering carries per-caption typography and alignment metadata.
+- `GetDocFieldName` parses Word `DOCPROPERTY` field code and maps it through the field dictionaries. It also processes Word `CustomDocumentProperties`; the `TDocumentCProperty` helper stores property/index metadata.
+- A field named `Hidden_Customizable` triggers `SilentSaveEmwatDoc`. This is a special field-triggered silent-save path; it is not the same routine as the 10-second-minimum AutoSave timer and is not proven to create a `.easz` archive.
+- Signature-like field names are recognized by a regex pattern, but the signature payload `signData` concatenation/separator contract is still unresolved.
+
+For compatibility, preserve regular vs twin field identity, both field names, encoding, MIME type, caption item metadata and custom-property storage as separate parts of the schema.
+
+
+## LoadDocument initialization versus final document result (2026-11-24)
+
+A full-range trace of the current `TWordViwer.LoadDocument` / `OnTmrAutoSave` region adds an important boundary:
+
+- `LoadDocument` logs `OpenDoc function called`, validates `DocFileName`, creates the local Word document, loads ConfigXML, and logs the Word calling mode.
+- It contains a special-case branch for a `Payam-e-Dowlat` request; this must not be silently merged into the ordinary letter workflow.
+- Its response path sets `TIdHTTPResponseInfo.ContentText` from an output string, calls Indy `WriteContent` when the string is non-empty, and sets the response-sent flag. Nearby status strings include `Result Response Status:`, `Temp Document file deleted.`, and `OpenDoc function succeed.`
+- The called `OnTmrAutoSave` routine logs `wv.LoadDocument method called`, reads `view`, `readonly`, and `protected` configuration, connects to the OLE Word engine, checks Office activation, installs Word event callbacks, and configures the timer.
+
+This evidence makes the initial HTTP response look like an **OpenDoc/Word-initialization acknowledgement**, not proven proof that the final edited document has been returned to Almas. The body is supplied through a method output string; the exact source and all status values still need the remaining branch/caller trace.
+
+The timer is configured to call `OnControlerNotify`; that later callback performs the Content-related operation and enters the local SevenZip recovery path. Do not equate the initial `WriteContent` acknowledgement with the later document-registration outcome.
+
+
+## 2026-11-24 — regular/twin field dictionary crosswalk
+
+The XML field pipeline trace confirms that `GetXmlFieldInfo` searches two dictionaries: one for regular fields and one for twin fields. The twin path checks both `Field1Name` and `Field2Name`. `SetFieldValue` recognizes `urlencoded` and `base64` encodings; other values use the raw path.
+
+`TXmlWordConfigTwinField` exposes both field names, a `CaptionItems` collection, RTL/LTR font names/styles/sizes, `Align`, `VAlign` and `Text`. These are real metadata fields, not just DFM presentation controls. XML metadata strings also include `id`, `mimetype`, `paramId`, `separator`, `concator` and `encryption`; the last three semantics remain under investigation.
+
+`GetDocFieldName` parses Word `DOCPROPERTY` codes and maps them through these dictionaries, while separately enumerating `CustomDocumentProperties`. The special Word field `Hidden_Customizable` invokes `SilentSaveEmwatDoc`; that path is distinct from the periodic timer callback and is not proof of archive creation.

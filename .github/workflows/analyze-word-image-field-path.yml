@@ -28,7 +28,7 @@ jobs:
         shell: bash
         run: |
           mkdir -p word-image-field-path
-          targets=(004BC2C4 004BC30C 004BC980 004C0410 004C19C0 004C2B20 004C2DE0 004C436C 004CFC74 004D08B4 004D34B0 004D3DF8)
+          targets=(004BC2C4 004BC30C 004BC980 004C009C 004C4D64 004C0410 004C19C0 004C2B20 004C2DE0 004C436C 004CFC74 004D08B4 004D34B0 004D3DF8)
           pids=()
           for target in "${targets[@]}"; do
             (
@@ -46,7 +46,7 @@ jobs:
         shell: bash
         run: |
           pids=()
-          for spec in "004BC2C4 500" "004BC30C 2400" "004BC980 600" "004C0410 700" "004C19C0 5200" "004C2B20 1000" "004C2DE0 500" "004C436C 1000" "004CFC74 1300" "004D08B4 1400" "004D34B0 1400" "004D3DF8 1400"; do
+          for spec in "004BC2C4 500" "004BC30C 2400" "004BC980 600" "004C009C 1800" "004C0410 700" "004C19C0 5200" "004C2B20 1000" "004C2DE0 500" "004C2EFC 900" "004C436C 1000" "004C4DBC 1800" "004CFC74 1300" "004D08B4 1400" "004D34B0 1400" "004D3DF8 1400"; do
             (
               set -e
               set -- $spec
@@ -61,6 +61,7 @@ jobs:
         run: |
           python tools/list_td32_symbols.py analysis-input/EmwatMethods.bpl1 \
             TWordViwer TXmlWordConfigField TXmlWordConfigTwinField TCaptionItem TEmwatFieldType \
+            TImageEnView TImageEnIO TImageEnProc TImageEnVect \
             > word-image-field-path/image-field-symbols.md
       - name: Decode image-field and caption constants
         run: |
@@ -70,9 +71,57 @@ jobs:
             0x004BC82C 0x004BC8A8 0x004BC910 0x004BC938 0x004BC95C \
             0x004BFEE8 0x004BFF0C 0x004C04DC 0x004C0510 0x004C052C \
             0x004C2E70 0x004C2E88 0x004C2EA4 0x004C2EBC 0x004C2ED0 0x004C2EEC \
+            0x004C2D4C 0x004C2D68 0x004C2D84 0x004C2DA4 0x004C2DC8 \
+            0x004C4590 0x004C459C \
+            0x004C57F4 0x004C5830 0x004C5898 0x004C5920 \
+            0x004C59D0 0x004C5A70 0x004C5AC0 0x004C5AD8 0x004C5AE8 \
+            0x004C5BA4 0x004C5BB4 0x004C5BF4 \
             0x004C0410 0x004C2DE0 0x004C436C 0x004CFC74 \
             > word-image-field-path/image-field-strings.md
+      - name: Trace image metadata and transform helper routines
+        shell: bash
+        run: |
+          pids=()
+          for spec in "00404F64 1400" "00404894 1000" "004042B4 800" "004042AC 800" "00404E34 1000" "0044ABE4 1800" "004B0304 900" "004B030C 900" "004AFE90 700" "004AFE88 700" "004AFF08 900" "004AFF10 900" "004AFEB8 700"; do
+            (
+              set -e
+              set -- $spec
+              python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x$1 word-image-field-path/image-helper-$1.md $2 ret
+            ) &
+            pids+=("$!")
+          done
+          status=0
+          for pid in "${pids[@]}"; do wait "$pid" || status=1; done
+          exit "$status"
+      - name: Find callers of GEAR32PD image-save thunk
+        run: |
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004AFE90 word-image-field-path/callers-IG_save_file.md
+      - name: Decode GEAR32PD import surface and x87 resolution constants
+        run: |
+          python - <<'PY' > word-image-field-path/gear32pd-imports-and-resolution-constants.md
+          import math
+          import pefile
+          path = 'analysis-input/EmwatMethods.bpl1'
+          pe = pefile.PE(path, fast_load=False)
+          print('=== GEAR32PD.DLL imports ===')
+          for desc in pe.DIRECTORY_ENTRY_IMPORT:
+              if desc.dll.lower() == b'gear32pd.dll':
+                  for imp in desc.imports:
+                      print(f'IAT=0x{imp.address:08X} API={imp.name.decode(errors="replace") if imp.name else "ordinal:"+str(imp.ordinal)}')
+          print('=== x87 80-bit constants ===')
+          for va in (0x004C4590, 0x004C459C):
+              off = pe.get_offset_from_rva(va - pe.OPTIONAL_HEADER.ImageBase)
+              raw = pe.__data__[off:off+10]
+              mantissa = int.from_bytes(raw[:8], 'little')
+              se = int.from_bytes(raw[8:10], 'little')
+              sign, exp = se >> 15, se & 0x7FFF
+              value = 0.0 if exp == 0 and mantissa == 0 else math.ldexp(mantissa, exp - 16383 - 63)
+              if sign: value = -value
+              print(f'VA=0x{va:08X} bytes={raw.hex()} value={value:.12g}')
+          PY
+      # Final focused pass: resolve caption output/save call chain.
       - uses: actions/upload-artifact@v4
         with:
           name: emwat-word-image-field-path
           path: word-image-field-path/
+

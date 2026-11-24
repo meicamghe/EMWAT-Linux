@@ -1,11 +1,14 @@
 #include "emwat/scanner.hpp"
+#include "emwat/scanner_detail.hpp"
+#include "sane_scanner_test_support.hpp"
 
 #include <sane/sane.h>
 
 #include <algorithm>
+#include <array>
+#include <cctype>
 #include <cmath>
 #include <cstring>
-#include <array>
 #include <limits>
 #include <mutex>
 #include <string>
@@ -54,6 +57,36 @@ private:
     bool active_{};
 };
 
+void validate_device_id(const std::string& device_id) {
+    if (device_id.empty())
+        throw ScannerError("scanner device id cannot be empty");
+    if (std::any_of(device_id.begin(), device_id.end(), [](unsigned char value) {
+            return std::iscntrl(value) != 0;
+        }))
+        throw ScannerError("scanner device id contains a control character");
+}
+
+void validate_scan_options(const ScanOptions& options) {
+    if (options.resolution_dpi &&
+        (!std::isfinite(*options.resolution_dpi) ||
+         *options.resolution_dpi <= 0.0 ||
+         *options.resolution_dpi > 100000.0)) {
+        throw ScannerError("Scan resolution must be finite and between 0 and 100000 DPI");
+    }
+    const auto validate_text = [](const std::optional<std::string>& value,
+                                  const char* option_name) {
+        if (!value) return;
+        if (value->empty() ||
+            std::any_of(value->begin(), value->end(), [](unsigned char ch) {
+                return std::iscntrl(ch) != 0;
+            })) {
+            throw ScannerError(std::string("Invalid scanner ") + option_name + " option");
+        }
+    };
+    validate_text(options.mode, "mode");
+    validate_text(options.source, "source");
+}
+
 void set_string_option(SANE_Handle handle, const char* name, const std::string& value) {
     SANE_Int index = 0;
     const SANE_Option_Descriptor* descriptor = nullptr;
@@ -64,7 +97,7 @@ void set_string_option(SANE_Handle handle, const char* name, const std::string& 
     if (!descriptor) throw ScannerError(std::string("Scanner does not support option: ") + name);
     if (!(descriptor->cap & SANE_CAP_SOFT_SELECT) || !(descriptor->cap & SANE_CAP_SOFT_DETECT) ||
         (descriptor->cap & SANE_CAP_INACTIVE) || descriptor->type != SANE_TYPE_STRING ||
-        descriptor->size <= 0 || value.size() >= static_cast<std::size_t>(descriptor->size))
+        !detail::sane_string_option_size_valid(descriptor->size, value.size()))
         throw ScannerError(std::string("Scanner option is unavailable or incompatible: ") + name);
     std::vector<SANE_Char> buffer(static_cast<std::size_t>(descriptor->size), 0);
     std::memcpy(buffer.data(), value.c_str(), value.size() + 1);
@@ -89,8 +122,15 @@ void set_resolution_option(SANE_Handle handle, double dpi) {
         (descriptor->cap & SANE_CAP_INACTIVE) || descriptor->size != static_cast<SANE_Int>(sizeof(SANE_Word)) ||
         (descriptor->type != SANE_TYPE_INT && descriptor->type != SANE_TYPE_FIXED))
         throw ScannerError("Scanner resolution option is unavailable or incompatible");
-    SANE_Word value = descriptor->type == SANE_TYPE_FIXED
-        ? SANE_FIX(dpi) : static_cast<SANE_Word>(std::lround(dpi));
+    SANE_Word value = 0;
+    if (descriptor->type == SANE_TYPE_FIXED) {
+        const auto fixed_value = detail::encode_sane_fixed_resolution(dpi);
+        if (!fixed_value)
+            throw ScannerError("Scan resolution cannot be represented by the scanner fixed-point option");
+        value = static_cast<SANE_Word>(*fixed_value);
+    } else {
+        value = static_cast<SANE_Word>(std::lround(dpi));
+    }
     SANE_Int info = 0;
     const auto status = sane_control_option(handle, index, SANE_ACTION_SET_VALUE, &value, &info);
     if (status != SANE_STATUS_GOOD)
@@ -219,7 +259,7 @@ std::vector<ScannerDevice> SaneScannerBackend::list_devices() {
 }
 
 ScannerCapabilities SaneScannerBackend::get_capabilities(const std::string& device_id) {
-    if (device_id.empty()) throw ScannerError("scanner device id cannot be empty");
+    validate_device_id(device_id);
     std::lock_guard<std::mutex> lock(sane_mutex());
     SaneSession session;
     SaneHandle device(device_id);
@@ -230,8 +270,202 @@ ScannerCapabilities SaneScannerBackend::get_capabilities(const std::string& devi
     return result;
 }
 
+namespace sane_detail {
+namespace {
+std::vector<std::uint8_t> read_sane_frame_bytes(
+    SANE_Handle handle,
+    const SANE_Parameters& params,
+    std::uint64_t max_frame_bytes,
+    const SaneScanApi& api,
+    bool allow_feeder_empty = false
+) {
+    if (params.pixels_per_line <= 0 || params.lines <= 0 || params.bytes_per_line <= 0)
+        throw ScannerError("Scanner returned invalid or variable scan dimensions");
+
+    const auto width = static_cast<std::size_t>(params.pixels_per_line);
+    const auto height = static_cast<std::size_t>(params.lines);
+    const auto stride = static_cast<std::size_t>(params.bytes_per_line);
+    if (stride < width || max_frame_bytes == 0 ||
+        static_cast<std::uint64_t>(height) >
+            max_frame_bytes / static_cast<std::uint64_t>(stride)) {
+        throw ScannerError("Scanner frame exceeds the active safety limit or has invalid stride");
+    }
+
+    const auto frame_bytes = stride * height;
+    std::vector<std::uint8_t> bytes;
+    bytes.reserve(frame_bytes);
+    std::array<SANE_Byte, 64 * 1024> chunk{};
+    for (;;) {
+        SANE_Int received = 0;
+        const auto status = api.read(
+            handle, chunk.data(), static_cast<SANE_Int>(chunk.size()), &received
+        );
+        if (received < 0 || static_cast<std::size_t>(received) > chunk.size())
+            throw ScannerError("Scanner returned an invalid read length");
+        if (received > 0) {
+            if (static_cast<std::size_t>(received) > frame_bytes - bytes.size())
+                throw ScannerError("Scanner returned more image data than declared");
+            bytes.insert(bytes.end(), chunk.begin(), chunk.begin() + received);
+        }
+        if (status == SANE_STATUS_EOF) break;
+        if (status == SANE_STATUS_NO_DOCS && allow_feeder_empty && bytes.empty())
+            throw detail::ScanBatchEnd{};
+        if (status != SANE_STATUS_GOOD)
+            throw ScannerError(std::string("Scanner read failed: ") + api.status_string(status));
+        if (received == 0)
+            throw ScannerError("Scanner returned no data before end-of-frame");
+    }
+    if (bytes.size() != frame_bytes)
+        throw ScannerError("Scanner returned an incomplete image frame");
+    return bytes;
+}
+
+void copy_planar_channel(
+    const std::vector<std::uint8_t>& plane,
+    std::size_t plane_stride,
+    PixelBuffer& output,
+    std::size_t channel
+) {
+    detail::interleave_planar_rgb_channel(
+        plane, plane_stride, output.width, output.height,
+        output.bytes, output.stride, channel
+    );
+}
+
+} // namespace
+
+ImagePage read_started_sane_page(
+    SANE_Handle handle,
+    const std::optional<double>& dpi_x,
+    const std::optional<double>& dpi_y,
+    const SaneScanApi& api,
+    std::uint64_t remaining_batch_bytes,
+    bool allow_feeder_empty
+) {
+    SANE_Parameters params{};
+    auto status = api.get_parameters(handle, &params);
+    if (status != SANE_STATUS_GOOD)
+        throw ScannerError(std::string("Cannot read scan parameters: ") + api.status_string(status));
+
+    const auto page_byte_limit = std::min<std::uint64_t>(
+        remaining_batch_bytes, static_cast<std::uint64_t>(max_scan_bytes)
+    );
+    if (page_byte_limit == 0)
+        throw ScannerError("Scanner page exceeds the active safety limit");
+
+    if (params.depth != 8)
+        throw ScannerError("Scanner output must be 8-bit grayscale or RGB");
+
+    if (params.format == SANE_FRAME_GRAY || params.format == SANE_FRAME_RGB) {
+        if (!params.last_frame)
+            throw ScannerError("Scanner returned a non-terminal interleaved frame");
+        const std::size_t channels = params.format == SANE_FRAME_GRAY ? 1 : 3;
+        if (params.pixels_per_line <= 0 ||
+            static_cast<std::size_t>(params.pixels_per_line) >
+                std::numeric_limits<std::size_t>::max() / channels)
+            throw ScannerError("Scanner returned invalid scan dimensions");
+
+        const auto width = static_cast<std::size_t>(params.pixels_per_line);
+        const auto stride = static_cast<std::size_t>(params.bytes_per_line);
+        const auto row_bytes = width * channels;
+        if (stride < row_bytes)
+            throw ScannerError("Scanner returned an invalid interleaved stride");
+
+        PixelBuffer pixels;
+        pixels.width = static_cast<std::uint32_t>(params.pixels_per_line);
+        pixels.height = static_cast<std::uint32_t>(params.lines);
+        pixels.stride = stride;
+        pixels.format = channels == 1 ? PixelFormat::Gray8 : PixelFormat::RGB8;
+        pixels.bytes = read_sane_frame_bytes(
+            handle, params, page_byte_limit, api, allow_feeder_empty
+        );
+        if (!pixels.valid())
+            throw ScannerError("Scanner produced an invalid pixel buffer");
+        return ImagePage{std::move(pixels), dpi_x, dpi_y};
+    }
+
+    if (params.format != SANE_FRAME_RED || params.last_frame)
+        throw ScannerError("Scanner returned an unsupported or incomplete frame sequence");
+
+    if (params.pixels_per_line <= 0 || params.lines <= 0 ||
+        static_cast<std::size_t>(params.pixels_per_line) >
+            std::numeric_limits<std::size_t>::max() / 3)
+        throw ScannerError("Scanner returned invalid planar RGB dimensions");
+
+    const auto width = static_cast<std::size_t>(params.pixels_per_line);
+    const auto height = static_cast<std::size_t>(params.lines);
+    const auto output_stride = width * 3;
+    if (height > std::numeric_limits<std::size_t>::max() / output_stride)
+        throw ScannerError("Scanner planar RGB image size overflow");
+    const auto output_bytes = output_stride * height;
+    if (output_bytes >= page_byte_limit)
+        throw ScannerError("Scanner planar RGB image exceeds the active safety limit");
+
+    PixelBuffer pixels;
+    pixels.width = static_cast<std::uint32_t>(params.pixels_per_line);
+    pixels.height = static_cast<std::uint32_t>(params.lines);
+    pixels.stride = output_stride;
+    pixels.format = PixelFormat::RGB8;
+    pixels.bytes.resize(output_bytes);
+
+    const std::array<int, 3> expected_formats{
+        static_cast<int>(SANE_FRAME_RED),
+        static_cast<int>(SANE_FRAME_GREEN),
+        static_cast<int>(SANE_FRAME_BLUE),
+    };
+    detail::consume_planar_rgb_sequence<SANE_Parameters>(
+        params,
+        expected_formats,
+        [&]() {
+            status = api.start(handle);
+            if (status != SANE_STATUS_GOOD)
+                throw ScannerError(
+                    std::string("Cannot start next planar RGB frame: ") + api.status_string(status)
+                );
+            SANE_Parameters next{};
+            status = api.get_parameters(handle, &next);
+            if (status != SANE_STATUS_GOOD)
+                throw ScannerError(
+                    std::string("Cannot read planar RGB parameters: ") + api.status_string(status)
+                );
+            return next;
+        },
+        [&](const SANE_Parameters& frame, int expected_format, bool should_be_last) {
+            if (!detail::planar_rgb_frame_matches(
+                    static_cast<int>(frame.format), expected_format,
+                    frame.depth, 8, frame.pixels_per_line, params.pixels_per_line,
+                    frame.lines, params.lines, frame.bytes_per_line,
+                    frame.last_frame != SANE_FALSE, should_be_last
+                ))
+                throw ScannerError("Scanner returned an inconsistent planar RGB frame sequence");
+        },
+        [&](const SANE_Parameters& frame, std::size_t channel) {
+            const auto frame_stride = static_cast<std::size_t>(frame.bytes_per_line);
+            auto plane = read_sane_frame_bytes(
+                handle, frame,
+                page_byte_limit - static_cast<std::uint64_t>(output_bytes), api,
+                channel == 0 && allow_feeder_empty
+            );
+            copy_planar_channel(plane, frame_stride, pixels, channel);
+        }
+    );
+
+    if (!pixels.valid())
+        throw ScannerError("Scanner produced an invalid planar RGB image");
+    return ImagePage{std::move(pixels), dpi_x, dpi_y};
+}
+} // namespace sane_detail
+
+const sane_detail::SaneScanApi& sane_detail::real_sane_scan_api() noexcept {
+    static const sane_detail::SaneScanApi api{
+        &sane_start, &sane_get_parameters, &sane_read, &sane_cancel, &sane_strstatus
+    };
+    return api;
+}
+
 ImagePage SaneScannerBackend::scan_one(const std::string& device_id, const ScanOptions& options) {
-    if (device_id.empty()) throw ScannerError("scanner device id cannot be empty");
+    validate_device_id(device_id);
+    validate_scan_options(options);
     std::lock_guard<std::mutex> lock(sane_mutex());
     SaneSession session;
     SaneHandle device(device_id);
@@ -240,87 +474,74 @@ ImagePage SaneScannerBackend::scan_one(const std::string& device_id, const ScanO
     if (options.mode) set_string_option(device.get(), "mode", *options.mode);
     if (options.source) set_string_option(device.get(), "source", *options.source);
 
-    // Read the device-selected DPI after applying options; never infer it from a request.
     const auto [dpi_x, dpi_y] = read_scan_dpi(device.get());
-
-    auto status = sane_start(device.get());
-    if (status != SANE_STATUS_GOOD)
-        throw ScannerError(std::string("Cannot start scan: ") + sane_strstatus(status));
-
-    SANE_Parameters params{};
-    status = sane_get_parameters(device.get(), &params);
+    const auto& api = sane_detail::real_sane_scan_api();
+    const auto status = api.start(device.get());
     if (status != SANE_STATUS_GOOD) {
-        sane_cancel(device.get());
-        throw ScannerError(std::string("Cannot read scan parameters: ") + sane_strstatus(status));
+        api.cancel(device.get());
+        throw ScannerError(std::string("Cannot start scan: ") + api.status_string(status));
+    }
+    try {
+        auto page = sane_detail::read_started_sane_page(
+            device.get(), dpi_x, dpi_y, api, max_scan_bytes, false
+        );
+        // SANE requires cancellation/reset after a completed single-image transfer.
+        api.cancel(device.get());
+        return page;
+    } catch (...) {
+        api.cancel(device.get());
+        throw;
+    }
+}
+
+std::vector<ImagePage> SaneScannerBackend::scan_pages(
+    const std::string& device_id,
+    const ScanOptions& options
+) {
+    validate_device_id(device_id);
+    validate_scan_options(options);
+
+    // Never repeatedly start a flatbed. Batch acquisition is enabled only when
+    // the caller explicitly selected a source whose name identifies a simplex ADF.
+    // A duplex feeder is rejected rather than silently returning only one side.
+    if (options.source && detail::is_duplex_source(*options.source))
+        throw ScannerError("duplex_adf_batch_not_supported");
+    if (!options.source || !detail::is_adf_source(*options.source)) {
+        return {scan_one(device_id, options)};
     }
 
-    PixelFormat format;
-    std::size_t channels = 0;
-    if (params.format == SANE_FRAME_GRAY && params.depth == 8) {
-        format = PixelFormat::Gray8;
-        channels = 1;
-    } else if (params.format == SANE_FRAME_RGB && params.depth == 8) {
-        format = PixelFormat::RGB8;
-        channels = 3;
-    } else {
-        sane_cancel(device.get());
-        throw ScannerError("Scanner output must be 8-bit grayscale or 8-bit RGB");
-    }
+    constexpr std::size_t max_adf_pages = 100;
+    constexpr std::uint64_t max_batch_bytes = 4ULL * 1024ULL * 1024ULL * 1024ULL;
+    std::lock_guard<std::mutex> lock(sane_mutex());
+    SaneSession session;
+    SaneHandle device(device_id);
 
-    if (params.pixels_per_line <= 0 || params.lines <= 0 || params.bytes_per_line <= 0 ||
-        static_cast<std::size_t>(params.pixels_per_line) >
-            std::numeric_limits<std::size_t>::max() / channels) {
-        sane_cancel(device.get());
-        throw ScannerError("Scanner returned invalid or variable scan dimensions");
-    }
+    if (options.resolution_dpi) set_resolution_option(device.get(), *options.resolution_dpi);
+    if (options.mode) set_string_option(device.get(), "mode", *options.mode);
+    set_string_option(device.get(), "source", *options.source);
 
-    const auto width = static_cast<std::size_t>(params.pixels_per_line);
-    const auto height = static_cast<std::size_t>(params.lines);
-    const auto row_bytes = width * channels;
-    const auto stride = static_cast<std::size_t>(params.bytes_per_line);
-    if (stride < row_bytes || height > max_scan_bytes / stride) {
-        sane_cancel(device.get());
-        throw ScannerError("Scanner image exceeds the 1 GiB safety limit or has invalid stride");
-    }
-
-    PixelBuffer pixels;
-    pixels.width = static_cast<std::uint32_t>(params.pixels_per_line);
-    pixels.height = static_cast<std::uint32_t>(params.lines);
-    pixels.stride = stride;
-    pixels.format = format;
-    pixels.bytes.reserve(stride * height);
-
-    std::array<SANE_Byte, 64 * 1024> chunk{};
-    for (;;) {
-        SANE_Int received = 0;
-        status = sane_read(device.get(), chunk.data(), static_cast<SANE_Int>(chunk.size()), &received);
-        if (received < 0 || static_cast<std::size_t>(received) > chunk.size()) {
-            sane_cancel(device.get());
-            throw ScannerError("Scanner returned an invalid read length");
-        }
-        if (received > 0) {
-            if (static_cast<std::size_t>(received) > stride * height - pixels.bytes.size()) {
-                sane_cancel(device.get());
-                throw ScannerError("Scanner returned more image data than declared");
-            }
-            pixels.bytes.insert(pixels.bytes.end(), chunk.begin(), chunk.begin() + received);
-        }
-        if (status == SANE_STATUS_EOF) break;
-        if (status != SANE_STATUS_GOOD) {
-            sane_cancel(device.get());
-            throw ScannerError(std::string("Scanner read failed: ") + sane_strstatus(status));
-        }
-        if (received == 0) {
-            sane_cancel(device.get());
-            throw ScannerError("Scanner returned no data before end-of-frame");
-        }
-    }
-
-    if (pixels.bytes.size() != stride * height) {
-        throw ScannerError("Scanner returned an incomplete image frame");
-    }
-    if (!pixels.valid()) throw ScannerError("Scanner produced an invalid pixel buffer");
-    return ImagePage{std::move(pixels), dpi_x, dpi_y};
+    const auto [dpi_x, dpi_y] = read_scan_dpi(device.get());
+    const auto& api = sane_detail::real_sane_scan_api();
+    return detail::collect_bounded_pages<ImagePage>(
+        [&]() {
+            const auto status = api.start(device.get());
+            if (status == SANE_STATUS_NO_DOCS) return false;
+            if (status != SANE_STATUS_GOOD)
+                throw ScannerError(
+                    std::string("Cannot continue ADF scan: ") + api.status_string(status)
+                );
+            return true;
+        },
+        [&](std::uint64_t remaining_bytes) {
+            return sane_detail::read_started_sane_page(
+                device.get(), dpi_x, dpi_y, api, remaining_bytes, true
+            );
+        },
+        [](const ImagePage& page) { return page.pixels.bytes.size(); },
+        [&]() { api.cancel(device.get()); },
+        max_adf_pages,
+        max_batch_bytes
+    );
 }
 
 } // namespace emwat

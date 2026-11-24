@@ -3,6 +3,7 @@ import http.client
 import socket
 import threading
 import unittest
+from unittest.mock import patch
 
 from emwat_linux.application import create_bridge_server, create_libreoffice_bridge_server
 from emwat_linux.bridge import BridgeResponse
@@ -111,6 +112,38 @@ class ApplicationCompositionTests(unittest.TestCase):
             thread.join(timeout=2)
 
 
+    def test_libreoffice_factory_can_explicitly_enable_secret_service_recovery(self):
+        recovery_store = object()
+        port = self.free_port()
+        with (
+            patch(
+                "emwat_linux.recovery_key_provider.create_secret_service_encrypted_store",
+                return_value=recovery_store,
+            ),
+            patch("emwat_linux.libreoffice_adapter.LibreOfficeAdapter") as adapter_type,
+        ):
+            server = create_libreoffice_bridge_server(
+                allowed_origins=frozenset({"http://127.0.0.1"}),
+                cancel_response_factory=lambda _result, _request: BridgeResponse(b"cancelled"),
+                encrypt_recovery=True,
+                recovery_root="/tmp/emwat-test-recovery",
+                port=port,
+            )
+            try:
+                adapter_type.assert_called_once_with(recovery_store=recovery_store)
+            finally:
+                server.server_close()
+
+    def test_encrypted_recovery_rejects_caller_supplied_unverified_adapter(self):
+        with self.assertRaisesRegex(ValueError, "caller-supplied office_adapter"):
+            create_libreoffice_bridge_server(
+                allowed_origins=frozenset({"http://127.0.0.1"}),
+                office_adapter=object(),
+                cancel_response_factory=lambda _result, _request: BridgeResponse(b"cancelled"),
+                encrypt_recovery=True,
+                port=self.free_port(),
+            )
+
     def test_libreoffice_factory_connects_editword_handler_and_fake_office(self):
         class FakeOffice:
             def __init__(self):
@@ -167,12 +200,59 @@ class ApplicationCompositionTests(unittest.TestCase):
             self.assertEqual(response.status, 200)
             self.assertIn(b'<response-word status="success">', payload)
             self.assertIn(b"application/msword", payload)
-            self.assertEqual(office.request.document_bytes[:8], bytes.fromhex("d0cf11e0a1b11ae1"))
+            # Verify the complete browser-facing response round-trips the final
+            # Office bytes, not merely that an XML envelope was emitted.
+            import xml.etree.ElementTree as ET
+            response_root = ET.fromstring(payload)
+            response_type = response_root.find("./return-types/type")
+            self.assertIsNotNone(response_type)
+            self.assertEqual(response_root.attrib, {"status": "success"})
+            self.assertEqual(
+                response_type.attrib,
+                {"mimetype": "application/msword", "encryption": "base64"},
+            )
+            returned_document = base64.b64decode(response_type.text, validate=True)
+            self.assertEqual(
+                returned_document,
+                bytes.fromhex("d0cf11e0a1b11ae1") + b"final-word-doc",
+            )
+            self.assertEqual(
+                office.request.document_bytes[:8],
+                bytes.fromhex("d0cf11e0a1b11ae1"),
+            )
             conn.close()
         finally:
             server.shutdown()
             server.server_close()
             thread.join(timeout=2)
+
+    def test_default_bridge_limits_cover_editword_service_document_contract(self):
+        server = create_bridge_server(
+            allowed_origins=frozenset({"http://127.0.0.1"}),
+            handlers={},
+        )
+        try:
+            self.assertEqual(server._max_body_bytes, 128 * 1024 * 1024)
+            self.assertEqual(server._max_response_bytes, 96 * 1024 * 1024)
+            self.assertEqual(server._handler._max_payload_bytes, 128 * 1024 * 1024)
+        finally:
+            server.server_close()
+
+    def test_libreoffice_factory_uses_same_bounded_request_and_response_limits(self):
+        class FakeOffice:
+            pass
+
+        server = create_libreoffice_bridge_server(
+            allowed_origins=frozenset({"http://127.0.0.1"}),
+            office_adapter=FakeOffice(),
+            cancel_response_factory=lambda _result, _request: BridgeResponse(b"cancelled"),
+        )
+        try:
+            self.assertEqual(server._max_body_bytes, 128 * 1024 * 1024)
+            self.assertEqual(server._max_response_bytes, 96 * 1024 * 1024)
+            self.assertEqual(server._handler._max_payload_bytes, 128 * 1024 * 1024)
+        finally:
+            server.server_close()
 
 
 if __name__ == "__main__":

@@ -786,3 +786,10 @@ Workflow run `43157168446` با موفقیت اجرا شد؛ artifact `139165262
 1. CI ساخت Native و sanitizer را روی هر تغییر اجرا کنید.
 2. برای تست واقعی، مدل/شناسه SANE، backend و خروجی capability را بدون اطلاعات کاربر ثبت کنید.
 3. قبل از فعال‌سازی ADF/duplex، trace و قرارداد frameهای چندگانه را از نمونه ویندوز تکمیل کنید.
+
+## Native SANE option-buffer hardening — 2026-11-23
+
+- SANE string-option descriptor sizes are supplied by backend drivers. Before allocating the option buffer, the native backend now requires a positive descriptor size no greater than 256 bytes and verifies that the requested value leaves room for its terminating NUL.
+- Added hardware-independent boundary tests for exact-fit rejection, negative/zero sizes, the 256-byte maximum and oversize descriptors.
+- This limits allocation exposure from malformed or hostile SANE backends; it does not expand scanner functionality or establish ADF/duplex support.
+- CI for code head 1474babe6b1caed58d014bc0a85c76bf67268633 is running; record the final workflow results only after completion.

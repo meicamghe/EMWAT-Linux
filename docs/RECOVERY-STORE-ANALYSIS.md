@@ -455,3 +455,53 @@ The close/response-chain artifact `14200889822` and its follow-up static BPL art
 3. Compare the generated `.easd/.easz` pair with the recovery Delete reader path without assuming their formats or password values are interchangeable.
 
 Evidence: runs `43815900214` and `43815900243`, artifacts `14200889822` and `14201769656`.
+
+## 27. Writer archive path — reconciled interface evidence (2026-11-23)
+
+This section supersedes the unresolved writer-direction notes in section 26 and the earlier password interpretation in sections 15–16 where they conflict.
+
+- The controller-notify path constructs two TStringList inputs for the archive writer. The first contains the temporary document path held by the Word viewer; the second contains the archive entry name derived from the viewer base path with the `.easd` suffix.
+- The writer-facing interface dispatch resolves `+0x10` to `T7zOutArchive.AddFiles` and `+0x18` to `T7zOutArchive.SaveToStream`. The `.easz` path is passed to the latter.
+- `SaveToStream` creates/truncates the `.easz` output through a `TFileStream` opened with `fmCreate`; the file-output path is therefore established by static call evidence.
+- The same interface's `+0x28` target is the progress-callback method body, despite an earlier TD32 label suggesting otherwise. It must not be treated as a password setter.
+- `T7zOutArchive.SetPassword` remains a no-op stub. The resolved `CryptoGetTextPassword2` body initializes an internal object list; the password text/provider returned at runtime has not been established.
+- Consequently, the output path and entry-name construction are better understood, but the archive's actual runtime encryption flag, password source, header profile, compression settings and cross-platform interoperability remain unverified.
+- Do not transfer constructor/configuration strings from the separate recovery-reader path into the writer password model. Reader and writer call paths must remain separate until a synthetic runtime archive is captured and inspected.
+
+Evidence: static archive trace artifact 14227611377; paired input/path trace artifact 14226742624; file-stream constructor trace artifact 14227002967. Current compatibility boundary: docs/EASZ-ARCHIVE-FORMAT.md.
+
+
+## Parallel trace update — autosave file patterns and account-derived helper (2026-11-24)
+
+New recovery-path artifacts add the following static evidence:
+
+- The `TFRMSHOWAUTOSAVEFILES` resource contains the file filter `*.easz` and the date/time display pattern `yyyy/mm/dd hh : nn : ss`. This is stronger than a generic extension string: the recovery picker is configured to enumerate `.easz` entries.
+- The controller-notify path contains the companion `.easd` value, and the existing `euUnArchive` path extracts archive content. The current evidence supports `.easz` as the picker-visible archive and `.easd` as an extracted/intermediate document name; exact archive entry names and lifecycle are still to be verified.
+- `euGetLocalAppDataPath` (`0x0044A300`) passes CSIDL `0x1C` to the shell-folder helper, consistent with Windows Local AppData. This identifies a path helper, not yet the complete autosave directory.
+- `euGetAutoSavePass` (`0x00456B78`) calls `advapi32!GetUserNameW` with a 0x400-character buffer and returns the current Windows account name. Despite its symbol name, the traced body does not itself implement a cryptographic derivation.
+- `DoClearOldAutoSaveFiles` references the literal `@25*gamsign*25@` and calls `euGetAutoSavePass` in one branch. The exact string composition and its relationship to archive encryption are not yet proven.
+- The `T7zOutArchive.CryptoGetTextPassword2` body inspected so far initializes object fields and a list; its presence alone does not establish that an output archive is encrypted or reveal its password.
+
+### Remaining recovery questions
+
+1. Trace `euClearOldAutoSaveFiles` and the caller arguments to determine what the marker-plus-username string is used for.
+2. Resolve the SevenZip VMT/interface slot that actually receives an archive password and prove whether the `.easz` writer enables header/data encryption.
+3. Identify the full Local AppData subdirectory and the writer that creates the picker-visible `.easz` file.
+4. Confirm archive entry names, timestamp metadata, and how the extracted `.easd` document is opened.
+
+Until these are resolved, do not hard-code the account name, marker string, directory, or encryption behavior in the Linux recovery implementation.
+
+
+## 10. SevenZip password and archive-writer crosswalk (2026-11-24)
+
+The parallel SevenZip object-field and controller-content workflows resolve an important distinction:
+
+- `euUnArchive` (`0x00456DFC)) is the input/extraction path.
+- `euResetMemory` (`0x00456F00)) is the output/archive-writing path. Its direct callers are `Applicationactivities.Finalization` (`0x00503779)) and `TfrmShowAutoSaveFiles.Delete` (`0x005EB938)).
+- `euUnArchive` passes a fixed 15-character UTF-16LE literal to the archive object's vtable `+0x28) dispatch. The same literal is the default argument used by `euResetMemory` before its output object's `+0x44) dispatch.
+- `T7zInArchive.SetPassword` (`0x00453860)) is implemented and stores its input at object offset `+0x58), then calls an underlying archive interface at `+0x1C). This makes the fixed literal a high-confidence password candidate, but the exact `+0x28)-to-`SetPassword` mapping is not yet proven.
+- `T7zOutArchive.SetPassword` (`0x004547DC)) is a stub that returns immediately. `T7zInArchive.CryptoGetTextPassword` and `SetPasswordCallback` are also short stubs in this build. Consequently, actual archive encryption is still unproven despite the password-like calls.
+- `euGetAutoSavePass` calls `GetUserNameW` and returns the current Windows username. `DoClearOldAutoSaveFiles` combines that value with a separate marker string; this path has not been connected to the input archive password setter.
+- The recovery cleanup path enumerates `*.easz` and calls `DeleteFileW` after a file-age comparison against `0x18`; the time unit and exact retention interval remain unknown.
+
+Do not conflate the fixed archive-password candidate with the username-derived cleanup token. Do not enable encryption in Linux until a synthetic Windows archive header/data fixture proves it. Full method/field details are in [SEVENZIP-ARCHIVE-ANALYSIS.md](SEVENZIP-ARCHIVE-ANALYSIS.md).

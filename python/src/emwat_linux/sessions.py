@@ -37,7 +37,11 @@ class DocumentSession:
     _lock: RLock = field(default_factory=RLock, init=False, repr=False, compare=False)
 
     def __post_init__(self) -> None:
-        if not self.session_id or self.session_id != self.session_id.strip():
+        if (
+            not isinstance(self.session_id, str)
+            or not self.session_id
+            or self.session_id != self.session_id.strip()
+        ):
             raise ValueError("session_id must be a non-empty trimmed string")
 
     def begin_initialization(self) -> None:
@@ -79,6 +83,8 @@ class DocumentSession:
         """Commit the exact returned document bytes; identical retries are safe."""
         if not isinstance(payload, bytes):
             raise TypeError("payload must be bytes")
+        if not payload:
+            raise ValueError("payload must not be empty")
         with self._lock:
             if self.state == DocumentState.RETURNED:
                 if self.returned_payload != payload:

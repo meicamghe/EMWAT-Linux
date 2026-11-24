@@ -82,3 +82,5 @@ jobs:
         with:
           name: emwat-recovery-store-analysis
           path: recovery-analysis/
+
+# Parallel RE dispatch marker: 2026-11-24 independent analysis lane.

@@ -48,7 +48,39 @@ jobs:
         run: |
           python tools/scan_registry_api_calls.py
           cp word-lifecycle-analysis/registry-api-call-sites.md registry-analysis/registry-api-call-sites.md
+      - name: Decode AutoSave interval and logging-level tables
+        run: |
+          python - <<'PY'
+          import pathlib, struct
+          import pefile
+          path = pathlib.Path("analysis-input/EmwatMethods.bpl1")
+          pe = pefile.PE(str(path), fast_load=True)
+          base = pe.OPTIONAL_HEADER.ImageBase
+          def read_va(va, size):
+              off = pe.get_offset_from_rva(va-base)
+              return pe.__data__[off:off+size]
+          out = ["# Dynamic Config option tables", ""]
+          labels_base = struct.unpack("<I", read_va(0x0062A7F4,4))[0]
+          out += [f"## Logging-level labels table at 0x{labels_base:08X}", ""]
+          for i in range(6):
+              ptr = struct.unpack("<I", read_va(labels_base+i*4,4))[0]
+              try:
+                  refcount, length = struct.unpack("<ii", read_va(ptr-8,8))
+                  value = read_va(ptr,length*2).decode("utf-16le","replace")
+                  out.append(f"- [{i}] ptr=0x{ptr:08X}, len={length}, ref={refcount}: {value}")
+              except Exception as exc:
+                  out.append(f"- [{i}] ptr=0x{ptr:08X}: decode failed ({exc})")
+          interval_base = struct.unpack("<I", read_va(0x0062A808,4))[0]
+          out += ["", f"## AutoSave interval table at 0x{interval_base:08X}", ""]
+          for i in range(6):
+              value = struct.unpack("<I", read_va(interval_base+i*4,4))[0]
+              out.append(f"- [{i}] {value} seconds ({value*1000} ms)")
+          pathlib.Path("registry-analysis/data/dynamic-config-option-tables.md").write_text("\n".join(out)+"\n",encoding="utf-8")
+          print("\n".join(out))
+          PY
       - uses: actions/upload-artifact@v4
         with:
           name: emwat-registry-settings-analysis
           path: registry-analysis/
+
+# Parallel RE dispatch marker: 2026-11-24 cross-subsystem analysis lane.

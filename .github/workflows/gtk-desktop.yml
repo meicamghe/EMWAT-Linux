@@ -1,0 +1,69 @@
+name: GTK desktop smoke test
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'python/src/emwat_linux/gtk_desktop.py'
+      - 'python/src/emwat_linux/gtk_recovery_view.py'
+      - 'python/src/emwat_linux/doctor.py'
+      - 'python/src/emwat_linux/desktop_entry.py'
+      - 'python/tests/test_desktop_entry.py'
+      - 'python/pyproject.toml'
+      - 'packaging/**'
+      - 'python/tests/test_gtk*.py'
+      - '.github/workflows/gtk-desktop.yml'
+  pull_request:
+    paths:
+      - 'python/src/emwat_linux/gtk_desktop.py'
+      - 'python/src/emwat_linux/gtk_recovery_view.py'
+      - 'python/src/emwat_linux/doctor.py'
+      - 'python/src/emwat_linux/desktop_entry.py'
+      - 'python/tests/test_desktop_entry.py'
+      - 'python/pyproject.toml'
+      - 'packaging/**'
+      - 'python/tests/test_gtk*.py'
+      - '.github/workflows/gtk-desktop.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  gtk-activation:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install GTK 4, PyGObject, and headless display
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y python3-gi gir1.2-gtk-4.0 python3-cryptography xvfb desktop-file-utils
+      - name: Validate per-user desktop launcher installer
+        run: |
+          sh -n packaging/install-desktop-entry.sh
+          sh -n packaging/uninstall-desktop-entry.sh
+          desktop-file-validate packaging/org.emwat.Linux.desktop
+          temp_base=$(mktemp -d)
+          temp_root="$temp_base/with space"
+          mkdir -p "$temp_root/bin"
+          printf '%s\n' '#!/bin/sh' 'exit 0' > "$temp_root/bin/emwat-linux"
+          cat > "$temp_root/bin/emwat-linux-desktop-entry" <<HELPER
+          #!/bin/sh
+          PYTHONPATH="$GITHUB_WORKSPACE/python/src" /usr/bin/python3 -m emwat_linux.desktop_entry "\$@"
+          HELPER
+          chmod +x "$temp_root/bin/emwat-linux" "$temp_root/bin/emwat-linux-desktop-entry"
+          PATH="$temp_root/bin:$PATH" XDG_DATA_HOME="$temp_root/data" sh packaging/install-desktop-entry.sh
+          grep -F 'Exec="'"$temp_root"'/bin/emwat-linux"' "$temp_root/data/applications/org.emwat.Linux.desktop"
+          desktop-file-validate "$temp_root/data/applications/org.emwat.Linux.desktop"
+          PATH="$temp_root/bin:$PATH" XDG_DATA_HOME="$temp_root/data" sh packaging/uninstall-desktop-entry.sh
+          test ! -e "$temp_root/data/applications/org.emwat.Linux.desktop"
+      - name: Run GTK application smoke tests
+        env:
+          PYTHONPATH: python/src
+          GTK_A11Y: "none"
+          GSK_RENDERER: "cairo"
+        run: xvfb-run -a /usr/bin/python3 -m unittest discover -s python/tests -p 'test_gtk_desktop_runtime.py' -v

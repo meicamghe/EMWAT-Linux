@@ -41,9 +41,18 @@ public:
     virtual ~ScannerBackend() = default;
     [[nodiscard]] virtual std::vector<ScannerDevice> list_devices() = 0;
     [[nodiscard]] virtual ScannerCapabilities get_capabilities(const std::string& device_id) = 0;
-    // Captures one 8-bit grayscale or RGB frame using the device's current defaults.
+    // Captures one 8-bit grayscale or RGB page using the device's current defaults.
     [[nodiscard]] virtual ImagePage scan_one(const std::string& device_id,
                                              const ScanOptions& options = {}) = 0;
+    // Batch API for document scanners. The compatibility fallback captures one
+    // page through scan_one(); feeder-capable backends must override this method
+    // to acquire every page and enforce their own bounded batch policy.
+    [[nodiscard]] virtual std::vector<ImagePage> scan_pages(
+        const std::string& device_id, const ScanOptions& options = {}) {
+        std::vector<ImagePage> pages;
+        pages.push_back(scan_one(device_id, options));
+        return pages;
+    }
 };
 
 // SANE-backed discovery. Each call owns a complete SANE init/exit lifetime.
@@ -53,6 +62,8 @@ public:
     [[nodiscard]] ScannerCapabilities get_capabilities(const std::string& device_id) override;
     [[nodiscard]] ImagePage scan_one(const std::string& device_id,
                                      const ScanOptions& options = {}) override;
+    [[nodiscard]] std::vector<ImagePage> scan_pages(
+        const std::string& device_id, const ScanOptions& options = {}) override;
 };
 
 } // namespace emwat

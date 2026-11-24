@@ -85,7 +85,7 @@ The output archive method T7zOutArchive.SetPassword at 0x004547DC is a stub: it 
 
 The input archive method T7zInArchive.SetPassword at 0x00453860 is implemented: it stores the supplied UnicodeString at object offset +0x58 and calls the underlying SevenZip interface at slot +0x1C. However, the bounded direct-call scan found no direct CALL xref to this method; an indirect/VMT call remains possible.
 
-T7zOutArchive.CryptoGetTextPassword2 at 0x004543C4 initializes an associated callback/interface object and clears adjacent state fields, but this trace does not reveal a literal password value. Neither mW@Tlogs43end_+ nor @25*gamsign*25@ should be labelled as the archive password without a proven data flow into the input archive's SetPassword or the CryptoGetTextPassword2 result.
+T7zOutArchive.CryptoGetTextPassword2 at 0x004543C4 initializes an associated callback/interface object and clears adjacent state fields, but this trace does not reveal a literal password value. The fixed 15-character literal used by euUnArchive is now a high-confidence archive-password candidate: it is passed to the archive object's +0x28 virtual dispatch, and T7zInArchive.SetPassword at 0x00453860 stores its UnicodeString input at object offset +0x58. The exact +0x28-to-SetPassword mapping is not yet proven. The separate @25*gamsign*25@ marker is combined with the Windows username by DoClearOldAutoSaveFiles and has not been traced into that input SetPassword path. The output T7zOutArchive.SetPassword method is a stub, so actual encryption remains unproven. See [the detailed SevenZip analysis](SEVENZIP-ARCHIVE-ANALYSIS.md).
 
 ### Linux implications
 
@@ -93,3 +93,45 @@ T7zOutArchive.CryptoGetTextPassword2 at 0x004543C4 initializes an associated cal
 - Do not add password encryption to the Linux recovery archive based only on euResetMemory's SetPassword call; the output SetPassword implementation is a no-op.
 - Keep the input archive password optional and unresolved until the indirect SetPassword call or CryptoGetTextPassword2 output is traced.
 - Preserve .easd and .easz as distinct observed suffixes; the exact mapping between archive and extracted document roles still needs caller-level validation.
+
+
+## Parallel trace update — close decision versus AutoSave content (2026-11-24)
+
+Fresh TD32 artifacts from the Word request-lifecycle and response workflows clarify two paths that must remain separate:
+
+### 1. AutoSave/controller-notify path
+
+At `TWordViwer.OnControlerNotify` (`0x004BB3B0`), the code pushes `-1`, pushes the document interface at viewer offset `+0x48`, then calls vtable slot `+0xDC`. The generated `TWordDocument.Get_Content` wrapper at `0x0042BDF8` maps that slot to the Content getter. Therefore the call is a Content-related operation, not a Document.Close call. The literal `-1` is passed at this callsite, but its precise meaning/ABI role remains unresolved; do not interpret it as SaveChanges.
+
+The handler then performs the Farsi-direction transform and calls `euUnArchive` (`0x00456DFC)) using the `.easd/.easz` path values. This is the local AutoSave/recovery branch. It is not, by itself, proof that the edited letter has been registered in Almas.
+
+### 2. User-facing BeforeSave decision
+
+The separate `TWordViwer.WordAppDocumentBeforeSave` callback at `0x004CD154` contains the Persian prompt:
+
+> محتويات اين سند تغيير كرده است. آيا مايل به ثبت تغييرات مي‌باشيد؟
+
+The three button captions are `موافقم`, `خیر`, and `انصراف`. The code checks the dialog result as follows:
+
+- Result `2` (Cancel): writes `-1` to the COM event's Cancel flag and exits the save/close path.
+- Result `6` (Yes): prepares `-1` as the SaveChanges argument for a later Document.Close dispatch at vtable slot `+0x29C`.
+- Other non-cancel result (the No branch): prepares `0` as SaveChanges for that Document.Close dispatch.
+
+The `-1` / `0` mapping is consistent with Word's `wdSaveChanges` / `wdDoNotSaveChanges` values. This is static callsite evidence for the prompt's Yes/No/Cancel behavior, not a runtime test of every Word version.
+
+### 3. HTTP response boundary
+
+The LoadDocument path contains an Indy `TIdHTTPResponseInfo.WriteContent` call and a response-construction branch. The remaining question is how the controller-notify completion releases the original long-lived `invoke` request and which returned payload Almas consumes. Keep that separate from the local `.easz` recovery artifact.
+
+**Implementation consequence:** Linux must model the close decision as a three-way state transition. Do not collapse No and Cancel: No closes without Word saving; Cancel vetoes the operation. Local recovery may still be a separate operation and must not be conflated with the final Almas registration response.
+
+
+### 4. LoadDocument HTTP response is a separate boundary
+
+The full `LoadDocument` region confirms that it creates/opens the Word document, loads ConfigXML, then writes an output string to `TIdHTTPResponseInfo.ContentText` and calls Indy `WriteContent`. Nearby logs identify an OpenDoc result status, temporary-document deletion, and successful document opening. The called `OnTmrAutoSave` routine connects to the OLE Word engine, reads view/readonly/protected configuration, installs Word callbacks, and configures the `OnControlerNotify` timer.
+
+This is evidence for an initial document-open acknowledgement. It does **not** prove that the edited document or final Almas registration result is carried in that same HTTP response. Keep three channels separate in the implementation model:
+
+1. Initial `LoadDocument` HTTP response.
+2. Periodic `OnControlerNotify` / `Get_Content(-1)` and local `.easz` recovery.
+3. The still-unresolved final registration/return path to Almas.

@@ -86,6 +86,15 @@ class WordConfigTests(unittest.TestCase):
         with self.assertRaises(WordConfigError):
             parse_word_config(value, max_decoded_bytes=4)
 
+    def test_all_size_limits_require_positive_builtin_integers(self):
+        value = encoded('<word-document/>')
+        invalid_values = (True, False, 1.5, 16.0, "16", 0, -1, None)
+        for parameter in ("max_encoded_chars", "max_decoded_bytes"):
+            for limit in invalid_values:
+                with self.subTest(parameter=parameter, limit=limit):
+                    with self.assertRaisesRegex(ValueError, "size limits must be positive integers"):
+                        parse_word_config(value, **{parameter: limit})
+
     def test_rejects_non_text_input(self):
         with self.assertRaises(TypeError):
             parse_word_config(b"<word-document/>")  # type: ignore[arg-type]

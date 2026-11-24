@@ -139,3 +139,5 @@ jobs:
         with:
           name: emwat-word-event-sink-analysis
           path: event-sink-analysis/
+
+# Parallel RE dispatch marker: 2026-11-24 independent analysis lane.

@@ -39,6 +39,7 @@ class OptionalAttribute:
     attributes: Mapping[str, str]
     content_attributes: Mapping[str, str]
     content: str
+    has_content_element: bool = False
 
 
 @dataclass(frozen=True)
@@ -68,8 +69,9 @@ def parse_word_config(
     """
     if not isinstance(encoded, str):
         raise TypeError("encoded wordConfig must be text")
-    if max_encoded_chars <= 0 or max_decoded_bytes <= 0:
-        raise ValueError("size limits must be positive")
+    limits = (max_encoded_chars, max_decoded_bytes)
+    if any(type(limit) is not int or limit <= 0 for limit in limits):
+        raise ValueError("size limits must be positive integers")
     if not encoded or len(encoded) > max_encoded_chars:
         raise WordConfigError("encoded_size_invalid")
 
@@ -144,6 +146,7 @@ def parse_word_config(
                         attributes=_immutable(attribute.attrib),
                         content_attributes=_immutable(content_node.attrib if content_node is not None else {}),
                         content=(content_node.text or "") if content_node is not None else (attribute.text or ""),
+                        has_content_element=content_node is not None,
                     )
                 )
         elif section.tag == "requested-types":

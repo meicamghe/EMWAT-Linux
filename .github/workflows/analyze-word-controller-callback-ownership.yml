@@ -82,3 +82,5 @@ jobs:
         with:
           name: emwat-word-controller-callback-ownership
           path: word-controller-callback-ownership/
+
+# Parallel RE dispatch marker: 2026-11-24 independent analysis lane.

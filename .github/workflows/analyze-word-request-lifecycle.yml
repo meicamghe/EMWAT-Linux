@@ -111,3 +111,5 @@ jobs:
         with:
           name: emwat-word-request-lifecycle-analysis
           path: request-lifecycle-analysis/
+
+# Parallel RE dispatch marker: 2026-11-24 independent analysis lane.

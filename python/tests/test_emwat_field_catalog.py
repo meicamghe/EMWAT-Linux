@@ -78,6 +78,72 @@ class EmwatFieldCatalogTests(unittest.TestCase):
             ["LetterSignerPer3", "SignNumberOfSigner3", "LetterSignerDep3"],
         )
 
+    def test_builds_duplicate_field_occurrences_in_original_order(self):
+        fields = (
+            "LetterSignerPer2",
+            "LetterSignerDep2",
+            "LetterSignerPer2",
+            "SignNumberOfSigner2",
+        )
+        slots = build_indexed_signer_slots(fields)
+        self.assertEqual(len(slots), 1)
+        self.assertEqual(
+            [field.field_id for field in slots[0].fields],
+            [
+                "LetterSignerPer2",
+                "LetterSignerDep2",
+                "LetterSignerPer2",
+                "SignNumberOfSigner2",
+            ],
+        )
+        self.assertEqual(
+            [field.family for field in slots[0].fields],
+            ["person", "department", "person", "signature_number"],
+        )
+
+
+    def test_catalogs_all_forty_base_fields_and_indexed_signer_families(self):
+        from emwat_linux.emwat_field_catalog import build_word_config_field_catalog
+
+        base_ids = ["RelatedLetters","LetterDescription","LetterSubject","Appendix","HasAppendix","Version","letterId","LetterProducerName","LetterProducerDep","LetterProducerDepPhoneNumber","LetterProducerPhoneNumber","LetterProducerUnit","LetterProducerUnitCode","LetterSenderName","LetterSenderDep","LetterSenderAddress","LetterSenderUnit","LetterSenderUnitCode","LetterSenderIndexUnit","ProduceDate","LetterRegistrationNo","LetterRegistrationDate","LetterRegistrationTime","Classification","TransferType","DocType","Priority","Receivers","ReceiverDeps","ReceiverCeremonialUnits","ccReceivers","ccReceiverDeps","ccReceiverCeremonialUnits","SenderSignerBehalfName","SignNumberOfSender","SignOfSenderStart†SignOfSenderEnd","ShamsQRcodeStart†ShamsQRcodeEnd","shamsBarcode","Slogan","SignsStart†SignsEnd"]
+        fields = tuple(base_ids) + (
+            "LetterSignerPer0",
+            "SignOfSignerStart19†SignOfSignerEnd19",
+            "UnknownFutureField",
+        )
+        catalog = build_word_config_field_catalog(fields)
+        self.assertEqual(len(catalog.base_fields), 40)
+        self.assertEqual(len(catalog.indexed_signer_fields), 2)
+        self.assertEqual(catalog.unknown_fields, ((42, "UnknownFutureField"),))
+        self.assertEqual(
+            catalog.base_fields[-6].category, "sender_signature_metadata"
+        )
+        self.assertEqual(
+            catalog.base_fields[-5].category, "sender_signature_image"
+        )
+        self.assertEqual(
+            catalog.base_fields[-1].category, "external_signature_parameter"
+        )
+
+        signer_ids = tuple(
+            field_id
+            for index in range(20)
+            for field_id in (
+                f"LetterSignerDep{index}",
+                f"LetterSignerPer{index}",
+                f"LetterSignerUnit{index}",
+                f"LetterSignerIndexUnit{index}",
+                f"SignNumberOfSigner{index}",
+                f"BehalfNameOfSigner{index}",
+                f"SignOfSignerStart{index}†SignOfSignerEnd{index}",
+            )
+        )
+        full_capture = build_word_config_field_catalog(tuple(base_ids) + signer_ids)
+        self.assertEqual(len(full_capture.base_fields), 40)
+        self.assertEqual(len(full_capture.indexed_signer_fields), 140)
+        self.assertEqual(full_capture.unknown_fields, ())
+        self.assertEqual(full_capture.duplicate_field_ids, ())
+
     def test_rejects_non_text_field_ids(self):
         with self.assertRaisesRegex(TypeError, "field_id_must_be_text"):
             parse_indexed_signer_field(None)

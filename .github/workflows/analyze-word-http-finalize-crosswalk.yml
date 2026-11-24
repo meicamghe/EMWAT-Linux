@@ -10,6 +10,7 @@ on:
       - 'tools/trace_td32_callers.py'
       - 'tools/trace_td32_procedure.py'
       - 'tools/scan_pe_pointer_refs.py'
+      - 'tools/decode_pe_strings.py'
   workflow_dispatch:
 
 permissions:
@@ -29,6 +30,35 @@ jobs:
         run: |
           mkdir -p finalize-crosswalk/word
           python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x004BB3B0 0x004BB777 finalize-crosswalk/word/OnControlerNotify.md
+          python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 \
+            0x004B7724 0x004B8A83 finalize-crosswalk/word/LoadDocument-full.md
+          python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 \
+            0x004B8A84 0x004BB3AF finalize-crosswalk/word/OnTmrAutoSave-full.md
+          python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 \
+            0x004B7CED 0x004B7F31 finalize-crosswalk/word/LoadDocument-pre-response.md
+          python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 \
+            0x004B7F31 0x004B8100 finalize-crosswalk/word/LoadDocument-response-tail.md
+          python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 \
+            0x004B8100 0x004B8A83 finalize-crosswalk/word/LoadDocument-post-response.md
+          python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 \
+            0x004B8F6C 0x004B9F1B finalize-crosswalk/word/OnTmrAutoSave-middle-1.md
+          python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 \
+            0x004B9F1C 0x004BA057 finalize-crosswalk/word/OnTmrAutoSave-middle-2.md
+          python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 \
+            0x004BA058 0x004BB3AF finalize-crosswalk/word/OnTmrAutoSave-tail.md
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004B8A84 \
+            finalize-crosswalk/word/OnTmrAutoSave-callers.md
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004BB3B0 \
+            finalize-crosswalk/word/OnControlerNotify-callers.md
+          python tools/decode_pe_strings.py analysis-input/EmwatMethods.bpl1 \
+            0x004B81E4 0x004B8220 0x004B8238 0x004B8280 \
+            0x004B82C4 0x004B832C 0x004B8348 0x004B8364 \
+            0x004B83A0 0x004B83C0 0x004B83E0 0x004B843C \
+            0x004B8978 0x004B89B8 0x004B89FC 0x004B8A50 \
+            0x004BA304 0x004BA350 0x004BA368 0x004BA388 \
+            0x004BA3A8 0x004BA3C8 0x004BA414 0x004BA438 \
+            0x004BA4B4 0x004BA4CC 0x004BA508 0x004BA5EC \
+            > finalize-crosswalk/word/loaddocument-autosave-strings.md
           for target in 004BB3B0 004CD154 004D281C 00456DFC 0042ABA0 0042FFF4; do
             python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x$target finalize-crosswalk/word/target-$target.md 2600 ret
             python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 0x$target finalize-crosswalk/word/refs-$target.md
@@ -80,8 +110,23 @@ jobs:
           status=0
           for pid in "${pids[@]}"; do wait "$pid" || status=1; done
           exit "$status"
+      - name: Decode service response model fields and XML writer
+        run: |
+          python tools/decode_pe_strings.py finalize-crosswalk/service/EmwatService.exe \
+            0x0045928C 0x004592BC 0x004592D4 0x004592F0 \
+            0x0045931C 0x00459348 0x00459374 0x0045938C \
+            0x004593A8 0x004593CC 0x004593E4 0x00459414 \
+            0x00459434 0x00459454 0x0045947C 0x0046092C \
+            0x00460948 0x00460968 0x00460990 0x004609B8 \
+            0x004609C8 0x00460F74 > finalize-crosswalk/service/response-model-strings.md
+          python tools/trace_pe_target.py finalize-crosswalk/service/EmwatService.exe \
+            0x0044E734 finalize-crosswalk/service/xml-field-writer.md 3600 ret
       - uses: actions/upload-artifact@v4
         with:
           name: emwat-service-http-response-crosswalk
           path: finalize-crosswalk/service/
           if-no-files-found: error
+
+# Parallel RE dispatch marker: 2026-11-24 independent analysis lane.
+
+# Parallel RE dispatch marker: 2026-11-24 cross-subsystem analysis lane.

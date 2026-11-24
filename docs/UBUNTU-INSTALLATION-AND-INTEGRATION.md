@@ -1,0 +1,355 @@
+# Ubuntu installation and integration workstreams
+
+Status: implementation scaffolding; not a release-ready installer. Product target and UI toolkit are decided: Linux-only, GTK 4 + PyGObject, LibreOffice Writer via UNO.
+Date: 2026-11-18
+
+This document separates the components that can already be installed/tested from
+the runtime contracts and product decisions that still block a supported desktop
+release. It intentionally does not claim Almas Gam compatibility, physical
+scanner support, Windows `.easz` compatibility, or a finished GUI.
+
+## 1. Native library installation
+
+The native CMake project now installs the reusable image/scanner library and
+public C++ headers. It does not install a daemon, GUI, or desktop launcher.
+
+Build dependencies on Ubuntu:
+
+```sh
+sudo apt update
+sudo apt install --no-install-recommends \
+  build-essential cmake pkg-config \
+  libpng-dev libjpeg-dev libtiff-dev libsane-dev
+```
+
+Build, test, and stage-install:
+
+```sh
+cmake -S native -B build/native -DCMAKE_BUILD_TYPE=Release
+cmake --build build/native --parallel
+ctest --test-dir build/native --output-on-failure
+sudo cmake --install build/native --prefix /usr/local
+```
+
+For package staging rather than modifying the host:
+
+```sh
+DESTDIR="$PWD/package-root" cmake --install build/native --prefix /usr
+```
+
+The native install rules are intentionally library/header-only until a stable
+application entrypoint and dependency/export policy exist.
+
+A Debian development package can now be generated from the same CMake build:
+
+```sh
+cmake -S native -B build/native -DCMAKE_BUILD_TYPE=Release
+cmake --build build/native --parallel
+cpack --config build/native/CPackConfig.cmake
+```
+
+This produces `emwat-native-core-dev` for the host architecture, with the
+static library and public headers under `/usr`. Its declared build-time
+dependencies are `libpng-dev`, `libjpeg-dev`, `libtiff-dev`, and `libsane-dev`.
+It is a development package only: it does not install the Python bridge, a
+service/daemon, desktop launcher, GUI, or Almas integration. The CI lifecycle
+job installs version 0.1.0, upgrades to 0.1.1, verifies the installed files,
+then removes the package and verifies those files are gone. This validates
+dpkg mechanics for this library package, not a complete end-user application
+upgrade or data-migration policy.
+
+## 2. Python bridge and LibreOffice runtime
+
+The Python project metadata is under `python/pyproject.toml`. Install the
+bridge package in a dedicated environment:
+
+```sh
+python3 -m venv .venv
+. .venv/bin/activate
+python -m pip install --upgrade pip
+python -m pip install ./python
+```
+
+LibreOffice and the distro-provided UNO bindings must be installed from the
+Ubuntu package manager and made visible to the Python interpreter that runs
+the bridge. The exact `python3-uno` import path varies by distro Python build;
+do not assume a pip wheel is interchangeable with the system UNO runtime.
+
+No production daemon command is declared yet: startup still requires explicit
+Almas Origin allowlists, a verified Cancel/Discard response policy, and an
+application lifecycle supervisor. Do not expose the bridge on a non-loopback
+interface.
+
+## 2.1 Headless bridge lifecycle supervisor
+
+`BridgeSupervisor` now provides a GTK-independent lifecycle owner. The
+application injects a factory that returns a fully configured loopback server:
+
+- `start()` is idempotent while the bridge is running.
+- `stop()` closes the current one-shot runtime.
+- A later start creates a fresh server rather than attempting to restart a
+  closed `HTTPServer`.
+- Failed cleanup remains visible and blocks replacement until `stop()` retries
+  and completes cleanup.
+- The supervisor does not supply Origin allowlists, method handlers, or
+  Cancel/Discard response envelopes. Those remain deployment-specific and must
+  be based on captured Almas behavior.
+
+The GTK 4 shell can control an explicitly injected supervisor: Start/Stop
+operations run off the GTK main thread, asynchronous supervisor failures are
+polled and shown in the status area, and Stop remains available for cleanup.
+Application shutdown serializes with those operations and requests cleanup of
+a running or failed supervisor before the UI exits. A queued Start is prevented
+from running after shutdown begins.
+
+The normal `emwat-linux` entry point still injects no supervisor. Its service
+controls are therefore disabled and no listener starts automatically. This is
+intentional: a production factory must still be supplied with evidence-backed
+Almas Origin allowlists, request handlers, and the exact Cancel/Discard response
+contract. The lifecycle UI is not a substitute for that configuration or a
+system service. See `docs/BRIDGE-SUPERVISOR-LIFECYCLE.md` for the state contract.
+
+## 3. End-to-end acceptance boundary
+
+The automated application composition test now verifies the full synthetic
+path:
+
+1. HTTP POST to the loopback bridge with an EMWAT 1.0 envelope.
+2. XML method dispatch to `EditWordDocument`.
+3. Base64 request normalization.
+4. Office adapter receives the exact source bytes.
+5. Close returns synthetic final Word bytes.
+6. Browser-facing `response-word` XML contains Base64 bytes that decode
+   byte-for-byte to the final Office output.
+
+This is a mocked Office adapter integration test, not a live Almas Gam or
+real LibreOffice UI session. Runtime acceptance still needs a sanitized,
+complete editable-letter request/response capture and a controlled test account.
+Never commit HAR files, cookies, authorization headers, letter text, or signature
+images from a real user session.
+
+## 4. Word fields and signData
+
+The current implementation:
+- preserves XML field order and per-field metadata;
+- decodes only declared `urlencoded` and `base64` field encodings;
+- recognizes the seven captured indexed signer families;
+- can build native-shaped single/twin descriptors from caller-supplied ordered
+  property names and XML fields using the observed dagger delimiter;
+- keeps the native Word COM same-index association separate from Linux Writer
+  inventory; LibreOffice enumeration order has not been proven equivalent to
+  Word COM order, so the current Writer audit reports candidates only and does
+  not attach XML fields to property indices;
+- preserves `signData` as opaque text and exposes external parameter bindings.
+
+The current parser deliberately does not split or concatenate `signData`.
+The observed `separator`, `concator`, and `concater` attributes are not enough
+to prove the exact native byte/string transformation or its interaction with
+each field's encoding. The next acceptance fixture must include synthetic values
+with delimiter collisions, empty values, non-ASCII text, and image bytes, plus
+the exact expected Word-side field result. Until then no heuristic concatenation
+is permitted.
+
+## 5. Recovery UI boundary
+
+`RecoverySnapshotService` and `RecoveryPickerController` already provide:
+- newest-first validated metadata without exposing private store paths;
+- restore to a caller-selected destination without overwriting;
+- explicit confirmation before discard;
+- optional retention policy operations;
+- an immutable `RecoveryPickerState` projection for native UI clients, including an explicit empty-catalog state, selected-entry metadata, default selection of the newest snapshot, and safe clearing of stale selections.
+
+`RecoveryPickerController.state()` performs no filesystem writes. A GTK 4 recovery view now exists at `python/src/emwat_linux/gtk_recovery_view.py`.
+It is a thin presentation layer over this controller: metadata-only rows,
+selection refresh, a native Save chooser for restore, explicit confirmation
+before discard, and sanitized error messages. It does not access store paths
+or document contents. PyGObject is imported lazily inside the view factory, so
+headless bridge and service imports do not require GTK. A headless import test
+covers this boundary; the actual GTK window still needs runtime validation on
+supported Ubuntu desktop sessions. The view identifies rows through GTK's widget-name API rather than attaching
+ad-hoc attributes to GI wrappers, tolerates out-of-range finite timestamps in
+catalog metadata, and refreshes stale selections when restore/discard is
+requested. Headless regression tests cover lazy GTK import and extreme timestamp
+formatting; they do not replace a live GTK desktop-session test. The detailed
+interaction and accessibility contract is in
+[RECOVERY-PICKER-UX.md](RECOVERY-PICKER-UX.md). Do not add Qt/PySide or move
+filesystem/business logic into GTK callbacks.
+
+## 6. Windows .easz compatibility
+
+Static analysis identifies a SevenZip-related output path, an `.easd` entry name,
+and an `.easz` output path. It does **not** currently prove that encryption is
+enabled for every output, identify an effective writer password, or establish
+archive interoperability. The `CryptoGetTextPassword2` method name and a
+credential-like static string are not sufficient proof. The Linux recovery
+store is a separate format and must remain usable independently.
+
+Required fixture evidence before implementing an adapter:
+- synthetic DOC/DOCX input and known test password;
+- archive header and encryption metadata;
+- exact entry name and extracted bytes;
+- wrong-password and corrupt-header behavior;
+- password lifecycle evidence, not merely a guessed string from a static field.
+
+Until this exists, the Ubuntu package must not advertise .easz import/export.
+
+## 7. Scanner compatibility
+
+The native SANE backend supports device discovery, capability inspection,
+8-bit grayscale/interleaved RGB pages, validated RED → GREEN → BLUE planar RGB
+assembly, and bounded ADF simplex batches when an ADF source is explicitly
+selected. It validates option types, resolution representation, frame
+sequence, dimensions/stride, and byte/page limits. Flatbed operation remains
+single-page unless explicitly configured otherwise; duplex is intentionally
+not enabled. Native fake/contract tests exercise the page reader and bounded
+batch state machine, but do not prove a physical scanner works.
+
+Before release, test at least one USB flatbed and one ADF-capable device where
+available, then separately verify:
+- source selection and supported resolution/mode options;
+- actual feeder page boundary behavior on supported drivers;
+- cancellation and unplug/device-loss behavior;
+- page order, partial scans, feeder-empty and jam behavior;
+- preview/edit/export handoff;
+- duplex only after front/back ordering and source semantics are proven.
+
+Do not map undocumented ImageGear integer modes to SANE options by guesswork.
+
+### Optional GTK 4 runtime packages
+
+On Ubuntu desktop systems, install the distro-provided GTK 4/PyGObject runtime
+when using the recovery window:
+
+```sh
+sudo apt install --no-install-recommends gir1.2-gtk-4.0 python3-gi
+```
+
+The bridge package does not yet declare a production desktop entrypoint, user
+service, or complete application .deb. Do not treat the native-core development
+package as the EMWAT desktop installer.
+
+## 8. Product UI and cost boundary
+
+The accepted product decision is Linux-only with a lightweight GTK 4 + Python/PyGObject control interface. LibreOffice Writer remains the document editor through UNO; GTK is not a document editor. Prefer distribution-provided free/open-source packages and do not introduce paid toolkit or cloud dependencies. The GUI must remain a thin optional layer over the existing service/controller APIs. See [LINUX-PRODUCT-DECISIONS.md](LINUX-PRODUCT-DECISIONS.md) for the binding decision.
+
+## 9. Release blockers
+
+A supported Ubuntu desktop release requires all of the following:
+- a production bridge entrypoint and supervised user-session lifecycle;
+- real Almas Origin and complete editable-letter fixtures;
+- verified Cancel/Discard wire envelopes;
+- real LibreOffice UNO close/save/cancel behavior on supported Ubuntu versions;
+- production GTK control UI and Recovery acceptance (keyboard, accessibility,
+  target desktop session, and restore/discard interaction);
+- tested package install/upgrade/remove and desktop integration;
+- synthetic .easz interoperability fixture if that compatibility is advertised;
+- physical scanner validation for every advertised acquisition mode.
+
+
+
+## Read-only runtime diagnostics
+
+The Python package now exposes `emwat-linux-doctor` (also available as
+`python -m emwat_linux.doctor`). It checks the active Python version, a
+LibreOffice executable, whether the active interpreter can import UNO, and
+whether GTK 4/PyGObject can build the optional recovery UI. GTK is reported as
+optional and does not cause a failed diagnostic exit status. Missing Python,
+LibreOffice, or UNO support produces a non-zero exit status.
+
+Run it after installing the Python package:
+
+```sh
+emwat-linux-doctor
+emwat-linux-doctor --json
+```
+
+The command is read-only: it does not start the bridge, create configuration,
+inspect documents, or modify recovery data. A successful report is a local
+dependency preflight only; it does not establish Almas compatibility or mean
+that the production bridge service/desktop launcher is available.
+
+## 10. Supervised bridge runtime
+
+A small, one-shot `BridgeRuntime` now owns the thread lifecycle for an
+already-configured `BridgeHTTPServer`. It starts the server on a named
+non-daemon thread, exposes a read-only lifecycle state, supports a context
+manager, and performs shutdown followed by socket close and thread join.
+The runtime deliberately does not invent Origin allowlists, Almas method
+handlers, or the unresolved Cancel response factory.
+
+Example for an integration that already has verified deployment settings:
+
+```python
+from emwat_linux.application import create_libreoffice_bridge_server
+from emwat_linux.application_runtime import BridgeRuntime
+
+server = create_libreoffice_bridge_server(
+    allowed_origins=verified_local_origins,
+    allowed_parent_origins=verified_almas_origins,
+    cancel_response_factory=verified_cancel_response_factory,
+)
+with BridgeRuntime(server):
+    run_desktop_event_loop()
+```
+
+This is lifecycle infrastructure, not yet a production CLI, desktop session
+supervisor, systemd user unit, or installer. The runtime is one-shot; create a
+new configured server/runtime after shutdown rather than attempting restart.
+Its automated tests use a controlled fake server and do not replace signal,
+desktop logout, real LibreOffice, or Almas end-to-end acceptance.
+
+
+Startup synchronization is explicit: the HTTP server exposes a readiness
+handshake from its actual `serve_forever` loop, and `BridgeRuntime.start()` waits for that handshake before allowing a concurrent `close()` to call
+`shutdown()`. This avoids the Python `socketserver.BaseServer` ordering hazard
+where calling `shutdown()` before `serve_forever()` enters its loop can block
+indefinitely. The readiness event is also released if the serve loop exits
+before its first poll. Regression coverage includes a deliberately delayed
+server start, concurrent close, and immediate start/close against the real
+loopback bridge. These tests do not replace desktop logout or signal handling
+acceptance.
+
+
+Shutdown is also failure-aware: if server shutdown raises, the runtime still
+attempts socket closure and performs a bounded serving-thread join (five
+seconds by default). It records the cleanup error and reports FAILED rather
+than claiming a clean stop. If the thread remains alive, `close()` raises
+after the timeout so the desktop supervisor can surface the failure; a later
+`close()` retries shutdown while that thread is still alive. If socket closure
+itself fails, a later `close()` retries it because closure has not been
+confirmed. A never-started runtime is not marked STOPPED until its bound socket
+is actually closed. The underlying HTTP server may still wait for active
+request workers during `server_close()`; Python threads cannot be forcibly
+killed safely, so a stuck request remains a fatal condition to surface.
+
+
+
+## GTK desktop control shell (initial)
+
+Install the optional desktop dependencies on Ubuntu. A virtual environment
+with system site packages keeps Ubuntu's PyGObject bindings visible while
+avoiding a system-wide pip install:
+
+```bash
+sudo apt install python3-venv python3-gi gir1.2-gtk-4.0 desktop-file-utils
+python3 -m venv --system-site-packages "$HOME/.local/share/emwat/venv"
+"$HOME/.local/share/emwat/venv/bin/pip" install ./python
+. "$HOME/.local/share/emwat/venv/bin/activate"
+sh packaging/install-desktop-entry.sh
+emwat-linux
+```
+
+The `emwat-linux` entrypoint opens a GTK 4 control/diagnostics window and
+reports the availability of Python, LibreOffice, UNO, and optional GTK 4.
+Importing the GTK modules remains lazy, so headless bridge/test processes do
+not require PyGObject. The current shell does **not** start the HTTP bridge:
+deployment-specific Almas Origin allowlists and the observed Cancel response
+factory are mandatory inputs and are not guessed. Recovery navigation is
+enabled only when a validated `RecoveryPickerController` is injected by a
+future configured desktop composition root.
+
+A dedicated GTK CI workflow installs GTK 4/PyGObject and runs an activation
+smoke test under Xvfb. Passing that smoke test proves the application can
+create its GTK window in CI; it does not establish desktop-session packaging,
+Wayland/X11 behavior on target machines, accessibility acceptance, or Almas
+end-to-end compatibility.

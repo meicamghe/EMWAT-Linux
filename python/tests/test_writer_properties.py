@@ -87,6 +87,84 @@ class WriterPropertyUpdateTests(unittest.TestCase):
         self.assertEqual(document.properties.values["LetterSubject"], "new")
         self.assertEqual(document.properties.values["LetterNumber"], "42")
 
+    def test_batch_rolls_back_prior_properties_when_later_update_fails(self):
+        class FailsOnSecondProperty(FakeUserProperties):
+            def setPropertyValue(self, name, value):
+                if name == "LetterNumber":
+                    raise RuntimeError("UNO failure")
+                super().setPropertyValue(name, value)
+
+        document = FakeDocument()
+        document.properties = FailsOnSecondProperty()
+        document.properties.values["LetterNumber"] = "old-number"
+        document.properties.info = FakePropertyInfo(document.properties.values)
+
+        with self.assertRaises(WriterPropertyUpdateError):
+            set_custom_document_properties(
+                document,
+                {"LetterSubject": "new", "LetterNumber": "new-number"},
+            )
+
+        self.assertEqual(
+            document.properties.getPropertyValue("LetterSubject"), "old"
+        )
+        self.assertEqual(
+            document.properties.getPropertyValue("LetterNumber"), "old-number"
+        )
+
+    def test_rolls_back_a_property_that_mutates_before_raising(self):
+        class MutatesThenFails(FakeUserProperties):
+            def setPropertyValue(self, name, value):
+                if name == "LetterNumber" and value == "new-number":
+                    self.values[name] = value
+                    raise RuntimeError("UNO setter failed after mutation")
+                super().setPropertyValue(name, value)
+
+        document = FakeDocument()
+        document.properties = MutatesThenFails()
+        document.properties.values["LetterNumber"] = "old-number"
+        document.properties.info = FakePropertyInfo(document.properties.values)
+
+        with self.assertRaises(WriterPropertyUpdateError):
+            set_custom_document_properties(
+                document,
+                {"LetterSubject": "new", "LetterNumber": "new-number"},
+            )
+
+        self.assertEqual(document.properties.values["LetterSubject"], "old")
+        self.assertEqual(document.properties.values["LetterNumber"], "old-number")
+
+    def test_reports_incomplete_rollback_without_exposing_property_values(self):
+        class FailsDuringUpdateAndRollback(FakeUserProperties):
+            def __init__(self):
+                super().__init__()
+                self.subject_calls = 0
+
+            def setPropertyValue(self, name, value):
+                if name == "LetterNumber":
+                    raise RuntimeError("UNO failure")
+                if name == "LetterSubject":
+                    self.subject_calls += 1
+                    if self.subject_calls > 1:
+                        raise RuntimeError("rollback failure")
+                super().setPropertyValue(name, value)
+
+        document = FakeDocument()
+        document.properties = FailsDuringUpdateAndRollback()
+        document.properties.values["LetterNumber"] = "old-number"
+        document.properties.info = FakePropertyInfo(document.properties.values)
+
+        with self.assertRaisesRegex(
+            WriterPropertyUpdateError,
+            "custom_property_update_failed_and_rollback_incomplete",
+        ) as caught:
+            set_custom_document_properties(
+                document,
+                {"LetterSubject": "sensitive-new-value", "LetterNumber": "new-number"},
+            )
+
+        self.assertNotIn("sensitive-new-value", str(caught.exception))
+
     def test_batch_rejects_non_text_values(self):
         with self.assertRaisesRegex(TypeError, "custom_property_value_must_be_text"):
             set_custom_document_properties(FakeDocument(), {"LetterSubject": b"binary"})

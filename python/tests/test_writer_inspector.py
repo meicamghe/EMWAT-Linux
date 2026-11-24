@@ -10,6 +10,23 @@ class FakeContainer:
     def getElementNames(self):
         return self.names
 
+    def getByName(self, _name):
+        return FakeGraphic()
+
+
+class FakeGraphic:
+    def getPropertySetInfo(self):
+        return type("PropertyInfo", (), {
+            "getProperties": lambda _self: [
+                type("Property", (), {"Name": "AnchorType"})(),
+                type("Property", (), {"Name": "GraphicURL"})(),
+                type("Property", (), {"Name": "Size"})(),
+            ]
+        })()
+
+    def getPropertyValue(self, _name):
+        raise AssertionError("graphic values and image bytes must not be read")
+
 
 class FakeEnumeration:
     def __init__(self, values):
@@ -130,12 +147,28 @@ class FakeDocument:
 
 
 class WriterInspectorTests(unittest.TestCase):
+    def test_reports_unavailable_writer_containers_instead_of_silently_omitting_them(self):
+        class PartiallyUnavailableDocument(FakeDocument):
+            def getBookmarks(self):
+                raise RuntimeError("UNO container unavailable")
+
+        catalog = inspect_writer_document(PartiallyUnavailableDocument())
+        self.assertEqual(catalog.bookmarks, ())
+        self.assertIn("getBookmarks_unavailable", catalog.inspection_warnings)
+        self.assertEqual(len(catalog.inspection_warnings), 1)
+
     def test_returns_sorted_structural_metadata_without_document_text(self):
         catalog = inspect_writer_document(FakeDocument())
         self.assertEqual(catalog.bookmarks, ("LetterNumber", "LetterSubject"))
         self.assertEqual(catalog.named_ranges, ("NamedRangeA",))
         self.assertEqual(catalog.text_tables, ("Table1",))
         self.assertEqual(catalog.graphic_objects, ("Image1",))
+        self.assertEqual(len(catalog.graphic_object_details), 1)
+        self.assertEqual(catalog.graphic_object_details[0].name, "Image1")
+        self.assertEqual(
+            catalog.graphic_object_details[0].property_names,
+            ("AnchorType", "GraphicURL", "Size"),
+        )
         self.assertEqual(len(catalog.text_fields), 2)
         self.assertEqual(
             catalog.text_fields[0].implementation_name,

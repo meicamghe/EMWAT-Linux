@@ -13,6 +13,8 @@ The earlier helper-symbol labels for several GEAR thunk addresses were incorrect
 | `0x004AFED8` | `0x00630D0C` | `GEAR32PD.DLL!IG_error_check` |
 | `0x004AFF00` | `0x00630CF8` | `GEAR32PD.DLL!IG_image_dimensions_get` |
 | `0x004AFF08` | `0x00630CF4` | `GEAR32PD.DLL!IG_image_resolution_get` |
+| `0x004AFF10` | `0x00630CF0` | `GEAR32PD.DLL!IG_image_resolution_set` |
+| `0x004AFEB8` | `0x00630D1C` | `GEAR32PD.DLL!IG_image_delete` |
 | `0x004AFE88` | `0x00630D34` | `GEAR32PD.DLL!IG_load_file` |
 | `0x004AFE98` | `0x00630D2C` | `GEAR32PD.DLL!IG_load_FD` |
 | `0x004AFE90` | `0x00630D30` | `GEAR32PD.DLL!IG_save_file` |
@@ -160,3 +162,37 @@ The complete `TGearImgProc.SelectScanner` body at `0x004EF9CC` pushes four argum
 4. Zero-extended byte from `[EBP+8]`; probably a UI/control flag, but caller semantics remain unresolved.
 
 The return value is stored at `[TGearImgProc+0x4C]` and then checked via VMT slot +0x04. This proves the call-site argument order and HWND provenance, not the exact exported C declaration or the path encoding. The selector mapper's numeric constants still lack verified format names. The attempted traces of six slots at the supposed parent VMT address did not produce valid code and are explicitly not used to identify the parent class.
+
+
+## Word image-field resolution helper
+
+The TD32 procedure `TWordViwer.EmbedTextToImage` at `0x004C436C` uses the GEAR32PD imports in this sequence:
+
+1. `IG_load_file` via thunk `0x004AFE88` at callsite `0x004C43C7`.
+2. `IG_image_resolution_get` via thunk `0x004AFF08` at callsite `0x004C43EE`.
+3. Normalizes four returned resolution/dimension values for the recognized metadata type branches (type values 2 and 4 use separate extended-float scale constants; their exact values remain undecoded).
+4. `IG_image_resolution_set` via thunk `0x004AFF10` at callsite `0x004C44D7`, with mode value 3 and the normalized four-value tuple.
+5. `IG_image_delete` via thunk `0x004AFEB8` at callsite `0x004C44E0`.
+
+The method also returns a calculated value through its output parameter and updates a viewer-side property. The bounded body contains no direct text-drawing import. Despite the Delphi method name `EmbedTextToImage`, do not conclude that it rasterizes caption text; the current evidence proves image loading/resolution normalization and handle cleanup only.
+
+This helper is reached from `TWordViwer.GetCaptionItemFont` at `0x004C19C0` (callsite `0x004C2186`). See [WORD-IMAGE-FIELD-PIPELINE-ANALYSIS.md](WORD-IMAGE-FIELD-PIPELINE-ANALYSIS.md) for the complete field/caption path.
+
+
+### Caption processing is a separate path
+
+The Word image-field caller `GetCaptionItemFont` (`0x004C19C0`) invokes a separate helper at `0x004C4DBC` that uses an image-view object, `TCaptionItem` iteration, and font/text metrics. If that helper returns false, the caller invokes `TWordViwer.FillMSWFields` (`0x004C009C`), whose TD32 signature accepts a `Word.Fields` interface.
+
+Do not attribute this caption composition to GEAR32PD: the bounded GEAR helper `EmbedTextToImage` calls only image load/resolution-get/resolution-set/delete APIs. The pixel-write/save operation, if any, is still unresolved.
+
+
+The Word signature-caption helper `0x004C4DBC` calls a save routine at `0x0044ABE4`. After the call, it logs `image saved to file. Params.Dpi: %d` and `Caption embeded to image.`. This confirms that the caption path writes a separate output image; it is not only a resolution metadata query. The actual image-save API is still being resolved. The nearby `0x004C5AE8=4` value belongs to the custom modal width-error dialog, not an output-format enum.
+
+
+### Resolution-unit conversion constants recovered
+
+The two x87 extended constants used by `EmbedTextToImage` are:
+- `39.37` — inches per metre. Type value 2 divides pixels-per-metre values by this constant to obtain pixels per inch.
+- `0.3937` — inches per centimetre. Type value 4 divides pixels-per-centimetre values by this constant to obtain pixels per inch.
+
+The normalized four-value tuple is passed to `IG_image_resolution_set` with mode argument 3. This makes the DPI normalization explicit; the exact semantics of GEAR mode 3 still need confirmation.

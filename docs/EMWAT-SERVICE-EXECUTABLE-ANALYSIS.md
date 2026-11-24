@@ -427,3 +427,79 @@ The BPL side resolves the service's virtual call precisely:
 - For `TEditWordDocument`, VMT `0x005ED764` has `+0x10 = 0x005EE82C`; this concrete `PerformMethod` reads `wordConfig`, `wordBody`, `letterImages`, and `signData`, then calls `TWordViwer.LoadDocument` (`0x004B7724`).
 
 This closes the class-name construction and service→BPL→concrete `PerformMethod` edge. It does not close all document-field semantics or end-to-end Almas integration.
+
+
+## Parallel route and CORS-header trace (2026-11-24)
+
+A bounded disassembly of the service's `CommandGet` response path and its string references confirms that the handler writes these literal response headers:
+
+- `Access-Control-Allow-Origin:*`
+- `Access-Control-Allow-Headers:*`
+- `Access-Control-Allow-Method:*`
+
+The last header is singular (`Allow-Method`), unlike the standard plural `Access-Control-Allow-Methods`. The wildcard origin/header values are static evidence of a permissive CORS response; the inspected range does not establish whether a separate Origin, token, or session check exists elsewhere in the request path.
+
+The embedded bridge still posts to the loopback service and returns `responseText` to the original `postMessage` source/origin. That response routing is not equivalent to server-side authorization. The Linux replacement should use an explicit origin allowlist and request authentication rather than copying wildcard CORS behavior by default.
+
+The same route trace confirms that the service loads `EmwatMethods.bpl` and logs package-load success/failure around the dispatch path. XML parsing separately resolves the `method`, `class`, `param`, and `name` vocabulary; exact method schemas and all error responses remain open.
+
+
+## Agent/Service lifecycle import-callsite audit — current extracted build (2026-11-24)
+
+The original executables were re-extracted from the repository's `EMWAT_Extracted.zip` and hashed before tracing:
+
+- `EmwatService.exe`: SHA-256 `9b07e270fa216095fe6648694a4896f6f8a190e69002c6742dc894c11a002659`, PE32, ImageBase `0x00400000`, entry point `0x00481C30`.
+- `EmwatAgent.exe`: SHA-256 `4553c4c65a5697b5e8121ac70e894a1b98a3def470a7165d931f078d258e4157`, PE32, ImageBase `0x00400000`.
+
+For the current Service build, a byte-level x86 CALL-thunk scan (rather than linear disassembly across Delphi RTTI/data) resolves 31 callsites for the selected lifecycle APIs:
+
+| API | Callsite count | Addresses / notes |
+|---|---:|---|
+| `CreateMutexW` | 1 | `0x00401D1A` |
+| `FindWindowW` | 2 | `0x00468154`, `0x00468273` |
+| `GetWindowTextW` | 1 | `0x00468170` |
+| `RegisterWindowMessageW` | 1 | `0x0047CE21` |
+| `PostMessageW` | 1 | `0x0047DFD6` |
+| `TerminateProcess` | 2 | `0x0047D85D`, `0x0047DFF5` |
+| `ShellExecuteW` | 1 | `0x00468263` |
+| `GetTempPathW` | 2 | `0x00442AEF`, `0x00467E85` |
+| `CreateFileW` | 1 | `0x0041A3CC` |
+
+This is concrete evidence of mutex-based single-instance/coordinator behavior and Win32 window-message communication between processes, plus explicit process termination paths. The actual mutex name, registered-message string, target window identity and termination conditions still need to be traced.
+
+The current extracted Service build has no imports for `OpenSCManagerW`, `OpenServiceW`, `StartServiceW`, `CreateServiceW`, or WTS session notification APIs in the inspected import table. Therefore the filename `EmwatService.exe` must not be treated as proof that this particular binary is a Windows SCM service; the observed coordination is currently better described as a user-mode process with window/mutex IPC. A separate installer/service wrapper or another version could still exist.
+
+
+## 2026-11-24 — confirmed local heartbeat endpoint
+
+The Agent/Service crosswalk now resolves the exact health-check request and response:
+
+- The request handler checks the query-parameter key `heartbeat` (string VA `0x0047C9F0`).
+- When present, it assigns the exact text `TickTack` (VA `0x0047CA30`) to `TIdHTTPResponseInfo.ContentText` at response-object offset `+0xBC`.
+- It then calls the Indy response writer at `0x004610FC`.
+- The startup error string explicitly reports that port `1984` must be free if binding fails.
+
+The matching Agent binary issues an HTTP `GET` to `http://127.0.0.1:1984/?heartbeat` and compares the returned body with `TickTack`. This closes the previously open string-to-callsite gap.
+
+**Native requirement:** implement `GET /?heartbeat` on loopback port `1984` with response body exactly `TickTack`. Do not route this request through document processing or return JSON. Keep health checking independent from the document API.
+
+
+## 2026-11-24 — TMainForm DFM confirms the HTTP listener configuration
+
+The embedded Delphi `TMAINFORM` resource in `EmwatService.exe` is a `TPF0` form stream. Its `TIdHTTPServer` component has the following serialized properties:
+
+| Property | DFM value |
+|---|---|
+| `Bindings[0].IP` | `127.0.0.1` |
+| `Port` | `1984` |
+| `DefaultPort` | `1984` |
+| `ListenQueue` | `100` |
+| `ReuseSocket` | `False` |
+| `TerminateWaitTime` | `15000 ms` |
+| `OnCommandGet` | `IdHTTPServerCommandGet` |
+
+The form method table identifies `IdHTTPServerCommandGet` at `0x0047BF30` and `FormCreate` at `0x0047CCD8`. In `FormCreate`, the server component at form offset `+0x3C0` is activated by setting its `Active` property to true through VMT slot `+0x94` at `0x0047CE5E`. Thus the loopback listener is not merely a resource default: the form startup path activates it.
+
+The service also contains the startup error message stating that port `1984` must be free if binding fails. This corroborates the DFM configuration.
+
+**Compatibility consequence:** the original service is loopback-only by configuration. The native Linux bridge should preserve that boundary and should not bind to `0.0.0.0` by default. The 15-second `TerminateWaitTime` is an Indy server shutdown setting; it is not evidence that document requests themselves have a 15-second timeout.

@@ -1,3 +1,17 @@
+## 2026 11 18 — scanner input validation test
+
+- Added hardware-independent regression checks that `SaneScannerBackend.get_capabilities("")` and `scan_one("")` reject an empty device identifier before entering SANE.
+- Native image core workflow `44244437647` completed successfully on `ed811a14f9d151a8a386c67b80b26b3d155f5c24`: build-test and ASan/UBSan sanitizer-test both passed, including their test steps.
+- Included in draft PR #2; this does not claim validation against a physical scanner, ADF, or duplex device.
+
+## 2026-11-18 — opt-in recovery retention implementation (PR #2)
+
+- Added `recovery_retention.py` with explicit age and/or snapshot-count limits. It keeps the newest valid snapshots, removes expired/excess sessions only when explicitly invoked, and returns removed session IDs.
+- Exposed the policy through `RecoverySnapshotService.apply_retention()`; there is no default policy, background timer, or implicit deletion. At least one positive limit is required and count limits cannot be zero.
+- Added unit tests for policy validation, age pruning, newest-N retention, service integration, and no-op behavior. Invalid/unverifiable entries are not enumerated by the store and are not deleted by this policy.
+- Python bridge CI passed on the final PR head `f1a8260589d6f5fbd8fda0a2e45bd29c7741ff4e`: runs `44244362768` and `44244353561` both completed successfully.
+- Draft PR: https://github.com/meicamghe/EMWAT-Linux/pull/2. This is not merged to main. Retention is not encryption; encryption-at-rest, user-facing policy controls, and a real Recovery UI remain open.
+
 ## 2026-11-18 — CI verification and recovery trigger coverage
 
 - Native image core run `44240525477` completed successfully on `ecf4fa8a8784b2403272ecd79186fd073e1a8e1b`: both `build-test` and `sanitizer-test` passed, including the ASan/UBSan test step.
@@ -677,7 +691,7 @@ The 20 addresses extracted from `0x00627B74` are not Word event callback pointer
 
 ## Recovery archive password correction — 2026-11-15
 
-Do not treat the Windows username or `@25*gamsign*25@` as the confirmed `.easz` archive password. `euGetAutoSavePass` returns the account name (or fallback) and `DoClearOldAutoSaveFiles` concatenates it with `@25*gamsign*25@`, but the exact archive consumer is unresolved. The recovery `Delete` path constructs a `Sevenzip.T7zInArchive` object; `euResetMemory` passes `mW@Tlogs43end_+` to virtual slot `+0x44` when its optional password string is null. The exact slot/property mapping and archive open/extract sequence remain pending. See `docs/RECOVERY-STORE-ANALYSIS.md`.
+Do not treat the Windows username or `@25*gamsign*25@` as the confirmed `.easz` archive password. `euGetAutoSavePass` returns the account name (or fallback) and `DoClearOldAutoSaveFiles` concatenates it with `@25*gamsign*25@`, but the exact archive consumer is unresolved. The recovery `Delete` path constructs a `Sevenzip.T7zInArchive` object; `euResetMemory` passes `[redacted candidate string]` to virtual slot `+0x44` when its optional password string is null. The exact slot/property mapping and archive open/extract sequence remain pending. See `docs/RECOVERY-STORE-ANALYSIS.md`.
 
 ## EditWordDocument request adapter — 2026-11-15
 
@@ -693,7 +707,7 @@ Do not treat the Windows username or `@25*gamsign*25@` as the confirmed `.easz` 
 
 ## Recovery / AutoSave findings — 2026-11-15
 
-The recovery subsystem now has a dedicated analysis report: `docs/RECOVERY-STORE-ANALYSIS.md`. Two additional recovery-path runs (#9 and #10; artifacts `14163436366` and `14163367757`) traced the SevenZip reader class. `euResetMemory` (`0x00456F00`) calls a helper named `CreateOutArchive` and passes the fallback password `mW@Tlogs43end_+` through virtual/interface slot `+0x44`. The call sequence strongly aligns with `T7zInArchive.SetPassword` → `OpenFile` → `ExtractTo`, but the slot-to-method mapping remains unproven. `T7zInArchive.SetPassword` (`0x00453860`) stores the string at `+0x58` and invokes an extraction-style interface call with a callback-like helper. The username / `@25*gamsign*25@` value returned by `euGetAutoSavePass` belongs to a separate cleanup/logging path and is not established as the recovery archive password.
+The recovery subsystem now has a dedicated analysis report: `docs/RECOVERY-STORE-ANALYSIS.md`. Two additional recovery-path runs (#9 and #10; artifacts `14163436366` and `14163367757`) traced the SevenZip reader class. `euResetMemory` (`0x00456F00`) calls a helper named `CreateOutArchive` and passes the fallback password `[redacted candidate string]` through virtual/interface slot `+0x44`. The call sequence strongly aligns with `T7zInArchive.SetPassword` → `OpenFile` → `ExtractTo`, but the slot-to-method mapping remains unproven. `T7zInArchive.SetPassword` (`0x00453860`) stores the string at `+0x58` and invokes an extraction-style interface call with a callback-like helper. The username / `@25*gamsign*25@` value returned by `euGetAutoSavePass` belongs to a separate cleanup/logging path and is not established as the recovery archive password.
 
 The reader exposes archive open, item-query and extraction methods. Do not yet name the `euResetMemory` path arguments as a proven OpenFile/ExtractTo pair: VMT slots `+0x0C` and `+0x3C` still need exact mapping. The `.easd` file's content and lifecycle, the SevenZip archive variant, and the writer-side `.easz` creation settings remain unresolved. Continue from `docs/RECOVERY-STORE-ANALYSIS.md`; do not repeat the completed class-method trace.
 
@@ -706,7 +720,7 @@ The reader exposes archive open, item-query and extraction methods. Do not yet n
 - New engine-neutral files: `office_adapter.py`, `document_coordinator.py`, and `editword_service.py`. They model request normalization → open → track modifications and engine saves independently → wait for user close → export final bytes. They are not a LibreOffice implementation. `editword_handler.py` now adapts the service to the XML dispatcher and uses the observed success serializer, but the factory is not yet registered in the application.
 - `EditWordDocument` request normalization exists, including Base64 document decoding and conservative preservation of signData as opaque text.
 - Heartbeat response and init-script generation are implemented against the captured exchange; production allowlists must still be configured.
-- Recovery analysis identifies `T7zInArchive` as the reader wrapper relevant to recovery. Its SetPassword implementation at `0x00453860` stores the supplied Unicode password at instance offset `+0x58` and invokes an extraction-style interface call with a callback-like helper. `euResetMemory` supplies `mW@Tlogs43end_+` to virtual/interface slot `+0x44` when its optional password is absent and the flag selects the fallback. The likely SetPassword → OpenFile → ExtractTo mapping remains unproven. Do not substitute the Windows username or `@25*gamsign*25@`, which belong to a separate cleanup/logging path.
+- Recovery analysis identifies `T7zInArchive` as the reader wrapper relevant to recovery. Its SetPassword implementation at `0x00453860` stores the supplied Unicode password at instance offset `+0x58` and invokes an extraction-style interface call with a callback-like helper. `euResetMemory` supplies `[redacted candidate string]` to virtual/interface slot `+0x44` when its optional password is absent and the flag selects the fallback. The likely SetPassword → OpenFile → ExtractTo mapping remains unproven. Do not substitute the Windows username or `@25*gamsign*25@`, which belong to a separate cleanup/logging path.
 - The reader exposes archive open, item metadata and extraction methods. Exact standard archive format, euResetMemory path-slot VMT mapping, .easd contents, and writer password callback remain unresolved. `T7zOutArchive.SetPassword` is a no-op stub; writer callback tracing is a separate task.
 - Word error strings were decoded and documented separately from the unresolved COM event dispatch map. Do not interpret the error string table as event callback metadata.
 
@@ -839,7 +853,7 @@ Run `43719180035` succeeded; artifact `14164088249` was inspected. Additional ev
 - Plugin run `43722990639` succeeded; artifact `14165676602` includes 20 interface vtable slots.
 - On custom interface vtable `0x00452420`: `+0x0C` forwards to `OpenStream(UnicodeString) -> IInStream` (`0x00452FDC`); `+0x3C` forwards to `SetPassword(UnicodeString)` (`0x00453860`); `+0x44` forwards to virtual constructor `T7zArchive.$bctr` (`0x0045392C`).
 - `SetPassword` stores its string at `Self+0x58`, creates an extraction callback interface from `Self+8`, and invokes `IInArchive.Extract` (`+0x1C`) with `indices=NULL`, `numItems=-1`, `testMode=0`. This is an all-items archive operation; callback output semantics are not yet proven.
-- The autosave Delete trace shows `euResetMemory` takes the selected `.easz` path as its first UnicodeString, a second string from helper `0x0044A998` as the `SetPassword` argument, and a null optional third string. Two true Boolean flags select the constructor fallback `mW@Tlogs43end_+`. The meaning of the second string and callback output path remain open. `ExtractTo` is a separate wrapper, not one of the three direct slots.
+- The autosave Delete trace shows `euResetMemory` takes the selected `.easz` path as its first UnicodeString, a second string from helper `0x0044A998` as the `SetPassword` argument, and a null optional third string. Two true Boolean flags select the constructor fallback `[redacted candidate string]`. The meaning of the second string and callback output path remain open. `ExtractTo` is a separate wrapper, not one of the three direct slots.
 
 
 ### SevenZip extraction callback comparison — 2026-11-15
@@ -856,7 +870,7 @@ Run `43719180035` succeeded; artifact `14164088249` was inspected. Additional ev
 
 - Run `43723328264` / artifact `14165058222` traces `TfrmShowAutoSaveFiles.Delete` (`0x005EB828`). The selected archive path is copied from the selected item record's `+0x20` field into `[ebp-4]` via `UStrLAsg`; this is the first `euResetMemory` argument.
 - `[ebp-8]`, the second argument, is produced by helper `0x0044A998` and passed to `SetPassword`. Its source semantics remain unknown.
-- The call passes `ECX=0` and two stack Boolean flags set to 1, selecting the `mW@Tlogs43end_+` constructor fallback.
+- The call passes `ECX=0` and two stack Boolean flags set to 1, selecting the `[redacted candidate string]` constructor fallback.
 - After `euResetMemory`, the caller invokes `0x004563A8` with the same two strings, then `0x004565DC` and `0x004555D8`. These helpers are the next targets for identifying the `.easd` output path and cleanup.
 
 
@@ -882,7 +896,7 @@ Run `43719180035` succeeded; artifact `14164088249` was inspected. Additional ev
 
 ### Latest callback-contract findings — 2026-11-15
 
-- Callback-contract run 2 (`43725294172`, artifact `14165994624`) confirms `T7zArchive.$bctr` at `0x0045392C` stores its string at `Self+0x44` and sets `Self+0x40` according to whether it is nonempty. The recovery fallback `mW@Tlogs43end_+` is passed to this constructor, not to `SetPassword`.
+- Callback-contract run 2 (`43725294172`, artifact `14165994624`) confirms `T7zArchive.$bctr` at `0x0045392C` stores its string at `Self+0x44` and sets `Self+0x40` according to whether it is nonempty. The recovery fallback `[redacted candidate string]` is passed to this constructor, not to `SetPassword`.
 - The `MyMessageDialog` result is a separate string passed to `T7zInArchive.SetPassword` via slot `+0x3C`.
 - Callback references `0x00453850` and `0x0045391C` contain the same `IArchiveExtractCallback` IID. Their construction contexts differ, but they implement the same COM callback interface.
 - `PrepareOperation` has distinct branches using `Self+0x3C`, `Self+0x50/+0x54`, and `Self+0x58`; exact property mapping and final output destination remain open. See `docs/RECOVERY-STORE-ANALYSIS.md` sections 24–25.
@@ -1069,7 +1083,7 @@ Do not implement guessed `signData` joining or claim end-to-end Almas registrati
 ### Important corrections
 1. `0x004563A8` is `FixDirectionInFarsiNumericMode`, not a list constructor. The two objects in `OnControlerNotify` are created by helper `0x0040414C` using global/class reference `0x0062F810`.
 2. Strings `0x004BB754` and `0x004BB76C` decode to `.easd` and `.easz`. The path at `TWordViwer+0x80` is direction-normalized and these suffixes are appended.
-3. `0x00452C10` constructs the `T7zOutArchive` interface returned by `T7zPlugin`; `0x00456DFC` is `Emwatutils.euUnArchive`. Its two inputs are `TStringList` instances. Interface slot `+0x10` reaches `AddFiles` (`0x453F34`), slot `+0x18` reaches `SaveToStream` (`0x454668`), and slot `+0x28` reaches `0x4547E8`, which stores the input string in field `+0x38` = `FPassword`. Thus `mW@Tlogs43end_+` is the archive password. The path `.easd` is the archive entry name and `.easz` is the output archive path.
+3. SUPERSEDED: the earlier interpretation of output interface slot `+0x28` as assigning `FPassword` was based on an incorrect field/method attribution. Current VMT evidence maps `+0x28` to the progress-callback method; it is not a confirmed password setter.
 4. The exact VMT inspection proves `TEmwatMethod` slot `+0x0C` is the shared public Invoke wrapper `0x0046C9E0` (TD32 label `Finalization`); slot `+0x10` is the abstract/error stub `0x00401068`. The wrapper calls the inner dictionary/XML helper `0x0046C82C`, then dispatches the concrete subclass through VMT slot `+0x10`.
 5. `TEditWordDocument` inherits `TEmwatMethod`; its VMT slot `+0x10` points to `0x005EE82C`, TD32-decorated as `TScanDocument.PerformMethod`. `TScanDocument` VMT slot `+0x10` points to `0x005EEB48`, TD32-decorated as `TFaxDocument.PerformMethod`. Class resolution and the wrapper-to-subclass VMT dispatch are confirmed; preserve the pointer/name discrepancies.
 
@@ -1097,7 +1111,7 @@ Do not implement guessed `signData` joining or claim end-to-end Almas registrati
 ### SevenZip interface correction
 - Exact VMT inspection shows `T7zPlugin.$bctr` obtains an interface pointer at `T7zOutArchive` object offset `+0x44`, IID `baa9d5dc-9ff4-4382-9bfd-ec9065bd0125`.
 - Through this interface: `+0x10 → AddFiles (0x453F34)`, `+0x18 → SaveToStream (0x454668)`, `+0x28 → SetProgressCallback (0x4547E8)`.
-- Therefore do not call `mW@Tlogs43end_+` a confirmed password; it is passed to SetProgressCallback through the observed interface. `SetPassword` exists separately at `0x4547DC`, but is not the mapped target.
+- Therefore do not call `[redacted candidate string]` a confirmed password; it is passed to SetProgressCallback through the observed interface. `SetPassword` exists separately at `0x4547DC`, but is not the mapped target.
 - `euUnArchive` passes two TStringList values to AddFiles and a `.easz` UnicodeString to SaveToStream; these do not obviously match the TD32 signatures. The archive direction and exact argument types remain unresolved. Next inspect target method bodies and the wrapper/factory.
 - Expanded archive workflow run `43869599848` was queued for those method-body traces at the last check.
 
@@ -1113,11 +1127,11 @@ Do not implement guessed `signData` joining or claim end-to-end Almas registrati
 
 
 ### Archive path resolved (Run 148)
-- Artifact `14227611377` proves the `euUnArchive` path is building a password-protected 7z output archive, despite its helper name.
+- Artifact `14227611377` establishes the output writer path and SevenZip wrapper, but does not prove that the resulting archive is encrypted.
 - Interface `+0x10` → `T7zOutArchive.AddFiles` (`0x453F34`): first TStringList value is the source file path (`TWordViwer+0xA0`); second is the archive entry name (base path + `.easd`).
 - Interface `+0x18` → `T7zOutArchive.SaveToStream` (`0x454668`): saves to base path + `.easz`.
-- Interface `+0x28` → `0x4547E8`: despite TD32 label `SetProgressCallback`, body stores the input string in field `+0x38`, identified by the T7zOutArchive field table as `FPassword`. Therefore `mW@Tlogs43end_+` is the archive password assigned in this path. The separate `SetPassword` at `0x4547DC` is a no-op.
-- Remaining: resolve global `0x62F800` to exact stream class; trace the callback that consumes FPassword; then capture a synthetic runtime archive if possible. Do not claim the archive has been validated at runtime.
+- Interface `+0x28` → `0x4547E8`: mapped as the progress-callback method. The earlier inference that its input was definitively the writer password is withdrawn. `T7zOutArchive.SetPassword` at `0x4547DC` is a no-op stub. No confirmed writer password value/provider is established.
+- Remaining: resolve the output stream and callback semantics, determine actual runtime encryption flags/password source, and capture a synthetic runtime archive if possible. Do not claim encryption or interoperability is validated.
 
 
 ### Confirmed service-to-BPL dispatch correction
@@ -1145,3 +1159,134 @@ Do not implement guessed `signData` joining or claim end-to-end Almas registrati
 - It wraps `TWordViwer.LoadDocument` in `CoInitialize`/`CoUninitialize`, passes the `TEmwatInvokeParam` pointer and output string, stores the returned method result, and sets `bResultSet=1`.
 - `LoadDocument` extracts `DocFileName` from `wordBody`, writes document data to a local `TFileStream(fmCreate)`, parses `wordConfig` XML, then calls `OnTmrAutoSave` with that file path. The path is stored in viewer `+0xA0` and later packaged as `.easd` inside `.easz`.
 - Next priority: determine how the returned string and `bResultSet` become the actual HTTP response body, and trace the full `wordConfig`/`letterImages`/`signData` handling.
+
+
+## Accepted product decisions — 2026-11-18 (do not reopen implicitly)
+
+- Linux only. Do not develop a new Windows app, UI, or installer; Windows is an analysis/compatibility reference only.
+- GTK 4 + Python/PyGObject is selected for a small, free/open-source Linux control UI. Do not use Qt/PySide unless the owner explicitly changes the decision.
+- LibreOffice Writer via UNO is the document editor. GTK is only for EMWAT status, settings, recovery, scanner entry points, and diagnostics.
+- Main product workflow: Almas request/document → local EMWAT protocol bridge → LibreOffice Writer editing → final document returned to Almas in the verified response format.
+- Keep bridge, document coordinator, UNO adapter, recovery, and scanner core independent from GTK; core and tests must run headlessly.
+- No paid toolkit, subscription, or mandatory cloud service. Check license obligations for all distributed dependencies.
+- Source of truth: `docs/LINUX-PRODUCT-DECISIONS.md`; also reflected in README, PROJECT-STATUS, Ubuntu installation guide, and recovery picker UX.
+- Next implementation priority remains real Almas/browser wire-contract evidence and full Writer document roundtrip, not GTK screen proliferation.
+
+
+## EMWAT Linux — Writer close evidence and CI handoff (2026-11-20)
+
+- Latest branch checkpoint: `79c017e757485dbd5fb19b7a7e1fd13beb05353c`; PR #2 remains open/Draft/unmerged.
+- Added `docs/WRITER-CLOSE-DISCARD-INVESTIGATION.md`: UNO `queryClosing`/terminal-close semantics are documented, but interactive Writer Save / Don't Save / Cancel ordering remains unverified. Do not infer discard from `notifyClosed` or `disposing`.
+- Python CI run `44784556864`: success.
+- LibreOffice UNO CI run `44784556817`: success; 17 tests passed, including real UNO open/close/export and EditWord response-handler integration.
+- Native CI run `44784556764`: package lifecycle and normal build/CTest/staged install passed; ASan/UBSan was still running at the checkpoint.
+- Next: poll Native sanitizer job, then record final combined CI status. Continue the Writer visible-UI Save / Don't Save / Cancel test design. Do not ship a daemon/desktop entrypoint or claim production readiness until Origin allowlists, verified close response policy, lifecycle supervision, secure recovery key custody and Almas wire fixtures are resolved.
+
+
+## 2026-11-20 — parallel Word/Writer evidence and close acceptance work
+
+- Added `python/src/emwat_linux/word_writer_evidence.py`: metadata-only summary of WordConfig field IDs, declared MIME/encoding, external parameter IDs, duplicates, settings, optional attributes and requested types, alongside Writer structural and custom-property names. It excludes field values, body text, image bytes and property values.
+- Exposed `LibreOfficeAdapter.audit_word_writer_evidence(handle, config)` under the document snapshot lock. It is read-only; no inferred mapping is applied.
+- Added tests for the report and adapter entry point. Initial report-only Python CI run `44796731919` passed 219 tests (217 passed, 2 optional skips). Newer adapter integration/test commit `4c571a74` has fresh CI runs queued.
+- Added `docs/WORD-WRITER-EVIDENCE-REPORT.md` and `docs/WRITER-VISIBLE-CLOSE-ACCEPTANCE.md`. The latter defines visible Writer Save, Don't Save, Cancel and retry acceptance, including output-marker checks and non-sensitive callback diagnostics.
+- Keep automatic WordConfig mapping disabled until a sanitized matching Word + wordConfig fixture and expected output are supplied and independently verified. Do not infer signData separators or property ordering.
+- Next: poll CI runs for commit `4c571a74be9c75ad6fa0b7b823bcd6a3e8d88f28` (Python `44796996459`, Native `44796996414`, UNO `44796996426`); then poll docs-triggered UNO run `44797006712`. PR #2 stays open, Draft and unmerged.
+
+## 2026-11-20 — corrected adapter evidence audit verification
+
+- Added a lock-protected, read-only `LibreOfficeAdapter.audit_word_writer_evidence()` entry point for the metadata-only report.
+- Corrected the test module imports after the first intermediate push; that intermediate CI attempt failed and is superseded by the corrected code/test head.
+- Corrected head `4c571a74be9c75ad6fa0b7b823bcd6a3e8d88f28`: Python run `44796996459` passed 220 tests (218 passed, 2 optional skips); UNO run `44796996426` passed 18 tests including the new audit regression and real Writer roundtrip.
+- Docs-triggered UNO run `44797006712` also passed. Native build/CTest/staged install passed; package lifecycle and ASan/UBSan were still running at last poll.
+- Continue polling Native run `44796996414`; keep PR #2 open, Draft and unmerged.
+
+
+## 2026-11-20 — complete CI checkpoint
+
+- Verified code/test head: `4c571a74be9c75ad6fa0b7b823bcd6a3e8d88f28`.
+- Python run `44796996459`: 220 tests, 218 passed, 2 optional skips.
+- UNO run `44796996426`: 18 tests passed, including the new read-only adapter evidence audit and real Writer roundtrip.
+- Native run `44796996414`: build/CTest, staged install, Debian package install/upgrade/removal lifecycle, and ASan/UBSan passed. Both normal and sanitizer CTest report 4/4 passed.
+- Docs-only UNO run `44797006712` passed. Later commits through `bb1d920` only update status/handoff documentation after the verified code/test head.
+- PR #2 remains open, Draft and unmerged. Do not claim live Almas E2E, automatic WordConfig field mapping, visible Save/Don't Save/Cancel parity, complete desktop installer, or physical scanner/ADF/duplex validation.
+
+
+## 2026-11-20 — expanded evidence report and close retry tests
+
+- Evidence report now includes field indices, twin delimiter members, duplicate/case-fold collision groups, root/permission attribute names, optional attribute type/encoding and content-element presence, plus Writer property collision metadata. No values or document text are exposed.
+- `OptionalAttribute.has_content_element` preserves the distinction between no `<content>` node and an explicitly empty node.
+- Added tests for missing optional IDs, empty content nodes, twin identifiers, collision handling, and redaction.
+- Added a close listener regression proving that a successful snapshot from a cancelled attempt is replaced on the next attempt and that terminal close notification is required.
+- Python run `44798087534` on `491ca49a`: 224 tests, 222 passed, 2 optional skips. Native run `44798087414`: build/CTest 4/4, sanitizer CTest 4/4, package lifecycle success.
+- UNO run `44797952771` on `226e0205`: 19 tests passed. New adapter integration coverage for twin metadata and empty optional content is in commit `41e15bbe`; poll its Python/UNO/Native workflows `44798367250`, `44798367221`, and `44798367187`.
+- An intermediate evidence-report test run failed because one assertion still referenced a removed report attribute; corrected immediately and verified by the subsequent 224-test green run.
+- Keep all automatic field writes disabled until the real sanitized Almas fixture and expected output are available. PR #2 stays open, Draft, unmerged.
+
+
+## 2026-11-20 — privacy-safe close trace
+
+- Added `CloseLifecycleTrace` and wired it into Writer close and save listeners. It stores fixed callback names, attempt ordinal, sequence, and monotonic timestamp only; it never stores document or field data and does not infer user choice.
+- Exposed read-only in-memory trace retrieval via `LibreOfficeAdapter.inspect_close_lifecycle_trace(handle)`.
+- Added tests for callback order, retry attempt numbering, allowlisted event names, and absence of payload/path data.
+- Python run `44798818684` on `2feff5bf`: 227 tests, 225 passed, 2 optional skips. UNO `44798818677` and Native `44798818848` still running at last poll.
+- The trace supports the visible Save / Don't Save / Cancel acceptance matrix; it does not itself prove the selected outcome.
+
+
+## Latest close-trace CI state
+
+- Python `44798818684`: 227 tests, 225 passed, 2 optional skips.
+- Native `44798818848`: normal build/CTest, ASan/UBSan and DEB package lifecycle all passed.
+- UNO `44798818677`: LibreOffice installation and runtime verification passed; the test step remains in progress. Poll it before claiming close-trace integration is UNO-verified.
+- PR #2 remains open, Draft, unmerged.
+
+## EMWAT Linux — corrected parallel-work checkpoint (2026-11-23)
+
+### CI at commit 8a29d56bdf366039882555cee92853b180eb5a04
+
+- Python Bridge run 45172202794: success.
+- LibreOffice UNO run 45172202821: success.
+- GTK desktop smoke test run 45172202655: success.
+- Native Image Core run 45172202648: build/CTest and staged install passed; Debian package install/upgrade/removal lifecycle passed; ASan/UBSan job also completed successfully.
+- These workflows validate the CI jobs at this exact branch head. They do not validate a physical scanner, live Almas browser integration, or Windows archive interoperability.
+
+### Archive evidence correction — supersedes older handoff wording
+
+- The .easz output-file path and .easd entry-name construction are supported by static call traces.
+- Do not describe the writer password or encryption state as confirmed. The writer CryptoGetTextPassword2 trace initializes an internal object list; it does not reveal a password value/provider. The mapped SetPassword implementation is a no-op, and interface slot +0x28 maps to the progress-callback method, not to a proven password setter.
+- Older notes in this handoff that label a fallback/configuration string as the archive password are superseded. Do not reuse any such string as an archive password.
+- The actual runtime encryption flags, password source, archive header profile and interoperability remain unverified. The current evidence boundary is documented in docs/EASZ-ARCHIVE-FORMAT.md.
+
+### Scanner implementation boundary
+
+- ImageDocument stores multiple pages. ScannerBackend exposes scan_one() and a source-compatible scan_pages() fallback; SaneScannerBackend overrides scan_pages() for explicitly selected simplex ADF sources. Duplex-labelled source values are deliberately excluded from batch mode.
+- SANE ADF batches keep one device/session open, use NO_DOCS at page boundaries (from start or before read bytes) as normal completion, cap batches at 100 pages / 4 GiB with the remaining byte budget enforced before allocation, and reject a 101st page rather than silently truncate. Flatbed and unspecified sources remain single-page only. The bounded collection state machine has deterministic fake tests for page order, exact-limit completion, empty feeder, read/start failure, over-limit failure, byte limits and cleanup.
+- Each page accepts one terminal 8-bit Gray/interleaved RGB frame or a validated planar RED → GREEN → BLUE sequence, interleaved into one RGB page. The production page reader now uses an injectable SANE function table, with fake-device tests for interleaved RGB, planar RGB, multi-page ADF, feeder-empty read status, partial-page rejection and invalid channel order. Duplex front/back semantics and physical scanner hardware acceptance remain open. See docs/SCANNER-MULTIFRAME-IMPLEMENTATION.md.
+
+### WordConfig / Writer boundary
+
+- The adapter opens the incoming document and exposes a read-only WordConfig-to-Writer evidence audit. It does not automatically apply WordConfig fields.
+- Exact-name intersections and case-only matches remain candidates, not verified semantic mappings. No positional mapping, signature-image substitution or unverified twin-field writes are permitted.
+- See docs/WORDCONFIG-WRITER-APPLICATION-PLAN.md.
+
+
+## 2026-11-23 — automatic Writer inventory and partial-inspection diagnostics
+
+- `LibreOfficeAdapter.open_document()` now captures a metadata-only WordConfig/Writer inventory automatically after opening the document and recording its baseline. The report is retained in-memory on the office handle as `word_writer_evidence`; no field values or body text are written and no mappings are applied.
+- Overall inventory failure does not block document open; only the stable status `writer_inventory_unavailable` is retained.
+- Writer catalog inspection now records stable, value-free `inspection_warnings` for individual UNO structures that cannot be enumerated. The evidence report exposes these as `writer_inventory_warnings`, preventing an unavailable container from being silently mistaken for a genuinely empty one.
+- Custom document-property metadata is now read once per inventory pass, preserving its UNO-reported order and producing the sorted view from the same snapshot.
+- Added unit coverage for unavailable containers and propagation of warning codes into the evidence report.
+- Latest verified CI at commit `7f92fdd0b1e293a34b73105e48a0f8b896ca0726`: LibreOffice UNO run `45177847225` passed 24 tests. Python, GTK and Native workflows for this exact head were still running/queued at the time of this handoff update; do not reuse earlier-head counts as proof for this commit.
+- Python run `45177757461` on prior code head `2f8ce039d0395c2870cdd743600e91bdf18e0b21` passed 277 tests; UNO run `45177756605` on that prior head passed 24 tests. These are not a substitute for final-head CI.
+- The SANE `scan_one()` terminal-frame guard and archive evidence correction are also present on the branch. No ADF/duplex or `.easz` interoperability claim is made.
+- PR #2 remains open, Draft and unmerged.
+
+
+## 2026-11-23 — automatic evidence-bounded template inventory
+
+- Added `emwat_linux.template_mapping.inspect_template_mapping(config, catalog)` and unit tests.
+- The inventory compares custom-property names with Writer bookmarks, named ranges, sections, tables, frames, graphic objects, document indexes and `DocInfo.Custom` text fields using case-insensitive exact matches only.
+- Critical safety correction: the report does **not** attach a Writer property index to a WordConfig XML field index. Equal counts are only a count observation; Word COM and LibreOffice property enumeration order equivalence remains unproven. All XML field IDs remain explicitly unassociated.
+- The inventory is captured automatically alongside the existing metadata-only Word/Writer evidence from a single UNO catalog snapshot. It neither reads property values nor modifies the document.
+- Added unit coverage and a live UNO integration assertion that the report preserves the unassociated-field boundary.
+- CI for the current branch head is triggered by the latest commits; do not claim it passed until all four workflows complete on the same head.

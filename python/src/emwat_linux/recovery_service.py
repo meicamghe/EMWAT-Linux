@@ -11,6 +11,7 @@ import json
 from pathlib import Path
 
 from emwat_linux.recovery_store import RecoverySnapshotStore
+from emwat_linux.recovery_retention import RecoveryRetentionPolicy, apply_recovery_retention
 
 
 @dataclass(frozen=True)
@@ -62,6 +63,12 @@ class RecoverySnapshotService:
     def discard(self, session_id: str) -> None:
         """Discard one recovery session after explicit UI/user selection."""
         self._store.remove_session(session_id)
+
+    def apply_retention(
+        self, policy: RecoveryRetentionPolicy, *, now: float | None = None
+    ) -> tuple[str, ...]:
+        """Apply an explicitly supplied retention policy; never runs implicitly."""
+        return apply_recovery_retention(self._store, policy, now=now)
 
 
 __all__ = ["RecoverySnapshot", "RecoverySnapshotService"]

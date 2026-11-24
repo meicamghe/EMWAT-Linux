@@ -90,3 +90,36 @@ The virtual call at `[object+0xA8]` in the GScan handlers is therefore a redraw/
 3. Identify the exact ImageGear package/version and constants used by the shipped DLL.
 4. Write the native image-backend specification (pixel buffer, color model, DPI, pages, errors, undo/dirty state) before coding the compatibility layer.
 5. Implement and test the verified Gear image operations, then the separate ImageEn ImageTools workflow.
+
+
+## Word XML image-field path — 2026-11-24
+
+The Word field path is distinct from the standalone GScan/ImageTools UI:
+
+- `TWordViwer.AddImagesToDoc` (`0x004C0410`) checks the XML field MIME type for `image/*` and routes image entries through `GetCaptionItemFont` (`0x004C19C0`).
+- `GetCaptionItemFont` calls `GetImageResolution` (`0x004C2DE0`) and `EmbedTextToImage` (`0x004C436C`) before the later field/image insertion helpers.
+- `GetCaptionItems` (`0x004C2B20`) parses caption style tokens including `Tahoma`, `bold`, `italic`, `underline`, and `strikeout`.
+- The direction tokens `right`, `center`, `left`, `top`, `middle`, `bottom` map to numeric values 1–6 in the helper at `0x004C2DE0`. The symbol name says `GetImageResolution`, but these literals look like placement/alignment values; keep the semantic label provisional.
+- The `EmbedTextToImage` bounded body calls GEAR32PD `IG_load_file`, `IG_image_resolution_get`, `IG_image_resolution_set`, and `IG_image_delete`. It proves image metadata normalization and handle cleanup, not text rasterization.
+
+The separate [Word image-field pipeline analysis](WORD-IMAGE-FIELD-PIPELINE-ANALYSIS.md) records the exact boundaries and open questions.
+
+
+### Caption composition vs. resolution metadata
+
+The Word XML image path has two distinct helpers:
+- `EmbedTextToImage` uses GEAR32PD to load the image and normalize its resolution metadata.
+- `GetCaptionItemFont` calls helper `0x004C4DBC`, which iterates caption items, uses an image-view object and font/text metrics to calculate placement. If it returns false, the caller invokes `FillMSWFields` (`0x004C009C`) with a `Word.Fields` interface.
+
+The caption helper is therefore separate from the GEAR resolution helper. Its final pixel-write/save operation and the exact Word COM calls in `FillMSWFields` remain open.
+
+
+### Signature caption output confirmed
+
+The helper `0x004C4DBC` logs `image saved to file. Params.Dpi: %d` and `Caption embeded to image.` after its caption-placement path. Its width-error branch calls `0x0044ABE4`, which is a custom modal dialog helper (VCL form setters/component enumeration), not the image save API. The `0x004C5AE8=4` value is the dialog control count. The actual image-save API remains unresolved.
+
+
+The GEAR32PD helper's constants are now decoded: type 2 converts pixels/metre to DPI using 39.37 inches/metre; type 4 converts pixels/centimetre to DPI using 0.3937 inches/centimetre. The normalized values are written through `IG_image_resolution_set` mode 3.
+
+
+The caption font parser at `0x004C2B20` selects direction-dependent font name/size/style slots from an eight-DWORD `TCaptionItem` record. It defaults empty font names to Tahoma, zero font size to 8, applies the caller's scale factor, and recognizes bold/italic/underline/strikeout tokens. Direction value 2 selects the second slot set; its exact RTL/LTR identity remains unconfirmed.

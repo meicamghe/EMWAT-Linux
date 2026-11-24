@@ -24,18 +24,25 @@ class EditWordDocumentService:
         *,
         session_id_factory: Callable[[], str] | None = None,
         max_document_bytes: int = 64 * 1024 * 1024,
+        max_encoded_document_chars: int = 90 * 1024 * 1024,
+        max_config_bytes: int = 16 * 1024 * 1024,
+        max_encoded_config_chars: int = 24 * 1024 * 1024,
     ) -> None:
-        if max_document_bytes <= 0:
-            raise ValueError("max_document_bytes must be positive")
+        limits = {
+            "max_document_bytes": max_document_bytes,
+            "max_encoded_document_chars": max_encoded_document_chars,
+            "max_config_bytes": max_config_bytes,
+            "max_encoded_config_chars": max_encoded_config_chars,
+        }
+        for name, value in limits.items():
+            if type(value) is not int or value <= 0:
+                raise ValueError(f"{name} must be a positive integer")
         self._coordinator = DocumentCoordinator(office)
         self._session_id_factory = session_id_factory or (lambda: secrets.token_urlsafe(24))
-        self._max_document_bytes = max_document_bytes
+        self._request_limits = limits
 
     def process(self, call: MethodCall) -> DocumentRunResult:
         """Process one EditWordDocument call; never reuse its HTTP invoke nonce."""
-        request = parse_editword_request(
-            call,
-            max_document_bytes=self._max_document_bytes,
-        )
+        request = parse_editword_request(call, **self._request_limits)
         session_id = self._session_id_factory()
         return self._coordinator.run(session_id=session_id, request=request)

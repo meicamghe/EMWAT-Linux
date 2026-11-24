@@ -27,7 +27,7 @@ from emwat_linux.word_config import WordDocumentConfig
 
 
 class DocumentCloseListenerRetryTests(unittest.TestCase):
-    def test_snapshot_failure_is_cleared_when_close_is_retried(self):
+    def test_cancelled_close_retries_never_export_live_document(self):
         from threading import Event, Lock
         from emwat_linux.libreoffice_adapter import _DocumentCloseListener
 
@@ -37,27 +37,30 @@ class DocumentCloseListenerRetryTests(unittest.TestCase):
 
             def storeToURL(self, _url, _properties):
                 self.attempts += 1
-                if self.attempts == 1:
-                    raise RuntimeError("simulated_close_attempt_cancelled")
+                raise RuntimeError("must_not_be_called_from_query_closing")
 
         document = FlakyDocument()
+        closed = Event()
         listener = _DocumentCloseListener(
             document,
-            "file:///tmp/emwat-final.doc",
-            lambda: None,
+            "file:///tmp/emwat-last-saved.doc",
+            closed.set,
             (),
             Lock(),
             Event(),
         )
 
         listener.queryClosing(None, False)
-        self.assertIsInstance(listener.snapshot_error, RuntimeError)
-        self.assertTrue(listener.snapshot_ready.is_set())
+        self.assertEqual(document.attempts, 0)
+        self.assertFalse(closed.is_set())
 
+        # A Cancel leaves Writer alive; a subsequent close attempt still must
+        # not export uncommitted document bytes.
         listener.queryClosing(None, False)
-        self.assertIsNone(listener.snapshot_error)
-        self.assertTrue(listener.snapshot_ready.is_set())
-        self.assertEqual(document.attempts, 2)
+        self.assertEqual(document.attempts, 0)
+        self.assertFalse(closed.is_set())
+        listener.notifyClosed(None)
+        self.assertTrue(closed.is_set())
 
 
 class RecoveryWorkerTests(unittest.TestCase):
@@ -99,7 +102,13 @@ class RecoveryWorkerTests(unittest.TestCase):
             try:
                 deadline = time.monotonic() + 3
                 snapshots = store.list_snapshots()
-                while not snapshots and time.monotonic() < deadline:
+                # The worker commits the snapshot before clearing the previous
+                # transient error. Wait for both observable success conditions;
+                # seeing the catalog entry alone can race the error-state update.
+                while (
+                    (not snapshots or handle.recovery_error is not None)
+                    and time.monotonic() < deadline
+                ):
                     time.sleep(0.01)
                     snapshots = store.list_snapshots()
                 self.assertTrue(snapshots, "recovery_worker_did_not_persist_snapshot")
@@ -270,6 +279,17 @@ class LibreOfficeIntegrationTests(unittest.TestCase):
             on_saved=lambda: saved_events.append("saved"),
         )
         try:
+            self.assertIsNotNone(handle.word_writer_evidence)
+            self.assertIsNone(handle.word_writer_evidence_error)
+            self.assertEqual(handle.word_writer_evidence.fields, ())
+            self.assertIsNotNone(handle.template_mapping_inventory)
+            self.assertIsNone(handle.template_mapping_inventory_error)
+            self.assertFalse(
+                handle.template_mapping_inventory.property_order_equivalence_verified
+            )
+            self.assertEqual(
+                handle.template_mapping_inventory.unassociated_config_field_ids, ()
+            )
             user_properties = handle.document.getDocumentProperties().getUserDefinedProperties()
             self.assertEqual(
                 user_properties.getPropertyValue("EMWATIntegrationMarker"),
@@ -323,6 +343,11 @@ class LibreOfficeIntegrationTests(unittest.TestCase):
             self.assertEqual(saved_events, [])
             with handle.snapshot_lock:
                 self.assertEqual(handle.document.isModified(), modified_before_recovery)
+
+            # Explicitly save the edited document. The adapter must capture
+            # this confirmed state before the later close handoff.
+            handle.document.store()
+            self.assertEqual(saved_events, ["saved"])
             handle.document.close(True)
             close_event = adapter.wait_for_close(handle)
             self.assertEqual(close_event.disposition, CloseDisposition.CLOSED)

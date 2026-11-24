@@ -105,3 +105,5 @@ jobs:
         with:
           name: emwat-word-custom-property-pipeline
           path: word-custom-property-pipeline/
+
+# Parallel RE dispatch marker: 2026-11-24 cross-subsystem analysis lane.
