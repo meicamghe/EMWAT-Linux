@@ -98,7 +98,8 @@ class WordAssetMappingTests(unittest.TestCase):
         inventory = inspect_word_assets(config(
             "<word-document><fields>"
             "<field id='SignOfSignerStart0&#8224;SignOfSignerEnd0' "
-            "mimetype='image/png' paramId='signData'/>"
+            "mimetype='image/png' paramId='signData' separator='&amp;' "
+            "concater='\\n' encryption='base64'/>"
             "</fields></word-document>"
         ))
         self.assertEqual(inventory.images[0].data, b"")
@@ -106,6 +107,12 @@ class WordAssetMappingTests(unittest.TestCase):
         self.assertEqual(inventory.signer_slots[0].signature_image_field_index, 0)
         self.assertEqual(inventory.unresolved_external_parameter_fields, ((0, "signData"),))
         self.assertEqual(inventory.empty_image_field_indices, ())
+        reference = inventory.external_image_parameters[0]
+        self.assertEqual(reference.parameter_id, "signData")
+        self.assertEqual(reference.separator, "&")
+        self.assertEqual(reference.concater, "\\n")
+        self.assertIsNone(reference.concator)
+        self.assertEqual(reference.encryption, "base64")
 
     def test_rejects_signature_twin_field_without_image_mime(self):
         with self.assertRaisesRegex(WriterAssetMappingError, "signer_signature_field_not_image"):

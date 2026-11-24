@@ -18,6 +18,12 @@ class WriterTextFieldInfo:
 
 
 @dataclass(frozen=True)
+class WriterGraphicObjectInfo:
+    name: str
+    property_names: tuple[str, ...]
+
+
+@dataclass(frozen=True)
 class WriterDocumentCatalog:
     bookmarks: tuple[str, ...]
     named_ranges: tuple[str, ...]
@@ -30,6 +36,7 @@ class WriterDocumentCatalog:
     custom_document_properties: tuple[str, ...]
     custom_document_properties_in_info_order: tuple[str, ...]
     inspection_warnings: tuple[str, ...] = ()
+    graphic_object_details: tuple[WriterGraphicObjectInfo, ...] = ()
 
 
 def _element_names(container: object, warning_code: str, warnings: list[str]) -> tuple[str, ...]:
@@ -106,6 +113,31 @@ def _text_fields(document: object, warnings: list[str]) -> tuple[WriterTextField
     return tuple(result)
 
 
+def _graphic_object_details(
+    document: object, warnings: list[str]
+) -> tuple[WriterGraphicObjectInfo, ...]:
+    """Inventory graphic property names only; never read GraphicURL or bytes."""
+    try:
+        container = document.getGraphicObjects()
+        names = tuple(sorted(str(name) for name in container.getElementNames()))
+    except Exception:
+        warnings.append("graphic_object_details_unavailable")
+        return ()
+
+    details: list[WriterGraphicObjectInfo] = []
+    for name in names:
+        try:
+            graphic = container.getByName(name)
+            properties = tuple(sorted(
+                str(item.Name)
+                for item in graphic.getPropertySetInfo().getProperties()
+            ))
+            details.append(WriterGraphicObjectInfo(name, properties))
+        except Exception:
+            warnings.append("graphic_object_properties_unavailable")
+    return tuple(details)
+
+
 def _custom_document_property_names_in_info_order(document: object, warnings: list[str]) -> tuple[str, ...]:
     """Return custom-property names in UNO PropertySetInfo order, without sorting."""
     try:
@@ -135,7 +167,13 @@ def inspect_writer_document(document: object) -> WriterDocumentCatalog:
         custom_document_properties=tuple(sorted(custom_names_in_info_order)),
         custom_document_properties_in_info_order=custom_names_in_info_order,
         inspection_warnings=tuple(dict.fromkeys(warnings)),
+        graphic_object_details=_graphic_object_details(document, warnings),
     )
 
 
-__all__ = ["WriterDocumentCatalog", "WriterTextFieldInfo", "inspect_writer_document"]
+__all__ = [
+    "WriterDocumentCatalog",
+    "WriterGraphicObjectInfo",
+    "WriterTextFieldInfo",
+    "inspect_writer_document",
+]

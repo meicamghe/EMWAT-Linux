@@ -35,6 +35,18 @@ class WordImageAsset:
 
 
 @dataclass(frozen=True)
+class ExternalImageParameterReference:
+    field_index: int
+    field_id: str
+    parameter_id: str
+    separator: str | None
+    concater: str | None
+    concator: str | None
+    encryption: str | None
+    mimetype: str | None
+
+
+@dataclass(frozen=True)
 class SignerMetadataSlot:
     index: int
     person: str = ""
@@ -55,6 +67,7 @@ class WordAssetInventory:
     signer_slot_count: int
     empty_image_field_indices: tuple[int, ...]
     unresolved_external_parameter_fields: tuple[tuple[int, str], ...]
+    external_image_parameters: tuple[ExternalImageParameterReference, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -111,6 +124,7 @@ def inspect_word_assets(
     images: list[WordImageAsset] = []
     empty_indices: list[int] = []
     unresolved_external: list[tuple[int, str]] = []
+    external_references: list[ExternalImageParameterReference] = []
     total_bytes = 0
     slots: dict[int, dict[str, str]] = {}
 
@@ -139,6 +153,21 @@ def inspect_word_assets(
             if field.external_parameter and not field.value:
                 data = b""
                 unresolved_external.append((index, field.external_parameter))
+                external_references.append(
+                    ExternalImageParameterReference(
+                        field_index=index,
+                        field_id=field.field_id,
+                        parameter_id=field.external_parameter,
+                        separator=field.attributes.get("separator"),
+                        # Keep both spellings: static analysis found the
+                        # request capture spelling "concater", while the
+                        # native setter reads "concator". Neither is aliased.
+                        concater=field.attributes.get("concater"),
+                        concator=field.attributes.get("concator"),
+                        encryption=field.encoding,
+                        mimetype=field.mimetype,
+                    )
+                )
             else:
                 if (field.encoding or "").casefold() != "base64":
                     raise WriterAssetMappingError("image_field_requires_base64")
@@ -192,6 +221,7 @@ def inspect_word_assets(
         signer_slot_count=len(slots),
         empty_image_field_indices=tuple(empty_indices),
         unresolved_external_parameter_fields=tuple(unresolved_external),
+        external_image_parameters=tuple(external_references),
     )
 
 
@@ -313,6 +343,7 @@ def apply_writer_graphic_updates(
 
 
 __all__ = [
+    "ExternalImageParameterReference",
     "SignerMetadataSlot",
     "WordAssetInventory",
     "WordImageAsset",
