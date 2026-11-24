@@ -53,3 +53,5 @@ jobs:
           name: emwat-indy-writecontent-helper-chain
           path: indy-writecontent-helpers/
           if-no-files-found: error
+
+# Parallel RE dispatch marker: 2026-11-24 final infrastructure analysis wave.
