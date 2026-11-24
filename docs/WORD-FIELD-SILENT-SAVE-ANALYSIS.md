@@ -458,3 +458,30 @@ This resolves the user-facing close choices and the `Document.Close.SaveChanges`
 The `OnControlerNotify` callback disables the timer on entry, checks the active-document state and a reentrancy flag, calls `CostumizeRecAndCC`, invokes Word `Get_Content(-1)`, normalizes path strings with `FixDirectionInFarsiNumericMode`, builds `.easd`/`.easz` path variants, calls `euUnArchive` at `0x00456DFC`, and re-enables the timer on exit. The exact meaning of the `-1` argument and the archive entry/path mapping remain open.
 
 `euUnArchive` is a **reader/extraction** path: it creates a `T7zPlugin`, enumerates archive items, obtains item paths and invokes extraction methods. Do not treat it as proof of the `.easz` writer. This periodic local AutoSave/archive path is distinct from the HTTP response writer.
+
+
+## 2026-11-24 — Dynamic Config and timer-driven print coupling
+
+Sources: workflow runs 45347505927 (registry settings), 45345628398 (timer callback), and 45347505941 (HTTP/controller crosswalk).
+
+The settings form reads/writes the registry key:
+
+`HKCU\Software\Emwat\Dynamic Config`
+
+Observed value names include the exact resource spellings:
+- `Background Priniting`
+- `Dont Ask Save On Print`
+- `Save Before Print`
+- `Logging Level`
+- `Save I/O Trace Files`
+- `AutoSaveInterval`
+- `Created IO Trace Count`
+
+The WordViewer lifecycle initializer at `0x004D0D24` reads three Boolean settings into viewer flags at offsets `+0x3C`, `+0x3D`, `+0x3E`, and reads `AutoSaveInterval` into `+0x88`. The settings form multiplies the selected interval by 1000 before storing it, so the registry value is milliseconds derived from a seconds-based UI choice. The timer setup uses this field and enforces a minimum of `10,000 ms`; the exact list of selectable interval values in the global array at `0x0062A808` has not yet been decoded. The exact one-to-one mapping of the three Boolean labels to viewer flag offsets remains a correlation to verify.
+
+A further cross-subsystem finding: `OnControlerNotify` calls `CostumizeRecAndCC` at `0x004D281C` before `Get_Content(-1)` and the `.easd/.easz` extraction path. The bounded `CostumizeRecAndCC` body contains **three calls through Word Document vtable slot `+0x2BC`**, the same slot used by the `TWordDocument.PrintOutOld` wrapper, with list operations between calls. This strongly suggests the timer/archive path can trigger Word print operations. Whether these become three separate spool jobs, or are internal print triggers coordinated by the BeforePrint callback, is not yet proven.
+
+Keep three paths separate in the Linux design until call ownership is resolved:
+1. Word BeforeSave close decision.
+2. Timer-driven AutoSave/print preparation and archive extraction.
+3. HTTP response serialization and completion.

@@ -62,3 +62,21 @@ Sources: workflow runs 45343331334 (SevenZip callback/class trace), 45344189109 
 - `T7zOutArchive` exposes output-side methods such as `AddFile`, `AddStream`, `SaveToFile` and `SaveToStream`, but no direct application callsite from the AutoSave callback was identified. Its `Password` property setter (`0x004547DC`) is a stub. `CryptoGetTextPassword2` (`0x004543C4`) has a nontrivial bounded body that initializes a helper object/fields, but no explicit password string assignment is visible. `GetOutArchive` has no direct application caller in the analyzed call graph.
 
 **Conclusion:** the input/extraction path is established; the component that actually creates or updates `.easz`, the password source, encryption flags and exact internal entry mapping are still unknown. Do not claim that the observed `T7zOutArchive` wrapper is the active writer merely because its methods exist.
+
+
+## 2026-11-24 — hardcoded input-archive password and writer boundary
+
+Source: workflow run 45347505914 (controller-content-unpack / SevenZip trace).
+
+The `euUnArchive` helper at `0x00456DFC` creates a `T7zPlugin` and passes a hardcoded 15-character Unicode string at VA `0x00456EE0` to the plugin's virtual method at slot `+0x28` before enumerating/extracting entries. This is strong evidence that the input-archive acquisition path supplies a built-in archive password. The literal is intentionally **redacted from this public document**; it should not be copied into logs, test fixtures or public commits.
+
+The helper then obtains the archive item count, iterates item paths from the supplied lists, invokes the plugin extraction method at slot `+0x10`, and closes through slot `+0x18`. The `.easd` and `.easz` strings are constructed by the timer callback before this call.
+
+Writer-side distinction:
+- `T7zOutArchive.SaveToStream` creates a `TFileStream` and calls its completion/update path; this is a real output-side callback implementation.
+- `T7zOutArchive.SaveToFile` at `0x00454644` is only a short metadata/out-parameter routine in the bounded trace, not proof of an application-level archive write.
+- `T7zOutArchive.SetPassword` at `0x004547DC` is a 9-byte stub.
+- The `T7zOutArchive` class exposes output methods, but no application-level call chain from the AutoSave callback to `GetOutArchive/SaveToStream` has been proven.
+- `T7zInArchive.SetPassword` is implemented; the exact virtual path from the hardcoded argument to that setter remains to be traced.
+
+**Conclusion:** the built-in input-archive password argument is now identified (literal redacted), and extraction is confirmed. The actual `.easz` writer call chain and output encryption behavior remain unresolved.

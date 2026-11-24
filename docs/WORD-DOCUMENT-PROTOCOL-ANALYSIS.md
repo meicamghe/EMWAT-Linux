@@ -1530,3 +1530,18 @@ Separately, `TWordViwer.OnControlerNotify` (`0x004BB3B0)) calls the document int
 The LoadDocument response branch reaches Indy `TIdHTTPResponseInfo.WriteContent`. What remains unresolved is the exact release/correlation between the Word close event, controller notification, response payload and the Almas-side registration result. A static WriteContent call does not by itself establish the complete round-trip contract.
 
 **Linux state-machine requirement:** preserve three distinct outcomes: save-and-close, close-without-saving, and cancel/veto. Keep the local recovery snapshot independent from the final connector response.
+
+
+## 2026-11-24 — XML field mapping, encoding and twin-field metadata
+
+Source: workflow run 45347505909 (custom-property pipeline).
+
+- `GetXmlFieldInfo` at `0x004BFC18` searches two separate dictionaries (viewer offsets `+0x68` and `+0x6C`). The regular-field path returns the field index and field-name metadata; the second path checks both `Field1Name` and `Field2Name` on the mapped field object. This confirms separate regular/twin lookup paths.
+- `SetFieldValue` at `0x004BFDB0` explicitly recognizes `urlencoded` and `base64` encoding labels and routes the value through the corresponding decode helpers; other values follow the raw path. Preserve the encoding label in the Linux field model rather than guessing from payload bytes.
+- XML field metadata strings include `id`, `mimetype`, `paramId`, `separator`, `concator` and `encryption`. Their complete semantic behavior and the precise role of `separator/concator` are still being traced.
+- `TXmlWordConfigField` exposes `Index`, `Field1Name`, `Field2Name` and `Field`. `TXmlWordConfigTwinField` additionally exposes `CaptionItems`, RTL/LTR font name/style/size, `Align`, `VAlign` and `Text`. This is concrete evidence that twin-field rendering carries per-caption typography and alignment metadata.
+- `GetDocFieldName` parses Word `DOCPROPERTY` field code and maps it through the field dictionaries. It also processes Word `CustomDocumentProperties`; the `TDocumentCProperty` helper stores property/index metadata.
+- A field named `Hidden_Customizable` triggers `SilentSaveEmwatDoc`. This is a special field-triggered silent-save path; it is not the same routine as the 10-second-minimum AutoSave timer and is not proven to create a `.easz` archive.
+- Signature-like field names are recognized by a regex pattern, but the signature payload `signData` concatenation/separator contract is still unresolved.
+
+For compatibility, preserve regular vs twin field identity, both field names, encoding, MIME type, caption item metadata and custom-property storage as separate parts of the schema.

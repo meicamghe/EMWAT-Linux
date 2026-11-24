@@ -122,3 +122,15 @@ A TD32 callsite scan of the exact repository BPL (`analysis-input/EmwatMethods.b
 - The same BPL contains Word `TWordDocument.PrintOut` / `TWordApplication.PrintOut` Automation wrappers and a large `BGPrintWithGamPrintOptions` routine. No direct `WritePrinter` callsite was identified in this import/callsite scan. This does not rule out indirect calls or submission performed by Word/another module.
 
 **Updated conclusion:** printer discovery/selection is demonstrably part of the BPL; actual job submission still appears to cross the Word Automation PrintOut boundary rather than a proven direct WritePrinter call. Trace the PrintOut VMT slot and a controlled job before defining the Linux submission contract.
+
+
+## 2026-11-24 — timer-driven print path and configuration
+
+Additional source: workflow runs 45345628398 (OnControlerNotify) and 45347505938 (print-handler/controller).
+
+- `OnControlerNotify` invokes `CostumizeRecAndCC` before `Get_Content(-1)`. The bounded `CostumizeRecAndCC` procedure calls Word Document vtable slot `+0x2BC` three times; this is the same slot used by the `TWordDocument.PrintOutOld` Automation wrapper. List operations occur between the calls.
+- This ties the timer-driven AutoSave/archive callback to Word print operations at the callsite level. Whether the three calls create three independent spool jobs or are coordinated by the registered BeforePrint handler is still unknown.
+- The Word BeforePrint callback `WordAppDocumentBeforePrintBGPrint` checks the active document and print configuration and builds recipient/CC lists. `TEmwatDocPrintHandler.Execute` dispatches a stored method callback via helper `0x004677B8`; `TEDPController.SetPrintThread` stores a handler and method pointer. Direct static callsites do not yet establish the exact callback-to-thread ownership.
+- Dynamic settings are stored under `HKCU\Software\Emwat\Dynamic Config`. The setting form exposes `Background Priniting`, `Dont Ask Save On Print`, `Save Before Print` and `AutoSaveInterval`; the interval is converted from seconds to milliseconds and clamped to a minimum of 10 seconds.
+
+**Next print trace:** determine whether the three Document.PrintOutOld calls in CostumizeRecAndCC each reach the Word BeforePrint callback, map the 15-Variant COM call at `+0x3F0`, identify the active/default printer selection and correlate each resulting job with the GAM output file.
