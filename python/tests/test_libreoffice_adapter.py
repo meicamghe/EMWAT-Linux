@@ -134,6 +134,12 @@ class LibreOfficeAdapterUnitTests(unittest.TestCase):
             adapter._capture_word_writer_evidence(handle, config)
         self.assertIsNotNone(handle.word_writer_evidence)
         self.assertIsNone(handle.word_writer_evidence_error)
+        self.assertIsNotNone(handle.word_config_field_catalog)
+        self.assertEqual(
+            handle.word_config_field_catalog.unknown_fields,
+            ((0, "subject"),),
+        )
+        self.assertIsNotNone(handle.word_asset_inventory)
         self.assertNotIn("private-value", repr(handle.word_writer_evidence))
         self.assertIsNotNone(handle.template_mapping_inventory)
         self.assertIsNone(handle.template_mapping_inventory_error)
