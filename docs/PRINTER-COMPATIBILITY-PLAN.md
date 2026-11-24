@@ -75,3 +75,37 @@ Treat `GAMPrinterSetup.exe` as a separate installation/reconfiguration workflow.
 ## Current implementation status
 
 No Linux printer backend, legacy index adapter, persistent printer selection, or print-job submission path is present in the inspected Python/native source tree at this analysis point. The existing SANE scanner subsystem is unrelated and must not be reused as a printer abstraction. No claim of printer compatibility or installer equivalence is made.
+
+
+## 2026-11-24 — EMWAT spooler calls and Word COM print path
+
+Source: workflow run 45345628400, expanded printer-pipeline artifact.
+
+### Windows spooler callsites in EmwatMethods
+
+The import-callsite map found 11 static callsites across the inspected spooler functions:
+
+| EMWAT method | API | Observed role |
+|---|---|---|
+| `Zanprinter.GetPrinterName` | `EnumPrintersA` | Enumerate printer names |
+| `Zanprinter.Finalization` | `OpenPrinterA`, `GetPrinterA`, `ClosePrinter` | Printer handle/info lifecycle |
+| `Emwatutils.getPrinterNumJobs` | `OpenPrinterW` | Open queue for job-count query |
+| `Emwatutils.ExtractFileNameEX` | `EnumJobsW` | Enumerate jobs |
+| `Emwatutils.euIsValidFileName` | `EnumPrintersW` | Printer enumeration in this helper; exact semantic reason still needs callsite context |
+
+No direct `WritePrinter`, `StartDocW`, `StartPage`, `EndPage` or `EndDoc` import/callsite was found in the inspected BPL. This does not mean the product does not print; it means the BPL delegates the actual print operation through a higher-level API.
+
+### Word COM print operation
+
+- `TWordViewer.BGPrintWithGamPrintOptions` at `0x004C5FF8` contains a 15-Variant COM vtable call at slot `+0x3F0` (the exact interface method identity remains unresolved), followed by a direct call to `TWordApplication.PrintOutOld` at `0x004C70CA`.
+- The `TWordApplication.PrintOutOld` wrapper at `0x00441E44` invokes COM interface slot `+0x1E4`. Its direct callers include `BGPrintWithGamPrintOptions` and `LoadOptions`.
+- `WordAppDocumentBeforePrintBGPrint` at `0x004CE030` is the Word print-event callback. It verifies the active document, checks print configuration and builds recipient/CC-related lists before the print path proceeds.
+- `TEmwatDocPrintHandler.Execute` at `0x004A5EA8` dispatches a stored method callback through helper `0x004677B8`; `TEDPController.SetPrintThread` stores handler/method pointers in controller fields. The complete callback-to-thread method ownership still needs one more callsite trace.
+- The similarly named `PrintWordDoc` routines in the `Createtiff` unit are not the main GAM print path in this evidence set: their direct callers are `CreateImageFile` and `GetCaptionItemFont`.
+
+### Remaining print questions
+
+1. Identify the COM method at vtable slot `+0x3F0` and map the 15 Variant arguments.
+2. Trace the selected/default printer queue and any `ActivePrinter`/registry state.
+3. Connect Word's print job to the GAM queue and the GAM server's final file path/extension.
+4. Resolve the relationship between print completion and EMWAT's document/response lifecycle.

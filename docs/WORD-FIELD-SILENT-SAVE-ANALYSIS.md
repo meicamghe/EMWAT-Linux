@@ -423,20 +423,38 @@ This is direct evidence that OnControlerNotify participates in EMWAT's local aut
 The same artifact identifies TWordDocument.Save at 0x004309A4, which dispatches through _Document slot +0x2B8. No direct bounded CALL xref was found; the method may be reached through an interface/VMT path. The close wrappers remain separate: no-argument Close uses +0x4D4 and the OleVariant overloads use +0x29C.
 
 
-## 2026-11-24 — expanded BeforeSave / close callback trace
+## 2026-11-24 — decoded BeforeSave / close callback and AutoSave timer
 
-Source: workflow run 45343331490, artifact 14897296677; TD32-bounded procedure `TWordViwer.WordAppDocumentBeforeSave` at `0x004CD154–0x004CD54B`.
+Sources: workflow runs 45344080216 (close prompt/helper trace), 45345628398 (full controller-notify callback), 45345628359 (callback ownership), and 45344189012 (Word event sink).
 
-Static observations:
+### BeforeSave / close decision
 
-1. The callback compares its incoming Word document argument with the document tracked at viewer offset `+0x48`; a non-matching document exits without processing.
-2. It checks viewer state bytes at offsets `+0x5E` and `+0x5F`. If `+0x5E` is zero, it writes `0xFFFF` through the callback's stack argument at `[ebp+8]` and exits. The callback signature and this write are consistent with a COM Cancel parameter.
-3. When the prompt-enabled flag `+0x5F` is set, it builds a three-choice modal prompt through helper `0x0044ABE4`. The prompt's text/button constants are at `0x004CD3C0`, `0x004CD3DC`, `0x004CD3F0`, `0x004CD40C`, `0x004CD41C`, `0x004CD42C` and `0x004CD4BC`; these constants still require decoding.
-4. A modal return value of `2` causes the callback to write `0xFFFF` to the Cancel parameter and leave without the later close call. This is consistent with Delphi `mrCancel`.
-5. A return value of `6` takes a branch that constructs a Boolean true value (`-1)); all other non-cancel results take the Boolean false branch (`0`). The precise property/object receiving this value must be confirmed by tracing helper `0x004034E8` and the prompt constants; do not yet label the branches as fully proven Save/Don't Save behavior.
-6. On the non-cancel path, the callback sets viewer flag `+0x5E`, constructs three Variant arguments and calls Word document interface slot `+0x29C`. The generated wrapper `TWordDocument.Close(OleVariant, OleVariant, OleVariant)` at `0x0042FFF4` calls the same interface slot, so this is a Word Document.Close call. The callback then clears viewer field `+0x58`.
-7. The TD32 method name is `WordAppDocumentBeforeSave`, while a diagnostic string near the callback is reported as `Document.OnBeforeClose Called.`. Keep both observations; the COM event record slot-to-DISPID mapping and the reason for this diagnostic wording remain to be closed.
+TD32 procedure `TWordViwer.WordAppDocumentBeforeSave` at `0x004CD154–0x004CD54B`:
 
-This trace materially narrows the close contract: Cancel is explicitly propagated to the COM callback parameter, and non-cancel choices reach a three-argument Word Document.Close call. It does **not** yet establish the user-facing wording, the exact Yes/No side effects, or the final Almas response for each choice.
+1. The callback verifies that the incoming Word document is the document tracked at viewer offset `+0x48`. It checks viewer state bytes `+0x5E` and `+0x5F`.
+2. When the prompt flag is enabled, it opens `TMyMessageDialog` through helper `0x0044A998`.
+3. The dialog strings decode to:
+   - Title: `ام وات`
+   - Message: `محتویات این سند تغییر کرده است. آیا مایل به ثبت تغییرات می‌باشید؟`
+   - Yes: `موافقم`
+   - No: `خیر`
+   - Cancel: `انصراف`
+4. Modal result `2` (Delphi `mrCancel`) writes `0xFFFF` to the COM Cancel parameter and exits without the subsequent close call.
+5. Modal result `6` (Delphi `mrYes`) builds integer `-1`; the other non-cancel branch (the No result, `7`) builds integer `0`. Helper `0x004034E8` resolves to `OleVarFromInt`.
+6. The Boolean Variant is passed as the first argument to the three-argument Word `Document.Close` call through interface slot `+0x29C`. The wrapper `TWordDocument.Close(OleVariant, OleVariant, OleVariant)` at `0x0042FFF4` uses that same slot. Thus Yes means `SaveChanges=True`, No means `SaveChanges=False`, and Cancel aborts the close.
+7. Before showing the prompt, the callback also invokes the `Set_Saved` wrapper/interface slot `+0xD8` with a local Variant. Its precise intent/value lifecycle remains a separate trace item.
+8. The callback is installed in the Word event sink at viewer event-record offset `+0x80`. The diagnostic string `Document.OnBeforeClose Called.` remains present even though the TD32 method name is `WordAppDocumentBeforeSave`; the event DISPID mapping is not yet proven.
 
-The periodic `OnControlerNotify` timer path remains separate: it performs the `.easd/.easz` recovery/archive work and is not the HTTP response writer.
+This resolves the user-facing close choices and the `Document.Close.SaveChanges` value. It does **not** yet prove how the completed close callback releases the long-lived HTTP request or which exact response payload is returned to Almas.
+
+### AutoSave timer and archive callback
+
+`TWordViewer.OnTmrAutoSave` configures the timer object at viewer offset `+0x7C`:
+- `0x00404B94`: `TTimer.SetOnTimer`
+- `0x00404B8C`: `TTimer.SetInterval`
+- `0x00404B84`: `TTimer.SetEnabled`
+- It assigns `TWordViewer.OnControlerNotify` at `0x004BB3B0`, clamps the interval to at least `10,000 ms`, then enables the timer.
+
+The `OnControlerNotify` callback disables the timer on entry, checks the active-document state and a reentrancy flag, calls `CostumizeRecAndCC`, invokes Word `Get_Content(-1)`, normalizes path strings with `FixDirectionInFarsiNumericMode`, builds `.easd`/`.easz` path variants, calls `euUnArchive` at `0x00456DFC`, and re-enables the timer on exit. The exact meaning of the `-1` argument and the archive entry/path mapping remain open.
+
+`euUnArchive` is a **reader/extraction** path: it creates a `T7zPlugin`, enumerates archive items, obtains item paths and invokes extraction methods. Do not treat it as proof of the `.easz` writer. This periodic local AutoSave/archive path is distinct from the HTTP response writer.

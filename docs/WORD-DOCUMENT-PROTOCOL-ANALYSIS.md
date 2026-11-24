@@ -1496,3 +1496,21 @@ The parser-side property methods provide a clearer source of truth than the TD32
 The current request-schema transcription says `concater`, while the native parser-side XML property is unambiguously spelled `concator`. These are different strings; no alias between them is proven. The TD32 `Get_*` serializer-side symbols also show a name/literal offset (for example, `Get_Concator` writes `separator`), so the parser-side `Set_*` methods are the trusted evidence for incoming XML attribute names.
 
 The Python decoder preserves all field attributes and does not currently normalize either spelling, so no runtime behavior was changed. Keep the discrepancy explicit until the raw request XML is rechecked; do not silently treat `concater` and `concator` as interchangeable.
+
+
+## 2026-11-24 — Word text/image field fill paths
+
+Sources: workflow runs 45344189015 (Word field pipeline) and 45344189010 (image-field path).
+
+Static callsite/string evidence now distinguishes the field fill paths:
+
+- `FillTextField` checks the field content type. `text/plain` follows the text-field path; a missing field interface or a non-`text/plain` type routes into `FillImageField`.
+- `FillImageField` recognizes the `image/*` MIME family and contains branches for `urlencoded` and `base64` payload encodings.
+- The method named `GetImageResolution` is misleading: its traced body maps alignment strings, not DPI/resolution, to numeric values: `right=1`, `center=2`, `left=3`, `top=4`, `middle=5`, `bottom=6`.
+- `AddImagesToDoc` and `EmbedTextToImage` provide an image/caption overlay path; the exact caption layout and twin-field pairing rules still need controlled fixtures.
+- Text values are written through two observed Word mechanisms: `CustomDocumentProperties[index]` or `Field.Result.Text`. A `field locked` diagnostic exists, so locked fields need an explicit compatibility rule rather than unconditional overwrite.
+- Explicit special field names include `LetterRegistrationDate`, `LetterRegistrationNo`, `ProduceDate`, `Receivers`, `ReceiverDeps`, `ccReceivers` and `ccReceiverDeps`.
+- The field-name classifier includes the signature-like pattern `^sign.*end[0-2]?[0-9]?$`; this is a naming clue, not yet a complete signature payload contract.
+- The code emits `twin filling start/end` diagnostics, but the pairing algorithm and ordering are not yet fully established.
+
+For Linux parity, preserve MIME type and encoding metadata as part of the field model. Do not interpret the alignment enum as image DPI, and do not collapse CustomDocumentProperties and Field.Result.Text into one storage path.

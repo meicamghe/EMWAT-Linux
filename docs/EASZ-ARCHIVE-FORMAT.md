@@ -48,3 +48,17 @@ The additional TD32 trace covers the **input** SevenZip wrapper (`T7zInArchive`)
 The recovery form's `TfrmShowAutoSaveFiles` is also a distinct subsystem. Its `Delete` path iterates selected list entries and initializes a Word Automation wrapper; its `CloseWordApp` method iterates Word documents and invokes a late-bound interface slot. The exact restore/delete filename and archive password contract still needs the helper-path and output-writer traces.
 
 **Conclusion:** the password question remains open, but the reader-side analysis rules out treating `euGetAutoSavePass` as a proven `.easz` password source. A controlled synthetic archive is still required to settle encryption and interoperability.
+
+
+## 2026-11-24 — extraction path and password/write-side limits
+
+Sources: workflow runs 45343331334 (SevenZip callback/class trace), 45344189109 (recovery UI/path trace), and 45345628398 (OnControlerNotify path).
+
+- `TWordViewer.OnTmrAutoSave` assigns `OnControlerNotify` as the timer event handler and clamps the timer interval to at least 10 seconds. The callback constructs `.easd` and `.easz` path variants and calls `euUnArchive`.
+- `euUnArchive` creates a `T7zPlugin`, obtains an input archive interface, enumerates archive entries, gets item paths and extracts entries. This is the concrete AutoSave-side archive **read/extract** path.
+- `euArchive` at `0x00456DDC` is not an archive writer; the bounded trace shows a `TStringList` construction/helper path used by the recovery UI.
+- `T7zInArchive.CryptoGetTextPassword` and `SetPasswordCallback` are 9-byte stubs that do not populate a password value. `T7zInArchive.SetPassword` does store a supplied UnicodeString at object offset `+0x58`, but no direct caller was found in the traced AutoSave extraction path.
+- `euGetAutoSavePass` has two direct callers: `DoClearOldAutoSaveFiles` and `TfrmSendLog.lblFileNameClick`. It is not proven to supply the `.easz` archive password.
+- `T7zOutArchive` exposes output-side methods such as `AddFile`, `AddStream`, `SaveToFile` and `SaveToStream`, but no direct application callsite from the AutoSave callback was identified. Its `Password` property setter (`0x004547DC`) is a stub. `CryptoGetTextPassword2` (`0x004543C4`) has a nontrivial bounded body that initializes a helper object/fields, but no explicit password string assignment is visible. `GetOutArchive` has no direct application caller in the analyzed call graph.
+
+**Conclusion:** the input/extraction path is established; the component that actually creates or updates `.easz`, the password source, encryption flags and exact internal entry mapping are still unknown. Do not claim that the observed `T7zOutArchive` wrapper is the active writer merely because its methods exist.

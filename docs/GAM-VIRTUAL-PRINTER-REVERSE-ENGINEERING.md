@@ -167,3 +167,16 @@ The CLI strings expose these settings as integer parameters, but do not provide 
 4. Inspect all installer actions/registry writes and determine how `GAMPrinter` queue, port and driver are installed.
 5. Trace EMWAT's actual print invocation and consumer path; do not infer it from printer enumeration APIs.
 6. Build sanitized test cases for color/BW/Fax, multipage output, filename collisions, missing destination folder, Unicode document names and cancellation.
+
+
+## 2026-11-24 — upstream EMWAT print integration evidence
+
+The upstream EMWAT BPL trace now shows that the main print-options path reaches Word COM `TWordApplication.PrintOutOld` from `TWordViewer.BGPrintWithGamPrintOptions`. The BPL's direct Windows spooler calls found so far are printer enumeration, printer-handle/info and job enumeration; no direct `WritePrinter` or GDI `StartDoc/EndDoc` callsite was found in the inspected module.
+
+This supports the following boundary for the Linux port:
+
+1. EMWAT chooses/configures a Word print operation.
+2. Word COM submits a normal Windows print job to the active/default Windows queue.
+3. The GAM virtual printer driver/monitor/server consumes that spool job and produces its virtual-image output.
+
+The exact active queue selection, the 15-Variant COM call at vtable slot `+0x3F0`, and the GAM server's final file hand-off remain unresolved. Do not equate the `PrintWordDoc` helper in the `Createtiff` unit with the main GAM print pipeline; its traced callers are image/caption helpers.

@@ -23,12 +23,12 @@ The highest-value gaps are:
 | Subsystem | Existing evidence | Remaining reverse engineering | Priority |
 |---|---|---|---|
 | HTTP bridge / XML parser | Indy server, loopback port 1984, init/heartbeat/invoke captures, XML names (emwat/version/method/class/param/name), bridge message forwarding and wildcard CORS-related header strings have static/runtime evidence | Server-side Origin/token/session validation, endpoint coverage, error responses, all method schemas, request bounds/version behavior and exact response behavior for non-Word methods | P0 |
-| Word document lifecycle | BeforeSave callback compares the active document, propagates Cancel on modal result 2, and on non-cancel paths calls the three-argument Document.Close wrapper; LoadDocument response writer and long-lived invoke capture are separately traced | Decode prompt strings/helper 0x44ABE4 and the Boolean side effect for modal result 6 vs other results; resolve event-record DISPID and what releases the pending invoke; correlate each close choice with returned bytes/Almas result | P0 |
-| WordConfig / fields | XML field model, URL-encoded/Base64 decoding, DOCPROPERTY token parsing, several field/image/recipient paths and Writer inventory exist | Full semantic mapping of the approximately 180-field catalog; single/twin fields; signature signData separators/concatenation; image storage/layout; permission/settings/RequestedTypes; real sanitized template parity | P0 |
+| Word document lifecycle | Custom Persian Yes/No/Cancel prompt is decoded; Yes calls Document.Close(SaveChanges=True), No calls Document.Close(SaveChanges=False), Cancel sets COM Cancel; LoadDocument writes through TIdHTTPResponseInfo.ContentText/WriteContent | Resolve the long-lived invoke release condition and exact close-to-response correlation; map event-record DISPID; correlate each close choice with returned bytes/Almas result. No direct WaitForSingleObject/Sleep callsite was found in the inspected BPL | P0 |
+| WordConfig / fields | text/plain vs image/* routing, urlencoded/base64 image payloads, CustomDocumentProperties vs Field.Result.Text, special recipient/registration fields and alignment enum 1–6 are now statically mapped | Full semantic mapping of the approximately 180-field catalog; twin-field ordering; signature signData separators/concatenation; image sizing/caption layout; permission/settings/RequestedTypes; sanitized template parity | P0 |
 | Agent ↔ Service | Imports, HTTP heartbeat, WTS notifications, service UI messaging and parts of the Service handler are known | Agent state machine, heartbeat interval/timeouts, launch/restart/stop policy, session-change behavior, process ownership, IPC/window-message contract, failure recovery | P1 |
 | Browser host / init | Embedded JavaScript postMessage bridge and init endpoint are recovered | Identify actual host control/process and CLSID/ProgID; prove how the Almas page loads the bridge; Origin/Referer validation and browser compatibility | P1 |
-| AutoSave timer / .easz recovery | OnControlerNotify is a minimum-10-second timer path to Get_Content(-1), .easd/.easz and the archive writer; reader-side CryptoGetTextPassword and SetPasswordCallback are stubs; euGetAutoSavePass direct callers are cleanup/log UI, not this writer path | Resolve -1 semantics, trace T7zOutArchive password/encryption setup and writer callsites, finish cleanup/list/restore path and validate a synthetic archive. Do not assign euGetAutoSavePass to .easz without a call-chain link | P1 |
-| Printer management / GAM | Windows spooler imports and GetPrinterIndex/SetPrinterIndex names; GAM OEM driver/monitor/server stack, queue defaults and CLI examples | Exact callers, API levels/flags, stable ordering/index base/persistence; actual job submission; InstallShield custom actions/registry/service setup; .zan and output hand-off; collision/compression enums | P1 |
+| AutoSave timer / .easz recovery | OnTmrAutoSave assigns OnControlerNotify to a TTimer, clamps interval to >=10,000 ms; callback disables/re-enables timer, calls Get_Content(-1), builds .easd/.easz paths and invokes euUnArchive/T7zInArchive extraction. euGetAutoSavePass callers are cleanup/log UI only | Resolve -1 semantics and exact archive entry/path mapping; locate the actual .easz writer (T7zOutArchive methods have no proven app callsite), password/encryption contract and validate a synthetic archive | P1 |
+| Printer management / GAM | EMWAT BGPrintWithGamPrintOptions reaches Word COM Application.PrintOutOld; Word BeforePrint callback and print-handler/controller classes are identified; spooler calls in BPL enumerate queues/jobs; GAM OEM driver/monitor/server stack and queue defaults are mapped | Identify the +0x3F0 COM call and its 15 Variant args; trace print-thread callback ownership, active/default queue selection and actual GAM job hand-off; resolve .zan/final output, InstallShield actions and compression/collision enums | P1 |
 | ImageGear / scanner | GEAR API imports, many callsites, TScanCommand state transitions, IIPEditor and some page/handle semantics; Linux SANE backend exists | Exact GEAR version/constants, remaining ABI arguments, frame/page lifecycle, cancellation/error mapping, metadata, save/load semantics and hardware comparison | P2 |
 | ImageEn / image tools | DFM forms and ImageEn/WIA/TWAIN dependencies identified | Handler bodies, acquisition source selection, multipage document model, undo/redo, crop/rotate/flip semantics, insert/remove/reorder pages, TIFF/JPEG export and callback/result contract | P2 |
 | Word print options | DFM reveals recipients/CC, page-range and copy-count controls | Event-handler logic, page-range parser, saved settings storage, recipient/CC copy rules, mapping to printer queue and actual output | P2 |
@@ -54,8 +54,8 @@ These are related workflows, but current evidence does **not** establish them as
 
 ### P0-B — Complete WordConfig semantics
 
-1. Generate a metadata-only inventory of all field identifiers and their declared encoding/type attributes.
-2. Trace native field lookup/population for text, image, signature, recipient, CC, QR/barcode and option fields.
+1. Preserve the confirmed text/plain vs image/* routing and the urlencoded/base64 image payload support.
+2. Generate a metadata-only inventory of all field identifiers and declared encoding/type attributes.
 3. Resolve twin-field pairing and ordering without assuming Writer enumeration order equals Word COM order.
 4. Recover signData parsing, separator and concatenation semantics from code paths; do not log or publish signature values.
 5. Compare a sanitized synthetic Windows request with Writer's field inventory and returned response.
@@ -73,18 +73,19 @@ These are related workflows, but current evidence does **not** establish them as
 
 ### P1-B — .easz archive interoperability
 
-1. Create a synthetic Windows recovery archive containing a non-sensitive generated DOC/DOCX only.
-2. Record archive signature, entries, compression/encryption flags, sizes, password prompts and failure behavior.
-3. Trace the password callback to its actual source and encoding; the existence of CryptoGetTextPassword2 alone does not prove encryption is enabled.
-4. Verify Linux read/write interoperability independently; keep the existing Linux recovery manifest format separate.
+1. The timer-side read path is established: OnControlerNotify calls euUnArchive and the T7zInArchive entry enumeration/extraction methods.
+2. Create a synthetic Windows archive containing a non-sensitive generated DOC/DOCX only.
+3. Trace the actual writer call chain; do not treat the T7zOutArchive class presence as proof it creates .easz in this workflow.
+4. Resolve password/encryption flags from the writer and a controlled fixture; euGetAutoSavePass is not a proven archive password source.
+5. Verify Linux read/write interoperability independently; keep the existing Linux recovery manifest format separate.
 
 **Exit criterion:** at least one known-good synthetic archive can be inspected and opened with a documented password/encryption contract, or support remains explicitly out of scope.
 
 ### P1-C — Printer pipeline and GAM package
 
-1. Hash and compare the exact EmwatMethods.bpl against repository analysis-input/EmwatMethods.bpl1; record PE version, architecture and timestamp before merging address-level traces.
-2. Trace every GetPrinterIndex / SetPrinterIndex caller and the underlying EnumPrinters / GetPrinter levels, flags, fields and ordering.
-3. Find actual job-submission callsites separately from printer enumeration/configuration.
+1. EMWAT's print-options path reaches Word COM Application.PrintOutOld; the BeforePrint callback and print-handler/controller objects are identified.
+2. Map the 15-Variant COM call at vtable +0x3F0 and the handler's stored method callback; determine active/default printer selection.
+3. Keep queue enumeration/job-status calls separate from actual print submission.
 4. Decode InstallShield tables/custom actions, driver/monitor registration, service setup and registry writes without executing the installer.
 5. Trace zvprtsrv page completion, .zan lifecycle, final file path/extension and how EMWAT consumes the result. The config CLI proves fileformat 1 = TIFF and 2 = JPEG; it does not yet prove the EMWAT hand-off.
 6. Resolve compression and save-collision enums with controlled output fixtures.
@@ -140,8 +141,8 @@ These are related workflows, but current evidence does **not** establish them as
 
 ## Immediate next execution order
 
-1. Finish the printer callsite and output hand-off trace already in progress.
-2. In parallel, resolve Get_Content(-1) and the HTTP close-response serialization path.
-3. Build the sanitized WordConfig field coverage report, focusing on signatures and image fields.
-4. Start Agent lifecycle and .easz fixture investigations as independent tracks.
-5. Only then expand into ImageEn handlers, Excel, and installer/updater details.
+1. Finish the printer COM slot +0x3F0 mapping, print-thread handoff and GAM output path.
+2. In parallel, resolve the pending HTTP invoke release condition and close-to-response correlation.
+3. Trace the actual .easz writer; current evidence proves extraction but not archive creation.
+4. Complete WordConfig signature/twin/image field coverage.
+5. Continue Agent lifecycle, then ImageEn handlers, Excel and installer/updater details.
