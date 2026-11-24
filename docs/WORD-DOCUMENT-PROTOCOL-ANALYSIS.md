@@ -1545,3 +1545,17 @@ Source: workflow run 45347505909 (custom-property pipeline).
 - Signature-like field names are recognized by a regex pattern, but the signature payload `signData` concatenation/separator contract is still unresolved.
 
 For compatibility, preserve regular vs twin field identity, both field names, encoding, MIME type, caption item metadata and custom-property storage as separate parts of the schema.
+
+
+## LoadDocument initialization versus final document result (2026-11-24)
+
+A full-range trace of the current `TWordViwer.LoadDocument` / `OnTmrAutoSave` region adds an important boundary:
+
+- `LoadDocument` logs `OpenDoc function called`, validates `DocFileName`, creates the local Word document, loads ConfigXML, and logs the Word calling mode.
+- It contains a special-case branch for a `Payam-e-Dowlat` request; this must not be silently merged into the ordinary letter workflow.
+- Its response path sets `TIdHTTPResponseInfo.ContentText` from an output string, calls Indy `WriteContent` when the string is non-empty, and sets the response-sent flag. Nearby status strings include `Result Response Status:`, `Temp Document file deleted.`, and `OpenDoc function succeed.`
+- The called `OnTmrAutoSave` routine logs `wv.LoadDocument method called`, reads `view`, `readonly`, and `protected` configuration, connects to the OLE Word engine, checks Office activation, installs Word event callbacks, and configures the timer.
+
+This evidence makes the initial HTTP response look like an **OpenDoc/Word-initialization acknowledgement**, not proven proof that the final edited document has been returned to Almas. The body is supplied through a method output string; the exact source and all status values still need the remaining branch/caller trace.
+
+The timer is configured to call `OnControlerNotify`; that later callback performs the Content-related operation and enters the local SevenZip recovery path. Do not equate the initial `WriteContent` acknowledgement with the later document-registration outcome.
