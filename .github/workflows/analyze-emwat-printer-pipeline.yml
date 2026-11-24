@@ -1,0 +1,138 @@
+name: Analyze EMWAT printer selection and submission pipeline
+on:
+  push:
+    paths:
+      - '.github/workflows/analyze-emwat-printer-pipeline.yml'
+      - 'analysis-input/EmwatMethods.bpl1'
+      - 'tools/find_td32_class_procedures.py'
+      - 'tools/trace_td32_procedure.py'
+      - 'tools/trace_td32_callers.py'
+      - 'tools/analyze_emwat_td32.py'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  printer-pipeline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install pefile capstone
+      - name: Index printer and print-handler methods
+        run: |
+          mkdir -p printer-pipeline/procedures
+          python tools/find_td32_class_procedures.py analysis-input/EmwatMethods.bpl1 \
+            GetPrinterIndex SetPrinterIndex TEmwatDocPrintHandler \
+            BGPrintWithGamPrintOptions WordAppDocumentBeforePrintBGPrint \
+            PrintWordDoc PrintDocument PrintToPrinter \
+            > printer-pipeline/printer-method-index.md
+          python - <<'PY'
+          import pathlib, re, subprocess, sys
+          source = pathlib.Path("printer-pipeline/printer-method-index.md").read_text(encoding="utf-8")
+          rows = []
+          for line in source.splitlines():
+              if not line.startswith("|") or "Decorated procedure" in line or "|---" in line:
+                  continue
+              parts = [x.strip() for x in line.strip("|").split("|")]
+              if len(parts) < 5:
+                  continue
+              match = re.search(r"0x([0-9A-Fa-f]{8})", parts[2])
+              if match:
+                  rows.append((parts[0], parts[1].strip("`"), match.group(1)))
+          index = ["# Printer method traces", ""]
+          for module, name, va in rows:
+              safe = re.sub(r"[^A-Za-z0-9_.-]+", "_", name)[:100]
+              trace = f"printer-pipeline/procedures/{va}-{safe}.md"
+              callers = f"printer-pipeline/procedures/{va}-{safe}-callers.md"
+              subprocess.run([sys.executable, "tools/trace_td32_procedure.py",
+                              "analysis-input/EmwatMethods.bpl1", "0x"+va, trace], check=True)
+              subprocess.run([sys.executable, "tools/trace_td32_callers.py",
+                              "analysis-input/EmwatMethods.bpl1", "0x"+va, callers], check=True)
+              index.append(f"- {module} — {name} — 0x{va}: {trace}; callers: {callers}")
+          pathlib.Path("printer-pipeline/procedures/index.md").write_text("\n".join(index)+"\n", encoding="utf-8")
+          print(f"Traced {len(rows)} matching method records")
+          PY
+      - name: Map spooler and GDI API callsites to TD32 procedures
+        run: |
+          python - <<'PY'
+          import pathlib, pefile, re, struct
+          from capstone import Cs, CS_ARCH_X86, CS_MODE_32
+          from analyze_emwat_td32 import find_td32, parse_td32
+          src = pathlib.Path("analysis-input/EmwatMethods.bpl1")
+          blob = src.read_bytes()
+          pe = pefile.PE(data=blob, fast_load=False)
+          base = pe.OPTIONAL_HEADER.ImageBase
+          selected = {}
+          for entry in getattr(pe, "DIRECTORY_ENTRY_IMPORT", []):
+              dll = entry.dll.decode("ascii", "replace")
+              if dll.lower() not in ("winspool.drv", "gdi32.dll"):
+                  continue
+              for imp in entry.imports:
+                  if not imp.address:
+                      continue
+                  name = imp.name.decode("ascii", "replace") if imp.name else f"ordinal_{imp.ordinal}"
+                  if dll.lower() == "winspool.drv" or name.lower() in {
+                      "startdocw", "startpage", "endpage", "enddoc", "createdcw", "resetdcw"
+                  }:
+                      selected[imp.address] = (dll, name)
+          thunks = {}
+          for sec in pe.sections:
+              if not (sec.Characteristics & 0x20000000):
+                  continue
+              code = sec.get_data()
+              for i in range(max(0, len(code)-5)):
+                  if code[i:i+2] == b"\xff\x25":
+                      slot = struct.unpack_from("<I", code, i+2)[0]
+                      if slot in selected:
+                          thunks[base+sec.VirtualAddress+i] = (slot, selected[slot])
+          hit = find_td32(blob)
+          if not hit:
+              raise SystemExit("TD32 directory not found")
+          td_base, td_end, directory, _ = hit
+          _, names, modules, procedures = parse_td32(blob, td_base, td_end, directory)
+          md = Cs(CS_ARCH_X86, CS_MODE_32)
+          rows = []
+          for p in procedures:
+              if not (1 <= p["segment"] <= len(pe.sections)):
+                  continue
+              sec = pe.sections[p["segment"]-1]
+              mod = modules.get(p["module"])
+              seg = next((s for s in mod[1] if s[0] == p["segment"]), None) if mod else None
+              if not seg:
+                  continue
+              _, _, segbase, segsize = seg
+              off, size = p["offset"], p["size"]
+              if size <= 0 or off < segbase or off+size > segbase+segsize or off+size > sec.SizeOfRawData:
+                  continue
+              raw = sec.PointerToRawData+off
+              va = base+sec.VirtualAddress+off
+              module = names[mod[0]] if mod and mod[0] < len(names) else str(p["module"])
+              for ins in md.disasm(blob[raw:raw+size], va):
+                  if ins.mnemonic == "call":
+                      target = int(ins.op_str,16) if re.fullmatch(r"0x[0-9a-fA-F]+",ins.op_str.strip()) else None
+                      if target in thunks:
+                          slot,(dll,name)=thunks[target]
+                          rows.append((dll,name,module,p["name"],ins.address,target,slot))
+          out = ["# Windows spooler/GDI call-site map", "",
+                 f"- Imports selected: {len(selected)}",
+                 f"- Resolved import thunks: {len(thunks)}",
+                 f"- TD32-attributed callsites: {len(rows)}",
+                 "- Static callsites only; runtime execution is not implied.", "",
+                 "| DLL | API | Caller module | TD32 procedure | Callsite VA | Thunk VA | IAT VA |",
+                 "|---|---|---|---|---:|---:|---:|"]
+          for row in sorted(rows,key=lambda x:(x[0].lower(),x[1].lower(),x[5])):
+              dll,name,module,proc,site,thunk,slot=row
+              out.append(f"| {dll} | {name} | {module} | {proc} | 0x{site:08X} | 0x{thunk:08X} | 0x{slot:08X} |")
+          pathlib.Path("printer-pipeline/spooler-gdi-callsites.md").write_text("\n".join(out)+"\n",encoding="utf-8")
+          print("\n".join(out[:12]))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: emwat-printer-pipeline-analysis
+          path: printer-pipeline/
+          if-no-files-found: error
