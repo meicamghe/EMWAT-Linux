@@ -70,3 +70,5 @@ jobs:
         with:
           name: emwat-recovery-plugin-analysis
           path: recovery-plugin-analysis/
+
+# Parallel RE dispatch marker: 2026-11-24 independent analysis lane.

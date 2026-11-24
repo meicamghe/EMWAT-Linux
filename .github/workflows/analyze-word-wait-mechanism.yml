@@ -165,3 +165,5 @@ jobs:
         with:
           name: emwat-word-wait-mechanism
           path: wait-mechanism-analysis/
+
+# Parallel RE dispatch marker: 2026-11-24 independent analysis lane.

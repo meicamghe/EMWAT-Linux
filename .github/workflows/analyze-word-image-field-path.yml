@@ -76,3 +76,5 @@ jobs:
         with:
           name: emwat-word-image-field-path
           path: word-image-field-path/
+
+# Parallel RE dispatch marker: 2026-11-24 independent analysis lane.
