@@ -482,3 +482,24 @@ The Agent/Service crosswalk now resolves the exact health-check request and resp
 The matching Agent binary issues an HTTP `GET` to `http://127.0.0.1:1984/?heartbeat` and compares the returned body with `TickTack`. This closes the previously open string-to-callsite gap.
 
 **Native requirement:** implement `GET /?heartbeat` on loopback port `1984` with response body exactly `TickTack`. Do not route this request through document processing or return JSON. Keep health checking independent from the document API.
+
+
+## 2026-11-24 — TMainForm DFM confirms the HTTP listener configuration
+
+The embedded Delphi `TMAINFORM` resource in `EmwatService.exe` is a `TPF0` form stream. Its `TIdHTTPServer` component has the following serialized properties:
+
+| Property | DFM value |
+|---|---|
+| `Bindings[0].IP` | `127.0.0.1` |
+| `Port` | `1984` |
+| `DefaultPort` | `1984` |
+| `ListenQueue` | `100` |
+| `ReuseSocket` | `False` |
+| `TerminateWaitTime` | `15000 ms` |
+| `OnCommandGet` | `IdHTTPServerCommandGet` |
+
+The form method table identifies `IdHTTPServerCommandGet` at `0x0047BF30` and `FormCreate` at `0x0047CCD8`. In `FormCreate`, the server component at form offset `+0x3C0` is activated by setting its `Active` property to true through VMT slot `+0x94` at `0x0047CE5E`. Thus the loopback listener is not merely a resource default: the form startup path activates it.
+
+The service also contains the startup error message stating that port `1984` must be free if binding fails. This corroborates the DFM configuration.
+
+**Compatibility consequence:** the original service is loopback-only by configuration. The native Linux bridge should preserve that boundary and should not bind to `0.0.0.0` by default. The 15-second `TerminateWaitTime` is an Indy server shutdown setting; it is not evidence that document requests themselves have a 15-second timeout.

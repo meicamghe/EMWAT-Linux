@@ -700,3 +700,19 @@ The current Linux bridge already implements the Windows heartbeat wire contract:
 Verification: Python bridge transport workflow `45352644056` passed on branch head `b54a414f37e91989b3fa7b615ce7bfc3b42d21cc`, including the package/console-entrypoint step and bridge transport tests.
 
 The bridge's transport contract is therefore implemented and CI-tested. The desktop shell still requires deployment-specific supervisor injection; do not infer that the GUI starts the bridge automatically.
+
+
+## 2026-11-24 — original Indy listener configuration recovered from DFM
+
+The embedded `TMAINFORM` DFM confirms the original `TIdHTTPServer` settings:
+
+- Binding IP: `127.0.0.1` only.
+- Both `Port` and `DefaultPort`: `1984`.
+- `ListenQueue`: 100.
+- `ReuseSocket`: false.
+- `TerminateWaitTime`: 15,000 ms.
+- `OnCommandGet`: `IdHTTPServerCommandGet` (method VA `0x0047BF30`).
+
+The Service `FormCreate` method at `0x0047CCD8` activates the `TIdHTTPServer` component at form offset `+0x3C0` by setting its `Active` property to true at `0x0047CE5E`.
+
+This confirms the native bridge's existing default `127.0.0.1:1984` is correct and that it must remain loopback-only. Do not confuse the server's 15-second `TerminateWaitTime` with a request timeout or the previously observed 54.558-second document transaction.
