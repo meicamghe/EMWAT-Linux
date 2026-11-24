@@ -107,7 +107,7 @@ class WordAssetMappingTests(unittest.TestCase):
         self.assertEqual(inventory.images[0].data, b"")
         self.assertEqual(inventory.images[0].field_id, "SignsStart†SignsEnd")
         self.assertEqual(inventory.images[0].external_parameter, "signData")
-        self.assertEqual(inventory.images[1].data, b"\\x01\\x02\\x03")
+        self.assertEqual(inventory.images[1].data, b"\x01\x02\x03")
         self.assertEqual(inventory.signer_slots[0].signature_image_field_index, 1)
         self.assertEqual(inventory.unresolved_external_parameter_fields, ((0, "signData"),))
         self.assertEqual(inventory.empty_image_field_indices, ())
