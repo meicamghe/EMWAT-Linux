@@ -249,3 +249,27 @@ Preserve these as four separate settings:
 - `max_sequential_failure` (integer).
 
 Do not invent defaults. Use a native per-user configuration store, and keep the exact Windows registry names only in an import/migration adapter.
+
+
+## 13. Agent Management form defaults and watchdog bounds (resource DFM)
+
+The `EmwatAgent.exe` resource tree contains a Delphi form resource named `TMANAGEFORM` (resource data begins with `TPF0`). The decoded form is titled `Emwat Agent Management` and has `FormCreate` and `FormCloseQuery` handlers.
+
+The DFM exposes the settings corresponding to the registry values:
+
+| UI control | Label | Min | Max | DFM default |
+|---|---|---:|---:|---:|
+| `seInterval` | `Verify Interval (s):` | 1 | 3600 | 1 |
+| `seSeqFailCount` | `Sequential failures to stop:` | 5 | 15 | 5 |
+| `chkMakeLog` | `Write Events Log to file:` | — | — | no `Checked=true` property present |
+| `edtFileName` | read-only path field | — | — | no literal Text property in DFM |
+
+This gives a strong default/range mapping:
+- `LifeCheckInterval`: seconds, UI range 1–3600, default 1 second.
+- `MaxSequentialFailure`: UI range 5–15, default 5 consecutive failures.
+- `MakeLog`: Boolean checkbox; DFM does not set it checked, so the form's component default is unchecked unless `FormCreate` changes it.
+- `LogFilePath`: editable through the browse button but displayed in a read-only edit control; its runtime default still needs to be traced (the binary contains the filename `AgentLog.log`, but the assignment path is not yet proven).
+
+The heartbeat worker's field at offset `+0x40` is used as the interval threshold: after a 1000 ms sleep it increments a counter until the field threshold is reached, then sends the heartbeat request. This is consistent with `LifeCheckInterval` being seconds. Its field at `+0x4C` is compared with the sequential-failure counter and is consistent with `MaxSequentialFailure`. The exact constructor/copy assignment from the form/config object to those worker offsets remains to be recovered.
+
+**Important:** the DFM proves the UI defaults and allowed ranges, not that every headless startup path uses those same defaults. Preserve these values as the compatibility defaults but keep the form-to-worker copy path on the open-items list.
