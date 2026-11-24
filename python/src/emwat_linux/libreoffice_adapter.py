@@ -40,6 +40,10 @@ from emwat_linux.template_mapping import (
     inspect_template_mapping,
 )
 from emwat_linux.word_config import WordDocumentConfig
+from emwat_linux.emwat_field_catalog import (
+    WordConfigFieldCatalog,
+    build_word_config_field_catalog,
+)
 from emwat_linux.word_writer_evidence import (
     WordWriterEvidenceReport,
     build_word_writer_evidence_report,
@@ -246,6 +250,8 @@ class _OfficeHandle:
         self.template_mapping_inventory_error: str | None = None
         self.word_asset_inventory: WordAssetInventory | None = None
         self.word_asset_inventory_error: str | None = None
+        self.word_config_field_catalog: WordConfigFieldCatalog | None = None
+        self.word_config_field_catalog_error: str | None = None
 
     def mark_closed(self) -> None:
         if not self._closed_once:
@@ -582,6 +588,15 @@ class LibreOfficeAdapter:
         handle.template_mapping_inventory_error = None
         handle.word_asset_inventory = None
         handle.word_asset_inventory_error = None
+        handle.word_config_field_catalog = None
+        handle.word_config_field_catalog_error = None
+        try:
+            handle.word_config_field_catalog = build_word_config_field_catalog(
+                tuple(field.field_id for field in config.fields)
+            )
+        except Exception:
+            handle.word_config_field_catalog_error = "word_config_field_catalog_unavailable"
+
         try:
             handle.word_asset_inventory = inspect_word_assets(config)
         except Exception:
