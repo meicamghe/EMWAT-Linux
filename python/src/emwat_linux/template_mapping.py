@@ -127,9 +127,16 @@ def inspect_template_mapping(
     # Independently compare each WordConfig identifier (including twin
     # members) to Writer structures by name. This avoids using property
     # enumeration position as a surrogate for semantic identity.
+    config_structures = list(structures)
+    config_structures.extend(
+        ("custom_document_property", name)
+        for name in catalog.custom_document_properties_in_info_order
+    )
+    config_by_folded_name: dict[str, list[tuple[str, str]]] = {}
     exact_structures: dict[str, list[tuple[str, str]]] = {}
-    for kind, name in structures:
+    for kind, name in config_structures:
         exact_structures.setdefault(name, []).append((kind, name))
+        config_by_folded_name.setdefault(name.casefold(), []).append((kind, name))
     config_candidates: list[ConfigFieldStructureCandidate] = []
     unmatched_config: list[int] = []
     partial_config: list[int] = []
@@ -151,7 +158,7 @@ def inspect_template_mapping(
                 field_ambiguous = True
                 continue
             else:
-                folded = by_folded_name.get(member.casefold(), ())
+                folded = config_by_folded_name.get(member.casefold(), ())
                 if len(folded) == 1:
                     kind, name = folded[0]
                     match_kind = "casefold"
