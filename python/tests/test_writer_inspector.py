@@ -10,6 +10,23 @@ class FakeContainer:
     def getElementNames(self):
         return self.names
 
+    def getByName(self, _name):
+        return FakeGraphic()
+
+
+class FakeGraphic:
+    def getPropertySetInfo(self):
+        return type("PropertyInfo", (), {
+            "getProperties": lambda _self: [
+                type("Property", (), {"Name": "AnchorType"})(),
+                type("Property", (), {"Name": "GraphicURL"})(),
+                type("Property", (), {"Name": "Size"})(),
+            ]
+        })()
+
+    def getPropertyValue(self, _name):
+        raise AssertionError("graphic values and image bytes must not be read")
+
 
 class FakeEnumeration:
     def __init__(self, values):
