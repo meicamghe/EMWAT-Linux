@@ -686,3 +686,17 @@ The Agent/Service static trace confirms both sides of the local heartbeat:
 - Service startup reports a port-binding error if port `1984` is occupied.
 
 For native Linux compatibility, expose a loopback-only `GET /?heartbeat` route on port `1984`, returning the exact body `TickTack` (no JSON envelope or appended newline). The heartbeat handler should not invoke Word, document parsing, scanning, or printing. Agent retry behavior and its even-failure `taskkill EmwatService.exe` branch are documented in `AGENT-SERVICE-IPC-ANALYSIS.md`.
+
+
+## 2026-11-24 — native heartbeat parity and concurrency test
+
+The current Linux bridge already implements the Windows heartbeat wire contract:
+
+- `BridgeHTTPServer.do_GET` handles `/?heartbeat` directly, returns status 200, body `TickTack`, `Content-Length: 8`, and `Content-Type: text/html; charset=ISO-8859-1`.
+- `create_bridge_server` and `create_libreoffice_bridge_server` default to loopback `127.0.0.1:1984`.
+- The unit test `test_legacy_agent_heartbeat_endpoint` asserts the exact response.
+- The test `test_document_post_waits_for_close_while_heartbeat_remains_responsive` blocks a document POST on a close-event gate and proves the heartbeat route still responds while that request remains active. This validates the threaded-server separation needed by the Windows Agent watchdog.
+
+Verification: Python bridge transport workflow `45352644056` passed on branch head `b54a414f37e91989b3fa7b615ce7bfc3b42d21cc`, including the package/console-entrypoint step and bridge transport tests.
+
+The bridge's transport contract is therefore implemented and CI-tested. The desktop shell still requires deployment-specific supervisor injection; do not infer that the GUI starts the bridge automatically.

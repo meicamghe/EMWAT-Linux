@@ -204,3 +204,18 @@ A separate string/callsite pass on the exact Agent hash found:
 These add evidence for a health-check/configuration layer, but the URL string has not yet been tied to a complete HTTP client callsite and expected response. The exact registry hive/value types/defaults are not fully mapped; at least one registry-open callsite uses `HKEY_CURRENT_USER`. The taskkill strings have not yet been tied to the confirmed GUID broadcast shutdown path, so treat them as candidate fallback/legacy commands rather than confirmed normal shutdown behavior. The string `Heartbeat.Sentinel` is not yet mapped to a specific mutex/event callsite.
 
 This section supplements, and does not replace, the exact mutex and registered-message shutdown sequence above.
+
+
+## 11. Native Linux parity check (current branch)
+
+The current Linux implementation already contains the captured heartbeat contract:
+
+- `python/src/emwat_linux/bridge.py` handles `GET /?heartbeat` before the document dispatcher and returns HTTP 200 with exactly 8 body bytes: `TickTack`.
+- The response content type is `text/html; charset=ISO-8859-1`, matching the tested compatibility response.
+- `python/src/emwat_linux/application.py` configures the production bridge composition root to bind `127.0.0.1:1984` by default.
+- `python/tests/test_bridge.py::test_legacy_agent_heartbeat_endpoint` asserts status, exact body, content length and content type.
+- `test_document_post_waits_for_close_while_heartbeat_remains_responsive` deliberately blocks a document POST and verifies that the independent heartbeat GET still returns `TickTack`. This exercises the threaded HTTP-server design against the exact long-document/heartbeat concurrency concern.
+
+The `Python bridge transport` workflow passed on commit `b54a414f37e91989b3fa7b615ce7bfc3b42d21cc` (run `45352644056`), including package installation/console-entrypoint verification and the bridge transport test step.
+
+**Deployment boundary:** the GTK desktop shell intentionally does not create a production bridge supervisor by itself. A deployment must inject a configured supervisor/server factory with the required Almas Origin allowlist and the still-unresolved Cancel response contract. Thus the heartbeat route is implemented and CI-tested, but automatic production desktop startup is not claimed.
