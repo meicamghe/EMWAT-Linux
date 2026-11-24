@@ -142,10 +142,11 @@ These are related workflows, but current evidence does **not** establish them as
 - Word print options (WORD-PRINT-OPTION-DFM.md)
 - GAM virtual printer (GAM-VIRTUAL-PRINTER-REVERSE-ENGINEERING.md)
 - Printer compatibility plan (PRINTER-COMPATIBILITY-PLAN.md)
+- EMWAT Windows spooler selection/job matching (EMWAT-PRINTER-SPOOLER-ANALYSIS.md)
 
 ## Immediate next execution order
 
-1. Trace the 15 Word PrintOut arguments, print-thread handoff, and GAM output file/consumer contract.
+1. Trace the 15 Word PrintOut arguments and print-thread handoff; EMWAT's driver-name queue discovery, paused-state check, and JOB_INFO_1 document-name matching are now mapped, but the matching job-to-GAM-artifact hand-off remains open.
 2. In parallel, resolve the remaining HTTP request-retention/release condition and correlate it with Word COM close; the response body/header writer is now statically mapped, while the 54.558-second delay remains unexplained.
 3. Trace the timer-driven CostumizeRecAndCC → Document.PrintOutOld → BeforePrint path and determine whether it generates GAM jobs.
 4. Resolve `euResetMemory` output slot `+0x44` to its concrete SevenZip output method, determine whether the shared fixed string enables output encryption, and validate a synthetic `.easz` archive; the application-level output helper and callers are now identified, but the encryption/writer contract is not.

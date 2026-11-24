@@ -157,3 +157,40 @@ The `TWordViewer` VMT identifies `fBG_Printing` (+0x3C), `fDontAskSaveBeforePrin
 `CostumizeRecAndCC` contains three calls through Word Document vtable slot `+0x2BC`, matching the `TWordDocument.PrintOutOld` wrapper. This ties the periodic recovery callback to Word print operations, but it remains unknown whether the three calls become separate spool jobs or are intercepted/coalesced by the registered BeforePrint handler.
 
 The explicit BeforePrint path `BGPrintWithGamPrintOptions` reaches `TWordApplication.PrintOutOld` and also issues a 15-Variant COM call at slot `+0x3F0`; the slot identity and argument mapping remain open.
+
+
+## 2026-11-24 — EMWAT's own Windows spooler selection and job matching
+
+The expanded BPL callsite map provides a separate view of EMWAT's **own** spooler logic, upstream of the GAM virtual-printer driver/monitor.
+
+### Queue discovery
+
+`Zanprinter.GetPrinterName` at `0x0047CAF0` calls `EnumPrintersA` twice (size probe, then data retrieval) at level 2. It iterates `PRINTER_INFO_2A` records using the 0x54-byte record stride, compares the `pDriverName` field at offset `+0x10` against an embedded string at `0x0047CC64`, and on a match stores the corresponding `pPrinterName` field at offset `+0x04` in global `0x0062B310`.
+
+This means the printer queue is discovered by a **driver-name match**, not by assuming that the installed queue is always named `GAMPrinter`. The literal at `0x0047CC64` still needs an independent string decode; do not hardcode its value from the nearby Zan/GAM branding alone.
+
+### Paused-state check
+
+`Zanprinter.Finalization` at `0x0047D8BC` uses the discovered name to call `OpenPrinterA`, then `GetPrinterA(level=2)`, and closes the handle. It checks the DWORD at `PRINTER_INFO_2A+0x48` against `1`, which corresponds to `PRINTER_STATUS_PAUSED`. The helper therefore includes an explicit paused-queue test. If the printer cannot be opened, the alternate branch raises an error rather than silently treating it as ready.
+
+### Job/document matching
+
+`Emwatutils.ExtractFileNameEX` at `0x004562C4` calls `EnumJobsW(level=1)` with a maximum request of 1000 jobs, first querying the required buffer size and then retrieving the `JOB_INFO_1W` array. It walks records at a 0x40-byte stride, reads `pDocument` at offset `+0x10`, and compares it with the supplied document-name string. It returns a Boolean indicating whether a matching document-name job is present.
+
+This is a concrete queue-correlation primitive: EMWAT can search the Windows spool queue for a job whose document label matches a requested name. The exact higher-level caller and the point where that job is correlated with a GAM-generated file remain unresolved.
+
+### Other spooler callsites
+
+The expanded static import map also confirms:
+- `Emwatutils.getPrinterNumJobs` is called from `BGPrintWithGamPrintOptions` before the explicit Word print path and opens a printer through `OpenPrinterW`; the exact count/query implementation behind its helper call still needs resolving.
+- `EnumJobsW` is used by `ExtractFileNameEX`, not by the queue-discovery routine.
+- `EnumPrintersA`/ `OpenPrinterA`/ `GetPrinterA` are used by the Zanprinter helper path, while other EMWAT utilities use wide-character spooler APIs.
+
+### Linux compatibility consequences
+
+1. Discover candidate queues by driver metadata where a migration/import mode needs to reproduce Windows matching; do not assume a queue-name-only lookup.
+2. Model queue state explicitly, including paused vs ready.
+3. Support document-name/job correlation independently of queue enumeration.
+4. Keep the Windows spooler job identity and the GAM-produced output artifact as separate objects until the final hand-off is proven.
+
+The evidence and limits above are also tracked in [the dedicated spooler analysis](EMWAT-PRINTER-SPOOLER-ANALYSIS.md).
