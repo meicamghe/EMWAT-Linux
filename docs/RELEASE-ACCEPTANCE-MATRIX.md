@@ -123,3 +123,11 @@ only. It does not change the release blockers in this matrix: live Almas
 integration, verified WordConfig semantic mapping, physical scanner/ADF/duplex,
 Windows `.easz` interoperability, and complete desktop runtime packaging.
 PR #2 remains open, Draft and unmerged.
+
+
+## Printer subsystem evidence and acceptance boundary — 2026-11-24
+
+- User-supplied reverse-engineering evidence identifies `GetPrinterIndex` and `SetPrinterIndex` in `EmwatMethods.bpl`, Windows Spooler calls (`OpenPrinterW`, `EnumPrintersW`, `GetPrinterW`) in `EmwatAgent.exe`, and `GAMPrinterSetup.exe` as an InstallShield installer.
+- These clues establish a printer-management path worth implementing, but the exact BPL/EXE versions, callsites, structure levels, index semantics, installer custom actions, and runtime sequence have not yet been independently validated against the binaries in this repository.
+- Linux printer discovery, stable identity selection, default-printer persistence, and print-job submission must be separate capabilities. A Windows-style index may be translated only against a single captured enumeration snapshot; it must not be persisted as the printer identity.
+- Printer compatibility is not implemented or accepted yet. See [PRINTER-COMPATIBILITY-PLAN.md](PRINTER-COMPATIBILITY-PLAN.md) for the evidence boundary, Linux mapping strategy, and required tests.
