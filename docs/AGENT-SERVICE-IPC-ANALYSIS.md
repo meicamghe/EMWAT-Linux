@@ -51,11 +51,15 @@ The resulting IDs are retained through the global message-ID slots referenced at
 
 ### Service registers the shared service-termination message
 
-At 0x0047CE21, Service calls RegisterWindowMessageW with:
+At 0x0047CE21, Service calls RegisterWindowMessageW with the UTF-16 string:
+
+{2EC42BF4-EA08-4476-AB86-466763F80E9A}_TERMINATE_EM_SERVICE_
+
+The Service literal has a **trailing underscore**. The Agent's second registered literal, at 0x0066110A, is:
 
 {2EC42BF4-EA08-4476-AB86-466763F80E9A}_TERMINATE_EM_SERVICE
 
-It stores the returned message ID in its form field at offset +0x420. This is the same string Agent registers as its second termination message.
+It has **no trailing underscore**. The two strings are not identical, so Windows assigns different registered-message IDs. The Service stores its own ID in form field +0x420.
 
 ### Agent message handler
 
@@ -77,7 +81,7 @@ The matching path enters 0x0047DF84. That routine:
 2. Calls GetCurrentProcess.
 3. Calls TerminateProcess on the current process with exit code zero at 0x0047DFF5.
 
-This establishes a shutdown broadcast from Service to all top-level windows before Service terminates itself. Because Agent registers the same Service-termination message, Agent can receive that broadcast and close.
+This establishes a shutdown broadcast from Service to all top-level windows before Service terminates itself. However, the exact Service string in this binary has a trailing underscore, while the Agent's corresponding string does not. Therefore the broadcast ID is **not the same** as the Agent's registered second ID in the exact binary pair analyzed here. Do not claim that this Service broadcast reaches the Agent's handler; a version mismatch, alternate listener, or separate shutdown path must be investigated.
 
 ### Agent shutdown broadcast
 
@@ -134,9 +138,52 @@ A Unix-domain socket plus per-process lock files is a reasonable native design c
 
 - Exact names/semantics of the additional registered messages at Agent callsites outside the two termination GUIDs.
 - The full meaning of the Agent's 143 SendMessageW callsites and event objects.
+- The exact registered-message string mismatch: Service broadcasts `..._TERMINATE_EM_SERVICE_`, while Agent registers `..._TERMINATE_EM_SERVICE`.
 - Which process launches the other, and whether either executable monitors/restarts its peer.
 - Exact mutex-already-exists user-visible behavior.
 - Whether a different installer package registers an SCM service or a different Agent build uses WTS.
+
+## 9. Exact Agent ↔ Service heartbeat contract
+
+The heartbeat URL is now connected to both the Agent request callsite and the Service response callsite in the exact binary hashes from Section 1.
+
+### Agent request
+
+In `EmwatAgent.exe`:
+- The reliability-sentinel worker routine at `0x0066014A` constructs the URL `http://127.0.0.1:1984/?heartbeat` (string VA `0x0066048C`).
+- The HTTP wrapper at `0x0065BB24` calls the request helper at `0x0065F7C0`; the inner method dispatch at `0x0065F8A8` passes the literal `GET` (VA `0x0065F93C`) to the HTTP client's virtual method at slot `+0xB8`.
+- The returned response text is compared with the exact string `TickTack` (VA `0x006604DC`).
+- A successful response clears the sequential-error state and reaches the `[Heartbeat] Cleared from error.` log path.
+
+This confirms an HTTP GET request and an exact body token, not merely the presence of a URL string.
+
+### Service response
+
+In `EmwatService.exe`:
+- The request handler checks the query-parameter collection for the key `heartbeat` (string VA `0x0047C9F0`).
+- When present, it assigns `TickTack` (string VA `0x0047CA30`) to the response `ContentText` field at response-object offset `+0xBC`.
+- It calls the Indy response writer at `0x004610FC`.
+
+The Service binary also contains the startup error text: `Port binding failed. Make sure Emwat is not running and port 1984 is free.` This corroborates the local listener's port.
+
+### Failure and recovery behavior in Agent
+
+The bounded worker routine shows:
+- A 1000 ms sleep in the polling loop before the next request cycle.
+- A sequential failure counter compared with the worker object's field at offset `+0x4C` (the configured threshold source is not yet directly mapped to the registry value).
+- On an even-numbered failure, it launches `taskkill.exe /f /im EmwatService.exe` and waits another 1000 ms. It then calls a separate process/window cleanup helper and applies a further delay calculated as `2000 + 300 × failure_count` milliseconds.
+- On reaching the maximum sequential-failure threshold, it logs `Max Sequential failure count reached. Terminate myself.`, broadcasts the Agent's own registered termination message to `HWND_BROADCAST`, and enters its termination path.
+- Registry strings `LifeCheckInterval` and `MaxSequentialFailure` exist under the Agent configuration namespace, but their exact types/defaults and their mapping to worker fields remain to be confirmed.
+
+The exact polling cadence is therefore not simply one second: the 1000 ms loop sleep is combined with failure-dependent backoff and the additional service-kill delay.
+
+### Linux compatibility contract
+
+The native service should implement a loopback-only health endpoint at `GET /?heartbeat` whose response body is exactly `TickTack`. It should be lightweight and independent of document-open, printer, scanner, or Word/LibreOffice work. The Linux supervisor should expose explicit health state and bounded restart behavior rather than copying `taskkill.exe` semantics. Do not silently change the response token or append JSON/newline content to it.
+
+## 10. Registered-message version mismatch
+
+The Agent and Service hashes in Section 1 do not register the same Service-termination string: Agent omits the final underscore; Service includes it. Although each side independently has a shutdown broadcast/handler path, this pair of binaries does not establish a matching cross-process registered-message handshake. Keep this discrepancy visible in compatibility tests and avoid treating the current Windows shutdown broadcast as a proven Agent notification.
 
 ## Evidence discipline
 

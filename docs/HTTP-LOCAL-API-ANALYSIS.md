@@ -674,3 +674,15 @@ The latest bounded trace of `TWordViewer.LoadDocument` (VA range `0x004B7724–0
 This means the traced response is emitted after the local document-open operation returns; there is no evidence in this path that it waits for the user to close Word or for `ReadyToClose`. The close prompt/BeforeSave callback is a separate later event path.
 
 The observed approximately 54.558-second request duration should therefore be investigated inside the `OpenDoc`/Word COM activation path (or its caller) rather than assumed to be a close-driven long poll. The trace shows one `TApplication.ProcessMessages` call, not an explicit wait loop. The exact `TEmError` wire text/schema and the source of the long duration remain open.
+
+
+## 2026-11-24 — Agent health-check endpoint is now fully cross-referenced
+
+The Agent/Service static trace confirms both sides of the local heartbeat:
+
+- Agent sends HTTP `GET http://127.0.0.1:1984/?heartbeat`.
+- Agent compares the response body with exactly `TickTack`.
+- Service checks the query parameter `heartbeat`, writes `TickTack` to `ContentText`, and sends it through Indy `WriteContent`.
+- Service startup reports a port-binding error if port `1984` is occupied.
+
+For native Linux compatibility, expose a loopback-only `GET /?heartbeat` route on port `1984`, returning the exact body `TickTack` (no JSON envelope or appended newline). The heartbeat handler should not invoke Word, document parsing, scanning, or printing. Agent retry behavior and its even-failure `taskkill EmwatService.exe` branch are documented in `AGENT-SERVICE-IPC-ANALYSIS.md`.

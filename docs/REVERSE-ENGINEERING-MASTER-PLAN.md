@@ -143,6 +143,7 @@ These are related workflows, but current evidence does **not** establish them as
 - GAM virtual printer (GAM-VIRTUAL-PRINTER-REVERSE-ENGINEERING.md)
 - Printer compatibility plan (PRINTER-COMPATIBILITY-PLAN.md)
 - EMWAT Windows spooler selection/job matching (EMWAT-PRINTER-SPOOLER-ANALYSIS.md)
+- Agent/Service IPC, heartbeat and watchdog (AGENT-SERVICE-IPC-ANALYSIS.md)
 
 ## Immediate next execution order
 
@@ -151,4 +152,4 @@ These are related workflows, but current evidence does **not** establish them as
 3. Trace the normal timer-driven CostumizeRecAndCC → Document.PrintOutOld → BeforePrint path and correlate its document label with the spooler job and GAM artifact; the two exception retries are fallback attempts, not three unconditional jobs.
 4. Resolve `euResetMemory` output slot `+0x44` to its concrete SevenZip output method, determine whether the shared fixed string enables output encryption, and validate a synthetic `.easz` archive; the application-level output helper and callers are now identified, but the encryption/writer contract is not.
 5. Complete WordConfig signature/twin/image field coverage.
-6. Continue Agent lifecycle, then ImageEn handlers, Excel and installer/updater details.
+6. Complete Agent watchdog registry defaults and the registered-message trailing-underscore mismatch; then ImageEn handlers, Excel and installer/updater details. The loopback heartbeat contract itself is now confirmed as GET `/?heartbeat` → exact body `TickTack`.

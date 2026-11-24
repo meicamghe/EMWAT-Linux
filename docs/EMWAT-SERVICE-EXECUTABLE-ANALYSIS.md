@@ -468,3 +468,17 @@ For the current Service build, a byte-level x86 CALL-thunk scan (rather than lin
 This is concrete evidence of mutex-based single-instance/coordinator behavior and Win32 window-message communication between processes, plus explicit process termination paths. The actual mutex name, registered-message string, target window identity and termination conditions still need to be traced.
 
 The current extracted Service build has no imports for `OpenSCManagerW`, `OpenServiceW`, `StartServiceW`, `CreateServiceW`, or WTS session notification APIs in the inspected import table. Therefore the filename `EmwatService.exe` must not be treated as proof that this particular binary is a Windows SCM service; the observed coordination is currently better described as a user-mode process with window/mutex IPC. A separate installer/service wrapper or another version could still exist.
+
+
+## 2026-11-24 — confirmed local heartbeat endpoint
+
+The Agent/Service crosswalk now resolves the exact health-check request and response:
+
+- The request handler checks the query-parameter key `heartbeat` (string VA `0x0047C9F0`).
+- When present, it assigns the exact text `TickTack` (VA `0x0047CA30`) to `TIdHTTPResponseInfo.ContentText` at response-object offset `+0xBC`.
+- It then calls the Indy response writer at `0x004610FC`.
+- The startup error string explicitly reports that port `1984` must be free if binding fails.
+
+The matching Agent binary issues an HTTP `GET` to `http://127.0.0.1:1984/?heartbeat` and compares the returned body with `TickTack`. This closes the previously open string-to-callsite gap.
+
+**Native requirement:** implement `GET /?heartbeat` on loopback port `1984` with response body exactly `TickTack`. Do not route this request through document processing or return JSON. Keep health checking independent from the document API.
