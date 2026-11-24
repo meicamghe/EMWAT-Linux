@@ -27,6 +27,7 @@ from emwat_linux.editword_request import EditWordDocumentRequest
 from emwat_linux.office_adapter import CloseDisposition, OfficeCloseEvent
 from emwat_linux.recovery_store import RecoverySnapshotStore
 from emwat_linux.writer_fields import refresh_writer_text_fields
+from emwat_linux.word_assets import apply_writer_graphic_updates
 from emwat_linux.writer_inspector import WriterDocumentCatalog, inspect_writer_document
 from emwat_linux.writer_properties import set_custom_document_properties
 from emwat_linux.template_mapping import (
@@ -627,6 +628,25 @@ class LibreOfficeAdapter:
             set_custom_document_properties(handle.document, updates)
             if updates:
                 refresh_writer_text_fields(handle.document)
+
+    def apply_writer_graphic_updates(
+        self,
+        handle: object,
+        updates: object,
+    ) -> tuple[str, ...]:
+        """Apply explicit image-field-to-existing-graphic bindings.
+
+        The caller must provide evidence-backed target names. This method
+        preserves the existing Writer graphic anchors and frame geometry.
+        Staged image files live inside the private office session directory.
+        """
+        if not isinstance(handle, _OfficeHandle):
+            raise TypeError("invalid_libreoffice_handle")
+        asset_directory = handle.work_dir / "mapped-assets"
+        with handle.snapshot_lock:
+            return apply_writer_graphic_updates(
+                handle.document, updates, asset_directory
+            )
 
     def wait_for_close(self, handle: object) -> OfficeCloseEvent:
         if not isinstance(handle, _OfficeHandle):

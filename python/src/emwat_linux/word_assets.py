@@ -1,0 +1,285 @@
+"""Evidence-bounded image and signer metadata mapping for EMWAT WordConfig.
+
+The native protocol identifies image payloads and 20 signer metadata slots, but
+it does not provide a verified field-id-to-Writer-anchor table. This module
+decodes and classifies assets and applies images only through caller-supplied,
+explicit target names. It never guesses signature image anchors or parses
+signData.
+"""
+from __future__ import annotations
+
+from collections.abc import Mapping, Sequence
+from dataclasses import dataclass
+from pathlib import Path
+
+from emwat_linux.word_config import WordDocumentConfig
+from emwat_linux.word_fields import DecodedWordField, decode_word_fields
+
+
+class WriterAssetMappingError(RuntimeError):
+    """Raised when an explicit Writer image mapping cannot be applied safely."""
+
+
+@dataclass(frozen=True)
+class WordImageAsset:
+    field_index: int
+    field_id: str
+    mimetype: str
+    data: bytes
+    external_parameter: str | None
+
+    @property
+    def is_empty(self) -> bool:
+        return not self.data
+
+
+@dataclass(frozen=True)
+class SignerMetadataSlot:
+    index: int
+    person: str = ""
+    department: str = ""
+    unit: str = ""
+
+
+@dataclass(frozen=True)
+class WordAssetInventory:
+    images: tuple[WordImageAsset, ...]
+    signer_slots: tuple[SignerMetadataSlot, ...]
+    signer_slot_count: int
+    empty_image_field_indices: tuple[int, ...]
+
+
+@dataclass(frozen=True)
+class WriterGraphicUpdate:
+    field_index: int
+    field_id: str
+    target_name: str
+    mimetype: str
+    data: bytes
+
+
+_IMAGE_EXTENSIONS = {
+    "image/png": ".png",
+    "image/jpeg": ".jpg",
+    "image/jpg": ".jpg",
+    "image/gif": ".gif",
+    "image/tif": ".tif",
+    "image/tiff": ".tif",
+    "image/bmp": ".bmp",
+}
+_SIGNER_FIELD = __import__("re").compile(r"^LetterSigner(Per|Dep|Unit)(0|[1-9][0-9]?)$")
+_MAX_SIGNER_SLOT = 19
+
+
+def _text_value(field: DecodedWordField) -> str:
+    if not isinstance(field.value, str):
+        raise WriterAssetMappingError("signer_metadata_must_be_text")
+    return field.value
+
+
+def inspect_word_assets(
+    config: WordDocumentConfig,
+    *,
+    max_image_bytes: int = 20 * 1024 * 1024,
+    max_total_image_bytes: int = 64 * 1024 * 1024,
+) -> WordAssetInventory:
+    """Decode image fields and preserve all observed signer slots 0..19.
+
+    Empty image fields are retained as empty indices; they are not interpreted
+    as a request to delete a pre-existing Writer graphic. Image bytes remain
+    in memory only and must not be written to logs or evidence reports.
+    """
+    if not isinstance(config, WordDocumentConfig):
+        raise TypeError("invalid_word_document_config")
+    if type(max_image_bytes) is not int or max_image_bytes <= 0:
+        raise ValueError("max_image_bytes_must_be_positive")
+    if type(max_total_image_bytes) is not int or max_total_image_bytes <= 0:
+        raise ValueError("max_total_image_bytes_must_be_positive")
+
+    decoded = decode_word_fields(config)
+    images: list[WordImageAsset] = []
+    empty_indices: list[int] = []
+    total_bytes = 0
+    slots: dict[int, dict[str, str]] = {}
+
+    for index, field in enumerate(decoded):
+        if field.is_image:
+            if (field.encoding or "").casefold() != "base64":
+                raise WriterAssetMappingError("image_field_requires_base64")
+            if not isinstance(field.value, bytes):
+                raise WriterAssetMappingError("image_field_payload_not_binary")
+            if len(field.value) > max_image_bytes:
+                raise WriterAssetMappingError("image_field_size_exceeded")
+            total_bytes += len(field.value)
+            if total_bytes > max_total_image_bytes:
+                raise WriterAssetMappingError("total_image_payload_size_exceeded")
+            mimetype = (field.mimetype or "").casefold()
+            if mimetype not in _IMAGE_EXTENSIONS:
+                raise WriterAssetMappingError("unsupported_image_mimetype")
+            images.append(
+                WordImageAsset(
+                    field_index=index,
+                    field_id=field.field_id,
+                    mimetype=mimetype,
+                    data=field.value,
+                    external_parameter=field.external_parameter,
+                )
+            )
+            if not field.value:
+                empty_indices.append(index)
+            continue
+
+        match = _SIGNER_FIELD.fullmatch(field.field_id)
+        if match is None:
+            continue
+        kind, raw_index = match.groups()
+        slot_index = int(raw_index)
+        if slot_index > _MAX_SIGNER_SLOT:
+            continue
+        slot = slots.setdefault(slot_index, {})
+        if kind in slot:
+            raise WriterAssetMappingError("duplicate_signer_metadata_field")
+        slot[kind] = _text_value(field)
+
+    signer_slots = tuple(
+        SignerMetadataSlot(
+            index=index,
+            person=slots.get(index, {}).get("Per", ""),
+            department=slots.get(index, {}).get("Dep", ""),
+            unit=slots.get(index, {}).get("Unit", ""),
+        )
+        for index in range(_MAX_SIGNER_SLOT + 1)
+    )
+    return WordAssetInventory(
+        images=tuple(images),
+        signer_slots=signer_slots,
+        signer_slot_count=len(slots),
+        empty_image_field_indices=tuple(empty_indices),
+    )
+
+
+def build_writer_graphic_updates(
+    inventory: WordAssetInventory,
+    target_names_by_field_index: Mapping[int, str],
+) -> tuple[WriterGraphicUpdate, ...]:
+    """Bind image fields to existing Writer graphic names using explicit input.
+
+    The field index is used because duplicate XML field IDs are observed and
+    therefore cannot safely act as unique keys. Missing targets are not guessed.
+    """
+    if not isinstance(inventory, WordAssetInventory):
+        raise TypeError("invalid_word_asset_inventory")
+    if not isinstance(target_names_by_field_index, Mapping):
+        raise TypeError("graphic_target_map_must_be_mapping")
+
+    assets_by_index = {asset.field_index: asset for asset in inventory.images}
+    if len(assets_by_index) != len(inventory.images):
+        raise WriterAssetMappingError("duplicate_image_field_index")
+    unknown_indices = tuple(
+        index for index in target_names_by_field_index if index not in assets_by_index
+    )
+    if unknown_indices:
+        raise WriterAssetMappingError("graphic_target_references_unknown_field")
+    targets = tuple(target_names_by_field_index.values())
+    if any(not isinstance(name, str) or not name for name in targets):
+        raise ValueError("graphic_target_name_required")
+    if len(set(targets)) != len(targets):
+        raise WriterAssetMappingError("duplicate_writer_graphic_target")
+
+    updates: list[WriterGraphicUpdate] = []
+    for field_index, target_name in target_names_by_field_index.items():
+        asset = assets_by_index[field_index]
+        if asset.is_empty:
+            raise WriterAssetMappingError("empty_image_field_not_applied")
+        updates.append(
+            WriterGraphicUpdate(
+                field_index=field_index,
+                field_id=asset.field_id,
+                target_name=target_name,
+                mimetype=asset.mimetype,
+                data=asset.data,
+            )
+        )
+    return tuple(updates)
+
+
+def apply_writer_graphic_updates(
+    document: object,
+    updates: Sequence[WriterGraphicUpdate],
+    asset_directory: Path,
+) -> tuple[str, ...]:
+    """Replace existing named Writer graphic objects without changing anchors.
+
+    Image files are staged in a private session directory. Existing GraphicURL
+    values are captured and restored in reverse order if any UNO setter fails.
+    The caller owns the directory lifetime; the LibreOffice session workdir is
+    an appropriate owner.
+    """
+    if not isinstance(updates, Sequence):
+        raise TypeError("graphic_updates_must_be_sequence")
+    if not updates:
+        return ()
+    if any(not isinstance(item, WriterGraphicUpdate) for item in updates):
+        raise TypeError("invalid_writer_graphic_update")
+    names = tuple(item.target_name for item in updates)
+    if len(set(names)) != len(names):
+        raise WriterAssetMappingError("duplicate_writer_graphic_target")
+
+    try:
+        container = document.getGraphicObjects()
+        existing = set(str(name) for name in container.getElementNames())
+        missing = tuple(name for name in names if name not in existing)
+        if missing:
+            raise KeyError("writer_graphic_object_not_found:" + ",".join(missing))
+    except (KeyError, TypeError, ValueError):
+        raise
+    except Exception as exc:
+        raise WriterAssetMappingError("writer_graphic_container_unavailable") from exc
+
+    directory = Path(asset_directory)
+    directory.mkdir(mode=0o700, parents=True, exist_ok=True)
+    staged: list[tuple[object, str, str]] = []
+    attempted: list[tuple[object, str]] = []
+    try:
+        for update in updates:
+            extension = _IMAGE_EXTENSIONS.get(update.mimetype.casefold())
+            if extension is None or not update.data:
+                raise WriterAssetMappingError("invalid_writer_graphic_payload")
+            path = directory / f"emwat-image-{update.field_index}{extension}"
+            path.write_bytes(update.data)
+            url = path.resolve().as_uri()
+            graphic = container.getByName(update.target_name)
+            previous_url = str(graphic.getPropertyValue("GraphicURL"))
+            staged.append((graphic, previous_url, url))
+
+        for graphic, previous_url, url in staged:
+            attempted.append((graphic, previous_url))
+            graphic.setPropertyValue("GraphicURL", url)
+    except Exception as exc:
+        rollback_failed = False
+        for graphic, previous_url in reversed(attempted):
+            try:
+                graphic.setPropertyValue("GraphicURL", previous_url)
+            except Exception:
+                rollback_failed = True
+        if rollback_failed:
+            raise WriterAssetMappingError(
+                "writer_graphic_update_failed_and_rollback_incomplete"
+            ) from exc
+        if isinstance(exc, (KeyError, TypeError, ValueError, WriterAssetMappingError)):
+            raise
+        raise WriterAssetMappingError("writer_graphic_update_failed") from exc
+
+    return names
+
+
+__all__ = [
+    "SignerMetadataSlot",
+    "WordAssetInventory",
+    "WordImageAsset",
+    "WriterAssetMappingError",
+    "WriterGraphicUpdate",
+    "apply_writer_graphic_updates",
+    "build_writer_graphic_updates",
+    "inspect_word_assets",
+]
