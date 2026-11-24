@@ -93,3 +93,34 @@ T7zOutArchive.CryptoGetTextPassword2 at 0x004543C4 initializes an associated cal
 - Do not add password encryption to the Linux recovery archive based only on euResetMemory's SetPassword call; the output SetPassword implementation is a no-op.
 - Keep the input archive password optional and unresolved until the indirect SetPassword call or CryptoGetTextPassword2 output is traced.
 - Preserve .easd and .easz as distinct observed suffixes; the exact mapping between archive and extracted document roles still needs caller-level validation.
+
+
+## Parallel trace update — close decision versus AutoSave content (2026-11-24)
+
+Fresh TD32 artifacts from the Word request-lifecycle and response workflows clarify two paths that must remain separate:
+
+### 1. AutoSave/controller-notify path
+
+At `TWordViwer.OnControlerNotify` (`0x004BB3B0`), the code pushes `-1`, pushes the document interface at viewer offset `+0x48`, then calls vtable slot `+0xDC`. The generated `TWordDocument.Get_Content` wrapper at `0x0042BDF8` maps that slot to the Content getter. Therefore the call is a Content-related operation, not a Document.Close call. The literal `-1` is passed at this callsite, but its precise meaning/ABI role remains unresolved; do not interpret it as SaveChanges.
+
+The handler then performs the Farsi-direction transform and calls `euUnArchive` (`0x00456DFC)) using the `.easd/.easz` path values. This is the local AutoSave/recovery branch. It is not, by itself, proof that the edited letter has been registered in Almas.
+
+### 2. User-facing BeforeSave decision
+
+The separate `TWordViwer.WordAppDocumentBeforeSave` callback at `0x004CD154` contains the Persian prompt:
+
+> محتويات اين سند تغيير كرده است. آيا مايل به ثبت تغييرات مي‌باشيد؟
+
+The three button captions are `موافقم`, `خیر`, and `انصراف`. The code checks the dialog result as follows:
+
+- Result `2` (Cancel): writes `-1` to the COM event's Cancel flag and exits the save/close path.
+- Result `6` (Yes): prepares `-1` as the SaveChanges argument for a later Document.Close dispatch at vtable slot `+0x29C`.
+- Other non-cancel result (the No branch): prepares `0` as SaveChanges for that Document.Close dispatch.
+
+The `-1` / `0` mapping is consistent with Word's `wdSaveChanges` / `wdDoNotSaveChanges` values. This is static callsite evidence for the prompt's Yes/No/Cancel behavior, not a runtime test of every Word version.
+
+### 3. HTTP response boundary
+
+The LoadDocument path contains an Indy `TIdHTTPResponseInfo.WriteContent` call and a response-construction branch. The remaining question is how the controller-notify completion releases the original long-lived `invoke` request and which returned payload Almas consumes. Keep that separate from the local `.easz` recovery artifact.
+
+**Implementation consequence:** Linux must model the close decision as a three-way state transition. Do not collapse No and Cancel: No closes without Word saving; Cancel vetoes the operation. Local recovery may still be a separate operation and must not be conflated with the final Almas registration response.
