@@ -186,4 +186,13 @@ The Word image-field caller `GetCaptionItemFont` (`0x004C19C0`) invokes a separa
 Do not attribute this caption composition to GEAR32PD: the bounded GEAR helper `EmbedTextToImage` calls only image load/resolution-get/resolution-set/delete APIs. The pixel-write/save operation, if any, is still unresolved.
 
 
-The Word signature-caption helper `0x004C4DBC` calls a save routine at `0x0044ABE4`. After the call, it logs `image saved to file. Params.Dpi: %d` and `Caption embeded to image.`. This confirms that the caption path writes a separate output image; it is not only a resolution metadata query. The exact save API and output format constant at `0x004C5AE8` are still being resolved.
+The Word signature-caption helper `0x004C4DBC` calls a save routine at `0x0044ABE4`. After the call, it logs `image saved to file. Params.Dpi: %d` and `Caption embeded to image.`. This confirms that the caption path writes a separate output image; it is not only a resolution metadata query. The actual image-save API is still being resolved. The nearby `0x004C5AE8=4` value belongs to the custom modal width-error dialog, not an output-format enum.
+
+
+### Resolution-unit conversion constants recovered
+
+The two x87 extended constants used by `EmbedTextToImage` are:
+- `39.37` — inches per metre. Type value 2 divides pixels-per-metre values by this constant to obtain pixels per inch.
+- `0.3937` — inches per centimetre. Type value 4 divides pixels-per-centimetre values by this constant to obtain pixels per inch.
+
+The normalized four-value tuple is passed to `IG_image_resolution_set` with mode argument 3. This makes the DPI normalization explicit; the exact semantics of GEAR mode 3 still need confirmation.

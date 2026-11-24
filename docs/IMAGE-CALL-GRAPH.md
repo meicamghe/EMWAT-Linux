@@ -116,4 +116,7 @@ The caption helper is therefore separate from the GEAR resolution helper. Its fi
 
 ### Signature caption output confirmed
 
-The helper `0x004C4DBC` now has direct save evidence: it calls `0x0044ABE4` with an output path and format/options, then logs `image saved to file. Params.Dpi: %d` and `Caption embeded to image.`. It also validates signature-image dimensions and emits Persian errors for invalid or too-narrow signature images. The save helper's exact API and the 16-bit format value at `0x004C5AE8` remain under analysis.
+The helper `0x004C4DBC` logs `image saved to file. Params.Dpi: %d` and `Caption embeded to image.` after its caption-placement path. Its width-error branch calls `0x0044ABE4`, which is a custom modal dialog helper (VCL form setters/component enumeration), not the image save API. The `0x004C5AE8=4` value is the dialog control count. The actual image-save API remains unresolved.
+
+
+The GEAR32PD helper's constants are now decoded: type 2 converts pixels/metre to DPI using 39.37 inches/metre; type 4 converts pixels/centimetre to DPI using 0.3937 inches/centimetre. The normalized values are written through `IG_image_resolution_set` mode 3.

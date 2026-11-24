@@ -47,7 +47,7 @@ The bounded disassembly proves this call sequence:
 | `0x004C44D7` | `0x004AFF10` | `IG_image_resolution_set` | Write normalized tuple; mode argument is 3 |
 | `0x004C44E0` | `0x004AFEB8` | `IG_image_delete` | Release loaded image handle |
 
-The function examines a metadata type field. Type values 2 and 4 take separate branches that divide four returned values by different 80-bit extended constants. The normalized tuple is passed to `IG_image_resolution_set`; the exact units and constants still need decoding.
+The function examines a metadata type field. Type value 2 divides four returned values by 39.37 (inches per metre); type value 4 divides by 0.3937 (inches per centimetre). These conversions normalize pixels-per-metre or pixels-per-centimetre values into pixels-per-inch (DPI). The normalized tuple is passed to `IG_image_resolution_set` with mode 3.
 
 The function returns a calculated output value and updates a viewer-side property. **No text-drawing API is called in this bounded procedure.** Although its symbol is `EmbedTextToImage`, the current trace proves image loading, resolution read/normalization/write, and handle cleanup only. Caption rasterization is not established.
 
@@ -118,4 +118,17 @@ The caption helper `0x004C4DBC` contains these internal messages:
 
 Before the save call, the code obtains image width/height through view-object VMT methods. It calculates `width - 20` and compares that value with `40`; the user-facing error formatter passes the measured width and `40`. This indicates a 40-pixel usable-width threshold with an additional 20-pixel margin in the internal calculation. Preserve the exact formula and validate it with real signature fixtures before translating it into a simple minimum-width rule.
 
-The output save call is at `0x004C51B4` to helper `0x0044ABE4`. The format argument is loaded from the 16-bit constant at `0x004C5AE8`; its value/meaning is pending the latest import/constant workflow.
+At `0x004C51B4`, the helper `0x0044ABE4` is a custom modal-dialog routine, **not** an image-save routine. Its body calls VCL `TControl.SetText`, `TCustomForm.SetFormStyle`, `TComponent.GetComponentCount` and `TComponent.GetComponent`, then invokes a form VMT method and frees the form. It is reached from the invalid/too-narrow signature-image branch. The 16-bit value `4` at `0x004C5AE8` is the dialog's child-control/argument count, not an image-format enum. The dialog uses the Persian strings `تایید` (confirm) and `ام وات` (EMWAT).
+
+
+## 9. Width-error dialog and image-save boundary correction
+
+The signature-width error branch formats a message and calls `0x0044ABE4`. That helper is a custom modal form builder:
+- `0x00404894` resolves to `TControl.SetText`;
+- `0x00404E34` resolves to `TCustomForm.SetFormStyle`;
+- `0x004042B4` / `0x004042AC` resolve to `TComponent.GetComponentCount` / `TComponent.GetComponent`;
+- it sets child-control text, invokes the form's modal/show VMT method, then frees the form.
+
+The constant `0x004C5AE8=4` is passed as the dialog's control/argument count. It is **not** the image output format. The dialog labels include `تایید` and `ام وات`.
+
+The success branch of `0x004C4DBC` calls `TWordViwer.ClearClipboard` (`0x004C4D64`), measures and positions caption items using font metrics and image-view VMT calls, then records the success messages. The image output/save API remains to be identified. The GEAR import table contains `IG_save_file` (IAT `0x00630D30`, thunk `0x004AFE90`), but its use by this caption routine has not yet been established.
