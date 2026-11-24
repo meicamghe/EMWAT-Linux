@@ -201,3 +201,8 @@ The XML `<method class="EditWordDocument">` value is not passed verbatim to Delp
 ## Native Python structural catalog — 2026-11-17
 
 The new `emwat_linux.emwat_field_catalog` helper recognizes the seven repeated signer families observed in this capture: department, person, unit, index unit, signature number, behalf name, and signature image. It retains the original field ID and capture order, and requires the two halves of a signature-image twin to carry the same numeric index. It deliberately does not infer mappings from these identifiers to LibreOffice Writer properties; that mapping still requires verified document fixtures and native resolver evidence.
+
+
+## Linux field-catalog implementation — 2026-11-24
+
+The Python catalog now recognizes all 40 non-indexed identifiers documented above by exact name and all seven indexed signer families. It retains each source position, duplicate occurrence, and unknown future ID. Known base categories distinguish letter content, producer/sender, registration/classification, To/CC recipients, sender-signature metadata, sender signature image, QR, barcode, slogan asset (kept unclassified), and the external `signData` parameter field. This is a schema catalog only: it does not assert Writer anchors or silently convert unknown fields.

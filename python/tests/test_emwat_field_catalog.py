@@ -101,6 +101,30 @@ class EmwatFieldCatalogTests(unittest.TestCase):
             ["person", "department", "person", "signature_number"],
         )
 
+
+    def test_catalogs_all_forty_base_fields_and_indexed_signer_families(self):
+        from emwat_linux.emwat_field_catalog import build_word_config_field_catalog
+
+        base_ids = ["RelatedLetters","LetterDescription","LetterSubject","Appendix","HasAppendix","Version","letterId","LetterProducerName","LetterProducerDep","LetterProducerDepPhoneNumber","LetterProducerPhoneNumber","LetterProducerUnit","LetterProducerUnitCode","LetterSenderName","LetterSenderDep","LetterSenderAddress","LetterSenderUnit","LetterSenderUnitCode","LetterSenderIndexUnit","ProduceDate","LetterRegistrationNo","LetterRegistrationDate","LetterRegistrationTime","Classification","TransferType","DocType","Priority","Receivers","ReceiverDeps","ReceiverCeremonialUnits","ccReceivers","ccReceiverDeps","ccReceiverCeremonialUnits","SenderSignerBehalfName","SignNumberOfSender","SignOfSenderStart†SignOfSenderEnd","ShamsQRcodeStart†ShamsQRcodeEnd","shamsBarcode","Slogan","SignsStart†SignsEnd"]
+        fields = tuple(base_ids) + (
+            "LetterSignerPer0",
+            "SignOfSignerStart19†SignOfSignerEnd19",
+            "UnknownFutureField",
+        )
+        catalog = build_word_config_field_catalog(fields)
+        self.assertEqual(len(catalog.base_fields), 40)
+        self.assertEqual(len(catalog.indexed_signer_fields), 2)
+        self.assertEqual(catalog.unknown_fields, ((42, "UnknownFutureField"),))
+        self.assertEqual(
+            catalog.base_fields[-5].category, "sender_signature_metadata"
+        )
+        self.assertEqual(
+            catalog.base_fields[-4].category, "sender_signature_image"
+        )
+        self.assertEqual(
+            catalog.base_fields[-1].category, "external_signature_parameter"
+        )
+
     def test_rejects_non_text_field_ids(self):
         with self.assertRaisesRegex(TypeError, "field_id_must_be_text"):
             parse_indexed_signer_field(None)
