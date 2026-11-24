@@ -227,6 +227,8 @@ def build_writer_graphic_updates(
     for field_index, target_name in target_names_by_field_index.items():
         asset = assets_by_index[field_index]
         if asset.is_empty:
+            if asset.external_parameter:
+                raise WriterAssetMappingError("external_image_parameter_unresolved")
             raise WriterAssetMappingError("empty_image_field_not_applied")
         updates.append(
             WriterGraphicUpdate(
