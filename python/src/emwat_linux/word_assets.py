@@ -54,6 +54,7 @@ class WordAssetInventory:
     signer_slots: tuple[SignerMetadataSlot, ...]
     signer_slot_count: int
     empty_image_field_indices: tuple[int, ...]
+    unresolved_external_parameter_fields: tuple[tuple[int, str], ...]
 
 
 @dataclass(frozen=True)
@@ -109,6 +110,7 @@ def inspect_word_assets(
     decoded = decode_word_fields(config)
     images: list[WordImageAsset] = []
     empty_indices: list[int] = []
+    unresolved_external: list[tuple[int, str]] = []
     total_bytes = 0
     slots: dict[int, dict[str, str]] = {}
 
@@ -127,29 +129,38 @@ def inspect_word_assets(
                 slot[family] = _text_value(field)
 
         if field.is_image:
-            if (field.encoding or "").casefold() != "base64":
-                raise WriterAssetMappingError("image_field_requires_base64")
-            if not isinstance(field.value, bytes):
-                raise WriterAssetMappingError("image_field_payload_not_binary")
-            if len(field.value) > max_image_bytes:
-                raise WriterAssetMappingError("image_field_size_exceeded")
-            total_bytes += len(field.value)
-            if total_bytes > max_total_image_bytes:
-                raise WriterAssetMappingError("total_image_payload_size_exceeded")
             mimetype = (field.mimetype or "").casefold()
             if mimetype not in _IMAGE_EXTENSIONS:
                 raise WriterAssetMappingError("unsupported_image_mimetype")
+            # A native image field may carry no inline bytes and instead refer
+            # to an outer EditWord parameter (for example signData). Keep that
+            # binding unresolved; its concatenation/encoding contract is not
+            # inferred here.
+            if field.external_parameter and field.value == "":
+                data = b""
+                unresolved_external.append((index, field.external_parameter))
+            else:
+                if (field.encoding or "").casefold() != "base64":
+                    raise WriterAssetMappingError("image_field_requires_base64")
+                if not isinstance(field.value, bytes):
+                    raise WriterAssetMappingError("image_field_payload_not_binary")
+                data = field.value
+                if len(data) > max_image_bytes:
+                    raise WriterAssetMappingError("image_field_size_exceeded")
+                total_bytes += len(data)
+                if total_bytes > max_total_image_bytes:
+                    raise WriterAssetMappingError("total_image_payload_size_exceeded")
+                if not data:
+                    empty_indices.append(index)
             images.append(
                 WordImageAsset(
                     field_index=index,
                     field_id=field.field_id,
                     mimetype=mimetype,
-                    data=field.value,
+                    data=data,
                     external_parameter=field.external_parameter,
                 )
             )
-            if not field.value:
-                empty_indices.append(index)
 
     signer_slots = tuple(
         SignerMetadataSlot(
@@ -180,6 +191,7 @@ def inspect_word_assets(
         signer_slots=signer_slots,
         signer_slot_count=len(slots),
         empty_image_field_indices=tuple(empty_indices),
+        unresolved_external_parameter_fields=tuple(unresolved_external),
     )
 
 
