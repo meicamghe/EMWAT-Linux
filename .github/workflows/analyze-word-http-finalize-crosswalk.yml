@@ -34,6 +34,18 @@ jobs:
             0x004B7724 0x004B8A83 finalize-crosswalk/word/LoadDocument-full.md
           python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 \
             0x004B8A84 0x004BB3AF finalize-crosswalk/word/OnTmrAutoSave-full.md
+          python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 \
+            0x004B7CED 0x004B7F31 finalize-crosswalk/word/LoadDocument-pre-response.md
+          python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 \
+            0x004B7F31 0x004B8100 finalize-crosswalk/word/LoadDocument-response-tail.md
+          python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 \
+            0x004B8100 0x004B8A83 finalize-crosswalk/word/LoadDocument-post-response.md
+          python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 \
+            0x004B8F6C 0x004B9F1B finalize-crosswalk/word/OnTmrAutoSave-middle-1.md
+          python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 \
+            0x004B9F1C 0x004BA057 finalize-crosswalk/word/OnTmrAutoSave-middle-2.md
+          python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 \
+            0x004BA058 0x004BB3AF finalize-crosswalk/word/OnTmrAutoSave-tail.md
           python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004B8A84 \
             finalize-crosswalk/word/OnTmrAutoSave-callers.md
           python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004BB3B0 \
@@ -98,6 +110,17 @@ jobs:
           status=0
           for pid in "${pids[@]}"; do wait "$pid" || status=1; done
           exit "$status"
+      - name: Decode service response model fields and XML writer
+        run: |
+          python tools/decode_pe_strings.py finalize-crosswalk/service/EmwatService.exe \
+            0x0045928C 0x004592BC 0x004592D4 0x004592F0 \
+            0x0045931C 0x00459348 0x00459374 0x0045938C \
+            0x004593A8 0x004593CC 0x004593E4 0x00459414 \
+            0x00459434 0x00459454 0x0045947C 0x0046092C \
+            0x00460948 0x00460968 0x00460990 0x004609B8 \
+            0x004609C8 0x00460F74 > finalize-crosswalk/service/response-model-strings.md
+          python tools/trace_pe_target.py finalize-crosswalk/service/EmwatService.exe \
+            0x0044E734 finalize-crosswalk/service/xml-field-writer.md 3600 ret
       - uses: actions/upload-artifact@v4
         with:
           name: emwat-service-http-response-crosswalk
