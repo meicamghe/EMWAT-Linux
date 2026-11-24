@@ -490,3 +490,18 @@ New recovery-path artifacts add the following static evidence:
 4. Confirm archive entry names, timestamp metadata, and how the extracted `.easd` document is opened.
 
 Until these are resolved, do not hard-code the account name, marker string, directory, or encryption behavior in the Linux recovery implementation.
+
+
+## 10. SevenZip password and archive-writer crosswalk (2026-11-24)
+
+The parallel SevenZip object-field and controller-content workflows resolve an important distinction:
+
+- `euUnArchive` (`0x00456DFC)) is the input/extraction path.
+- `euResetMemory` (`0x00456F00)) is the output/archive-writing path. Its direct callers are `Applicationactivities.Finalization` (`0x00503779)) and `TfrmShowAutoSaveFiles.Delete` (`0x005EB938)).
+- `euUnArchive` passes a fixed 15-character UTF-16LE literal to the archive object's vtable `+0x28) dispatch. The same literal is the default argument used by `euResetMemory` before its output object's `+0x44) dispatch.
+- `T7zInArchive.SetPassword` (`0x00453860)) is implemented and stores its input at object offset `+0x58), then calls an underlying archive interface at `+0x1C). This makes the fixed literal a high-confidence password candidate, but the exact `+0x28)-to-`SetPassword` mapping is not yet proven.
+- `T7zOutArchive.SetPassword` (`0x004547DC)) is a stub that returns immediately. `T7zInArchive.CryptoGetTextPassword` and `SetPasswordCallback` are also short stubs in this build. Consequently, actual archive encryption is still unproven despite the password-like calls.
+- `euGetAutoSavePass` calls `GetUserNameW` and returns the current Windows username. `DoClearOldAutoSaveFiles` combines that value with a separate marker string; this path has not been connected to the input archive password setter.
+- The recovery cleanup path enumerates `*.easz` and calls `DeleteFileW` after a file-age comparison against `0x18`; the time unit and exact retention interval remain unknown.
+
+Do not conflate the fixed archive-password candidate with the username-derived cleanup token. Do not enable encryption in Linux until a synthetic Windows archive header/data fixture proves it. Full method/field details are in [SEVENZIP-ARCHIVE-ANALYSIS.md](SEVENZIP-ARCHIVE-ANALYSIS.md).
