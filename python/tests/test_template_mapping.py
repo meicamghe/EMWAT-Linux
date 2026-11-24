@@ -88,6 +88,50 @@ class TemplateMappingTests(unittest.TestCase):
         self.assertEqual(report.unmatched_custom_properties, ("LetterSubject",))
         self.assertEqual(report.unmatched_writer_structures, ("bookmark:Subject",))
 
+
+    def test_maps_config_ids_directly_to_writer_structures_without_property_order(self):
+        report = inspect_template_mapping(
+            config("LetterSubject", "SignStart†SignEnd", "NoTarget"),
+            catalog(
+                (),
+                bookmarks=("LetterSubject",),
+                ranges=("SignStart", "SignEnd"),
+            ),
+        )
+        self.assertEqual(
+            [(item.field_index, item.field_member, item.structure_kind, item.match_kind)
+             for item in report.config_field_candidates],
+            [
+                (0, "LetterSubject", "bookmark", "exact"),
+                (1, "SignStart", "named_range", "exact"),
+                (1, "SignEnd", "named_range", "exact"),
+            ],
+        )
+        self.assertEqual(report.unmatched_config_field_indices, (2,))
+        self.assertEqual(report.partial_config_field_indices, ())
+        self.assertEqual(report.ambiguous_config_field_indices, ())
+        self.assertFalse(report.property_order_equivalence_verified)
+
+    def test_reports_partial_twin_and_ambiguous_direct_field_candidates(self):
+        report = inspect_template_mapping(
+            config("Start†Missing", "signature"),
+            catalog((), ranges=("Start",), bookmarks=("Signature", "SIGNATURE")),
+        )
+        self.assertEqual(report.partial_config_field_indices, (0,))
+        self.assertEqual(report.ambiguous_config_field_indices, (1,))
+        self.assertEqual(
+            [(item.field_index, item.field_member) for item in report.config_field_candidates],
+            [(0, "Start")],
+        )
+
+    def test_prevents_two_config_fields_claiming_one_writer_structure(self):
+        report = inspect_template_mapping(
+            config("Signature", "signature"),
+            catalog((), bookmarks=("Signature",)),
+        )
+        self.assertEqual(report.config_field_candidates, ())
+        self.assertEqual(report.ambiguous_config_field_indices, (0, 1))
+
     def test_surfaces_duplicate_property_names_and_partial_inventory_warnings(self):
         report = inspect_template_mapping(
             config("xml-a", "xml-b"),

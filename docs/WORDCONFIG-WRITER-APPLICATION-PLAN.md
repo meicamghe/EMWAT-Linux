@@ -110,3 +110,8 @@ A separate read-only image matcher now compares image-bearing WordConfig IDs (in
 This is deliberately a **candidate audit**, not a mapping registry: a name match does not prove the image belongs to that semantic field. No candidate is automatically applied. The Writer inventory also records each graphic object's supported property names (for example `GraphicURL`, `AnchorType`, and `Size`) without reading those property values or image bytes. This gives fixture reviewers more structure to compare while preserving document privacy.
 
 The separate `SignsStart†SignsEnd` / `signData` external reference is not conflated with indexed `SignOfSignerStartN†SignOfSignerEndN` inline image fields. Both are retained independently, and raw `separator`, `concater`, and `concator` attributes remain unnormalized.
+
+
+### Direct WordConfig-ID to Writer-structure audit — 2026-11-24
+
+The template inventory now also compares each incoming WordConfig field identifier directly with Writer bookmarks, named ranges, sections, tables, frames, graphic objects, document indexes, custom document properties, and `DocInfo.Custom` fields. Twin IDs are checked member-by-member. Only exact or unique case-folded name matches are emitted. It separately reports unmatched, partially matched twin, and ambiguous/reused targets. This path is independent of custom-property enumeration order and remains read-only; it does not write values or automatically accept candidates.

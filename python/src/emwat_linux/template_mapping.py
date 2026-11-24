@@ -24,6 +24,16 @@ class TemplateStructureCandidate:
 
 
 @dataclass(frozen=True)
+class ConfigFieldStructureCandidate:
+    field_index: int
+    field_id: str
+    field_member: str
+    structure_kind: str
+    structure_name: str
+    match_kind: str
+
+
+@dataclass(frozen=True)
 class TemplateMappingInventory:
     config_field_count: int
     custom_property_count: int
@@ -36,6 +46,10 @@ class TemplateMappingInventory:
     unmatched_writer_structures: tuple[str, ...]
     unassociated_config_field_ids: tuple[str, ...]
     inspection_warnings: tuple[str, ...]
+    config_field_candidates: tuple[ConfigFieldStructureCandidate, ...] = ()
+    unmatched_config_field_indices: tuple[int, ...] = ()
+    partial_config_field_indices: tuple[int, ...] = ()
+    ambiguous_config_field_indices: tuple[int, ...] = ()
 
 
 def _duplicates(values: tuple[str, ...]) -> tuple[str, ...]:
@@ -110,6 +124,69 @@ def inspect_template_mapping(
                 matched_properties.add(property_index)
                 matched_structures.add((kind, actual_name))
 
+    # Independently compare each WordConfig identifier (including twin
+    # members) to Writer structures by name. This avoids using property
+    # enumeration position as a surrogate for semantic identity.
+    exact_structures: dict[str, list[tuple[str, str]]] = {}
+    for kind, name in structures:
+        exact_structures.setdefault(name, []).append((kind, name))
+    config_candidates: list[ConfigFieldStructureCandidate] = []
+    unmatched_config: list[int] = []
+    partial_config: list[int] = []
+    ambiguous_config: list[int] = []
+    field_candidate_owners: dict[tuple[str, str], list[int]] = {}
+    for field_index, field in enumerate(config.fields):
+        identifier = parse_word_field_identifier(field.field_id)
+        members = tuple(dict.fromkeys(
+            member for member in (identifier.first, identifier.second) if member
+        ))
+        matched_members = 0
+        field_ambiguous = False
+        for member in members:
+            exact = exact_structures.get(member, ())
+            if len(exact) == 1:
+                kind, name = exact[0]
+                match_kind = "exact"
+            elif len(exact) > 1:
+                field_ambiguous = True
+                continue
+            else:
+                folded = by_folded_name.get(member.casefold(), ())
+                if len(folded) == 1:
+                    kind, name = folded[0]
+                    match_kind = "casefold"
+                elif len(folded) > 1:
+                    field_ambiguous = True
+                    continue
+                else:
+                    continue
+            matched_members += 1
+            config_candidates.append(
+                ConfigFieldStructureCandidate(
+                    field_index, field.field_id, member, kind, name, match_kind
+                )
+            )
+            field_candidate_owners.setdefault((kind, name), []).append(field_index)
+        if field_ambiguous:
+            ambiguous_config.append(field_index)
+        elif matched_members == 0:
+            unmatched_config.append(field_index)
+        elif matched_members < len(members):
+            partial_config.append(field_index)
+
+    reused_targets = {
+        index
+        for owners in field_candidate_owners.values()
+        if len(set(owners)) > 1
+        for index in owners
+    }
+    if reused_targets:
+        ambiguous_config.extend(sorted(reused_targets))
+        config_candidates = [
+            candidate for candidate in config_candidates
+            if candidate.field_index not in reused_targets
+        ]
+    ambiguous_config_tuple = tuple(sorted(set(ambiguous_config)))
     return TemplateMappingInventory(
         config_field_count=len(config.fields),
         custom_property_count=len(property_names),
@@ -130,10 +207,15 @@ def inspect_template_mapping(
         # no XML field can safely be attached to a property index.
         unassociated_config_field_ids=tuple(field.field_id for field in config.fields),
         inspection_warnings=catalog.inspection_warnings,
+        config_field_candidates=tuple(config_candidates),
+        unmatched_config_field_indices=tuple(unmatched_config),
+        partial_config_field_indices=tuple(partial_config),
+        ambiguous_config_field_indices=ambiguous_config_tuple,
     )
 
 
 __all__ = [
+    "ConfigFieldStructureCandidate",
     "TemplateMappingInventory",
     "TemplateStructureCandidate",
     "inspect_template_mapping",
