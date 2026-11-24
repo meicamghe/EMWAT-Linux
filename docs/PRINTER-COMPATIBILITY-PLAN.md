@@ -13,6 +13,10 @@ The following observations were supplied by the project owner and are treated as
 
 The repository currently contains `analysis-input/EmwatMethods.bpl1` and generated string inventories for `EmwatMethods.bpl1` and `EmwatAgent.exe`. The relationship between the owner's `.bpl` filename and the repository's `.bpl1` artifact (same binary, renamed copy, or different build) must be verified by file hash and PE metadata before address-level traces are combined. String inventories alone do not establish callsites or runtime semantics.
 
+## Newly recovered GAM Virtual Printer package evidence (2026-11-24)
+
+Detailed payload, INI, rendering, and uncertainty inventory: [GAM Virtual Printer reverse-engineering evidence](GAM-VIRTUAL-PRINTER-REVERSE-ENGINEERING.md). The extracted package confirms a GAMPrinter queue configured over a Zan Image Printer-derived OEM graphics-driver/port-monitor stack. It also exposes color/BW/Fax profiles, filename templating and optional FTP/email/event features. Numeric format/compression/collision enums and the exact EMWAT output hand-off remain unresolved; do not select a Linux output format from the current enum values.
+
 ## What the Windows API evidence means
 
 - `EnumPrintersW` is a discovery/enumeration boundary. Its flags, name/server filters, returned level, and buffer handling determine which printers are visible to EMWAT.
