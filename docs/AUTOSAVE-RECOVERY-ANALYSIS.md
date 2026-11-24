@@ -124,3 +124,14 @@ The `-1` / `0` mapping is consistent with Word's `wdSaveChanges` / `wdDoNotSaveC
 The LoadDocument path contains an Indy `TIdHTTPResponseInfo.WriteContent` call and a response-construction branch. The remaining question is how the controller-notify completion releases the original long-lived `invoke` request and which returned payload Almas consumes. Keep that separate from the local `.easz` recovery artifact.
 
 **Implementation consequence:** Linux must model the close decision as a three-way state transition. Do not collapse No and Cancel: No closes without Word saving; Cancel vetoes the operation. Local recovery may still be a separate operation and must not be conflated with the final Almas registration response.
+
+
+### 4. LoadDocument HTTP response is a separate boundary
+
+The full `LoadDocument` region confirms that it creates/opens the Word document, loads ConfigXML, then writes an output string to `TIdHTTPResponseInfo.ContentText` and calls Indy `WriteContent`. Nearby logs identify an OpenDoc result status, temporary-document deletion, and successful document opening. The called `OnTmrAutoSave` routine connects to the OLE Word engine, reads view/readonly/protected configuration, installs Word callbacks, and configures the `OnControlerNotify` timer.
+
+This is evidence for an initial document-open acknowledgement. It does **not** prove that the edited document or final Almas registration result is carried in that same HTTP response. Keep three channels separate in the implementation model:
+
+1. Initial `LoadDocument` HTTP response.
+2. Periodic `OnControlerNotify` / `Get_Content(-1)` and local `.easz` recovery.
+3. The still-unresolved final registration/return path to Almas.
