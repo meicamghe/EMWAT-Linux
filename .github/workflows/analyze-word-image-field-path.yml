@@ -119,6 +119,7 @@ jobs:
               if sign: value = -value
               print(f'VA=0x{va:08X} bytes={raw.hex()} value={value:.12g}')
           PY
+      # Final focused pass: resolve caption output/save call chain.
       - uses: actions/upload-artifact@v4
         with:
           name: emwat-word-image-field-path
