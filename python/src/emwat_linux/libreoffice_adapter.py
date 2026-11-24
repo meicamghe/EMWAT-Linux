@@ -39,6 +39,7 @@ from emwat_linux.template_mapping import (
     TemplateMappingInventory,
     inspect_template_mapping,
 )
+from emwat_linux.image_mapping import ImageMappingInventory, inspect_word_image_mapping
 from emwat_linux.word_config import WordDocumentConfig
 from emwat_linux.emwat_field_catalog import (
     WordConfigFieldCatalog,
@@ -248,6 +249,8 @@ class _OfficeHandle:
         self.word_writer_evidence_error: str | None = None
         self.template_mapping_inventory: TemplateMappingInventory | None = None
         self.template_mapping_inventory_error: str | None = None
+        self.word_image_mapping_inventory: ImageMappingInventory | None = None
+        self.word_image_mapping_inventory_error: str | None = None
         self.word_asset_inventory: WordAssetInventory | None = None
         self.word_asset_inventory_error: str | None = None
         self.word_config_field_catalog: WordConfigFieldCatalog | None = None
@@ -586,6 +589,8 @@ class LibreOfficeAdapter:
         handle.word_writer_evidence_error = None
         handle.template_mapping_inventory = None
         handle.template_mapping_inventory_error = None
+        handle.word_image_mapping_inventory = None
+        handle.word_image_mapping_inventory_error = None
         handle.word_asset_inventory = None
         handle.word_asset_inventory_error = None
         handle.word_config_field_catalog = None
@@ -627,6 +632,13 @@ class LibreOfficeAdapter:
         except Exception:
             # Keep diagnostic status value-free; never retain document content.
             handle.template_mapping_inventory_error = "template_mapping_inventory_unavailable"
+
+        try:
+            handle.word_image_mapping_inventory = inspect_word_image_mapping(
+                config, catalog
+            )
+        except Exception:
+            handle.word_image_mapping_inventory_error = "word_image_mapping_inventory_unavailable"
 
     def audit_word_writer_evidence(
         self,

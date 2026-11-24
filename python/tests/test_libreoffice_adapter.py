@@ -143,6 +143,8 @@ class LibreOfficeAdapterUnitTests(unittest.TestCase):
         self.assertNotIn("private-value", repr(handle.word_writer_evidence))
         self.assertIsNotNone(handle.template_mapping_inventory)
         self.assertIsNone(handle.template_mapping_inventory_error)
+        self.assertIsNotNone(handle.word_image_mapping_inventory)
+        self.assertIsNone(handle.word_image_mapping_inventory_error)
         self.assertEqual(
             handle.template_mapping_inventory.unassociated_config_field_ids,
             ("subject",),
