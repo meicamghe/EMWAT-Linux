@@ -11,6 +11,7 @@ from __future__ import annotations
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
+import re
 
 from emwat_linux.word_config import WordDocumentConfig
 from emwat_linux.word_fields import DecodedWordField, decode_word_fields
@@ -67,7 +68,7 @@ _IMAGE_EXTENSIONS = {
     "image/tiff": ".tif",
     "image/bmp": ".bmp",
 }
-_SIGNER_FIELD = __import__("re").compile(r"^LetterSigner(Per|Dep|Unit)(0|[1-9][0-9]?)$")
+_SIGNER_FIELD = re.compile(r"^LetterSigner(Per|Dep|Unit)(0|[1-9][0-9]?)$")
 _MAX_SIGNER_SLOT = 19
 
 

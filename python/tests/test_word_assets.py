@@ -107,7 +107,10 @@ class WordAssetMappingTests(unittest.TestCase):
 
     def test_refuses_implicit_or_ambiguous_targets(self):
         inventory = inspect_word_assets(config(
-            "<word-document><fields><field id='Sig' mimetype='image/png' encryption='base64'>AQID</field></fields></word-document>"
+            "<word-document><fields>"
+            "<field id='Sig0' mimetype='image/png' encryption='base64'>AQID</field>"
+            "<field id='Sig1' mimetype='image/png' encryption='base64'>BAUG</field>"
+            "</fields></word-document>"
         ))
         with self.assertRaisesRegex(WriterAssetMappingError, "duplicate_writer_graphic_target"):
             build_writer_graphic_updates(inventory, {0: "Same", 1: "Same"})

@@ -27,7 +27,12 @@ from emwat_linux.editword_request import EditWordDocumentRequest
 from emwat_linux.office_adapter import CloseDisposition, OfficeCloseEvent
 from emwat_linux.recovery_store import RecoverySnapshotStore
 from emwat_linux.writer_fields import refresh_writer_text_fields
-from emwat_linux.word_assets import apply_writer_graphic_updates
+from emwat_linux.word_assets import (
+    WordAssetInventory,
+    apply_writer_graphic_updates,
+    build_writer_graphic_updates,
+    inspect_word_assets,
+)
 from emwat_linux.writer_inspector import WriterDocumentCatalog, inspect_writer_document
 from emwat_linux.writer_properties import set_custom_document_properties
 from emwat_linux.template_mapping import (
@@ -239,6 +244,8 @@ class _OfficeHandle:
         self.word_writer_evidence_error: str | None = None
         self.template_mapping_inventory: TemplateMappingInventory | None = None
         self.template_mapping_inventory_error: str | None = None
+        self.word_asset_inventory: WordAssetInventory | None = None
+        self.word_asset_inventory_error: str | None = None
 
     def mark_closed(self) -> None:
         if not self._closed_once:
@@ -573,6 +580,15 @@ class LibreOfficeAdapter:
         handle.word_writer_evidence_error = None
         handle.template_mapping_inventory = None
         handle.template_mapping_inventory_error = None
+        handle.word_asset_inventory = None
+        handle.word_asset_inventory_error = None
+        try:
+            handle.word_asset_inventory = inspect_word_assets(config)
+        except Exception:
+            # Retain only a fixed status code; image bytes and signer metadata
+            # must never leak through diagnostic strings.
+            handle.word_asset_inventory_error = "word_asset_inventory_unavailable"
+
         try:
             with handle.snapshot_lock:
                 catalog = inspect_writer_document(handle.document)
@@ -647,6 +663,28 @@ class LibreOfficeAdapter:
             return apply_writer_graphic_updates(
                 handle.document, updates, asset_directory
             )
+
+    def apply_word_image_fields(
+        self,
+        handle: object,
+        target_names_by_field_index: object,
+    ) -> tuple[str, ...]:
+        """Apply image fields through an explicit, evidence-backed target map.
+
+        Duplicate XML IDs are disambiguated by source field index. No target
+        is inferred from a field name, signer slot, or image position.
+        """
+        if not isinstance(handle, _OfficeHandle):
+            raise TypeError("invalid_libreoffice_handle")
+        inventory = handle.word_asset_inventory
+        if inventory is None:
+            raise RuntimeError(
+                handle.word_asset_inventory_error or "word_asset_inventory_unavailable"
+            )
+        updates = build_writer_graphic_updates(
+            inventory, target_names_by_field_index
+        )
+        return self.apply_writer_graphic_updates(handle, updates)
 
     def wait_for_close(self, handle: object) -> OfficeCloseEvent:
         if not isinstance(handle, _OfficeHandle):
