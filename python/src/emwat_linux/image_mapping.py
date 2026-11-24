@@ -58,6 +58,7 @@ def inspect_word_image_mapping(
             member for member in (identifier.first, identifier.second) if member
         ))
         matches: list[ImageStructureCandidate] = []
+        field_ambiguous = False
         for member in members:
             exact = tuple(name for name in graphic_names if name == member)
             if len(exact) == 1:
