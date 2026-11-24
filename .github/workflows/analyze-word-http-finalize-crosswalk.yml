@@ -10,6 +10,7 @@ on:
       - 'tools/trace_td32_callers.py'
       - 'tools/trace_td32_procedure.py'
       - 'tools/scan_pe_pointer_refs.py'
+      - 'tools/decode_pe_strings.py'
   workflow_dispatch:
 
 permissions:
