@@ -604,3 +604,27 @@ Source: workflow run 45343331297, artifact 14896418153; Service executable trace
 Security boundary: these findings raise a concrete origin/CSRF review requirement, but do not by themselves prove an exploitable vulnerability or prove the server performs no additional request validation. Trace the server-side origin/token/session checks before making that claim. The Linux bridge must not copy wildcard CORS or accept arbitrary webpage messages; use a strict origin policy and a session-bound local capability/token.
 
 Related static targets: `0x0047BF30` (request handler), `0x0047E0EC` (EmwatMethods.bpl package load path), `0x00470B38` (XML request parser), and `0x0047C59C` (bridge script).
+
+
+## 2026-11-24 — Service → BPL → Word → Indy response crosswalk
+
+Sources: workflow runs 45349332094 (main-form request handler), 45349331995 (BPL method invoke), 45349331946 (service/BPL dispatch crosswalk), 45349332072 (Indy response methods), and 45349331991 (WriteContent helper chain).
+
+The static call chain is now substantially connected:
+
+1. The Service form's `EmwatServiceCommandGet` handler at `0x0047BF30` receives the Indy HTTP request.
+2. It dispatches the request into the BPL method layer through `TEmwatMethod.Invoke` (generic method-name dispatcher).
+3. The BPL routes the document method through `TScanDocument.PerformMethod`.
+4. The Word path reaches `TWordViewer.LoadDocument` at approximately `0x004B7724`.
+5. `LoadDocument` populates the `TIdHTTPResponseInfo` content response and invokes the response-writing path.
+6. Indy `TIdHTTPResponseInfo.WriteContent` at `0x004610FC` writes headers and body. Its header helper is at `0x004612F4`; body transfer uses the response's `TIdIOHandler` through `WriteBuffer`/`WriteStream`, then releases the content stream.
+
+This establishes the static server-to-BPL-to-Word-to-Indy response path. It does not explain the observed approximately 54.558-second transaction delay.
+
+### Wait/close correlation remains open
+
+- The traced `LoadDocument` body calls `TApplication.ProcessMessages` once at `0x004B7C1C`; the inspected path did not reveal an explicit `Sleep` or `WaitForSingleObject` loop.
+- The periodic `OnControlerNotify` timer and the Word close callback are separate paths. The timer toggles `ReadyToClose` while it runs; `WordAppDocumentBeforeSave` cancels close while that flag is false.
+- No direct callsite proves that the HTTP response waits for Word close or for `ReadyToClose` to become true.
+
+Do not implement a guessed long-poll contract. The next trace must identify the exact object/event/COM call that keeps the request handler active, or show that the delay originates outside this BPL path.

@@ -33,7 +33,7 @@ The typo in `Background Priniting` is intentional in this evidence record; it re
 
 ## Boolean settings
 
-The lifecycle routine reads three Boolean values into viewer flags at offsets `+0x3C`, `+0x3D` and `+0x3E`. The settings form exposes three Boolean controls with the names above. The order suggests a corresponding mapping, but the exact value-name-to-offset mapping still needs direct string-address/callsite confirmation. The flags should remain separately represented in Linux configuration until that mapping is proven.
+The lifecycle routine reads three Boolean values into viewer flags at offsets `+0x3C`, `+0x3D` and `+0x3E`. The TWordViewer VMT confirms the exact flags: `+0x3C=fBG_Printing`, `+0x3D=fDontAskSaveBeforePrint`, and `+0x3E=fSaveBeforePrint`. These align with the settings form values `Background Priniting`, `Dont Ask Save On Print`, and `Save Before Print`, respectively. The flags should remain separately represented in Linux configuration until that mapping is proven.
 
 ## Timer callback behavior
 
@@ -57,3 +57,8 @@ The lifecycle routine reads three Boolean values into viewer flags at offsets `+
 - Exact mapping of the three Boolean registry values to viewer offsets.
 - Whether the timer's three `Document.PrintOutOld` calls produce one or multiple GAM print jobs.
 - Whether the archive extraction path is paired with an output writer in another module or process.
+
+
+## ReadyToClose close gate
+
+The TWordViewer VMT identifies `ReadyToClose` at offset `+0x5E`. `OnControlerNotify` clears it while the timer callback performs recipient/CC customization, Content retrieval and archive extraction, then restores it. `WordAppDocumentBeforeSave` cancels the close if `ReadyToClose` is false. This is a close-safety gate; it is not yet proven to be the condition that releases the HTTP request.

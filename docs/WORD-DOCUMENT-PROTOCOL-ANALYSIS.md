@@ -1559,3 +1559,12 @@ A full-range trace of the current `TWordViwer.LoadDocument` / `OnTmrAutoSave` re
 This evidence makes the initial HTTP response look like an **OpenDoc/Word-initialization acknowledgement**, not proven proof that the final edited document has been returned to Almas. The body is supplied through a method output string; the exact source and all status values still need the remaining branch/caller trace.
 
 The timer is configured to call `OnControlerNotify`; that later callback performs the Content-related operation and enters the local SevenZip recovery path. Do not equate the initial `WriteContent` acknowledgement with the later document-registration outcome.
+
+
+## 2026-11-24 — regular/twin field dictionary crosswalk
+
+The XML field pipeline trace confirms that `GetXmlFieldInfo` searches two dictionaries: one for regular fields and one for twin fields. The twin path checks both `Field1Name` and `Field2Name`. `SetFieldValue` recognizes `urlencoded` and `base64` encodings; other values use the raw path.
+
+`TXmlWordConfigTwinField` exposes both field names, a `CaptionItems` collection, RTL/LTR font names/styles/sizes, `Align`, `VAlign` and `Text`. These are real metadata fields, not just DFM presentation controls. XML metadata strings also include `id`, `mimetype`, `paramId`, `separator`, `concator` and `encryption`; the last three semantics remain under investigation.
+
+`GetDocFieldName` parses Word `DOCPROPERTY` codes and maps them through these dictionaries, while separately enumerating `CustomDocumentProperties`. The special Word field `Hidden_Customizable` invokes `SilentSaveEmwatDoc`; that path is distinct from the periodic timer callback and is not proof of archive creation.

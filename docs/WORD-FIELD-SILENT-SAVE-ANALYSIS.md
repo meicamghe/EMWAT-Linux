@@ -485,3 +485,30 @@ Keep three paths separate in the Linux design until call ownership is resolved:
 1. Word BeforeSave close decision.
 2. Timer-driven AutoSave/print preparation and archive extraction.
 3. HTTP response serialization and completion.
+
+
+## 2026-11-24 — WordViewer state fields and close gate
+
+The `TWordViewer` VMT/field metadata from workflow run 45349331995 provides exact names for important state offsets:
+
+| Offset | Field |
+|---|---|
+| `+0x04` | `PrntThreadControler` |
+| `+0x08` | `tempPrntOptions` |
+| `+0x3C` | `fBG_Printing` |
+| `+0x3D` | `fDontAskSaveBeforePrint` |
+| `+0x3E` | `fSaveBeforePrint` |
+| `+0x40` | `XmlWordConfig` |
+| `+0x44` | `WordApp` |
+| `+0x48` | `EmwatDocument` |
+| `+0x5C` | `IsSavingNow` |
+| `+0x5D` | `AnySaveRequested` |
+| `+0x5E` | `ReadyToClose` |
+| `+0x5F` | `OpenAsFree` |
+| `+0x60` | `ActiveFields` |
+| `+0x64` | `docCustomDocumentProperties` |
+| `+0x68` | `XmlWordConfigFields` |
+
+`OnControlerNotify` sets `ReadyToClose=0` while its work is in progress and restores `ReadyToClose=1` at completion. `WordAppDocumentBeforeSave` checks this flag and sets the COM Cancel parameter when the document is not ready. This is a close-safety gate around the timer callback, not proof that the HTTP request itself waits on the flag.
+
+The `WordAppDocumentBeforeSave` callback also branches on `OpenAsFree`; its exact effect on prompt/save behavior remains open. The timer callback invokes `CostumizeRecAndCC`, whose bounded body contains three calls through the Word Document vtable slot used by `TWordDocument.PrintOutOld`, then obtains `Get_Content(-1)` and invokes archive extraction. This links timer-driven recovery preparation with Word print operations; exact job count and BeforePrint coordination remain unresolved.

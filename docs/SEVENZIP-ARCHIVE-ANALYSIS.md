@@ -74,3 +74,12 @@ DoClearOldAutoSaveFiles at 0x00456C0C combines that result with a separate marke
 - Do not copy a suspected password literal into the Linux implementation before dispatch and archive-header behavior are verified.
 - Do not add encryption to the Linux recovery store solely because a setter is called; the output setter is currently a stub.
 - Use synthetic test archives and never commit real customer documents or signature payloads.
+
+
+## 7. Additional output callback detail
+
+The bounded trace of `T7zOutArchive.SaveToStream` at `0x00454668` shows it creates a `TFileStream` for the supplied path and calls the archive completion/update path. The short `T7zOutArchive.SaveToFile` routine at `0x00454644` is a metadata/out-parameter callback, not by itself proof of an application-level file write.
+
+The functional `T7zInArchive.SetPassword` at `0x00453860` stores the supplied string at object offset `+0x58` and forwards it to the underlying archive interface through slot `+0x1C`. This strengthens the input password path, while the exact dispatch from `euUnArchive` slot `+0x28` to this setter still needs proof.
+
+For output, `euResetMemory` is the application-level helper identified in Section 1. Its output-object slot `+0x44` must not be equated with the named `T7zOutArchive.SetPassword` method until the concrete VMT/interface mapping is recovered; that named setter remains a stub. The same fixed string in the input and output helper is therefore a candidate argument, not proof of encrypted output.

@@ -143,3 +143,17 @@ A Unix-domain socket plus per-process lock files is a reasonable native design c
 - Confirmed here: mutex names, initial-owner arguments, ERROR_ALREADY_EXISTS checks, registered message strings, message-ID comparisons, HWND_BROADCAST shutdown posts, and the Service's GetCurrentProcess/TerminateProcess sequence.
 - Not claimed: complete Agent/Service state machine, runtime ordering under races, installer registration, or behavior on every Windows version.
 - No customer documents, signatures, credentials, or runtime user data are included.
+
+
+## 8. Additional heartbeat/configuration strings (same binary hashes)
+
+A separate string/callsite pass on the exact Agent hash found:
+- `http://127.0.0.1:1984/?heartbeat`
+- `Heartbeat.Sentinel`
+- `Max Sequential failure count reached. Terminate myself.`
+- Registry namespace/value strings: `SOFTWARE\Emwat`, `Agent`, `LifeCheckInterval`, `LogFilePath`, `MaxSequentialFailure` and `MakeLog`.
+- Embedded command strings: `taskkill.exe /f /im EmwatService.exe` and `taskkill.exe /f /im WINWORD.EXE`.
+
+These add evidence for a health-check/configuration layer, but the URL string has not yet been tied to a complete HTTP client callsite and expected response. The exact registry hive/value types/defaults are not fully mapped; at least one registry-open callsite uses `HKEY_CURRENT_USER`. The taskkill strings have not yet been tied to the confirmed GUID broadcast shutdown path, so treat them as candidate fallback/legacy commands rather than confirmed normal shutdown behavior. The string `Heartbeat.Sentinel` is not yet mapped to a specific mutex/event callsite.
+
+This section supplements, and does not replace, the exact mutex and registered-message shutdown sequence above.

@@ -80,3 +80,12 @@ Writer-side distinction:
 - `T7zInArchive.SetPassword` is implemented; the exact virtual path from the hardcoded argument to that setter remains to be traced.
 
 **Conclusion:** the built-in input-archive password argument is now identified (literal redacted), and extraction is confirmed. The actual `.easz` writer call chain and output encryption behavior remain unresolved.
+
+
+## 2026-11-24 correction — output archive helper identified
+
+A separate trace now identifies `euResetMemory` at `0x00456F00` as an output-archive helper. It selects one of two SevenZip plugin records, creates an output wrapper, dispatches an output-object method at slot `+0x44` with a supplied/default string, opens the destination path through slot `+0x0C`, and applies a compression/property value through slot `+0x3C`. Direct callers are `Applicationactivities.Finalization` and `TfrmShowAutoSaveFiles.Delete`.
+
+This supersedes the earlier statement that no output helper had been identified. The helper is now known, but the exact output-object class and the +0x44 method identity remain unresolved. The same fixed 15-character string is supplied in both the input `euUnArchive` path and the output `euResetMemory` path; this is a password candidate, not proof that output encryption is active.
+
+The SevenZip callback trace also shows `T7zOutArchive.SaveToStream` creates a `TFileStream` and calls its completion/update path. `T7zOutArchive.SetPassword` remains a stub, so the output password/encryption behavior must be proven from the +0x44 dispatch and a synthetic archive header. See [the detailed SevenZip analysis](SEVENZIP-ARCHIVE-ANALYSIS.md).

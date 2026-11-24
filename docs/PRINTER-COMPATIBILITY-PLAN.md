@@ -146,3 +146,14 @@ The expanded `BGPrintWithGamPrintOptions` trace resolves a two-stage Word Automa
 This is stronger evidence than the mere presence of Word PrintOut wrappers: the GAM background-print routine itself reaches the Word COM print boundary. The exact semantics of all 15 optional arguments and the reason for the subsequent PrintOutOld call still require argument-by-argument tracing and a controlled print job.
 
 The separate `TEmwatDocPrintHandlerUnit.SeparteImages` caller at `0x004A02FB` invokes `CreateImageFile` (`0x004A0BA8`), which in turn calls `CreateTiff.PrintWordDoc` (`0x004A0A68`) for generated items. This is a second image-file preparation path; its extension, bytes and relationship to the final GAM spool output are not established by these names alone.
+
+
+## 2026-11-24 — timer-driven print / ReadyToClose coordination
+
+The `TWordViewer` VMT identifies `fBG_Printing` (+0x3C), `fDontAskSaveBeforePrint` (+0x3D), `fSaveBeforePrint` (+0x3E) and `ReadyToClose` (+0x5E). These are separate flags and must not be collapsed into a single print preference.
+
+`OnControlerNotify` clears `ReadyToClose` during the timer callback, calls `CostumizeRecAndCC`, retrieves `Get_Content(-1)`, runs the local archive extraction path, then restores `ReadyToClose`. `WordAppDocumentBeforeSave` cancels the close if `ReadyToClose` is false.
+
+`CostumizeRecAndCC` contains three calls through Word Document vtable slot `+0x2BC`, matching the `TWordDocument.PrintOutOld` wrapper. This ties the periodic recovery callback to Word print operations, but it remains unknown whether the three calls become separate spool jobs or are intercepted/coalesced by the registered BeforePrint handler.
+
+The explicit BeforePrint path `BGPrintWithGamPrintOptions` reaches `TWordApplication.PrintOutOld` and also issues a 15-Variant COM call at slot `+0x3F0`; the slot identity and argument mapping remain open.
