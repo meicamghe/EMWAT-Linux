@@ -43,3 +43,5 @@ jobs:
           name: emwat-word-response-controller-analysis
           path: word-response/
           if-no-files-found: error
+
+# Parallel RE dispatch marker: 2026-11-24 independent analysis lane.

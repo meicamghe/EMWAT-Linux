@@ -91,3 +91,5 @@ jobs:
         with:
           name: emwat-word-close-response-chain
           path: word-close-response-chain/
+
+# Parallel RE dispatch marker: 2026-11-24 independent analysis lane.

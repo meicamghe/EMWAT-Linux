@@ -85,3 +85,5 @@ jobs:
           name: emwat-service-http-response-crosswalk
           path: finalize-crosswalk/service/
           if-no-files-found: error
+
+# Parallel RE dispatch marker: 2026-11-24 independent analysis lane.

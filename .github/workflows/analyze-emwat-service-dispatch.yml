@@ -52,3 +52,5 @@ jobs:
           name: emwat-service-dispatch-deep-trace
           path: service-dispatch/
           if-no-files-found: error
+
+# Parallel RE dispatch marker: 2026-11-24 independent analysis lane.

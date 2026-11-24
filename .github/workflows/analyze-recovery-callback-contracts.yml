@@ -53,3 +53,5 @@ jobs:
         with:
           name: emwat-recovery-callback-contracts
           path: recovery-callback-contracts/
+
+# Parallel RE dispatch marker: 2026-11-24 independent analysis lane.

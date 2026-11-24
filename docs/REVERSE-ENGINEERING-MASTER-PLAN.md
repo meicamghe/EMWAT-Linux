@@ -23,11 +23,11 @@ The highest-value gaps are:
 | Subsystem | Existing evidence | Remaining reverse engineering | Priority |
 |---|---|---|---|
 | HTTP bridge / XML parser | Indy server, loopback port 1984, init/heartbeat/invoke captures, parser envelope and service-to-BPL dispatch have substantial static/runtime evidence | Complete error responses, all method classes and parameter schemas, request bounds/version behavior, Origin/token/session checks, additional endpoints, exact response behavior for non-Word methods | P0 |
-| Word document lifecycle | LoadDocument, close-driven wait, registered BeforeSave callback, controller notification and Get_Content wrapper have been traced | Reconcile all branches and event ordering; resolve -1 argument/buffer semantics; exact Yes/No/Cancel outcomes; connect content serialization to HTTP response and observed Almas registration | P0 |
+| Word document lifecycle | LoadDocument response writer and long-lived invoke capture are traced; Word event sink registration and separate timer-driven AutoSave path are also traced | Resolve COM event-slot identity (TD32 name conflicts with diagnostic text); exact Yes/No/Cancel semantics; identify what releases the pending invoke; keep timer Get_Content(-1)/.easd/.easz recovery separate from final HTTP response | P0 |
 | WordConfig / fields | XML field model, URL-encoded/Base64 decoding, DOCPROPERTY token parsing, several field/image/recipient paths and Writer inventory exist | Full semantic mapping of the approximately 180-field catalog; single/twin fields; signature signData separators/concatenation; image storage/layout; permission/settings/RequestedTypes; real sanitized template parity | P0 |
 | Agent ↔ Service | Imports, HTTP heartbeat, WTS notifications, service UI messaging and parts of the Service handler are known | Agent state machine, heartbeat interval/timeouts, launch/restart/stop policy, session-change behavior, process ownership, IPC/window-message contract, failure recovery | P1 |
 | Browser host / init | Embedded JavaScript postMessage bridge and init endpoint are recovered | Identify actual host control/process and CLSID/ProgID; prove how the Almas page loads the bridge; Origin/Referer validation and browser compatibility | P1 |
-| .easz recovery archive | SevenZip interfaces and writer path, .easd entry naming and file creation have static evidence | Synthetic archive fixture; password source/derivation/encoding; actual encryption flags/header; entry metadata and extraction error behavior; cross-tool interoperability | P1 |
+| AutoSave timer / .easz recovery | OnControlerNotify is registered as a timer callback with a minimum 10-second interval; it calls CostumizeRecAndCC, Word Content getter with -1, derives .easd/.easz paths and reaches the archive writer | Resolve -1 semantics, archive password source/encoding and encryption flags, cleanup/list UI path, and fixture interoperability. This is independent of the HTTP response writer | P1 |
 | Printer management / GAM | Windows spooler imports and GetPrinterIndex/SetPrinterIndex names; GAM OEM driver/monitor/server stack, queue defaults and CLI examples | Exact callers, API levels/flags, stable ordering/index base/persistence; actual job submission; InstallShield custom actions/registry/service setup; .zan and output hand-off; collision/compression enums | P1 |
 | ImageGear / scanner | GEAR API imports, many callsites, TScanCommand state transitions, IIPEditor and some page/handle semantics; Linux SANE backend exists | Exact GEAR version/constants, remaining ABI arguments, frame/page lifecycle, cancellation/error mapping, metadata, save/load semantics and hardware comparison | P2 |
 | ImageEn / image tools | DFM forms and ImageEn/WIA/TWAIN dependencies identified | Handler bodies, acquisition source selection, multipage document model, undo/redo, crop/rotate/flip semantics, insert/remove/reorder pages, TIFF/JPEG export and callback/result contract | P2 |
@@ -38,13 +38,17 @@ The highest-value gaps are:
 
 ## Ordered work packages
 
-### P0-A — Close the Word response contract
+### P0-A — Separate Word close, periodic recovery, and HTTP response contracts
 
-1. Build a single cross-reference from the registered BeforeSave callback, OnControlerNotify, TWordDocument.Get_Content, the HTTP response writer and the browser postMessage response.
-2. Resolve the Get_Content(-1) argument and output buffer using the exact interface signature and callers.
-3. Capture sanitized, synthetic Yes / No / Cancel cases and compare request completion, response XML, returned document bytes and Almas-side outcome.
-4. Keep the product's observed behavior (closing the editor registers/applies the document even when Save was not manually pressed) separate from assumptions about whether Word silently saved first.
-5. Add tests only for behaviors established by binary evidence or a controlled fixture. Keep unknown Cancel/Discard envelopes injected rather than guessed.
+These are related workflows, but current evidence does **not** establish them as one callback chain:
+
+1. **Word event sink:** trace callback registration and COM event interface/slot identity. The TD32 label `WordAppDocumentBeforeSave` conflicts with diagnostic text `Document.OnBeforeClose Called.` in the routine. `WordAppDocumentBeforeClose` is a separate procedure; its active registration is not yet proven. Do not assign a COM DISPID from the TD32 symbol alone.
+2. **Close decision:** trace the registered callback's Yes/No/Cancel path, Word Close wrapper arguments and `Set_Saved` calls. Determine which bytes Word/EMWAT considers saved for each choice.
+3. **Periodic recovery:** separately trace `OnControlerNotify` (timer callback, minimum 10 seconds), `CostumizeRecAndCC`, `Get_Content(-1)`, `.easd`/`.easz` path construction and the 7-Zip writer. The meaning of `-1` remains unknown. This path is not the final HTTP response writer.
+4. **HTTP response:** separately trace the long-lived invoke wait/release condition into the already mapped `LoadDocument` response branch, which assigns `AResponseInfo.ContentText` and calls `TIdHTTPResponseInfo.WriteContent`.
+5. Correlate the above with the captured successful `response-word` response and its approximately 54.558-second delay. The capture has TCP payload gaps, so do not treat the returned document bytes as a complete verified fixture.
+6. Capture sanitized, synthetic Yes / No / Cancel cases and compare request completion, response XML, returned document bytes and Almas-side outcome.
+7. Preserve the user's observed Windows behavior (closing Word returns control to EMWAT even without manually pressing Save) without assuming that it means the timer archive, Word Save event and HTTP return are the same operation.
 
 **Exit criterion:** all three close choices have a documented state transition and response contract, or an explicit, bounded unknown with the missing fixture identified.
 
