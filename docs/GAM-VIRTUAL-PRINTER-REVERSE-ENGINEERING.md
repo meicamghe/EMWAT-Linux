@@ -184,9 +184,9 @@ The exact active queue selection, the 15-Variant COM call at vtable slot `+0x3F0
 
 ## 2026-11-24 — timer-triggered Word print calls upstream of GAM
 
-A new upstream trace shows that the Word AutoSave timer callback `OnControlerNotify` calls `CostumizeRecAndCC` before the archive extraction step. The bounded `CostumizeRecAndCC` body contains three calls through the Word Document COM vtable slot `+0x2BC`, which is also used by the `TWordDocument.PrintOutOld` wrapper.
+A new upstream trace shows that the Word AutoSave timer callback `OnControlerNotify` calls `CostumizeRecAndCC` before the archive extraction step. The bounded `CostumizeRecAndCC` body contains up to three exception-retry attempts through the Word Document COM vtable slot `+0x2BC`, which is also used by the `TWordDocument.PrintOutOld` wrapper.
 
-This means the upstream print subsystem is not limited to the user-initiated `BGPrintWithGamPrintOptions` path: the periodic timer/archive workflow also reaches Word print operations. The exact relationship between these three calls, the Word BeforePrint callback, the background print handler and the GAM queue is not yet established.
+This means the upstream print subsystem is not limited to the user-initiated `BGPrintWithGamPrintOptions` path: the periodic timer/archive workflow also reaches Word print operations. The full procedure shows one normal PrintOutOld call and up to two fallback attempts only when an earlier attempt raises an exception. It is not three unconditional print jobs. The exact relationship to the Word BeforePrint callback, background print handler and GAM queue remains open.
 
 For the native Linux design, keep separate adapters for:
 - explicit Word print requests and print options;

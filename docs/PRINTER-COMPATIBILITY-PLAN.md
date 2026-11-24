@@ -128,8 +128,8 @@ A TD32 callsite scan of the exact repository BPL (`analysis-input/EmwatMethods.b
 
 Additional source: workflow runs 45345628398 (OnControlerNotify) and 45347505938 (print-handler/controller).
 
-- `OnControlerNotify` invokes `CostumizeRecAndCC` before `Get_Content(-1)`. The bounded `CostumizeRecAndCC` procedure calls Word Document vtable slot `+0x2BC` three times; this is the same slot used by the `TWordDocument.PrintOutOld` Automation wrapper. List operations occur between the calls.
-- This ties the timer-driven AutoSave/archive callback to Word print operations at the callsite level. Whether the three calls create three independent spool jobs or are coordinated by the registered BeforePrint handler is still unknown.
+- `OnControlerNotify` invokes `CostumizeRecAndCC` before `Get_Content(-1)`. The full `CostumizeRecAndCC` procedure calls Word Document vtable slot `+0x2BC` once on the normal path, with up to two additional attempts only when a prior call raises an exception. This is the same slot used by the `TWordDocument.PrintOutOld` Automation wrapper. The method sets `IsSavingNow` (+0x5C) while active and clears it on exit.
+- This ties the timer-driven AutoSave/archive callback to Word print operations at the callsite level. The normal PrintOutOld call's relationship to the registered BeforePrint handler and the resulting spool job is still unknown; the exception retries should not be modelled as three unconditional jobs.
 - The Word BeforePrint callback `WordAppDocumentBeforePrintBGPrint` checks the active document and print configuration and builds recipient/CC lists. `TEmwatDocPrintHandler.Execute` dispatches a stored method callback via helper `0x004677B8`; `TEDPController.SetPrintThread` stores a handler and method pointer. Direct static callsites do not yet establish the exact callback-to-thread ownership.
 - Dynamic settings are stored under `HKCU\Software\Emwat\Dynamic Config`. The setting form exposes `Background Priniting`, `Dont Ask Save On Print`, `Save Before Print` and `AutoSaveInterval`; the interval is converted from seconds to milliseconds and clamped to a minimum of 10 seconds.
 

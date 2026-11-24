@@ -660,3 +660,17 @@ Keep the response model explicit:
 5. request-handler result ownership (`bResultSet`) and fallback suppression.
 
 Do not add a fixed 54-second delay, long-poll, or close-event wait to the Linux bridge without a trace proving that contract.
+
+
+## 2026-11-24 — LoadDocument response timing refined
+
+The latest bounded trace of `TWordViewer.LoadDocument` (VA range `0x004B7724–0x004B8A83`) narrows the response timing:
+
+- `LoadDocument` logs “OpenDoc function called”, creates a local Word document file, loads the Word configuration and invokes the `OpenDoc` helper at `0x00457050`.
+- After the OpenDoc path returns, the method logs the result, builds a `TEmError` status object from the global error-type/message table, calls its virtual text serializer (slot `+0x54`), assigns that text to `TIdHTTPResponseInfo.ContentText`, and calls `WriteContent`.
+- The response tail then attempts to delete the temporary document file and logs success/failure.
+- The Indy response header writer at `0x0044E734` handles response metadata; `TIdHTTPResponseInfo.WriteContent` at `0x004610FC` sends the body through the IOHandler.
+
+This means the traced response is emitted after the local document-open operation returns; there is no evidence in this path that it waits for the user to close Word or for `ReadyToClose`. The close prompt/BeforeSave callback is a separate later event path.
+
+The observed approximately 54.558-second request duration should therefore be investigated inside the `OpenDoc`/Word COM activation path (or its caller) rather than assumed to be a close-driven long poll. The trace shows one `TApplication.ProcessMessages` call, not an explicit wait loop. The exact `TEmError` wire text/schema and the source of the long duration remain open.

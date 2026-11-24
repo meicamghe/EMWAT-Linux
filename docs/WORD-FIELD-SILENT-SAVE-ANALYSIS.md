@@ -511,7 +511,7 @@ The `TWordViewer` VMT/field metadata from workflow run 45349331995 provides exac
 
 `OnControlerNotify` sets `ReadyToClose=0` while its work is in progress and restores `ReadyToClose=1` at completion. `WordAppDocumentBeforeSave` checks this flag and sets the COM Cancel parameter when the document is not ready. This is a close-safety gate around the timer callback, not proof that the HTTP request itself waits on the flag.
 
-The `WordAppDocumentBeforeSave` callback also branches on `OpenAsFree`; its exact effect on prompt/save behavior remains open. The timer callback invokes `CostumizeRecAndCC`, whose bounded body contains three calls through the Word Document vtable slot used by `TWordDocument.PrintOutOld`, then obtains `Get_Content(-1)` and invokes archive extraction. This links timer-driven recovery preparation with Word print operations; exact job count and BeforePrint coordination remain unresolved.
+The `WordAppDocumentBeforeSave` callback also branches on `OpenAsFree`; its exact effect on prompt/save behavior remains open. The timer callback invokes `CostumizeRecAndCC`, whose bounded body contains up to three attempts through the Word Document vtable slot used by `TWordDocument.PrintOutOld`, then obtains `Get_Content(-1)` and invokes archive extraction. The complete `CostumizeRecAndCC` body shows the PrintOutOld call is retried only after an exception: one call on the normal successful path, with up to two fallback attempts. It is not three unconditional print jobs. The method sets `IsSavingNow` (+0x5C) while active and clears it on exit.
 
 
 ## 2026-11-24 — direct wait audit and request-path boundary
@@ -526,3 +526,8 @@ The wait-thunk cross-reference narrows the possible source of the long HTTP tran
 **Interpretation:** do not attribute the observed 54.558-second response delay to a proven EMWAT `WaitForSingleObject` or `Sleep` loop in `LoadDocument`. Synchronous COM Automation calls, indirect VMT dispatches, Indy network writes, and work inside Word remain open possibilities. The GIF wait routine is relevant only if a document actually traverses animated-GIF decoding.
 
 The response path now has a separately documented attachment branch in Indy `TIdHTTPResponseInfo.WriteContent`; this must not be confused with the Word close/BeforeSave gate or the periodic AutoSave timer.
+
+
+## LoadDocument response is after OpenDoc, not after Word close
+
+The latest full bounded trace shows `LoadDocument` calls the `OpenDoc` helper, then constructs a `TEmError` status object, assigns its serialized text to `AResponseInfo.ContentText` and calls `WriteContent`. The temporary document file is then deleted. No direct wait-for-close loop was found in this method. The approximately 54.558-second duration is now a candidate Word COM/OpenDoc initialization delay, not a proven close-driven wait.
