@@ -421,3 +421,22 @@ The expanded close/controller workflow (run 43814607589, artifact 14202031457) p
 This is direct evidence that OnControlerNotify participates in EMWAT's local auto-save/archive workflow. It is **not** evidence that this method posts the final letter to Almas or constructs the response-word HTTP envelope. Keep local .easd/.easz recovery distinct from the captured EditWordDocument request/response round-trip.
 
 The same artifact identifies TWordDocument.Save at 0x004309A4, which dispatches through _Document slot +0x2B8. No direct bounded CALL xref was found; the method may be reached through an interface/VMT path. The close wrappers remain separate: no-argument Close uses +0x4D4 and the OleVariant overloads use +0x29C.
+
+
+## 2026-11-24 — expanded BeforeSave / close callback trace
+
+Source: workflow run 45343331490, artifact 14897296677; TD32-bounded procedure `TWordViwer.WordAppDocumentBeforeSave` at `0x004CD154–0x004CD54B`.
+
+Static observations:
+
+1. The callback compares its incoming Word document argument with the document tracked at viewer offset `+0x48`; a non-matching document exits without processing.
+2. It checks viewer state bytes at offsets `+0x5E` and `+0x5F`. If `+0x5E` is zero, it writes `0xFFFF` through the callback's stack argument at `[ebp+8]` and exits. The callback signature and this write are consistent with a COM Cancel parameter.
+3. When the prompt-enabled flag `+0x5F` is set, it builds a three-choice modal prompt through helper `0x0044ABE4`. The prompt's text/button constants are at `0x004CD3C0`, `0x004CD3DC`, `0x004CD3F0`, `0x004CD40C`, `0x004CD41C`, `0x004CD42C` and `0x004CD4BC`; these constants still require decoding.
+4. A modal return value of `2` causes the callback to write `0xFFFF` to the Cancel parameter and leave without the later close call. This is consistent with Delphi `mrCancel`.
+5. A return value of `6` takes a branch that constructs a Boolean true value (`-1)); all other non-cancel results take the Boolean false branch (`0`). The precise property/object receiving this value must be confirmed by tracing helper `0x004034E8` and the prompt constants; do not yet label the branches as fully proven Save/Don't Save behavior.
+6. On the non-cancel path, the callback sets viewer flag `+0x5E`, constructs three Variant arguments and calls Word document interface slot `+0x29C`. The generated wrapper `TWordDocument.Close(OleVariant, OleVariant, OleVariant)` at `0x0042FFF4` calls the same interface slot, so this is a Word Document.Close call. The callback then clears viewer field `+0x58`.
+7. The TD32 method name is `WordAppDocumentBeforeSave`, while a diagnostic string near the callback is reported as `Document.OnBeforeClose Called.`. Keep both observations; the COM event record slot-to-DISPID mapping and the reason for this diagnostic wording remain to be closed.
+
+This trace materially narrows the close contract: Cancel is explicitly propagated to the COM callback parameter, and non-cancel choices reach a three-argument Word Document.Close call. It does **not** yet establish the user-facing wording, the exact Yes/No side effects, or the final Almas response for each choice.
+
+The periodic `OnControlerNotify` timer path remains separate: it performs the `.easd/.easz` recovery/archive work and is not the HTTP response writer.

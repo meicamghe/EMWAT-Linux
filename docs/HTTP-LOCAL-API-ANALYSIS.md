@@ -587,3 +587,20 @@ Evidence and full trace details: `docs/WORD-RESPONSE-TIMER-CORRELATION-2026-11-1
 ### Long-lived invoke wait is mapped — 2026-11-16
 
 `TWordViwer.LoadDocument` calls `OnTmrAutoSave` at `0x004B7A58` and does not proceed to the HTTP response branch until it returns. `OnTmrAutoSave` loops at `0x004B9AE8`: `Sleep(5)`, `TApplication.ProcessMessages`, then test viewer `+0x58`. While the field remains nonzero, the loop continues; every 200 iterations it resets its counter and performs maintenance/check calls, then repeats. The close/registration callback at `0x004CD154` calls Word `Document.Close` and clears viewer `+0x58` at `0x004CD31C`. The wait then exits, and `LoadDocument` writes the `response-word` response. This static chain matches the observed ~54.558-second PCAP delay. The event callback's formal COM DISPID and the code that initially sets `+0x58` nonzero are still being traced.
+
+
+## Static Service/bridge follow-up — CORS headers and message forwarding (2026-11-24)
+
+Source: workflow run 45343331297, artifact 14896418153; Service executable trace around `0x0047BF30` and embedded JavaScript constant at `0x0047C59C`.
+
+- The traced request handler invokes the response-header setter three times with these exact header strings:
+  - `Access-Control-Allow-Origin:*`
+  - `Access-Control-Allow-Headers:*`
+  - `Access-Control-Allow-Method:*` (singular spelling in the binary)
+- The same handler then routes into the invoke/package-loading path. This is static evidence that the handler sets wildcard CORS-related response headers; it is not proof that every endpoint or every response uses the same handler.
+- The embedded bridge JavaScript registers a `message` listener (with an `attachEvent` fallback), captures `event.origin` and `event.source`, sends `event.data` as an XHR POST to `http://127.0.0.1:$V{myport}?invoke=<random>`, and posts `responseText` back to the captured source using the captured origin. The random query suffix is computed from `floor(random()*99999)`.
+- The script posts an initialization marker to its parent using the substituted `$V{host}` target origin. No inbound-origin allowlist check is visible in this embedded script fragment.
+
+Security boundary: these findings raise a concrete origin/CSRF review requirement, but do not by themselves prove an exploitable vulnerability or prove the server performs no additional request validation. Trace the server-side origin/token/session checks before making that claim. The Linux bridge must not copy wildcard CORS or accept arbitrary webpage messages; use a strict origin policy and a session-bound local capability/token.
+
+Related static targets: `0x0047BF30` (request handler), `0x0047E0EC` (EmwatMethods.bpl package load path), `0x00470B38` (XML request parser), and `0x0047C59C` (bridge script).
