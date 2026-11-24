@@ -171,7 +171,7 @@ The Service binary also contains the startup error text: `Port binding failed. M
 The bounded worker routine shows:
 - A 1000 ms sleep in the polling loop before the next request cycle.
 - A sequential failure counter compared with the worker object's field at offset `+0x4C` (the configured threshold source is not yet directly mapped to the registry value).
-- On an even-numbered failure, it launches `taskkill.exe /f /im EmwatService.exe` and waits another 1000 ms. It then calls a separate process/window cleanup helper and applies a further delay calculated as `2000 + 300 × failure_count` milliseconds.
+- On an even-numbered failure, it launches `taskkill.exe /f /im EmwatService.exe` and waits another 1000 ms. It then calls process/window cleanup helper `0x0062D088` and applies a further delay calculated as `2000 + 300 × failure_count` milliseconds.
 - On reaching the maximum sequential-failure threshold, it logs `Max Sequential failure count reached. Terminate myself.`, broadcasts the Agent's own registered termination message to `HWND_BROADCAST`, and enters its termination path.
 - Registry strings `LifeCheckInterval` and `MaxSequentialFailure` exist under the Agent configuration namespace, but their exact types/defaults and their mapping to worker fields remain to be confirmed.
 
@@ -313,3 +313,20 @@ This proves that the UI can change the live watchdog interval, log path/toggle a
 ### Startup config load
 
 The Agent startup routine at `0x006610B4` registers the two window messages, then calls `0x0062D6F8` with the global config record. This is the callsite that loads the registry values before the form/worker uses them. If the registry values are absent, the reader preserves the already initialized config-record fields. The exact initializer that seeds those fields before this call remains the last default-value question; the DFM separately proves the UI defaults/ranges listed in Section 13.
+
+
+## 15. Word process termination in the Agent watchdog recovery path
+
+The helper called from the even-failure branch, `0x0062D088`, is now decoded.
+
+- It enumerates top-level windows using `FindWindowW`, `GetWindowTextW` and `GetWindow` (next-window traversal).
+- It lowercases each window title and searches for the substring `GamElectronic EMWAT`.
+- If that is absent, it searches for **both** substrings `efg` and `.doc` in the same title.
+- When either title condition matches, it launches `taskkill.exe /f /im WINWORD.EXE`, waits 100 ms, and continues the window traversal.
+- The helper is called by the heartbeat worker after the even-failure branch has attempted to terminate `EmwatService.exe`.
+
+This is stronger than a generic "close stale Word window" interpretation: the launched command targets the **process image name** `WINWORD.EXE`, so it can terminate every Word process in the Windows session, not only the window that matched. The title check is the gate, but the command itself is process-wide.
+
+### Migration safety consequence
+
+Do **not** reproduce this as `pkill soffice`, `killall`, or a broad process-name kill on Linux. A native supervisor should identify the exact document/session it owns, request graceful close, preserve unsaved state, and only terminate that owned child process after a bounded failure policy. The original Windows behavior is a compatibility fact and a data-loss hazard, not a safe design requirement.
