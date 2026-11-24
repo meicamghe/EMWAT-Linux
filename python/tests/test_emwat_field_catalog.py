@@ -125,6 +125,25 @@ class EmwatFieldCatalogTests(unittest.TestCase):
             catalog.base_fields[-1].category, "external_signature_parameter"
         )
 
+        signer_ids = tuple(
+            field_id
+            for index in range(20)
+            for field_id in (
+                f"LetterSignerDep{index}",
+                f"LetterSignerPer{index}",
+                f"LetterSignerUnit{index}",
+                f"LetterSignerIndexUnit{index}",
+                f"SignNumberOfSigner{index}",
+                f"BehalfNameOfSigner{index}",
+                f"SignOfSignerStart{index}†SignOfSignerEnd{index}",
+            )
+        )
+        full_capture = build_word_config_field_catalog(tuple(base_ids) + signer_ids)
+        self.assertEqual(len(full_capture.base_fields), 40)
+        self.assertEqual(len(full_capture.indexed_signer_fields), 140)
+        self.assertEqual(full_capture.unknown_fields, ())
+        self.assertEqual(full_capture.duplicate_field_ids, ())
+
     def test_rejects_non_text_field_ids(self):
         with self.assertRaisesRegex(TypeError, "field_id_must_be_text"):
             parse_indexed_signer_field(None)
