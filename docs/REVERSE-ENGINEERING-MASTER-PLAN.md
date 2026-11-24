@@ -143,7 +143,7 @@ These are related workflows, but current evidence does **not** establish them as
 
 ## Immediate next execution order
 
-1. Finish the printer COM slot +0x3F0 mapping, print-thread handoff and GAM output path.
+1. Trace the 15 Word PrintOut arguments, print-thread handoff, and GAM output file/consumer contract.
 2. In parallel, resolve the pending HTTP invoke release condition and close-to-response correlation.
 3. Trace the timer-driven CostumizeRecAndCC → Document.PrintOutOld → BeforePrint path and determine whether it generates GAM jobs.
 4. Trace the actual .easz writer; current evidence proves extraction and a hardcoded input-password argument, but not archive creation or output encryption.
