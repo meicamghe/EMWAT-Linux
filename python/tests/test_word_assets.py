@@ -60,7 +60,11 @@ class WordAssetMappingTests(unittest.TestCase):
             "<field id='LetterSignerPer0' encryption='urlencoded'>A%20B</field>"
             "<field id='LetterSignerDep0'>Dept</field>"
             "<field id='LetterSignerUnit19'>Unit</field>"
-            "<field id='SenderSignature' mimetype='image/png' encryption='base64'>AQID</field>"
+            "<field id='LetterSignerIndexUnit0'>Index unit</field>"
+            "<field id='SignNumberOfSigner0'>7</field>"
+            "<field id='BehalfNameOfSigner0'>For another</field>"
+            "<field id='SignOfSignerStart19&#8224;SignOfSignerEnd19' mimetype='image/png' encryption='base64'>AQID</field>"
+            "<field id='SenderSignature' mimetype='image/png' encryption='base64'>BAUG</field>"
             "<field id='EmptySignature' mimetype='image/tif' encryption='base64'/>"
             "</fields></word-document>"
         )
@@ -82,6 +86,14 @@ class WordAssetMappingTests(unittest.TestCase):
                 "<word-document><fields>"
                 "<field id='LetterSignerPer0'>A</field>"
                 "<field id='LetterSignerPer0'>B</field>"
+                "</fields></word-document>"
+            ))
+
+    def test_rejects_signature_twin_field_without_image_mime(self):
+        with self.assertRaisesRegex(WriterAssetMappingError, "signer_signature_field_not_image"):
+            inspect_word_assets(config(
+                "<word-document><fields>"
+                "<field id='SignOfSignerStart0&#8224;SignOfSignerEnd0'>not-image</field>"
                 "</fields></word-document>"
             ))
 

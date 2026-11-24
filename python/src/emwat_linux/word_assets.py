@@ -13,6 +13,7 @@ from dataclasses import dataclass
 from pathlib import Path
 import re
 
+from emwat_linux.emwat_field_catalog import parse_indexed_signer_field
 from emwat_linux.word_config import WordDocumentConfig
 from emwat_linux.word_fields import DecodedWordField, decode_word_fields
 
@@ -40,6 +41,12 @@ class SignerMetadataSlot:
     person: str = ""
     department: str = ""
     unit: str = ""
+    index_unit: str = ""
+    signature_number: str = ""
+    behalf_name: str = ""
+    signature_image_field_index: int | None = None
+    present_families: tuple[str, ...] = ()
+    missing_families: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -68,7 +75,18 @@ _IMAGE_EXTENSIONS = {
     "image/tiff": ".tif",
     "image/bmp": ".bmp",
 }
-_SIGNER_FIELD = re.compile(r"^LetterSigner(Per|Dep|Unit)(0|[1-9][0-9]?)$")
+_SIGNER_FAMILY_ATTRIBUTES = {
+    "person": "person",
+    "department": "department",
+    "unit": "unit",
+    "index_unit": "index_unit",
+    "signature_number": "signature_number",
+    "behalf_name": "behalf_name",
+}
+_SIGNER_FAMILIES = (
+    "department", "person", "unit", "index_unit",
+    "signature_number", "behalf_name", "signature_image",
+)
 _MAX_SIGNER_SLOT = 19
 
 
@@ -104,6 +122,19 @@ def inspect_word_assets(
     slots: dict[int, dict[str, str]] = {}
 
     for index, field in enumerate(decoded):
+        signer_field = parse_indexed_signer_field(field.field_id)
+        if signer_field is not None and signer_field.index <= _MAX_SIGNER_SLOT:
+            slot = slots.setdefault(signer_field.index, {})
+            family = signer_field.family
+            if family in slot:
+                raise WriterAssetMappingError("duplicate_signer_metadata_field")
+            if family == "signature_image":
+                if not field.is_image:
+                    raise WriterAssetMappingError("signer_signature_field_not_image")
+                slot[family] = str(index)
+            else:
+                slot[family] = _text_value(field)
+
         if field.is_image:
             if (field.encoding or "").casefold() != "base64":
                 raise WriterAssetMappingError("image_field_requires_base64")
@@ -128,26 +159,28 @@ def inspect_word_assets(
             )
             if not field.value:
                 empty_indices.append(index)
-            continue
-
-        match = _SIGNER_FIELD.fullmatch(field.field_id)
-        if match is None:
-            continue
-        kind, raw_index = match.groups()
-        slot_index = int(raw_index)
-        if slot_index > _MAX_SIGNER_SLOT:
-            continue
-        slot = slots.setdefault(slot_index, {})
-        if kind in slot:
-            raise WriterAssetMappingError("duplicate_signer_metadata_field")
-        slot[kind] = _text_value(field)
 
     signer_slots = tuple(
         SignerMetadataSlot(
             index=index,
-            person=slots.get(index, {}).get("Per", ""),
-            department=slots.get(index, {}).get("Dep", ""),
-            unit=slots.get(index, {}).get("Unit", ""),
+            person=slots.get(index, {}).get("person", ""),
+            department=slots.get(index, {}).get("department", ""),
+            unit=slots.get(index, {}).get("unit", ""),
+            index_unit=slots.get(index, {}).get("index_unit", ""),
+            signature_number=slots.get(index, {}).get("signature_number", ""),
+            behalf_name=slots.get(index, {}).get("behalf_name", ""),
+            signature_image_field_index=(
+                int(slots[index]["signature_image"])
+                if "signature_image" in slots.get(index, {}) else None
+            ),
+            present_families=tuple(
+                family for family in _SIGNER_FAMILIES
+                if family in slots.get(index, {})
+            ),
+            missing_families=tuple(
+                family for family in _SIGNER_FAMILIES
+                if family not in slots.get(index, {})
+            ),
         )
         for index in range(_MAX_SIGNER_SLOT + 1)
     )
