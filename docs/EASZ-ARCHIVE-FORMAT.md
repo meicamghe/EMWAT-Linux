@@ -31,3 +31,20 @@ These findings identify a 7z archive-writing path containing the temporary docum
 6. Keep Linux-native recovery usable when the optional Windows archive adapter is unavailable.
 
 Until those tests exist, describe `.easz` support as reverse-engineering evidence only, not as a working Linux feature.
+
+
+## 2026-11-24 — reader-side password callback cross-check
+
+Source: workflow run 45343331334, artifact 14896429368.
+
+The additional TD32 trace covers the **input** SevenZip wrapper (`T7zInArchive`), not the output archive writer:
+
+- `T7zInArchive.CryptoGetTextPassword` at `0x00453480` is a 9-byte stub whose body returns zero and does not populate a password output value.
+- `T7zInArchive.SetPasswordCallback` at `0x00453534` is likewise a 9-byte stub returning zero without storing a callback.
+- `T7zInArchive.SetPassword` at `0x00453860` copies a supplied UnicodeString into object field `+0x58`, then invokes an interface method through the object stored at `+0x28`. The direct TD32 caller scan found no direct CALL site; VMT/interface invocation or another registration path remains possible.
+- `euGetAutoSavePass` at `0x00456B78` has two direct callers in the analyzed module: `DoClearOldAutoSaveFiles` and `TfrmSendLog.lblFileNameClick`. Neither is the traced `OnControlerNotify` archive-writer path. Therefore this helper is **not yet evidence** for the password used by the `.easz` writer.
+- The reader-side stubs do not resolve whether the output-side `T7zOutArchive` enables encryption. Do not infer that Windows archives are plaintext or encrypted from these input-class methods.
+
+The recovery form's `TfrmShowAutoSaveFiles` is also a distinct subsystem. Its `Delete` path iterates selected list entries and initializes a Word Automation wrapper; its `CloseWordApp` method iterates Word documents and invokes a late-bound interface slot. The exact restore/delete filename and archive password contract still needs the helper-path and output-writer traces.
+
+**Conclusion:** the password question remains open, but the reader-side analysis rules out treating `euGetAutoSavePass` as a proven `.easz` password source. A controlled synthetic archive is still required to settle encryption and interoperability.

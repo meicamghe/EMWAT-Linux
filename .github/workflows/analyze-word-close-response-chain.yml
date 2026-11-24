@@ -29,7 +29,7 @@ jobs:
         shell: bash
         run: |
           mkdir -p word-close-response-chain
-          printf '%s\n' 0042FEB0 0042FF08 0042FF7C 0042FFF4 004309A4 00456DFC 004563A8 0042BD34 0042BD94 0042BDF8 004BB3B0 004D281C 0046C82C 005EE82C 004B7F9C 004B7724 004CD154 > /tmp/targets
+          printf '%s\n' 0042FEB0 0042FF08 0042FF7C 0042FFF4 004309A4 00456DFC 004563A8 0042BD34 0042BD94 0042BDF8 004BB3B0 004D281C 0046C82C 005EE82C 004B7F9C 004B7724 004CD154 0044A998 004034E8 > /tmp/targets
           pids=()
           while read -r target; do
             (
@@ -46,7 +46,7 @@ jobs:
         shell: bash
         run: |
           pids=()
-          for spec in "0042FEB0 500" "0042FF08 500" "0042FF7C 500" "0042FFF4 500" "004309A4 500" "00456DFC 900" "004563A8 900" "0042BD34 320" "0042BD94 320" "0042BDF8 320" "004BB3B0 900" "004D281C 500" "0046C82C 700" "005EE82C 1000" "004B7F9C 700" "004B7724 900" "004CD154 600"; do
+          for spec in "0042FEB0 500" "0042FF08 500" "0042FF7C 500" "0042FFF4 500" "004309A4 500" "00456DFC 900" "004563A8 900" "0042BD34 320" "0042BD94 320" "0042BDF8 320" "004BB3B0 900" "004D281C 500" "0046C82C 700" "005EE82C 1000" "004B7F9C 700" "004B7724 900" "004CD154 600" "0044A998 700" "004034E8 300"; do
             (
               set -e
               set -- $spec
@@ -68,7 +68,7 @@ jobs:
             0x005EE9F4 0x005EEA0C 0x005EEA88 0x005EEAA0 \
             0x005EEABC 0x005EEAD4 0x005EEB0C \
             0x004BB6CC 0x004BB754 0x004BB76C \
-            0x004D2865 0x004D28B1 \
+            0x004D2865 0x004D28B1 0x004CD374 0x004CD3C0 0x004CD3DC 0x004CD3F0 0x004CD40C 0x004CD41C 0x004CD42C 0x004CD4BC 0x004CD50C \
             > word-close-response-chain/close-and-controller-strings.md
       - name: Resolve PerformMethod VMT ownership and references
         shell: bash

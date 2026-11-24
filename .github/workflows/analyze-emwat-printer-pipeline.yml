@@ -60,7 +60,8 @@ jobs:
       - name: Map spooler and GDI API callsites to TD32 procedures
         run: |
           python - <<'PY'
-          import pathlib, pefile, re, struct
+          import pathlib, pefile, re, struct, sys
+          sys.path.insert(0, "tools")
           from capstone import Cs, CS_ARCH_X86, CS_MODE_32
           from analyze_emwat_td32 import find_td32, parse_td32
           src = pathlib.Path("analysis-input/EmwatMethods.bpl1")
@@ -114,10 +115,17 @@ jobs:
               module = names[mod[0]] if mod and mod[0] < len(names) else str(p["module"])
               for ins in md.disasm(blob[raw:raw+size], va):
                   if ins.mnemonic == "call":
-                      target = int(ins.op_str,16) if re.fullmatch(r"0x[0-9a-fA-F]+",ins.op_str.strip()) else None
+                      operand = ins.op_str.strip()
+                      target = int(operand,16) if re.fullmatch(r"0x[0-9a-fA-F]+",operand) else None
                       if target in thunks:
                           slot,(dll,name)=thunks[target]
                           rows.append((dll,name,module,p["name"],ins.address,target,slot))
+                      else:
+                          direct = re.search(r"\[(0x[0-9a-fA-F]+)\]",operand)
+                          slot = int(direct.group(1),16) if direct else None
+                          if slot in selected:
+                              dll,name=selected[slot]
+                              rows.append((dll,name,module,p["name"],ins.address,0,slot))
           out = ["# Windows spooler/GDI call-site map", "",
                  f"- Imports selected: {len(selected)}",
                  f"- Resolved import thunks: {len(thunks)}",
