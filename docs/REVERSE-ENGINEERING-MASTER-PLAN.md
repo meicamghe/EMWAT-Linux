@@ -133,6 +133,7 @@ These are related workflows, but current evidence does **not** establish them as
 - Import table analysis (IMPORT-TABLE-ANALYSIS.md)
 - Resource analysis (RESOURCE-ANALYSIS.md)
 - Windows .easz archive (EASZ-ARCHIVE-FORMAT.md)
+- SevenZip AutoSave archive/password analysis (SEVENZIP-ARCHIVE-ANALYSIS.md)
 - Dynamic Config registry settings (DYNAMIC-CONFIG-REGISTRY-ANALYSIS.md)
 - Scanner interface (SCANNER-INTERFACE-ANALYSIS.md)
 - Image call graph (IMAGE-CALL-GRAPH.md)
