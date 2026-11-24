@@ -33,14 +33,14 @@ The typo in `Background Priniting` is intentional in this evidence record; it re
 
 ## Boolean settings
 
-The lifecycle routine reads three Boolean values into viewer flags at offsets `+0x3C`, `+0x3D` and `+0x3E`. The TWordViewer VMT confirms the exact flags: `+0x3C=fBG_Printing`, `+0x3D=fDontAskSaveBeforePrint`, and `+0x3E=fSaveBeforePrint`. These align with the settings form values `Background Priniting`, `Dont Ask Save On Print`, and `Save Before Print`, respectively. The flags should remain separately represented in Linux configuration until that mapping is proven.
+The lifecycle routine reads three Boolean values into viewer flags at offsets `+0x3C`, `+0x3D` and `+0x3E`. The TWordViewer VMT confirms the exact flags: `+0x3C=fBG_Printing`, `+0x3D=fDontAskSaveBeforePrint`, and `+0x3E=fSaveBeforePrint`. These align respectively with the settings form values `Background Priniting`, `Dont Ask Save On Print`, and `Save Before Print`. This mapping is confirmed; preserve the three flags independently in Linux configuration.
 
 ## Timer callback behavior
 
 - `OnTmrAutoSave` assigns `OnControlerNotify` at `0x004BB3B0` as the timer event handler using `TTimer.SetOnTimer`.
 - It sets the timer interval and enables the timer.
 - `OnControlerNotify` disables the timer during its callback, checks document state and a reentrancy guard, invokes `CostumizeRecAndCC`, calls Word `Get_Content(-1)`, prepares `.easd/.easz` path variants and invokes `euUnArchive`; it re-enables the timer at exit.
-- The callback's `CostumizeRecAndCC` helper contains three Word Document calls through the same COM vtable slot used by the `TWordDocument.PrintOutOld` wrapper. Whether these calls create separate spool jobs or are coordinated by the BeforePrint event remains unresolved.
+- `CostumizeRecAndCC` makes one normal call through the Word Document vtable slot used by `TWordDocument.PrintOutOld`; up to two further calls are exception-retry fallbacks, not three unconditional print jobs. It also sets/clears `IsSavingNow` during the operation.
 
 ## Implementation notes for Linux
 
@@ -54,11 +54,16 @@ The lifecycle routine reads three Boolean values into viewer flags at offsets `+
 ## Open questions
 
 - Exact selectable AutoSaveInterval values in the array at `0x0062A808`.
-- Exact mapping of the three Boolean registry values to viewer offsets.
-- Whether the timer's three `Document.PrintOutOld` calls produce one or multiple GAM print jobs.
+- The Boolean registry-to-viewer mapping is confirmed: `Background Priniting` → `fBG_Printing`, `Dont Ask Save On Print` → `fDontAskSaveBeforePrint`, `Save Before Print` → `fSaveBeforePrint`.
+- Whether the single successful timer-path `Document.PrintOutOld` call produces a GAM job whose document label can be matched to the spooler record and output artifact.
 - Whether the archive extraction path is paired with an output writer in another module or process.
 
 
 ## ReadyToClose close gate
 
 The TWordViewer VMT identifies `ReadyToClose` at offset `+0x5E`. `OnControlerNotify` clears it while the timer callback performs recipient/CC customization, Content retrieval and archive extraction, then restores it. `WordAppDocumentBeforeSave` cancels the close if `ReadyToClose` is false. This is a close-safety gate; it is not yet proven to be the condition that releases the HTTP request.
+
+
+## 2026-11-24 correction — print retry semantics
+
+The complete `CostumizeRecAndCC` trace shows that the Word Document `PrintOutOld` dispatch has one normal attempt and up to two additional attempts only when an exception is raised. It is incorrect to model these as three unconditional print jobs. The method also sets `IsSavingNow` (`TWordViewer+0x5C`) while active and clears it on exit. This behavior is separately recorded in `WORD-FIELD-SILENT-SAVE-ANALYSIS.md`.
