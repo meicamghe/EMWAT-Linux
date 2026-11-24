@@ -100,6 +100,28 @@ Ancillary defaults:
 
 The presence of FTP/email APIs and configuration is not evidence that these features are enabled in the default GAM queue. Keep them optional and separately gated in a Linux design.
 
+## Decoded configuration CLI examples (2026-11-24 follow-up)
+
+Static strings from `zvprtcfg_x86.exe` include a usage guide and numbered examples. These examples are stronger evidence for the file-format enum than the INI defaults alone:
+
+| CLI example | Confirmed interpretation |
+|---|---|
+| `image.fileformat=1` | Save as TIFF (explicitly labelled Example 5) |
+| `image.fileformat=2` | Save as JPEG (explicitly labelled Example 6) |
+| `save.folder=c:\\temp` | Change the saving folder |
+| `save.basefilename=[%%DocName]` | Change the output filename template |
+
+The tool documents `-silent`, `-show`, `-listprinters`, and `-setdefault` options. Its examples also expose configuration controls for supported/default paper size (`gpd.papersize`), DPI (`gpd.dpi`), color (`gpd.color`) and orientation (`gpd.orientation`). It can request batch printing of HTML files recursively (`print.html`) or shell-execute selected TXT/DOC/XLS files (`print.shellexecute`). These are capabilities of the configuration utility; they are not evidence that the GAM deployment enables all of them.
+
+The following numeric values remain unresolved from the current evidence:
+- `image.compression`
+- `save.filexistact`
+- `save.filenameindex`
+- `save.popupdialog`
+- `save.removeextension`
+
+The CLI strings expose these settings as integer parameters, but do not provide their enum tables. The binary contains phrases such as “Always overwrite” and “Append to existing file”; without a controlled mapping, do not assign those actions to a numeric `filexistact` value.
+
 ## Rendering and hand-off clues
 
 - `zvprtuni5` contains rendering-stage names including `Render_StartDoc`, `Render_StartPage`, `Render_StartBand`, `Render_NextBand`, `Render_EndBand`, `Render_SendPage`, and `Render_EndDoc`.
@@ -120,7 +142,8 @@ The presence of FTP/email APIs and configuration is not evidence that these feat
 | Document rendering is band/page oriented | Strong static-analysis evidence |
 | Color/BW/Fax INI defaults | Directly observed in extracted INIs |
 | INI files listed above are UTF-16LE | Confirmed by `file` output |
-| Numeric enum meanings for file format/compression/collision/dialog | Unknown |
+| `image.fileformat=1` = TIFF; `image.fileformat=2` = JPEG | Confirmed by labelled `zvprtcfg` Examples 5 and 6 |
+| Compression and save/collision/dialog enum meanings | Unknown |
 | Exact output path resolution and generated extension | Unknown |
 | Meaning and producer/consumer of `.zan` | Unknown |
 | Exact EMWAT → printer → output-file hand-off | Not traced |
@@ -131,14 +154,14 @@ The presence of FTP/email APIs and configuration is not evidence that these feat
 
 1. Keep printer discovery, metadata, selection and submission as separate operations, as specified in [the printer compatibility plan](PRINTER-COMPATIBILITY-PLAN.md).
 2. Do not copy the Windows OEM driver, monitor DLLs or service executable into the Linux product.
-3. Do not hard-code `fileformat=1` as PDF or TIFF. Decode the enum and verify actual output bytes/extension first.
+3. The utility explicitly documents `image.fileformat=1` as TIFF and `image.fileformat=2` as JPEG. Still verify actual output bytes/extension and discover other enum values before implementing the Linux output contract.
 4. Treat document-name normalization and collision handling as explicit policy, not a side effect of the CUPS spool directory.
 5. Prefer a controlled native output contract (likely a generated PDF or raster document) only after tracing what EMWAT actually reads/receives from the Windows printer flow.
 6. Keep FTP, email, events, watermarks, external-app launch and text-output features out of the minimum compatible path until a real EMWAT workflow demonstrates that they are required.
 
 ## Next reverse-engineering tasks
 
-1. Decode `fileformat`, `compression`, `filexistact`, `filenameindex`, and `popupdialog` numeric enums from `zvprtcfg`/server code paths and corroborate them with controlled output files.
+1. Decode `image.compression`, `save.filexistact`, `save.filenameindex`, `save.popupdialog`, and `save.removeextension` numeric enums from server/config code paths and corroborate them with controlled output files; `image.fileformat` values 1 (TIFF) and 2 (JPEG) are now established by the utility's labelled examples.
 2. Recover `folder=x` path resolution, output extension, filename numbering and overwrite/append/rename/prompt behavior.
 3. Trace `Render_SendPage` and shared-memory IPC through the OEM driver to the server; establish where a completed file is published and how EMWAT retrieves it.
 4. Inspect all installer actions/registry writes and determine how `GAMPrinter` queue, port and driver are installed.
