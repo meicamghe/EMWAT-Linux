@@ -109,3 +109,16 @@ No direct `WritePrinter`, `StartDocW`, `StartPage`, `EndPage` or `EndDoc` import
 2. Trace the selected/default printer queue and any `ActivePrinter`/registry state.
 3. Connect Word's print job to the GAM queue and the GAM server's final file path/extension.
 4. Resolve the relationship between print completion and EMWAT's document/response lifecycle.
+
+
+## Parallel BPL callsite trace — printer discovery and print boundary (2026-11-24)
+
+A TD32 callsite scan of the exact repository BPL (`analysis-input/EmwatMethods.bpl1`) found 11 statically attributed Windows spooler API callsites. Important results:
+
+- `Zanprinter.GetPrinterName` (`0x0047CAF0`) calls `EnumPrintersA` with flags `0x8` and information level `2`, then iterates `PRINTER_INFO_2`-sized entries and compares the printer-name field against the configured global name. This is a local-printer enumeration path, not proof of remote/shared-printer discovery.
+- `Zanprinter.Finalization` (`0x0047D8BC`) opens the configured queue with `OpenPrinterA`, calls `GetPrinterA` at level `2`, reads the `PRINTER_INFO_2` field at offset `+0x48` (Status), compares it to `1`, and closes the handle. The comparison is consistent with checking the paused status bit; the precise user-visible policy still needs runtime confirmation.
+- `Emwatutils.getPrinterNumJobs` (`0x00456258`) actually calls `OpenPrinterW` and returns the resulting printer handle (or zero). Its symbol name is misleading: the traced body does not call `EnumJobs` or calculate a job count.
+- `BGPrintWithGamPrintOptions` (`0x004C5FF8`) calls that helper early, so opening/validating the selected printer handle is part of the background-print path.
+- The same BPL contains Word `TWordDocument.PrintOut` / `TWordApplication.PrintOut` Automation wrappers and a large `BGPrintWithGamPrintOptions` routine. No direct `WritePrinter` callsite was identified in this import/callsite scan. This does not rule out indirect calls or submission performed by Word/another module.
+
+**Updated conclusion:** printer discovery/selection is demonstrably part of the BPL; actual job submission still appears to cross the Word Automation PrintOut boundary rather than a proven direct WritePrinter call. Trace the PrintOut VMT slot and a controlled job before defining the Linux submission contract.
