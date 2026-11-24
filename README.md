@@ -57,6 +57,7 @@ EMWAT واسط محلی بین اتوماسیون تحت وب الماس گام 
 - [نقشه وابستگی‌های ImageGear و ImageEn](docs/Imaging-Dependency-Map.md)
 - [گراف فراخوانی‌های تصویر و اسکن](docs/IMAGE-CALL-GRAPH.md)
 - [تحلیل دقیق APIهای ImageGear](docs/GEAR-API-CALLS.md)
+- [مهندسی معکوس افزونه ImageGear GIF/LZW](docs/IMAGEGEAR-LZW-GIF-REVERSE-ENGINEERING.md)
 - [تحلیل قرارداد انتخاب اسکنر و رابط‌های callback](docs/SCANNER-INTERFACE-ANALYSIS.md)
 - ابزار [استخراج GUID/ProgID و Resourceها](tools/EMWAT-COM-Resource-Analyzer.py)
 
