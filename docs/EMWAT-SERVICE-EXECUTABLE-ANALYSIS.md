@@ -442,3 +442,29 @@ The last header is singular (`Allow-Method`), unlike the standard plural `Access
 The embedded bridge still posts to the loopback service and returns `responseText` to the original `postMessage` source/origin. That response routing is not equivalent to server-side authorization. The Linux replacement should use an explicit origin allowlist and request authentication rather than copying wildcard CORS behavior by default.
 
 The same route trace confirms that the service loads `EmwatMethods.bpl` and logs package-load success/failure around the dispatch path. XML parsing separately resolves the `method`, `class`, `param`, and `name` vocabulary; exact method schemas and all error responses remain open.
+
+
+## Agent/Service lifecycle import-callsite audit — current extracted build (2026-11-24)
+
+The original executables were re-extracted from the repository's `EMWAT_Extracted.zip` and hashed before tracing:
+
+- `EmwatService.exe`: SHA-256 `9b07e270fa216095fe6648694a4896f6f8a190e69002c6742dc894c11a002659`, PE32, ImageBase `0x00400000`, entry point `0x00481C30`.
+- `EmwatAgent.exe`: SHA-256 `4553c4c65a5697b5e8121ac70e894a1b98a3def470a7165d931f078d258e4157`, PE32, ImageBase `0x00400000`.
+
+For the current Service build, a byte-level x86 CALL-thunk scan (rather than linear disassembly across Delphi RTTI/data) resolves 31 callsites for the selected lifecycle APIs:
+
+| API | Callsite count | Addresses / notes |
+|---|---:|---|
+| `CreateMutexW` | 1 | `0x00401D1A` |
+| `FindWindowW` | 2 | `0x00468154`, `0x00468273` |
+| `GetWindowTextW` | 1 | `0x00468170` |
+| `RegisterWindowMessageW` | 1 | `0x0047CE21` |
+| `PostMessageW` | 1 | `0x0047DFD6` |
+| `TerminateProcess` | 2 | `0x0047D85D`, `0x0047DFF5` |
+| `ShellExecuteW` | 1 | `0x00468263` |
+| `GetTempPathW` | 2 | `0x00442AEF`, `0x00467E85` |
+| `CreateFileW` | 1 | `0x0041A3CC` |
+
+This is concrete evidence of mutex-based single-instance/coordinator behavior and Win32 window-message communication between processes, plus explicit process termination paths. The actual mutex name, registered-message string, target window identity and termination conditions still need to be traced.
+
+The current extracted Service build has no imports for `OpenSCManagerW`, `OpenServiceW`, `StartServiceW`, `CreateServiceW`, or WTS session notification APIs in the inspected import table. Therefore the filename `EmwatService.exe` must not be treated as proof that this particular binary is a Windows SCM service; the observed coordination is currently better described as a user-mode process with window/mutex IPC. A separate installer/service wrapper or another version could still exist.
