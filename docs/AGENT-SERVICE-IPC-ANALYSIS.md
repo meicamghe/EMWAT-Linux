@@ -219,3 +219,33 @@ The current Linux implementation already contains the captured heartbeat contrac
 The `Python bridge transport` workflow passed on commit `b54a414f37e91989b3fa7b615ce7bfc3b42d21cc` (run `45352644056`), including package installation/console-entrypoint verification and the bridge transport test step.
 
 **Deployment boundary:** the GTK desktop shell intentionally does not create a production bridge supervisor by itself. A deployment must inject a configured supervisor/server factory with the required Almas Origin allowlist and the still-unresolved Cancel response contract. Thus the heartbeat route is implemented and CI-tested, but automatic production desktop startup is not claimed.
+
+
+## 12. Agent registry configuration read/write contract
+
+The Agent binary contains separate read and write routines for its configuration under:
+
+`HKCU\SOFTWARE\Emwat\Agent`
+
+The reader opens `HKEY_CURRENT_USER` (predefined handle `0x80000001`), opens `SOFTWARE\Emwat`, then the `Agent` subkey, and processes these values:
+
+| Value | Registry type/operation observed | Configuration object offset |
+|---|---|---:|
+| `LifeCheckInterval` | DWORD read/write | `+0x00` |
+| `MakeLog` | one-byte Boolean read/write | `+0x04` |
+| `LogFilePath` | Unicode string read/write | `+0x08` |
+| `MaxSequentialFailure` | DWORD read/write | `+0x10` |
+
+The reader first checks whether each value exists. If it does, it reads the registry value; if it does not, it retains the value already present in the configuration object. Therefore the defaults are initialized elsewhere and are **not** recoverable from this registry routine alone. The writer stores the same four fields back to the same subkey.
+
+The heartbeat worker compares its sequential failure counter against an object field at offset `+0x4C`. `MaxSequentialFailure` is the strongest candidate for the source of that threshold, but the copy/constructor path from the registry configuration object to the worker field has not yet been traced. Likewise, the traced worker's 1000 ms sleep is a literal constant; do not assume it is the value of `LifeCheckInterval` until the field-use path is proven.
+
+### Linux configuration model
+
+Preserve these as four separate settings:
+- `life_check_interval` (integer; units/default still to be verified);
+- `make_log` (Boolean);
+- `log_file_path` (path/string);
+- `max_sequential_failure` (integer).
+
+Do not invent defaults. Use a native per-user configuration store, and keep the exact Windows registry names only in an import/migration adapter.
