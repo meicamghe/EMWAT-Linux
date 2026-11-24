@@ -29,7 +29,7 @@ jobs:
           python tools/find_td32_class_procedures.py analysis-input/EmwatMethods.bpl1 \
             GetPrinterIndex SetPrinterIndex TEmwatDocPrintHandler \
             BGPrintWithGamPrintOptions WordAppDocumentBeforePrintBGPrint \
-            PrintWordDoc PrintDocument PrintToPrinter \
+            PrintWordDoc PrintDocument PrintToPrinter CreateImageFile Zanprinter@GetPrinterName Zanprinter@Finalization getPrinterNumJobs ExtractFileNameEX euIsValidFileName TWordDocument@PrintOut TWordDocument@PrintOut2000 TWordApplication@PrintOut TWordApplication@PrintOut2000 \
             > printer-pipeline/printer-method-index.md
           python - <<'PY'
           import pathlib, re, subprocess, sys
