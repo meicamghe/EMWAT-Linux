@@ -148,5 +148,30 @@ class WordWriterEvidenceReportTests(unittest.TestCase):
         self.assertEqual(report.writer_custom_property_names, ())
 
 
+
+    def test_report_includes_graphic_property_names_without_reading_graphic_values(self):
+        from emwat_linux.word_writer_evidence import build_word_writer_evidence_report
+        from emwat_linux.writer_inspector import WriterDocumentCatalog, WriterGraphicObjectInfo
+        from emwat_linux.word_config import parse_word_config
+        import base64
+
+        config = parse_word_config(base64.b64encode(b"<word-document/>").decode())
+        catalog = WriterDocumentCatalog(
+            bookmarks=(), named_ranges=(), text_sections=(), text_tables=(),
+            text_frames=(), graphic_objects=("SignatureFrame",), document_indexes=(),
+            text_fields=(), custom_document_properties=(),
+            custom_document_properties_in_info_order=(),
+            graphic_object_details=(
+                WriterGraphicObjectInfo(
+                    "SignatureFrame", ("AnchorType", "GraphicURL", "Size")
+                ),
+            ),
+        )
+        report = build_word_writer_evidence_report(config, catalog)
+        self.assertEqual(
+            report.writer_graphic_object_properties,
+            (("SignatureFrame", ("AnchorType", "GraphicURL", "Size")),),
+        )
+
 if __name__ == "__main__":
     unittest.main()

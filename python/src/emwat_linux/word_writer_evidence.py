@@ -56,6 +56,7 @@ class WordWriterEvidenceReport:
     writer_custom_property_casefold_collisions: tuple[tuple[str, ...], ...]
     writer_docinfo_custom_field_names: tuple[str, ...]
     writer_inventory_warnings: tuple[str, ...] = ()
+    writer_graphic_object_properties: tuple[tuple[str, tuple[str, ...]], ...] = ()
 
 
 def _duplicates(values: tuple[str, ...]) -> tuple[str, ...]:
@@ -146,6 +147,10 @@ def build_word_writer_evidence_report(
             if field.custom_property_name is not None
         ),
         writer_inventory_warnings=writer_catalog.inspection_warnings,
+        writer_graphic_object_properties=tuple(
+            (item.name, item.property_names)
+            for item in writer_catalog.graphic_object_details
+        ),
     )
 
 
