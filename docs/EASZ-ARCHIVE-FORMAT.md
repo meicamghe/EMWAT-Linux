@@ -89,3 +89,21 @@ A separate trace now identifies `euResetMemory` at `0x00456F00` as an output-arc
 This supersedes the earlier statement that no output helper had been identified. The helper is now known, but the exact output-object class and the +0x44 method identity remain unresolved. The same fixed 15-character string is supplied in both the input `euUnArchive` path and the output `euResetMemory` path; this is a password candidate, not proof that output encryption is active.
 
 The SevenZip callback trace also shows `T7zOutArchive.SaveToStream` creates a `TFileStream` and calls its completion/update path. `T7zOutArchive.SetPassword` remains a stub, so the output password/encryption behavior must be proven from the +0x44 dispatch and a synthetic archive header. See [the detailed SevenZip analysis](SEVENZIP-ARCHIVE-ANALYSIS.md).
+
+
+## 2026-11-24 — output archive wrapper is constructed but writer calls remain unreferenced
+
+The expanded SevenZip TD32 graph clarifies why the output side remains unresolved:
+
+- `T7zPlugin.Create` at `0x00452C10` constructs a `T7zOutArchive` callback/wrapper through `0x004543C4` and stores the resulting object at plugin offset `+0x44`. This occurs during plugin construction, including the input-archive path.
+- The output class has methods `GetOutArchive` (`0x00454450`), `SaveToStream` (`0x00454668`), `SaveToFile` (`0x00454644`), `AddFile`, `AddStream`, `AddFiles` and `CrearBatch`.
+- The TD32 direct-caller scans report **zero application-level direct callers** for `GetOutArchive`, `SaveToStream`, `SaveToFile`, `AddFile` and `CrearBatch`. `AddStream` is called only internally by the output class's own `AddFiles`/`CrearBatch` paths.
+- `SaveToStream` itself creates a temporary `TMemoryStream` and calls `SetCompleted`; this describes a library capability, not proof that EMWAT invokes it.
+- `T7zOutArchive.SetPassword` at `0x004547DC` is a nine-byte no-op routine (`xor eax,eax; ret 8`). No output password-setting callsite has been identified.
+
+**Conclusion:** the SevenZip output wrapper is instantiated as part of `T7zPlugin`, but the bounded application call graph does not reach its archive-writing methods. This makes the current output-writer path a library capability without a proven EMWAT caller. It does not prove that no writer exists elsewhere: another module/process or an indirect interface dispatch may create the `.easz` file.
+
+Next trace:
+1. Search indirect/VMT/interface references to the `T7zOutArchive` object stored at plugin offset `+0x44`.
+2. Inspect all writes/renames of `.easz`/ `.easd` paths outside the SevenZip unit.
+3. Correlate a real Windows-created `.easz` file with the responsible process and file-I/O callsites.
