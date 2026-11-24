@@ -155,6 +155,7 @@ def inspect_writer_document(document: object) -> WriterDocumentCatalog:
     custom_names_in_info_order = _custom_document_property_names_in_info_order(
         document, warnings
     )
+    graphic_details = _graphic_object_details(document, warnings)
     return WriterDocumentCatalog(
         bookmarks=_container_names(document, "getBookmarks", warnings),
         named_ranges=_container_names(document, "getNamedRanges", warnings),
@@ -167,7 +168,7 @@ def inspect_writer_document(document: object) -> WriterDocumentCatalog:
         custom_document_properties=tuple(sorted(custom_names_in_info_order)),
         custom_document_properties_in_info_order=custom_names_in_info_order,
         inspection_warnings=tuple(dict.fromkeys(warnings)),
-        graphic_object_details=_graphic_object_details(document, warnings),
+        graphic_object_details=graphic_details,
     )
 
 

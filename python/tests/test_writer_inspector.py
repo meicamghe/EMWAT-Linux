@@ -146,11 +146,11 @@ class WriterInspectorTests(unittest.TestCase):
         self.assertEqual(catalog.named_ranges, ("NamedRangeA",))
         self.assertEqual(catalog.text_tables, ("Table1",))
         self.assertEqual(catalog.graphic_objects, ("Image1",))
+        self.assertEqual(len(catalog.graphic_object_details), 1)
+        self.assertEqual(catalog.graphic_object_details[0].name, "Image1")
         self.assertEqual(
-            catalog.graphic_object_details,
-            (type(catalog.graphic_object_details[0])(
-                "Image1", ("AnchorType", "GraphicURL", "Size")
-            ),),
+            catalog.graphic_object_details[0].property_names,
+            ("AnchorType", "GraphicURL", "Size"),
         )
         self.assertEqual(len(catalog.text_fields), 2)
         self.assertEqual(
