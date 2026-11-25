@@ -274,7 +274,7 @@ class BridgeHTTPServer:
                 if (
                     len(invoke_parameters) != 1
                     or invoke_parameters[0][0] != "invoke"
-                    or not invoke_parameters[0][1]
+                    or not re.fullmatch(r"[0-9]+", invoke_parameters[0][1])
                 ):
                     self._send(400, b"invalid_invoke_query", "text/plain; charset=utf-8")
                     return
