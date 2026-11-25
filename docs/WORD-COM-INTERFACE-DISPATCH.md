@@ -858,7 +858,7 @@ Word event-sink follow-up run `43723423283` (artifact `14165491351`) resolved th
 - The `0x00627A38` and `0x00627768` blocks contain Word class/interface GUID metadata. Their presence helps identify generated COM wrappers but does not provide the event-handler method pointer or prove which `IConnectionPoint::Advise` call subscribes the main editor.
 - `0x00401420` and `0x00401430` remain external/import thunks not resolved to a file-backed implementation in this package; do not assign them a semantic name from these traces alone.
 
-The missing step is now narrower: trace the generated event-sink/connection-point registration path that consumes the server data and connects the `WordAppDocumentBeforeSave`/`WordAppDocumentBeforeClose` handlers. The new lifecycle run is still tracing controller field assignments and callback registration.
+The TWordApplication connection path is now cross-identified: its server-data record at `0x00627B74` names ApplicationEvents3, and RTTI maps event field `+0x80` to OnDocumentBeforeClose callback `0x004CD154`. Word interop metadata corroborates DISPID `0x00000006`. Remaining COM work is direct extraction of the embedded typelib member record and a complete mapping of the other callback fields; the main close-event identity is no longer open.
 
 
 
