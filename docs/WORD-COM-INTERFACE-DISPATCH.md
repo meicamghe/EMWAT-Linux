@@ -402,7 +402,7 @@ This makes `GetDocFieldIndex` a central field-processing routine: it iterates a 
 
 The whole-PE pointer scan found no raw pointer to 0x004CCBBC; its only direct bounded caller is FillImgFldsForPrint at 0x004CCF8F. Run-27 RTTI maps the callback field +0x80 to OnDocumentBeforeClose, so pointer 0x004CD154 is the registered BeforeClose callback despite TD32's WordAppDocumentBeforeSave label. The complete field crosswalk is +0x80 OnDocumentBeforeClose → 0x004CD154; +0x88 OnDocumentBeforePrint → 0x004D00AC/0x004CE030; +0x90 OnDocumentBeforeSave → 0x004CD54C; +0x98 OnNewDocument → 0x004CD9C0. Earlier name-based classifications are superseded.
 
-The registered OnDocumentBeforeClose callback at 0x004CD154 has no direct HTTP call. It accesses _Document slot +0xD8 (wrapper label Set_Saved; callsite value flow unresolved), conditionally prompts, sets event Cancel on Cancel, and invokes interface slot +0x29C with three OleVariant arguments on Yes/No. The separate TD32-named WordAppDocumentBeforeClose at 0x004CCBBC is not the installed pointer and has only the FillImgFldsForPrint caller in the bounded scan. The bridge's parent-page message and final commit path remain to be mapped.
+The registered OnDocumentBeforeClose callback at 0x004CD154 has no direct HTTP call. It reads _Document.Saved through slot +0xD8 (the TD32 wrapper label Set_Saved is reversed; its wrapper returns WordBool), conditionally prompts, sets event Cancel on Cancel, and invokes interface slot +0x29C with three OleVariant arguments on Yes/No. The separate TD32-named WordAppDocumentBeforeClose at 0x004CCBBC is not the installed pointer and has only the FillImgFldsForPrint caller in the bounded scan. The bridge's parent-page message and final commit path remain to be mapped.
 
 
 ## Additional WordXP collection RTTI (lifecycle run 45)
@@ -740,7 +740,7 @@ Run 26 (43584217243, artifact 14109926135) completed successfully. TD32 symbols 
 
 The three-argument wrapper forwards its three OleVariant arguments through document interface slot +0x29C. The concrete runtime target and effective argument meanings are not identified by this wrapper alone.
 
-Run-27 callback identity correction: 0x004CD154 is installed at TWordApplication.OnDocumentBeforeClose field +0x80 despite the TD32 symbol WordAppDocumentBeforeSave. It accesses _Document slot +0xD8 (wrapper label Set_Saved; callsite value flow unresolved), calls PreparePrintDocument at 0x004CB108, conditionally prompts, sets event Cancel to 0xFFFF on Cancel, and invokes interface slot +0x29C with three OleVariant arguments on Yes/No. The separate TD32-named WordAppDocumentBeforeClose at 0x004CCBBC is not the installed callback; its bounded direct caller is FillImgFldsForPrint at 0x004CCF8F.
+Run-27 callback identity correction: 0x004CD154 is installed at TWordApplication.OnDocumentBeforeClose field +0x80 despite the TD32 symbol WordAppDocumentBeforeSave. It reads _Document.Saved through slot +0xD8 (the TD32 wrapper label Set_Saved is reversed; its wrapper returns WordBool), calls PreparePrintDocument at 0x004CB108, conditionally prompts, sets event Cancel to 0xFFFF on Cancel, and invokes interface slot +0x29C with three OleVariant arguments on Yes/No. The separate TD32-named WordAppDocumentBeforeClose at 0x004CCBBC is not the installed callback; its bounded direct caller is FillImgFldsForPrint at 0x004CCF8F.
 
 The no-argument overload's +0x4D4 slot must not be conflated with the optional-argument overloads' +0x29C slot. 0x00430070 is SaveAs2000, not Close. Remaining work: resolve the COM interface implementation behind +0x29C, find any actual close-event registration, and trace the page-side close-time POST. No apply-on-close explanation is established.
 
@@ -903,7 +903,7 @@ The follow-up wrapper traces (run 43814055308, artifact 14200974814) resolve the
 - TWordDocument.Get_Saved at 0x0042BD34 dispatches through _Document byte offset +0xD4.
 - TWordDocument.Set_Saved at 0x0042BD94 dispatches through _Document byte offset +0xD8.
 
-Therefore, the direct call at 0x004CD1F5 inside WordAppDocumentBeforeSave, which uses _Document slot +0xD8, maps to the generated Set_Saved wrapper—not Get_Saved. The earlier interpretation of that instruction as reading Document.Saved is not supported and is withdrawn. The callback's local OleVariant setup and the value it supplies to Set_Saved need a separate trace before assigning business meaning.
+Therefore, the direct call at 0x004CD1F5 inside the callback at 0x004CD154 uses slot +0xD8, whose TD32 wrapper label is Set_Saved. Wrapper call-shape analysis resolves this slot as the actual get_Saved getter: it returns a WordBool through an output pointer. The callback reads Document.Saved; the earlier withdrawal of that interpretation is superseded. The wrapper name, not the callsite, was misleading.
 
 The OnControlerNotify call at 0x004BB514 uses slot +0xDC. The follow-up trace resolves TWordDocument.Get_Content at 0x0042BDF8 to the same slot +0xDC. Thus the controller path is calling the Word document Content member, not a Saved getter/setter. OnControlerNotify supplies -1 in the argument position; the precise meaning of that value in this call context remains unresolved.
 
@@ -1019,7 +1019,7 @@ Artifact: Word lifecycle run `43817445960`, artifact `14203757393`.
 In the callback at `0x004CD154` (TD32 symbol `TWordViwer.WordAppDocumentBeforeSave`, RTTI event property `OnDocumentBeforeClose`):
 
 1. It verifies that the event's document matches `viewer+0x48` and that the viewer state permits handling.
-2. It passes a zero-initialized local by reference through COM slot `+0xD8`, then reads the local after the call. The wrapper crosswalk labels this slot `Set_Saved`, but this callsite's getter/setter semantics are unresolved; do not claim a proven write of `Saved=False`.
+2. It passes a zero-initialized local by reference through COM slot `+0xD8`; the call returns the actual `get_Saved` WordBool, despite the TD32 wrapper label `Set_Saved`. The callback reads `Document.Saved` and uses it to decide whether to prompt; it does not write `Saved=False`.
 3. It displays the registration prompt. The dialog result is then mapped as follows:
    - Yes (`MessageDlg` result 6): the first `OleVariant` passed to Close is set to `-1` (True / SaveChanges).
    - No: the first `OleVariant` remains `0` (False / do not save changes).
