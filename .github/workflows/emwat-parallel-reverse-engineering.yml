@@ -13,6 +13,8 @@ on:
       - 'tools/resolve_delphi_vmt_slots.py'
       - 'tools/scan_pe_pointer_refs.py'
       - 'tools/trace_pe_target.py'
+      - 'native/**'
+      - '.github/workflows/native-core.yml'
   workflow_dispatch:
 
 permissions:
