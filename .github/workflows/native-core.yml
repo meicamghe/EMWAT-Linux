@@ -89,9 +89,11 @@ jobs:
           test "$(dpkg-query -W -f='${Version}' emwat-native-core-dev)" = "0.1.0"
           test -f /usr/lib/libemwat_image_core.a
           test -f /usr/include/emwat/scanner.hpp
+          test -f /usr/include/emwat/scan_result.hpp
           sudo dpkg -i "$second_package"
           test "$(dpkg-query -W -f='${Version}' emwat-native-core-dev)" = "0.1.1"
           test -f /usr/lib/libemwat_image_core.a
+          test -f /usr/include/emwat/scan_result.hpp
           sudo dpkg -r emwat-native-core-dev
           if dpkg-query -W emwat-native-core-dev >/dev/null 2>&1; then
             echo "package remains installed after removal" >&2
@@ -99,3 +101,4 @@ jobs:
           fi
           test ! -e /usr/lib/libemwat_image_core.a
           test ! -e /usr/include/emwat/scanner.hpp
+          test ! -e /usr/include/emwat/scan_result.hpp
