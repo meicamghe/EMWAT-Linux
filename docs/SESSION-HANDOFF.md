@@ -17,7 +17,7 @@ Current reviewed baseline: `main` HEAD `0f95be8577718e16b6c59afb1f43fe561dabe517
 
 ### Highest-priority reverse-engineering threads
 1. Event identity is cross-identified: `TWordApplication.OnDocumentBeforeClose`, event-source IID `00020A00-0000-0000-C000-000000000046` (`ApplicationEvents3`), and Word interop DISPID `0x00000006`. Only direct decoding of the embedded typelib member record remains optional confirmation.
-2. Identify the original path source and search mask passed to `Emwatutils.DirIsEmpty` (`0x004565DC`); `0x004563A8` is now resolved as Farsi numeric-direction string normalization.
+2. Identify the original path source and search mask passed to `Emwatutils.DirIsEmpty` (`0x004565DC`); `0x004563A8` is resolved as Farsi numeric-direction string normalization. `+0x58` stores the directory-enumeration status.
 3. Obtain a sanitized Response body/HAR for `invoke=29501`.
 4. Obtain a gap-free PCAP response and compare complete document bytes.
 5. Capture Save / Don't Save / Cancel separately and correlate each decision to the actual response payload.
@@ -57,7 +57,7 @@ See [WORD-CLOSE-RESPONSE-CONTRACT-2026-11-25.md](WORD-CLOSE-RESPONSE-CONTRACT-20
 - Recovery UI/picker and retention policy are not yet implemented. The local store is not encrypted and is not compatible with the Windows password-protected `.easz` archive. Do not claim Almas end-to-end or full 180-field mapping.
 
 
-Last reviewed: 2026-11-16
+Last reviewed: 2026-11-25
 
 This is the concise continuity entry point for future sessions. Detailed reverse-engineering evidence remains in the linked analysis documents.
 
