@@ -1,0 +1,74 @@
+# EMWAT Word print dispatch and worker ownership — follow-up
+
+Date: 2026-11-25  
+Input: GitHub Actions artifacts from printer-pipeline run `45345628400` and print-handler/controller run `45347505938`, both successful.  
+Scope: static TD32/disassembly evidence from the repository's `analysis-input/EmwatMethods.bpl1`. No Windows runtime print was performed.
+
+## 1. Explicit GAM print call order
+
+The `BGPrintWithGamPrintOptions` procedure (`0x004C5FF8`) provides a concrete sequence:
+
+1. It obtains the active document's printer-name value and calls `Emwatutils.getPrinterNumJobs` (`0x00456258`). That helper calls `OpenPrinterW`; a zero result enters the early error/exit path. The helper's name is misleading: the inspected body does not itself enumerate jobs or calculate a count.
+2. It prepares fifteen OleVariant argument records on its stack.
+3. At `0x004C70B6`, it invokes the document interface through vtable slot `+0x3F0`.
+4. At `0x004C70CA`, it then calls the generated `TWordApplication.PrintOutOld` wrapper (`0x00441E44`), which dispatches through the application interface slot `+0x1E4`.
+5. After the application-level call, the routine continues with document-interface calls and its own completion/exception handling.
+
+The order is important: the `+0x3F0` document-interface dispatch and the application `PrintOutOld` call are two distinct COM calls in the same routine. Do not collapse them into one call or assume that one is merely the wrapper for the other.
+
+### Known wrapper slots for comparison
+
+- `TWordDocument.PrintOutOld` wrapper at `0x004309F8` dispatches through document slot `+0x2BC`.
+- `TWordDocument.PrintOut2000` wrapper at `0x004345FC` dispatches through document slot `+0x394`.
+- `TWordApplication.PrintOutOld` wrapper at `0x00441E44` dispatches through application slot `+0x1E4`.
+
+The current artifact does not identify the exact generated wrapper/typelib member corresponding to document slot `+0x3F0`. Its fifteen arguments are confirmed as OleVariant records at the callsite, but their semantic mapping and the reason for the subsequent application-level call remain unresolved. Do not assign names to the fifteen arguments from their count alone.
+
+## 2. Timer-driven print is a separate call path
+
+The `OnControlerNotify` callback (`0x004BB3B0`) calls `CostumizeRecAndCC` (`0x004D281C`) before the archive extraction path. The bounded `CostumizeRecAndCC` trace contains a normal document `PrintOutOld` dispatch through slot `+0x2BC`, with exception fallback attempts. This is distinct from the explicit `BGPrintWithGamPrintOptions` sequence above.
+
+The wrapper at `0x004309F8` confirms that document slot `+0x2BC` is the `TWordDocument.PrintOutOld` wrapper's dispatch target. The retry structure must not be represented as three unconditional print jobs.
+
+## 3. Print-handler execution and callback storage
+
+The `TEmwatDocPrintHandler.Execute` method at `0x004A5EA8` is a small dispatcher, not a spooler API caller:
+
+- It reads a method/callback field at handler offset `+0x40`.
+- It passes that value, together with a local method-record argument, to helper `0x004677B8`.
+- No direct spooler submission API appears in this method's decoded body.
+
+The constructor at `0x004A5C10` stores an interface reference at object offset `+0x44`, initializes helper/state objects at offsets `+0x48` and `+0xC8` through `+0xD8`, and writes the Execute code address `0x004A5EA8` plus the instance pointer into a method-record-shaped object at offsets `+0x18` and `+0x1C`. This is consistent with Delphi method-callback/thread setup, but the complete owner/worker relation is not yet proven from this artifact alone.
+
+The `DoOnTerminate` method (`0x004A5D78`) releases the five helper/state references, releases and clears the `+0x48` reference, finalizes and clears the `+0x40` callback field, then releases the interface at `+0x44`. This gives a concrete cleanup order and confirms that the callback field has a managed lifetime.
+
+`TEDPController.SetPrintThread` (`0x004D2F44`) stores the two supplied pointer-sized values at controller offsets `+0x10` and `+0x14`. `TEDPController.Notify` (`0x004D2EC8`) checks and dispatches its stored notification method record. These are method-record storage/dispatch operations; the precise relationship between this controller callback and the print worker's `+0x40` field still needs a caller/ownership trace.
+
+## 4. What this changes in the Linux design
+
+Keep these operations separate in the native design:
+
+- print-option preparation and recipient/CC field preparation;
+- document-level PrintOut request with its own argument contract;
+- application-level PrintOutOld request;
+- timer-driven PrintOutOld preparation/retry path;
+- worker/callback lifecycle and completion notification;
+- spool queue job discovery/correlation;
+- GAM output artifact publication and EMWAT retrieval.
+
+Do not equate worker completion with GAM artifact availability. The current static evidence still does not prove which job produces the TIFF, how its final path is chosen, or how EMWAT consumes it.
+
+## 5. Next targeted investigations
+
+1. Resolve document vtable slot `+0x3F0` against the exact Word type-library wrapper metadata; recover all fifteen argument names/types and their values at `0x004C70B6`.
+2. Trace helper `0x004677B8` and the constructor's thread creation/start path to identify the exact callback owner and worker object.
+3. Trace all indirect/VMT callers of `TEDPController.SetPrintThread` and `SetOnNotify`; correlate controller offsets `+0x10/+0x14` with the notification record read by `Notify`.
+4. Find the higher-level indirect caller of `ExtractFileNameEX` and correlate its document label with the queue/job ID and the GAM output artifact.
+5. Only after a controlled Windows print capture, determine whether the explicit and timer-driven paths create separate jobs, share a job, or are intercepted/coalesced.
+
+## Evidence and limits
+
+- Printer-pipeline artifact: run `45345628400`, artifact `14897534290`.
+- Print-handler/controller artifact: run `45347505938`, artifact `14898272788`.
+- The workflows completed successfully as static-analysis jobs. Their success is not a runtime print test.
+- No source binary, Wine prefix, printer configuration, or system configuration was modified by this analysis.
