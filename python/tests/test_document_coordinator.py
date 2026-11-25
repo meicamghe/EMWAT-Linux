@@ -35,12 +35,14 @@ class FakeOffice:
         saved_output=b"latest-saved-document",
         save=False,
         veto_close_attempts=0,
+        dirty_after_save=False,
     ):
         self.close = close
         self.approved_output = initial_approved
         self.saved_output = saved_output
         self.save = save
         self.veto_close_attempts = veto_close_attempts
+        self.dirty_after_save = dirty_after_save
         self.calls = []
         self.on_modified = None
         self.on_saved = None
@@ -60,6 +62,8 @@ class FakeOffice:
         if self.save:
             self.approved_output = self.saved_output
             self.on_saved()
+        if self.dirty_after_save:
+            self.on_modified()
         # The adapter consumes vetoed close attempts and waits for a later choice.
         for _ in range(self.veto_close_attempts):
             self.calls.append(("close_attempt_vetoed", handle))
@@ -98,6 +102,16 @@ class DocumentCoordinatorTests(unittest.TestCase):
             [call[0] for call in office.calls],
             ["open", "wait_for_close", "export_final_document"],
         )
+
+    def test_dont_save_after_a_prior_save_returns_that_prior_saved_snapshot(self):
+        office = FakeOffice(save=True, dirty_after_save=True)
+        result = DocumentCoordinator(office).run(
+            session_id="local-session-save-then-dirty", request=sample_request()
+        )
+        self.assertEqual(result.payload, b"latest-saved-document")
+        self.assertEqual(result.session.saved_revision, 1)
+        self.assertEqual(result.session.revision, 2)
+        self.assertEqual(result.session.state, DocumentState.RETURNED)
 
     def test_discard_does_not_export_document(self):
         office = FakeOffice(close=CloseDisposition.DISCARDED)
