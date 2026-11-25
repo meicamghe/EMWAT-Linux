@@ -391,7 +391,7 @@ class LibreOfficeAdapter:
             handle.save_proxy = save_proxy
             handle.close_proxy = close_proxy
             handle.desktop = desktop
-            handle.output_path = output_path
+            handle.output_path = approved_path
             handle.source_path = source_path
             handle.profile_path = profile_path
             handle.context = context
