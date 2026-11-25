@@ -1,3 +1,9 @@
+## 2026-11-25 — URL field decoder evidence reconciliation
+
+- Re-disassembled the `urlencoded` helper in the checked-in `analysis-input/EmwatMethods.bpl1` snapshot. At `0x004553CE–0x004553E1`, `+` selects the one-byte constant at `0x00455454`; the constant is `0x20`, so native decoding turns `+` into a space. The `%HH` branch routes the following two characters through the hexadecimal conversion helper at `0x004551FC`.
+- This confirms the existing Python `unquote_plus` behavior and the `A+B%20C` regression case. The binary’s malformed/truncated escape behavior remains unresolved; Python’s strict rejection remains fail-closed and is not claimed as native parity.
+- The detailed field-decoding note was corrected; no production field mapping or live Almas compatibility claim changes.
+
 ## 2026-11-24 — real LibreOffice path through loopback bridge
 
 - Extended the gated UNO integration to POST a generated, synthetic EditWordDocument request through the actual loopback HTTP server, run it through the service and a real LibreOffice UNO process, then validate the returned `response-word` envelope and legacy Word/CFB payload. The Writer close is automated only to keep this component test deterministic; it does not simulate a user's close choice.

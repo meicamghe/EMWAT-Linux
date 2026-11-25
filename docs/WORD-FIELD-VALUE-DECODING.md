@@ -1,6 +1,6 @@
 # Word field value decoding analysis
 
-Date: 2026-11-16
+Date: 2026-11-25
 
 ## Native encoding dispatch
 
@@ -30,7 +30,9 @@ The Linux implementation deliberately rejects malformed input instead of silentl
 
 ## Remaining verification
 
-Trace `0x00455314`, `0x00455108`, and `0x004735D0` to verify URL/Base64 edge cases and byte/string conversion details. The encoding labels and dispatch branches themselves are confirmed by the disassembly and decoded string constants.
+The `+` behavior is confirmed by the `0x00455314` disassembly: the ordinary-character branch compares the current byte with `0x2B` and, on a match, appends the one-byte string at `0x00455454`; that byte is `0x20` (space). The percent branch reads the following two bytes and routes them through the hexadecimal conversion helper at `0x004551FC` before appending the result. Thus `A+B%20C` → `A B C` is supported by both the binary trace and the Python regression test.
+
+Malformed or truncated `%` sequences still need a controlled Wine 11 fixture to establish the original runtime behavior. The current Python decoder rejects malformed escapes, which is deliberately fail-closed and is not claimed to reproduce the native error behavior. The Base64 helper chain at `0x00455108` and `0x004735D0` also still needs exact byte/string edge-case analysis.
 
 
 ## Word field-code name extraction
