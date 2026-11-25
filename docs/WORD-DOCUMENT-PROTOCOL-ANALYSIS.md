@@ -1517,7 +1517,7 @@ The previous run-25/26 interpretation that `0x004CD154` was registered as Word B
 - `+0x88` is `OnDocumentBeforePrint`, `+0x90` is `OnDocumentBeforeSave`, and `+0x98` is `OnNewDocument`. The pointers assigned at those offsets likewise have TD32 labels that do not match the wrapper event-property names.
 - This resolves the event property name, but not the numeric COM DISPID or event-source IID.
 
-The same run's full-class scan found the first nonzero write to viewer `+0x58`: `OnTmrAutoSave` calls `PrintWithGamPrintOptions` at `0x004B937C`, and that method writes the return from helper `0x004565DC` to `Self+0x58` at `0x004C5E44`. The close callback at `0x004CD154` clears it at `0x004CD31C`. The returned token's type/meaning remains unresolved pending a trace of `0x004565DC`.
+The field scan found the first known write to viewer `+0x58` inside `PrintWithGamPrintOptions` at `0x004C5E44`; the direct TD32 caller scan confirms the BeforeSave callback callsite at `0x004CD6EC`. An earlier report associated the timer with `0x004B937C`, but the full `OnTmrAutoSave` decode currently stops at an embedded-data boundary near `0x004B8F0B`; the alleged timer call is being revalidated independently. The close callback clears `+0x58` at `0x004CD31C`.
 
 Use this correction as the current authority wherever older sections say the callback is a registered BeforeSave event. The separate TD32-named `WordAppDocumentBeforeClose` at `0x004CCBBC` remains a different routine with no established role in the main event registration.
 
