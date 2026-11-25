@@ -34,11 +34,11 @@ The wrapper at `0x004309F8` confirms that document slot `+0x2BC` is the `TWordDo
 
 The `TEmwatDocPrintHandler.Execute` method at `0x004A5EA8` is a small dispatcher, not a spooler API caller:
 
-- It reads a method/callback field at handler offset `+0x40`.
-- It passes that value, together with a local method-record argument, to helper `0x004677B8`.
+- In its exception-handling path, it passes the value at handler offset `+0x40`, a local string/argument record, and a local argument pointer to `0x004677B8`.
+- The new TD32 symbol index identifies `0x004677B8` as `TETracer.LogException`; it calls `0x00467788`, identified as `TETracer.LogDebugF`. These are logging routines, not a worker dispatcher.
 - No direct spooler submission API appears in this method's decoded body.
 
-The constructor at `0x004A5C10` stores an interface reference at object offset `+0x44`, initializes helper/state objects at offsets `+0x48` and `+0xC8` through `+0xD8`, and writes the Execute code address `0x004A5EA8` plus the instance pointer into a method-record-shaped object at offsets `+0x18` and `+0x1C`. This is consistent with Delphi method-callback/thread setup, but the complete owner/worker relation is not yet proven from this artifact alone.
+The constructor at `0x004A5C10` stores an interface reference at object offset `+0x44`, initializes helper/state objects at offsets `+0x48` and `+0xC8` through `+0xD8`, and writes the Execute code address `0x004A5EA8` plus the instance pointer into a method-record-shaped object at offsets `+0x18` and `+0x1C`. The method-record-shaped value is consistent with Delphi callback storage, but this evidence does not establish that `Execute` invokes it through `0x004677B8`. The actual helper is an exception logger. The complete owner/worker relation remains unresolved.
 
 The `DoOnTerminate` method (`0x004A5D78`) releases the five helper/state references, releases and clears the `+0x48` reference, finalizes and clears the `+0x40` callback field, then releases the interface at `+0x44`. This gives a concrete cleanup order and confirms that the callback field has a managed lifetime.
 
@@ -62,7 +62,7 @@ Do not equate worker completion with GAM artifact availability. The current stat
 
 1. Resolve document vtable slot `+0x3F0` against the exact Word type-library wrapper metadata; recover all fifteen argument names/types and their values at `0x004C70B6`.
 2. Trace helper `0x004677B8` and the constructor's thread creation/start path to identify the exact callback owner and worker object.
-3. Trace all indirect/VMT callers of `TEDPController.SetPrintThread` and `SetOnNotify`; correlate controller offsets `+0x10/+0x14` with the notification record read by `Notify`.
+3. Trace all indirect/VMT callers of `TEDPController.SetPrintThread` and `SetOnNotify`; correlate controller offsets `+0x10/+0x14` with the notification record read by `Notify`. The direct-caller scan for `SetPrintThread` returned no direct CALL xrefs, so indirect dispatch remains open.
 4. Find the higher-level indirect caller of `ExtractFileNameEX` and correlate its document label with the queue/job ID and the GAM output artifact.
 5. Only after a controlled Windows print capture, determine whether the explicit and timer-driven paths create separate jobs, share a job, or are intercepted/coalesced.
 
@@ -72,3 +72,8 @@ Do not equate worker completion with GAM artifact availability. The current stat
 - Print-handler/controller artifact: run `45347505938`, artifact `14898272788`.
 - The workflows completed successfully as static-analysis jobs. Their success is not a runtime print test.
 - No source binary, Wine prefix, printer configuration, or system configuration was modified by this analysis.
+
+
+## 6. Correction from the expanded TD32 symbol/caller pass (2026-11-25)
+
+The expanded trace resolved a prior ambiguity: `0x004677B8` is `TETracer.LogException`, and `0x00467788` is `TETracer.LogDebugF`. `TEmwatDocPrintHandler.Execute` calls `LogException` in its exception path. Therefore, the earlier interpretation of `0x004677B8` as a callback dispatcher is withdrawn. The constructor's method-record-shaped storage at `+0x18/+0x1C` and controller notification record still warrant investigation, but they must not be attributed to that logging helper. The new direct-caller scan found no direct CALL xrefs to `TEDPController.SetPrintThread`; this does not rule out VMT/indirect calls.
