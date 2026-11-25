@@ -75,3 +75,10 @@ set(CPACK_DEBIAN_PACKAGE_DEPENDS "libpng-dev, libjpeg-dev, libtiff-dev, libsane-
 set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS OFF)
 set(CPACK_DEBIAN_FILE_NAME "DEB-DEFAULT")
 include(CPack)
+
+
+# Scan output ownership is separate from the pixel document and scanner session.
+add_executable(emwat_scan_result_tests tests/test_scan_result.cpp)
+target_include_directories(emwat_scan_result_tests PRIVATE include)
+target_compile_options(emwat_scan_result_tests PRIVATE -Wall -Wextra -Wpedantic -Werror)
+add_test(NAME scan_result_contract COMMAND emwat_scan_result_tests)
