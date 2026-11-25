@@ -1399,3 +1399,11 @@ Do not implement guessed `signData` joining or claim end-to-end Almas registrati
 - `cmbPagesChange` (`0x0061E680`) is preview geometry only: it computes a uniform fit scale, rounds fitted dimensions with the already-resolved Delphi `System.Round` helper, and centers the preview. It does not establish scanner DPI or resampling semantics.
 - The new Word traces confirm additional `TWordApplication` getters and dispatch slots: `Get_Windows` (`0x0043EAB8`, slot `+0x2C`), `Get_WordBasic` (`0x0043EC28`, slot `+0x3C`), `Get_Version` (`0x0043F308`, slot `+0x88`), and `Get_CustomDictionaries` (`0x00440B2C`, slot `+0x188`). `PrintOutOld` (`0x00441E44`) dispatches through slot `+0x1E4`. This confirms wrapper targets, not the semantic mapping or ABI of the 18-record `BGPrintWithGamPrintOptions` callsite; the 18-vs-17 discrepancy remains open.
 - Branch head before this handoff update: `5969ca3f007aa15589cc10797a2811e27e55a126`; the scanner report was committed as `781624eb79a9d8dcb48ea73b849b0f40c1ccbbe9`.
+
+## 2026-11-25 — next parallel pass launched
+
+- Expanded `.github/workflows/emwat-parallel-reverse-engineering.yml` and committed as `934793b0889cd3c90bfe33c34269f666ce56446a`. The next run is `45562585651` (https://github.com/meicamghe/EMWAT-Linux/actions/runs/45562585651).
+- New Word targets cover `TWordApplication.Get_ActivePrinter` / `Set_ActivePrinter`, print-handler preparation/field methods, and controller notification. The symbol index now searches `Zanprinter`, `GetPrinterName`, and printer interfaces so the next artifact can connect Word's selected printer to EMWAT's printer layer.
+- New scanner targets cover preview form destruction, page-number/image-size helpers, image-handle loading, and scanner selection in addition to the already recovered per-page output path.
+- At handoff update time, all three jobs had started: `native-regression` was installing native dependencies; `word-print-com` was tracing the expanded target set; `image-ui-and-vmt` was resolving scanner/image VMTs. No artifacts or final conclusions from run `45562585651` are available yet.
+- Current branch head before this handoff update: `934793b0889cd3c90bfe33c34269f666ce56446a`.
