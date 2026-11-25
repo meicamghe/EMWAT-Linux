@@ -142,30 +142,30 @@ The service-side `GetClass("T"+className)` resolution and the VMT `+0x0C` call a
 
 ## Run 150 — Word event wiring and save/close checkpoints
 
-Source: Word lifecycle artifact `14226866454` (dispatch crosswalk run 6). These are static traces; the complete-range rerun is in progress.
+Source: Word lifecycle artifact `14226866454` (dispatch crosswalk run 6), superseded where noted by later runs 25–26, 95–99, and the event-sink artifact `14305641689`. The new field/dispatch expansion has been added to the current branch workflow and awaits its run artifact.
 
 ### Timer-side event registration
 
-`TWordViwer.OnTmrAutoSave` at `0x004B8A84` (procedure range `0x004B8A84–0x004BB3AF`) registers Word application event callbacks. In the decoded setup path it writes:
-- WordApp event slot `+0x80` → `TWordViwer.WordAppDocumentBeforeSave` at `0x004CD154`;
+`TWordViwer.OnTmrAutoSave` at `0x004B8A84` (procedure range `0x004B8A84–0x004BB3AF`) writes callback/owner pointer pairs into event-related fields of the `TWordApplication` wrapper. In the decoded setup path it writes:
+- event-record field `+0x80` → callback pointer `0x004CD154` (TD32 symbol `TWordViwer.WordAppDocumentBeforeSave`; formal COM event identity unresolved);
 - slot `+0x90` → `WordAppNewDocument` at `0x004CD54C`;
 - slot `+0x98` → `WordAppWindowActivate` at `0x004CD9C0`;
 - slot `+0x88` → `WordAppDocumentBeforePrintBGPrint` at `0x004CE030` (or alternate handler `0x004D00AC`, based on a viewer flag).
 The corresponding owner pointers are stored in adjacent event fields. This confirms the event wiring, not yet the full timer's repeated-save behavior; the first TD32 trace decoded only 1,159 of 10,540 procedure bytes.
 
-### BeforeSave behavior
+### Callback body at `0x004CD154` (TD32 symbol: BeforeSave)
 
-`WordAppDocumentBeforeSave` at `0x004CD154` checks that the event document matches the active document. If viewer flag `+0x5E` is clear, it sets the Word `Cancel` output to `-1` and exits. Otherwise it accesses the Word document through interface slot `+0xD8`. **Correction:** the wrapper crosswalk maps `Get_Saved` to `+0xD4` and `Set_Saved` to `+0xD8`; therefore this instruction must not be described as reading the `Saved` property. The OleVariant value assigned through the setter and the prompt condition remain unresolved. For an unsaved document and viewer flag `+0x5F`, it presents a three-choice dialog; one choice explicitly sets `Cancel=-1`. On the continuing path it changes viewer flags, calls a Word document interface method at slot `+0x29C`, clears the stored document interface, and resets state.
+`WordAppDocumentBeforeSave` at `0x004CD154` checks that the event document matches the active document. If viewer flag `+0x5E` is clear, it sets the Word `Cancel` output to `-1` and exits. Otherwise it accesses the Word document through interface slot `+0xD8`. The wrapper crosswalk labels `+0xD8` as `Set_Saved` (while `Get_Saved` maps to `+0xD4`), but the callsite's argument/value flow is not fully resolved; do not describe it as reading `Document.Saved` or as a proven write of a particular value. For an unsaved document and viewer flag `+0x5F`, it presents a three-choice dialog; one choice explicitly sets `Cancel=-1`. On the continuing path it changes viewer flags, calls a Word document interface method at slot `+0x29C`, clears the stored document interface, and resets state.
 
 The dialog's exact labels and the semantics of slot `+0x29C` are not yet decoded. The event-record slot's formal COM DISPID is also unresolved. Do not equate this callback with the Almas close-time commit until the downstream calls are traced.
 
 ### BeforeClose and silent-save candidates
 
-- `WordAppDocumentBeforeClose` at `0x004CCBBC` calls helper `0x004BCA88`; this helper is now a priority target for identifying the actual close decision/commit behavior.
+- The TD32-named `WordAppDocumentBeforeClose` at `0x004CCBBC` has a known direct caller in `FillImgFldsForPrint`; its live event-registration role is unproven. `0x004BCA88` is identified elsewhere as a `GetXmlFieldInfo` overload, not a dedicated close/commit helper.
 - `TWordViwer.SilentSaveEmwatDoc` at `0x004D23D8` creates two `TStringList` objects, fills them from viewer collections at `+0x90/+0x94/+0x98/+0x9C`, and passes them with the archive object to helper `0x004AEBBC`. Its exact archive/commit role is not yet established.
 - `OnControlerNotify` at `0x004BB3B0` separately reads the Word document content and creates the passworded `.easz` archive described in Run 148/149.
 
-Keep three events separate until their call/data flow is linked: timer-driven `OnTmrAutoSave`, Word `BeforeSave`/`BeforeClose`, and the controller-notify archive operation. The next run traces the full procedure ranges and the `0x004BCA88`/`0x004AEBBC` helpers.
+Keep the timer callback wiring, the `0x004CD154` callback body, the TD32-named `0x004CCBBC` helper, and the controller-notify archive operation separate until their COM dispatch and data flow are linked. The new event-sink workflow expands field-offset and dispatch-helper tracing.
 
 
 ### LoadDocument → autosave path → archive source linkage
@@ -206,11 +206,11 @@ Source: Word response/controller workflow run `43872534265`, artifact `142288510
 - `OnTmrAutoSave` installs `OnControlerNotify` as the `TTimer.OnTimer` callback on the timer stored at viewer offset `+0x7C`; the timer interval at viewer offset `+0x88` is clamped to at least 10,000 ms and the timer is enabled.
 - `OnControlerNotify` is therefore a periodic local content/archive callback, not the Word `BeforeClose` event. It reads Word Content through slot `+0xDC` and creates .easd/.easz local archive paths. It is not currently proven to submit the final Almas registration.
 - `TEDPController.Notify` at `0x004D2EC8` is a separate print-handler controller callback; it invokes `TEmwatDocPrintHandler.GetDocFieldName` and must not be conflated with `TWordViwer.OnControlerNotify`.
-- The response appears approximately 54.558 seconds after the request body completes. The static wait/release chain is now mapped: `LoadDocument` calls `OnTmrAutoSave` synchronously at `0x004B7A58`; `OnTmrAutoSave` repeats a `Sleep(5)` + `ProcessMessages` loop while viewer `+0x58` is nonzero; the close/registration callback at `0x004CD154` clears that field after Word `Document.Close` at `0x004CD31C`; then `LoadDocument` writes the HTTP response. The 200-iteration cycle is a repeating maintenance interval, not a one-second total timeout. The formal COM event DISPID and the initial nonzero setter for `+0x58` remain under investigation.
+- The response appears approximately 54.558 seconds after the request body completes. The static wait/release chain is now mapped: `LoadDocument` calls `OnTmrAutoSave` synchronously at `0x004B7A58`; `OnTmrAutoSave` repeats a `Sleep(5)` + `ProcessMessages` loop while viewer `+0x58` is nonzero; the callback at `0x004CD154` clears that field after Word `Document.Close` at `0x004CD31C`; then `LoadDocument` writes the HTTP response. The 200-iteration cycle is a repeating maintenance interval, not a one-second total timeout. The formal COM event DISPID and the initial nonzero setter for `+0x58` remain under investigation.
 
 ### Event identity caution — 2026-11-16
 
-The callback pointer at Word event-record offset `+0x80` is `0x004CD154`. TD32 names the procedure `WordAppDocumentBeforeSave`, but its first log string is `Document.OnBeforeClose Called.` and its behavior prompts for change registration before calling the three-argument `Document.Close` wrapper. The event-record slot's actual COM DISPID (DocumentBeforeSave versus DocumentBeforeClose) is not yet mapped. Do not use the TD32 method name alone as proof of the COM event identity. The metadata block at `0x00627B74` has since been decoded as an error-message/resource map and auto-save interval labels, not an event DISPID table; it does not resolve the formal COM event identity.
+The callback pointer at event-record offset `+0x80` is `0x004CD154`. TD32 names the procedure `WordAppDocumentBeforeSave`, but its first log string is `Document.OnBeforeClose Called.` and its body prompts for change registration before calling the three-argument `Document.Close` wrapper. The formal COM event DISPID and event-source mapping are not yet established. Do not use the TD32 method name alone as proof of the COM event identity. The metadata block at `0x00627B74` has since been decoded as an error-message/resource map and auto-save interval labels, not an event DISPID table; it does not resolve the formal COM event identity.
 
 
 ## Run 153 — synchronous Word-close wait releases HTTP response — 2026-11-16
@@ -220,7 +220,7 @@ The request-lifecycle and wait-mechanism artifacts reveal the full static wait c
 1. `TWordViwer.LoadDocument` calls `OnTmrAutoSave` synchronously at `0x004B7A58` and tests its return value before proceeding to the response branch.
 2. `OnTmrAutoSave` waits at `0x004B9AE8`: `kernel32!Sleep(5)`, `TApplication.ProcessMessages`, then compare viewer field `+0x58` with zero.
 3. If the field remains nonzero, it loops. Every 200 iterations it resets the counter and runs the maintenance/check block around `0x004B9B38` (calls `0x00445B10` and `0x00455108`), then repeats. Thus 200 × 5 ms is the maintenance cycle, not the total wait limit.
-4. The registered close/registration callback at `0x004CD154` calls the Word `Document.Close` wrapper at `0x004CD2FF`, then clears viewer field `+0x58` at `0x004CD31C`.
+4. The callback body at `0x004CD154` calls the Word `Document.Close` wrapper at `0x004CD2FF`, then clears viewer field `+0x58` at `0x004CD31C`.
 5. The wait loop sees zero, disables the 10-second timer, and returns from `OnTmrAutoSave`.
 6. `LoadDocument` then takes its successful branch at `0x004B7F31`, writes the `response-word` XML via Indy `WriteContent`, and sets `bResultSet`.
 
