@@ -1463,3 +1463,19 @@ Commit on `feature/recovery-retention-policy`:
 - `849a2ef3532509ca775231e0cefeca2198aa2583` — `docs: reconcile invoke frame lengths with PCAP reconstruction`.
 
 The documentation file was fetched again after the write and its new blob SHA verified. No CI status was reported for this docs-only commit. No live Almas E2E, complete raw-capture reanalysis, or nonce-29501 body inspection was performed.
+
+## 2026-11-25 follow-up — Office close contract wording audit
+
+A focused source review compared the captured close lifecycle with the current bridge/service/adapter contract. It found a stale interface docstring that contradicted the accepted Writer behavior: `OfficeAdapter.export_final_document` said it returned “including unsaved edits”, while the actual LibreOffice adapter reads the last confirmed saved-state file. The manual acceptance evidence establishes that Don't Save returns the previous confirmed baseline, not the dirty live document.
+
+Corrected and committed:
+- `python/src/emwat_linux/office_adapter.py`: documented that `CLOSED` includes Save and Don't Save; both return the latest confirmed saved state. `DISCARDED` is reserved for explicit operation-level discard with no document payload.
+- `python/src/emwat_linux/document_coordinator.py`: clarified that finalization must never substitute a dirty live snapshot.
+- `python/src/emwat_linux/editword_handler.py`: corrected the factory contract; the coordinator currently emits a `DISCARDED` result, not a terminal `CANCELLED` result. A vetoed close remains non-terminal and the adapter keeps waiting.
+
+Commits:
+- `a686b156336fcf4057d1c67ca1343bf477ac13b7`
+- `6a452ebef9381c23ed0501981212891ceadccf03`
+- `b0304651b49af1fd89d2eb115624bb619c3a75bb`
+
+This is a contract/documentation correction, not a behavior change. Existing coordinator and LibreOffice tests were inspected; no test execution is claimed for these commits. The bridge's synchronous handler waits inside its request worker while the threaded server can continue serving heartbeat requests, as covered by the existing `test_document_post_waits_for_close_while_heartbeat_remains_responsive`. The captured ~54.56-second wait is compatible with this design; the socket timeout applies to socket I/O, not to elapsed time spent waiting in the office adapter.
