@@ -79,3 +79,8 @@ References:
 - LibreOffice SDK `XCloseable`: https://api.libreoffice.org/docs/idl/ref/interfacecom_1_1sun_1_1star_1_1util_1_1XCloseable.html
 
 The Save snapshot listener remains based on `OnSaveDone` and `OnSaveAsDone`. The approved-copy export uses `XStorable.storeToURL`, which is an export operation and emits `OnSaveToDone`, not the Save/Save-As completion event. This prevents the internal approved-copy export from being mistaken for a user Save.
+
+
+## Windows Saved-property evidence
+
+The registered `OnDocumentBeforeClose` callback reads the Word document's `Saved` state through COM vtable slot `+0xD8`. The TD32 wrapper names are reversed: `Set_Saved` at `0x0042BD94` behaves as the getter (output WordBool), while `Get_Saved` at `0x0042BD34` behaves as the setter (input WordBool at `+0xD4`). The callback uses the returned value to decide whether the Save/Don't Save/Cancel prompt is required.
