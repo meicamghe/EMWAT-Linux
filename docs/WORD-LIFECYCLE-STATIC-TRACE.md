@@ -302,3 +302,8 @@ The expanded field/path artifact `15011890875` shows:
 - The actual `OnDocumentBeforeSave` callback `0x004CD54C` calls the same method with `EDX=ECX=0x004CD928`, which is the same UTF-16 literal `Gamelectronics EMWAT`.
 
 The string-conversion helper `0x00403520` and configuration lookup helper `0x00403430` are now queued for detailed trace. Do not yet equate the vendor label with an absolute filesystem path.
+
+
+### Run 39 — Saved accessor semantics resolved
+
+The wrapper trace confirms that TD32 names are reversed relative to actual COM behavior: `Get_Saved` (`0x0042BD34`) invokes slot `+0xD4` with an input WordBool (setter), while `Set_Saved` (`0x0042BD94`) invokes slot `+0xD8` with an output WordBool (getter). The registered `OnDocumentBeforeClose` callback at `0x004CD154` reads `Document.Saved` through `+0xD8` and branches on the returned value.
