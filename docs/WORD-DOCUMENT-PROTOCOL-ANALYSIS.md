@@ -1557,4 +1557,9 @@ The TD32 wrapper `TWordDocument.Set_Saved` at `0x0042BD94` calls COM slot `+0xD8
 
 ### Run 39 — helper identification correction
 
-The thunk at `0x00403520` resolves to `rtl230.bpl!@System@Variants@@OleVarFromUStr`; `0x00401240` resolves to `rtl230.bpl!@System@@UStrAsg`. Thus the timer code converts and copies a string into `+0xA0`, but this field belongs to the archive/AddFiles flow, not the `DirIsEmpty` input. The thunk at `0x00403430` jumps through IAT slot `0x0062F1FC`, whose captured value `0x00233D76` is outside the file-backed image; its imported symbol name remains unresolved.
+The thunk at `0x00403520` resolves to `rtl230.bpl!@System@Variants@@OleVarFromUStr`; `0x00401240` resolves to `rtl230.bpl!@System@@UStrAsg`. Thus the timer code converts and copies a string into `+0xA0`, but this field belongs to the archive/AddFiles flow, not the `DirIsEmpty` input. The thunk at `0x00403430` is now resolved through the PE import table: `rtl230.bpl!System.SysUtils.StringReplace` (IAT RVA `0x0022F1FC`, VA `0x0062F1FC`). In `PrintWithGamPrintOptions`, it takes the `+0x54` string plus the two method string arguments and flags, writes a replacement result to a local, then `UStrAsg` stores that result at `+0x50`.
+
+
+### Run 40 — StringReplace import resolved
+
+The PE import table identifies IAT slot `0x0062F1FC` (RVA `0x0022F1FC`) as `rtl230.bpl!@System@Sysutils@StringReplace`. In `PrintWithGamPrintOptions` (`0x004C5E04`), the source string is `Self+0x54`; the two string parameters are EDX/ECX (saved in ESI/EDI), the replace flags come from byte `0x004C5F24`, and the result is assigned to `Self+0x50` through `UStrAsg` (`0x00401240`). The BeforeSave callsite at `0x004CD6EC` passes `0x004CD928` for both replacement parameters, so that particular call requests a same-string replacement. This does not establish the timer call's parameter values.
