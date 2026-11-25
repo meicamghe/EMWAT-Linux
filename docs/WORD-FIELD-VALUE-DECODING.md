@@ -36,7 +36,13 @@ The `+` behavior is confirmed by the `0x00455314` disassembly: the ordinary-char
 
 The `base64` branch in `SetFieldValue` (`0x004BFDB0`) calls `0x00455108`, then `0x004735D0`, before assigning the result. `0x004735D0` delegates to `0x004738CC`, which calculates the decoded byte count and calls the decoder at `0x00473700`.
 
-The decoder rejects input lengths not divisible by four, maps each input byte through a 256-byte character-translation table at `0x00627F98`, rejects a table value of `0xFF`, and assembles three output bytes per four input characters. The final group handles `=` padding and emits one or two bytes. On decode failure, the `0x004738CC` wrapper clears the output value. These findings were statically traced in the checked-in `EmwatMethods.bpl1` and runtime-probed against the byte-identical Wine 11 installation. The probe calls the internal decoder directly, so it does not establish how the preceding `0x00455108` transformation affects whitespace or Unicode input before lookup.
+The decoder rejects input lengths not divisible by four, maps each input byte through a 256-byte character-translation table at `0x00627F98`, rejects a table value of `0xFF`, and assembles three output bytes per four input characters. The final group handles `=` padding and emits one or two bytes. On decode failure, the `0x004738CC` wrapper clears the output value. These findings were statically traced in the checked-in `EmwatMethods.bpl1` and runtime-probed against the byte-identical Wine 11 installation.
+
+#### Pre-decoder conversion at `0x00455108`
+
+Static disassembly establishes that this helper converts the input Delphi `WideString` to an `AnsiString` using the caller-supplied code page (the `SetFieldValue` Base64 path supplies `0`, Windows ACP), flags `0x270`, and a NUL-terminated source (`cchWideChar=-1`). It first queries the required byte count `N`, sets the destination string length to `N-1`, then calls `WideCharToMultiByte` with destination capacity `N-1`. The API return value is ignored. This helper therefore does not itself normalize whitespace; it performs ACP conversion before the Base64 table lookup.
+
+A disposable Wine 11 WinAPI probe (Wine reports `11.0`) confirmed that the query for the test strings returns 2 bytes including the terminator. Passing capacity 1 to the second call returns 0 with `ERROR_INSUFFICIENT_BUFFER` (122), while the first converted byte has already been written. For `A`, `é`, and an unrepresentable CJK character, the written ACP bytes were respectively `41`, `e9`, and `3f` in this Wine prefix. The `0x270` flags call succeeded through the query and reached the same short-buffer behavior. The probe did not call the BPL helper, so it confirms Wine's WinAPI behavior, not full `SetFieldValue` output. Prefix `/home/m/.wine-wchar-probe-20261125` and its temporary harness were removed; the installed BPL hash was rechecked and still matches the repository snapshot.
 
 #### Wine 11 direct decoder probe
 
@@ -51,9 +57,9 @@ The installed `EmwatMethods.bpl` hash is `6ff7d262f46ab009e3eecf20fca40cd41ec8ad
 | `TWE` | failure | output buffer untouched | Length not divisible by four |
 | `QQ=A` | success | `41` (`A`) | Direct decoder accepts noncanonical padding and ignores the fourth character after `=` |
 
-The wrapper at `0x004738CC` clears its output after a failed decode, based on static control-flow analysis; the harness tested only the lower-level decoder and did not call that wrapper. Likewise, the surprising `QQ=A` acceptance is a property of the direct routine and is not yet proven to be reachable unchanged through `0x00455108` and the full `SetFieldValue` path.
+The wrapper at `0x004738CC` clears its output after a failed decode, based on static control-flow analysis; the decoder harness tested only the lower-level routine and did not call that wrapper. Likewise, the surprising `QQ=A` acceptance is a property of the direct routine and is not yet proven to be reachable unchanged through the conversion helper and full `SetFieldValue` path.
 
-The Linux decoder rejects malformed Base64 instead of silently treating it as an empty value. It also rejects the direct decoder's noncanonical `QQ=A` case. This is deliberately fail-closed and is not claimed as exact native error parity. Controlled Wine 11 fixtures are still needed for malformed/truncated `%` sequences, Base64 whitespace and non-ASCII input, the behavior of padding through the full method path, and the complete `0x00455108` byte/string conversion.
+The Linux decoder rejects malformed Base64 instead of silently treating it as an empty value. It also rejects the direct decoder's noncanonical `QQ=A` case. This is deliberately fail-closed and is not claimed as exact native error parity. Controlled Wine 11 fixtures are still needed for malformed/truncated `%` sequences, Base64 whitespace and non-ASCII input, and the behavior of padding through the complete method path. The conversion helper's ACP/code-page and short-buffer mechanics are statically established, but its exact BPL runtime result remains untested.
 
 
 ## Word field-code name extraction
@@ -68,4 +74,4 @@ When the case-sensitive `DOCPROPERTY` keyword is present, the routine extracts t
 
 Python implements this as `extract_docproperty_identifier`, including the observed Delphi one-based Copy offset and fallback behavior. Python CI run `43814423443` passed **94 tests** (one optional UNO-only test skipped).
 
-The URL helper at `0x00455314` is statically traced for ordinary characters, `+`, and `%HH`; `+` maps to a space. Malformed/truncated percent escapes still require a controlled Wine fixture. For Base64, the decoder at `0x00473700` and its output wrapper are statically traced, but the preceding `0x00455108` conversion and its whitespace/Unicode behavior remain unresolved.
+The URL helper at `0x00455314` is statically traced for ordinary characters, `+`, and `%HH`; `+` maps to a space. Malformed/truncated percent escapes still require a controlled Wine fixture. For Base64, the inner decoder and conversion helper at `0x00455108` are statically traced, and a Wine 11 WinAPI probe confirms the short-buffer behavior described above. The wrapper/full method path and whitespace/Unicode behavior end to end remain unresolved.
