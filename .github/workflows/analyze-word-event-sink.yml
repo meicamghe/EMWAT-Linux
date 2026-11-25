@@ -76,6 +76,11 @@ jobs:
             python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x$target event-sink-analysis/dispatch-helpers/target-$target.md 1200 ret
           done
           python tools/inspect_pe_va.py analysis-input/EmwatMethods.bpl1 0x00429128 --before 0x80 --after 0x300 > event-sink-analysis/dispatch-helpers/TWordApplication-typeinfo.md
+          for target in 004C5E04 004565DC; do
+            python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x$target event-sink-analysis/state-fields/procedure-$target.md
+            python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x$target event-sink-analysis/state-fields/callers-$target.md
+          done
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004565DC event-sink-analysis/dispatch-helpers/target-004565DC.md 1400 ret
       - name: Resolve Word COM interface and VMT event metadata
         run: |
           mkdir -p event-sink-analysis/interfaces
