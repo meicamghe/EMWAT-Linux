@@ -1,3 +1,8 @@
+## 2026-11-25 — native scan-result CI verification
+
+- Native-core workflow run `45560461337` completed successfully on commit `fa64dc9491fa5cdde3fabf32bc7d7ee5980fe994`: `build-test`, `sanitizer-test` (ASan/UBSan), and `deb-package-lifecycle` all passed.
+- The build job ran **5/5 CTest tests**, including the new `scan_result_contract` test, and verified installation of `scan_result.hpp`. The sanitizer job also passed its test step; the package lifecycle job completed install/upgrade/removal.
+- This verifies the new output model's compilation, structural contract tests, sanitizer run, and packaging inclusion. It does not yet integrate `ScanResult` into a live scanner workflow or establish exact Windows response-path semantics.
 ## 2026-11-25 — native scan-result boundary
 
 - Added `native/include/emwat/scan_result.hpp`: a typed `ScanResult` that explicitly distinguishes a collection of single-page files from one multipage file, while retaining optional scan-path and response-filename metadata. It validates structural invariants without probing the filesystem or inventing the Windows naming contract.
