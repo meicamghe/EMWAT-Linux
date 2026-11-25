@@ -68,7 +68,7 @@ The three workflows listed in the original investigation batch completed and the
 - `Analyze EMWAT Word request lifecycle` — run `43873354906`
 - `Analyze EMWAT controller callback ownership` — run `43873363849`
 
-The resulting timer registration, synchronous wait/release chain, and separate `TEDPController.Notify` ownership are recorded in sections 8–10 below. The wrapper event property is now identified as OnDocumentBeforeClose; the numeric COM DISPID and the semantic type of the first nonzero `+0x58` value remain unresolved.
+The resulting timer registration, synchronous wait/release chain, and separate `TEDPController.Notify` ownership are recorded in sections 8–10 below. The wrapper event property is OnDocumentBeforeClose; server-data record `0x00627B74` identifies event-source IID ApplicationEvents3 (`00020A00-0000-0000-C000-000000000046`), and Word interop metadata corroborates DISPID `0x00000006`. The `+0x58` value is the status returned by `DirIsEmpty`.
 
 ## 7. Remaining questions
 
@@ -92,7 +92,7 @@ Evidence: controller-callback-ownership run `43873363849`, artifact `14229520023
 
 The native callback at `0x004CD154` is named `WordAppDocumentBeforeSave` in TD32, but its first log string is `Document.OnBeforeClose Called.`. Its prompt text is Persian: “محتويات اين سند تغيير كرده است. آيا مايل به ثبت تغييرات مي‌باشيد؟” (“The contents of this document have changed. Do you want to register the changes?”). The Yes/No branches call the three-argument `Document.Close` wrapper with SaveChanges True/False; Cancel sets the event Cancel flag. This is close/registration behavior. The wrapper RTTI maps event-record offset `+0x80` to `OnDocumentBeforeClose`; only the numeric COM DISPID and event-source IID remain unproven.
 
-The metadata block at `0x00627B74` has now been decoded: it is an error-message/resource map (`Err_20000`, `Request XML is invalid`, `Error on connect to MS-Word`, etc.) plus logging levels and auto-save interval labels, not the Word event DISPID table. It does not resolve the callback's formal COM event identity. Use “registered `TWordApplication.OnDocumentBeforeClose` callback at `0x004CD154`”; retain the numeric DISPID as unresolved.
+**Correction to the earlier data-block interpretation:** `0x00627B74` is the `TServerData` record passed by `TWordApplication.Connect` (`0x0043E0E8`) to the OLE server connection helper (`0x00404FAC`), not an error-message/resource map. Its first three GUIDs are Word.Application CLSID `000209FF-0000-0000-C000-000000000046`, default interface IID `00020970-0000-0000-C000-000000000046`, and event-source IID `00020A00-0000-0000-C000-000000000046` (ApplicationEvents3). The error/resource strings belong to a separate data block. Word interop metadata corroborates `DocumentBeforeClose` DISPID `0x00000006`. Use the registered `TWordApplication.OnDocumentBeforeClose` callback at `0x004CD154`.
 
 
 ## 10. Long-lived HTTP request release — confirmed static chain
@@ -119,7 +119,7 @@ The exact thunk/caller scan shows the only direct `WaitForSingleObject` call in 
 
 The static wait chain remains the best-supported explanation for the long-lived request: `LoadDocument` enters the synchronous `OnTmrAutoSave` wait, the loop polls viewer `+0x58`, and the response writer runs after that state clears. This is consistent with the approximately 54.558-second PCAP delay. The local service must keep this long-lived invoke isolated from heartbeat handling; heartbeat must remain serviceable while the Word request is pending.
 
-The wrapper RTTI now identifies callback `0x004CD154` at field `+0x80` as `OnDocumentBeforeClose`, despite the TD32 label `WordAppDocumentBeforeSave`. The numeric COM DISPID remains unresolved. The first nonzero setter for viewer `+0x58` is now located in `PrintWithGamPrintOptions` (`0x004C5E44`); helper `0x004565DC` supplies the token whose exact meaning remains unresolved.
+The wrapper RTTI now identifies callback `0x004CD154` at field `+0x80` as `OnDocumentBeforeClose`, despite the TD32 label `WordAppDocumentBeforeSave`. The event-source IID is ApplicationEvents3 (`00020A00-0000-0000-C000-000000000046`) and Word interop metadata corroborates `DocumentBeforeClose` DISPID `0x00000006`. The first known `+0x58` writer is `PrintWithGamPrintOptions` (`0x004C5E44`), storing the directory-enumeration status returned by `DirIsEmpty` (`0x004565DC`).
 
 The independent DevTools capture for `invoke=29501` matches the PCAP `invoke=58351` response length (1,166,820 bytes) and HTTP content type/charset, but its body is unavailable. The PCAP's inner `response-word` / Base64 `application/msword` structure is confirmed only for `58351`. See `docs/RUNTIME-CAPTURE-2026-11-25.md` and `docs/PCAP-EDITWORD-DOCUMENT-ROUNDTRIP.md`.
 
