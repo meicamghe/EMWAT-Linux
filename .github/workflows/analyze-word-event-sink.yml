@@ -4,6 +4,8 @@ on:
   push:
     paths:
       - '.github/workflows/analyze-word-event-sink.yml'
+      - 'docs/WORD-LIFECYCLE-STATIC-TRACE.md'
+      - 'docs/WORD-DOCUMENT-PROTOCOL-ANALYSIS.md'
       - 'analysis-input/EmwatMethods.bpl1'
       - 'tools/find_td32_class_procedures.py'
       - 'tools/trace_td32_procedure.py'
