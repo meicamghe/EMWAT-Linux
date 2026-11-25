@@ -77,10 +77,16 @@ class DocumentSessionTests(unittest.TestCase):
 
         cancelled = self.opened_session()
         cancelled.mark_dirty()
-        cancelled.cancel()
+        cancelled.cancel_close_attempt()
         self.assertEqual(cancelled.state, DocumentState.DIRTY)
         self.assertEqual(cancelled.revision, 1)
         self.assertTrue(cancelled.begin_finalize())
+
+        terminal = self.opened_session()
+        terminal.cancel()
+        self.assertEqual(terminal.state, DocumentState.CANCELLED)
+        with self.assertRaises(InvalidTransition):
+            terminal.begin_finalize()
 
     def test_session_id_validation(self):
         for value in ("", " doc-1", "doc-1 "):
