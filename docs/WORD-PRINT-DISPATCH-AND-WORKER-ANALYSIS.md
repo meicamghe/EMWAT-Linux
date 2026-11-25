@@ -76,34 +76,17 @@ Do not equate worker completion with GAM artifact availability. The current stat
 
 ## 6. Exact identification of document vtable slot `+0x3F0` (2026-11-25)
 
-The follow-up wrapper trace resolves the previously open member:
+The follow-up wrapper trace resolves the member and overload:
 
-- TD32 identifies `0x00436030` as `TWordDocument.PrintOut` with fifteen `OleVariant` parameters.
-- Its body prepares the Variant arguments, obtains the document interface, and calls `[vtable + 0x3F0]` at `0x004360B4`.
-- The wrapper ends with `ret 0x34`, consistent with thirteen stack-passed arguments plus two register-passed arguments in the Delphi register calling convention; total = fifteen.
-- The `BGPrintWithGamPrintOptions` callsite at `0x004C70B6` invokes the same vtable slot after preparing fifteen Variant argument records. This matches the wrapper's member and argument count exactly.
+- TD32 identifies `0x004361B0` as `TWordDocument.PrintOut` with seventeen `OleVariant` parameters.
+- Its body prepares the Variant arguments, obtains the document interface, and calls `[vtable + 0x3F0]` at `0x00436234`.
+- The wrapper ends with `ret 0x3c`, consistent with fifteen stack-passed arguments plus two register-passed arguments in the Delphi register calling convention; total = seventeen.
+- The adjacent overloads provide a useful cross-check: `0x00436030` is the 15-Variant overload (`ret 0x34`), and `0x004360F0` is the 16-Variant overload (`ret 0x38`). All three dispatch through the same `+0x3F0` slot.
+- The caller setup in `BGPrintWithGamPrintOptions` at `0x004C6F90–0x004C70B6` prepares seventeen Variant argument records and pushes the document interface pointer separately before calling the slot. This matches the 17-Variant wrapper.
 
-**Conclusion:** the call at `0x004C70B6` is `TWordDocument.PrintOut` (15-argument overload), not an unknown document-interface operation. The subsequent call at `0x004C70CA` remains a separate `TWordApplication.PrintOutOld` invocation through its own wrapper/interface slot.
+**Conclusion:** the call at `0x004C70B6` is `TWordDocument.PrintOut` using the 17-argument Variant overload. The subsequent call at `0x004C70CA` remains a separate `TWordApplication.PrintOutOld` invocation through its own wrapper/interface slot.
 
-The standard Word `Document.PrintOut` parameter order for this 15-argument overload is:
-
-1. `Background`
-2. `Append`
-3. `Range`
-4. `OutputFileName`
-5. `From`
-6. `To`
-7. `Item`
-8. `Copies`
-9. `Pages`
-10. `PageType`
-11. `PrintToFile`
-12. `Collate`
-13. `FileName`
-14. `ActivePrinterMacGX`
-15. `ManualDuplexPrint`
-
-The member identity and argument count are established by the wrapper/callsite match. The concrete value and VARIANT type of each argument at runtime still need to be mapped from the caller's local Variant records. Do not infer the values from the form's visible controls alone.
+The semantic names and concrete values/types of the seventeen arguments have **not** yet been proven from the caller's local Variant records or the exact WordXP type-library metadata. A previously considered 15-parameter standard Word signature is not a safe mapping for this 17-argument overload and is withdrawn here. Do not assign argument names based only on a generic Word documentation signature.
 
 ## 7. Correction from the expanded TD32 symbol/caller pass (2026-11-25)
 
