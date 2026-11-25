@@ -45,7 +45,7 @@ The Linux adapter is therefore being reconciled to maintain a separate approved 
 
 ## Reverse-engineering questions that remain open
 
-1. Resolve the numeric COM DISPID and event-source IID for the RTTI-confirmed `TWordApplication.OnDocumentBeforeClose` field `+0x80` / callback `0x004CD154`. The TD32 procedure label `WordAppDocumentBeforeSave` is misleading; the wrapper RTTI maps the field to BeforeClose.
+1. Event identity is cross-identified: `TWordApplication.OnDocumentBeforeClose`, event-source IID `00020A00-0000-0000-C000-000000000046` (`ApplicationEvents3`), Word interop DISPID `0x00000006`. The TD32 procedure label `WordAppDocumentBeforeSave` is misleading. Direct decoding of the BPL's embedded typelib member record remains optional confirmation.
 2. Find the first instruction that sets viewer field `+0x58` to a nonzero value and identify its exact state/pointer meaning. The clear at `0x004CD31C` and the `Sleep(5) + ProcessMessages` wait loop are known; the initial setter is not.
 3. Obtain the actual response body for `invoke=29501` (sanitized HAR or Response-tab export) to establish whether its inner structure matches the PCAP `invoke=58351` response. Matching size and headers alone are insufficient.
 4. Obtain a complete, gap-free PCAP response for definitive document bytes/hash comparison.
