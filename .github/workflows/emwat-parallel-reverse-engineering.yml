@@ -48,6 +48,19 @@ jobs:
           status=0
           for pid in "${pids[@]}"; do wait "$pid" || status=1; done
           exit "$status"
+      - name: Decode Delphi Variant runtime helper bodies outside TD32 procedure ranges
+        shell: bash
+        run: |
+          mkdir -p parallel-re/word-print/rtl-helpers
+          targets=(00403550 004034E8 00403520 004034D0 00403368 00403480 00401420 00401478)
+          pids=()
+          for target in "${targets[@]}"; do
+            (python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x$target parallel-re/word-print/rtl-helpers/helper-$target.md 100 ret) &
+            pids+=("$!")
+          done
+          status=0
+          for pid in "${pids[@]}"; do wait "$pid" || status=1; done
+          exit "$status"
       - name: Index Word automation and print-handler symbols
         run: |
           python tools/list_td32_symbols.py analysis-input/EmwatMethods.bpl1 \
@@ -92,6 +105,19 @@ jobs:
               python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x$target parallel-re/image-ui/procedure-$target.md
               python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x$target parallel-re/image-ui/callers-$target.md
             ) &
+            pids+=("$!")
+          done
+          status=0
+          for pid in "${pids[@]}"; do wait "$pid" || status=1; done
+          exit "$status"
+      - name: Trace Delphi coordinate conversion and image editor runtime helpers
+        shell: bash
+        run: |
+          mkdir -p parallel-re/image-ui/rtl-helpers
+          targets=(00401058 00403270 00403278 00403308 0040487C 004049CC)
+          pids=()
+          for target in "${targets[@]}"; do
+            (python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x$target parallel-re/image-ui/rtl-helpers/helper-$target.md 100 ret) &
             pids+=("$!")
           done
           status=0
