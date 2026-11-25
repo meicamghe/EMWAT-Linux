@@ -4,7 +4,7 @@ The adapter keeps a separate approved DOC snapshot: the original input is the
 baseline, and only a completed office-engine Save event may replace it. Close
 returns that approved snapshot, never a live unsaved buffer. Periodic recovery
 snapshots remain separate crash-recovery material and are never final output.
-A cancelled close does not emit notifyClosed, so the request keeps waiting.
+A cancelled close attempt does not emit the successful-close notification, so the request keeps waiting.
 """
 from __future__ import annotations
 
@@ -131,6 +131,18 @@ class _DocumentCloseListener:
     ) -> None:
         self._on_closed = on_closed
         self._recovery_stop = recovery_stop
+        self._close_lock = Lock()
+        self._closed = False
+
+    def _mark_closed(self) -> None:
+        # LibreOffice may deliver notifyClosing followed by disposing.
+        # Treat both as the same terminal transition and notify the waiter once.
+        with self._close_lock:
+            if self._closed:
+                return
+            self._closed = True
+        self._recovery_stop.set()
+        self._on_closed()
 
     def queryClosing(self, _event: object, _gets_ownership: bool) -> None:
         # Save/Don't Save/Cancel must be resolved by the office UI. In particular,
@@ -141,12 +153,10 @@ class _DocumentCloseListener:
         # XCloseListener.notifyClosing is the actual successful-close callback.
         # XCloseListener has no notifyClosed method; disposing is a fallback for
         # external disposal that did not arrive through XCloseable.close().
-        self._recovery_stop.set()
-        self._on_closed()
+        self._mark_closed()
 
     def disposing(self, _event: object) -> None:
-        self._recovery_stop.set()
-        self._on_closed()
+        self._mark_closed()
 
 
 class _DocumentEventListener:
