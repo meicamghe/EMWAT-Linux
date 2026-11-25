@@ -6,6 +6,7 @@ from pathlib import Path
 from emwat_linux.libreoffice_adapter import (
     _CFB_SIGNATURE,
     _DocumentCloseListener,
+    _DocumentEventListener,
     _ModifyListener,
     _file_url,
     _source_extension,
@@ -116,6 +117,19 @@ class LibreOfficeAdapterUnitTests(unittest.TestCase):
         listener.notifyClosed(object())
         self.assertEqual(closed, [True])
         self.assertTrue(recovery_stop.is_set())
+
+    def test_document_event_listener_only_forwards_completed_saves(self):
+        events = []
+        listener = _DocumentEventListener(lambda: events.append("saved"))
+
+        class Event:
+            def __init__(self, name):
+                self.EventName = name
+
+        listener.documentEventOccured(Event("OnSave"))
+        listener.documentEventOccured(Event("OnSaveDone"))
+        listener.documentEventOccured(Event("OnSaveAsDone"))
+        self.assertEqual(events, ["saved", "saved"])
 
     def test_modify_listener_forwards_document_change(self):
         changes = []
