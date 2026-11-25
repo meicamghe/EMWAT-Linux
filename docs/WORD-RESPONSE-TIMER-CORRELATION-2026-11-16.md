@@ -60,15 +60,15 @@ The captured exchange on loopback port 1984 contains:
 
 The first response payload arrived about 54.558 seconds after the final request-body byte. This is direct evidence of a long-lived invoke request and a returned document, but it does not alone identify which internal wait/event releases the request. The response PCAP has 17 four-byte TCP sequence gaps (68 captured-payload bytes missing; estimated 51 decoded document bytes), so the full returned file and its hash are not verified.
 
-## 6. Next analysis now running
+## 6. Completed analysis batch
 
-Three existing workflows were extended and triggered:
+The three workflows listed in the original investigation batch completed and their artifacts were inspected:
 
 - `Analyze EMWAT Word wait and COM call chain` — run `43873345452`
 - `Analyze EMWAT Word request lifecycle` — run `43873354906`
 - `Analyze EMWAT controller callback ownership` — run `43873363849`
 
-They extend the OnTmrAutoSave body and timer registration, inspect the remaining request/response path, and trace `TEDPController.Notify` ownership. Results are not yet marked complete; the run artifacts must be inspected before treating any new trace as confirmed.
+The resulting timer registration, synchronous wait/release chain, and separate `TEDPController.Notify` ownership are recorded in sections 8–10 below. The formal COM DISPID and initial nonzero setter for viewer `+0x58` remain unresolved.
 
 ## 7. Remaining questions
 
