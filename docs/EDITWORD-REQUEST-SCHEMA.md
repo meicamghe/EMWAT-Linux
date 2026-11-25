@@ -208,3 +208,8 @@ The new `emwat_linux.emwat_field_catalog` helper recognizes the seven repeated s
 Use “registered close/save-decision callback at `0x004CD154`” rather than assigning a formal COM event name. TD32 labels the procedure `WordAppDocumentBeforeSave`, but its diagnostic and Close call path conflict with a straightforward BeforeSave interpretation; the event-record slot's formal COM DISPID remains unresolved.
 
 The Linux bridge returns the approved snapshot according to the Save / Don't Save / Cancel contract in `docs/WORD-CLOSE-RESPONSE-CONTRACT-2026-11-25.md`. The periodic `.easz` archive and recovery snapshots are separate from that final response selection.
+
+
+### 2026-11-25 Word event-property correction
+
+The callback pointer `0x004CD154` stored by `OnTmrAutoSave` at `TWordApplication` field `+0x80` is now mapped by the wrapper RTTI at `0x00429128` to `OnDocumentBeforeClose`. Treat it as the registered Word BeforeClose event property; TD32's `WordAppDocumentBeforeSave` label is misleading. The numeric COM DISPID remains unresolved. The distinct routine at `0x004CCBBC` is not this registered callback.
