@@ -14,6 +14,13 @@ from emwat_linux.editword_request import EditWordDocumentRequest
 
 
 class CloseDisposition(str, Enum):
+    """Distinguish editor closure from abandoning the whole bridge operation.
+
+    CLOSED includes both Save and Don't Save close choices: the adapter returns
+    the latest confirmed saved state. DISCARDED means an explicit operation-level
+    discard for which no document payload is returned.
+    """
+
     CLOSED = "closed"
     DISCARDED = "discarded"
 
@@ -62,4 +69,8 @@ class OfficeAdapter(Protocol):
         """
 
     def export_final_document(self, handle: object) -> bytes:
-        """Return final document bytes after close, including unsaved edits."""
+        """Return the latest confirmed saved-state bytes after accepted close.
+
+        Do not export a dirty live snapshot. A Don't Save close still returns the
+        last confirmed saved state (the original baseline if no save succeeded).
+        """
