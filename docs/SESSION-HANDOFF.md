@@ -1,3 +1,8 @@
+## 2026-11-25 — crop coordinate conversion helper resolved
+
+- The image lane in run `45561529517` completed successfully, as did its Word and native-regression jobs. Its artifact was inspected.
+- `0x00401058` resolves to `rtl230.bpl!@System@@ROUND` (Delphi `System.Round`), so crop preview-to-source coordinates are independently scaled on X and Y and rounded by the target RTL before being passed into the `TGearImgProc` constructor. It is not a truncating cast. Also identified `IntToStr` helper thunks, `TControl.SetVisible`, and `TWinControl.GetHandle` used by the editor path. See the updated crop-coordinate report.
+- Word print Variant helper recovery remains as recorded in section 9 of the Word dispatch report. New follow-up traces now include the property/automation helper addresses `0x004ADA4C`, `0x0043EC28`, `0x0043EAB8`, `0x0043F308`, `0x00440B2C`, and `0x00403488`, plus a broader `TWordViwer` symbol index. The next run is `45561859598`.
 ## 2026-11-25 — scan-result rename and Debian package verification
 
 - Native-core run `45561332281` completed successfully on commit `8cb43e5c276c84362a043f4bac376f8b491c6bdf`: `build-test`, `sanitizer-test`, and `deb-package-lifecycle` all passed. The package job now checks that `scan_result.hpp` is present after install and upgrade and absent after package removal.
