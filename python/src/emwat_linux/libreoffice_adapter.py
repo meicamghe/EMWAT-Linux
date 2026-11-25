@@ -174,14 +174,14 @@ class _OfficeHandle:
         close_listener: _DocumentCloseListener | None,
         work_dir: Path,
         recovery_session_id: str,
-        approved_snapshot_path: Path,
+        approved_snapshot_path: Path | None = None,
     ) -> None:
         self.process = process
         self.document = document
         self.close_listener = close_listener
         self.work_dir = work_dir
         self.recovery_session_id = recovery_session_id
-        self.approved_snapshot_path = approved_snapshot_path
+        self.approved_snapshot_path = approved_snapshot_path or (work_dir / "approved.doc")
         self.approved_snapshot_error: Exception | None = None
         self.closed = Event()
         self.recovery_stop = Event()
