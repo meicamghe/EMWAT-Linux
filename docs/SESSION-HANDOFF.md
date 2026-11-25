@@ -1314,3 +1314,12 @@ Do not implement guessed `signData` joining or claim end-to-end Almas registrati
 - Added `docs/WORD-PRINT-DISPATCH-AND-WORKER-ANALYSIS.md`. It separates the explicit `BGPrintWithGamPrintOptions` sequence (document vtable `+0x3F0`, then application `PrintOutOld` at `+0x1E4`) from the timer-driven document `PrintOutOld` path (`+0x2BC`). It also records the `TEmwatDocPrintHandler.Execute` callback field and cleanup lifecycle, while keeping unresolved method ownership explicit.
 - Commit: `e0d3795cd8a1cbbd1b6d498fee3e70d3471b8804`.
 - Next: resolve the document `+0x3F0` member and fifteen OleVariant arguments from exact wrapper/type-library metadata; trace helper `0x004677B8` and indirect controller callers; then correlate `ExtractFileNameEX` with the GAM TIFF artifact. No end-to-end print claim is made.
+
+
+## 2026-11-25 — parallel reverse-engineering and regression lanes
+
+- Added `.github/workflows/emwat-parallel-reverse-engineering.yml` with three independent jobs: (1) Word print COM/callback procedure, caller and pointer-reference traces; (2) Delphi VMT/symbol analysis plus read-only inventory of preserved scanner/image DFM resources; (3) native image-core build/tests and Python bridge regression tests.
+- The workflow is triggered by changes to its own file and relevant preserved analysis inputs. It runs on GitHub Actions; it does not require Codex or local Ubuntu access from ChatGPT.
+- Corrected the Python test install command to install the project from `./python` and `pytest` explicitly; the project does not declare a `test` extra.
+- Commits: `bc25c106ec835d61df23a084cb03ccaaa2c0512c` (workflow), `b49f0b3eabbc3650afe4e717a59f203ef7747bbb` (dependency correction).
+- Workflow execution and test outcomes are pending/unverified at this checkpoint. Do not report success until the run and all three jobs are inspected.
