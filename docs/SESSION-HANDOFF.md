@@ -1153,3 +1153,10 @@ Do not implement guessed `signData` joining or claim end-to-end Almas registrati
 - Static analysis identifies the PE32 module as an Accusoft ImageGear LZW extension. It records exports, the 45-slot extension initialization loop, GearExtInfo query behavior, GIF extension framing, and the TIFF LZW decode core.
 - TIFF decode evidence: 9–12-bit code extraction, Clear=0x100, EOI=0x101, dual MSB/LSB bit-reader branches, dictionary expansion including the special next-code case, and stride-based output padding.
 - No native codec implementation or runtime compatibility is claimed yet. Continue with the exported wrapper at 0x10005650, its callers/ABI, FillOrder selection, allocator/error callbacks, then implement isolated native codec tests.
+
+
+## New runtime evidence — 2026-11-25
+
+The screenshots `when open.png` and `when close.png` committed on 2026-11-25 expose a close-time localhost request. The selected request is `POST http://127.0.0.1:1984/?invoke=29501`, status 200, request content type `text/plain; charset=UTF-8`, referer `http://127.0.0.1:1984/?init=84760_34426`. The response headers show `Content-Length: 1166820`, `Content-Type: text/html; charset=ISO-8859-1`, and `Connection: close`. These observations are recorded in [the Nov 25 runtime capture](RUNTIME-CAPTURE-2026-11-25.md).
+
+**Resume from the capture, not from a fresh static-analysis pass:** obtain the sanitized Payload and Response tab/body for this same POST, decode the response bytes using the observed charset only after checking the actual bytes, and correlate the request Initiator stack with the parent-page message / Word close sequence. The screenshot proves a large 200 response but does not reveal its body or prove its semantic format. Preserve the distinction between the registered BeforeSave callback and the still-unidentified close-time trigger.
