@@ -30,6 +30,8 @@ class OfficeAdapter(Protocol):
 
     wait_for_close is intentionally unbounded by default: the captured Windows
     exchange keeps its HTTP request open while the document is being edited.
+    A cancelled close attempt must not be reported as a terminal close; the
+    adapter keeps waiting for a later Save/Don't Save decision and actual close.
     The adapter reports modification and engine-save events separately. The
     bridge serves requests concurrently, so concrete adapters must keep handles
     and callbacks isolated per document and be safe for concurrent sessions.
