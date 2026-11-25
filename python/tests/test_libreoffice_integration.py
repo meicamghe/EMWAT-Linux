@@ -39,9 +39,12 @@ class DocumentCloseListenerCancelTests(unittest.TestCase):
         self.assertEqual(closed, [])
         self.assertFalse(recovery_stop.is_set())
 
-        listener.notifyClosed(None)
+        listener.notifyClosing(None)
         self.assertEqual(closed, [True])
         self.assertTrue(recovery_stop.is_set())
+
+        listener.disposing(None)
+        self.assertEqual(closed, [True])
 
 
 class RecoveryWorkerTests(unittest.TestCase):
