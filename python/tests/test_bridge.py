@@ -276,8 +276,17 @@ class BridgeHTTPServerTests(unittest.TestCase):
         self.assertEqual(headers["Content-Length"], "8")
         self.assertEqual(headers["Content-Type"], "text/html; charset=ISO-8859-1")
 
-    def test_post_requires_one_nonempty_invoke_parameter(self):
-        for path in ("/", "/?invoke=", "/?invoke=1&invoke=2", "/?other=1"):
+    def test_post_requires_one_decimal_invoke_nonce(self):
+        invalid_paths = (
+            "/",
+            "/?invoke=",
+            "/?invoke=active",
+            "/?invoke=12x",
+            "/?invoke=１２３",
+            "/?invoke=1&invoke=2",
+            "/?other=1",
+        )
+        for path in invalid_paths:
             with self.subTest(path=path):
                 status, body, _ = self.request(
                     "POST",
