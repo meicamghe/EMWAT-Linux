@@ -36,7 +36,7 @@ class DocumentSessionTests(unittest.TestCase):
         self.assertEqual(session.state, DocumentState.DIRTY)
         self.assertIsNone(session.returned_payload)
 
-    def test_close_without_explicit_save_can_return_final_bytes(self):
+    def test_dirty_session_can_finalize_using_adapter_selected_approved_snapshot(self):
         session = self.opened_session()
         session.mark_dirty()
         self.assertIsNone(session.saved_revision)
@@ -67,7 +67,7 @@ class DocumentSessionTests(unittest.TestCase):
         with self.assertRaises(InvalidTransition):
             session.begin_finalize()
 
-    def test_failure_and_cancel_are_terminal(self):
+    def test_failure_is_terminal_but_cancelled_close_attempt_keeps_session_open(self):
         failed = self.opened_session()
         failed.fail("writer_crashed")
         self.assertEqual(failed.state, DocumentState.FAILED)
@@ -76,10 +76,11 @@ class DocumentSessionTests(unittest.TestCase):
             failed.begin_finalize()
 
         cancelled = self.opened_session()
+        cancelled.mark_dirty()
         cancelled.cancel()
-        self.assertEqual(cancelled.state, DocumentState.CANCELLED)
-        with self.assertRaises(InvalidTransition):
-            cancelled.begin_finalize()
+        self.assertEqual(cancelled.state, DocumentState.DIRTY)
+        self.assertEqual(cancelled.revision, 1)
+        self.assertTrue(cancelled.begin_finalize())
 
     def test_session_id_validation(self):
         for value in ("", " doc-1", "doc-1 "):
