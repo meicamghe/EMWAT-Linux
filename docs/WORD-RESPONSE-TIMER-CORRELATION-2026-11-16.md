@@ -113,3 +113,14 @@ Evidence: request-lifecycle artifact `14229047092` (notably `LoadDocument-comple
 ### WaitForSingleObject false lead excluded
 
 The exact thunk/caller scan shows the only direct `WaitForSingleObject` call in this BPL is from `GraphicCompression.FireEvent` (`0x00607240–0x0060786B`), a separate GraphicCompression worker/event pump. It is not in the `TWordViwer` request lifecycle and should not be treated as the Word-close wait. The Word request wait is the `Sleep(5)` + `ProcessMessages` loop inside `OnTmrAutoSave` that polls viewer `+0x58`.
+
+
+## 2026-11-25 reconciliation — request wait, HTTP response, and close decisions
+
+The static wait chain remains the best-supported explanation for the long-lived request: `LoadDocument` enters the synchronous `OnTmrAutoSave` wait, the loop polls viewer `+0x58`, and the response writer runs after that state clears. This is consistent with the approximately 54.558-second PCAP delay. The local service must keep this long-lived invoke isolated from heartbeat handling; heartbeat must remain serviceable while the Word request is pending.
+
+Do not overstate the COM event identity: `0x004CD154` is TD32-labelled `WordAppDocumentBeforeSave`, has a `Document.OnBeforeClose Called.` diagnostic, and invokes `Document.Close`; the event-record slot's formal COM DISPID remains unresolved. The initial nonzero setter for viewer `+0x58` also remains unresolved.
+
+The independent DevTools capture for `invoke=29501` matches the PCAP `invoke=58351` response length (1,166,820 bytes) and HTTP content type/charset, but its body is unavailable. The PCAP's inner `response-word` / Base64 `application/msword` structure is confirmed only for `58351`. See `docs/RUNTIME-CAPTURE-2026-11-25.md` and `docs/PCAP-EDITWORD-DOCUMENT-ROUNDTRIP.md`.
+
+The Linux close contract is now explicit in `docs/WORD-CLOSE-RESPONSE-CONTRACT-2026-11-25.md`: Save returns the latest successfully saved snapshot; Don't Save returns the last approved snapshot (initial input if no Save completed); Cancel leaves the session open and the pending request waiting. A generic close callback must never snapshot the live unsaved buffer. This is the required Linux behavior; it does not claim that the Windows callback's COM DISPID or exact wire branch has been fully resolved.
