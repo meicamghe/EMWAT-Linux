@@ -781,7 +781,7 @@ The first attempt to trace those targets with TD32 procedure boundaries reports 
 The event sink remains distinct from the TWordViwer callback record assignments. The latter prove that the main viewer registers its BeforeSave handler at `0x004CD154`; the 20 generated event-table targets still need to be mapped to event DISPIDs/names before they can be associated with specific Word events.
 
 
-## Correction — 2026-11-15: 0x00627B74 is an error-string table, not an event callback table
+## Correction — 2026-11-15: 0x00627B74 is TServerData with trailing error strings, not an event callback table
 
 The run #8 extraction correctly found 20 pointers, but the initial interpretation of those pointers as Word event callbacks was wrong. Run #9 (`43716905570`, artifact `14162568118`) decoded the targets as Delphi string literals, not executable callback routines. The raw disassembly attempt at `0x004499B8–0x00449E20` yielded data-like bytes and is not valid evidence of callback code.
 
@@ -798,7 +798,7 @@ The decoded strings include:
 - `Temp path not Found.`;
 - `Scan failed on %s. The error code(s)= %s\\r%s`.
 
-Therefore the pointer region beginning at `0x00627BB0` is a server error-message/string mapping structure (exact record semantics still need full structure analysis). It must not be used to identify Word event callback functions. The earlier subsection titled “Generated Word event callback table — extraction corrected” is superseded by this correction.
+Therefore the pointer region beginning at `0x00627BB0` is the trailing error-message/string mapping portion of the TWordApplication server-data record. The record itself begins at `0x00627B74` with Word.Application CLSID `000209FF-0000-0000-C000-000000000046`, default interface IID `00020970-0000-0000-C000-000000000046`, and event-source IID `00020A00-0000-0000-C000-000000000046` (ApplicationEvents3). The 20 pointers are error strings, not callback functions; the record's leading GUIDs still provide the event-source identity. The earlier subsection titled “Generated Word event callback table — extraction corrected” is superseded by this correction.
 
 The live main-viewer event registration evidence is unchanged: `OnTmrAutoSave` assigns `TWordViwer.WordAppDocumentBeforeSave` (`0x004CD154`) to callback field `+0x80`, plus other event handlers at `+0x90`, `+0x98`, and conditional `+0x88`. The 20 string pointers provide error handling text for the Word/EMWAT subsystem, not a map of those event registrations.
 
@@ -815,9 +815,9 @@ Word event-sink workflow run #3 (`43722341799`, artifact `14164794063`) adds the
 - `TWordApplication.InitServerData` (`0x0043E070`) passes the data record at `0x00627A38` to helper `0x0040479C`.
 - `TWordDocument.InitServerData` (`0x0042AA20`) does the same with a separate data record at `0x00627768`.
 - The broad Delphi interface-table scan reports `TWordApplication` VMT `0x004202A8` with a null interface-table pointer. This does not rule out its generated OLE event connection-point machinery; it means the event source is not represented as a direct Delphi VMT interface-table entry in this scan.
-- The `0x00627B74` region remains the server error-string map described above. It is not reclassified as an event table.
+- The `0x00627B74` block is the TWordApplication server-data record: its leading GUIDs identify Word.Application, `_Application`, and ApplicationEvents3; its trailing 20 pointers are the error-string map. It is not an event callback table.
 
-A targeted follow-up run (`43722702804`) now traces helper `0x0040479C` and the supporting RTL helpers, and expands/scans the `TWordDocument` server-data record at `0x00627768`. The actual event IID/DISPID-to-callback mapping remains unresolved until that artifact is inspected.
+A targeted follow-up run (`43722702804`) traces helper `0x0040479C` and the separate `TWordDocument` server-data record at `0x00627768`. The TWordApplication event source is now identified from the third GUID in its server-data record at `0x00627B74`; RTTI maps the callback field to OnDocumentBeforeClose, and Word interop metadata corroborates DISPID `0x00000006`.
 
 
 ## `WordAppDocumentBeforeClose` helper cross-reference — 2026-11-15
