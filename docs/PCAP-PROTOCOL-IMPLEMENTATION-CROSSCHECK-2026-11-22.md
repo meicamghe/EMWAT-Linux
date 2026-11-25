@@ -38,7 +38,7 @@ The request index independently shows init GET responses of exactly 994 payload 
 |---|---|---|
 | `GET /?heartbeat` | `bridge.py` `do_GET` | Returns HTTP 200, legacy ISO-8859-1 HTML content type, body `TickTack` (8 bytes) |
 | `GET /?init=<digits>_<digits>` | `bridge.py` `do_GET` and `_build_init_response()` | Enforces the observed numeric pair shape; checks Referer against configured parent-origin allowlist; generates the 994-byte init script |
-| `POST /?invoke=<nonce>` | `bridge.py` `do_POST` | Requires one non-empty invoke query parameter, bounded Content-Length, configured Origin, and complete request body |
+| `POST /?invoke=<nonce>` | `bridge.py` `do_POST` | Requires exactly one decimal ASCII invoke nonce, bounded Content-Length, configured Origin, and complete request body |
 | UTF-8 XML method envelope | `protocol.py` `parse_method_call()` | Validates `emwat` root, version `1.0`, one `method`, class, and named `param` children |
 | Explicit method dispatch | `dispatcher.py` `XMLMethodDispatcher` | Only registered classes execute; unknown classes return a non-success response |
 | `EditWordDocument` request | `editword_request.py`, `editword_service.py` | Decodes the confirmed Base64 `wordConfig` and `wordBody`; preserves `signData` as opaque text |
@@ -53,6 +53,7 @@ The POST request media type in the capture is `text/plain;charset=UTF-8`. The tr
 - The capture includes at least two invoke exchanges. The 585-byte request's method/body is not identified by the HTTP metadata export alone; do not label it as `EditWordDocument` without its reconstructed body.
 - The 31,420-byte request and HTTP 200 response are a larger invoke exchange, but this CSV alone does not prove its complete body or method class. The separate earlier EditWordDocument round-trip report documents a fully identified request/response fixture.
 - The 54.6-second stream-18 duration is consistent with a user-held document session, but this capture summary alone does not prove the precise Writer/Word close choice or the Almas response semantics for Save / Don't Save / Cancel.
+- A separate DevTools screenshot pair (`when open.png`, `when close.png`) now shows the same `/?invoke=29501` request provisional while Word is open and completed as `POST 200` after Word closes. Its completed response declares `Content-Length: 1166820` and `text/html; charset=ISO-8859-1`. This supports a pending single-Invoke lifecycle, but the Headers views do not expose the body or prove its semantic type. See `docs/ALMAS-WRITER-LIFECYCLE-CONTRACT.md` for the detailed evidence and limits.
 - No change is made to field mapping, signature handling, cancellation response, or Writer close disposition based on this metadata-only capture.
 
 ## 5. Verification
