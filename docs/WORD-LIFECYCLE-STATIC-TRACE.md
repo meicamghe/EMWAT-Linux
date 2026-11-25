@@ -170,7 +170,7 @@ Keep the timer callback wiring, the `0x004CD154` callback body, the TD32-named `
 
 ### LoadDocument → autosave path → archive source linkage
 
-The existing full-range `TWordViwer.LoadDocument` trace (`0x004B7724`) shows it calls `TWordViwer.OnTmrAutoSave` at `0x004B8A84` with a document path string (`0x004B7A58`). The timer routine copies that string into `TWordViwer+0xA0` (`0x004B8AE8`). Later, `OnControlerNotify` reads `TWordViwer+0xA0` and passes it as the first/source path to the `T7zOutArchive.AddFiles` operation.
+The existing full-range `TWordViwer.LoadDocument` trace (`0x004B7724`) shows it calls `TWordViwer.OnTmrAutoSave` at `0x004B8A84` with a document path string (`0x004B7A58`). The timer routine copies that string into `TWordViwer+0xA0` (`0x004B8AE8`). Later, `OnControlerNotify` reads `TWordViwer+0xA0` and passes it into the archive/AddFiles path. This `+0xA0` archive source is distinct from the `+0x54` output string used by `PrintWithGamPrintOptions` and `DirIsEmpty`.
 
 The same `LoadDocument` path creates a file stream from the document path through `0x004041BC` (`TFileStream.$bctr`) at `0x004B7C39`, then writes document data into it. This connects the Word document file created during `LoadDocument` to the file later packaged as the `.easd` archive entry and saved in the `.easz` archive.
 
@@ -301,7 +301,7 @@ The expanded field/path artifact `15011890875` shows:
 - The timer call's `ECX` argument `0x004BA84C` is the UTF-16 literal `Gamelectronics EMWAT`.
 - The actual `OnDocumentBeforeSave` callback `0x004CD54C` calls the same method with `EDX=ECX=0x004CD928`, which is the same UTF-16 literal `Gamelectronics EMWAT`.
 
-The string-conversion helper `0x00403520` and configuration lookup helper `0x00403430` are now queued for detailed trace. Do not yet equate the vendor label with an absolute filesystem path.
+`0x00403520` is confirmed by its IAT thunk as `rtl230.bpl!System.Variants.OleVarFromUStr`; `0x00401240` is `rtl230.bpl!System.UStrAsg`. `0x00403430` remains unresolved: its IAT slot contains an address outside the BPL image, and the runtime import name must be recovered from the PE import metadata. Do not equate `Gamelectronics EMWAT` with an absolute filesystem path.
 
 
 ### Run 39 — Saved accessor semantics resolved
