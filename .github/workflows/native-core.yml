@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - main
+      - feature/recovery-retention-policy
     paths:
       - 'native/**'
       - '.github/workflows/native-core.yml'
@@ -40,6 +41,7 @@ jobs:
           test -f "$DESTDIR/usr/lib/libemwat_image_core.a"
           test -f "$DESTDIR/usr/include/emwat/image_document.hpp"
           test -f "$DESTDIR/usr/include/emwat/scanner.hpp"
+          test -f "$DESTDIR/usr/include/emwat/scan_result.hpp"
 
   sanitizer-test:
     runs-on: ubuntu-latest
