@@ -73,7 +73,7 @@ The resulting timer registration, synchronous wait/release chain, and separate `
 ## 7. Remaining questions
 
 1. What exact object/token does helper `0x004565DC` return to the first known writer of viewer `+0x58`?
-2. Which numeric COM event DISPID and event-source IID map to the RTTI-confirmed `OnDocumentBeforeClose` field `+0x80`?
+2. Can the embedded BPL type-library member record be parsed directly to independently verify the cross-checked `ApplicationEvents3.DocumentBeforeClose` DISPID `0x00000006`?
 3. Does the periodic `.easz` archive feed a separate recovery channel, or is it consumed by another part of the desktop/browser bridge?
 4. What exact response XML is produced for non-DOC, image, and DOCX workflows?
 5. Can a complete gap-free response capture be obtained for a definitive document diff?
