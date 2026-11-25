@@ -56,3 +56,13 @@ The Linux adapter is therefore being reconciled to maintain a separate approved 
 - Never publish document text, Base64 payloads, customer identifiers, cookies, tokens, or private URLs.
 - Preserve the distinction between direct capture evidence, static binary evidence, user-observed behavior, and implementation policy.
 - Do not promote the likely `invoke=29501` / `invoke=58351` payload equivalence to a verified fact until the first body is available.
+
+
+## CI verification
+
+The code/test implementation at commit `886aee77fcc498e0ff17979d0f218b04e20a7856` passed:
+
+- Python Bridge workflow run `45585674994`: 148 tests, 2 optional skips.
+- LibreOffice UNO workflow run `45585674974`: 13 tests passed, including real Writer roundtrip and the Save-complete snapshot path.
+
+Later commits on the reconciliation branch update documentation only. These CI runs validate the tested Linux implementation path; they do not establish the unresolved Windows COM DISPID, the `invoke=29501` response body, or live Almas end-to-end compatibility.
