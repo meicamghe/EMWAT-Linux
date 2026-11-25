@@ -17,7 +17,7 @@ Current reviewed baseline: `main` HEAD `0f95be8577718e16b6c59afb1f43fe561dabe517
 
 ### Highest-priority reverse-engineering threads
 1. Event identity is cross-identified: `TWordApplication.OnDocumentBeforeClose`, event-source IID `00020A00-0000-0000-C000-000000000046` (`ApplicationEvents3`), and Word interop DISPID `0x00000006`. Only direct decoding of the embedded typelib member record remains optional confirmation.
-2. Trace path helper `0x004563A8` and the directory/filter supplied to `Emwatutils.DirIsEmpty` (`0x004565DC`); viewer `+0x58` stores its enumeration status, not an object pointer.
+2. Identify the original path source and search mask passed to `Emwatutils.DirIsEmpty` (`0x004565DC`); `0x004563A8` is now resolved as Farsi numeric-direction string normalization.
 3. Obtain a sanitized Response body/HAR for `invoke=29501`.
 4. Obtain a gap-free PCAP response and compare complete document bytes.
 5. Capture Save / Don't Save / Cancel separately and correlate each decision to the actual response payload.
@@ -1208,3 +1208,8 @@ Artifact `15009034578` identifies `0x004565DC` as `Emwatutils.DirIsEmpty`: it pe
 ### 2026-11-25 event-source IID / DISPID cross-check
 
 The TWordApplication server-data record at `0x00627B74` carries event-source IID `00020A00-0000-0000-C000-000000000046` (Word ApplicationEvents3). Microsoft Word PIA exposes `ApplicationEvents3.DocumentBeforeClose`; Word interop event metadata corroborates DISPID `0x00000006`. The embedded type-library member record itself has not yet been parsed directly, so record the ID as cross-verified rather than claiming it was read from the BPL.
+
+
+### 2026-11-25 path-helper result
+
+Run 34 artifact `15010103394` resolves `0x004563A8` as `Emwatutils.FixDirectionInFarsiNumericMode`. `PrintWithGamPrintOptions` normalizes its UnicodeString path through this helper, then calls `DirIsEmpty` (`0x004565DC`). The latter returns a FindFirst/FindNext enumeration status and writes a filename-like string. Viewer `+0x58` stores this status; its exact input path and search mask remain the next analysis target.
