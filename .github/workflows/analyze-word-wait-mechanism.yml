@@ -50,7 +50,7 @@ jobs:
           python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x004B8D12 0x004B8E90 wait-mechanism-analysis/word-com/OnTmrAutoSave-connect-and-quit.md
           python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x004B8A84 0x004BA058 wait-mechanism-analysis/word-com/OnTmrAutoSave-entry-to-main-tail.md
           python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x004BA058 0x004BB3AF wait-mechanism-analysis/word-com/OnTmrAutoSave-final-tail.md
-          python tools.trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x00403430 wait-mechanism-analysis/word-com/helper-00403430.md 1600 ret
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x00403430 wait-mechanism-analysis/word-com/helper-00403430.md 1600 ret
           objdump -p analysis-input/EmwatMethods.bpl1 > wait-mechanism-analysis/word-com/PE-import-table.txt
           python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x004B9900 0x004B9A80 wait-mechanism-analysis/word-com/OnTmrAutoSave-timer-registration.md
           for target in 0043E070 0043E0F0 0043E0FC 0043E174 0043E270 0042ABF8 00404FAC 00404F8C 00401188 00401430 00401420 00401478 00403550 00403480 00403ED0 00403ED8 0043F360 00440950 00440A68 00441C68 004CDB54 004C5D68 004B8A84 004B7724; do
