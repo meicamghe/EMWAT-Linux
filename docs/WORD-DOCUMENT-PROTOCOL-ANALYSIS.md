@@ -1517,7 +1517,7 @@ The previous run-25/26 interpretation that `0x004CD154` was registered as Word B
 - `+0x88` is `OnDocumentBeforePrint`, `+0x90` is `OnDocumentBeforeSave`, and `+0x98` is `OnNewDocument`. The pointers assigned at those offsets likewise have TD32 labels that do not match the wrapper event-property names.
 - This resolves the event property name, but not the numeric COM DISPID or event-source IID.
 
-The field scan found the first known write to viewer `+0x58` inside `PrintWithGamPrintOptions` at `0x004C5E44`; the direct TD32 caller scan confirms the BeforeSave callback callsite at `0x004CD6EC`. An earlier report associated the timer with `0x004B937C`, but the full `OnTmrAutoSave` decode currently stops at an embedded-data boundary near `0x004B8F0B`; the alleged timer call is being revalidated independently. The close callback clears `+0x58` at `0x004CD31C`.
+The field scan found the first known write to viewer `+0x58` inside `PrintWithGamPrintOptions` at `0x004C5E44`. Both timer callsite `0x004B937C` and BeforeSave callsite `0x004CD6EC` are confirmed; the timer supplies the transformed `+0xA0` document path. The close callback clears `+0x58` at `0x004CD31C`.
 
 Use this correction as the current authority wherever older sections say the callback is a registered BeforeSave event. The separate TD32-named `WordAppDocumentBeforeClose` at `0x004CCBBC` remains a different routine with no established role in the main event registration.
 
@@ -1557,7 +1557,7 @@ The TD32 wrapper `TWordDocument.Set_Saved` at `0x0042BD94` calls COM slot `+0xD8
 
 ### Run 39 — helper identification correction
 
-The thunk at `0x00403520` resolves to `rtl230.bpl!@System@Variants@@OleVarFromUStr`; `0x00401240` resolves to `rtl230.bpl!@System@@UStrAsg`. Thus the timer code converts and copies a string into `+0xA0`, but this field belongs to the archive/AddFiles flow, not the `DirIsEmpty` input. The thunk at `0x00403430` is now resolved through the PE import table: `rtl230.bpl!System.SysUtils.StringReplace` (IAT RVA `0x0022F1FC`, VA `0x0062F1FC`). In `PrintWithGamPrintOptions`, it takes the `+0x54` string plus the two method string arguments and flags, writes a replacement result to a local, then `UStrAsg` stores that result at `+0x50`.
+The thunk at `0x00403520` resolves to `rtl230.bpl!@System@Variants@@OleVarFromUStr`; `0x00401240` resolves to `rtl230.bpl!@System@@UStrAsg`. Thus the timer copies the LoadDocument path into `+0xA0`; it feeds both the archive/AddFiles flow and the directory check through helper `0x00403320` at `0x004B9366`. The thunk at `0x00403430` is now resolved through the PE import table: `rtl230.bpl!System.SysUtils.StringReplace` (IAT RVA `0x0022F1FC`, VA `0x0062F1FC`). In `PrintWithGamPrintOptions`, it takes the `+0x54` string plus the two method string arguments and flags, writes a replacement result to a local, then `UStrAsg` stores that result at `+0x50`.
 
 
 ### Run 40 — StringReplace import resolved
