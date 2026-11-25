@@ -403,7 +403,7 @@ A generated-wrapper cross-check changes how the BeforeSave callback's COM call m
 - TWordDocument.Set_Saved (0x0042BD94) dispatches through _Document slot +0xD8.
 - The callback installed as OnDocumentBeforeClose (0x004CD154; TD32 label WordAppDocumentBeforeSave) calls slot +0xD8 at 0x004CD1F5.
 
-Therefore the call at 0x004CD1F5 is mapped to Set_Saved, not Get_Saved. Any earlier statement that this instruction reads Document.Saved is withdrawn. The callback still contains the Yes/No/Cancel prompt and the three-argument Close dispatch, but the value supplied to Set_Saved and the exact condition that selects the prompt require additional tracing.
+Therefore the call at 0x004CD1F5 reaches the TD32 wrapper label Set_Saved through slot +0xD8. Wrapper call-shape analysis shows this is the actual get_Saved getter returning WordBool; the callback reads Document.Saved. The earlier withdrawal of the Saved-read interpretation is superseded.
 
 Evidence: close/response-chain run 43814055308, artifact 14200974814. A follow-up traces Get_Content at 0x0042BDF8 to resolve the adjacent +0xDC slot used by OnControlerNotify.
 
