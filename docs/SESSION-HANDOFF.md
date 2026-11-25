@@ -1,3 +1,9 @@
+## 2026-11-25 — Word Print Variant helper ABI recovered
+
+- The Word lane in run `45561529517` completed successfully and produced an inspected artifact. `0x00403550` is not a generic Variant initializer: it resolves to `rtl230.bpl!@System@Variants@EmptyParam`. Fifteen of the eighteen pushed records are therefore explicit missing optional parameters.
+- The remaining records are now typed at the helper level: `-0x58` is populated via `OleVarFromInt` from a document/application property at `+0x408`; `-0x78` is `OleVarFromInt` with 0 or 4; `-0x88` starts as `EmptyParam` and may be replaced with an `OleVarFromUStr` value depending on branches. `VarClr`, `VarToUStr`, and `CheckAutoResult` thunk identities were also resolved. Full semantic parameter mapping and the 18-vs-17 interface ABI discrepancy remain open. See section 9 of `docs/WORD-PRINT-DISPATCH-AND-WORKER-ANALYSIS.md`.
+- The native-regression job in run `45561529517` passed. The image/scanner lane in that run was still running at this checkpoint; its artifact must be inspected before accepting new conclusions.
+- The native-core run `45561490818` has passed build-test and ASan/UBSan; Debian package lifecycle was still running at this checkpoint. The earlier run on intermediate commit `c5e434c` failed because the header rename landed before the test rename in separate commits; the next commit `8cb43e5` passed the complete native-core workflow. Treat this as a transient intermediate-commit failure, not a final branch failure.
 ## 2026-11-25 — ImageGear save path and editor constructor correction
 
 - Parallel run `45560979156` completed successfully across all three jobs (`word-print-com`, `image-ui-and-vmt`, `native-regression`). The new image artifact was inspected, not just generated.
