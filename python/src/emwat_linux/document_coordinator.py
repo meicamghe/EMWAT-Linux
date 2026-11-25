@@ -99,6 +99,7 @@ class DocumentCoordinator:
                 DocumentState.RETURNED,
                 DocumentState.DISCARDED,
                 DocumentState.FAILED,
+                DocumentState.CANCELLED,
             ):
                 session.fail("office_adapter_failure")
             raise OfficeCoordinationError("office_session_failed") from exc
