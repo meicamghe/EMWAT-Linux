@@ -35,7 +35,7 @@ struct ScanResult {
         return std::holds_alternative<MultiPageFile>(output);
     }
 
-    [[nodiscard]] std::size_t page_file_count() const noexcept {
+    [[nodiscard]] std::size_t output_file_count() const noexcept {
         if (const auto* set = std::get_if<SinglePageFileSet>(&output))
             return set->files.size();
         return 1;
