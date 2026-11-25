@@ -76,7 +76,7 @@ jobs:
             python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x$target event-sink-analysis/dispatch-helpers/target-$target.md 1200 ret
           done
           python tools/inspect_pe_va.py analysis-input/EmwatMethods.bpl1 0x00429128 --before 0x80 --after 0x300 > event-sink-analysis/dispatch-helpers/TWordApplication-typeinfo.md
-          for target in 004C5E04 004565DC 004563A8 00403520 00403430; do
+          for target in 004C5E04 004565DC 004563A8 00403520 00403430 0042BD34 0042BD94 0042ABA0; do
             python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x$target event-sink-analysis/state-fields/procedure-$target.md
             python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x$target event-sink-analysis/state-fields/callers-$target.md
           done
@@ -85,6 +85,8 @@ jobs:
           python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x00403520 event-sink-analysis/dispatch-helpers/target-00403520.md 1400 ret
           python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x00403430 event-sink-analysis/dispatch-helpers/target-00403430.md 1400 ret
           python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x00401240 event-sink-analysis/dispatch-helpers/target-00401240.md 1400 ret
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x0042BD34 event-sink-analysis/dispatch-helpers/target-0042BD34.md 1400 ret
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x0042BD94 event-sink-analysis/dispatch-helpers/target-0042BD94.md 1400 ret
           python tools/inspect_pe_va.py analysis-input/EmwatMethods.bpl1 0x004BA84C --before 0x40 --after 0x120 > event-sink-analysis/dispatch-helpers/OnTmrAutoSave-constant-4BA84C.md
           python tools/inspect_pe_va.py analysis-input/EmwatMethods.bpl1 0x004CD928 --before 0x40 --after 0x120 > event-sink-analysis/dispatch-helpers/BeforeSave-constant-4CD928.md
       - name: Resolve Word COM interface and VMT event metadata
