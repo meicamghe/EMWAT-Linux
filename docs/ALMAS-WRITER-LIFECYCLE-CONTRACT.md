@@ -102,6 +102,49 @@ In particular:
 - the handler therefore still requires an injected cancel-response factory
   whenever the service returns no payload.
 
+## 4. Browser Invoke lifetime: Word open → Word close
+
+A pair of DevTools screenshots committed in the repository as `when open.png`
+and `when close.png` provides a direct observation of one browser-side
+Invoke lifecycle. Both screenshots select the same request URL:
+
+`http://127.0.0.1:1984/?invoke=29501`
+
+Observed while the Word window is open:
+
+- The selected request is shown with provisional request headers.
+- The screenshot does not expose a completed request method or HTTP status.
+- Its Referer is `http://127.0.0.1:1984/?init=84760_34426`.
+- Its request Content-Type is `text/plain;charset=UTF-8`.
+
+Observed after Word is closed:
+
+- The selected request is still the same `invoke=29501` URL; no separate
+  close-time Invoke is visible in this comparison.
+- DevTools now reports `POST` and `200 OK`.
+- The response is `text/html; charset=ISO-8859-1`, with
+  `Content-Length: 1166820` (1,166,820 bytes).
+- The Referer and request Content-Type shown remain the same as above.
+
+This is consistent with one XHR remaining pending during the Word editing
+session and completing after the editor closes. It is stronger evidence for a
+held-open Invoke than for a second close notification. The first screenshot
+does not show the request method/status, however, so the pair alone does not
+prove that the browser changed an already-sent request's method; it shows the
+same request URL in a provisional state and later as a completed POST.
+
+The response body and request payload are not visible in these Headers
+screenshots. Consequently, the 1,166,820-byte response cannot yet be
+classified as a Word document, HTML wrapper, or another serialized envelope.
+Do not hard-code this length or infer Save/Don't Save/Cancel semantics from it.
+
+**Implementation consequence:** the production Invoke handler must support a
+request whose dispatch remains pending while the office document is open, then
+serialize exactly one terminal response when the document lifecycle completes.
+It must not fabricate a second close-time Invoke. The Linux Writer adapter's
+saved-state rules remain separate from the still-unidentified Windows/Almas
+response body.
+
 ## 4. Required capture to close the Almas gap
 
 Capture a sanitized test exchange from a controlled Almas account and the
