@@ -99,3 +99,21 @@ The expanded trace resolved a prior ambiguity: `0x004677B8` is `TETracer.LogExce
 - The first fifteen listed records are initialized immediately before their addresses are pushed using helper 0x00403550. The three pre-existing records are prepared earlier: -0x58 via 0x004034E8 from an application/document property path, -0x88 via Variant initialization and copy helper 0x00403520, and -0x78 via 0x004034E8 with an integer-like value. Their exact VARTYPEs and semantic values still require helper and source-property tracing.
 - Do not report the 17-parameter wrapper as the proven signature of this specific caller until the eighteen-address discrepancy is resolved. The next workflow pass traces the Variant helpers and interface-construction helper 0x0042ABA0; the COM call convention and any hidden/result argument must be established from that evidence, not guessed.
 
+
+## 9. Delphi RTL helper identities for the 18 caller records (2026-11-25)
+
+The next artifact pass resolved the helper thunks through the `rtl230.bpl` IAT. This establishes the record initialization classes, but not the final COM method ABI:
+
+- `0x00403550` → `rtl230.bpl!@System@Variants@EmptyParam$qqrv`. The fifteen records at offsets `-0x2cc, -0x2dc, -0x2ec, -0x2fc, -0x30c, -0x31c, -0x32c, -0x33c, -0x34c, -0x35c, -0x36c, -0x37c, -0x38c, -0x39c, -0x3ac` are initialized as COM optional/missing Variant values (`EmptyParam`), not generic untyped zeroed records.
+- `0x004034E8` → `rtl230.bpl!@System@Variants@@OleVarFromInt`. The record at `-0x58` is populated from an integer-like value returned through the application/document property at object offset `+0x408`. The record at `-0x78` is populated with integer 0 or 4, selected by the preceding branches.
+- `0x00403520` → `rtl230.bpl!@System@Variants@@OleVarFromUStr`. The record at `-0x88` starts as `EmptyParam`; conditional branches can replace it with a UnicodeString Variant. One branch obtains a string through the document/application object at `+0x3e8`; another obtains a value via a document interface call and converts a temporary Variant to UnicodeString through `0x004034D0` (`VarToUStr`) before assigning it.
+- `0x00403480` → `rtl230.bpl!@System@Variants@@VarClr`, used to clear the temporary Variant in the conditional string path.
+- `0x004034D0` → `rtl230.bpl!@System@Variants@@VarToUStr`.
+- `0x00401478` → `rtl230.bpl!@System@@CheckAutoResult`, confirming this helper is Delphi's automation-result check rather than a print-specific callback.
+
+### What this resolves and what it does not
+
+- The eighteen pushed record pointers have a real structure: fifteen `EmptyParam` placeholders, one integer Variant from a property path, one integer Variant set to 0 or 4, and one optional UnicodeString Variant (or `EmptyParam`).
+- The semantic Word PrintOut parameter names/order are still not proven. In particular, do not map the three populated values to generic Word object-model parameter names based only on current values.
+- The eighteen-record callsite still cannot be equated with the independently identified 17-parameter `TWordDocument.PrintOut` wrapper at `0x004361B0`. The exact interface slot target/signature, register-vs-stack convention, and any overload/proxy layer remain unresolved. The wrapper/callsite mismatch warning remains active.
+- Artifact source: run `45561529517`, artifact `emwat-parallel-word-print` (RTL helper disassembly plus procedure/caller traces).
