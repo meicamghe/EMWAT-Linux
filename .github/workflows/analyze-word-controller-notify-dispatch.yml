@@ -33,9 +33,9 @@ jobs:
           python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x004BB3B0 0x004BB777 controller-notify-dispatch/OnControlerNotify.md
           python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x004BB3B0 controller-notify-dispatch/OnControlerNotify-full-td32.md
           python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004BB581 controller-notify-dispatch/OnControlerNotify-archive-input.md 1600 ret
-          python tools/scan_td32_class_field_refs.py analysis-input/EmwatMethods.bpl1 TWordViwer controller-notify-dispatch/TWordViwer-archive-path-fields.md --offsets 0x80 0x84 0x88           python tools/inspect_delphi_vmt_address.py analysis-input/EmwatMethods.bpl1 0x004B10A4
+          python tools/scan_td32_class_field_refs.py analysis-input/EmwatMethods.bpl1 TWordViwer controller-notify-dispatch/TWordViwer-archive-path-fields.md --offsets 0x80 0x84 0x88 0xA0 0x54 0x58
+          python tools/inspect_delphi_vmt_address.py analysis-input/EmwatMethods.bpl1 0x004B10A4
           cp bpl-analysis/EmwatMethods-vmt-address.md controller-notify-dispatch/TWordViwer-vmt-field-table.md
-0xA0 0x54 0x58
           for target in 00404B94 00404B8C 00404B84; do
             python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x$target controller-notify-dispatch/helper-$target.md 1800 ret
             python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 0x$target controller-notify-dispatch/helper-refs-$target.md
