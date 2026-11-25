@@ -572,7 +572,7 @@ The expanded trace artifact from workflow run `43500518664` completed successful
 
 ### Next static-analysis target
 
-The earlier Delphi VMT resolver remains useful for internal class diagnostics, but it is not the table used by this Word callback path. The current TWordViwer+0x48 field is a Wordxp._Document COM interface, and slot +0x2BC maps to PrintOutOld(). The 0x004CCBBC -> +0x38 -> GetXmlFieldInfo path is a nested image-field helper reached from FillImgFldsForPrint, despite its TD32 WordAppDocumentBeforeClose label. The callback registered at event-record +0x80 is 0x004CD154, but runs 25–26 identify it as WordAppDocumentBeforeSave. It accesses `_Document` slot `+0xD8`, prompts, and invokes interface slot `+0x29C` with three OleVariant arguments on Yes/No. The wrapper crosswalk labels `+0xD8` as `Set_Saved`, while the callsite's argument/value flow is not fully resolved; do not claim that this instruction reads `Document.Saved`. Runtime-confirmed behavior remains separate: closing the Word document causes the local bridge request invoke=5208 with an EditWordDocument XML payload containing wordConfig; the parent-page message that initiates this request is not yet traced.
+The earlier Delphi VMT resolver remains useful for internal class diagnostics, but it is not the table used by this Word callback path. The current TWordViwer+0x48 field is a Wordxp._Document COM interface, and slot +0x2BC maps to PrintOutOld(). The 0x004CCBBC -> +0x38 -> GetXmlFieldInfo path is a nested image-field helper reached from FillImgFldsForPrint, despite its TD32 WordAppDocumentBeforeClose label. The callback pointer stored at event-record +0x80 is 0x004CD154; the new RTTI crosswalk identifies this field as TWordApplication.OnDocumentBeforeClose despite the TD32 procedure label WordAppDocumentBeforeSave. It accesses `_Document` slot `+0xD8`, prompts, and invokes interface slot `+0x29C` with three OleVariant arguments on Yes/No. The wrapper crosswalk labels `+0xD8` as `Set_Saved`, while the callsite's argument/value flow is not fully resolved; do not claim that this instruction reads `Document.Saved`. Runtime-confirmed behavior remains separate: closing the Word document causes the local bridge request invoke=5208 with an EditWordDocument XML payload containing wordConfig; the parent-page message that initiates this request is not yet traced.
 
 
 ## Run 108 — deep trace رویدادهای Word و dispatch کنترلر (2026-11-14)
@@ -1505,3 +1505,18 @@ The wrapper crosswalk in the current analysis maps `Get_Saved` (`0x0042BD34`) to
 Likewise, `0x004CD154` is the callback pointer stored at event-record offset `+0x80` and has TD32 symbol name `WordAppDocumentBeforeSave`, but the formal COM event DISPID remains unresolved. Its close prompt and `Document.Close` call are evidence about its body, not proof of the event interface identity. Use the neutral label “registered close/save-decision callback at `0x004CD154`”.
 
 For the Linux implementation's Save / Don't Save / Cancel behavior, use `docs/WORD-CLOSE-RESPONSE-CONTRACT-2026-11-25.md`; do not infer that policy from the Windows symbol name alone.
+
+
+## 2026-11-25 correction — RTTI proves the event property at +0x80
+
+The previous run-25/26 interpretation that `0x004CD154` was registered as Word BeforeSave is superseded by the `TWordApplication` RTTI crosswalk in event-sink run 27 (artifact `15008774182`).
+
+- `TWordApplication` type information at `0x00429128` names field `+0x80` as `OnDocumentBeforeClose`.
+- `OnTmrAutoSave` stores callback pointer `0x004CD154` at that exact field offset (`0x004B8CA2`).
+- Therefore the registered wrapper event property is **Word.Application.OnDocumentBeforeClose**. The TD32 symbol `WordAppDocumentBeforeSave` is misleading; the diagnostic string and `Document.Close` call path are consistent with the RTTI result.
+- `+0x88` is `OnDocumentBeforePrint`, `+0x90` is `OnDocumentBeforeSave`, and `+0x98` is `OnNewDocument`. The pointers assigned at those offsets likewise have TD32 labels that do not match the wrapper event-property names.
+- This resolves the event property name, but not the numeric COM DISPID or event-source IID.
+
+The same run's full-class scan found the first nonzero write to viewer `+0x58`: `OnTmrAutoSave` calls `PrintWithGamPrintOptions` at `0x004B937C`, and that method writes the return from helper `0x004565DC` to `Self+0x58` at `0x004C5E44`. The close callback at `0x004CD154` clears it at `0x004CD31C`. The returned token's type/meaning remains unresolved pending a trace of `0x004565DC`.
+
+Use this correction as the current authority wherever older sections say the callback is a registered BeforeSave event. The separate TD32-named `WordAppDocumentBeforeClose` at `0x004CCBBC` remains a different routine with no established role in the main event registration.
