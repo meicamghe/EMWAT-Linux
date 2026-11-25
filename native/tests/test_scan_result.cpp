@@ -23,7 +23,7 @@ int main() {
     files.validate();
     assert(files.is_single_page_file_set());
     assert(!files.is_multipage_file());
-    assert(files.page_file_count() == 2);
+    assert(files.output_file_count() == 2);
 
     ScanResult multipage{
         MultiPageFile{"document.tif"},
@@ -33,7 +33,7 @@ int main() {
     multipage.validate();
     assert(!multipage.is_single_page_file_set());
     assert(multipage.is_multipage_file());
-    assert(multipage.page_file_count() == 1);
+    assert(multipage.output_file_count() == 1);
 
     ScanResult empty_set{SinglePageFileSet{{}}, {}, {}};
     assert(throws_invalid([&] { empty_set.validate(); }));
