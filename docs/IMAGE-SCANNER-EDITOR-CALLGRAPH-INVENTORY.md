@@ -126,3 +126,38 @@ The follow-up run traced 23 procedures and direct callers in parallel. The follo
 - `TfrmImageTools.doProc` (`0x0050BBB8`) derives a three-way operation selector from an ImageEn object method result, then computes floating-point parameters from several stored controls/objects and calls the free-rotate path. This confirms that free rotation is a parameterized operation, not just a 90-degree transform.
 
 The expanded trace does not change the VMT caveat: candidate VMTs remain heuristic/unverified until corroborated independently.
+
+
+## 9. ImageGear and file-I/O helper identities (workflow run 45559625754)
+
+The previously opaque helper addresses are now resolved against the PE import table. These are not all ordinary file-system helpers; most are ImageGear API thunks:
+
+| Helper VA | Resolved target | Evidence role |
+|---|---|---|
+| `0x004AFE78` | `GEAR32PD.DLL!IG_ext_load` | Load ImageGear extension |
+| `0x004AFE90` | `GEAR32PD.DLL!IG_save_file` | Save image file through ImageGear |
+| `0x004AFE98` | `GEAR32PD.DLL!IG_load_FD` | Load image through an FD/stream path |
+| `0x004AFEA0` | `GEAR32PD.DLL!IG_save_FD` | Save image through an FD/stream path |
+| `0x004AFEA8` | `GEAR32PD.DLL!IG_page_count_get` | Read page count |
+| `0x004AFEB8` | `GEAR32PD.DLL!IG_image_delete` | Delete/release an ImageGear image object |
+| `0x004AFEC0` | `GEAR32PD.DLL!IG_image_is_valid` | Validate an ImageGear image object |
+| `0x004AFF18` | `GEAR32PD.DLL!IG_IP_color_promote` | Promote image color representation |
+| `0x00402684` | `kernel32.dll!CloseHandle` | Close a Win32 handle |
+| `0x004026A4` | `kernel32.dll!CreateFileW` | Open/create a Win32 file handle |
+| `0x00402918` | `kernel32.dll!_lclose` | Close a legacy CRT file handle |
+| `0x00402920` | `kernel32.dll!_lopen` | Open a legacy CRT file handle |
+
+The thunk identities are exact import-table matches. The wrapper names establish which ImageGear operations the native implementation must replace, but they do not reveal the complete argument ABI or ownership rules. In particular, do not assume that `IG_load_FD` and `IG_save_FD` take ordinary POSIX file descriptors without recovering their argument contract.
+
+### Linux parity consequence
+
+The native backend should replace these calls at the semantic boundary:
+
+- image decode/encode and format dispatch (`IG_load_FD`, `IG_save_FD`, `IG_save_file`);
+- multipage count and page iteration (`IG_page_count_get`);
+- image-object validity and lifecycle (`IG_image_is_valid`, `IG_image_delete`);
+- color-depth promotion (`IG_IP_color_promote`);
+- file-handle creation/closure using safe POSIX file descriptors.
+
+This confirms why a thin CUPS or Wine compatibility shim is insufficient: the original scanner/image pipeline is coupled to ImageGear image objects, page streams and format operations. Native libtiff/libjpeg/libpng plus a well-defined Linux image-document/result model is the appropriate replacement boundary, after exact output semantics are verified.
+
