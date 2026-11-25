@@ -27,10 +27,12 @@ The response is therefore a large payload (about 1.11 MiB), not a tiny status-on
 
 ## What is not established
 
-The screenshots do not expose the POST Payload tab or Response tab. Consequently, they do not establish:
+The screenshots do not expose the POST Payload tab or Response tab. The current PCAP report for the separate `invoke=58351` exchange records the same response Content-Length (1,166,820 bytes) and the same `text/html; charset=ISO-8859-1` HTTP Content-Type, while its captured body contains a `response-word` XML structure carrying Base64 `application/msword` data. This is a strong cross-capture correlation, but it is not direct evidence of the `invoke=29501` body because the two invoke values are different and the DevTools response body is unavailable.
+
+Consequently, the screenshots alone do not establish:
 
 - the exact request body, XML envelope, encoding, or method class;
-- whether the response contains raw HTML, XML, base64, an embedded document, or a multipart-like structure;
+- whether the `invoke=29501` response body has the same inner `response-word` structure as the PCAP `invoke=58351` response;
 - how the browser consumes the 1,166,820-byte response;
 - whether the request is initiated by a Word close callback, a parent-page message, or another close-time handler;
 - whether the response is the final saved letter, a wrapper containing the letter, or another artifact.
@@ -48,5 +50,6 @@ Do not infer these details from the response headers alone.
 ## Evidence classification
 
 - **Runtime-confirmed from screenshots:** local POST URL, loopback port, HTTP 200, request content type and referer, response length and response content type/charset, connection-close header.
+- **Cross-capture correlation only:** `invoke=29501` and `invoke=58351` have matching response length (1,166,820 bytes) and HTTP response content type/charset. The `29501` body is not directly available; identical inner payload structure is not proven.
 - **Previously statically confirmed:** bridge uses `postMessage` and local HTTP POST; `invoke` is a per-request nonce/cache-buster; the service has Word method/response structures; the registered Word callback at `0x004CD154` is BeforeSave.
-- **Unknown:** body semantics, response semantics, exact close-time trigger, and end-to-end persistence mechanism.
+- **Unknown:** the actual `invoke=29501` body, exact close-time trigger, and end-to-end persistence mechanism. The `58351` PCAP body semantics are separately documented in `docs/PCAP-EDITWORD-DOCUMENT-ROUNDTRIP.md`.

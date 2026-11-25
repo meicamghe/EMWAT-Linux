@@ -97,7 +97,10 @@ class DocumentSession:
             self.state = DocumentState.FAILED
 
     def discard(self) -> None:
-        """Close without returning edited bytes after an explicit discard outcome.
+        """Terminate without a response after an explicit application-level abort.
+
+        This is not the office UI's "Don't Save" choice: that closes normally
+        and returns the previous approved snapshot.
 
         Do not infer discard merely from a BeforeSave cancellation: the recovered
         native event sink proves a BeforeSave callback, not a separate
@@ -108,10 +111,22 @@ class DocumentSession:
                 raise InvalidTransition(f"cannot discard a session in state {self.state.value}")
             self.state = DocumentState.DISCARDED
 
-    def cancel(self) -> None:
+    def cancel_close_attempt(self) -> None:
+        """Cancel one close attempt without terminating the document session."""
         with self._lock:
-            if self.state in (DocumentState.FINALIZING, DocumentState.RETURNED,
-                              DocumentState.DISCARDED, DocumentState.FAILED, DocumentState.CANCELLED):
+            if self.state not in (DocumentState.OPENED, DocumentState.DIRTY):
+                raise InvalidTransition(
+                    f"cannot cancel a close attempt in state {self.state.value}"
+                )
+            # Intentionally preserve OPENED/DIRTY and all revision metadata.
+
+    def cancel(self) -> None:
+        """Terminate a session explicitly, distinct from the office UI's Cancel."""
+        with self._lock:
+            if self.state in (
+                DocumentState.FINALIZING, DocumentState.RETURNED,
+                DocumentState.DISCARDED, DocumentState.FAILED, DocumentState.CANCELLED,
+            ):
                 raise InvalidTransition(f"cannot cancel a session in state {self.state.value}")
             self.state = DocumentState.CANCELLED
 

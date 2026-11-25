@@ -228,7 +228,7 @@ The service string dump also contains `TEmwatInvokeParam`, `ParseMethod`, `Calli
 
 Older lifecycle notes in this document mention WordAppDocumentBeforeClose/BeforeSave names based on an incorrect address assignment. The corrected TD32 mapping is: 0x004CD154 is the registered TWordViwer.WordAppDocumentBeforeSave callback at viewer field +0x80; the separately named TWordViwer.WordAppDocumentBeforeClose is 0x004CCBBC, whose only direct bounded caller found is FillImgFldsForPrint at 0x004CCF8F and for which no raw-pointer registration reference was found. Do not describe 0x004CD154 as a close callback or treat the 0x004CCBBC symbol name as proof of active event registration.
 
-Run 26 (43584217243, artifact 14109926135) also confirms TWordDocument.Close wrappers: no-argument 0x0042FEB0 uses interface slot +0x4D4; the 1/2/3-OleVariant overloads at 0x0042FF08, 0x0042FF7C, and 0x0042FFF4 use +0x29C. The registered BeforeSave callback checks _Document.Saved and may prompt; its Cancel branch sets the event Cancel value, while Yes/No invoke the three-argument Close path. This does not yet explain the browser-observed close-time POST or the user's confirmed apply-on-close behavior.
+Run 26 (43584217243, artifact 14109926135) also confirms TWordDocument.Close wrappers: no-argument 0x0042FEB0 uses interface slot +0x4D4; the 1/2/3-OleVariant overloads at 0x0042FF08, 0x0042FF7C, and 0x0042FFF4 use +0x29C. The callback pointer registered at event-record offset +0x80 targets 0x004CD154 (TD32 symbol: WordAppDocumentBeforeSave); it accesses Word document state and may prompt. Its Cancel branch sets the event Cancel value, while Yes/No invoke the three-argument Close path. The formal COM event DISPID is unresolved, and the +0xD8 wrapper is Set_Saved rather than Get_Saved. This does not yet explain the browser-observed close-time POST or the user's confirmed apply-on-close behavior.
 
 The bridge script evidence remains unchanged: each window message is POSTed with event.data as the body, a client-generated random requestId in the invoke query, and the responseText is postMessaged to the original source/origin. The service-side dispatch and full response contract still require further analysis.
 
@@ -587,3 +587,10 @@ Evidence and full trace details: `docs/WORD-RESPONSE-TIMER-CORRELATION-2026-11-1
 ### Long-lived invoke wait is mapped — 2026-11-16
 
 `TWordViwer.LoadDocument` calls `OnTmrAutoSave` at `0x004B7A58` and does not proceed to the HTTP response branch until it returns. `OnTmrAutoSave` loops at `0x004B9AE8`: `Sleep(5)`, `TApplication.ProcessMessages`, then test viewer `+0x58`. While the field remains nonzero, the loop continues; every 200 iterations it resets its counter and performs maintenance/check calls, then repeats. The close/registration callback at `0x004CD154` calls Word `Document.Close` and clears viewer `+0x58` at `0x004CD31C`. The wait then exits, and `LoadDocument` writes the `response-word` response. This static chain matches the observed ~54.558-second PCAP delay. The event callback's formal COM DISPID and the code that initially sets `+0x58` nonzero are still being traced.
+
+
+## 2026-11-25 close-decision / response correlation addendum
+
+The close-time DevTools request `invoke=29501` matches the PCAP `invoke=58351` response length (1,166,820 bytes) and HTTP content type/charset, but the `29501` body is not available. Only the PCAP body for `58351` directly proves the `response-word` / Base64 `application/msword` structure. See `docs/PCAP-EDITWORD-DOCUMENT-ROUNDTRIP.md` and `docs/RUNTIME-CAPTURE-2026-11-25.md`.
+
+The Linux bridge must keep the long-lived EditWord invoke isolated from heartbeat handling and apply the Save / Don't Save / Cancel approved-snapshot policy documented in `docs/WORD-CLOSE-RESPONSE-CONTRACT-2026-11-25.md`.

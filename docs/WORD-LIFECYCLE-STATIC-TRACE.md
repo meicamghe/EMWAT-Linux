@@ -155,9 +155,9 @@ The corresponding owner pointers are stored in adjacent event fields. This confi
 
 ### BeforeSave behavior
 
-`WordAppDocumentBeforeSave` at `0x004CD154` checks that the event document matches the active document. If viewer flag `+0x5E` is clear, it sets the Word `Cancel` output to `-1` and exits. Otherwise it reads the Word document's `Saved` property through interface slot `+0xD8`. For an unsaved document and viewer flag `+0x5F`, it presents a three-choice dialog; one choice explicitly sets `Cancel=-1`. On the continuing path it changes viewer flags, calls a Word document interface method at slot `+0x29C`, clears the stored document interface, and resets state.
+`WordAppDocumentBeforeSave` at `0x004CD154` checks that the event document matches the active document. If viewer flag `+0x5E` is clear, it sets the Word `Cancel` output to `-1` and exits. Otherwise it accesses the Word document through interface slot `+0xD8`. **Correction:** the wrapper crosswalk maps `Get_Saved` to `+0xD4` and `Set_Saved` to `+0xD8`; therefore this instruction must not be described as reading the `Saved` property. The OleVariant value assigned through the setter and the prompt condition remain unresolved. For an unsaved document and viewer flag `+0x5F`, it presents a three-choice dialog; one choice explicitly sets `Cancel=-1`. On the continuing path it changes viewer flags, calls a Word document interface method at slot `+0x29C`, clears the stored document interface, and resets state.
 
-The dialog's exact labels and the semantics of slot `+0x29C` are not yet decoded. Do not equate this callback with the Almas close-time commit until the downstream calls are traced.
+The dialog's exact labels and the semantics of slot `+0x29C` are not yet decoded. The event-record slot's formal COM DISPID is also unresolved. Do not equate this callback with the Almas close-time commit until the downstream calls are traced.
 
 ### BeforeClose and silent-save candidates
 
@@ -227,3 +227,15 @@ The request-lifecycle and wait-mechanism artifacts reveal the full static wait c
 This explains why the local HTTP request remains open during Word editing and returns the document after the close/registration path. The observed ~54.558-second delay is consistent with the user's Word session duration. The initial setter of viewer `+0x58` and the formal COM event identity of callback `0x004CD154` remain open.
 
 Evidence: wait-mechanism run `43874638245`, artifact `14229716255`; request-lifecycle run `43873354906`, artifact `14229047092`; Word response run `43872534265`, artifact `14228851062`.
+
+
+## 2026-11-25 — Linux close-decision contract and implementation boundary
+
+The Linux implementation must distinguish the office engine's successful Save event from close-time finalization:
+
+- Save returns the latest approved snapshot only after `OnSaveDone` or `OnSaveAsDone` has been observed and the corresponding DOC snapshot write succeeds.
+- Don't Save closes normally but returns the previous approved snapshot; if no Save completed, that is the initial input baseline.
+- Cancel is a cancelled close attempt, not a terminal session cancellation. No response is emitted and the same request/session remains pending until a later decision closes the document.
+- Periodic recovery snapshots are separate and are never the final response.
+
+The current reconciliation branch implements this boundary in `LibreOfficeAdapter` by keeping `approved.doc` separate from periodic recovery data and by removing live-buffer snapshotting from `queryClosing`. The Windows event callback's formal COM DISPID and the initial nonzero setter for viewer `+0x58` remain unresolved; the Linux contract is not evidence that those Windows internals have been fully identified.
