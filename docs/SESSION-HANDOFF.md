@@ -17,7 +17,7 @@ Current reviewed baseline: `main` HEAD `0f95be8577718e16b6c59afb1f43fe561dabe517
 
 ### Highest-priority reverse-engineering threads
 1. Resolve the numeric COM DISPID/event-source IID for the now RTTI-confirmed `TWordApplication.OnDocumentBeforeClose` field `+0x80` (callback `0x004CD154`). TD32's `WordAppDocumentBeforeSave` name is misleading.
-2. Trace helper `0x004565DC`, which supplies the first nonzero viewer `+0x58` value through `PrintWithGamPrintOptions`; identify the returned token/object type.
+2. Trace path helper `0x004563A8` and the directory/filter supplied to `Emwatutils.DirIsEmpty` (`0x004565DC`); viewer `+0x58` stores its enumeration status, not an object pointer.
 3. Obtain a sanitized Response body/HAR for `invoke=29501`.
 4. Obtain a gap-free PCAP response and compare complete document bytes.
 5. Capture Save / Don't Save / Cancel separately and correlate each decision to the actual response payload.
@@ -1198,3 +1198,8 @@ Workflow run 27 (artifact `15008774182`) resolves two formerly open items:
 - The first nonzero write to viewer `+0x58` is found: `OnTmrAutoSave` calls `TWordViwer.PrintWithGamPrintOptions` at `0x004B937C`; that method stores the return of `0x004565DC` into `Self+0x58` at `0x004C5E44`. The close callback clears it at `0x004CD31C`. Trace `0x004565DC` to identify the token's exact type and meaning.
 
 The event-property mapping is stronger than the earlier TD32 name-based inference. Use the RTTI crosswalk in `docs/WORD-LIFECYCLE-STATIC-TRACE.md` as the current authority.
+
+
+### 2026-11-25 event-sink run 28 refinement
+
+Artifact `15009034578` identifies `0x004565DC` as `Emwatutils.DirIsEmpty`: it performs FindFirst/FindNext directory enumeration, returns the final status in EAX, and writes a UnicodeString output. `PrintWithGamPrintOptions` stores this status in viewer `+0x58` at `0x004C5E44`. This method is called both from `OnTmrAutoSave` at `0x004B937C` and from callback `0x004CD54C` at `0x004CD6EC`; RTTI maps the latter callback field `+0x90` to `OnDocumentBeforeSave`. The exact path/filter and status convention remain open; next trace `0x004563A8`.
