@@ -213,3 +213,8 @@ The Linux bridge returns the approved snapshot according to the Save / Don't Sav
 ### 2026-11-25 Word event-property correction
 
 The callback pointer `0x004CD154` stored by `OnTmrAutoSave` at `TWordApplication` field `+0x80` is now mapped by the wrapper RTTI at `0x00429128` to `OnDocumentBeforeClose`. Treat it as the registered Word BeforeClose event property; TD32's `WordAppDocumentBeforeSave` label is misleading. The event-source IID is `ApplicationEvents3` (`00020A00-0000-0000-C000-000000000046`) and Word interop metadata corroborates `DocumentBeforeClose` DISPID `0x00000006`. The distinct routine at `0x004CCBBC` is not this registered callback.
+
+
+### 2026-11-25 Saved-property accessor semantics
+
+The BeforeClose callback `0x004CD154` reads `Document.Saved` through COM slot `+0xD8`. The TD32 wrapper names are reversed: `Set_Saved` at `0x0042BD94` returns the WordBool from `+0xD8` (getter), while `Get_Saved` at `0x0042BD34` passes an input WordBool to `+0xD4` (setter). The callback does not set `Saved=False`.
