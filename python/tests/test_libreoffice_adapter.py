@@ -114,9 +114,13 @@ class LibreOfficeAdapterUnitTests(unittest.TestCase):
         self.assertEqual(closed, [])
         self.assertFalse(recovery_stop.is_set())
 
-        listener.notifyClosed(object())
+        listener.notifyClosing(object())
         self.assertEqual(closed, [True])
         self.assertTrue(recovery_stop.is_set())
+
+        # Disposal after notifyClosing is permitted and must be idempotent.
+        listener.disposing(object())
+        self.assertEqual(closed, [True])
 
     def test_document_event_listener_only_forwards_completed_saves(self):
         events = []
