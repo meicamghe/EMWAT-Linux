@@ -76,10 +76,12 @@ jobs:
             python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x$target event-sink-analysis/dispatch-helpers/target-$target.md 1200 ret
           done
           python tools/inspect_pe_va.py analysis-input/EmwatMethods.bpl1 0x00429128 --before 0x80 --after 0x300 > event-sink-analysis/dispatch-helpers/TWordApplication-typeinfo.md
-          for target in 004C5E04 004565DC 004563A8 00403520 00403430 0042BD34 0042BD94 0042ABA0; do
+          for target in 004B8A84 004C5E04 004565DC 004563A8 00403520 00403430 0042BD34 0042BD94 0042ABA0; do
             python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x$target event-sink-analysis/state-fields/procedure-$target.md
             python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x$target event-sink-analysis/state-fields/callers-$target.md
           done
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004B8A84 event-sink-analysis/state-fields/callers-004B8A84.md
+          python tools/inspect_pe_va.py analysis-input/EmwatMethods.bpl1 0x0062F1FC --before 0x20 --after 0x40 > event-sink-analysis/dispatch-helpers/IAT-slot-0062F1FC.md
           python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004565DC event-sink-analysis/dispatch-helpers/target-004565DC.md 1400 ret
           python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004563A8 event-sink-analysis/dispatch-helpers/target-004563A8.md 1400 ret
           python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x00403520 event-sink-analysis/dispatch-helpers/target-00403520.md 1400 ret
