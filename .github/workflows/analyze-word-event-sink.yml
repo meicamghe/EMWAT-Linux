@@ -13,6 +13,7 @@ on:
       - 'tools/trace_delphi_interfaces.py'
       - 'tools/resolve_delphi_vmt_slots.py'
       - 'tools/scan_pe_pointer_refs.py'
+      - 'tools/scan_td32_class_field_refs.py'
       - 'tools/scan_named_pe_resource.py'
 permissions:
   contents: read
@@ -65,6 +66,16 @@ jobs:
             python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x$target event-sink-analysis/callbacks/$target-callers.md
             python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 0x$target event-sink-analysis/callbacks/$target-pointer-refs.md
           done
+      - name: Exhaustively scan viewer state and trace COM event dispatch
+        shell: bash
+        run: |
+          mkdir -p event-sink-analysis/state-fields event-sink-analysis/dispatch-helpers
+          python tools/scan_td32_class_field_refs.py analysis-input/EmwatMethods.bpl1 TWordViwer event-sink-analysis/state-fields/TWordViwer-offset-58.md --offsets 0x58 0x5E 0x5F 0x79 0x7C 0x80 0x88
+          python tools/scan_td32_class_field_refs.py analysis-input/EmwatMethods.bpl1 TWordApplication event-sink-analysis/state-fields/TWordApplication-event-fields.md --offsets 0x80 0x84 0x88 0x8C 0x90 0x94 0x98 0x9C 0x124
+          for target in 00404F8C 00401188 00404FAC 00404FBC 00440950 0040479C 00401358 00401370 00401210 00401430; do
+            python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x$target event-sink-analysis/dispatch-helpers/target-$target.md 1200 ret
+          done
+          python tools/inspect_pe_va.py analysis-input/EmwatMethods.bpl1 0x00429128 --before 0x80 --after 0x300 > event-sink-analysis/dispatch-helpers/TWordApplication-typeinfo.md
       - name: Resolve Word COM interface and VMT event metadata
         run: |
           mkdir -p event-sink-analysis/interfaces
