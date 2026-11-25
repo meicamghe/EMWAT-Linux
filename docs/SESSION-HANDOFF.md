@@ -1,3 +1,10 @@
+## 2026-11-25 — parallel lane verification and new reverse-engineering corrections
+
+- Parallel workflow run `45560465682` completed successfully: `word-print-com`, `image-ui-and-vmt`, and `native-regression` all passed. The image artifact includes the expanded scanner/editor traces and result-container symbol index.
+- Native-core run `45560461337` completed successfully: all three jobs passed (`build-test`, ASan/UBSan `sanitizer-test`, and `deb-package-lifecycle`). The build ran 5/5 CTest tests, including `scan_result_contract`, and verified staged installation of `scan_result.hpp`.
+- New static recovery: the Simple Image Editor crop path uses independent source/viewer X and Y scale ratios. MouseDown scales both X bounds and both Y bounds into source pixels before calling helper `0x004EEE24`; mouse move/up implement edge/interior selection and drag updates. See `docs/IMAGE-EDITOR-CROP-COORDINATE-RECOVERY.md`. Exact rounding helper, preview offset/letterboxing and editor transaction semantics remain open.
+- Important correction: the 17-Variant `TWordDocument.PrintOut` wrapper at `0x004361B0` is independently confirmed, but the `BGPrintWithGamPrintOptions` callsite appears to prepare/push **18** Variant-record addresses before its `+0x3F0` dispatch. The prior claim that the caller matched the 17-argument wrapper is withdrawn. See section 8 of `docs/WORD-PRINT-DISPATCH-AND-WORKER-ANALYSIS.md`.
+- A new parallel workflow run `45560979156` is executing the next targeted pass for Variant helper ABI and the crop helper/state-transition procedures. Do not record conclusions from those traces until the artifact is inspected.
 ## 2026-11-25 — native scan-result CI verification
 
 - Native-core workflow run `45560461337` completed successfully on commit `fa64dc9491fa5cdde3fabf32bc7d7ee5980fe994`: `build-test`, `sanitizer-test` (ASan/UBSan), and `deb-package-lifecycle` all passed.
