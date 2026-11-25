@@ -76,10 +76,13 @@ jobs:
             TfrmSimpleImageEditor TfrmGScanPreview TfrmImageTools TGearImgProc \
             TImageProcessor TResultImage TMultiPageImage TSetOfMultiPageImages \
             TSetOfSinglePageImages TScanCommand > parallel-re/image-ui/image-scanner-symbols.md
+          python tools/list_td32_symbols.py analysis-input/EmwatMethods.bpl1 \
+            TResultImage TSetOfSinglePageImages TSetOfMultiPageImages \
+            GetScanPath GetResponseFileName SetResultImage > parallel-re/image-ui/result-container-symbols.md
       - name: Trace scanner, multipage TIFF, and image-editor operations in parallel
         shell: bash
         run: |
-          targets=(0061D888 0061DC80 0061DEF4 0061E510 0061E548 0061E5C0 0061E5F0 0061E620 004F11E8 004F1A04 004F1D04 004EF138 004EF40C 004EF510 004EF714 004EF8C0 004EF9CC 004EEDB4 004F01F0 00508A90 0050A29C 0050A414 0050BBB8)
+          targets=(0061D888 0061DC80 0061DEF4 0061E3F0 0061E470 0061E510 0061E548 0061E5C0 0061E5F0 0061E620 0061E680 004F1064 004F109C 004F11E8 004F1274 004F1308 004F1404 004F1660 004F1890 004F1A04 004F1D04 004EF138 004EF40C 004EF510 004EF714 004EF8C0 004EF9CC 004EEDB4 004F01F0 00508A90 0050A29C 0050A414 0050A534 0050AB2C 0050ABA4 0050ACDC 0050BBB8)
           pids=()
           for target in "${targets[@]}"; do
             (
