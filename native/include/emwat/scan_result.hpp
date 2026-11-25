@@ -35,6 +35,8 @@ struct ScanResult {
         return std::holds_alternative<MultiPageFile>(output);
     }
 
+    // Counts physical output files, not image pages. A multipage file may hold
+    // several pages; its internal page count is intentionally not inferred here.
     [[nodiscard]] std::size_t output_file_count() const noexcept {
         if (const auto* set = std::get_if<SinglePageFileSet>(&output))
             return set->files.size();
