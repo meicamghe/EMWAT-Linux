@@ -36,9 +36,24 @@ The `+` behavior is confirmed by the `0x00455314` disassembly: the ordinary-char
 
 The `base64` branch in `SetFieldValue` (`0x004BFDB0`) calls `0x00455108`, then `0x004735D0`, before assigning the result. `0x004735D0` delegates to `0x004738CC`, which calculates the decoded byte count and calls the decoder at `0x00473700`.
 
-The decoder rejects input lengths not divisible by four, maps each input byte through a 256-byte character-translation table at `0x00627F98`, rejects a table value of `0xFF`, and assembles three output bytes per four input characters. The final group handles one or two `=` padding characters and emits one or two bytes. On decode failure, the `0x004738CC` wrapper clears the output value. These are static findings from the checked-in `EmwatMethods.bpl1`; they do not establish how the preceding `0x00455108` transformation affects whitespace or Unicode input before lookup.
+The decoder rejects input lengths not divisible by four, maps each input byte through a 256-byte character-translation table at `0x00627F98`, rejects a table value of `0xFF`, and assembles three output bytes per four input characters. The final group handles `=` padding and emits one or two bytes. On decode failure, the `0x004738CC` wrapper clears the output value. These findings were statically traced in the checked-in `EmwatMethods.bpl1` and runtime-probed against the byte-identical Wine 11 installation. The probe calls the internal decoder directly, so it does not establish how the preceding `0x00455108` transformation affects whitespace or Unicode input before lookup.
 
-The Linux decoder currently rejects malformed Base64 instead of silently treating it as an empty value. This is deliberately fail-closed and is not claimed as exact native error parity. Controlled Wine 11 fixtures are still needed for malformed/truncated `%` sequences and for Base64 whitespace, non-ASCII input, padding edge cases, and the complete `0x00455108` byte/string conversion.
+#### Wine 11 direct decoder probe
+
+The installed `EmwatMethods.bpl` hash is `6ff7d262f46ab009e3eecf20fca40cd41ec8ad937adf7bbfe2f6eddd56aaea2d`, matching the repository analysis snapshot. A 32-bit harness at `tools/reverse_engineering/probe_emwat_base64_decoder.c` loaded the installed BPL with `LoadLibraryEx(..., DONT_RESOLVE_DLL_REFERENCES)` and called decoder RVA `0x73700`; package initialization and imports were not resolved. It ran under Wine `11.0` in a disposable prefix, which was removed afterward. The original `/home/m/.wine-emwat` prefix was not launched or modified; its EMWAT binary hashes were rechecked after the probe.
+
+| Input | Decoder result | Output | Observation |
+|---|---:|---|---|
+| `TWFu` | success | `4d 61 6e` (`Man`) | Three-byte group |
+| `QQ==` | success | `41` (`A`) | Two `=` padding characters |
+| `QUI=` | success | `41 42` (`AB`) | One `=` padding character |
+| `QQ?=` | failure | partial byte `41` remains in the caller buffer | Invalid alphabet is reported after earlier output was written |
+| `TWE` | failure | output buffer untouched | Length not divisible by four |
+| `QQ=A` | success | `41` (`A`) | Direct decoder accepts noncanonical padding and ignores the fourth character after `=` |
+
+The wrapper at `0x004738CC` clears its output after a failed decode, based on static control-flow analysis; the harness tested only the lower-level decoder and did not call that wrapper. Likewise, the surprising `QQ=A` acceptance is a property of the direct routine and is not yet proven to be reachable unchanged through `0x00455108` and the full `SetFieldValue` path.
+
+The Linux decoder rejects malformed Base64 instead of silently treating it as an empty value. It also rejects the direct decoder's noncanonical `QQ=A` case. This is deliberately fail-closed and is not claimed as exact native error parity. Controlled Wine 11 fixtures are still needed for malformed/truncated `%` sequences, Base64 whitespace and non-ASCII input, the behavior of padding through the full method path, and the complete `0x00455108` byte/string conversion.
 
 
 ## Word field-code name extraction

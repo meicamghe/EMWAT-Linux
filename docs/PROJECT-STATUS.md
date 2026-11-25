@@ -1,3 +1,10 @@
+## 2026-11-25 — Wine 11 runtime Base64 decoder probe
+
+- The Wine 11 installation's `EmwatMethods.bpl` (`6ff7d262f46ab009e3eecf20fca40cd41ec8ad937adf7bbfe2f6eddd56aaea2d`) matches the checked-in analysis snapshot byte-for-byte. A 32-bit probe called internal decoder RVA `0x73700` after loading the BPL with `DONT_RESOLVE_DLL_REFERENCES` in a fresh disposable prefix; the existing `/home/m/.wine-emwat` prefix was not launched or modified.
+- Wine 11 results: `TWFu` → `Man`, `QQ==` → `A`, `QUI=` → `AB`; invalid `QQ?=` returned false after writing a partial `A`; non-multiple-of-four `TWE` returned false without writing; raw decoder input `QQ=A` returned success as `A`, ignoring the trailing character.
+- The direct probe does not call wrapper `0x004738CC` or the preceding `0x00455108` conversion. Wrapper clearing-on-failure is static evidence; acceptance of noncanonical padding is confirmed only for the inner decoder. The temporary prefix and harness executable were removed after confirming the original Wine binary hashes remained unchanged.
+- Reproducible, non-production harness: `tools/reverse_engineering/probe_emwat_base64_decoder.c`. Full conditions and limits are in `WORD-FIELD-VALUE-DECODING.md`.
+
 ## 2026-11-25 — Base64 field decoder static trace
 
 - Traced `SetFieldValue`'s Base64 branch (`0x004BFDB0`) through `0x004735D0` / `0x004738CC` into decoder `0x00473700` in `analysis-input/EmwatMethods.bpl1`. The decoder requires a multiple-of-four input length, validates bytes through a 256-byte character-translation table, emits three bytes per full group, and interprets terminal `=` padding to produce one or two bytes. Its wrapper clears the output on a reported decode failure.
