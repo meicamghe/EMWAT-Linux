@@ -1,3 +1,7 @@
+## 2026-11-25 — scan-result rename and Debian package verification
+
+- Native-core run `45561332281` completed successfully on commit `8cb43e5c276c84362a043f4bac376f8b491c6bdf`: `build-test`, `sanitizer-test`, and `deb-package-lifecycle` all passed. The package job now checks that `scan_result.hpp` is present after install and upgrade and absent after package removal.
+- The scan-result API now uses `output_file_count()` rather than `page_file_count()`, explicitly counting physical output files only. This avoids claiming that one multipage container contains one image page.
 ## 2026-11-25 — Word Print Variant helper ABI recovered
 
 - The Word lane in run `45561529517` completed successfully and produced an inspected artifact. `0x00403550` is not a generic Variant initializer: it resolves to `rtl230.bpl!@System@Variants@EmptyParam`. Fifteen of the eighteen pushed records are therefore explicit missing optional parameters.
