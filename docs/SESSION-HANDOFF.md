@@ -17,7 +17,7 @@ Current reviewed baseline: `main` HEAD `0f95be8577718e16b6c59afb1f43fe561dabe517
 
 ### Highest-priority reverse-engineering threads
 1. Event identity is cross-identified: `TWordApplication.OnDocumentBeforeClose`, event-source IID `00020A00-0000-0000-C000-000000000046` (`ApplicationEvents3`), and Word interop DISPID `0x00000006`. Only direct decoding of the embedded typelib member record remains optional confirmation.
-2. Resolve the meaning of the Sender-derived string copied to `TWordViwer+0xA0` before `DirIsEmpty` (`0x004565DC`). `0x004563A8` normalizes it; the timer also passes UTF-16 `Gamelectronics EMWAT`. Trace helpers `0x00403520` and `0x00403430` to distinguish a directory path from a configuration key.
+2. Keep the two strings separate: `+0xA0` is the timer/archive AddFiles source (copied with `UStrAsg` after `OleVarFromUStr`), while `+0x54` is the `DirIsEmpty` output string and `+0x58` its status. Resolve the original input passed to `PrintWithGamPrintOptions` and the IAT symbol behind `0x00403430` (`0x0062F1FC` currently contains unmapped address `0x00233D76`).
 3. Obtain a sanitized Response body/HAR for `invoke=29501`.
 4. Obtain a gap-free PCAP response and compare complete document bytes.
 5. Capture Save / Don't Save / Cancel separately and correlate each decision to the actual response payload.
@@ -1217,7 +1217,7 @@ Run 34 artifact `15010103394` resolves `0x004563A8` as `Emwatutils.FixDirectionI
 
 ### Run 38 — DirIsEmpty input source
 
-Artifact `15011890875` shows `OnTmrAutoSave` copies a Sender-derived string into viewer `+0xA0` at `0x004B8AE2`, then normalizes and checks it. The `ECX` literal `0x004BA84C` is `Gamelectronics EMWAT`; the BeforeSave callback passes the same string at `0x004CD928`. The original input's semantic meaning remains open; next trace `0x00403520` and `0x00403430`.
+Artifacts `15011890875` and run 39 show `+0xA0` is copied by `UStrAsg` after `OleVarFromUStr` and used in the archive/AddFiles flow, not as the `DirIsEmpty` input. `PrintWithGamPrintOptions` instead uses `+0x54` as the enumeration output string and stores status in `+0x58`. `0x00403520` is `OleVarFromUStr`; `0x00403430` remains an unresolved imported thunk via IAT `0x0062F1FC`.
 
 
 ### 2026-11-25 Saved accessor wrapper correction
