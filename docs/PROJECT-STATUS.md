@@ -1,3 +1,19 @@
+# Latest reconciliation — 2026-11-25 (main baseline)
+
+This section is the current authority for the Word close/response contract. Older dated entries below are historical checkpoints and must not override this reconciliation.
+
+- Reviewed current `main` HEAD: `0f95be8577718e16b6c59afb1f43fe561dabe517`. The current `emwat_strings.txt` blob is **13,722,034 bytes**. Any previous empty-file observation belongs to an older tree.
+- PCAP `invoke=58351` has a 54.557883-second request-body-to-response delay, HTTP 200, response Content-Length 1,166,820, and HTTP Content-Type `text/html; charset=ISO-8859-1`. Its captured inner body contains `response-word` and Base64 `application/msword`; TCP gaps prevent a complete document hash.
+- DevTools `invoke=29501` has the same response length and HTTP content type/charset. Its body was not captured. Treat this as strong correlation, not proof of identical body semantics.
+- The Linux decision contract is Save → latest successfully saved snapshot; Don't Save → previous approved snapshot (initial input if no successful Save); Cancel → leave the session open and keep the pending request waiting. Periodic recovery snapshots are not approved final output.
+- The LibreOffice adapter has been changed on the reconciliation branch to seed an approved DOC snapshot from the input, advance it only on successful `OnSaveDone`/`OnSaveAsDone`, and export only that approved snapshot after actual close. Generic `queryClosing` no longer snapshots the live document. The session cancel transition now preserves OPENED/DIRTY state.
+- These source changes are not yet verified by CI. Do not describe them as tested until the branch workflows complete.
+- COM DISPID for callback `0x004CD154`, first nonzero setter for viewer `+0x58`, and direct body for `invoke=29501` remain open.
+
+Detailed contract and evidence: [Word close/response contract reconciliation](WORD-CLOSE-RESPONSE-CONTRACT-2026-11-25.md), [runtime capture](RUNTIME-CAPTURE-2026-11-25.md), [PCAP round-trip](PCAP-EDITWORD-DOCUMENT-ROUNDTRIP.md).
+
+---
+
 ## تکمیل موازی Native scanner و اعتبارسنجی — 2026-11-18
 
 - سند scanner اکنون مرز دقیق کد SANE موجود و قابلیت‌های هنوز تأییدنشده را تفکیک می‌کند: یک frame هشت‌بیتی Gray/RGB، محدودیت 1 GiB، گزینه‌های mode/source/DPI و نبود تأیید ADF/duplex/multi-frame یا سخت‌افزار واقعی.
