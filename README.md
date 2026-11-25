@@ -18,6 +18,7 @@ EMWAT واسط محلی بین اتوماسیون تحت وب الماس گام 
 
 - [گزارش وضعیت و نقطه ادامه پروژه](docs/PROJECT-STATUS.md)
 - [شواهد runtime درخواست و پاسخ bridge در 2026-11-25](docs/RUNTIME-CAPTURE-2026-11-25.md)
+- [قرارداد Save / Don't Save / Cancel و تطبیق شواهد Word](docs/WORD-CLOSE-RESPONSE-CONTRACT-2026-11-25.md)
 - [نقشه پیاده‌سازی بومی لینوکس و مسیرهای موازی](docs/LINUX-NATIVE-IMPLEMENTATION-PLAN.md)
 - [اعتبارسنجی runtime نسخه Windows با Winux/Wine](docs/WINUX-RUNTIME-VALIDATION.md)
 - [تحلیل گردش‌کار واقعی EMWAT در الماس گام](docs/PRODUCT-WORKFLOW-ANALYSIS.md)
@@ -44,6 +45,7 @@ EMWAT واسط محلی بین اتوماسیون تحت وب الماس گام 
 - `EmwatService.exe-strings.txt`
 - `EmwatAgent.exe-strings.txt`
 - `EmwatMethods.bpl1-strings.txt`
+- `emwat_strings.txt` — رشته‌های تجمیع‌شده؛ نسخهٔ فعلی main در 2026-11-25 برابر 13,722,034 بایت است.
 - `EMWAT-Analysis-Results.txt` — خروجی فیلترشده و تجمیع‌شده
 - `EMWAT-Import-Report.txt` — خروجی Import Table سه فایل اصلی
 
