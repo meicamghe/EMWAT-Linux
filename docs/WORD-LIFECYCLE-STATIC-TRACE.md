@@ -263,7 +263,7 @@ The `OnTmrAutoSave` registration instructions at `0x004B8C9C–0x004B8CCE` write
 The other observed assignments crosswalk as follows:
 
 - `+0x88` / `OnDocumentBeforePrint` → `0x004D00AC` or `0x004CE030` (conditional print handlers).
-- `+0x90` / `OnDocumentBeforeSave` → `0x004CD54C` (TD32 label `WordAppNewDocument`).
+- `+0x90` / `OnDocumentBeforeSave` → `0x004CD54C` (TD32 label `WordAppNewDocument`; misleading).
 - `+0x98` / `OnNewDocument` → `0x004CD9C0` (TD32 label `WordAppWindowActivate`).
 
 This identifies the Delphi wrapper event property, not the numeric COM DISPID. The exact DISPID and event-interface IID remain open. Earlier run-25/26 claims that `0x004CD154` was a registered BeforeSave event are superseded.
@@ -277,6 +277,6 @@ The full `TWordViwer` field scan found one nonzero write besides the close-time 
 3. The wait loop checks viewer `+0x58` for nonzero at `0x004B9AE8` / `0x004BB3F2`.
 4. The now-identified `OnDocumentBeforeClose` callback at `0x004CD154` clears viewer `+0x58` at `0x004CD31C`.
 
-This locates the first nonzero setter and ties it to the synchronous wait/release path. The exact object/token returned by `0x004565DC` is not yet identified; do not reduce the field to a Boolean until that helper is traced.
+This locates the first known writer and ties it to the synchronous wait/release path. The helper `0x004565DC` is TD32-named `Emwatutils.DirIsEmpty`; its body uses `FindFirst`/`FindNext`, returns the final enumeration status in EAX, and writes a filename-like UnicodeString through the out parameter. Thus `+0x58` holds a directory-enumeration status/empty indicator, not a heap-object pointer. The exact boolean convention and path/filter remain open. The same `PrintWithGamPrintOptions` method is also called at `0x004CD6EC` from callback `0x004CD54C`, which RTTI maps to `OnDocumentBeforeSave` field `+0x90`; the status can therefore be refreshed on the Save event as well as during `OnTmrAutoSave`.
 
-The current branch event-sink workflow has been extended to trace `PrintWithGamPrintOptions`, its callers, and helper `0x004565DC`; that follow-up artifact is still pending.
+The current branch event-sink workflow has traced `PrintWithGamPrintOptions` and `DirIsEmpty`. A follow-up trace of path helper `0x004563A8` is still pending.
