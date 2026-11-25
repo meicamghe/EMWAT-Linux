@@ -66,3 +66,16 @@ The code/test implementation at commit `886aee77fcc498e0ff17979d0f218b04e20a7856
 - LibreOffice UNO workflow run `45585674974`: 13 tests passed, including real Writer roundtrip and the Save-complete snapshot path.
 
 Later commits on the reconciliation branch update documentation only. These CI runs validate the tested Linux implementation path; they do not establish the unresolved Windows COM DISPID, the `invoke=29501` response body, or live Almas end-to-end compatibility.
+
+
+## 2026-11-25 UNO close-listener conformance correction
+
+The previous adapter implementation waited for a non-interface `notifyClosed` callback. LibreOffice's `com.sun.star.util.XCloseListener` exposes `queryClosing`, `notifyClosing`, and inherited `disposing`; there is no `notifyClosed` method. The official IDL specifies that `notifyClosing` is called when the close is actually accepted, after `queryClosing`; a listener can veto a close by throwing `CloseVetoException`.
+
+The adapter now marks the document closed from `notifyClosing`, and also accepts `disposing` as a terminal fallback when the broadcaster is externally disposed. `queryClosing` remains non-vetoing: a user's Cancel in the office save prompt is represented by the absence of a successful `notifyClosing`/disposal event, so the pending bridge request continues waiting. The listener no longer advertises or depends on the nonexistent `notifyClosed` method.
+
+References:
+- LibreOffice SDK `XCloseListener`: https://api.libreoffice.org/docs/idl/ref/interfacecom_1_1sun_1_1star_1_1util_1_1XCloseListener.html
+- LibreOffice SDK `XCloseable`: https://api.libreoffice.org/docs/idl/ref/interfacecom_1_1sun_1_1star_1_1util_1_1XCloseable.html
+
+The Save snapshot listener remains based on `OnSaveDone` and `OnSaveAsDone`. The approved-copy export uses `XStorable.storeToURL`, which is an export operation and emits `OnSaveToDone`, not the Save/Save-As completion event. This prevents the internal approved-copy export from being mistaken for a user Save.
