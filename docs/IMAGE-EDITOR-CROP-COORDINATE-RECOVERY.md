@@ -49,3 +49,10 @@ The callsite scan found CropImage called from Initial (0x004F11BD) and the edito
 - `0x004EEE24` is `TGearImgProc`'s constructor, not the crop method. The preview mouse-down handler constructs a processor with the scaled four-coordinate record.
 - The actual crop/apply boundary is the indirect image interface dispatch in `CropImage` at `0x004F1201` (slot `+0x88`). The subsequent `btnRegisterClick` dispatch and UI updates are separate operations.
 - The earlier wording that described `0x004EEE24` as the final crop helper is withdrawn.
+## RTL helper identity recovered
+
+- `0x00401058` → `rtl230.bpl!@System@@ROUND`.
+- `0x00403270` / `0x00403278` → `rtl230.bpl!@System@Sysutils@IntToStr` overloads; these are used when the editor builds coordinate/page-related UI strings.
+- `0x0040487C` → `vcl230.bpl!TControl.SetVisible`.
+- `0x004049CC` → `vcl230.bpl!TWinControl.GetHandle`.
+- Therefore, the preview-to-source mapping is independently scaled on X and Y and passed through Delphi's `Round` helper before the processor constructor receives the four source-coordinate values. The exact tie behavior should match the RTL version shipped with the target (`rtl230.bpl`) in the final compatibility layer.
