@@ -4,8 +4,6 @@ on:
   push:
     paths:
       - '.github/workflows/analyze-word-event-sink.yml'
-      - 'docs/WORD-LIFECYCLE-STATIC-TRACE.md'
-      - 'docs/WORD-DOCUMENT-PROTOCOL-ANALYSIS.md'
       - 'analysis-input/EmwatMethods.bpl1'
       - 'tools/find_td32_class_procedures.py'
       - 'tools/trace_td32_procedure.py'
@@ -72,7 +70,7 @@ jobs:
         shell: bash
         run: |
           mkdir -p event-sink-analysis/state-fields event-sink-analysis/dispatch-helpers
-          python tools/scan_td32_class_field_refs.py analysis-input/EmwatMethods.bpl1 TWordViwer event-sink-analysis/state-fields/TWordViwer-offset-58.md --offsets 0x58 0x5E 0x5F 0x79 0x7C 0x80 0x88
+          python tools/scan_td32_class_field_refs.py analysis-input/EmwatMethods.bpl1 TWordViwer event-sink-analysis/state-fields/TWordViwer-offset-58.md --offsets 0x54 0x58 0x5E 0x5F 0x79 0x7C 0x80 0x88 0xA0
           python tools/scan_td32_class_field_refs.py analysis-input/EmwatMethods.bpl1 TWordApplication event-sink-analysis/state-fields/TWordApplication-event-fields.md --offsets 0x80 0x84 0x88 0x8C 0x90 0x94 0x98 0x9C 0x124
           for target in 00404F8C 00401188 00404FAC 00404FBC 00440950 0040479C 00401358 00401370 00401210 00401430; do
             python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x$target event-sink-analysis/dispatch-helpers/target-$target.md 1200 ret
@@ -84,6 +82,8 @@ jobs:
           done
           python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004565DC event-sink-analysis/dispatch-helpers/target-004565DC.md 1400 ret
           python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004563A8 event-sink-analysis/dispatch-helpers/target-004563A8.md 1400 ret
+          python tools/inspect_pe_va.py analysis-input/EmwatMethods.bpl1 0x004BA84C --before 0x40 --after 0x120 > event-sink-analysis/dispatch-helpers/OnTmrAutoSave-constant-4BA84C.md
+          python tools/inspect_pe_va.py analysis-input/EmwatMethods.bpl1 0x004CD928 --before 0x40 --after 0x120 > event-sink-analysis/dispatch-helpers/BeforeSave-constant-4CD928.md
       - name: Resolve Word COM interface and VMT event metadata
         run: |
           mkdir -p event-sink-analysis/interfaces
