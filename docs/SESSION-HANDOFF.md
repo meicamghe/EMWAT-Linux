@@ -1421,3 +1421,45 @@ Do not implement guessed `signData` joining or claim end-to-end Almas registrati
 
 - Follow-up notation cleanup in `docs/WORD-ACTIVE-PRINTER-AND-SCANNER-STATE-RECOVERY.md` committed as `d7f7226f01f9b3945f041733aca37d307c238a97`.
 - Latest run `45563007730`: native regression is complete/success. Word and image jobs are still running their expanded trace batches; their trace steps have not yet completed, so no artifacts or claims from the new Zanprinter targets are accepted yet.
+
+---
+
+## 2026-11-25 follow-up — Invoke response evidence reconciliation
+
+### New repository-state discovery
+
+The `main` branch was inspected separately from `feature/recovery-retention-policy`. Its 2026-11-25 upload adds a 13,722,034-byte `emwat_strings.txt` plus extracted analysis assets and reports. This supersedes the earlier observation that `emwat_strings.txt` was empty on the older branch/ref. Do not treat that earlier empty-file result as the current `main` state.
+
+The recursive `main` tree was checked: it contains `http-requests.txt`, `tcp-conversations.txt`, the PCAP analysis scripts, and derived reports, but does not contain the private `emwat.pcapng` or `tcp-payloads.txt` source exports. The existing sequence-aware report and workflow artifact remain the evidence source for the 2026-11-15 raw capture.
+
+### Correct interpretation of stream 18 sizes
+
+The packet index's `tcp.len=31,420` (request-bearing frame 2344) and `tcp.len=53,405` (response-bearing frame 2732) are individual TCP frame payload lengths, not full HTTP body lengths. The sequence-aware PCAP report establishes:
+- request `Content-Length: 1,177,821`;
+- response `Content-Length: 1,166,820`;
+- request body complete at 0.002154 s;
+- first response payload at 54.560037 s;
+- 54.557883 s from final request-body byte to first response byte;
+- response payload sent over approximately 1.362 ms.
+
+The approximately 2.35 MB TCP conversation aggregate is bidirectional connection traffic and must not be interpreted as a second application payload or as the exact size of either HTTP entity. The old frame-length/body-length ambiguity is reconciled; exact packet-byte accounting still requires the private raw PCAP.
+
+### Cross-capture inference for nonce 29501
+
+The DevTools screenshot pair for `invoke=29501` reports a completed response Content-Length of exactly 1,166,820 bytes. This exactly matches the independently captured `invoke=58351` response, whose body was reconstructed as a successful `response-word` envelope carrying Base64 `application/msword` content.
+
+This is strong cross-capture corroboration that nonce 29501 returned the same class of Word-document response, but not direct body-level proof: the screenshot exposes headers only and the nonces are from distinct captures. Keep the classification as strongly corroborated, not confirmed from the screenshot itself.
+
+### Static close-release chain
+
+The preserved BPL trace maps `LoadDocument → OnTmrAutoSave`, a `Sleep(5) + ProcessMessages` polling loop on viewer field `+0x58`, the registered close/registration callback calling Word `Document.Close` and clearing `+0x58`, followed by `LoadDocument` writing the successful `response-word` response. This is consistent with the captured ~54.56-second wait and the browser screenshot's same-Invoke completion after Word closes. The formal COM event DISPID and initial setter for `+0x58` remain unresolved.
+
+### Repository change
+
+Detailed evidence and limitations were added to:
+- `docs/PCAP-PROTOCOL-IMPLEMENTATION-CROSSCHECK-2026-11-22.md`, section 6.
+
+Commit on `feature/recovery-retention-policy`:
+- `849a2ef3532509ca775231e0cefeca2198aa2583` — `docs: reconcile invoke frame lengths with PCAP reconstruction`.
+
+The documentation file was fetched again after the write and its new blob SHA verified. No CI status was reported for this docs-only commit. No live Almas E2E, complete raw-capture reanalysis, or nonce-29501 body inspection was performed.
