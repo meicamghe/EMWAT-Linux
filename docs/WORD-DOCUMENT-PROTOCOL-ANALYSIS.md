@@ -1534,3 +1534,10 @@ The same `PrintWithGamPrintOptions` method has a second direct caller at `0x004C
 - `+0x98` OnNewDocument → `0x004CD9C0` (TD32 label WindowActivate).
 
 The next unresolved helper is `0x004563A8`, which prepares the path passed to `DirIsEmpty`.
+
+
+## 2026-11-25 — path helper resolved
+
+Run 34 artifact `15010103394` identifies `0x004563A8` as `Emwatutils.FixDirectionInFarsiNumericMode`. It normalizes a UnicodeString under Farsi/numeric-direction flags and writes the normalized string to its output parameter. `PrintWithGamPrintOptions` calls it before `DirIsEmpty` (`0x004565DC`), so the directory enumeration receives a normalized path. The original path source and the search mask/filter are still unknown.
+
+The wait state at viewer `+0x58` therefore stores the final directory-enumeration status returned by `DirIsEmpty`, not a pointer. The function returns zero when it finds an eligible entry and a nonzero FindFirst/FindNext status when enumeration ends/fails; the wait loop checks nonzero, and the registered BeforeClose callback clears it.
