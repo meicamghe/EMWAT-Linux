@@ -1,3 +1,8 @@
+## 2026-11-25 — native scan-result boundary
+
+- Added `native/include/emwat/scan_result.hpp`: a typed `ScanResult` that explicitly distinguishes a collection of single-page files from one multipage file, while retaining optional scan-path and response-filename metadata. It validates structural invariants without probing the filesystem or inventing the Windows naming contract.
+- Added native contract tests for both result variants, page-file counts, empty collections/paths, and empty metadata; registered them with CTest. The pixel/page model (`ImageDocument`) and scanner backend/session remain separate.
+- Enabled the native-core CI workflow on the working feature branch and made the parallel workflow respond to native changes, so this implementation is checked by normal build, sanitizer, package lifecycle, and parallel regression jobs.
 ## 2026-11-25 — expanded parallel reverse-engineering coverage
 
 - Expanded the image/scanner lane to trace the preview Register/Cancel handlers, crop mouse-coordinate lifecycle, page selector, form close checks, free rotation, auto-orient, rotate/flip, and print-preview operations alongside the existing scanner and multipage-save paths. Added a separate symbol index for TResultImage, TSetOfSinglePageImages, and TSetOfMultiPageImages plus scan-path/response-filename accessors.
