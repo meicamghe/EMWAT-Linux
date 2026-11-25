@@ -157,7 +157,7 @@ The corresponding owner pointers are stored in adjacent event fields. This confi
 
 `WordAppDocumentBeforeSave` at `0x004CD154` checks that the event document matches the active document. If viewer flag `+0x5E` is clear, it sets the Word `Cancel` output to `-1` and exits. Otherwise it accesses the Word document through interface slot `+0xD8`. The wrapper crosswalk labels `+0xD8` as `Set_Saved` (while `Get_Saved` maps to `+0xD4`), but the callsite's argument/value flow is not fully resolved; do not describe it as reading `Document.Saved` or as a proven write of a particular value. For an unsaved document and viewer flag `+0x5F`, it presents a three-choice dialog; one choice explicitly sets `Cancel=-1`. On the continuing path it changes viewer flags, calls a Word document interface method at slot `+0x29C`, clears the stored document interface, and resets state.
 
-The dialog's exact labels and the semantics of slot `+0x29C` are not yet decoded. The event-record slot's formal COM DISPID is also unresolved. Do not equate this callback with the Almas close-time commit until the downstream calls are traced.
+The dialog's exact labels and the semantics of slot `+0x29C` are not yet decoded. The numeric COM DISPID remains unresolved. The wrapper RTTI now identifies the event property as `OnDocumentBeforeClose`; this does not by itself prove that the event is the final Almas commit.
 
 ### BeforeClose and silent-save candidates
 
@@ -239,3 +239,44 @@ The Linux implementation must distinguish the office engine's successful Save ev
 - Periodic recovery snapshots are separate and are never the final response.
 
 The current reconciliation branch implements this boundary in `LibreOfficeAdapter` by keeping `approved.doc` separate from periodic recovery data and by removing live-buffer snapshotting from `queryClosing`. The Windows event callback's formal COM DISPID and the initial nonzero setter for viewer `+0x58` remain unresolved; the Linux contract is not evidence that those Windows internals have been fully identified.
+
+
+## Run 154 — RTTI resolves the registered Word close event and wait-token writer (2026-11-25)
+
+**New evidence: Word wrapper RTTI, event-record assignments, and full-class field scan.** Artifact: workflow run `45587968139`, artifact `15008774182`.
+
+### Event identity crosswalk
+
+The `TWordApplication` class type information at `0x00429128` explicitly names the event properties and their instance-field offsets:
+
+| TWordApplication event property | Event field offset |
+|---|---:|
+| `OnDocumentBeforeClose` | `+0x80` |
+| `OnDocumentBeforePrint` | `+0x88` |
+| `OnDocumentBeforeSave` | `+0x90` |
+| `OnNewDocument` | `+0x98` |
+| `OnWindowActivate` | `+0xA0` |
+| `OnWindowDeactivate` | `+0xA8` |
+
+The `OnTmrAutoSave` registration instructions at `0x004B8C9C–0x004B8CCE` write callback `0x004CD154` to field `+0x80`. Combining the assignment with RTTI now resolves the event property as **Word.Application.OnDocumentBeforeClose**. The TD32 procedure label `WordAppDocumentBeforeSave` is misleading for this callback. This also agrees with its diagnostic string `Document.OnBeforeClose Called.` and its three-argument `Document.Close` path.
+
+The other observed assignments crosswalk as follows:
+
+- `+0x88` / `OnDocumentBeforePrint` → `0x004D00AC` or `0x004CE030` (conditional print handlers).
+- `+0x90` / `OnDocumentBeforeSave` → `0x004CD54C` (TD32 label `WordAppNewDocument`).
+- `+0x98` / `OnNewDocument` → `0x004CD9C0` (TD32 label `WordAppWindowActivate`).
+
+This identifies the Delphi wrapper event property, not the numeric COM DISPID. The exact DISPID and event-interface IID remain open. Earlier run-25/26 claims that `0x004CD154` was a registered BeforeSave event are superseded.
+
+### First nonzero write to viewer +0x58
+
+The full `TWordViwer` field scan found one nonzero write besides the close-time clear:
+
+1. `OnTmrAutoSave` calls `TWordViwer.PrintWithGamPrintOptions` at `0x004B937C`.
+2. That method writes `Self+0x58 = EAX` at `0x004C5E44`; EAX is returned by helper `0x004565DC`.
+3. The wait loop checks viewer `+0x58` for nonzero at `0x004B9AE8` / `0x004BB3F2`.
+4. The now-identified `OnDocumentBeforeClose` callback at `0x004CD154` clears viewer `+0x58` at `0x004CD31C`.
+
+This locates the first nonzero setter and ties it to the synchronous wait/release path. The exact object/token returned by `0x004565DC` is not yet identified; do not reduce the field to a Boolean until that helper is traced.
+
+The current branch event-sink workflow has been extended to trace `PrintWithGamPrintOptions`, its callers, and helper `0x004565DC`; that follow-up artifact is still pending.
