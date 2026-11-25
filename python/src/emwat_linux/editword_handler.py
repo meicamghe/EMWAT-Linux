@@ -29,9 +29,11 @@ def create_editword_handler(
 ) -> Callable[[MethodCall, BridgeRequest], BridgeResponse]:
     """Create a dispatcher handler with explicit discard/cancel response policy.
 
-    The injected factory is called for both DISCARDED and CANCELLED sessions;
-    their distinct DocumentState values let the caller choose a verified wire
-    response without conflating "No" with "Cancel".
+    The injected factory is called when the coordinator returns an explicit
+    DISCARDED operation outcome. A user's Don't Save close is not this outcome:
+    it is a successful CLOSED session whose latest confirmed saved state is
+    returned. A distinct terminal CANCELLED outcome is not currently emitted
+    by the coordinator and must not be inferred from a vetoed close attempt.
     """
 
     if not callable(cancel_response_factory):
