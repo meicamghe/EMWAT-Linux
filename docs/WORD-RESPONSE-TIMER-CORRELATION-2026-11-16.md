@@ -131,3 +131,8 @@ The Linux close contract is now explicit in `docs/WORD-CLOSE-RESPONSE-CONTRACT-2
 Run 27 artifact `15008774182` identifies `TWordApplication` field `+0x80` as `OnDocumentBeforeClose`, and `OnTmrAutoSave` stores `0x004CD154` at that field. The TD32 symbol `WordAppDocumentBeforeSave` is therefore a misleading procedure label, not the event-property identity.
 
 The full-class field scan also found the first known nonzero write to viewer `+0x58`: `OnTmrAutoSave` calls `PrintWithGamPrintOptions` at `0x004B937C`; it writes the return from `0x004565DC` to `Self+0x58` at `0x004C5E44`. The close callback clears the field at `0x004CD31C`. The value's semantic type remains pending a dedicated helper trace.
+
+
+## 2026-11-25 Saved accessor cross-check
+
+The TD32 wrapper `Set_Saved` at `0x0042BD94` invokes slot `+0xD8` with an output WordBool and returns it (actual getter); `Get_Saved` at `0x0042BD34` invokes slot `+0xD4` with an input WordBool (actual setter). The registered BeforeClose callback at `0x004CD154` therefore reads the document's Saved state before prompting.
