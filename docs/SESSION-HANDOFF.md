@@ -16,7 +16,7 @@ Current reviewed baseline: `main` HEAD `0f95be8577718e16b6c59afb1f43fe561dabe517
 - Current main code had a mismatch: `queryClosing` snapshotted the live document and `export_final_document` returned it regardless of Save/Don't Save. The reconciliation branch changes the adapter to maintain an approved snapshot and adds `cancel_close_attempt()` to preserve the open/dirty state while keeping explicit terminal cancellation separate. CI passed on code/test commit `886aee77fcc498e0ff17979d0f218b04e20a7856`: Python Bridge run `45585674994` (148 tests, 2 optional skips) and LibreOffice UNO run `45585674974` (13 tests). Later branch commits are documentation-only.
 
 ### Highest-priority reverse-engineering threads
-1. Resolve the numeric COM DISPID/event-source IID for the now RTTI-confirmed `TWordApplication.OnDocumentBeforeClose` field `+0x80` (callback `0x004CD154`). TD32's `WordAppDocumentBeforeSave` name is misleading.
+1. Event identity is cross-identified: `TWordApplication.OnDocumentBeforeClose`, event-source IID `00020A00-0000-0000-C000-000000000046` (`ApplicationEvents3`), and Word interop DISPID `0x00000006`. Only direct decoding of the embedded typelib member record remains optional confirmation.
 2. Trace path helper `0x004563A8` and the directory/filter supplied to `Emwatutils.DirIsEmpty` (`0x004565DC`); viewer `+0x58` stores its enumeration status, not an object pointer.
 3. Obtain a sanitized Response body/HAR for `invoke=29501`.
 4. Obtain a gap-free PCAP response and compare complete document bytes.
@@ -1062,7 +1062,7 @@ Do not implement guessed `signData` joining or claim end-to-end Almas registrati
 ### Important findings and corrections
 1. `TEmwatMethod.Invoke` (`0x0046C82C`) walks dictionary key/value pairs. `0x0046E324` is `TPairEnumerator.DoGetCurrent`; `0x0046E3CC` maps to `TPairEnumerator.MoveNext` in VMT RTTI despite a conflicting TD32 decorated label. Raw pointer search found no static reference to `0x0046C82C`; its runtime role is still unresolved. Do not assume it is the request dispatcher.
 2. `TEditWordDocument` VMT `0x005ED764` slot `+0x10` points to `0x005EE82C`. This routine reads `wordConfig`, `wordBody`, `letterImages`, `signData`, validates `wordConfig`, and calls `TWordViwer.LoadDocument` at `0x004B7724`. TD32 decorates the target as `TScanDocument.PerformMethod`. `TScanDocument` VMT slot `+0x10` points to `0x005EEB48`, which TD32 decorates as `TFaxDocument.PerformMethod`. Preserve this VMT/symbol mismatch; resolve class registration before renaming.
-3. The main editor close behavior is traced through `TWordApplication.OnDocumentBeforeClose` field `+0x80` → callback `0x004CD154` (TD32 symbol `WordAppDocumentBeforeSave`). Yes → Close(SaveChanges=True), No → Close(SaveChanges=False), Cancel → event Cancel and leave the document open. The numeric COM DISPID remains open.
+3. The main editor close behavior is traced through `TWordApplication.OnDocumentBeforeClose` field `+0x80` → callback `0x004CD154` (TD32 symbol `WordAppDocumentBeforeSave`). Yes → Close(SaveChanges=True), No → Close(SaveChanges=False), Cancel → event Cancel and leave the document open. The event-source IID is `ApplicationEvents3` (`00020A00-0000-0000-C000-000000000046`) and Word interop metadata corroborates DISPID `0x00000006`.
 4. The periodic `OnTmrAutoSave` path sets `OnControlerNotify` as a timer callback and enforces a minimum interval of 10 seconds. Keep this separate from the close-time registration prompt.
 5. Service HTTP handler/Indy response writer work is already substantially mapped in existing artifacts. The current public `analysis-input/` directory does not contain `EmwatService.exe`, so a fresh service PE trace cannot run from this checkout unless an authorized analysis copy is added.
 
@@ -1203,3 +1203,8 @@ The event-property mapping is stronger than the earlier TD32 name-based inferenc
 ### 2026-11-25 event-sink run 28 refinement
 
 Artifact `15009034578` identifies `0x004565DC` as `Emwatutils.DirIsEmpty`: it performs FindFirst/FindNext directory enumeration, returns the final status in EAX, and writes a UnicodeString output. `PrintWithGamPrintOptions` stores this status in viewer `+0x58` at `0x004C5E44`. This method is called both from `OnTmrAutoSave` at `0x004B937C` and from callback `0x004CD54C` at `0x004CD6EC`; RTTI maps the latter callback field `+0x90` to `OnDocumentBeforeSave`. The exact path/filter and status convention remain open; next trace `0x004563A8`.
+
+
+### 2026-11-25 event-source IID / DISPID cross-check
+
+The TWordApplication server-data record at `0x00627B74` carries event-source IID `00020A00-0000-0000-C000-000000000046` (Word ApplicationEvents3). Microsoft Word PIA exposes `ApplicationEvents3.DocumentBeforeClose`; Word interop event metadata corroborates DISPID `0x00000006`. The embedded type-library member record itself has not yet been parsed directly, so record the ID as cross-verified rather than claiming it was read from the BPL.
