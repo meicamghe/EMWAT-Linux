@@ -1,0 +1,125 @@
+name: EMWAT parallel reverse-engineering lanes
+on:
+  push:
+    paths:
+      - '.github/workflows/emwat-parallel-reverse-engineering.yml'
+      - 'analysis-input/EmwatMethods.bpl1'
+      - 'analysis-input/RCDATA_TFRMGSCANPREVIEW_13.bin'
+      - 'analysis-input/RCDATA_TFRMIMAGETOOLS_14.bin'
+      - 'analysis-input/RCDATA_TFRMSIMPLEIMAGEEDITOR_18.bin'
+      - 'tools/trace_td32_procedure.py'
+      - 'tools/trace_td32_callers.py'
+      - 'tools/list_td32_symbols.py'
+      - 'tools/resolve_delphi_vmt_slots.py'
+      - 'tools/scan_pe_pointer_refs.py'
+      - 'tools/trace_pe_target.py'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  word-print-com:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install pefile capstone
+      - name: Trace Word print dispatch and callback helpers
+        shell: bash
+        run: |
+          mkdir -p parallel-re/word-print
+          targets=(004C5FF8 004309F8 00441E44 004677B8 00467788 004A5C10 004A5D78 004A5EA8 004D2EC8 004D2F44)
+          pids=()
+          for target in "${targets[@]}"; do
+            (
+              set -e
+              python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x$target parallel-re/word-print/procedure-$target.md
+              python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x$target parallel-re/word-print/callers-$target.md
+              python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 0x$target parallel-re/word-print/pointers-$target.md
+            ) &
+            pids+=("$!")
+          done
+          status=0
+          for pid in "${pids[@]}"; do wait "$pid" || status=1; done
+          exit "$status"
+      - name: Index Word automation and print-handler symbols
+        run: |
+          python tools/list_td32_symbols.py analysis-input/EmwatMethods.bpl1 \
+            TWordDocument TWordApplication PrintOut PrintOutOld PrintOut2000 \
+            BGPrintWithGamPrintOptions TEmwatDocPrintHandler TEDPController \
+            > parallel-re/word-print/symbol-index.md
+      - uses: actions/upload-artifact@v4
+        with:
+          name: emwat-parallel-word-print
+          path: parallel-re/word-print/
+          if-no-files-found: error
+
+  image-ui-and-vmt:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install pefile capstone
+      - name: Resolve image and scanner Delphi VMTs and slots
+        run: |
+          mkdir -p parallel-re/image-ui
+          python tools/resolve_delphi_vmt_slots.py analysis-input/EmwatMethods.bpl1 \
+            parallel-re/image-ui/image-scanner-vmt-slots.md
+          python tools/list_td32_symbols.py analysis-input/EmwatMethods.bpl1 \
+            TfrmSimpleImageEditor TfrmGScanPreview TfrmImageTools TGearImgProc \
+            TImageProcessor TResultImage TMultiPageImage TSetOfMultiPageImages \
+            TSetOfSinglePageImages TScanCommand > parallel-re/image-ui/image-scanner-symbols.md
+      - name: Inventory preserved image form resources without changing them
+        run: |
+          python - <<'PY'
+          import hashlib, pathlib, re
+          paths = [
+              pathlib.Path("analysis-input/RCDATA_TFRMGSCANPREVIEW_13.bin"),
+              pathlib.Path("analysis-input/RCDATA_TFRMIMAGETOOLS_14.bin"),
+              pathlib.Path("analysis-input/RCDATA_TFRMSIMPLEIMAGEEDITOR_18.bin"),
+          ]
+          out = ["# Preserved image form resource inventory", ""]
+          for path in paths:
+              data = path.read_bytes()
+              out += [f"## {path.name}", "", f"- Size: {len(data)} bytes",
+                      f"- SHA-256: {hashlib.sha256(data).hexdigest()}",
+                      f"- Header: {data[:32].hex(' ')}", "- Printable ASCII strings:"]
+              strings = []
+              for m in re.finditer(rb"[ -~]{4,}", data):
+                  value = m.group().decode("ascii", "replace")
+                  if re.search(r"(?i)^(T[A-Z][A-Za-z0-9_]{2,}|On[A-Z]|[A-Za-z][A-Za-z0-9_]{2,})$", value):
+                      strings.append((m.start(), value))
+              out += [f"  - 0x{off:04X}: {value}" for off, value in strings[:250]]
+              out.append("")
+          pathlib.Path("parallel-re/image-ui/form-resource-inventory.md").write_text(
+              "\n".join(out) + "\n", encoding="utf-8")
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: emwat-parallel-image-ui
+          path: parallel-re/image-ui/
+          if-no-files-found: error
+
+  native-regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install native image dependencies
+        run: sudo apt-get update && sudo apt-get install -y libpng-dev libjpeg-dev libtiff-dev libsane-dev
+      - name: Build and run native regression suite
+        run: |
+          cmake -S native -B native/build-parallel -DCMAKE_BUILD_TYPE=Release
+          cmake --build native/build-parallel --parallel 2
+          ctest --test-dir native/build-parallel --output-on-failure
+      - name: Run Python bridge regression suite
+        run: |
+          python -m pip install -e 'python[test]'
+          python -m pytest -q python/tests
