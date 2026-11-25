@@ -127,3 +127,17 @@ The approximately 54.558-second gap between the final request-body byte and the 
 This makes the captured delay consistent with the period during which the Word document remains open. The callback's formal COM event DISPID and the initial nonzero setter for viewer `+0x58` remain under investigation. The periodic `.easz` archive remains a separate local recovery path until its relation to the returned DOC is proven.
 
 See `docs/WORD-RESPONSE-TIMER-CORRELATION-2026-11-16.md` and `docs/WORD-LIFECYCLE-STATIC-TRACE.md` Run 153 for the full static trace references.
+
+
+## Cross-invoke DevTools correlation — 2026-11-25
+
+The separate close-time DevTools screenshot for `invoke=29501` reports HTTP 200, `Content-Length: 1166820`, and `Content-Type: text/html; charset=ISO-8859-1`. These match the response length and HTTP content type recorded for the PCAP exchange `invoke=58351`.
+
+The PCAP body for `58351` is directly decoded far enough to identify `response-word status="success"` and a Base64 `application/msword` return item. The DevTools evidence for `29501` contains no Response/Body tab. Therefore:
+
+- The matching length and headers are strong evidence that the two exchanges follow the same response path.
+- The body structure for `29501` is not directly verified.
+- Do not state that both responses are byte-identical, have identical document content, or even that the `29501` body has been inspected.
+- Both `invoke` values are per-request nonces, so their difference does not imply different method classes or document sessions.
+
+The HTTP Content-Type is `text/html; charset=ISO-8859-1` even though the PCAP body contains the `response-word` XML-shaped envelope. Keep HTTP header media type distinct from the inner return item's `application/msword` MIME metadata.
