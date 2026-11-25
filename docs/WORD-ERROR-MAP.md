@@ -3,7 +3,7 @@
 Date: 2026-11-15  
 Source: workflow `analyze-word-event-sink.yml`, run #11 (`43717625474`), artifact `14162998865`  
 Input: `analysis-input/EmwatMethods.bpl1`  
-Scope: string pointers referenced by the server metadata block near `0x00627B74`. This is an error-message/string table, not a Word COM event callback table.
+Scope: the trailing string-pointer region inside the `TWordApplication` server-data record at `0x00627B74`. The record begins with Word.Application CLSID `000209FF-0000-0000-C000-000000000046`, default interface IID `00020970-0000-0000-C000-000000000046`, and event-source IID `00020A00-0000-0000-C000-000000000046` (`ApplicationEvents3`); the following 20 pointers are error-message strings, not event callback functions.
 
 ## Error code/message pairs
 
@@ -42,4 +42,4 @@ These strings corroborate the AutoSave interval choices in the settings subsyste
 
 - These are useful stable error identifiers/messages for the Linux bridge and Writer adapter.
 - The current Python bridge intentionally returns sanitized protocol errors; production UI/log translation can map internal error categories to these user-facing messages without exposing exception details.
-- Do not treat this data block as a COM event map. The live callback registration is independently established at `0x004CD154`, installed in `TWordApplication.OnDocumentBeforeClose` field `+0x80` by RTTI; its TD32 procedure label says `WordAppDocumentBeforeSave` and is misleading.
+- Do not treat the 20 string pointers as a COM event callback map. The same TServerData record also supplies the ApplicationEvents3 event-source IID. The live callback registration is independently established at `0x004CD154`, installed in `TWordApplication.OnDocumentBeforeClose` field `+0x80` by RTTI; its TD32 procedure label says `WordAppDocumentBeforeSave` and is misleading.
