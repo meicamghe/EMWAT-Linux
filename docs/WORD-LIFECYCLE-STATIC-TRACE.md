@@ -155,9 +155,9 @@ The corresponding owner pointers are stored in adjacent event fields. This confi
 
 ### BeforeSave behavior
 
-`WordAppDocumentBeforeSave` at `0x004CD154` checks that the event document matches the active document. If viewer flag `+0x5E` is clear, it sets the Word `Cancel` output to `-1` and exits. Otherwise it reads the Word document's `Saved` property through interface slot `+0xD8`. For an unsaved document and viewer flag `+0x5F`, it presents a three-choice dialog; one choice explicitly sets `Cancel=-1`. On the continuing path it changes viewer flags, calls a Word document interface method at slot `+0x29C`, clears the stored document interface, and resets state.
+`WordAppDocumentBeforeSave` at `0x004CD154` checks that the event document matches the active document. If viewer flag `+0x5E` is clear, it sets the Word `Cancel` output to `-1` and exits. Otherwise it accesses the Word document through interface slot `+0xD8`. **Correction:** the wrapper crosswalk maps `Get_Saved` to `+0xD4` and `Set_Saved` to `+0xD8`; therefore this instruction must not be described as reading the `Saved` property. The OleVariant value assigned through the setter and the prompt condition remain unresolved. For an unsaved document and viewer flag `+0x5F`, it presents a three-choice dialog; one choice explicitly sets `Cancel=-1`. On the continuing path it changes viewer flags, calls a Word document interface method at slot `+0x29C`, clears the stored document interface, and resets state.
 
-The dialog's exact labels and the semantics of slot `+0x29C` are not yet decoded. Do not equate this callback with the Almas close-time commit until the downstream calls are traced.
+The dialog's exact labels and the semantics of slot `+0x29C` are not yet decoded. The event-record slot's formal COM DISPID is also unresolved. Do not equate this callback with the Almas close-time commit until the downstream calls are traced.
 
 ### BeforeClose and silent-save candidates
 
