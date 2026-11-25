@@ -43,3 +43,9 @@ The callsite scan found CropImage called from Initial (0x004F11BD) and the edito
 - Procedure traces: 0x004F1274, 0x004F1308, 0x004F1404, 0x004F11E8, 0x004F1660.
 - Direct callers: 0x004F11E8.
 - Static-only. No physical scanner, actual GUI, or Windows runtime crop comparison was performed.
+
+## Constructor/apply distinction correction
+
+- `0x004EEE24` is `TGearImgProc`'s constructor, not the crop method. The preview mouse-down handler constructs a processor with the scaled four-coordinate record.
+- The actual crop/apply boundary is the indirect image interface dispatch in `CropImage` at `0x004F1201` (slot `+0x88`). The subsequent `btnRegisterClick` dispatch and UI updates are separate operations.
+- The earlier wording that described `0x004EEE24` as the final crop helper is withdrawn.
