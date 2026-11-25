@@ -606,7 +606,7 @@ Artifact اجرای موفق run `43500518664` با شناسه `14073787351` ب�
 - trace خطی تابع `OnTmrAutoSave` نیز در ناحیه‌ای شامل داده/بخش‌های exception به انتهای disassembly معتبر نرسیده است؛ بنابراین پایان واقعی تابع و همه branchها هنوز استخراج نشده‌اند.
 - توابع helper `0x00440950`، `0x00440A68` و `0x00441C68` wrapperهای کوتاه برای فراخوانی interface method در offsetهای `+0x174`، `+0x180` و `+0x1E0` هستند؛ معنای دقیق این slotها بدون resolve کردن interface/VMT مشخص نیست.
 
-این مسیر `+0x38 → GetXmlFieldInfo` در آدرس `0x004CCBBC` در تحلیل run 26 به‌عنوان helper فیلدهای تصویر/چاپ با یک caller مستقیم (`FillImgFldsForPrint`) شناسایی شد؛ نقش آن به‌عنوان event واقعی Close اثبات نشده است. callback ثبت‌شده در `0x004CD154` در event record در offset `+0x80` قرار دارد، اما TD32 آن را `WordAppDocumentBeforeSave` معرفی می‌کند، نه BeforeClose. این callback وضعیت `Document.Saved` را از slot `+0xD8` می‌خواند، پیام Yes/No/Cancel نشان می‌دهد و در Yes/No مستقیماً slot `+0x29C` را با سه OleVariant صدا می‌زند. درخواست runtime `invoke=5208` همچنان باید از پیام parent-page به bridge تا POST دنبال شود.
+این مسیر `+0x38 → GetXmlFieldInfo` در آدرس `0x004CCBBC` در تحلیل run 26 به‌عنوان helper فیلدهای تصویر/چاپ با یک caller مستقیم (`FillImgFldsForPrint`) شناسایی شد؛ نقش آن به‌عنوان event واقعی Close اثبات نشده است. callback ثبت‌شده در `0x004CD154` در event record در offset `+0x80` قرار دارد، اما TD32 آن را `WordAppDocumentBeforeSave` معرفی می‌کند، نه BeforeClose. این callback از interface slot `+0xD8` استفاده می‌کند؛ اما wrapper crosswalk نشان می‌دهد `+0xD8` برابر `Set_Saved` است و نباید آن را خواندن `Document.Saved` تفسیر کرد. پیام Yes/No/Cancel نشان داده می‌شود و در Yes/No مستقیماً slot `+0x29C` را با سه OleVariant صدا می‌زند. درخواست runtime `invoke=5208` همچنان باید از پیام parent-page به bridge تا POST دنبال شود.
 
 
 ## Run 109 — ارزیابی خروجی VMT و اصلاح فیلتر مقصدها (2026-11-14)
@@ -754,7 +754,7 @@ The service-side half of the observed close request is no longer an unknown blac
 
 For the observed runtime envelope `EditWordDocument`, the class resolution is `TEditWordDocument`, and its concrete VMT slot `+0x10` target is `0x005EE82C`. This method reads `wordConfig`, `wordBody`, `letterImages`, and `signData`, then calls `TWordViwer.LoadDocument` at `0x004B7724` with the `TEmwatInvokeParam*` and output-string reference.
 
-**Correction to earlier close-event progress:** `TWordViwer.OnTmrAutoSave` registers `0x004CD154` at event-record `+0x80`, but TD32 identifies that procedure as `WordAppDocumentBeforeSave`, not `WordAppDocumentBeforeClose`. It calls `PreparePrintDocument` (`0x004CB108`), checks `Document.Saved` through `_Document` slot `+0xD8`, prompts Yes/No/Cancel, sets the event Cancel word on Cancel, and directly invokes interface slot `+0x29C` with three OleVariant arguments on Yes/No. The separately named `WordAppDocumentBeforeClose` at `0x004CCBBC` has only a direct caller from `FillImgFldsForPrint` (`0x004CCF8F`) in the bounded scan and no raw-pointer registration reference; its active event role is unproven. Do not rely on the earlier callback label or claim a registered BeforeClose handler.
+**Correction to earlier close-event progress:** `TWordViwer.OnTmrAutoSave` registers `0x004CD154` at event-record `+0x80`, but TD32 identifies that procedure as `WordAppDocumentBeforeSave`, not `WordAppDocumentBeforeClose`. It calls `PreparePrintDocument` (`0x004CB108`), accesses `_Document` slot `+0xD8` (the wrapper crosswalk identifies this as `Set_Saved`, not `Get_Saved`), prompts Yes/No/Cancel, sets the event Cancel word on Cancel, and directly invokes interface slot `+0x29C` with three OleVariant arguments on Yes/No. The separately named `WordAppDocumentBeforeClose` at `0x004CCBBC` has only a direct caller from `FillImgFldsForPrint` (`0x004CCF8F`) in the bounded scan and no raw-pointer registration reference; its active event role is unproven. Do not rely on the earlier callback label or claim a registered BeforeClose handler.
 
 **What remains unproven:** the close callback body has no direct HTTP request call. The embedded browser bridge is now deobfuscated: it forwards parent `postMessage` event data unchanged to the local service via XHR and posts `responseText` back to the original source/origin. The remaining task is to identify which parent-page code sends the close-time message and how the final document content is committed. The user's observed apply-on-close behavior remains the behavioral requirement.
 
@@ -848,7 +848,7 @@ Run 26 (43584217243, artifact 14109926135) completed successfully and supersedes
 
 - Callback 0x004CD154, registered at viewer field +0x80 in 0x004B8C9C–0x004B8CCE, is TWordViwer.WordAppDocumentBeforeSave, not BeforeClose.
 - The actual TD32-named TWordViwer.WordAppDocumentBeforeClose is 0x004CCBBC. Its only direct bounded caller found is FillImgFldsForPrint at 0x004CCF8F; no raw-pointer registration reference was found. Its active event role remains unproven.
-- The registered BeforeSave routine checks _Document.Saved through interface slot +0xD8. If changed and the viewer prompt flag is enabled, it presents the changed-document prompt. Cancel sets COM event Cancel to 0xFFFF; Yes/No lead to the three-argument TWordDocument.Close wrapper at 0x0042FFF4.
+- The callback whose TD32 symbol is `WordAppDocumentBeforeSave` accesses interface slot +0xD8; the wrapper crosswalk maps this to `Set_Saved`, not `Get_Saved`, so it must not be described as reading `_Document.Saved`. If the viewer prompt flag is enabled, it presents the changed-document prompt. Cancel sets COM event Cancel to 0xFFFF; Yes/No lead to the three-argument TWordDocument.Close wrapper at 0x0042FFF4.
 - Close overload dispatch: no-argument 0x0042FEB0 -> slot +0x4D4; one-argument 0x0042FF08, two-argument 0x0042FF7C, and three-argument 0x0042FFF4 -> slot +0x29C.
 - 0x004CB108 is PreparePrintDocument; 0x00430070 is SaveAs2000, not Close.
 
@@ -1496,3 +1496,12 @@ The parser-side property methods provide a clearer source of truth than the TD32
 The current request-schema transcription says `concater`, while the native parser-side XML property is unambiguously spelled `concator`. These are different strings; no alias between them is proven. The TD32 `Get_*` serializer-side symbols also show a name/literal offset (for example, `Get_Concator` writes `separator`), so the parser-side `Set_*` methods are the trusted evidence for incoming XML attribute names.
 
 The Python decoder preserves all field attributes and does not currently normalize either spelling, so no runtime behavior was changed. Keep the discrepancy explicit until the raw request XML is rechecked; do not silently treat `concater` and `concator` as interchangeable.
+
+
+## 2026-11-25 correction — Saved accessor and event identity
+
+The wrapper crosswalk in the current analysis maps `Get_Saved` (`0x0042BD34`) to interface slot `+0xD4`, and `Set_Saved` (`0x0042BD94`) to `+0xD8`. Any older sentence in this document saying the callback reads `Document.Saved` through `+0xD8` is superseded and incorrect.
+
+Likewise, `0x004CD154` is the callback pointer stored at event-record offset `+0x80` and has TD32 symbol name `WordAppDocumentBeforeSave`, but the formal COM event DISPID remains unresolved. Its close prompt and `Document.Close` call are evidence about its body, not proof of the event interface identity. Use the neutral label “registered close/save-decision callback at `0x004CD154`”.
+
+For the Linux implementation's Save / Don't Save / Cancel behavior, use `docs/WORD-CLOSE-RESPONSE-CONTRACT-2026-11-25.md`; do not infer that policy from the Windows symbol name alone.
