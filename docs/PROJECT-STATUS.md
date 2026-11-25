@@ -1,3 +1,9 @@
+## 2026-11-25 — Base64 field decoder static trace
+
+- Traced `SetFieldValue`'s Base64 branch (`0x004BFDB0`) through `0x004735D0` / `0x004738CC` into decoder `0x00473700` in `analysis-input/EmwatMethods.bpl1`. The decoder requires a multiple-of-four input length, validates bytes through a 256-byte character-translation table, emits three bytes per full group, and interprets terminal `=` padding to produce one or two bytes. Its wrapper clears the output on a reported decode failure.
+- The preceding conversion at `0x00455108` remains unresolved for whitespace and Unicode edge cases. Linux intentionally rejects malformed Base64; this differs from the native helper's clear-output failure path and is not described as exact malformed-input parity.
+- Updated `WORD-FIELD-VALUE-DECODING.md`; no Almas-to-Writer field mapping is enabled by this static codec trace.
+
 ## 2026-11-25 — URL field decoder evidence reconciliation
 
 - Re-disassembled the `urlencoded` helper in the checked-in `analysis-input/EmwatMethods.bpl1` snapshot. At `0x004553CE–0x004553E1`, `+` selects the one-byte constant at `0x00455454`; the constant is `0x20`, so native decoding turns `+` into a space. The `%HH` branch routes the following two characters through the hexadecimal conversion helper at `0x004551FC`.
