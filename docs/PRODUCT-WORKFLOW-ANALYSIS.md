@@ -147,3 +147,8 @@ The user's Windows observation remains: closing Word is sufficient for Almas Gam
 ## 2026-11-25 — wait-state field refinement
 
 The wait/release state at viewer `+0x58` is now traced to `TWordViwer.PrintWithGamPrintOptions` (`0x004C5E04`), which stores the return from `Emwatutils.DirIsEmpty` (`0x004565DC`) at `0x004C5E44`. The helper performs directory enumeration with FindFirst/FindNext and writes a filename-like UnicodeString through an output parameter. The method is called from the timer path and from the RTTI-mapped `OnDocumentBeforeSave` callback (`0x004CD54C`, field `+0x90)). The BeforeClose callback (`0x004CD154`, field `+0x80`) clears the status. The helper `0x004563A8` is now identified as `FixDirectionInFarsiNumericMode`, which normalizes the UnicodeString path before `DirIsEmpty`. The original path source and search mask/filter remain under investigation.
+
+
+## 2026-11-25 Saved accessor correction
+
+The TD32 wrapper names are reversed relative to actual COM behavior: `Get_Saved` at `0x0042BD34` invokes slot `+0xD4` with an input WordBool (setter), while `Set_Saved` at `0x0042BD94` invokes slot `+0xD8` with an output WordBool (getter). The registered `OnDocumentBeforeClose` callback `0x004CD154` reads `Document.Saved` through `+0xD8`; it does not set the property to false.
