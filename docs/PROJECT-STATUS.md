@@ -2393,3 +2393,10 @@ Python bridge CI در run `44031548179` موفق شد: **111 تست موفق، 2
 - Added `build_indexed_signer_slots()` / `IndexedSignerSlot` to align recognized signer fields by numeric index, preserve capture order within each slot, and report absent families without synthesizing values or guessing mappings.
 - The first CI attempt found an incorrect expectation in the new test (the fixture included `SignNumberOfSigner3`); the assertion was corrected. The corrected run `44105991823` on `ef95c118111a4e2909657e9e06f75a87a68a326b` passed: **142 tests run, 140 passed, 2 optional LibreOffice tests skipped**.
 - Added `docs/RECOVERY-CATALOG.md` specifying the in-process JSON consumer contract, explicit save-dialog restore flow, confirmation requirement for discard, and prohibition on exposing the service as an unauthenticated HTTP endpoint.
+
+
+## Runtime bridge capture — 2026-11-25
+
+Two DevTools screenshots now provide runtime evidence for the close-time local bridge transaction. The selected request is a POST to `127.0.0.1:1984/?invoke=29501`, returning HTTP 200. Request content type is `text/plain; charset=UTF-8`; response headers report 1,166,820 bytes and `text/html; charset=ISO-8859-1`, with connection close. The request referer includes the local `?init=84760_34426` endpoint. Full evidence boundaries and next actions are documented in [RUNTIME-CAPTURE-2026-11-25.md](RUNTIME-CAPTURE-2026-11-25.md).
+
+This narrows the critical unknown: capture and decode the POST body and response body, then correlate the Initiator stack with the parent-page `postMessage` and Word close sequence. The screenshots do not prove the response is an HTML document or identify the exact document payload. No production-compatible response parser or Almas end-to-end behavior is claimed from headers alone.
