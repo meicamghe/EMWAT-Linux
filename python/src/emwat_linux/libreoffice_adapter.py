@@ -138,9 +138,9 @@ class _DocumentCloseListener:
         return
 
     def notifyClosing(self, _event: object) -> None:
-        return
-
-    def notifyClosed(self, _event: object) -> None:
+        # XCloseListener.notifyClosing is the actual successful-close callback.
+        # XCloseListener has no notifyClosed method; disposing is a fallback for
+        # external disposal that did not arrive through XCloseable.close().
         self._recovery_stop.set()
         self._on_closed()
 
@@ -379,7 +379,7 @@ class LibreOfficeAdapter:
                 close_listener,
                 uno_module=uno,
                 interface_name="com.sun.star.util.XCloseListener",
-                methods=("queryClosing", "notifyClosing", "notifyClosed", "disposing"),
+                methods=("queryClosing", "notifyClosing", "disposing"),
             )
             document.addModifyListener(modify_proxy)
             document.addDocumentEventListener(save_proxy)
