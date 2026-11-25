@@ -277,11 +277,16 @@ The full `TWordViwer` field scan found one nonzero write besides the close-time 
 3. The wait loop checks viewer `+0x58` for nonzero at `0x004B9AE8` / `0x004BB3F2`.
 4. The now-identified `OnDocumentBeforeClose` callback at `0x004CD154` clears viewer `+0x58` at `0x004CD31C`.
 
-This locates the first known writer and ties it to the synchronous wait/release path. The helper `0x004565DC` is TD32-named `Emwatutils.DirIsEmpty`; its body uses `FindFirst`/`FindNext`, returns the final enumeration status in EAX, and writes a filename-like UnicodeString through the out parameter. Thus `+0x58` holds a directory-enumeration status/empty indicator, not a heap-object pointer. The exact boolean convention and path/filter remain open. The same `PrintWithGamPrintOptions` method is also called at `0x004CD6EC` from callback `0x004CD54C`, which RTTI maps to `OnDocumentBeforeSave` field `+0x90`; the status can therefore be refreshed on the Save event as well as during `OnTmrAutoSave`.
+This locates the first known writer and ties it to the synchronous wait/release path. The helper `0x004565DC` is TD32-named `Emwatutils.DirIsEmpty`; its body uses `FindFirst`/`FindNext`, returns the final enumeration status in EAX, and writes a filename-like UnicodeString through the out parameter. Thus `+0x58` holds a directory-enumeration status/empty indicator, not a heap-object pointer. The exact path source/filter remain open. The `DirIsEmpty` body returns the final FindFirst/FindNext status (zero when an eligible entry is found, nonzero when enumeration terminates/fails), while writing a filename-like UnicodeString through its output parameter. The same `PrintWithGamPrintOptions` method is also called at `0x004CD6EC` from callback `0x004CD54C`, which RTTI maps to `OnDocumentBeforeSave` field `+0x90`; the status can therefore be refreshed on Save as well as during `OnTmrAutoSave`.
 
-The current branch event-sink workflow has traced `PrintWithGamPrintOptions` and `DirIsEmpty`. A follow-up trace of path helper `0x004563A8` is still pending.
+The follow-up trace identifies `0x004563A8` as `Emwatutils.FixDirectionInFarsiNumericMode`: it normalizes a UnicodeString for Farsi/numeric direction handling and returns the normalized string. `PrintWithGamPrintOptions` applies this normalization before calling `DirIsEmpty`; it is not a filesystem path-discovery helper.
 
 
 ### Event-source metadata cross-check
 
 The TWordApplication server-data block at `0x00627B74` contains Word.Application CLSID `000209FF-0000-0000-C000-000000000046`, default interface IID `00020970-0000-0000-C000-000000000046`, and event-source IID `00020A00-0000-0000-C000-000000000046` (ApplicationEvents3). The Word PIA exposes `ApplicationEvents3.DocumentBeforeClose`; Word interop event definitions corroborate DISPID `0x00000006`. The BPL's embedded member metadata has not yet been independently decoded for the numeric ID.
+
+
+### Run 34 — path normalizer resolution
+
+Event-sink run 34 artifact `15010103394` resolves `0x004563A8` as `Emwatutils.FixDirectionInFarsiNumericMode`. It accepts a UnicodeString and flags, applies string normalization, and writes a normalized UnicodeString to its output parameter. `PrintWithGamPrintOptions` calls it before `DirIsEmpty`, so the directory check is performed on a normalized path string. This does not yet reveal the original path source or the filename filter.
