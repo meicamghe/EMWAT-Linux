@@ -1218,3 +1218,8 @@ Run 34 artifact `15010103394` resolves `0x004563A8` as `Emwatutils.FixDirectionI
 ### Run 38 — DirIsEmpty input source
 
 Artifact `15011890875` shows `OnTmrAutoSave` copies a Sender-derived string into viewer `+0xA0` at `0x004B8AE2`, then normalizes and checks it. The `ECX` literal `0x004BA84C` is `Gamelectronics EMWAT`; the BeforeSave callback passes the same string at `0x004CD928`. The original input's semantic meaning remains open; next trace `0x00403520` and `0x00403430`.
+
+
+### 2026-11-25 Saved accessor wrapper correction
+
+The TD32 wrapper names are reversed relative to behavior: `Get_Saved` at `0x0042BD34` invokes slot `+0xD4` with an input WordBool (actual setter); `Set_Saved` at `0x0042BD94` invokes slot `+0xD8` with an output WordBool and returns it (actual getter). The registered BeforeClose callback `0x004CD154` reads `Document.Saved` through `+0xD8`.
