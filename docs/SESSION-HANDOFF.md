@@ -1238,3 +1238,7 @@ The PE import table maps `0x0062F1FC` to `rtl230.bpl!System.SysUtils.StringRepla
 ### Run 44 — filename extraction
 
 Artifact `15015875555` resolves `0x00403320` as `rtl230.bpl!System.SysUtils.ExtractFileName` (IAT `0x0062F288`). The full document path in `+0xA0` is reduced to its filename before the timer calls `PrintWithGamPrintOptions`; that filename is then normalized and passed to `DirIsEmpty`. Remaining: decode the exact FindFirst search mask and path semantics.
+
+### Run 46 — controller path list flow
+
+The controller does not call a SevenZip archive interface at `+0x3C`; `0x0062F810` is the TStringList VMT. It creates two lists, adds the document path from `+0xA0` to the first, and adds two normalized `+0x80` paths suffixed `.easd` and `.easz` to the second. It then invokes `euUnArchive` with both lists and the `.easz` path. Trace the exact role of viewer `+0x80` and confirm the final list serialization format.
