@@ -17,7 +17,7 @@ Current reviewed baseline: `main` HEAD `0f95be8577718e16b6c59afb1f43fe561dabe517
 
 ### Highest-priority reverse-engineering threads
 1. Event identity is cross-identified: `TWordApplication.OnDocumentBeforeClose`, event-source IID `00020A00-0000-0000-C000-000000000046` (`ApplicationEvents3`), and Word interop DISPID `0x00000006`. Only direct decoding of the embedded typelib member record remains optional confirmation.
-2. Keep the two strings separate: `+0xA0` is the timer/archive AddFiles source (copied with `UStrAsg` after `OleVarFromUStr`), while `+0x54` is the `DirIsEmpty` output string and `+0x58` its status. Resolve the timer-side caller and its parameters for `PrintWithGamPrintOptions`. `0x00403430` is now resolved as `rtl230.bpl!System.SysUtils.StringReplace`; it transforms `Self+0x54` using EDX/ECX string arguments and writes the result to `Self+0x50`.
+2. Keep the two strings separate: `+0xA0` is the document-path string passed by `LoadDocument` to `OnTmrAutoSave` at `0x004B7A58`, then copied with `UStrAsg` after `OleVarFromUStr` for the archive/AddFiles flow, while `+0x54` is the `DirIsEmpty` output string and `+0x58` its status. Resolve the timer-side caller and its parameters for `PrintWithGamPrintOptions`. `0x00403430` is now resolved as `rtl230.bpl!System.SysUtils.StringReplace`; it transforms `Self+0x54` using EDX/ECX string arguments and writes the result to `Self+0x50`.
 3. Obtain a sanitized Response body/HAR for `invoke=29501`.
 4. Obtain a gap-free PCAP response and compare complete document bytes.
 5. Capture Save / Don't Save / Cancel separately and correlate each decision to the actual response payload.
