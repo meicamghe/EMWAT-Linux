@@ -1,3 +1,8 @@
+## 2026-11-25 — expanded parallel reverse-engineering coverage
+
+- Expanded the image/scanner lane to trace the preview Register/Cancel handlers, crop mouse-coordinate lifecycle, page selector, form close checks, free rotation, auto-orient, rotate/flip, and print-preview operations alongside the existing scanner and multipage-save paths. Added a separate symbol index for TResultImage, TSetOfSinglePageImages, and TSetOfMultiPageImages plus scan-path/response-filename accessors.
+- This is a static-analysis coverage expansion only. It does not claim recovered crop coordinate math, editor commit/cancel semantics, arbitrary-angle behavior, or TIFF finalization. The new workflow run triggered by this commit is the verification gate; record its run ID and job results after completion.
+- Next independent lanes remain: recover the 17 TWordDocument.PrintOut Variant values from the caller's local records; correlate printer selection/queue job names with GAM output publication; and complete ImageGear LZW callback ABI from a hash-matched local DLL (the proprietary DLL is intentionally not checked into the repository).
 ## 2026 11 18 — scanner input validation test
 
 - Added hardware-independent regression checks that `SaneScannerBackend.get_capabilities("")` and `scan_one("")` reject an empty device identifier before entering SANE.
