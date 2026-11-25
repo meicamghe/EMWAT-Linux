@@ -290,3 +290,15 @@ The TWordApplication server-data block at `0x00627B74` contains Word.Application
 ### Run 34 — path normalizer resolution
 
 Event-sink run 34 artifact `15010103394` resolves `0x004563A8` as `Emwatutils.FixDirectionInFarsiNumericMode`. It accepts a UnicodeString and flags, applies string normalization, and writes a normalized UnicodeString to its output parameter. `PrintWithGamPrintOptions` calls it before `DirIsEmpty`, so the directory check is performed on a normalized path string. This does not yet reveal the original path source or the filename filter.
+
+
+### Run 38 — path-source and string-literal findings
+
+The expanded field/path artifact `15011890875` shows:
+
+- `OnTmrAutoSave` copies the event Sender-derived string into `TWordViwer+0xA0` at `0x004B8AE2` using helper `0x00401240` (string assignment); the value is later read at `0x004B9360`.
+- The copied string is passed through `FixDirectionInFarsiNumericMode` (`0x004563A8`) and then to `DirIsEmpty` (`0x004565DC`).
+- The timer call's `ECX` argument `0x004BA84C` is the UTF-16 literal `Gamelectronics EMWAT`.
+- The actual `OnDocumentBeforeSave` callback `0x004CD54C` calls the same method with `EDX=ECX=0x004CD928`, which is the same UTF-16 literal `Gamelectronics EMWAT`.
+
+The string-conversion helper `0x00403520` and configuration lookup helper `0x00403430` are now queued for detailed trace. Do not yet equate the vendor label with an absolute filesystem path.
