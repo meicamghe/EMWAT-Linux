@@ -147,7 +147,7 @@ Source: Word lifecycle artifact `14226866454` (dispatch crosswalk run 6), supers
 ### Timer-side event registration
 
 `TWordViwer.OnTmrAutoSave` at `0x004B8A84` (procedure range `0x004B8A84–0x004BB3AF`) writes callback/owner pointer pairs into event-related fields of the `TWordApplication` wrapper. In the decoded setup path it writes:
-- event-record field `+0x80` → callback pointer `0x004CD154` (TD32 symbol `TWordViwer.WordAppDocumentBeforeSave`; formal COM event identity unresolved);
+- event-record field `+0x80` → callback pointer `0x004CD154` (RTTI: `OnDocumentBeforeClose`; TD32 symbol `TWordViwer.WordAppDocumentBeforeSave`);
 - slot `+0x90` → `WordAppNewDocument` at `0x004CD54C`;
 - slot `+0x98` → `WordAppWindowActivate` at `0x004CD9C0`;
 - slot `+0x88` → `WordAppDocumentBeforePrintBGPrint` at `0x004CE030` (or alternate handler `0x004D00AC`, based on a viewer flag).
@@ -157,7 +157,7 @@ The corresponding owner pointers are stored in adjacent event fields. This confi
 
 `WordAppDocumentBeforeSave` at `0x004CD154` checks that the event document matches the active document. If viewer flag `+0x5E` is clear, it sets the Word `Cancel` output to `-1` and exits. Otherwise it accesses the Word document through interface slot `+0xD8`. The wrapper crosswalk labels `+0xD8` as `Set_Saved` (while `Get_Saved` maps to `+0xD4`), but the callsite's argument/value flow is not fully resolved; do not describe it as reading `Document.Saved` or as a proven write of a particular value. For an unsaved document and viewer flag `+0x5F`, it presents a three-choice dialog; one choice explicitly sets `Cancel=-1`. On the continuing path it changes viewer flags, calls a Word document interface method at slot `+0x29C`, clears the stored document interface, and resets state.
 
-The dialog's exact labels and the semantics of slot `+0x29C` are not yet decoded. The numeric COM DISPID remains unresolved. The wrapper RTTI now identifies the event property as `OnDocumentBeforeClose`; this does not by itself prove that the event is the final Almas commit.
+The dialog's exact labels and the semantics of slot `+0x29C` are not yet decoded. The server-data record at `0x00627B74` identifies event-source IID `ApplicationEvents3` (`00020A00-0000-0000-C000-000000000046`), and Word interop metadata corroborates `DocumentBeforeClose` DISPID `0x00000006`. This identifies the COM event contract; it does not by itself prove that the event is the final Almas commit.
 
 ### BeforeClose and silent-save candidates
 
@@ -238,7 +238,7 @@ The Linux implementation must distinguish the office engine's successful Save ev
 - Cancel is a cancelled close attempt, not a terminal session cancellation. No response is emitted and the same request/session remains pending until a later decision closes the document.
 - Periodic recovery snapshots are separate and are never the final response.
 
-The current reconciliation branch implements this boundary in `LibreOfficeAdapter` by keeping `approved.doc` separate from periodic recovery data and by removing live-buffer snapshotting from `queryClosing`. The Windows event callback's formal COM DISPID and the initial nonzero setter for viewer `+0x58` remain unresolved; the Linux contract is not evidence that those Windows internals have been fully identified.
+The current reconciliation branch implements this boundary in `LibreOfficeAdapter` by keeping `approved.doc` separate from periodic recovery data and by removing live-buffer snapshotting from `queryClosing`. The Windows event contract is cross-identified as `ApplicationEvents3.DocumentBeforeClose` (DISPID `0x00000006`); the `+0x58` setter is traced to `DirIsEmpty`. The original path source/filter and the page-side commit remain to be mapped.
 
 
 ## Run 154 — RTTI resolves the registered Word close event and wait-token writer (2026-11-25)
