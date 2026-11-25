@@ -19,6 +19,7 @@ class DocumentState(str, Enum):
     RETURNED = "returned"
     DISCARDED = "discarded"
     FAILED = "failed"
+    CANCELLED = "cancelled"
 
 
 class InvalidTransition(RuntimeError):
@@ -90,7 +91,7 @@ class DocumentSession:
 
     def fail(self, reason: str) -> None:
         with self._lock:
-            if self.state in (DocumentState.RETURNED, DocumentState.DISCARDED, DocumentState.FAILED):
+            if self.state in (DocumentState.RETURNED, DocumentState.DISCARDED, DocumentState.FAILED, DocumentState.CANCELLED):
                 raise InvalidTransition(f"cannot fail a terminal session in state {self.state.value}")
             self.failure_reason = reason.strip() or "unspecified_failure"
             self.state = DocumentState.FAILED
@@ -107,18 +108,24 @@ class DocumentSession:
                 raise InvalidTransition(f"cannot discard a session in state {self.state.value}")
             self.state = DocumentState.DISCARDED
 
-    def cancel(self) -> None:
-        """Cancel only the current close attempt; keep the document session open.
-
-        The caller may later retry close and choose Save or Don't Save. A Cancel
-        decision must not make the request/session terminal or return a payload.
-        """
+    def cancel_close_attempt(self) -> None:
+        """Cancel one close attempt without terminating the document session."""
         with self._lock:
             if self.state not in (DocumentState.OPENED, DocumentState.DIRTY):
                 raise InvalidTransition(
                     f"cannot cancel a close attempt in state {self.state.value}"
                 )
             # Intentionally preserve OPENED/DIRTY and all revision metadata.
+
+    def cancel(self) -> None:
+        """Terminate a session explicitly, distinct from the office UI's Cancel."""
+        with self._lock:
+            if self.state in (
+                DocumentState.FINALIZING, DocumentState.RETURNED,
+                DocumentState.DISCARDED, DocumentState.FAILED, DocumentState.CANCELLED,
+            ):
+                raise InvalidTransition(f"cannot cancel a session in state {self.state.value}")
+            self.state = DocumentState.CANCELLED
 
     def _require(self, expected: DocumentState) -> None:
         if self.state != expected:
