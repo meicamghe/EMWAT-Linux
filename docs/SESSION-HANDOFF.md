@@ -1031,7 +1031,7 @@ Do not implement guessed `signData` joining or claim end-to-end Almas registrati
 
 ## Confirmed Word close lifecycle — 2026-11-16
 
-- The traced close-decision callback pointer is `0x004CD154` at event-record `+0x80`; wrapper RTTI identifies this property as `OnDocumentBeforeClose`, despite TD32 symbol `WordAppDocumentBeforeSave`. The numeric COM DISPID is unresolved. The separate TD32-named `WordAppDocumentBeforeClose` at `0x004CCBBC` is not the pointer stored in this event record.
+- The traced close-decision callback pointer is `0x004CD154` at event-record `+0x80`; wrapper RTTI identifies this property as `OnDocumentBeforeClose`, despite TD32 symbol `WordAppDocumentBeforeSave`. The event-source IID is `ApplicationEvents3` (`00020A00-0000-0000-C000-000000000046`), and Word interop metadata corroborates `DocumentBeforeClose` DISPID `0x00000006`. The separate TD32-named `WordAppDocumentBeforeClose` at `0x004CCBBC` is not the pointer stored in this event record.
 - Callback accesses COM slot `+0xD8` (wrapper label `Set_Saved`; callsite value flow unresolved), asks whether to register changes, then invokes the three-argument `_Document.Close` through slot `+0x29C`. Do not claim that the call definitively sets or reads `Saved`.
 - Dialog mapping: Yes → SaveChanges `-1`; No → SaveChanges `0`; Cancel → event Cancel `0xFFFF` and no close.
 - One-/two-/three-argument Close wrappers at `0x0042FF08`, `0x0042FF7C`, `0x0042FFF4` all dispatch to the same COM Close slot `+0x29C`.
@@ -1194,7 +1194,7 @@ The screenshots `when open.png` and `when close.png` committed on 2026-11-25 exp
 
 Workflow run 27 (artifact `15008774182`) resolves two formerly open items:
 
-- The `TWordApplication` RTTI at `0x00429128` maps field `+0x80` to `OnDocumentBeforeClose`. `OnTmrAutoSave` stores `0x004CD154` at that field. Thus the main editor's callback is the wrapper's BeforeClose event property, notwithstanding the TD32 symbol `WordAppDocumentBeforeSave`. The numeric COM DISPID remains unresolved.
+- The `TWordApplication` RTTI at `0x00429128` maps field `+0x80` to `OnDocumentBeforeClose`. `OnTmrAutoSave` stores `0x004CD154` at that field. Thus the main editor's callback is the wrapper's BeforeClose event property, notwithstanding the TD32 symbol `WordAppDocumentBeforeSave`. The event-source IID is `ApplicationEvents3` (`00020A00-0000-0000-C000-000000000046`), and Word interop metadata corroborates `DocumentBeforeClose` DISPID `0x00000006`.
 - The first nonzero write to viewer `+0x58` is found: `OnTmrAutoSave` calls `TWordViwer.PrintWithGamPrintOptions` at `0x004B937C`; that method stores the return of `0x004565DC` into `Self+0x58` at `0x004C5E44`. The close callback clears it at `0x004CD31C`. Trace `0x004565DC` to identify the token's exact type and meaning.
 
 The event-property mapping is stronger than the earlier TD32 name-based inference. Use the RTTI crosswalk in `docs/WORD-LIFECYCLE-STATIC-TRACE.md` as the current authority.
