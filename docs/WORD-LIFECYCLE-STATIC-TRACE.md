@@ -296,12 +296,12 @@ Event-sink run 34 artifact `15010103394` resolves `0x004563A8` as `Emwatutils.Fi
 
 The expanded field/path artifact `15011890875` shows:
 
-- `OnTmrAutoSave` copies the event Sender-derived string into `TWordViwer+0xA0` at `0x004B8AE2` through helper `0x00401240` (exact helper semantics pending); the value is later read at `0x004B9360`.
+- `LoadDocument` passes the prepared document-path UnicodeString to `OnTmrAutoSave` at `0x004B7A58`. The timer copies it into `TWordViwer+0xA0` with `UStrAsg` (`0x00401240`), reads it at `0x004B9360`, transforms it through `0x00403320`, and calls `PrintWithGamPrintOptions` at `0x004B937C`.
 - The copied string is passed through `FixDirectionInFarsiNumericMode` (`0x004563A8`) and then to `DirIsEmpty` (`0x004565DC`).
 - The timer call's `ECX` argument `0x004BA84C` is the UTF-16 literal `Gamelectronics EMWAT`.
 - The actual `OnDocumentBeforeSave` callback `0x004CD54C` calls the same method with `EDX=ECX=0x004CD928`, which is the same UTF-16 literal `Gamelectronics EMWAT`.
 
-`0x00403520` is confirmed by its IAT thunk as `rtl230.bpl!System.Variants.OleVarFromUStr`; `0x00401240` is `rtl230.bpl!System.UStrAsg`. `0x00403430` remains unresolved: its IAT slot contains an address outside the BPL image, and the runtime import name must be recovered from the PE import metadata. Do not equate `Gamelectronics EMWAT` with an absolute filesystem path.
+`0x00403520` is `rtl230.bpl!System.Variants.OleVarFromUStr`; `0x00401240` is `rtl230.bpl!System.UStrAsg`; `0x00403430` is `rtl230.bpl!System.SysUtils.StringReplace`. The timer passes the transformed document path as EDX and the UTF-16 label `Gamelectronics EMWAT` as ECX. This label is a replacement string, not an absolute path.
 
 
 ### Run 39 — Saved accessor semantics resolved
