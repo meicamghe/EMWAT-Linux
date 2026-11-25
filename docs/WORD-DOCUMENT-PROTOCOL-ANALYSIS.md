@@ -1545,7 +1545,7 @@ The wait state at viewer `+0x58` therefore stores the final directory-enumeratio
 
 ## 2026-11-25 — source of the DirIsEmpty input
 
-Run 38 artifact `15011890875` narrows the input source: `OnTmrAutoSave` copies a Sender-derived string into `TWordViwer+0xA0` at `0x004B8AE2` through helper `0x00401240`, then reads it at `0x004B9360`, normalizes it with `FixDirectionInFarsiNumericMode` (`0x004563A8`), and checks it with `DirIsEmpty` (`0x004565DC`). The call's separate `ECX` argument `0x004BA84C` is the UTF-16 label `Gamelectronics EMWAT`. The `OnDocumentBeforeSave` callback `0x004CD54C` passes the same literal at `0x004CD928` as both string arguments to `PrintWithGamPrintOptions`.
+Run 38 artifact `15011890875` and follow-up run 39 distinguish two independent strings: `OnTmrAutoSave` converts a local UnicodeString through `OleVarFromUStr` (`0x00403520`) and copies it to `TWordViwer+0xA0` with `UStrAsg` (`0x00401240`); `OnControlerNotify` later uses `+0xA0` in its archive/AddFiles path. Separately, `PrintWithGamPrintOptions` uses `TWordViwer+0x54` as the output UnicodeString for `DirIsEmpty`, with the returned status stored at `+0x58`. Its `ECX` argument literal `0x004BA84C` is UTF-16 `Gamelectronics EMWAT`; the BeforeSave callback also passes the same literal at `0x004CD928`. The `+0xA0` archive source must not be conflated with the `+0x54` directory-enumeration output.
 
 This establishes the immediate source of the timer's input string, but not its semantic identity (for example, component name, output directory, or configuration key). Helpers `0x00403520` and `0x00403430` are the next targets.
 
@@ -1553,3 +1553,8 @@ This establishes the immediate source of the timer's input string, but not its s
 ## 2026-11-25 correction — Saved accessor wrapper names are reversed
 
 The TD32 wrapper `TWordDocument.Set_Saved` at `0x0042BD94` calls COM slot `+0xD8` with an output WordBool and returns that value; it is the actual `get_Saved` getter. The TD32 wrapper `TWordDocument.Get_Saved` at `0x0042BD34` passes an input WordBool to slot `+0xD4` and returns void; it is the actual `put_Saved` setter. Therefore callback `0x004CD154` reads `Document.Saved` through `+0xD8`; it does not write `Saved=False`.
+
+
+### Run 39 — helper identification correction
+
+The thunk at `0x00403520` resolves to `rtl230.bpl!@System@Variants@@OleVarFromUStr`; `0x00401240` resolves to `rtl230.bpl!@System@@UStrAsg`. Thus the timer code converts and copies a string into `+0xA0`, but this field belongs to the archive/AddFiles flow, not the `DirIsEmpty` input. The thunk at `0x00403430` jumps through IAT slot `0x0062F1FC`, whose captured value `0x00233D76` is outside the file-backed image; its imported symbol name remains unresolved.
