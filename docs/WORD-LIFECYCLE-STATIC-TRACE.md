@@ -272,12 +272,12 @@ This identifies the Delphi wrapper event property. The TWordApplication server-d
 
 The full `TWordViwer` field scan found one nonzero write besides the close-time clear:
 
-1. `OnTmrAutoSave` calls `TWordViwer.PrintWithGamPrintOptions` at `0x004B937C`.
+1. An earlier bounded trace reported a timer-side `PrintWithGamPrintOptions` call at `0x004B937C`; the full TD32 decode of `OnTmrAutoSave` currently stops at an embedded-data boundary near `0x004B8F0B`, so this callsite is being independently revalidated.
 2. That method writes `Self+0x58 = EAX` at `0x004C5E44`; EAX is returned by helper `0x004565DC`.
 3. The wait loop checks viewer `+0x58` for nonzero at `0x004B9AE8` / `0x004BB3F2`.
 4. The now-identified `OnDocumentBeforeClose` callback at `0x004CD154` clears viewer `+0x58` at `0x004CD31C`.
 
-This locates the first known writer and ties it to the synchronous wait/release path. The helper `0x004565DC` is TD32-named `Emwatutils.DirIsEmpty`; its body uses `FindFirst`/`FindNext`, returns the final enumeration status in EAX, and writes a filename-like UnicodeString through the out parameter. Thus `+0x58` holds a directory-enumeration status/empty indicator, not a heap-object pointer. The exact path source/filter remain open. The `DirIsEmpty` body returns the final FindFirst/FindNext status (zero when an eligible entry is found, nonzero when enumeration terminates/fails), while writing a filename-like UnicodeString through its output parameter. The same `PrintWithGamPrintOptions` method is also called at `0x004CD6EC` from callback `0x004CD54C`, which RTTI maps to `OnDocumentBeforeSave` field `+0x90`; the status can therefore be refreshed on Save as well as during `OnTmrAutoSave`.
+This locates the first known writer and ties it to the synchronous wait/release path. The helper `0x004565DC` is TD32-named `Emwatutils.DirIsEmpty`; its body uses `FindFirst`/`FindNext`, returns the final enumeration status in EAX, and writes a filename-like UnicodeString through the out parameter. Thus `+0x58` holds a directory-enumeration status/empty indicator, not a heap-object pointer. The exact path source/filter remain open. The `DirIsEmpty` body returns the final FindFirst/FindNext status (zero when an eligible entry is found, nonzero when enumeration terminates/fails), while writing a filename-like UnicodeString through its output parameter. The direct TD32 caller scan confirms `PrintWithGamPrintOptions` at `0x004CD6EC` from callback `0x004CD54C` (RTTI field `+0x90`, `OnDocumentBeforeSave`). The timer-side route is still under revalidation; do not treat the earlier `0x004B937C` label as independently confirmed.
 
 The follow-up trace identifies `0x004563A8` as `Emwatutils.FixDirectionInFarsiNumericMode`: it normalizes a UnicodeString for Farsi/numeric direction handling and returns the normalized string. `PrintWithGamPrintOptions` applies this normalization before calling `DirIsEmpty`; it is not a filesystem path-discovery helper.
 
