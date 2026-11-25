@@ -1,3 +1,31 @@
+## 2026-11-25 — current main reconciliation and next work
+
+Current reviewed baseline: `main` HEAD `0f95be8577718e16b6c59afb1f43fe561dabe517`. The `emwat_strings.txt` blob is 13,722,034 bytes; do not reuse any earlier empty-file conclusion.
+
+### Word response evidence
+- PCAP `invoke=58351`: response arrives 54.557883 seconds after request body completion; HTTP 200; response length 1,166,820; HTTP content type `text/html; charset=ISO-8859-1`. The captured inner body contains `response-word status="success"` with Base64 `application/msword`.
+- DevTools `invoke=29501`: same response length and HTTP content type/charset, but no response body is available. Correlation is strong; body equivalence is not proven.
+- `invoke` is a per-request nonce/cache-buster, not a method or session identifier.
+- Keep the request worker blocked on the document lifecycle while heartbeat remains concurrently serviceable.
+
+### Required Linux close contract
+- Save → return the latest successfully saved snapshot.
+- Don't Save → return the last approved snapshot (initial input if no Save completed), not the current unsaved buffer.
+- Cancel → leave the session open and keep the same invoke request waiting for a later decision.
+- Recovery snapshots are for crash recovery only and must not become final response bytes.
+- Current main code had a mismatch: `queryClosing` snapshotted the live document and `export_final_document` returned it regardless of Save/Don't Save. The reconciliation branch changes the adapter to maintain an approved snapshot and changes session cancellation to preserve the open/dirty state. CI is pending; verify before claiming it works.
+
+### Highest-priority reverse-engineering threads
+1. Map the formal COM event DISPID wired to event-record offset `+0x80`; retain neutral naming for `0x004CD154` until proven.
+2. Find the first nonzero write to viewer `+0x58` and identify its semantic value.
+3. Obtain a sanitized Response body/HAR for `invoke=29501`.
+4. Obtain a gap-free PCAP response and compare complete document bytes.
+5. Capture Save / Don't Save / Cancel separately and correlate each decision to the actual response payload.
+
+See [WORD-CLOSE-RESPONSE-CONTRACT-2026-11-25.md](WORD-CLOSE-RESPONSE-CONTRACT-2026-11-25.md), [RUNTIME-CAPTURE-2026-11-25.md](RUNTIME-CAPTURE-2026-11-25.md), and [PCAP-EDITWORD-DOCUMENT-ROUNDTRIP.md](PCAP-EDITWORD-DOCUMENT-ROUNDTRIP.md).
+
+---
+
 ## 2026-11-18 — CI verification and recovery trigger coverage
 
 - Native image core run `44240525477` completed successfully on `ecf4fa8a8784b2403272ecd79186fd073e1a8e1b`: both `build-test` and `sanitizer-test` passed, including the ASan/UBSan test step.
@@ -55,7 +83,7 @@ The confirmed real-world workflow is a local desktop bridge for the Almas Gam we
 
 ## Confirmed user observations and constraints
 
-- **User-observed product requirement:** the user tested that closing the document applies/registers changes whether or not Save was pressed. Reproduce this behavior in Linux. The exact internal event, file extraction method and transport remain to be identified.
+- **Current user-defined Linux decision contract:** Save returns the latest successfully saved snapshot; Don't Save returns the last approved snapshot (initial input if no successful Save occurred); Cancel keeps the same session open and the pending request waiting. Never return a generic live unsaved buffer from a close callback. Exact Windows COM event and wire mapping remain under investigation.
 - The user has supplied the original Windows installer/extracted files for analysis. The historical extraction location was `D:\EmwatInstaller`.
 - The user stated that the extracted EMWAT files contain no customer information. Still inspect any future traces, sample letters, cookies, tokens, and logs before publishing them.
 - The original Windows binaries examined are PE32/x86; this is a fact about the analyzed binaries, not a reason to make the Linux implementation 32-bit-only.
