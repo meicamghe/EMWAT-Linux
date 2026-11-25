@@ -74,6 +74,37 @@ Do not equate worker completion with GAM artifact availability. The current stat
 - No source binary, Wine prefix, printer configuration, or system configuration was modified by this analysis.
 
 
-## 6. Correction from the expanded TD32 symbol/caller pass (2026-11-25)
+## 6. Exact identification of document vtable slot `+0x3F0` (2026-11-25)
+
+The follow-up wrapper trace resolves the previously open member:
+
+- TD32 identifies `0x00436030` as `TWordDocument.PrintOut` with fifteen `OleVariant` parameters.
+- Its body prepares the Variant arguments, obtains the document interface, and calls `[vtable + 0x3F0]` at `0x004360B4`.
+- The wrapper ends with `ret 0x34`, consistent with thirteen stack-passed arguments plus two register-passed arguments in the Delphi register calling convention; total = fifteen.
+- The `BGPrintWithGamPrintOptions` callsite at `0x004C70B6` invokes the same vtable slot after preparing fifteen Variant argument records. This matches the wrapper's member and argument count exactly.
+
+**Conclusion:** the call at `0x004C70B6` is `TWordDocument.PrintOut` (15-argument overload), not an unknown document-interface operation. The subsequent call at `0x004C70CA` remains a separate `TWordApplication.PrintOutOld` invocation through its own wrapper/interface slot.
+
+The standard Word `Document.PrintOut` parameter order for this 15-argument overload is:
+
+1. `Background`
+2. `Append`
+3. `Range`
+4. `OutputFileName`
+5. `From`
+6. `To`
+7. `Item`
+8. `Copies`
+9. `Pages`
+10. `PageType`
+11. `PrintToFile`
+12. `Collate`
+13. `FileName`
+14. `ActivePrinterMacGX`
+15. `ManualDuplexPrint`
+
+The member identity and argument count are established by the wrapper/callsite match. The concrete value and VARIANT type of each argument at runtime still need to be mapped from the caller's local Variant records. Do not infer the values from the form's visible controls alone.
+
+## 7. Correction from the expanded TD32 symbol/caller pass (2026-11-25)
 
 The expanded trace resolved a prior ambiguity: `0x004677B8` is `TETracer.LogException`, and `0x00467788` is `TETracer.LogDebugF`. `TEmwatDocPrintHandler.Execute` calls `LogException` in its exception path. Therefore, the earlier interpretation of `0x004677B8` as a callback dispatcher is withdrawn. The constructor's method-record-shaped storage at `+0x18/+0x1C` and controller notification record still warrant investigation, but they must not be attributed to that logging helper. The new direct-caller scan found no direct CALL xrefs to `TEDPController.SetPrintThread`; this does not rule out VMT/indirect calls.
