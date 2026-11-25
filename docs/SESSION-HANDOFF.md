@@ -1195,14 +1195,14 @@ The screenshots `when open.png` and `when close.png` committed on 2026-11-25 exp
 Workflow run 27 (artifact `15008774182`) resolves two formerly open items:
 
 - The `TWordApplication` RTTI at `0x00429128` maps field `+0x80` to `OnDocumentBeforeClose`. `OnTmrAutoSave` stores `0x004CD154` at that field. Thus the main editor's callback is the wrapper's BeforeClose event property, notwithstanding the TD32 symbol `WordAppDocumentBeforeSave`. The event-source IID is `ApplicationEvents3` (`00020A00-0000-0000-C000-000000000046`), and Word interop metadata corroborates `DocumentBeforeClose` DISPID `0x00000006`.
-- The first writer to viewer `+0x58` is `PrintWithGamPrintOptions` (`0x004C5E44`). The direct TD32 caller scan confirms the BeforeSave callback call at `0x004CD6EC`; the previously reported timer callsite `0x004B937C` is being revalidated because the full timer decode stops at an embedded-data boundary. The close callback clears `+0x58` at `0x004CD31C`.
+- The first writer to viewer `+0x58` is `PrintWithGamPrintOptions` (`0x004C5E44`). The direct BeforeSave call at `0x004CD6EC` and timer call at `0x004B937C` are both confirmed. The timer derives its input from `+0xA0` through helper `0x00403320`; the close callback clears `+0x58` at `0x004CD31C`.
 
 The event-property mapping is stronger than the earlier TD32 name-based inference. Use the RTTI crosswalk in `docs/WORD-LIFECYCLE-STATIC-TRACE.md` as the current authority.
 
 
 ### 2026-11-25 event-sink run 28 refinement
 
-Artifact `15009034578` identifies `0x004565DC` as `Emwatutils.DirIsEmpty`: it performs FindFirst/FindNext directory enumeration, returns the final status in EAX, and writes a UnicodeString output. `PrintWithGamPrintOptions` stores this status in viewer `+0x58` at `0x004C5E44`. The direct TD32 caller scan confirms the callback `0x004CD54C` call at `0x004CD6EC`; RTTI maps its field `+0x90` to `OnDocumentBeforeSave`. The earlier timer-side callsite at `0x004B937C` remains under revalidation. The exact path/filter and status convention remain open; next trace `0x004563A8`.
+Artifact `15009034578` identifies `0x004565DC` as `Emwatutils.DirIsEmpty`: it performs FindFirst/FindNext directory enumeration, returns the final status in EAX, and writes a UnicodeString output. `PrintWithGamPrintOptions` stores this status in viewer `+0x58` at `0x004C5E44`. The direct TD32 caller scan confirms the callback `0x004CD54C` call at `0x004CD6EC`; RTTI maps its field `+0x90` to `OnDocumentBeforeSave`. The timer-side call at `0x004B937C` is confirmed. The remaining path work is to identify helper `0x00403320` and the precise search mask/filter passed to `DirIsEmpty`.
 
 
 ### 2026-11-25 event-source IID / DISPID cross-check
