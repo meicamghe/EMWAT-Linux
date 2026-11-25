@@ -97,7 +97,10 @@ class DocumentSession:
             self.state = DocumentState.FAILED
 
     def discard(self) -> None:
-        """Close without returning edited bytes after an explicit discard outcome.
+        """Terminate without a response after an explicit application-level abort.
+
+        This is not the office UI's "Don't Save" choice: that closes normally
+        and returns the previous approved snapshot.
 
         Do not infer discard merely from a BeforeSave cancellation: the recovered
         native event sink proves a BeforeSave callback, not a separate
