@@ -15,6 +15,8 @@ from emwat_linux.editword_request import EditWordDocumentRequest
 
 class CloseDisposition(str, Enum):
     CLOSED = "closed"
+    # Explicit terminal abort only. Word's "Don't Save" is still CLOSED and
+    # returns the last approved snapshot; it is not this disposition.
     DISCARDED = "discarded"
 
 
