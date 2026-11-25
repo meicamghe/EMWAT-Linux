@@ -34,7 +34,7 @@ jobs:
         shell: bash
         run: |
           mkdir -p parallel-re/word-print
-          targets=(004C5FF8 004309F8 00441E44 00436030 004360F0 004361B0 00445B70 004677B8 00467788 004A5C10 004A5D78 004A5EA8 004D2EC8 004D2F44 00403550 004034E8 00403520 004034D0 00403368 00403480 0042ABA0)
+          targets=(004C5FF8 004309F8 00441E44 00436030 004360F0 004361B0 00445B70 004677B8 00467788 004A5C10 004A5D78 004A5EA8 004D2EC8 004D2F44 00403550 004034E8 00403520 004034D0 00403368 00403480 0042ABA0 004ADA4C 0043EC28 0043EAB8 0043F308 00440B2C 00403488)
           pids=()
           for target in "${targets[@]}"; do
             (
@@ -65,7 +65,7 @@ jobs:
         run: |
           python tools/list_td32_symbols.py analysis-input/EmwatMethods.bpl1 \
             TWordDocument TWordApplication PrintOut PrintOutOld PrintOut2000 \
-            BGPrintWithGamPrintOptions TEmwatDocPrintHandler TEDPController \
+            BGPrintWithGamPrintOptions TEmwatDocPrintHandler TEDPController TWordViwer \
             > parallel-re/word-print/symbol-index.md
       - uses: actions/upload-artifact@v4
         with:
