@@ -37,7 +37,7 @@ This is materially stronger than merely finding the string `WINWORD.EXE`: the co
 | `AddImagesToDoc` | `0x004C0410` | `0x140` |
 | `FillPrintDocFields` | `0x004CB638` | `0x1584` |
 | `WordAppDocumentBeforeClose` | `0x004CCBBC` | `0x20C` |
-| `WordAppDocumentBeforeSave` | `0x004CD154` | `0x3F8` |
+| TD32 `WordAppDocumentBeforeSave` (RTTI event property `OnDocumentBeforeClose`) | `0x004CD154` | `0x3F8` |
 | `WordAppNewDocument` | `0x004CD54C` | `0x474` |
 | `WordAppWindowActivate` | `0x004CD9C0` | `0x16C` |
 | `QuitWord` | `0x004CDB54` | `0xD8` |
@@ -80,7 +80,7 @@ The downloaded `TWordViwer.LoadDocument` procedure trace gives three useful cros
 
 - At `0x004B78E4–0x004B78E9`, `LoadDocument` calls `0x004D0D24` on the global viewer instance. Although TD32 labels this procedure `$bdtr`, its body initializes viewer flags/settings and allocates the three dictionaries at offsets `+0x64/+0x68/+0x6C`; classify it as a constructor/initializer-like path, not teardown. The actual VMT destructor is at `0x004D1148` (see below).
 - At `0x004B7991–0x004B7994`, `LoadDocument` calls `AddCustomDocPropertiesToDic` at `0x004D1454`. TD32 indexes this method as a `TWordViwer` method, size `0x3B4`. This places custom document-property extraction in the load/response preparation path.
-- At `0x004B7A55–0x004B7A58`, `LoadDocument` calls `OnTmrAutoSave` at `0x004B8A84` synchronously and tests its Boolean result immediately afterwards. The detailed wait-loop and response-release evidence is recorded in the research log; this is distinct from Word's registered BeforeSave event.
+- At `0x004B7A55–0x004B7A58`, `LoadDocument` calls `OnTmrAutoSave` at `0x004B8A84` synchronously and tests its Boolean result immediately afterwards. The detailed wait-loop and response-release evidence is recorded in the research log; this is distinct from the registered `OnDocumentBeforeClose` event property; the actual `OnDocumentBeforeSave` property is at wrapper field `+0x90` and uses callback `0x004CD54C`.
 
 The raw TD32 index labels these procedures as:
 - `$bctr`: `0x004D08B4`, size `0x470`
@@ -108,7 +108,7 @@ The class-procedure index allows the Word-facing implementation to be divided in
 | Request/config field mapping | `GetXmlFieldInfo` `0x004BCA88`; overload `0x004BFC18`; `GetDocFieldName` `0x004BB81C`; `FindFieldInActivefields` `0x004BC170`; `AddFieldInActivefields` `0x004BC278` | XML field definitions are resolved and tracked in an active-fields collection |
 | Document field mutation | `FillField` `0x004BC2C4`; `FillImageField` `0x004BC30C`; `GetFieldValue` `0x004BFD38`; `SetFieldValue` `0x004BFDB0`; `FillMSWFields` `0x004C009C`; `AddImagesToDoc` `0x004C0410` | The implementation has distinct text/value and image-field paths and explicitly consumes Word `_Document`, `Field` and `Fields` interfaces |
 | Content and custom metadata | `TWordViwer.Destroy` `0x004D1148` (stale TD32/log label `AddXmlWordConfigFieldsToDic`); `AddCustomDocPropertiesToDic` `0x004D1454` | The VMT destructor frees viewer maps/resources and calls `ScreenRefresh`; the second routine enumerates Word custom properties, builds single/twin descriptors using the matching XML field entry, and inserts them into the descriptor maps |
-| Save and close callbacks | `WordAppDocumentBeforeSave` `0x004CD154`; `WordAppDocumentBeforeClose` `0x004CCBBC`; `SilentSaveEmwatDoc` `0x004D23D8`; `OnTmrAutoSave` `0x004B8A84`; `OnControlerNotify` `0x004BB3B0` | Save events, close events, silent save, timer-driven waiting and controller notification are separate code paths |
+| Save and close callbacks | `OnDocumentBeforeClose` → `0x004CD154` (TD32 label `WordAppDocumentBeforeSave`); `OnDocumentBeforeSave` → `0x004CD54C` (TD32 label `WordAppNewDocument`); `WordAppDocumentBeforeClose` `0x004CCBBC`; `SilentSaveEmwatDoc` `0x004D23D8`; `OnTmrAutoSave` `0x004B8A84`; `OnControlerNotify` `0x004BB3B0` | RTTI event properties are the authority for event identity; TD32 callback labels are misleading in this block |
 | Print pipeline | `PreparePrintDocument` `0x004CB108`; `CollectFieldsSets` `0x004CB5E4`; `FillPrintDocFields` `0x004CB638`; `PrintWithGamPrintOptions` `0x004C5E04`; `BGPrintWithGamPrintOptions` `0x004C5FF8`; print event callbacks `0x004CDC2C`, `0x004CE030` | Print preparation, field substitution, foreground/background print and Word print callbacks have dedicated routines |
 | Document formatting/protection | `ProtectDocument` `0x004C9EA8`; `SaveOriginalOptions` `0x004C5CDC`; `RollBackOriginalOptions` `0x004CA4B0`; `SetDocCaption` `0x004C5D68` | EMWAT also manages document protection and temporary document options; these behaviors must not be omitted from a replacement |
 
@@ -155,7 +155,7 @@ This is a significant compatibility requirement: the Linux backend must preserve
 
 ### BeforeSave event behavior
 
-`WordAppDocumentBeforeSave` at `0x004CD154` is a 1,016-byte procedure with a TD32 signature containing the Word `_Document` interface and an event argument. The trace:
+`WordAppDocumentBeforeSave` at `0x004CD154` is a 1,016-byte procedure with a TD32 signature containing the Word `_Document` interface and an event argument. Run-27 RTTI maps the registered event field `+0x80` to `OnDocumentBeforeClose`, so the procedure label is misleading. The trace:
 - verifies the callback's document against the viewer's active document reference;
 - calls pre-save helper `0x004CB108`;
 - consults viewer state flags at offsets `+0x5E` and `+0x5F`;
@@ -222,7 +222,7 @@ Important correction: helper `0x00456DFC`, previously treated as a post-content 
 
 A full TD32 trace of `OnTmrAutoSave` (`0x004B8A84`) resolves the event callback registration more precisely. The routine installs callback targets into the Word event-sink record:
 
-- `0x004CD154` — `WordAppDocumentBeforeSave`;
+- `0x004CD154` — TD32 `WordAppDocumentBeforeSave`, registered as `OnDocumentBeforeClose` by RTTI;
 - `0x004CD54C` — `WordAppNewDocument`;
 - `0x004CD9C0` — `WordAppWindowActivate`;
 - `0x004CE030` — `WordAppDocumentBeforePrintBGPrint`, or alternate target `0x004D00AC` depending on viewer flag `+0x3C`.
