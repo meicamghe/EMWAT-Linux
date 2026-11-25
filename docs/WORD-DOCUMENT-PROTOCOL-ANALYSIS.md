@@ -1545,7 +1545,7 @@ The wait state at viewer `+0x58` therefore stores the final directory-enumeratio
 
 ## 2026-11-25 — source of the DirIsEmpty input
 
-Run 38 artifact `15011890875` and follow-up run 39 distinguish two independent strings: `LoadDocument` (`0x004B7724`) passes its prepared document-path UnicodeString in EDX at callsite `0x004B7A58` to `OnTmrAutoSave` (`0x004B8A84`), despite the TD32 parameter label `TObject`. The timer converts that value through `OleVarFromUStr` (`0x00403520`) and copies it to `TWordViwer+0xA0` with `UStrAsg` (`0x00401240`); `OnControlerNotify` later uses `+0xA0` in its archive/AddFiles path. Separately, `PrintWithGamPrintOptions` uses `TWordViwer+0x54` as the output UnicodeString for `DirIsEmpty`, with the returned status stored at `+0x58`. Its `ECX` argument literal `0x004BA84C` is UTF-16 `Gamelectronics EMWAT`; the BeforeSave callback also passes the same literal at `0x004CD928`. The `+0xA0` archive source must not be conflated with the `+0x54` directory-enumeration output.
+Run 38 artifact `15011890875` and follow-up run 39 distinguish two independent strings: `LoadDocument` (`0x004B7724`) passes its prepared document-path UnicodeString in EDX at callsite `0x004B7A58` to `OnTmrAutoSave` (`0x004B8A84`), despite the TD32 parameter label `TObject`. The timer converts that value through `OleVarFromUStr` (`0x00403520`) and copies it to `TWordViwer+0xA0` with `UStrAsg` (`0x00401240`); `OnControlerNotify` later uses `+0xA0` in its archive/AddFiles path. Separately, `PrintWithGamPrintOptions` uses `TWordViwer+0x54` as the output UnicodeString for `DirIsEmpty`, with the returned status stored at `+0x58`. Its `ECX` argument literal `0x004BA84C` is UTF-16 `Gamelectronics EMWAT`; the BeforeSave callback also passes the same literal at `0x004CD928`. `+0xA0` is the upstream document-path source for both paths: `OnTmrAutoSave` reads it at `0x004B9360`, passes it through helper `0x00403320`, and calls `PrintWithGamPrintOptions` at `0x004B937C`; that method normalizes the resulting path and supplies it to `DirIsEmpty`. Separately, `+0x54` is the enumeration output string, `+0x58` its status, and `+0x50` the StringReplace-transformed output. `OnControlerNotify` also consumes `+0xA0` in the archive/AddFiles path.
 
 This establishes the immediate source of the timer's input string, but not its semantic identity (for example, component name, output directory, or configuration key). Helpers `0x00403520` and `0x00403430` are the next targets.
 
@@ -1562,4 +1562,20 @@ The thunk at `0x00403520` resolves to `rtl230.bpl!@System@Variants@@OleVarFromUS
 
 ### Run 40 — StringReplace import resolved
 
-The PE import table identifies IAT slot `0x0062F1FC` (RVA `0x0022F1FC`) as `rtl230.bpl!@System@Sysutils@StringReplace`. In `PrintWithGamPrintOptions` (`0x004C5E04`), the source string is `Self+0x54`; the two string parameters are EDX/ECX (saved in ESI/EDI), the replace flags come from byte `0x004C5F24`, and the result is assigned to `Self+0x50` through `UStrAsg` (`0x00401240`). The BeforeSave callsite at `0x004CD6EC` passes `0x004CD928` for both replacement parameters, so that particular call requests a same-string replacement. This does not establish the timer call's parameter values.
+The PE import table identifies IAT slot `0x0062F1FC` (RVA `0x0022F1FC`) as `rtl230.bpl!@System@Sysutils@StringReplace`. In `PrintWithGamPrintOptions` (`0x004C5E04`), the source string is `Self+0x54`; the two string parameters are EDX/ECX (saved in ESI/EDI), the replace flags come from byte `0x004C5F24`, and the result is assigned to `Self+0x50` through `UStrAsg` (`0x00401240`). The BeforeSave callsite at `0x004CD6EC` passes `0x004CD928` for both replacement parameters, so that particular call requests a same-string replacement. The timer-side callsite is now confirmed: EDX is the transformed `+0xA0` document path and ECX is the UTF-16 literal `Gamelectronics EMWAT` at `0x004BA84C`.
+
+
+### Run 42 — timer-to-directory-check bridge
+
+The fresh bounded disassembly of `0x004B9300–0x004B9400` confirms:
+
+```asm
+004B9360  mov eax, [Self+0xA0]
+004B9366  call 0x00403320
+004B936B  mov edx, [local_result]
+004B9371  mov ecx, 0x004BA84C   ; "Gamelectronics EMWAT"
+004B9376  mov eax, Self
+004B937C  call 0x004C5E04      ; PrintWithGamPrintOptions
+```
+
+Therefore `+0xA0` is indeed the upstream path source for the timer's `DirIsEmpty` check after helper `0x00403320`; it remains distinct from the enumeration output buffer `+0x54`. The helper `0x00403320` is the next semantic target.
