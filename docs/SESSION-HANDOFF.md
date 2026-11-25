@@ -1418,3 +1418,6 @@ Do not implement guessed `signData` joining or claim end-to-end Almas registrati
 - Expanded next-pass workflow targets with `Zanprinter.GetPrinterName` (`0x0047CAF0`), install/configuration routines (`0x0047CC6C`, `0x0047CC94`, `0x0047D054`), `SetPrinterForTiffout` (`0x0047D238`), `CheckPrinterPaused` (`0x0047D448`), plus scanner error/load/destroy/crop helpers. Commit: `0c9b8152c6054cf81a9524d0d2a1f7f14a55ad12`.
 - The new run `45563007730` on that commit is active. At last poll, all three jobs had started; native was installing dependencies, Word was tracing the expanded targets, and image was installing Python analysis dependencies. No final result/artifacts were available at that poll.
 - The report commit is `edffc1d2c815e1c8f58ea47923042994d5f4af48`; current branch head may advance as further documentation is committed.
+
+- Follow-up notation cleanup in `docs/WORD-ACTIVE-PRINTER-AND-SCANNER-STATE-RECOVERY.md` committed as `d7f7226f01f9b3945f041733aca37d307c238a97`.
+- Latest run `45563007730`: native regression is complete/success. Word and image jobs are still running their expanded trace batches; their trace steps have not yet completed, so no artifacts or claims from the new Zanprinter targets are accepted yet.
