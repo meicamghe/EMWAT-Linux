@@ -117,7 +117,7 @@ class DocumentCoordinatorTests(unittest.TestCase):
                 # while closing or exporting. They must not mutate a terminal session.
                 self.on_modified()
                 self.on_saved()
-                return self.output
+                return self.approved_output
 
         office = LateCallbackOffice()
         result = DocumentCoordinator(office).run(
@@ -139,7 +139,7 @@ class DocumentCoordinatorTests(unittest.TestCase):
             session_id="local-session-vetoed-close", request=sample_request()
         )
         self.assertEqual(result.session.state, DocumentState.RETURNED)
-        self.assertEqual(result.payload, b"final-document")
+        self.assertEqual(result.payload, b"initial-approved-document")
         self.assertEqual(result.session.revision, 1)
         self.assertIsNone(result.session.saved_revision)
         self.assertEqual(
