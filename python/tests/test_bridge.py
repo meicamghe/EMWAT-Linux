@@ -60,7 +60,7 @@ class BridgeHTTPServerTests(unittest.TestCase):
             try:
                 connection.request(
                     "POST",
-                    "/?invoke=active",
+                    "/?invoke=54320",
                     body=b"request",
                     headers={
                         "Origin": "https://office.example",
@@ -280,7 +280,7 @@ class BridgeHTTPServerTests(unittest.TestCase):
         invalid_paths = (
             "/",
             "/?invoke=",
-            "/?invoke=active",
+            "/?invoke=54320",
             "/?invoke=12x",
             "/?invoke=１２３",
             "/?invoke=1&invoke=2",
@@ -436,7 +436,7 @@ class BridgeHTTPServerTests(unittest.TestCase):
                 )
                 status, body, _ = self.request(
                     "POST",
-                    "/?invoke=invalid-status",
+                    "/?invoke=54321",
                     b"x",
                     {"Origin": "https://office.example"},
                 )
@@ -456,7 +456,7 @@ class BridgeHTTPServerTests(unittest.TestCase):
         self.thread.start()
         self.host, self.port = self.server.address
         status, body, _ = self.request(
-            "POST", "/?invoke=test", b"x", {"Origin": "https://office.example"}
+            "POST", "/?invoke=54322", b"x", {"Origin": "https://office.example"}
         )
         self.assertEqual(status, 500)
         self.assertEqual(body, b"internal_bridge_error")
@@ -505,7 +505,7 @@ class BridgeHTTPServerTests(unittest.TestCase):
         self.thread.start()
         self.host, self.port = self.server.address
         status, body, _ = self.request(
-            "POST", "/?invoke=test", b"x", {"Origin": "https://office.example"}
+            "POST", "/?invoke=54322", b"x", {"Origin": "https://office.example"}
         )
         self.assertEqual(status, 500)
         self.assertEqual(body, b"internal_bridge_error")
