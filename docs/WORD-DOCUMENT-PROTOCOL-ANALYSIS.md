@@ -1548,3 +1548,8 @@ The wait state at viewer `+0x58` therefore stores the final directory-enumeratio
 Run 38 artifact `15011890875` narrows the input source: `OnTmrAutoSave` copies a Sender-derived string into `TWordViwer+0xA0` at `0x004B8AE2` through helper `0x00401240`, then reads it at `0x004B9360`, normalizes it with `FixDirectionInFarsiNumericMode` (`0x004563A8`), and checks it with `DirIsEmpty` (`0x004565DC`). The call's separate `ECX` argument `0x004BA84C` is the UTF-16 label `Gamelectronics EMWAT`. The `OnDocumentBeforeSave` callback `0x004CD54C` passes the same literal at `0x004CD928` as both string arguments to `PrintWithGamPrintOptions`.
 
 This establishes the immediate source of the timer's input string, but not its semantic identity (for example, component name, output directory, or configuration key). Helpers `0x00403520` and `0x00403430` are the next targets.
+
+
+## 2026-11-25 correction — Saved accessor wrapper names are reversed
+
+The TD32 wrapper `TWordDocument.Set_Saved` at `0x0042BD94` calls COM slot `+0xD8` with an output WordBool and returns that value; it is the actual `get_Saved` getter. The TD32 wrapper `TWordDocument.Get_Saved` at `0x0042BD34` passes an input WordBool to slot `+0xD4` and returns void; it is the actual `put_Saved` setter. Therefore callback `0x004CD154` reads `Document.Saved` through `+0xD8`; it does not write `Saved=False`.
