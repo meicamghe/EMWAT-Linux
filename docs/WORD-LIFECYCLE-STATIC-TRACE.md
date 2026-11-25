@@ -206,7 +206,7 @@ Source: Word response/controller workflow run `43872534265`, artifact `142288510
 - `OnTmrAutoSave` installs `OnControlerNotify` as the `TTimer.OnTimer` callback on the timer stored at viewer offset `+0x7C`; the timer interval at viewer offset `+0x88` is clamped to at least 10,000 ms and the timer is enabled.
 - `OnControlerNotify` is therefore a periodic local content/archive callback, not the Word `BeforeClose` event. It reads Word Content through slot `+0xDC` and creates .easd/.easz local archive paths. It is not currently proven to submit the final Almas registration.
 - `TEDPController.Notify` at `0x004D2EC8` is a separate print-handler controller callback; it invokes `TEmwatDocPrintHandler.GetDocFieldName` and must not be conflated with `TWordViwer.OnControlerNotify`.
-- The response appears approximately 54.558 seconds after the request body completes. The static wait/release chain is now mapped: `LoadDocument` calls `OnTmrAutoSave` synchronously at `0x004B7A58`; `OnTmrAutoSave` repeats a `Sleep(5)` + `ProcessMessages` loop while viewer `+0x58` is nonzero; the callback at `0x004CD154` clears that field after Word `Document.Close` at `0x004CD31C`; then `LoadDocument` writes the HTTP response. The 200-iteration cycle is a repeating maintenance interval, not a one-second total timeout. The numeric COM DISPID and the semantic type of the value returned by helper `0x004565DC` remain under investigation.
+- The response appears approximately 54.558 seconds after the request body completes. The static wait/release chain is now mapped: `LoadDocument` calls `OnTmrAutoSave` synchronously at `0x004B7A58`; `OnTmrAutoSave` repeats a `Sleep(5)` + `ProcessMessages` loop while viewer `+0x58` is nonzero; the callback at `0x004CD154` clears that field after Word `Document.Close` at `0x004CD31C`; then `LoadDocument` writes the HTTP response. The 200-iteration cycle is a repeating maintenance interval, not a one-second total timeout. The embedded typelib's raw DISPID record is not yet parsed, but the Word interop cross-check identifies `DocumentBeforeClose` as DISPID `0x00000006`; the semantic convention of `DirIsEmpty` remains under investigation.
 
 ### Event identity caution — 2026-11-16
 
@@ -266,7 +266,7 @@ The other observed assignments crosswalk as follows:
 - `+0x90` / `OnDocumentBeforeSave` → `0x004CD54C` (TD32 label `WordAppNewDocument`; misleading).
 - `+0x98` / `OnNewDocument` → `0x004CD9C0` (TD32 label `WordAppWindowActivate`).
 
-This identifies the Delphi wrapper event property, not the numeric COM DISPID. The exact DISPID and event-interface IID remain open. Earlier run-25/26 claims that `0x004CD154` was a registered BeforeSave event are superseded.
+This identifies the Delphi wrapper event property. The TWordApplication server-data record at `0x00627B74` supplies event-source IID `00020A00-0000-0000-C000-000000000046` (`ApplicationEvents3`); Word interop metadata assigns `DocumentBeforeClose` DISPID `0x00000006`. The exact embedded typelib member record has not been decoded directly. Earlier run-25/26 claims that `0x004CD154` was a registered BeforeSave event are superseded.
 
 ### First nonzero write to viewer +0x58
 
@@ -280,3 +280,8 @@ The full `TWordViwer` field scan found one nonzero write besides the close-time 
 This locates the first known writer and ties it to the synchronous wait/release path. The helper `0x004565DC` is TD32-named `Emwatutils.DirIsEmpty`; its body uses `FindFirst`/`FindNext`, returns the final enumeration status in EAX, and writes a filename-like UnicodeString through the out parameter. Thus `+0x58` holds a directory-enumeration status/empty indicator, not a heap-object pointer. The exact boolean convention and path/filter remain open. The same `PrintWithGamPrintOptions` method is also called at `0x004CD6EC` from callback `0x004CD54C`, which RTTI maps to `OnDocumentBeforeSave` field `+0x90`; the status can therefore be refreshed on the Save event as well as during `OnTmrAutoSave`.
 
 The current branch event-sink workflow has traced `PrintWithGamPrintOptions` and `DirIsEmpty`. A follow-up trace of path helper `0x004563A8` is still pending.
+
+
+### Event-source metadata cross-check
+
+The TWordApplication server-data block at `0x00627B74` contains Word.Application CLSID `000209FF-0000-0000-C000-000000000046`, default interface IID `00020970-0000-0000-C000-000000000046`, and event-source IID `00020A00-0000-0000-C000-000000000046` (ApplicationEvents3). The Word PIA exposes `ApplicationEvents3.DocumentBeforeClose`; Word interop event definitions corroborate DISPID `0x00000006`. The BPL's embedded member metadata has not yet been independently decoded for the numeric ID.
