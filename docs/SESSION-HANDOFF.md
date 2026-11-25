@@ -1323,3 +1323,15 @@ Do not implement guessed `signData` joining or claim end-to-end Almas registrati
 - Corrected the Python test install command to install the project from `./python` and `pytest` explicitly; the project does not declare a `test` extra.
 - Commits: `bc25c106ec835d61df23a084cb03ccaaa2c0512c` (workflow), `b49f0b3eabbc3650afe4e717a59f203ef7747bbb` (dependency correction).
 - Workflow execution and test outcomes are pending/unverified at this checkpoint. Do not report success until the run and all three jobs are inspected.
+
+
+## 2026-11-25 — parallel RE lanes: first verified batch
+
+- Added `.github/workflows/emwat-parallel-reverse-engineering.yml` with three independent jobs: Word print COM/callback traces; scanner/image VMT, symbol and procedure traces; native C++ and Python regression suites.
+- Successful workflow run `45558987223` on commit `b49f0b3eabbc3650afe4e717a59f203ef7747bbb`: all 3 jobs passed. Native image core: 4/4 CTest tests passed. Python bridge: 317 passed, 9 skipped, 336 subtests passed.
+- The first workflow attempt `45558964591` failed only because the Python package has no `test` extra and pytest was not installed. Corrected to `pip install -e ./python pytest`; the corrected run passed. Do not count the failed first attempt as a product regression.
+- Expanded image procedure/caller tracing in the workflow. Run `45559122428` completed successfully with all 3 jobs passed, including the additional scanner, TIFF, crop, rotate, page and ImageEn traces.
+- Added `docs/IMAGE-SCANNER-EDITOR-CALLGRAPH-INVENTORY.md` with class/method inventory, multipage page iteration, SavePage/SaveToFile/ScanToFile path observations, image-editor operations, and the explicit unverified VMT boundary.
+- Corrected `docs/WORD-PRINT-DISPATCH-AND-WORKER-ANALYSIS.md`: `0x004677B8` is `TETracer.LogException`, and `0x00467788` is `TETracer.LogDebugF`. They are not a worker callback dispatcher. The controller/thread ownership relation remains open.
+- Latest recorded commits for this batch: `c3f0ffdb491c5904ac4c8cc4b804aacc35316a4e` (print-analysis correction), `035855358083ed31b248c834b60198cd62742444` (image call-graph inventory), `5614bb08a57d8fa9be6254215a0e617f26b4c1d8` (expanded body-level image traces).
+- No physical scanner, TIFF hardware capture, Wine prefix, or physical printer was exercised. No VMT candidate is treated as proven. The exact Word COM `+0x3F0` member and its fifteen Variant arguments remain unresolved.
