@@ -1517,7 +1517,7 @@ The previous run-25/26 interpretation that `0x004CD154` was registered as Word B
 - `+0x88` is `OnDocumentBeforePrint`, `+0x90` is `OnDocumentBeforeSave`, and `+0x98` is `OnNewDocument`. The pointers assigned at those offsets likewise have TD32 labels that do not match the wrapper event-property names.
 - This resolves the event property name, but not the numeric COM DISPID or event-source IID.
 
-The field scan found the first known write to viewer `+0x58` inside `PrintWithGamPrintOptions` at `0x004C5E44`. Both timer callsite `0x004B937C` and BeforeSave callsite `0x004CD6EC` are confirmed; the timer supplies the transformed `+0xA0` document path. The close callback clears `+0x58` at `0x004CD31C`.
+The field scan found the first known write to viewer `+0x58` inside `PrintWithGamPrintOptions` at `0x004C5E44`. Both timer callsite `0x004B937C` and BeforeSave callsite `0x004CD6EC` are confirmed; the timer supplies the filename extracted from the `+0xA0` document path. The close callback clears `+0x58` at `0x004CD31C`.
 
 Use this correction as the current authority wherever older sections say the callback is a registered BeforeSave event. The separate TD32-named `WordAppDocumentBeforeClose` at `0x004CCBBC` remains a different routine with no established role in the main event registration.
 
@@ -1579,3 +1579,8 @@ The fresh bounded disassembly of `0x004B9300–0x004B9400` confirms:
 ```
 
 Therefore `+0xA0` is indeed the upstream path source for the timer's `DirIsEmpty` check after helper `0x00403320`; it remains distinct from the enumeration output buffer `+0x54`. The helper `0x00403320` is the next semantic target.
+
+
+### Run 44 — ExtractFileName identified
+
+The import table resolves `0x00403320` through IAT `0x0062F288` to `rtl230.bpl!System.SysUtils.ExtractFileName`. The timer therefore passes only the extracted filename from the document path stored in `+0xA0` to `PrintWithGamPrintOptions`; the latter normalizes that filename before calling `DirIsEmpty`. This narrows the remaining question to how `DirIsEmpty` interprets that filename and which search mask it constructs.
