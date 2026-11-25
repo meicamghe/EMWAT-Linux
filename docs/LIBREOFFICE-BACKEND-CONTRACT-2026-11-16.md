@@ -222,3 +222,15 @@ Do not describe the current prototype as filling the letter template. The next i
 ## 10. Writer custom-property inventory boundary
 
 `WriterDocumentCatalog` exposes custom-property names only; it does not currently attach the single/twin descriptor classifier. A pure helper, `build_word_custom_property_field_maps()`, can classify an ordered sequence of identifiers using the native first-dagger split rule, but the binary's actual descriptor-map population and subsequent `TDictionary.Remove` consumption are still being traced. Keeping this classifier separate avoids incorrectly treating Writer custom-property names as the source of the native XML descriptor maps. No field mutation, twin-value splitting, or image/signature application is implied.
+
+
+## 2026-11-25 — approved snapshot and close decision contract
+
+The Linux adapter's close behavior is now specified independently from unresolved Windows COM event identity:
+
+- Save: return the latest DOC snapshot only after a successful office-engine Save-complete event and successful snapshot write.
+- Don't Save: close normally and return the previously approved DOC snapshot; before the first Save, the approved baseline is the original input converted to DOC.
+- Cancel: do not close/finalize or answer the pending invoke; keep the same document session open until another close decision.
+- Periodic recovery snapshots remain recovery-only and must not be returned as final document bytes.
+
+Implementation details and verification are in `docs/WORD-CLOSE-RESPONSE-CONTRACT-2026-11-25.md`. The adapter's automatic field/image mapping remains incomplete; this close contract does not imply that the 180 EMWAT fields or signData pipeline are implemented.
