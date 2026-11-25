@@ -1541,3 +1541,10 @@ The next unresolved helper is `0x004563A8`, which prepares the path passed to `D
 Run 34 artifact `15010103394` identifies `0x004563A8` as `Emwatutils.FixDirectionInFarsiNumericMode`. It normalizes a UnicodeString under Farsi/numeric-direction flags and writes the normalized string to its output parameter. `PrintWithGamPrintOptions` calls it before `DirIsEmpty` (`0x004565DC`), so the directory enumeration receives a normalized path. The original path source and the search mask/filter are still unknown.
 
 The wait state at viewer `+0x58` therefore stores the final directory-enumeration status returned by `DirIsEmpty`, not a pointer. The function returns zero when it finds an eligible entry and a nonzero FindFirst/FindNext status when enumeration ends/fails; the wait loop checks nonzero, and the registered BeforeClose callback clears it.
+
+
+## 2026-11-25 — source of the DirIsEmpty input
+
+Run 38 artifact `15011890875` narrows the input source: `OnTmrAutoSave` copies a Sender-derived string into `TWordViwer+0xA0` at `0x004B8AE2` through helper `0x00401240`, then reads it at `0x004B9360`, normalizes it with `FixDirectionInFarsiNumericMode` (`0x004563A8`), and checks it with `DirIsEmpty` (`0x004565DC`). The call's separate `ECX` argument `0x004BA84C` is the UTF-16 label `Gamelectronics EMWAT`. The `OnDocumentBeforeSave` callback `0x004CD54C` passes the same literal at `0x004CD928` as both string arguments to `PrintWithGamPrintOptions`.
+
+This establishes the immediate source of the timer's input string, but not its semantic identity (for example, component name, output directory, or configuration key). Helpers `0x00403520` and `0x00403430` are the next targets.
