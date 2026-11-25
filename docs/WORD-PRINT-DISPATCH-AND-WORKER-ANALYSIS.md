@@ -82,7 +82,7 @@ The follow-up wrapper trace resolves the member and overload:
 - Its body prepares the Variant arguments, obtains the document interface, and calls `[vtable + 0x3F0]` at `0x00436234`.
 - The wrapper ends with `ret 0x3c`, consistent with fifteen stack-passed arguments plus two register-passed arguments in the Delphi register calling convention; total = seventeen.
 - The adjacent overloads provide a useful cross-check: `0x00436030` is the 15-Variant overload (`ret 0x34`), and `0x004360F0` is the 16-Variant overload (`ret 0x38`). All three dispatch through the same `+0x3F0` slot.
-- The caller setup in `BGPrintWithGamPrintOptions` at `0x004C6F90–0x004C70B6` prepares seventeen Variant argument records and pushes the document interface pointer separately before calling the slot. This matches the 17-Variant wrapper.
+- The caller setup in `BGPrintWithGamPrintOptions` at `0x004C6F90–0x004C70B6` prepares and pushes eighteen distinct local Variant-record addresses, then pushes the document interface pointer separately. The eighteen locals comprise fifteen records initialized in this block through `0x00403550` and three earlier Variant records at `[ebp-0x58]`, `[ebp-0x88]`, and `[ebp-0x78]` that were prepared earlier in the procedure. This does **not** match the 17-Variant wrapper's 15 stack + 2 register parameter shape on a simple count. The exact dispatch ABI/hidden-argument interpretation is unresolved; the prior statement that the caller matched the 17-Variant wrapper is withdrawn.
 
 **Conclusion:** the call at `0x004C70B6` is `TWordDocument.PrintOut` using the 17-argument Variant overload. The subsequent call at `0x004C70CA` remains a separate `TWordApplication.PrintOutOld` invocation through its own wrapper/interface slot.
 
@@ -91,3 +91,11 @@ The semantic names and concrete values/types of the seventeen arguments have **n
 ## 7. Correction from the expanded TD32 symbol/caller pass (2026-11-25)
 
 The expanded trace resolved a prior ambiguity: `0x004677B8` is `TETracer.LogException`, and `0x00467788` is `TETracer.LogDebugF`. `TEmwatDocPrintHandler.Execute` calls `LogException` in its exception path. Therefore, the earlier interpretation of `0x004677B8` as a callback dispatcher is withdrawn. The constructor's method-record-shaped storage at `+0x18/+0x1C` and controller notification record still warrant investigation, but they must not be attributed to that logging helper. The new direct-caller scan found no direct CALL xrefs to `TEDPController.SetPrintThread`; this does not rule out VMT/indirect calls.
+
+## 8. Caller-arity discrepancy discovered in the expanded trace (2026-11-25)
+
+- The generated wrapper TWordDocument.PrintOut at 0x004361B0 remains independently proven to accept 17 OleVariant parameters: it receives two through Delphi register arguments (EDX/ECX) and fifteen from stack slots [ebp+8] through [ebp+0x40], then dispatches through slot +0x3F0.
+- The BGPrintWithGamPrintOptions callsite, however, emits eighteen local Variant-record addresses in this order: -0x2cc, -0x2dc, -0x2ec, -0x2fc, -0x30c, -0x31c, -0x32c, -0x33c, -0x34c, -0x88, -0x58, -0x35c, -0x36c, -0x37c, -0x38c, -0x78, -0x39c, -0x3ac (frame offsets relative to EBP). It then separately pushes the document interface pointer at 0x004C70B3 before the indirect slot call.
+- The first fifteen listed records are initialized immediately before their addresses are pushed using helper 0x00403550. The three pre-existing records are prepared earlier: -0x58 via 0x004034E8 from an application/document property path, -0x88 via Variant initialization and copy helper 0x00403520, and -0x78 via 0x004034E8 with an integer-like value. Their exact VARTYPEs and semantic values still require helper and source-property tracing.
+- Do not report the 17-parameter wrapper as the proven signature of this specific caller until the eighteen-address discrepancy is resolved. The next workflow pass traces the Variant helpers and interface-construction helper 0x0042ABA0; the COM call convention and any hidden/result argument must be established from that evidence, not guessed.
+
