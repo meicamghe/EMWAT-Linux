@@ -89,7 +89,7 @@ The exact COM event interface slot-to-name mapping is supported here by the Delp
 
 ### BeforeSave callback behavior (procedure-level observations)
 
-The callback at `0x004CD154` is registered as `TWordApplication.OnDocumentBeforeClose` (field `+0x80`); its TD32 symbol `WordAppDocumentBeforeSave` is misleading. It is not an empty notification hook:
+The callback at `0x004CD154` is registered as `TWordApplication.OnDocumentBeforeClose` (field `+0x80`); its TD32 symbol `WordAppDocumentBeforeSave` is misleading. It reads `Document.Saved` through slot `+0xD8` (the TD32 wrapper label `Set_Saved` is reversed). It is not an empty notification hook:
 
 - It first checks that the Word document passed by COM matches the viewer's tracked document pointer at `[TWordViwer + 0x48]`; unrelated documents are ignored.
 - It checks viewer state byte `+0x5E`. When that state is false, it writes `0xFFFF` to the callback's `WordBool`-sized argument at the supplied pointer and exits. In the Word BeforeSave event signature, this is consistent with setting the event's Cancel flag.
@@ -426,3 +426,8 @@ The same artifact identifies TWordDocument.Save at 0x004309A4, which dispatches 
 ## 2026-11-25 RTTI event-property correction
 
 The callback pointer `0x004CD154` is stored at `TWordApplication` field `+0x80`, which class RTTI identifies as `OnDocumentBeforeClose`. The TD32 symbol `WordAppDocumentBeforeSave` is not the event identity. The actual `OnDocumentBeforeSave` event property is field `+0x90` and receives callback `0x004CD54C` (TD32 label `WordAppNewDocument`). Use the RTTI crosswalk in `WORD-LIFECYCLE-STATIC-TRACE.md` for current event naming.
+
+
+## 2026-11-25 Saved accessor correction
+
+The wrapper procedures show reversed TD32 labels: `Set_Saved` at `0x0042BD94` is the actual getter through slot `+0xD8`, and `Get_Saved` at `0x0042BD34` is the actual setter through slot `+0xD4`. The BeforeClose callback reads the Saved flag; it does not set it false.
