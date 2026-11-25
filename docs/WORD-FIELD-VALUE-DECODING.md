@@ -53,4 +53,4 @@ When the case-sensitive `DOCPROPERTY` keyword is present, the routine extracts t
 
 Python implements this as `extract_docproperty_identifier`, including the observed Delphi one-based Copy offset and fallback behavior. Python CI run `43814423443` passed **94 tests** (one optional UNO-only test skipped).
 
-The helper implementations at `0x00455314`, `0x00455108`, and `0x004735D0` are still being traced. In particular, the exact treatment of `+` in URL-encoded values remains unverified.
+The URL helper at `0x00455314` is statically traced for ordinary characters, `+`, and `%HH`; `+` maps to a space. Malformed/truncated percent escapes still require a controlled Wine fixture. For Base64, the decoder at `0x00473700` and its output wrapper are statically traced, but the preceding `0x00455108` conversion and its whitespace/Unicode behavior remain unresolved.
