@@ -191,7 +191,7 @@ Evidence: response/controller workflow run `43872534265`, artifact `14228851062`
 
 ### Long-lived request release chain
 
-`LoadDocument` calls `OnTmrAutoSave` synchronously at `0x004B7A58`. The latter waits while viewer field `+0x58` is nonzero, pumping messages and sleeping 5 ms per iteration. Every 200 iterations it runs a one-second maintenance/check cycle and continues. The registered close/save-decision callback at `0x004CD154` calls Word `Document.Close` and then clears viewer `+0x58` at `0x004CD31C`; this releases the wait. `LoadDocument` then writes the successful `response-word` HTTP body and sets `bResultSet`. This explains the observed ~54.558-second request-to-response delay. The field's initial nonzero setter and the callback's formal COM event DISPID remain under investigation.
+`LoadDocument` calls `OnTmrAutoSave` synchronously at `0x004B7A58`. The latter waits while viewer field `+0x58` is nonzero, pumping messages and sleeping 5 ms per iteration. Every 200 iterations it runs a one-second maintenance/check cycle and continues. The registered close/save-decision callback at `0x004CD154` calls Word `Document.Close` and then clears viewer `+0x58` at `0x004CD31C`; this releases the wait. `LoadDocument` then writes the successful `response-word` HTTP body and sets `bResultSet`. This explains the observed ~54.558-second request-to-response delay. The first known writer is `PrintWithGamPrintOptions` (`0x004C5E44`), which stores the `DirIsEmpty` status returned by `0x004565DC`; helper `0x004563A8` and the path/filter remain to be traced. The numeric COM DISPID/event-source IID remain under investigation.
 
 ## Service class-name resolution — 2026-11-16
 
@@ -205,7 +205,7 @@ The new `emwat_linux.emwat_field_catalog` helper recognizes the seven repeated s
 
 ### 2026-11-25 event-identity and return-snapshot clarification
 
-Use “registered close/save-decision callback at `0x004CD154`” rather than assigning a formal COM event name. TD32 labels the procedure `WordAppDocumentBeforeSave`, but its diagnostic and Close call path conflict with a straightforward BeforeSave interpretation; the event-record slot's formal COM DISPID remains unresolved.
+Use “registered `TWordApplication.OnDocumentBeforeClose` callback at `0x004CD154`”. RTTI maps field `+0x80` to that event property despite the TD32 label `WordAppDocumentBeforeSave`; the numeric COM DISPID remains unresolved.
 
 The Linux bridge returns the approved snapshot according to the Save / Don't Save / Cancel contract in `docs/WORD-CLOSE-RESPONSE-CONTRACT-2026-11-25.md`. The periodic `.easz` archive and recovery snapshots are separate from that final response selection.
 
