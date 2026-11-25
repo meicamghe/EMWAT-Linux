@@ -1306,3 +1306,11 @@ Do not implement guessed `signData` joining or claim end-to-end Almas registrati
 - The inventory is captured automatically alongside the existing metadata-only Word/Writer evidence from a single UNO catalog snapshot. It neither reads property values nor modifies the document.
 - Added unit coverage and a live UNO integration assertion that the report preserves the unassociated-field boundary.
 - CI for the current branch head is triggered by the latest commits; do not claim it passed until all four workflows complete on the same head.
+
+
+## 2026-11-25 — Word print dispatch and worker ownership follow-up
+
+- Inspected the successful printer-pipeline artifact `45345628400` and print-handler/controller artifact `45347505938` from the existing branch; no local Wine prefix or printer configuration was touched.
+- Added `docs/WORD-PRINT-DISPATCH-AND-WORKER-ANALYSIS.md`. It separates the explicit `BGPrintWithGamPrintOptions` sequence (document vtable `+0x3F0`, then application `PrintOutOld` at `+0x1E4`) from the timer-driven document `PrintOutOld` path (`+0x2BC`). It also records the `TEmwatDocPrintHandler.Execute` callback field and cleanup lifecycle, while keeping unresolved method ownership explicit.
+- Commit: `e0d3795cd8a1cbbd1b6d498fee3e70d3471b8804`.
+- Next: resolve the document `+0x3F0` member and fifteen OleVariant arguments from exact wrapper/type-library metadata; trace helper `0x004677B8` and indirect controller callers; then correlate `ExtractFileNameEX` with the GAM TIFF artifact. No end-to-end print claim is made.
