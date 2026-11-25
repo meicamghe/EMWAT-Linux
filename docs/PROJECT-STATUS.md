@@ -1805,7 +1805,7 @@ The BPL export/API analysis resolves the earlier naming ambiguity. The public TE
 ### رفع ابهام چرخهٔ بستن Word — 2026-11-16
 
 - مسیر اصلی اکنون مشخص است: callback ثبت‌شده `WordAppDocumentBeforeSave` در `0x004CD154` است، نه `WordAppDocumentBeforeClose`.
-- callback ابتدا `Saved=False` را از COM slot `+0xD8` تنظیم می‌کند، سپس prompt ثبت تغییرات را نشان می‌دهد.
+- **اصلاح جدید:** callback مقدار `Document.Saved` را از COM slot `+0xD8` می‌خواند؛ TD32 نام wrapperها معکوس است و callback مقدار Saved را False نمی‌کند.
 - Yes → آرگومان اول `_Document.Close` برابر `-1`؛ No → برابر `0`؛ Cancel → فیلد Cancel رویداد برابر `0xFFFF` و سند باز می‌ماند.
 - برای Yes/No از overload سه‌آرگومانی `TWordDocument.Close` و COM slot `+0x29C` استفاده می‌شود؛ overloadهای 1/2/3 آرگومان همگی به همین slot ختم می‌شوند.
 - این یافته رفتار مشاهده‌شدهٔ کاربر را توضیح می‌دهد: بستن Word بدون فشردن Save هم می‌تواند ثبت را آغاز کند. اما POST/response نهایی Almas هنوز اثبات نشده است.
