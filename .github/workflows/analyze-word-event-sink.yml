@@ -86,6 +86,8 @@ jobs:
           python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x004B9300 0x004B9400 event-sink-analysis/callbacks/OnTmrAutoSave-PrintOptions-callsite.md
           python tools/inspect_pe_va.py analysis-input/EmwatMethods.bpl1 0x0062F1FC --before 0x20 --after 0x40 > event-sink-analysis/dispatch-helpers/IAT-slot-0062F1FC.md
           objdump -p analysis-input/EmwatMethods.bpl1 > event-sink-analysis/dispatch-helpers/PE-import-table.txt
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x00403320 event-sink-analysis/dispatch-helpers/target-00403320.md 1400 ret
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x00403320 event-sink-analysis/state-fields/callers-00403320.md
           python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004565DC event-sink-analysis/dispatch-helpers/target-004565DC.md 1400 ret
           python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004563A8 event-sink-analysis/dispatch-helpers/target-004563A8.md 1400 ret
           python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x00403520 event-sink-analysis/dispatch-helpers/target-00403520.md 1400 ret
