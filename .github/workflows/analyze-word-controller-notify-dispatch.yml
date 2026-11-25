@@ -40,6 +40,10 @@ jobs:
           done
           python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x00456DFC controller-notify-dispatch/archive-helper-00456DFC.md 2200 ret
           python tools/inspect_pe_va.py analysis-input/EmwatMethods.bpl1 0x0062F810 --before 0x40 --after 0x180 > controller-notify-dispatch/archive-class-vmt-0062F810.md
+          python tools.inspect_delphi_vmt_address.py analysis-input/EmwatMethods.bpl1 0x0062F810
+          cp bpl-analysis/EmwatMethods-vmt-address.md controller-notify-dispatch/archive-class-vmt-name.md
+          python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x00456DFC controller-notify-dispatch/archive-helper-00456DFC-td32.md
+          python tools/decode_pe_strings.py analysis-input/EmwatMethods.bpl1 0x004BB754 0x004BB76C > controller-notify-dispatch/archive-path-constants.md
           python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 0x004BB3B0 controller-notify-dispatch/OnControlerNotify-pointer-refs.md
           python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004BB3B0 controller-notify-dispatch/OnControlerNotify-callers.md
           python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004B999A controller-notify-dispatch/registration-callers.md
