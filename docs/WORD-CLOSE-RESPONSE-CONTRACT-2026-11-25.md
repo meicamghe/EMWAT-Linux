@@ -39,7 +39,7 @@ The reviewed `main` implementation had three mismatches with this contract:
 
 1. `_DocumentCloseListener.queryClosing` wrote the live Writer document to `final.doc` for every close attempt. That could capture unsaved edits and did not distinguish Save from Don't Save.
 2. `DocumentCoordinator` returned the close-time file regardless of whether the office engine had emitted a Save-complete event.
-3. `DocumentSession.cancel()` moved the session to terminal `CANCELLED`, while a user pressing Cancel must leave the active document session open.
+3. `DocumentSession.cancel()` was terminal and was being conflated with the office close-dialog Cancel. The reconciliation adds `cancel_close_attempt()` for the retryable UI decision while retaining `cancel()` for explicit terminal application cancellation.
 
 The Linux adapter is therefore being reconciled to maintain a separate approved DOC snapshot: initialize it from the opened input, replace it only after a successful Save-complete event, and export only that snapshot after actual close. A cancelled close attempt does not signal `notifyClosed`, so the waiting request remains pending. The separate periodic recovery store remains unchanged.
 
