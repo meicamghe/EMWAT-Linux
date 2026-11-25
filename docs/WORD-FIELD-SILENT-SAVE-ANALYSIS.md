@@ -74,7 +74,7 @@ TD32 symbols in the same artifact resolve several callback addresses written by 
 
 | Address | TD32 method identity | Meaning |
 |---|---|---|
-| `0x004CD154` | `WordAppDocumentBeforeSave` | Word document BeforeSave callback |
+| `0x004CD154` | TD32 `WordAppDocumentBeforeSave`; RTTI event property `OnDocumentBeforeClose` | Word Application BeforeClose callback |
 | `0x004CD54C` | `WordAppNewDocument` | NewDocument callback |
 | `0x004CD9C0` | `WordAppWindowActivate` | WindowActivate callback |
 | `0x004CE030` | `WordAppDocumentBeforePrintBGPrint` | BeforePrint callback path with background-print handling |
@@ -89,7 +89,7 @@ The exact COM event interface slot-to-name mapping is supported here by the Delp
 
 ### BeforeSave callback behavior (procedure-level observations)
 
-The callback at `0x004CD154` is not an empty notification hook:
+The callback at `0x004CD154` is registered as `TWordApplication.OnDocumentBeforeClose` (field `+0x80`); its TD32 symbol `WordAppDocumentBeforeSave` is misleading. It is not an empty notification hook:
 
 - It first checks that the Word document passed by COM matches the viewer's tracked document pointer at `[TWordViwer + 0x48]`; unrelated documents are ignored.
 - It checks viewer state byte `+0x5E`. When that state is false, it writes `0xFFFF` to the callback's `WordBool`-sized argument at the supplied pointer and exits. In the Word BeforeSave event signature, this is consistent with setting the event's Cancel flag.
@@ -401,7 +401,7 @@ A generated-wrapper cross-check changes how the BeforeSave callback's COM call m
 
 - TWordDocument.Get_Saved (0x0042BD34) dispatches through _Document slot +0xD4.
 - TWordDocument.Set_Saved (0x0042BD94) dispatches through _Document slot +0xD8.
-- WordAppDocumentBeforeSave (0x004CD154) calls slot +0xD8 at 0x004CD1F5.
+- The callback installed as OnDocumentBeforeClose (0x004CD154; TD32 label WordAppDocumentBeforeSave) calls slot +0xD8 at 0x004CD1F5.
 
 Therefore the call at 0x004CD1F5 is mapped to Set_Saved, not Get_Saved. Any earlier statement that this instruction reads Document.Saved is withdrawn. The callback still contains the Yes/No/Cancel prompt and the three-argument Close dispatch, but the value supplied to Set_Saved and the exact condition that selects the prompt require additional tracing.
 
@@ -421,3 +421,8 @@ The expanded close/controller workflow (run 43814607589, artifact 14202031457) p
 This is direct evidence that OnControlerNotify participates in EMWAT's local auto-save/archive workflow. It is **not** evidence that this method posts the final letter to Almas or constructs the response-word HTTP envelope. Keep local .easd/.easz recovery distinct from the captured EditWordDocument request/response round-trip.
 
 The same artifact identifies TWordDocument.Save at 0x004309A4, which dispatches through _Document slot +0x2B8. No direct bounded CALL xref was found; the method may be reached through an interface/VMT path. The close wrappers remain separate: no-argument Close uses +0x4D4 and the OleVariant overloads use +0x29C.
+
+
+## 2026-11-25 RTTI event-property correction
+
+The callback pointer `0x004CD154` is stored at `TWordApplication` field `+0x80`, which class RTTI identifies as `OnDocumentBeforeClose`. The TD32 symbol `WordAppDocumentBeforeSave` is not the event identity. The actual `OnDocumentBeforeSave` event property is field `+0x90` and receives callback `0x004CD54C` (TD32 label `WordAppNewDocument`). Use the RTTI crosswalk in `WORD-LIFECYCLE-STATIC-TRACE.md` for current event naming.
