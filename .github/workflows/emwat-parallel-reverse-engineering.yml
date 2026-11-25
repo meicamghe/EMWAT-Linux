@@ -92,6 +92,24 @@ jobs:
           status=0
           for pid in "${pids[@]}"; do wait "$pid" || status=1; done
           exit "$status"
+      - name: Resolve scanner and image file I/O helper boundaries
+        shell: bash
+        run: |
+          mkdir -p parallel-re/image-io
+          python tools/list_pe_imports.py analysis-input/EmwatMethods.bpl1 parallel-re/image-io/imports.md
+          targets=(004AFE78 004AFE90 004AFE98 004AFEA0 004AFEA8 004AFEB8 004AFEC0 004AFF18 00402684 004026A4 00402918 00402920)
+          pids=()
+          for target in "${targets[@]}"; do
+            (
+              set -e
+              python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x$target parallel-re/image-io/helper-$target.md 1800 ret
+              python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 0x$target parallel-re/image-io/helper-$target-pointers.md
+            ) &
+            pids+=("$!")
+          done
+          status=0
+          for pid in "${pids[@]}"; do wait "$pid" || status=1; done
+          exit "$status"
       - name: Inventory preserved image form resources without changing them
         run: |
           python - <<'PY'
