@@ -1520,3 +1520,17 @@ The previous run-25/26 interpretation that `0x004CD154` was registered as Word B
 The same run's full-class scan found the first nonzero write to viewer `+0x58`: `OnTmrAutoSave` calls `PrintWithGamPrintOptions` at `0x004B937C`, and that method writes the return from helper `0x004565DC` to `Self+0x58` at `0x004C5E44`. The close callback at `0x004CD154` clears it at `0x004CD31C`. The returned token's type/meaning remains unresolved pending a trace of `0x004565DC`.
 
 Use this correction as the current authority wherever older sections say the callback is a registered BeforeSave event. The separate TD32-named `WordAppDocumentBeforeClose` at `0x004CCBBC` remains a different routine with no established role in the main event registration.
+
+
+## 2026-11-25 — +0x58 writer semantic refinement
+
+The event-sink run-28 artifact `15009034578` resolves helper `0x004565DC` as TD32 `Emwatutils.DirIsEmpty`. Its body performs directory enumeration using `FindFirst`/`FindNext`, returns the final enumeration status in EAX, and writes a UnicodeString result through its output parameter. `TWordViwer.PrintWithGamPrintOptions` stores that return value in viewer `+0x58` at `0x004C5E44`; therefore the field is an enumeration-status/empty-indicator value, not an object pointer. The exact boolean convention and the path/filter passed into `DirIsEmpty` remain unresolved.
+
+The same `PrintWithGamPrintOptions` method has a second direct caller at `0x004CD6EC`, inside callback `0x004CD54C). RTTI maps callback field `+0x90` to `TWordApplication.OnDocumentBeforeSave`, although TD32 labels `0x004CD54C` as `WordAppNewDocument`. The current event crosswalk is therefore:
+
+- `+0x80` OnDocumentBeforeClose → `0x004CD154` (TD32 label BeforeSave).
+- `+0x88` OnDocumentBeforePrint → `0x004D00AC` / `0x004CE030`.
+- `+0x90` OnDocumentBeforeSave → `0x004CD54C` (TD32 label NewDocument).
+- `+0x98` OnNewDocument → `0x004CD9C0` (TD32 label WindowActivate).
+
+The next unresolved helper is `0x004563A8`, which prepares the path passed to `DirIsEmpty`.
