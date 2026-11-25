@@ -17,7 +17,7 @@ Current reviewed baseline: `main` HEAD `0f95be8577718e16b6c59afb1f43fe561dabe517
 
 ### Highest-priority reverse-engineering threads
 1. Event identity is cross-identified: `TWordApplication.OnDocumentBeforeClose`, event-source IID `00020A00-0000-0000-C000-000000000046` (`ApplicationEvents3`), and Word interop DISPID `0x00000006`. Only direct decoding of the embedded typelib member record remains optional confirmation.
-2. Keep the two strings separate: `+0xA0` is the timer/archive AddFiles source (copied with `UStrAsg` after `OleVarFromUStr`), while `+0x54` is the `DirIsEmpty` output string and `+0x58` its status. Resolve the original input passed to `PrintWithGamPrintOptions` and the IAT symbol behind `0x00403430` (`0x0062F1FC` currently contains unmapped address `0x00233D76`).
+2. Keep the two strings separate: `+0xA0` is the timer/archive AddFiles source (copied with `UStrAsg` after `OleVarFromUStr`), while `+0x54` is the `DirIsEmpty` output string and `+0x58` its status. Resolve the timer-side caller and its parameters for `PrintWithGamPrintOptions`. `0x00403430` is now resolved as `rtl230.bpl!System.SysUtils.StringReplace`; it transforms `Self+0x54` using EDX/ECX string arguments and writes the result to `Self+0x50`.
 3. Obtain a sanitized Response body/HAR for `invoke=29501`.
 4. Obtain a gap-free PCAP response and compare complete document bytes.
 5. Capture Save / Don't Save / Cancel separately and correlate each decision to the actual response payload.
@@ -1223,3 +1223,8 @@ Artifacts `15011890875` and run 39 show `+0xA0` is copied by `UStrAsg` after `Ol
 ### 2026-11-25 Saved accessor wrapper correction
 
 The TD32 wrapper names are reversed relative to behavior: `Get_Saved` at `0x0042BD34` invokes slot `+0xD4` with an input WordBool (actual setter); `Set_Saved` at `0x0042BD94` invokes slot `+0xD8` with an output WordBool and returns it (actual getter). The registered BeforeClose callback `0x004CD154` reads `Document.Saved` through `+0xD8`.
+
+
+### Run 40 — imported helper resolved
+
+The PE import table maps `0x0062F1FC` to `rtl230.bpl!System.SysUtils.StringReplace`. `PrintWithGamPrintOptions` applies this to the directory-enumeration output at `+0x54`, using its two UnicodeString parameters and the flags byte at `0x004C5F24`, then stores the result at `+0x50`. The BeforeSave call passes the same literal `Gamelectronics EMWAT` for both replacement parameters. Timer-side call parameters still require direct confirmation.
