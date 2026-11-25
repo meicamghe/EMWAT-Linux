@@ -76,6 +76,22 @@ jobs:
             TfrmSimpleImageEditor TfrmGScanPreview TfrmImageTools TGearImgProc \
             TImageProcessor TResultImage TMultiPageImage TSetOfMultiPageImages \
             TSetOfSinglePageImages TScanCommand > parallel-re/image-ui/image-scanner-symbols.md
+      - name: Trace scanner, multipage TIFF, and image-editor operations in parallel
+        shell: bash
+        run: |
+          targets=(0061D888 0061DC80 0061DEF4 0061E510 0061E548 0061E5C0 0061E5F0 0061E620 004F11E8 004F1A04 004F1D04 004EF138 004EF40C 004EF510 004EF714 004EF8C0 004EF9CC 004EEDB4 004F01F0 00508A90 0050A29C 0050A414 0050BBB8)
+          pids=()
+          for target in "${targets[@]}"; do
+            (
+              set -e
+              python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x$target parallel-re/image-ui/procedure-$target.md
+              python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x$target parallel-re/image-ui/callers-$target.md
+            ) &
+            pids+=("$!")
+          done
+          status=0
+          for pid in "${pids[@]}"; do wait "$pid" || status=1; done
+          exit "$status"
       - name: Inventory preserved image form resources without changing them
         run: |
           python - <<'PY'
