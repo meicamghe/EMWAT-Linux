@@ -13,7 +13,7 @@ Current reviewed baseline: `main` HEAD `0f95be8577718e16b6c59afb1f43fe561dabe517
 - Don't Save → return the last approved snapshot (initial input if no Save completed), not the current unsaved buffer.
 - Cancel → leave the session open and keep the same invoke request waiting for a later decision.
 - Recovery snapshots are for crash recovery only and must not become final response bytes.
-- Current main code had a mismatch: `queryClosing` snapshotted the live document and `export_final_document` returned it regardless of Save/Don't Save. The reconciliation branch changes the adapter to maintain an approved snapshot and changes session cancellation to preserve the open/dirty state. CI is pending; verify before claiming it works.
+- Current main code had a mismatch: `queryClosing` snapshotted the live document and `export_final_document` returned it regardless of Save/Don't Save. The reconciliation branch changes the adapter to maintain an approved snapshot and adds `cancel_close_attempt()` to preserve the open/dirty state while keeping explicit terminal cancellation separate. CI is pending; verify before claiming it works.
 
 ### Highest-priority reverse-engineering threads
 1. Map the formal COM event DISPID wired to event-record offset `+0x80`; retain neutral naming for `0x004CD154` until proven.
