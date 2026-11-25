@@ -17,7 +17,7 @@ Current reviewed baseline: `main` HEAD `0f95be8577718e16b6c59afb1f43fe561dabe517
 
 ### Highest-priority reverse-engineering threads
 1. Event identity is cross-identified: `TWordApplication.OnDocumentBeforeClose`, event-source IID `00020A00-0000-0000-C000-000000000046` (`ApplicationEvents3`), and Word interop DISPID `0x00000006`. Only direct decoding of the embedded typelib member record remains optional confirmation.
-2. Identify the original path source and search mask passed to `Emwatutils.DirIsEmpty` (`0x004565DC`); `0x004563A8` is resolved as Farsi numeric-direction string normalization. `+0x58` stores the directory-enumeration status.
+2. Resolve the meaning of the Sender-derived string copied to `TWordViwer+0xA0` before `DirIsEmpty` (`0x004565DC`). `0x004563A8` normalizes it; the timer also passes UTF-16 `Gamelectronics EMWAT`. Trace helpers `0x00403520` and `0x00403430` to distinguish a directory path from a configuration key.
 3. Obtain a sanitized Response body/HAR for `invoke=29501`.
 4. Obtain a gap-free PCAP response and compare complete document bytes.
 5. Capture Save / Don't Save / Cancel separately and correlate each decision to the actual response payload.
@@ -1213,3 +1213,8 @@ The TWordApplication server-data record at `0x00627B74` carries event-source IID
 ### 2026-11-25 path-helper result
 
 Run 34 artifact `15010103394` resolves `0x004563A8` as `Emwatutils.FixDirectionInFarsiNumericMode`. `PrintWithGamPrintOptions` normalizes its UnicodeString path through this helper, then calls `DirIsEmpty` (`0x004565DC`). The latter returns a FindFirst/FindNext enumeration status and writes a filename-like string. Viewer `+0x58` stores this status; its exact input path and search mask remain the next analysis target.
+
+
+### Run 38 — DirIsEmpty input source
+
+Artifact `15011890875` shows `OnTmrAutoSave` copies a Sender-derived string into viewer `+0xA0` at `0x004B8AE2`, then normalizes and checks it. The `ECX` literal `0x004BA84C` is `Gamelectronics EMWAT`; the BeforeSave callback passes the same string at `0x004CD928`. The original input's semantic meaning remains open; next trace `0x00403520` and `0x00403430`.
