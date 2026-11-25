@@ -2419,3 +2419,6 @@ Python bridge CI در run `44031548179` موفق شد: **111 تست موفق، 2
 Two DevTools screenshots now provide runtime evidence for the close-time local bridge transaction. The selected request is a POST to `127.0.0.1:1984/?invoke=29501`, returning HTTP 200. Request content type is `text/plain; charset=UTF-8`; response headers report 1,166,820 bytes and `text/html; charset=ISO-8859-1`, with connection close. The request referer includes the local `?init=84760_34426` endpoint. Full evidence boundaries and next actions are documented in [RUNTIME-CAPTURE-2026-11-25.md](RUNTIME-CAPTURE-2026-11-25.md).
 
 This narrows the critical unknown: capture and decode the POST body and response body, then correlate the Initiator stack with the parent-page `postMessage` and Word close sequence. The screenshots do not prove the response is an HTML document or identify the exact document payload. No production-compatible response parser or Almas end-to-end behavior is claimed from headers alone.
+
+
+- Saved property accessors: `TWordDocument.Set_Saved` at `0x0042BD94` behaves as getter through slot `+0xD8`; `TWordDocument.Get_Saved` at `0x0042BD34` behaves as setter through `+0xD4`. The BeforeClose callback reads the actual Saved state; it does not set it false.
