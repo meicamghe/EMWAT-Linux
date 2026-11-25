@@ -120,9 +120,9 @@ flowchart LR
 
 ## Word close lifecycle correction — run 26 (2026-11-14)
 
-The previous static notes mention WordAppDocumentBeforeClose and WordAppDocumentBeforeSave, but their address mapping has since been corrected. 0x004CD154 is the registered TWordViwer.WordAppDocumentBeforeSave callback; it is not BeforeClose. The TD32-named WordAppDocumentBeforeClose procedure is 0x004CCBBC, with only one direct bounded caller found (FillImgFldsForPrint at 0x004CCF8F) and no raw-pointer registration reference. Therefore the active Word close event has not yet been identified.
+The previous static notes mention WordAppDocumentBeforeClose and WordAppDocumentBeforeSave, but their address mapping has since been corrected. The callback pointer at event-record offset +0x80 targets 0x004CD154, whose TD32 symbol is TWordViwer.WordAppDocumentBeforeSave. That symbol is not sufficient to establish the formal COM event DISPID: its first diagnostic says Document.OnBeforeClose Called. and its body invokes the three-argument Word Document.Close wrapper. The separately named TD32 procedure WordAppDocumentBeforeClose is 0x004CCBBC, with only one direct bounded caller found (FillImgFldsForPrint at 0x004CCF8F) and no raw-pointer registration reference. Therefore the formal event identity remains unresolved; use the neutral label “registered close/save-decision callback at 0x004CD154”.
 
-The registered BeforeSave callback checks the document's Saved property, conditionally prompts, cancels the event on Cancel, and invokes the three-argument Close interface path for Yes/No. This does not disprove the user's observed behavior: closing the document applies/registers changes even when Save was not pressed. That behavior remains a required product contract; the page-side POST/response path is still the likely place to connect the observed close event to the web application, but the exact mechanism is not yet established.
+The callback at 0x004CD154 accesses the Word document interface, conditionally prompts, sets the event Cancel value on Cancel, and invokes the three-argument Close interface path for Yes/No. Its TD32 name is BeforeSave, but the event-record slot's formal COM DISPID is not yet proven. Also, the wrapper crosswalk maps Get_Saved to slot +0xD4 and Set_Saved to +0xD8; do not describe an access through +0xD8 as reading Saved. This does not disprove the user's observed behavior: closing the document applies/registers changes even when Save was not pressed. That behavior remains a required product contract; the page-side POST/response path is still the likely place to connect the observed close event to the web application, but the exact mechanism is not yet established.
 
 
 ## Clarification from repeat user test — close without pressing Save (2026-11-14)
@@ -137,3 +137,8 @@ For reverse engineering, explicitly separate these questions:
 3. How does the local HTTP response deliver it to the browser, and how does Almas Gam persist it?
 
 Do not describe the observed behavior as “upload without saving”. The correct verified wording is: **the user does not press Save, but closing Word is sufficient for the document to be registered in Almas Gam**.
+
+
+## 2026-11-25 — decision contract cross-reference
+
+The user's Windows observation remains: closing Word is sufficient for Almas Gam registration even when the user does not press the toolbar Save button. This does not mean every close choice returns unsaved bytes. The required Linux decision semantics are now specified separately: Save returns the latest successfully saved snapshot; Don't Save returns the previous approved snapshot; Cancel keeps the same session open and the pending request waiting. See [Word close/response contract reconciliation](WORD-CLOSE-RESPONSE-CONTRACT-2026-11-25.md). The Windows prompt's formal COM event identity and exact wire mapping remain under investigation.
