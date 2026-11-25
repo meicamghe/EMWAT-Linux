@@ -95,7 +95,7 @@ The `_Document` slot `+0x2BC` is now mapped with high confidence to `PrintOutOld
 
 ## Historical callback registration cross-check — superseded by run-27 RTTI
 
-The full OnTmrAutoSave trace stores callback/data pairs in TWordApplication event fields. Run-27 RTTI at 0x00429128 maps +0x80 to OnDocumentBeforeClose, +0x88 to OnDocumentBeforePrint, +0x90 to OnDocumentBeforeSave, and +0x98 to OnNewDocument. The corresponding callback pointers are +0x80 → 0x004CD154 (TD32 label WordAppDocumentBeforeSave), +0x88 → 0x004D00AC or 0x004CE030, +0x90 → 0x004CD54C (TD32 label WordAppNewDocument), and +0x98 → 0x004CD9C0 (TD32 label WordAppWindowActivate). Thus the earlier run-25/26 interpretation of +0x80 as BeforeSave is superseded: 0x004CD154 is the registered OnDocumentBeforeClose callback. It calls PreparePrintDocument at 0x004CB108, accesses _Document slot +0xD8 (the wrapper label is Set_Saved, but the callsite passes a zero-initialized local by reference and reads it afterward; exact getter/setter semantics are unresolved), conditionally prompts, sets event Cancel to 0xFFFF on Cancel, and invokes interface slot +0x29C with three OleVariant arguments on Yes/No. This is the same dispatch slot used by the three-argument TWordDocument.Close wrapper at 0x0042FFF4. 0x00430070 is SaveAs2000, not Close. The no-argument Close wrapper 0x0042FEB0 uses +0x4D4; one/two/three-argument wrappers use +0x29C. The numeric COM DISPID/event-source IID remain unresolved.
+The full OnTmrAutoSave trace stores callback/data pairs in TWordApplication event fields. Run-27 RTTI at 0x00429128 maps +0x80 to OnDocumentBeforeClose, +0x88 to OnDocumentBeforePrint, +0x90 to OnDocumentBeforeSave, and +0x98 to OnNewDocument. The corresponding callback pointers are +0x80 → 0x004CD154 (TD32 label WordAppDocumentBeforeSave), +0x88 → 0x004D00AC or 0x004CE030, +0x90 → 0x004CD54C (TD32 label WordAppNewDocument), and +0x98 → 0x004CD9C0 (TD32 label WordAppWindowActivate). Thus the earlier run-25/26 interpretation of +0x80 as BeforeSave is superseded: 0x004CD154 is the registered OnDocumentBeforeClose callback. It calls PreparePrintDocument at 0x004CB108, accesses _Document slot +0xD8 (the wrapper label is Set_Saved, but the callsite passes a zero-initialized local by reference and reads it afterward; exact getter/setter semantics are unresolved), conditionally prompts, sets event Cancel to 0xFFFF on Cancel, and invokes interface slot +0x29C with three OleVariant arguments on Yes/No. This is the same dispatch slot used by the three-argument TWordDocument.Close wrapper at 0x0042FFF4. 0x00430070 is SaveAs2000, not Close. The no-argument Close wrapper 0x0042FEB0 uses +0x4D4; one/two/three-argument wrappers use +0x29C. The event-source IID is `00020A00-0000-0000-C000-000000000046` (`ApplicationEvents3`), and `DocumentBeforeClose` is DISPID `0x00000006` per Word interop event metadata; direct decoding of the embedded typelib member record remains optional confirmation.
 
 The separate TD32-named WordAppDocumentBeforeClose at 0x004CCBBC is a different routine: it has only the bounded caller FillImgFldsForPrint at 0x004CCF8F and is not the callback pointer installed at +0x80. The registered OnDocumentBeforeClose callback at 0x004CD154 contains no direct HTTP request call. The parent-page message and close-time POST/response path remain to be mapped.
 
@@ -1203,8 +1203,25 @@ Run 27 artifact `15008774182` proves the wrapper event-property mapping. The TWo
 | `+0x90` | `OnDocumentBeforeSave` | `0x004CD54C` | `WordAppNewDocument` |
 | `+0x98` | `OnNewDocument` | `0x004CD9C0` | `WordAppWindowActivate` |
 
-The TD32 labels are misleading; use RTTI property names for event identity. Numeric COM DISPIDs and event-source IID remain unresolved. The separate routine `0x004CCBBC` is not the registered close event.
+The TD32 labels are misleading; use RTTI property names for event identity. Event-source IID `00020A00-0000-0000-C000-000000000046` (`ApplicationEvents3`) is read from the server-data record at `0x00627B74`; `DocumentBeforeClose` is DISPID `0x00000006` per Word interop event metadata. The embedded type-library record itself has not yet been decoded directly. The separate routine `0x004CCBBC` is not the registered close event.
 
 The first known writer of viewer `+0x58` is `PrintWithGamPrintOptions` (`0x004C5E04`), called from `OnTmrAutoSave` and from the actual BeforeSave callback `0x004CD54C`. It stores the return of `Emwatutils.DirIsEmpty` (`0x004565DC`) at `Self+0x58` (`0x004C5E44`). That helper enumerates a directory with FindFirst/FindNext and returns the final enumeration status; the close callback `0x004CD154` clears the field at `0x004CD31C`. The exact path/filter and status convention remain open pending trace of `0x004563A8`.
 
 The `+0xD8` Saved-accessor conflict is intentionally not resolved by name alone: the TD32 wrapper crosswalk calls it `Set_Saved`, while the close callback passes a zero-initialized local by reference and reads it after the call. Until the type-library accessor mapping is independently verified, do not state that the callback reads `Document.Saved` or writes `Saved=False`.
+
+
+### Event-source IID and DISPID cross-check
+
+The TWordApplication server-data record at `0x00627B74` begins with:
+
+- CLSID: `000209FF-0000-0000-C000-000000000046` (Word.Application)
+- default interface IID: `00020970-0000-0000-C000-000000000046`
+- event-source IID: `00020A00-0000-0000-C000-000000000046` (Word `ApplicationEvents3`)
+
+Microsoft's Word PIA documents `ApplicationEvents3.DocumentBeforeClose`; the Word interop event contract assigns `DocumentBeforeClose` DISPID `0x00000006`. This matches the RTTI property mapping and the callback signature/control flow. The exact DISPID value was corroborated against interop metadata rather than extracted from the BPL's embedded type-library member record.
+
+References:
+- Microsoft Learn, [ApplicationEvents3 interface](https://learn.microsoft.com/en-us/dotnet/api/microsoft.office.interop.word.applicationevents3?view=word-pia)
+- Microsoft Learn, [ApplicationEvents3.DocumentBeforeClose](https://learn.microsoft.com/en-us/dotnet/api/microsoft.office.interop.word.applicationevents3.documentbeforeclose?view=word-pia)
+- Word interop event test, [JNA ComEventCallbacks2_Test](https://github.com/java-native-access/jna/blob/c24bbfad90e49730202cc439f436c1a6820f2dba/contrib/platform/test/com/sun/jna/platform/win32/COM/util/ComEventCallbacks2_Test.java)
+- Microsoft VBA docs, [Application.DocumentBeforeClose](https://github.com/microsoftdocs/vba-docs/blob/cfee1b35b419270636defdbee0ac96e5ded071bb/api/Word.Application.DocumentBeforeClose.md)
