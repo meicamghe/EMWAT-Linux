@@ -1,7 +1,7 @@
 ## 2026-11-26 — full connector handler inventory completed
 
 - Run 30 (`45765541247`) completed successfully across all three jobs. The Word artifact `15092201094` dynamically traced 12 symbols: central `TEmwatMethod.Invoke` (`0x0046C82C`), `TWordViwer.LoadDocument`, and 10 concrete connector `PerformMethod` procedures. The image artifact `15091712828` includes the corrected `TResultImage`/single-page/multipage result methods. Native regression passed.
-- The common dispatcher iterates a `TDictionary<AnsiString, T>`, invokes each handler through interface slot `+0x54`, and inserts its return value into a result dictionary.
+- The service calls the base wrapper at `0x0046C9E0` (VMT slot `+0x0C`); it invokes `TEmwatMethod.Invoke` at `0x0046C82C` to serialize dictionary pairs into XML parameter nodes, then calls the concrete handler through VMT slot `+0x10`. Interface slot `+0x54` inside the inner helper is the `TXMLEmwatType.GetXML` serializer getter, not the handler dispatch.
 - Discovered connector handler inventory:
   - Word edit (runtime `TEditWordDocument`, TD32 label `TScanDocument`, VA `0x005EE82C`) — four known keys; calls `TWordViwer.LoadDocument`.
   - Scanner (runtime `TScanDocument`, TD32 label `TFaxDocument`, VA `0x005EEB48`) — `document` key; calls `TScanCommand.GetNextPage`.
