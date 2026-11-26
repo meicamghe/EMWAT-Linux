@@ -1,3 +1,8 @@
+## 2026-11-26 — run 36 supersedes cancelled run 35
+
+- Run 35 (`45769864678`) was cancelled by the newer workflow commit `713cb7a1878a90aadf8c2137433b606d23575cb5`, which queued run 36 (`45769890366`). This is a superseded run, not a test failure.
+- Run 36 contains the new `FResponseXML` factory/callback and ImageEn wrapper traces described below. It is pending; wait for its jobs before recording results.
+
 ## 2026-11-26 — run 35 response XML and ImageEn wrapper tracing
 
 - Workflow commit `713cb7a1878a90aadf8c2137433b606d23575cb5` starts run 35.
