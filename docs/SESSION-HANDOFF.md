@@ -1932,7 +1932,7 @@ Next probes: recover the four filename-table strings and state-byte meanings; re
 - Native regression lane passed in run 45794156659: CMake native build/CTest and Python bridge tests succeeded.
 - Native boundary audit: scan_pages returns vector<ImagePage>; ScanResult is currently referenced only by its header and isolated test. No production composition yet persists scan_pages output into SinglePageFileSet/MultiPageFile or serializes response metadata. This is an integration gap, not a test failure; do not invent cardinality rules.
 - Word/Printer thread lane completed successfully; artifact 15104841284 was downloaded and inspected. Findings are appended in section 6 of docs/REVERSE-ENGINEERING-DEEP-FOLLOWUP-2026-11-26.md.
-- Workflow note: the scanner state-table pointer scan omitted its output-path argument, so its detailed report went to the default bpl-analysis path and was not included in the artifact. The procedure/caller traces are present; fix the workflow path before relying on that pointer report.
+- Workflow note: the scanner state-table pointer scan omitted its output-path argument, so its detailed report went to the default bpl-analysis path and was not included in the artifact. The procedure/caller traces are present; the path was fixed in workflow commit 7c4ac0ea70ac1d6485d7be614f41de7e15a7911a; Run 50's artifact remains unchanged and the corrected step has not yet been rerun.
 - Detailed report: docs/REVERSE-ENGINEERING-DEEP-FOLLOWUP-2026-11-26.md. Run 50 does not establish physical scanner, ADF/duplex, real printer queue, Wine, or live Almas acceptance.
 
 
