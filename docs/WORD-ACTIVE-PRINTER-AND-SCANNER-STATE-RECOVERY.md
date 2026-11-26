@@ -82,15 +82,38 @@ This establishes the imported function identities and direct callsite shapes, bu
 
 ## 6. GAM printer selection and configuration string inventory
 
-The expanded Word/printer artifact decodes the following static evidence:
+### 6.1 Exact Winspool API and driver matching
 
-- `Zanprinter.GetPrinterName` is `0x0047CAF0`. It calls helper `0x004044CC` with arguments shaped like a Winspool `EnumPrinters` level-2 query (flags value 8, level 2, initially null output buffer, and output pointers). It then walks returned records with a `0x54`-byte stride, compares the field at `+0x10` with the exact string `zvprt1`, and copies the field at `+0x04` into global string storage `0x0062B310`.
-- The `0x54` stride and `+0x04`/`+0x10` fields match the layout positions of `pPrinterName` and `pDriverName` in Winspool `PRINTER_INFO_2`. This strongly suggests that EMWAT locates the installed printer by driver name `zvprt1` and returns its printer name. The helper thunk `0x004044CC` has not yet been resolved to `EnumPrintersA` versus `EnumPrintersW`; keep the ANSI/Unicode API variant unconfirmed.
-- `Zanprinter.InstallZanPrinter` (`0x0047CC6C`) calls `GetPrinterName` and updates global printer-name state when it succeeds.
-- The decoded string constants used by the printer configuration routines include `GAMPrinterSetup.exe`, `ZVPsrc\\save.ini`, `configure.ini`, `policy`, `allusersfolder`, and `zvprt50\\`.
-- The `CheckPrinterPaused` path (`0x0047D448`) references `save.ini` keys/values including `folder`, `save`, `basefilename`, `No Dialogs`, `popupdialog`, `filexistact`; `image.ini` strings include `tiff`, `fileformat`, `image`, `256`, `imagecolor`, `lzw`, `compression`, `0`, `pagetype`, `Each page as a single strip`, and `rowsperstrip`; `general.ini` strings include `hidestsdialog`, `general`, `sentinel`, `JobFinishes.GAM`, and `sentinelfile`.
+The run-22 artifact resolves helper thunk `0x004044CC` exactly to `winspool.drv!EnumPrintersA` through IAT `0x0062F9F0`; this is ANSI, not Unicode. `Zanprinter.GetPrinterName` (`0x0047CAF0`) calls it twice using the same raw parameters:
 
-These are recovered literals and structure/call-shape evidence, not proof of every configuration value's active runtime effect. The `EnumPrinters` thunk, registry/path resolution, and the actual queue/driver installation state still require confirmation.
+- `Flags=8`
+- `Name=NULL`
+- `Level=2`
+- First call: `pPrinterEnum=NULL`, `cbBuf=0`, with `pcbNeeded` and `pcReturned` output pointers
+- Second call: allocated output buffer and required byte count from the first call
+
+The routine walks the returned records using a `0x54`-byte stride, compares the field at offset `+0x10` with the exact driver-name string `zvprt1`, and copies the field at offset `+0x04` into global Unicode string storage `0x0062B310`. On 32-bit Windows, these offsets and stride match `PRINTER_INFO_2A` (`pPrinterName` at +0x04, `pDriverName` at +0x10, structure size 0x54). The matching queue is therefore selected by **driver name** `zvprt1`, and the returned value is its **printer/queue name**. This is now directly grounded in the resolved `EnumPrintersA` thunk and callsite; it is no longer merely an ANSI/Unicode guess.
+
+Direct callers of `EnumPrintersA` are the two calls inside `GetPrinterName` at `0x0047CB37` and `0x0047CB7D`. Other nearby Winspool imports have separate IAT thunks/callsites and must not be conflated with this enumeration path.
+
+### 6.2 Driver install and configuration-directory discovery
+
+- `Zanprinter.InstallZanPrinter` (`0x0047CC6C`) calls `GetPrinterName`; when a matching queue is found it copies global `0x0062B310` into its output string and returns success.
+- `Zanprinter.GetZanInstallDir` (`0x0047CC94`) polls `GetPrinterName` up to 300 times, sleeping `0x64` ms between attempts. This is a bounded ~30-second wait for the driver queue to appear, not proof that the installer completed successfully.
+- Its missing-printer branch constructs a path containing `GAMPrinterSetup.exe` and passes the decoded verb strings `Open` / `RunAs` through helper `0x00404494`. The exact helper/API contract and which branch selects each verb remain pending.
+- `Zanprinter.GetZanConfigurationDir` (`0x0047D054`) opens the exact registry subkey `HKLM\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\zvprt50` (root handle `0x80000002`, access mask `0x20019`) and queries value `UninstallString`. If the registry path/value cannot be used, it falls back to appending `zvprt50\\` to the supplied path. The precise normalization of the returned uninstall string is still being traced.
+- `Zanprinter.SetPrinterForTiffout` (`0x0047D238`) calls `GetZanConfigurationDir`, reads `configure.ini` / section `policy` / key `allusersfolder`, and constructs paths involving `zvprt50\\` and `save.ini`. The same routine references `save.ini` keys `basefilename` and `save`. The meaning of the numeric return/branch values and exact helper API semantics are not yet mapped.
+
+### 6.3 INI keys consumed by the pause/configuration check
+
+`Zanprinter.CheckPrinterPaused` (`0x0047D448`) references these decoded literals:
+
+- `save.ini`: `folder`, `save`, `basefilename`, `No Dialogs`, `popupdialog`, `filexistact` (with literal default/value strings including `1`)
+- `image.ini`: `fileformat=tiff`, `image=256`, `imagecolor=lzw`, `compression=0`, `pagetype=Each page as a single strip`, `rowsperstrip`
+- `general.ini`: `hidestsdialog`, `sentinel`, `sentinelfile=JobFinishes.GAM`
+
+These are static key/value strings and the observed sequence of helper calls, not proof of every effective value under every installed-driver version. Do not hardcode these as Linux defaults until their read/write helper contracts, path resolution and actual generated INI files are verified.
+
 
 ## Evidence
 
