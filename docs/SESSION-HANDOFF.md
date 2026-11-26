@@ -2023,3 +2023,10 @@ Next probes: recover the four filename-table strings and state-byte meanings; re
 
 - Run 8 ImageEn artifact 15106526888 shows 0x004B0100–0x004B0240 is a dense import-thunk range. 0x004B0154 is `jmp [0x00630D70]`, not a local function body. Nearby mappings: Acquire 0x004B012C -> IAT 0x00630D84; 0x004B01A4 -> 0x00630DE0; 0x004B01F4 -> 0x00630DB8; 0x004B01FC -> 0x00630DB4; 0x004B0204 -> 0x00630DB0.
 - Exact imported API names are being resolved in Run 9 with trace_pe_target.py. Until then, keep these as IAT slot mappings only. Details in Track M of docs/REVERSE-ENGINEERING-PARALLEL-FOLLOWUP-2026-11-26.md.
+
+
+## 2026-11-26 — ImageEn thunk API identities resolved
+
+- Run 9 ImageEn artifact 15106033536 maps import thunks in PKIECtrl23.bpl: 0x004B012C=TImageEnMIO.Acquire; 0x004B0154=TImageEnMIO.PrintImage; 0x004B01A4=TImageEnMView.GetImageCount; 0x004B01F4=TImageEnMView.GetMultiSelectedImages; 0x004B01FC=TImageEnMView.GetMultiSelectedImagesCount; 0x004B0204=TImageEnMView.MultiSelectSortList.
+- The earlier unknown helper 0x004B0154 is conclusively PrintImage, not acquisition. DoPrintingPanel loops print images to a canvas; its second branch iterates the multi-selection list. Do not conflate with Acquire or GEAR32PD scanning, and do not infer physical printer/spool success from the call.
+- Full Run 9 completion plus scanner and Word artifacts still need checking. Detailed evidence in Track N of docs/REVERSE-ENGINEERING-PARALLEL-FOLLOWUP-2026-11-26.md.
