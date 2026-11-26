@@ -1,0 +1,231 @@
+name: EMWAT parallel deep follow-up lanes
+on:
+  push:
+    paths:
+      - '.github/workflows/emwat-parallel-deep-followup.yml'
+      - 'analysis-input/EmwatMethods.bpl1'
+      - 'tools/list_td32_symbols.py'
+      - 'tools/trace_td32_procedure.py'
+      - 'tools/trace_td32_callers.py'
+      - 'tools/scan_pe_pointer_refs.py'
+      - 'native/**'
+      - 'python/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: emwat-deep-followup-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  scanner-result-ownership:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install pefile capstone
+      - name: Resolve result-image class methods from TD32 symbols
+        shell: bash
+        run: |
+          mkdir -p deep-followup/scanner-result
+          python tools/list_td32_symbols.py analysis-input/EmwatMethods.bpl1 \
+            TResultImage TSetOfSinglePageImages TSetOfMultiPageImages \
+            GetScanFilePath GetResponseFileName ShiftSerial \
+            > deep-followup/scanner-result/symbol-index.md
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          import subprocess
+          import sys
+
+          source = Path("deep-followup/scanner-result/symbol-index.md").read_text()
+          rows = []
+          for line in source.splitlines():
+              cols = [part.strip() for part in line.strip().strip("|").split("|")]
+              if len(cols) != 5 or not cols[0].startswith("`0x"):
+                  continue
+              address = cols[0].strip("`")
+              name = cols[4].strip("`")
+              if any(term in name.casefold() for term in (
+                  "tresultimage", "tsetofsinglepageimages", "tsetofmultipageimages",
+                  "getscanfilepath", "getresponsefilename", "shiftserial"
+              )):
+                  rows.append((address, name))
+          rows = sorted(set(rows))
+          if not rows:
+              raise SystemExit("No result-image TD32 symbols resolved")
+          (Path("deep-followup/scanner-result/selected-symbols.txt")).write_text(
+              "\n".join(f"{address} {name}" for address, name in rows) + "\n"
+          )
+          for address, name in rows:
+              safe = address.replace("0x", "")
+              subprocess.run([
+                  sys.executable, "tools/trace_td32_procedure.py",
+                  "analysis-input/EmwatMethods.bpl1", address,
+                  f"deep-followup/scanner-result/procedure-{safe}.md"
+              ], check=True)
+              subprocess.run([
+                  sys.executable, "tools/trace_td32_callers.py",
+                  "analysis-input/EmwatMethods.bpl1", address,
+                  f"deep-followup/scanner-result/callers-{safe}.md"
+              ], check=True)
+          PY
+      - name: Inspect global scan-state table and paging references
+        run: |
+          python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 0x0062A7F0 \
+            > deep-followup/scanner-result/state-table-pointer-refs.md
+          python tools/trace_td32_procedure_skipdata.py analysis-input/EmwatMethods.bpl1 0x004F2558 \
+            deep-followup/scanner-result/get-next-page-control-flow.md
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: emwat-deep-scanner-result-ownership
+          path: deep-followup/scanner-result/
+          if-no-files-found: error
+
+  imageen-acquisition:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install pefile capstone
+      - name: Resolve ImageEn acquisition, import and print procedures
+        shell: bash
+        run: |
+          mkdir -p deep-followup/imageen
+          python tools/list_td32_symbols.py analysis-input/EmwatMethods.bpl1 \
+            TfrmImageTools InsertPicture ScanPicture DoPrinting UpdatePrintPreview \
+            > deep-followup/imageen/symbol-index.md
+          python - <<'PY'
+          from pathlib import Path
+          import subprocess
+          import sys
+
+          source = Path("deep-followup/imageen/symbol-index.md").read_text()
+          rows = []
+          for line in source.splitlines():
+              cols = [part.strip() for part in line.strip().strip("|").split("|")]
+              if len(cols) != 5 or not cols[0].startswith("`0x"):
+                  continue
+              address, name = cols[0].strip("`"), cols[4].strip("`")
+              if any(term in name.casefold() for term in (
+                  "insertpicture", "scanpicture", "doprinting",
+                  "updateprintpreview", "acquire"
+              )):
+                  rows.append((address, name))
+          rows = sorted(set(rows))
+          if not rows:
+              raise SystemExit("No ImageEn caller procedures resolved")
+          (Path("deep-followup/imageen/selected-symbols.txt")).write_text(
+              "\n".join(f"{address} {name}" for address, name in rows) + "\n"
+          )
+          for address, name in rows:
+              safe = address.replace("0x", "")
+              subprocess.run([
+                  sys.executable, "tools/trace_td32_procedure.py",
+                  "analysis-input/EmwatMethods.bpl1", address,
+                  f"deep-followup/imageen/procedure-{safe}.md"
+              ], check=True)
+              subprocess.run([
+                  sys.executable, "tools/trace_td32_callers.py",
+                  "analysis-input/EmwatMethods.bpl1", address,
+                  f"deep-followup/imageen/callers-{safe}.md"
+              ], check=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: emwat-deep-imageen-acquisition
+          path: deep-followup/imageen/
+          if-no-files-found: error
+
+  word-printer-thread:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install pefile capstone
+      - name: Resolve hidden print thread and Word/GAM dispatch methods
+        shell: bash
+        run: |
+          mkdir -p deep-followup/word-printer
+          python tools/list_td32_symbols.py analysis-input/EmwatMethods.bpl1 \
+            THidePrintingThread TCreateTiff SeparteImages GetPrinterName \
+            SetPrinterForTiffout Finalization Get_ActivePrinter Set_ActivePrinter \
+            > deep-followup/word-printer/symbol-index.md
+          python - <<'PY'
+          from pathlib import Path
+          import subprocess
+          import sys
+
+          source = Path("deep-followup/word-printer/symbol-index.md").read_text()
+          rows = []
+          for line in source.splitlines():
+              cols = [part.strip() for part in line.strip().strip("|").split("|")]
+              if len(cols) != 5 or not cols[0].startswith("`0x"):
+                  continue
+              address, name = cols[0].strip("`"), cols[4].strip("`")
+              if any(term in name.casefold() for term in (
+                  "thideprintingthread", "separteimages", "getprintername",
+                  "setprinterfortiffout", "finalization", "get_activeprinter",
+                  "set_activeprinter"
+              )):
+                  rows.append((address, name))
+          rows = sorted(set(rows))
+          if not rows:
+              raise SystemExit("No Word/GAM print-thread symbols resolved")
+          (Path("deep-followup/word-printer/selected-symbols.txt")).write_text(
+              "\n".join(f"{address} {name}" for address, name in rows) + "\n"
+          )
+          for address, name in rows:
+              safe = address.replace("0x", "")
+              subprocess.run([
+                  sys.executable, "tools/trace_td32_procedure.py",
+                  "analysis-input/EmwatMethods.bpl1", address,
+                  f"deep-followup/word-printer/procedure-{safe}.md"
+              ], check=True)
+              subprocess.run([
+                  sys.executable, "tools/trace_td32_callers.py",
+                  "analysis-input/EmwatMethods.bpl1", address,
+                  f"deep-followup/word-printer/callers-{safe}.md"
+              ], check=True)
+              subprocess.run([
+                  sys.executable, "tools/scan_pe_pointer_refs.py",
+                  "analysis-input/EmwatMethods.bpl1", address,
+                  f"deep-followup/word-printer/pointers-{safe}.md"
+              ], check=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: emwat-deep-word-printer-thread
+          path: deep-followup/word-printer/
+          if-no-files-found: error
+
+  native-regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install native image dependencies
+        run: sudo apt-get update && sudo apt-get install -y libpng-dev libjpeg-dev libtiff-dev libsane-dev
+      - name: Build and run native regression suite
+        run: |
+          cmake -S native -B native/build-deep-followup -DCMAKE_BUILD_TYPE=Release
+          cmake --build native/build-deep-followup --parallel 2
+          ctest --test-dir native/build-deep-followup --output-on-failure
+      - name: Run Python bridge regression suite
+        run: |
+          python -m pip install -e ./python pytest
+          python -m pytest -q python/tests
