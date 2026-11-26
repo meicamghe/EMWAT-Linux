@@ -3304,3 +3304,11 @@ The next meaningful Almas acceptance input is a sanitized, synthetic-or-test-acc
 - Commit `35ffc42ef1717aecfdd065378c9cd249c3ff0ce8` fixed the `-Werror=missing-field-initializers` warning with `response_metadata{}`.
 - Reverse-engineering run `45786665652`: Native regression passed (C++ build, CTest, Python bridge). Native image core run `45786665929`: build/test, sanitizer, and Debian package lifecycle all passed.
 - Word/Printer and Image/Scanner lanes in the reverse-engineering run remain under analysis; their results are separate from Native verification.
+
+## 2026-11-26 — Run 48 green; scanner paging control flow expanded
+
+- Run 48 ([45786665652](https://github.com/meicamghe/EMWAT-Linux/actions/runs/45786665652)) completed successfully in all three jobs: Native regression, Image/UI/VMT, and Word/COM/Printer. The native C++/CTest and Python bridge regression suites passed.
+- The skipdata-aware artifact now covers all 1,340 bytes of `TScanCommand.GetNextPage` at `0x004F2558`, revealing both next-page and new-document paths, filename marker/index state, result-image construction and response-XML virtual update/finalization. Embedded `.byte` spans remain explicitly untrusted as instructions.
+- The `.tmp` helper and `document` dictionary write are better bounded but not semantically decoded. The Variant payload, filename policy, response collection cardinality, exact XML property mapping, and result-image file ownership remain open.
+- Detailed evidence: `docs/REVERSE-ENGINEERING-RUN48.md`; updated callgraph: `docs/IMAGE-SCANNER-EDITOR-CALLGRAPH-INVENTORY.md`.
+- This run does not prove physical scanner/printer, Wine, or live Almas acceptance. No production native scanner code changed. PR #2 remains Draft/open/unmerged; no merge/rebase was attempted.
