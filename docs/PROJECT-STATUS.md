@@ -1,3 +1,13 @@
+## 2026-11-26 — connector VMT, public ScanDocument, and image-result ownership
+
+- Runtime service/VMT mapping is now reconciled with TD32 symbols. See `CONNECTOR-HANDLER-ENTRYPOINT-INVENTORY.md` and `EMWAT-SERVICE-EXECUTABLE-ANALYSIS.md`. TD32 procedure labels are shifted for multiple handlers and must not be treated as runtime class names.
+- Public runtime `TScanDocument` is confirmed at `0x005EEB48` (TD32 label `TFaxDocument.PerformMethod`). It reads `document`, opens it as a stream, constructs `TScanCommand`, calls `GetNextPage`, and inserts a returned interface value into the result dictionary. The output dictionary key/response serialization and the Linux handler remain unimplemented.
+- Runtime `TEditWordDocument` is `0x005EE82C`; runtime `TImageEdition` is `0x005EF300` with keys `data/config`; runtime `TUpgradeEmwat` is `0x005EF24C` with key `PlugIn`. The upgrade helper references `EmwatMethods.bpl`, a `.zip` package and `EmwatUpdate.exe`.
+- Windows scanner result classes include `TSetOfSinglePageImages` and `TSetOfMultiPageImages`; their exact one-to-one mapping to the native `ScanOutput` variants is still open. Path literals `%.3d`, `_P`, and `_P000` show page/serial naming but not final concatenation or file ownership.
+- A separate ImageEn I/O family is identified (`TImageEnMIO.Acquire`, `SaveToFileTIFF`, `SaveToFile`, `LoadFromFileAuto`, `GetParams`, print/dialog calls). Its enclosing procedure relationship to the ImageGear preview path and public `ScanDocument` remains under trace.
+- Run 31 (`45766302144`) and run 32 (`45767912737`) completed successfully, including native regression. Run 33 (`45768755921`) was cancelled when an expanded workflow superseded it; this is not a test failure. Run 34 (`45768861461`) is active: native regression has passed; Word and Image reverse-engineering jobs are still running.
+- No production scanner/ImageEdition handler was added. Request paths remain untrusted and must be confined to approved application data/output roots before any Linux file access.
+
 ## 2026-11-25 — Wine 11 runtime Base64 decoder probe
 
 - The Wine 11 installation's `EmwatMethods.bpl` (`6ff7d262f46ab009e3eecf20fca40cd41ec8ad937adf7bbfe2f6eddd56aaea2d`) matches the checked-in analysis snapshot byte-for-byte. A 32-bit probe called internal decoder RVA `0x73700` after loading the BPL with `DONT_RESOLVE_DLL_REFERENCES` in a fresh disposable prefix; the existing `/home/m/.wine-emwat` prefix was not launched or modified.
