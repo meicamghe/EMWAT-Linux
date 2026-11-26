@@ -12,6 +12,7 @@ on:
       - 'tools/list_td32_symbols.py'
       - 'tools/resolve_delphi_vmt_slots.py'
       - 'tools/scan_pe_pointer_refs.py'
+      - 'tools/scan_pe_iat_callers.py'
       - 'tools/trace_pe_target.py'
       - 'native/**'
       - '.github/workflows/native-core.yml'
@@ -136,6 +137,28 @@ jobs:
               set -e
               python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x$target parallel-re/image-io/helper-$target.md 1800 ret
               python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 0x$target parallel-re/image-io/helper-$target-pointers.md
+            ) &
+            pids+=("$!")
+          done
+          status=0
+          for pid in "${pids[@]}"; do wait "$pid" || status=1; done
+          exit "$status"
+      - name: Resolve scanner API imports and enumerate exact callsites
+        shell: bash
+        run: |
+          mkdir -p parallel-re/image-io/scanner-api
+          python tools/scan_pe_iat_callers.py analysis-input/EmwatMethods.bpl1 \
+            0x00630CE4 0x00630CE8 0x00630D0C 0x00630D04 0x00630D08 \
+            > parallel-re/image-io/scanner-api/iat-callsites.md
+          targets=(004AFF28 004AFF30 004AFED8 004AFEE8 004AFEE0)
+          pids=()
+          for target in "${targets[@]}"; do
+            (
+              set -e
+              python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x$target \
+                parallel-re/image-io/scanner-api/helper-$target.md 100 ret
+              python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x$target \
+                parallel-re/image-io/scanner-api/callers-$target.md
             ) &
             pids+=("$!")
           done
