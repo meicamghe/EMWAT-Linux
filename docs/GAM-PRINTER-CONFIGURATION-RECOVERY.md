@@ -170,3 +170,16 @@ The expanded traces refine the printer boundary:
 Keep four interfaces distinct: (1) queue discovery/selection, (2) GAM-compatible TIFF output-directory and INI policy, (3) queue paused-state inspection, and (4) queued-job counting/correlation. A CUPS implementation should map these to separate IPP/CUPS operations and must not treat successful configuration as proof that a queue is ready. Preserve the TIFF options as metadata until a real GAM-produced TIFF fixture establishes byte-level and multipage equivalence.
 
 Evidence: Run 43 Word artifact `15099392610`, including `procedure-0047CAF0.md`, `procedure-0047D238.md`, `procedure-0047D448.md`, `printer-api/status-callers/open-printer-jobs-procedure.md`, and `printer-api/print-pipeline/procedure-004A0148.md`. Static analysis only; no Wine/Linux printer runtime success is claimed.
+
+
+## 2026-11-26 — Run 50 hidden print-thread trace
+
+Run 50 (45794156659) completed successfully; Word/Printer artifact 15104841284 is reviewed in docs/REVERSE-ENGINEERING-DEEP-FOLLOWUP-2026-11-26.md.
+
+- TWordViewer.LoadDocument calls TCreateTiff.SeparteImages at 0x004B7A9C and 0x004B7ABD.
+- SeparteImages resolves the configured printer through Zanprinter.GetPrinterName, calls SetPrinterForTiffout and the pause-state check, then calls THidePrintingThread.Execute at 0x004A0E88. The caller checks the returned Boolean and has an error path.
+- GetPrinterName uses EnumPrintersA level 2 and walks PRINTER_INFO_2A records at 0x54-byte intervals. It matches the configured driver-name field at +0x10 and returns the printer-name field at +0x04.
+- The pause-state gate checks PRINTER_INFO_2A +0x48 against PRINTER_STATUS_PAUSED (1).
+- THidePrintingThread.Execute is 3,096 bytes, but only 1,885 bytes were decoded by the current trace; the remaining 1,211 bytes are unresolved. The decoded section contains indirect interface dispatches, page-index loops, file-stream operations and repeated file-existence polling with sleeps/retries.
+- The TWordApplication ActivePrinter getter/setter wrappers have no direct TD32 CALL xrefs in this artifact. Do not claim the code explicitly sets ActivePrinter.
+- Actual Winspool job submission/completion and final output delivery remain unproven. No physical printer or Wine printer acceptance was performed.
