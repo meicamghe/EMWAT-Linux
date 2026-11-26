@@ -1,3 +1,11 @@
+## 2026-11-26 — connector handler inventory update
+
+- Runtime dispatch is now traced through `TEmwatMethod.Invoke` (`0x0046C82C`): it enumerates the incoming `TDictionary<AnsiString, T>`, invokes a handler through interface slot `+0x54`, and inserts the returned value into a result dictionary.
+- The connector inventory now covers Word edit, Fax, Get/Set version, Upgrade, ImageEdition, EditExcelWorkBook, CompareWordDocument, ShowEmwatSetting, ShowLastEditedDocs, and ShowSendLog. Procedure addresses, body observations and unresolved schemas are tracked in `docs/CONNECTOR-HANDLER-ENTRYPOINT-INVENTORY.md`.
+- The TD32 label `TScanDocument.PerformMethod` at `0x005EE82C` is runtime-mapped to `TEditWordDocument.PerformMethod` for `EditWordDocument`; it is not evidence of a public scanner endpoint.
+- Linux currently implements/registers only the EditWordDocument method by default. Other discovered handlers remain reverse-engineering targets; do not add success stubs or inferred request keys.
+- Run 31 is decoding remaining connector keys and tracing shared version/settings/compare/dispatch helpers.
+
 # EMWAT-Linux — Master reverse-engineering coverage and work plan
 
 Date: 2026-11-24  
