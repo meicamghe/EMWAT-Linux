@@ -583,7 +583,7 @@ The expanded trace confirms two distinct connector methods:
 - `TScanDocument.PerformMethod` at `0x005EE82C` reads the outer dictionary keys `wordConfig`, `wordBody`, `letterImages`, and `signData`, then calls helper `0x004B7724`. The helper's complete semantic contract remains unresolved.
 - `TFaxDocument.PerformMethod` at `0x005EEB48` directly constructs `TScanCommand` at `0x004F21DC`, calls `GetNextPage` at `0x004F2558`, then reads the command's `ResponseXML` object at `+0x34` and invokes its `Scanedimage` property accessor (VMT slot `+0x54`, corroborated by `TXMLResponseScanType.Get_Scanedimage` at `0x004EBB04`). The returned value is inserted into the handler's output dictionary. This is the concrete FaxDocument-to-ScanCommand path; it is not evidence that the public TScanDocument handler delegates to the same command.
 
-The two input dictionary keys used by `TFaxDocument.PerformMethod` at static addresses `0x005EED54` and `0x005EED6C` were not reliably decoded in this artifact. Do not name or map them by guessing.
+The two input dictionary keys used by `TFaxDocument.PerformMethod` are now decoded by the parallel Word/Printer lane's string inventory: `0x005EED54` is `.tmp` and `0x005EED6C` is `document`. The handler retrieves both values from its input dictionary. The trace passes the `.tmp` value into `GetNextPage`; the precise semantic role and expected type of each value (especially `document`) still require controlled input fixtures. Do not infer that either value is the returned image path.
 
 ### ScanCommand request and state
 
@@ -602,3 +602,8 @@ The response object has separate `Status`, `ErrorCode`, and `Scanedimage` proper
 Run 43 also expanded ImageEn wrapper and caller traces, including `TImageEnMIO.PrintImage`, `LoadFromFileAuto`, `GetParams`, and `PreviewPrintImage` callsites. These establish a separate ImageEn path alongside the ImageGear scanner path, but do not yet recover all method ABIs, object ownership, or the complete output-file/response cardinality.
 
 The Run 43 evidence narrows the Linux contract but does not authorize a guessed protocol implementation. Next implementation work should preserve the separate handler contracts, response metadata, previous-page continuation state, and file-collection ownership. Before claiming Almas compatibility, obtain a controlled request/response capture and actual generated files for single-page and multipage cases. No physical scanner, ADF/duplex, or live Almas run was part of this workflow.
+
+
+### Run 43 key cross-reference correction
+
+The `.tmp` and `document` keys were decoded in the Run 43 Word/Printer artifact's `connector-handlers/handler-string-constants.md`, not in the Image/Scanner artifact. Their use sites are in the Image/Scanner `TFaxDocument.PerformMethod` trace. This is a cross-lane join within workflow run `45783897821`; the dictionary value types and exact meaning of `document` remain open.
