@@ -343,6 +343,30 @@ This confirms two distinct Windows result-collection classes (`TSetOfSinglePageI
 
 Do not conflate the `PlugIn`/Finalization upgrade method with the runtime ImageEdition `data/config` method.
 
+### 12.4.1 Preview UI output: page-indexed `_New.tif`
+
+Run 32 traced `TfrmGScanPreview.Scan` (`0x0061DC80`) through its full page loop and resolved the relevant Win32/GEAR call boundary:
+
+- It derives a base output path from the form's path field at `+0x458`, appends the exact suffix `_New.tif` (`0x0061DEE8`), and uses that same output path for the page loop.
+- It obtains the selected source page count from the image-set interface and iterates page numbers from 1 through that count. The currently loaded page handle is reused for the matching current page; other pages are loaded with `IG_load_FD`.
+- For each page it calls `CreateFileW` (`0x004026A4`) with creation disposition `OPEN_ALWAYS` (`4`), then calls `IG_save_FD` with the one-based page index and reserved argument `0`. The format argument is `0x40028` when form field `+0x434 == 1`, otherwise `0x80028`.
+- Each created handle is closed with `CloseHandle` (`0x00402684`). The failure path marks the operation unsuccessful; after the loop the routine removes a partial output and restores the original path/state rather than reporting the failed output as complete.
+- The observed call shape and same-path reopen with `OPEN_ALWAYS` strongly support one page-indexed multipage `_New.tif` output container for this preview UI routine. This does **not** prove that the connector's `TSetOfMultiPageImages` uses the same output ownership model.
+
+Keep the two paths separate: the UI routine's `_New.tif` is grounded by direct file/create/save calls, while the public `ScanDocument` connector returns a `TResultImage`-derived object whose exact response key and path ownership remain open.
+
+### 12.4.2 ImageGear scanner API boundaries
+
+The same run resolved the following imported GEAR entry points:
+
+- `0x004AFF28` → `IG_scan_source_select`
+- `0x004AFF30` → `IG_scan_pages`
+- `0x004AFED8` → `IG_error_check`
+- `0x004AFEE0` → `IG_error_clear`
+- `0x004AFEE8` → `IG_error_get`
+
+These identities establish API boundaries only. Device/source selection arguments, callback ABI, cancellation semantics and exact error ownership still need caller-level validation; do not bind them directly to SANE options by name.
+
 ### 12.5 Linux implementation boundary
 
 - Runtime `TEditWordDocument` is implemented as the current Linux default handler.
