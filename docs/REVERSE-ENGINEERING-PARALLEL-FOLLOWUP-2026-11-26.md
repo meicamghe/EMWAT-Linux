@@ -283,3 +283,18 @@ The corrected static Delphi pointer-table inspector completed with exit_status=0
 The GetNextPage trace loads this four-entry pointer table and compares a string derived from command field +0x2C against the entries. The static contents are therefore one empty slot followed by three image-extension strings. This does not yet prove the complete connector protocol meaning of each entry, nor whether the compared string is always a basename suffix in every runtime path. Preserve the exact observation and obtain a runtime request/response capture before encoding an external file-naming rule.
 
 Run 7 also confirms the shell-continuation repair: the table output, stdout, stderr and status artifacts are present, with no stderr and exit_status=0. All four workflow lanes are green.
+
+
+## Track M — ImageEn addresses are IAT jump thunks, not local helper bodies
+
+Run 8 ImageEn artifact 15106526888 includes a bounded disassembly of 0x004B0100–0x004B0240. This range is a dense sequence of short import thunks. Each target address has the form `mov eax,eax; jmp dword ptr [IAT-slot]`; therefore the earlier absence of TD32 procedure ranges was expected and the target is not an ordinary local Delphi method body.
+
+Confirmed thunk-to-IAT-slot mapping from the range trace:
+- 0x004B012C (TImageEnMIO.Acquire import thunk) -> IAT slot 0x00630D84
+- 0x004B0154 -> IAT slot 0x00630D70
+- 0x004B01A4 -> IAT slot 0x00630DE0
+- 0x004B01F4 -> IAT slot 0x00630DB8
+- 0x004B01FC -> IAT slot 0x00630DB4
+- 0x004B0204 -> IAT slot 0x00630DB0
+
+This proves that the addresses are imported entry points, not code that can be understood by extending a local disassembly. The import names must be resolved from the PE import table. A new workflow step invokes trace_pe_target.py on these addresses to resolve the IAT targets; results are pending Run 9. Do not infer helper API names from caller patterns alone.
