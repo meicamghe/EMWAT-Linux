@@ -1,10 +1,16 @@
+## 2026-11-26 — run 37 scanner XML VMT expansion
+
+- Workflow commit `3f53f522208c45f94261bf6f5321808dcc4a7496` queued run 37 (`45771016531`).
+- Extended `resolve_delphi_vmt_slots.py` to include `TXMLResponseScanType`, `TXMLScanedImageType`, `TXMLConfigType`, and `TXMLOutputType`. The goal is to identify the response object's concrete VMT and map interface slots `+0x54` and `+0xB8` without guessing.
+- Run 37 is queued; no new VMT result claimed yet.
+
 ## 2026-11-26 — run 36 ScanResponseXML object and scanner property names recovered
 
 - Run 36 (`45769890366`) completed successfully across Native, Word/print and Image/UI jobs.
 - `TScanCommand.FResponseXML` is created through `0x004EB7F4`, whose TD32 identity is `Scanresponsexml.TXMLResponseScanType.AfterConstruction`. The constructor then stores it at field `+0x34) and calls its interface slot `+0xB8) with callback address `0x004F22A4`; that address lies inside the `TScanCommand` constructor body, so callback semantics remain unresolved.
 - Property setter inventory from direct callers of external thunk `0x004012F8`:
   - `TXMLResponseScanType`: `Status` (`0x004EB964`), `ErrorCode` (`0x004EBAA4`).
-  - `TXMLScanedImageType`: `ImageName` (`0x004EBCAC)), `Encoding` (`0x004EBDF4`).
+  - `TXMLScanedImageType`: `ImageName` (`0x004EBCAC`), `Encoding` (`0x004EBDF4`).
   - `TXMLConfigType`: `Type`, `DriverDialog`, `ImageEditor`, `MultiJpegSupport`, `PreviousImageName`.
   - `TXMLOutputType`: `ForceSinglePageFiles`.
 - These are Delphi property names and setter callsites, not a complete XML schema. Root/tag hierarchy, required values, image list ownership, outer result key and serialization remain open. `0x004012F8` is an external/relocated thunk whose target is outside the BPL; do not name it as a dictionary API.
