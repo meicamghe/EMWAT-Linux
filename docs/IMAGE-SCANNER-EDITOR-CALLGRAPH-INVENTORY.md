@@ -369,7 +369,9 @@ The run-36 cross-reference of the external dictionary-assignment thunk `0x004012
 | `TXMLScanedImageType` | `ImageName` | `0x004EBCAC` |
 | `TXMLScanedImageType` | `Encoding` | `0x004EBDF4` |
 
-- The `TScanCommand` fields `FRequestXML` (`+0x30`) and `FResponseXML` (`+0x34`) are therefore XML request/response objects, not raw image buffers.
+- The run-37 VMT scan found class-name-associated candidate records for `TXMLResponseScanType` (`0x004EB2B0`), `TXMLScanedImageType` (`0x004EB614`), `TXMLConfigType` (`0x004E958C`), and `TXMLOutputType` (`0x004E98A4`). However, the scanner labels all four **unverified VMT candidates**; the parsed slots `+0x54`/`+0xB8` are unmapped/implausible values and the candidate parent metadata points to an external XMLRTL VMT. Therefore this run does not resolve the concrete class VMT or either interface slot. Do not treat these candidate addresses as confirmed VMTs. A new symbol-driven pass now traces every TD32 method and direct caller for these four XML classes, which is more reliable than assigning semantics from the candidate table.
+
+The `TScanCommand` fields `FRequestXML` (`+0x30`) and `FResponseXML` (`+0x34`) are therefore XML request/response objects, not raw image buffers.
 - `FResponseXML` is initialized through `TXMLResponseScanType.AfterConstruction` at `0x004EB7F4`. The `TScanCommand` constructor then calls its interface slot `+0xB8` with callback address `0x004F22A4`; the callback/event semantics remain unresolved.
 - The public `TScanDocument` handler obtains the response object through interface slot `+0x54` and inserts that value into the outer result dictionary. The output key and final XML serialization are still unknown.
 - These are recovered Delphi property names and setter callsites, not yet a complete XML schema. The XML hierarchy, element/tag spelling, required/optional status, values and relationship to `VerifyConstraints` must be verified from the XML resources and setter callers before implementing a parser/serializer.
