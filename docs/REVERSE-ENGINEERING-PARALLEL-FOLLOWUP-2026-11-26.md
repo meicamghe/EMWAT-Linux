@@ -358,7 +358,7 @@ Run 11 (45802366826) completed successfully on workflow commit e72935d8af774bf51
 ### Scanner command dispatch narrowed to Fax PerformMethod
 
 The TD32 symbol search returns seven TScanCommand methods:
-- Constructor: 0x004F21DC
+- TD32 entry 0x004F21DC is labelled TScanCommand.$bdtr. Its body initializes child fields and returns the object pointer, and TFaxDocument.PerformMethod passes the class reference at 0x004F1F3C and stores the returned pointer. The destructor-style TD32 name conflicts with the apparent allocation/initialization path; do not label it a constructor until this discrepancy is resolved.
 - DoNewScan: 0x004F22AC
 - DoRequest: 0x004F22E4
 - GetNextPage: 0x004F2558
@@ -375,3 +375,33 @@ The TWordViwer symbol inventory contains 50 methods. WordAppDocumentBeforeClose 
 WordAppDocumentBeforeSave (0x004CD154) has no direct CALL xrefs. The raw PE pointer scan finds a code-section reference at VA 0x004B8CA8, within the TD32 range of TWordViwer.OnTmrAutoSave (0x004B8A84, size 10,540 bytes), plus a separate debug-section symbol-table occurrence. The code-section reference is a promising event/method-pointer assignment candidate, but the containing instruction and object-field semantics have not yet been decoded. Do not call this proof of OnDocumentBeforeClose registration.
 
 Next useful targets are the full TScanCommand request methods and the precise instruction context around 0x004B8CA8, together with FillImgFldsForPrint. No production Linux behavior changed in Run 11.
+
+
+## Track R — Run 12: scanner request lifecycle and Word event-sink registration
+
+Run 12 (45803097158) completed successfully on workflow commit 0652a17e1e7079b800f15dfaf83c917d481c82dd. All four jobs passed: scanner/result ownership, native regression, ImageEn acquisition, and Word/printer thread. Artifacts: scanner 15107623398, ImageEn 15107902714, Word/printer 15108816538.
+
+### TScanCommand request lifecycle
+
+Run 12 traced all seven TD32-listed TScanCommand procedures. The key relationships are:
+- GetNextPage (0x004F2558) calls VerifyConstraints (0x004F2C4C) and then LoadRequestXML (0x004F2B18) before processing the page/response state.
+- DoRequest (0x004F22E4) also calls LoadRequestXML and then branches on the result-image location and command state. It contains a recursive retry path for one status result.
+- LoadRequestXML reads the command's interface object at +0x34 and calls its VMT methods to populate/read XML-related values. HasError (0x004F2A94) checks the command error flag at +0x29, uses the request string at +0x2C and TResultImage at +0x20, then sets state byte +0x28 to 2 or 4 according to ShiftSerial.
+- DoNewScan (0x004F22AC) releases the command's +0x24 and +0x04 child objects and resets its state.
+- VerifyConstraints (0x004F2C4C) parses and compares multiple XML node/property values, then populates command fields including flags at +0x19/+0x1A/+0x1B, state/format bytes and numeric fields at +0x08/+0x0C/+0x10/+0x14. Exact XML names and schema still need string-constant decoding; do not infer their names from field offsets.
+
+The only direct TD32 CALL to GetNextPage remains TFaxDocument.PerformMethod at 0x005EECBD. That caller invokes address 0x004F21DC with class reference 0x004F1F3C, stores the returned object, calls GetNextPage, then reads a property from command interface field +0x34 via VMT slot +0x54 and copies it to its local response value. The TD32 symbol for 0x004F21DC is TScanCommand.$bdtr, although its body appears to initialize child objects and return the instance. Preserve this name/body discrepancy until the constructor/destructor role is proven.
+
+### Word event-sink callback registration clarified
+
+The Word artifact confirms TWordViwer.OnTmrAutoSave (0x004B8A84) is called from TWordViwer.LoadDocument at 0x004B7A58. Inside OnTmrAutoSave, at 0x004B8CA2 onward, code obtains the event-source object from this+0x44 and writes callback/instance pairs into its fields:
+- event-source +0x80 = 0x004CD154; +0x84 = this
+- event-source +0x90 = 0x004CD54C; +0x94 = this
+- event-source +0x98 = 0x004CD9C0; +0x9C = this
+- a conditional pair at +0x88/+0x8C selects 0x004D00AC or 0x004CE030 based on this+0x3C.
+
+This is direct code evidence that 0x004CD154, 0x004CD54C and 0x004CD9C0 are installed as callbacks on the event-source object. Combined with the previously recovered event-source/RTTI slot mapping, 0x004CD154 is consistent with the actual OnDocumentBeforeClose event despite its misleading TD32 name WordAppDocumentBeforeSave. The callback registration is now directly observed; keep the event-name mapping tied to the separate RTTI/slot evidence.
+
+By contrast, 0x004CCBBC (TD32-named WordAppDocumentBeforeClose) has no raw code pointer registration and its only direct CALL is from FillImgFldsForPrint at 0x004CCF8F. FillImgFldsForPrint (0x004CCDC8–0x004CD153) iterates document image fields and calls 0x004CCBBC in that print-field path. Treat 0x004CCBBC as a reusable field/print helper, not the registered COM close callback.
+
+No production Linux runtime behavior changed. Exact XML node names for TScanCommand and the semantic names of the conditional Word event slots remain open.
