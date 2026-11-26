@@ -126,3 +126,14 @@ A second pass over `TScanCommand.VerifyConstraints` (`0x004F2C4C–0x004F323F`) 
 - In `HasError`, when `FIsNextPageRequest` is true, the code passes `FPreviousReturnedFileName` into `TResultImage.ShiftSerial` (`0x004ECFC8`). A successful shift sets command state `+0x28` to 2; failure sets it to 4.
 
 These findings substantially clarify how the current request is classified and how numeric scan constraints are represented. They do not yet identify the external connector's page-sequence numbering convention, nor the exact meaning of the four-entry table at `0x0062A7F0`.
+
+## 9. Public TScanDocument dictionary-to-WordViewer handoff
+
+The complete `TScanDocument.PerformMethod` body (`0x005EE82C–0x005EEB47`) shows more than the dictionary key inventory:
+
+- It looks up `wordConfig` first. If the key is absent, it raises the explicit error text `Requset XML is not valid (wordConfig parameter is null)` (source spelling retained).
+- It then looks up `wordBody`, `letterImages`, and `signData`.
+- The handler forwards the four retrieved values into `TWordViewer.LoadDocument` at `0x004B7724`. Register/stack setup at the callsite passes the values as separate inputs; the helper then performs the actual Word document loading and related image processing.
+- The handler sets a state byte on its receiver after the LoadDocument call and logs its thread uninitialization path.
+
+This narrows the connector contract: `wordConfig` is explicitly required by this entrypoint; the other three keys are consumed and forwarded, but their optionality and exact serialized types are not yet proven. Do not treat the names as a complete schema or assume that each value is a plain string without inspecting the downstream stream/Variant handling.
