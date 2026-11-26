@@ -1817,3 +1817,13 @@ This is a contract/documentation correction, not a behavior change. Existing coo
 - Updated `docs/GAM-PRINTER-CONFIGURATION-RECOVERY.md` in commit `e85c5051a9de80a7f6542082a3428515f4e9e2db`; this is documentation-only. No merge/rebase was performed.
 - `TCreateTiff.SeparteImages` iterates image collections through virtual count/index calls and enters per-image processing. Exact VCL canvas/spool submission semantics remain open; no CUPS backend or runtime printer parity is claimed.
 - Next: finish Run 43 Image artifact review; recover the exact result-image base path versus XML response-name ownership, scan output cardinality, and `TFaxDocument` paging/handler relationship. Then update scanner contract docs and run fresh CI on the resulting combined head.
+
+
+## 2026-11-26 — Run 43 scanner trace completed
+
+- Run `45783897821` completed with all three jobs successful: `word-print-com`, `image-ui-and-vmt`, and `native-regression`. The Image/Scanner artifact `15099174916` was downloaded and reviewed.
+- `TFaxDocument.PerformMethod` (`0x005EEB48`) directly constructs `TScanCommand` (`0x004F21DC`), calls `GetNextPage` (`0x004F2558`), and retrieves the `Scanedimage` property from its `ResponseXML` object. The two dictionary keys used by this handler remain undecoded.
+- The separate `TScanDocument.PerformMethod` (`0x005EE82C`) reads `wordConfig`, `wordBody`, `letterImages`, and `signData`, then calls `0x004B7724`. Do not merge these handlers or assume an indirect relationship without further evidence.
+- Response XML is structurally split into `Status`, `ErrorCode`, and `Scanedimage`; the nested image has `ImageName` and `Encoding`. The `TScanCommand` path is stateful: it uses `FIsNextPageRequest` and `FPreviousReturnedFileName` while resolving the next image result.
+- Updated scanner call-graph inventory with the new evidence and explicit unknowns. The native regression job passed, but that does not validate a physical scanner, ADF/duplex, or Almas wire compatibility.
+- Next: compare this recovered handler contract against the native scan-result/connector boundary; implement only the parts whose semantics are now grounded. Capture real single-page and multipage outputs before finalizing response-name and file-cardinality rules. PR #2 remains Draft and unmerged; do not merge or rebase.
