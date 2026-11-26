@@ -1,3 +1,11 @@
+## 2026-11-26 — run 37 VMT scan inconclusive; run 38 symbol-driven XML tracing
+
+- Run 37 (`45771016476`) completed successfully across Native, Word and Image jobs. The VMT extension found class-name-associated candidates for `TXMLResponseScanType`, `TXMLScanedImageType`, `TXMLConfigType`, and `TXMLOutputType`, but all were explicitly marked **unverified**. Parsed slots `+0x54`/`+0xB8` were unmapped/implausible and the parent metadata pointed outside the BPL to XMLRTL; do not use these candidates to infer the response interface.
+- Updated `docs/IMAGE-SCANNER-EDITOR-CALLGRAPH-INVENTORY.md` to distinguish recovered XML property setter names from unresolved VMT/interface-slot identity.
+- Extended `resolve_delphi_vmt_slots.py` search targets to include the four scanner XML classes. The VMT scan alone did not resolve their virtual interface methods, so run 38 adds a symbol-driven trace of every TD32 procedure and direct caller belonging to those classes. This should recover method bodies/slot calls without trusting the candidate VMT layout.
+- Run 38 (`45773058079`, workflow commit `f844417`) is in progress: image/VMT lane is tracing XML-class procedures; Word print trace and Native regression are also running. Do not claim results until all three jobs finish.
+- This is an analysis/tooling-only change; no Linux scanner handler or guessed XML schema was added.
+
 ## 2026-11-26 — run 37 scanner XML VMT expansion
 
 - Workflow commit `3f53f522208c45f94261bf6f5321808dcc4a7496` queued run 37 (`45771016531`).
