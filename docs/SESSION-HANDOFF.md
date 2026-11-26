@@ -1,3 +1,27 @@
+## 2026-11-26 — Run 49 green; ScanCommand paging trace and connector contract extended
+
+Current branch: `feature/recovery-retention-policy`  
+Run 49: [45788814934](https://github.com/meicamghe/EMWAT-Linux/actions/runs/45788814934)  
+Detailed report: [REVERSE-ENGINEERING-RUN49.md](REVERSE-ENGINEERING-RUN49.md)
+
+- All three Run 49 jobs passed: native regression, Word/Printer/COM, and Image/UI/VMT. Both analysis artifacts were downloaded and reviewed.
+- The deep skipdata trace for `TScanCommand.GetNextPage` now covers all 1,340 bytes (16 `.byte` pseudo-instructions). This is full byte coverage, not full instruction decoding; embedded data and branch targets still need validation.
+- Confirmed paging path: `VerifyConstraints` then `LoadRequestXML`; branch on `FIsNextPageRequest +0x29`; next-page path checks `FPreviousReturnedFileName +0x2C` against `_P`, updates state bytes `+0x1D/+0x1E`, and updates `ResultImage +0x20`. Four-entry state table at `0x0062A7F0` remains unresolved.
+- Confirmed response XML names: root `response-scan`, child `scaned-image`, fields `status`, `errorCode`, `imageName`, `encoding`. Binary constants `success` and `base64` are present in the response path; runtime protocol semantics still need capture.
+- `TScanDocument.PerformMethod` dictionary lookup keys now include `wordConfig`, `wordBody`, `letterImages`, and `signData`. Do not infer value types/optionality from key strings alone.
+- ImageGear exports/callsites now resolve `IG_IP_flip` and `IG_IP_rotate_multiple_90`; ImageEn import inventory identifies `Acquire`, `LoadFromFileAuto`, `SaveToFileTIFF`, and `PrintImage`.
+- Preserved Delphi resources inventory identifies scanner preview and image tools controls (crop, flips, rotations, TIFF/JPEG, multi-image view, add/scan/print). Resource presence is not runtime validation.
+- Word/Printer artifact reconfirms `EnumPrintersA` driver match `zvprt1` and actual pause check through `GetPrinterA` status offset `+0x48`; real spool submission remains unproven.
+- No code behavior was changed by this analysis. No merge or rebase was performed.
+
+Next:
+1. Validate all control-flow destinations in the skipdata trace and recover the four-state table.
+2. Trace request/response XML end-to-end, including caller-side interpretation and response collection cardinality.
+3. Recover `.tmp` helper output and `document` Variant semantics.
+4. Trace ImageEn Acquire through TWAIN/WIA device setup, transfer and TIFF persistence.
+5. Resolve Word/GAM actual spool submission and completion.
+6. Keep physical scanner/ADF/Duplex and real printer acceptance explicitly open.
+
 ## 2026-11-26 — Run 40 complete; SANE variable-height support committed
 
 Current branch: `feature/recovery-retention-policy`  
