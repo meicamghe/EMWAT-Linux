@@ -1,3 +1,10 @@
+## 2026-11-26 — result-image ownership and serial candidate check
+
+- `TResultImage` separates location byte `+0x04`, response filename `+0x08`, and scan path `+0x10`.
+- Separate `TSetOfSinglePageImages` and `TSetOfMultiPageImages` implementations are present. Preserve this distinction in the native model.
+- `ShiftSerial(1)` asks the virtual `GetScanFilePath` for the next serial candidate and checks its existence; `HasError` maps that result to command state 2 or 4. Three-digit serial formatting is bounded at 999.
+- Full caveats and VAs: `docs/REVERSE-ENGINEERING-RUN49.md`.
+
 ## 2026-11-26 — TScanDocument required key and WordViewer handoff
 
 - `TScanDocument.PerformMethod` (`0x005EE82C–0x005EEB47`) explicitly requires `wordConfig`; if absent it raises the source message `Requset XML is not valid (wordConfig parameter is null)`.
