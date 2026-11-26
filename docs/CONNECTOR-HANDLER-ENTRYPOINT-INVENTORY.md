@@ -49,6 +49,7 @@ The internal `TScanCommand` class and its XML validation/page/result lifecycle a
 - `TFaxDocument` reaches `TScanCommand` and the result-image hierarchy, but its request key, page/file ownership and response contract remain unknown.
 - `TEditExcelWorkBook`, `TCompareWordDocument`, version, settings, last-edited-documents and send-log methods require their dictionary keys and response structures to be recovered.
 - Do not register stubs that return success, invent dictionary keys, or translate handler names directly into HTTP methods. Implement only after request parsing, result ownership, error mapping and response serialization are grounded in captures or complete static/runtime evidence.
+- Any dictionary value that becomes a file/path argument (Fax, ImageEdition, Excel, CompareWordDocument, or scanner result XML) must be treated as untrusted. Canonicalize beneath an approved application data/output root and reject absolute-path or traversal escapes; the Windows program's working-directory assumptions are not a Linux security policy.
 
 ## 5. Next reverse-engineering targets
 
