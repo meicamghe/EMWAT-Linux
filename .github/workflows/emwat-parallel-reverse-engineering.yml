@@ -740,6 +740,27 @@ jobs:
               ], check=True)
               print(f"traced {address} {symbol}")
           PY
+      - name: Extend ScanCommand paging trace across embedded data and dictionary helpers
+        shell: bash
+        run: |
+          mkdir -p parallel-re/image-ui/fax-scan-command/deep-trace
+          python tools/trace_td32_procedure_skipdata.py analysis-input/EmwatMethods.bpl1 0x004F2558 \
+            parallel-re/image-ui/fax-scan-command/deep-trace/get-next-page-skipdata.md
+          targets=(00454B9C 0046D2C0 0046D210 004738CC)
+          pids=()
+          for target in "${targets[@]}"; do
+            (
+              set -e
+              python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x$target \
+                parallel-re/image-ui/fax-scan-command/deep-trace/helper-$target.md 180 ret
+              python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x$target \
+                parallel-re/image-ui/fax-scan-command/deep-trace/callers-$target.md
+            ) &
+            pids+=("$!")
+          done
+          status=0
+          for pid in "${pids[@]}"; do wait "$pid" || status=1; done
+          exit "$status"
       - name: Inventory preserved image form resources without changing them
         run: |
           python - <<'PY'
