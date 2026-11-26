@@ -82,3 +82,17 @@ The result-image trace has now resolved three relevant string literals:
 - `_P000` is present at `0x004ED338`; its exact callsite/format role is still being reconciled and must not be merged with the other format string by assumption.
 
 These literals narrow the filename contract but do not yet establish concatenation order, serial ownership (session number versus collision retry), extension placement, or which concrete collection corresponds to one physical multipage file. The native `ScanResult` model therefore remains intentionally semantic rather than encoding guessed Windows suffix rules. Next work is to trace all callers/arguments around `0x004ED03C`, `0x004ED4C0`, and `0x004ED338`, then compare a real output directory and response filename from a sanitized Windows capture.
+
+
+## 2026-11-26 update — preview UI multipage TIFF output path traced
+
+Run 32 (`45767912737`, artifact `15092827056`) traces `TfrmGScanPreview.Scan` through its page loop:
+
+- The UI routine derives the output path from its path field and appends `_New.tif`.
+- It iterates one-based source page indices, reuses the current page handle when possible, and loads other pages with `IG_load_FD`.
+- It opens the same output path for each page using `CreateFileW` with `OPEN_ALWAYS`, calls `IG_save_FD` with the page index and reserved argument 0, then closes the handle. Format argument is `0x40028` when form field `+0x434 == 1`, otherwise `0x80028`.
+- On failure, the routine marks the operation unsuccessful and removes the partial output/restores the previous path state.
+
+This is strong static evidence for a single page-indexed `_New.tif` container in the preview UI path. It is **not** proof that the separate public `ScanDocument` connector's `TSetOfMultiPageImages` has identical ownership semantics. The connector result model remains open pending its path callers and a sanitized output/response capture.
+
+Run 32 also resolves ImageGear scanner imports `IG_scan_source_select`, `IG_scan_pages`, `IG_error_check`, `IG_error_clear`, and `IG_error_get`; their full argument/callback/error contracts remain unverified. No native scanner implementation was changed.
