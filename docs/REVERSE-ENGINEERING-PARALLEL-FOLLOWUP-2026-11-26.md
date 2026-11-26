@@ -324,3 +324,28 @@ Run 9 (45799375720) completed successfully on workflow commit f440723152a4c72c27
 The Word callback trace step at address 0x004CCCC9 executed successfully, but its output was initially written under deep-followup/word/, outside the Word artifact upload path deep-followup/word-printer/. This is an artifact-path omission, not a trace failure. Commit 56b9777d corrects the output path so the next workflow run retains the callback trace in the uploaded artifact. Run 10 should be checked for the file before interpreting the callback body.
 
 No production Linux behavior changed. Run 9's native regression, scanner trace and ImageEn import-resolution lanes are green; the exact Word close callback artifact remains pending the corrected upload.
+
+
+## Track P — Run 10 completion and Word close callback resolution
+
+Run 10 (45799833716), executed on workflow commit 56b9777d39d31c007d686066a0929452cffef9ec, completed successfully. All four jobs passed: native regression, Word/printer thread, scanner/result ownership, and ImageEn acquisition. Artifacts inspected:
+- Word/printer: 15105214824
+- Scanner/result ownership: 15106039295
+- ImageEn: 15106642640
+
+### Word close callback containing procedure resolved
+
+The corrected Word artifact now contains word-app-document-before-close.md, resolving the previous output-path omission. The callsite 0x004CCCC9 is inside the TD32-named procedure TWordViwer.WordAppDocumentBeforeClose:
+- Procedure range: 0x004CCBBC–0x004CCDC7
+- Size: 524 bytes; decoded coverage 524/524, with six skipdata pseudo-instructions
+- The call at 0x004CCCC9 invokes TWordViwer.GetXmlFieldInfo at 0x004BCA88.
+- The containing procedure receives a Word _Document Delphi interface argument and uses virtual dispatch at interface slot +0x38 before the GetXmlFieldInfo call. Its body returns the helper result through the normal epilogue.
+
+This establishes the containing method's TD32 symbol and the exact helper callsite. It does not, by itself, prove the complete COM event hookup, Save/Discard/Cancel wire behavior, or what Almas does after the callback. Keep the separate 0x004CD154 TD32-labelled WordAppDocumentBeforeSave method and its previously observed event-registration evidence distinct; do not collapse the two procedures based only on names or callsites.
+
+### Scanner and ImageEn confirmation
+
+- Scanner artifact confirms the four-entry GetNextPage table remains decoded with exit_status=0, empty stderr: empty slot, .tif, .jpg, .bmp. The shared helper 0x00454B9C resolves to Emwatutils.euGetASFileName; its 17 direct callers span TIFF splitting, Word loading/printing, fax, Excel and connector methods. It has no direct caller from TScanCommand.GetNextPage, so it is not a scanner-specific path helper.
+- ImageEn artifact independently reconfirms the import thunk identities: 0x004B0154=TImageEnMIO.PrintImage, 0x004B01A4=TImageEnMView.GetImageCount, 0x004B01F4=TImageEnMView.GetMultiSelectedImages, 0x004B01FC=TImageEnMView.GetMultiSelectedImagesCount, and 0x004B0204=TImageEnMView.MultiSelectSortList; 0x004B012C remains TImageEnMIO.Acquire.
+
+No production Linux runtime behavior changed. Run 10 is green for its workflow commit; it is not a CI result for the later PR head 84e596f811b2c0b32f4ed9f50b602f05f38c304b.
