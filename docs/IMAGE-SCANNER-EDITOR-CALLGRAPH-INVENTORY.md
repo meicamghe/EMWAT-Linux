@@ -583,7 +583,7 @@ The expanded trace confirms two distinct connector methods:
 - `TScanDocument.PerformMethod` at `0x005EE82C` reads the outer dictionary keys `wordConfig`, `wordBody`, `letterImages`, and `signData`, then calls helper `0x004B7724`. The helper's complete semantic contract remains unresolved.
 - `TFaxDocument.PerformMethod` at `0x005EEB48` directly constructs `TScanCommand` at `0x004F21DC`, calls `GetNextPage` at `0x004F2558`, then reads the command's `ResponseXML` object at `+0x34` and invokes its `Scanedimage` property accessor (VMT slot `+0x54`, corroborated by `TXMLResponseScanType.Get_Scanedimage` at `0x004EBB04`). The returned value is inserted into the handler's output dictionary. This is the concrete FaxDocument-to-ScanCommand path; it is not evidence that the public TScanDocument handler delegates to the same command.
 
-The two input dictionary keys used by `TFaxDocument.PerformMethod` are now decoded by the parallel Word/Printer lane's string inventory: `0x005EED54` is `.tmp` and `0x005EED6C` is `document`. The handler retrieves both values from its input dictionary. The trace passes the `.tmp` value into `GetNextPage`; the precise semantic role and expected type of each value (especially `document`) still require controlled input fixtures. Do not infer that either value is the returned image path.
+The previous interpretation of both strings as input dictionary keys was incorrect. `0x005EED54` is the literal `.tmp`, passed to helper `0x00454B9C` to construct a local string/path value which is later passed to `GetNextPage`; it is not looked up in the input dictionary. `0x005EED6C` is the `document` key. At `0x005EEBAE`, `TFaxDocument.PerformMethod` calls the generic `TDictionary<String, Variant>.SetItem` implementation (`0x0046D2E4`) with that key and a local value slot. This is a dictionary write/update, not a read. The precise value type and intended semantics of the `document` entry remain unresolved; do not claim it is fetched as an input document payload.
 
 ### ScanCommand request and state
 
@@ -606,9 +606,14 @@ The Run 43 evidence narrows the Linux contract but does not authorize a guessed 
 
 ### Run 43 key cross-reference correction
 
-The `.tmp` and `document` keys were decoded in the Run 43 Word/Printer artifact's `connector-handlers/handler-string-constants.md`, not in the Image/Scanner artifact. Their use sites are in the Image/Scanner `TFaxDocument.PerformMethod` trace. This is a cross-lane join within workflow run `45783897821`; the dictionary value types and exact meaning of `document` remain open.
+The `.tmp` and `document` strings were decoded in the Run 43 Word/Printer artifact's `connector-handlers/handler-string-constants.md`, not in the Image/Scanner artifact. Cross-lane use-site inspection corrects the initial interpretation: `.tmp` is a literal passed to a helper to construct a temporary string/path; `document` is passed to generic `TDictionary<String, Variant>.SetItem`, so it is written/updated rather than read. The variant value's semantic type remains open.
 
 
 ### Native response-metadata model follow-up
 
 The native `ScanResult` now has an optional `ScanResponseMetadata` member with separate raw `status`, `error_code`, and nested `scanned_image.image_name` / `encoding` fields. These are intentionally strings/optionals: no public status enum, encoding-to-extension mapping, or path inference is introduced. `scan_path`, `response_filename`, and the physical `ScanOutput` remain separate. A focused `test_scan_result` case verifies all four response fields remain independent from the physical output path and outer response filename. Code commit `faba1970efe44a36cd1a398711ac0f9eee6f2d9f`; test commit `6f75b41edb0643029479cbc2f1cf1f644d69ac6e`. No CI result is currently visible for the test commit; do not mark it verified until the native workflow runs.
+
+
+### Run 43 correction — dictionary direction and `.tmp` role
+
+The initial cross-lane interpretation in this section and the first Run 43 notes was wrong and is superseded here. Disassembly at `0x005EEB89` loads the `.tmp` literal into `0x00454B9C`; no dictionary lookup occurs at that site. The resulting local string is passed as the `edx` argument to `TScanCommand.GetNextPage` at `0x005EECBD`. Separately, `0x005EEBAE` calls `0x0046D2E4`, whose TD32 symbol is `TDictionary<String, Variant>.SetItem`; its key is `document`. Thus the handler mutates/writes that dictionary entry, not reads it. The actual Variant value and purpose still need further tracing. The next workflow adds a skipdata-aware GetNextPage disassembly plus helper traces for `.tmp` construction and dictionary internals.
