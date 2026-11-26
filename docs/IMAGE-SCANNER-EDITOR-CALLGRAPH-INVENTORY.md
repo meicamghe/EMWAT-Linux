@@ -247,32 +247,28 @@ Evidence: run `45763574936`, artifact `15090488790`, files under `image-io/image
 
 
 
-## 12. Connector and `TScanCommand` body traces (workflow run 45764043847)
+## 12. Runtime scanner/image connector and result-image contracts
 
-The run-27 body traces and run-29 string/symbol inventory cover the Word handler's runtime VMT target, the image-edition connector target, the internal `TScanCommand` lifecycle, and the first result-image class methods. Keep TD32 symbol names separate from runtime class resolution.
+The service-side class-resolution/VMT map in `docs/EMWAT-SERVICE-EXECUTABLE-ANALYSIS.md` resolves the actual runtime class for each concrete `VMT+0x10` target. Several TD32 procedure labels are stale or shifted; runtime class names below use the service/VMT mapping, with TD32 labels shown separately.
 
-### 12.1 Word handler at `0x005EE82C`
+### 12.1 Word handler — runtime `TEditWordDocument`, `0x005EE82C`
 
-TD32 labels this procedure `TScanDocument.PerformMethod`, but the runtime class/VMT analysis in `docs/WORD-DOCUMENT-PROTOCOL-ANALYSIS.md` maps the same VA to `TEditWordDocument.PerformMethod` for the `EditWordDocument` request. This runtime mapping takes precedence over the stale TD32 label.
+- TD32 label: `TScanDocument.PerformMethod`.
+- Runtime VMT evidence maps this VA to `TEditWordDocument.PerformMethod` for XML class `EditWordDocument`.
+- Reads `wordConfig`, `wordBody`, `letterImages`, and `signData`; delegates to `TWordViwer.LoadDocument` at `0x004B7724`.
+- The four embedded keys are confirmed by the run-29 string decode.
 
-Body observations:
+This is the Word handler, not the scanner endpoint.
 
-- Receives a generic dictionary with `AnsiString` keys in `EDX` and a result dictionary in `ECX`.
-- Performs four key lookups through helper `0x0046DC8C`, using constants at `0x005EE9F4`, `0x005EEA88`, `0x005EEAA0`, and `0x005EEABC`.
-- Converts selected values through helper `0x004735D0`; one value is checked/normalized through `0x00401270`.
-- Calls `TWordViwer.LoadDocument` at `0x004B7724` with the collected values and a local output pointer, then inserts the returned value into the result dictionary through helper `0x004012F8`.
-- Sets a byte flag at offset `+0x04` on the result object and notifies a global interface through vtable slot `+0x14` on success and exception cleanup paths.
+### 12.2 Public scanner connector — runtime `TScanDocument`, `0x005EEB48`
 
-The four request keys `wordConfig`, `wordBody`, `letterImages`, and `signData` are independently confirmed by the run-29 embedded string decode. **This is the Word document-edit handler, not evidence of a public `ScanDocument` endpoint.**
+- TD32 label: `TFaxDocument.PerformMethod`.
+- The service VMT map resolves runtime class `TScanDocument` to this `VMT+0x10` target.
+- Reads dictionary key `document` and emits the embedded log prefix `[Invoke ScanDocument]`.
+- Opens the supplied document value as a file stream, constructs the `TScanCommand` path through `0x004F21DC`, then calls `TScanCommand.GetNextPage` at `0x004F2558`.
+- The returned page/result object is inserted into the output dictionary.
 
-### 12.2 Image-edition connector — `TImageEdition.PerformMethod`, `0x005EF24C`
-
-- Performs one dictionary lookup through `0x0046DC8C` using string constant `0x005EF2F8`, decoded as `PlugIn`.
-- Converts the selected value through `0x004735D0`, then calls `@Applicationactivities.Finalization` at `0x0050357C` (module `imageEditionResposeXML`, procedure size `0xD48`) with that value and the result dictionary.
-- The finalization routine distinguishes a null input (status byte `2`) from a missing input file (status byte `1`), builds a path from the selected value and a static suffix, checks it with `FileExists`, and on the existing-file path opens a stream through `0x004041BC`. It then reads/decodes image-related data and populates shared response state through global interfaces. The exact payload format and response keys are not yet known.
-- Uses a separate two-argument cleanup path and global interface notification.
-
-The key is confirmed as `PlugIn`; the plugin path/payload format, operation selection, result schema and image-editor object contract remain unknown. Because the value participates in a filesystem path that is checked and opened as a stream, any Linux implementation must treat it as untrusted input and constrain resolution to an approved plugin/data root; do not pass it directly to file APIs or allow traversal/absolute-path escape. The string constants used by `Finalization` are queued for decoding in the next pass. This remains a distinct image-edition connector target.
+This confirms that a public Windows `ScanDocument` connector exists. It is not the same code path as the `TfrmGScanPreview.Scan` UI method; it consumes a document/result request and delegates to the stateful `TScanCommand`/result-image layer. The `document` path value is untrusted and must be confined beneath an approved application data/output root in any Linux implementation.
 
 ### 12.3 Internal `TScanCommand` request/page lifecycle
 
@@ -280,51 +276,16 @@ The key is confirmed as `PlugIn`; the plugin path/payload format, operation sele
 |---|---:|---|
 | `DoNewScan` | `0x004F22AC` | Clears/reinitializes object fields at `+0x24` and `+0x04`, masks an input flag with `0xFC`, and calls a state-reset helper; positive input flags trigger additional initialization. |
 | `DoRequest` | `0x004F22E4` | Loads/parses request XML, examines result-image state, calls result/controller helpers, validates constraints, and updates status byte `+0x28` with distinct values. One branch recurses after a result-object callback. |
-| `GetNextPage` | `0x004F2558` | Calls `VerifyConstraints` and `LoadRequestXML`; uses a multi-file branch when flag `+0x29` is set; calls result-image helper `0x004EC8B4` with page/selection arguments and stores its return at `+0x20`; then calls `HasError`. Exact helper identity is unresolved. |
-| `HasError` | `0x004F2A94` | For the multi-file branch, constructs a path from field `+0x2C`, passes it to a result-object method, then calls helper `0x004ECFC8` and maps the result into status byte `+0x28`. Exact helper identity is unresolved. |
+| `GetNextPage` | `0x004F2558` | Calls `VerifyConstraints` and `LoadRequestXML`; uses a multi-file branch when flag `+0x29` is set; constructs a `TResultImage` via `0x004EC8B4` (`UnicodeString` path and `TImageFormat`), stores the returned object at `+0x20`, then calls `HasError`. |
+| `HasError` | `0x004F2A94` | For the multi-file branch, constructs a path from field `+0x2C`, passes it to a result-object method, then calls `TResultImage.ShiftSerial` (`0x004ECFC8`) and maps its Boolean result into status byte `+0x28`. `ShiftSerial` calls `GetScanFilePath` (`0x004ED03C`) and checks whether the resulting file exists. |
 | `LoadRequestXML` | `0x004F2B18` | Checks global service/controller state; obtains a string from an object at `+0x34`, combines it with global path/config state, and passes it to a global interface method at slot `+0x14`. Returns a Boolean-like result. |
 | `VerifyConstraints` | `0x004F2C4C` | Reads multiple child/attribute values through XML-like interfaces (vtable slots `+0xAC`, `+0xB0`, `+0xB4`, `+0xB8`, `+0xBC`), compares them against static strings, and sets validation/mode flags. |
 
-The command object stores state flags at offsets `+0x18` through `+0x1E`, plus `+0x28` and `+0x29`; result/path references are observed at `+0x20`, `+0x2C`, `+0x30`, and `+0x34`. These are object offsets only; do not assign semantic field names until XML strings and constructors are decoded.
+The command object stores state flags at offsets `+0x18` through `+0x1E`, plus `+0x28` and `+0x29`; result/path references are observed at `+0x20`, `+0x2C`, `+0x30`, and `+0x34`. These are object offsets only; do not assign semantic field names until XML tags and constructors are fully decoded.
 
-### 12.3.1 Result-image hierarchy and recovered XML literals
+#### 12.3.1 Constraint values and state flags
 
-The run-29 symbol inventory resolves the two helper addresses that were previously left unnamed:
-
-- `0x004EC8B4` is `TResultImage.Create(UnicodeString, TImageFormat)`.
-- `0x004ECFC8` is `TResultImage.ShiftSerial`, not a `HasError` method.
-- `0x004ED03C` is `TResultImage.GetScanFilePath`.
-- `0x004ECF50` is `TResultImage.NextFile`.
-- `0x004ED168` and `0x004ED298` are constructors for `TSetOfSinglePageImages` and `TSetOfMultiPageImages`, respectively.
-
-The constructor dispatches to concrete result-image implementations based on the format/mode arguments. This directly confirms that the Windows scan-result layer distinguishes a single-page-file collection from a multipage result object, matching the native `ScanOutput` variant model.
-
-The run-30 body traces further establish the following ownership behavior:
-
-| Method | Recovered behavior |
-|---|---|
-| `TResultImage.GetFilesCount` (`0x004ECC84`) | Returns the count from the internal collection stored under the result object at `+0x08`. |
-| `TResultImage.GetFileNamePath` (`0x004ECBD8`) | For a positive one-based index, calls `GetScanFilePath(index-1)`; otherwise returns the base path held at `+0x10`. |
-| `TResultImage.FileNameOf` (`0x004ECB6C`) | Resolves the path through the object's virtual path getter and returns a filename only when the file exists. |
-| `TResultImage.NextFile` (`0x004ECF50`) | Checks the current path; when it exists, passes the path and requested serial/index through helper `0x00403320` to derive the next filename. |
-| `TResultImage.GetFileStream` (`0x004ECD60`) | Checks the resolved file path and, if present, opens a stream through helper `0x004041BC`; absent files return an empty stream result. |
-| `TResultImage.GetFileSize` (`0x004ECCAC`) | Repeatedly calls `ShiftSerial` while the serial/path exists, then returns the final serial counter. |
-| `TSetOfMultiPageImages.Create` (`0x004ED298`) | Clears previous result state, stores a single base path at `+0x10`, then calls `ShiftSerial` to choose a non-colliding serial. |
-| `TSetOfMultiPageImages.GetScanFilePath` (`0x004ED4C0`) | Resolves the base file and builds a formatted path using an embedded format string at `0x004ED584`; the literal still needs decoding. |
-| `TSetOfMultiPageImages.SetResponseFileName` (`0x004ED58C`) | Normalizes/checks a candidate path and stores it only when the directory/file conditions pass. |
-
-The base `TResultImage.GetScanFilePath` (`0x004ED03C`) builds an indexed path using format string `0x004ED144`; the exact suffix format is still pending string decoding. The single-page collection uses this indexed-path behavior, while the multipage subclass overrides it with its one-container path. This is stronger evidence for the two native output variants than the class names alone, but exact path syntax, extension policy, and response filename serialization remain unresolved.
-
-The decoded `TScanCommand` / connector literals are:
-
-- Word request keys at `0x005EE9F4`, `0x005EEA88`, `0x005EEAA0`, `0x005EEABC`: `wordConfig`, `wordBody`, `letterImages`, `signData`.
-- Image-edition dictionary key at `0x005EF2F8`: `PlugIn`.
-- Scanner log strings: `SCAN: NewDocument.`, `SCAN: NextPage Requested.`, and ` - Gam Scanner`.
-- Scanner validation literals: `none`, `jpg`, `yes`, `no`.
-- Scanner error prefix: `<ScanDoc HasError>. ErrorXML: `.
-- A Persian warning string is embedded at `0x004F24C8`: «محدوديتهاي زير در تصوير رعايت نشده است. آيا مايليد عمليات تكرار شود؟» (the image did not satisfy listed constraints; the UI asks whether to retry).
-
-The values `none/jpg/yes/no` are confirmed constants used by `VerifyConstraints`. Their exact XML tag names are not available in this callsite, but the value-to-state mapping is visible:
+The decoded constants used by `VerifyConstraints` are `none`, `jpg`, `yes`, and `no`. Their exact XML tag names are not present at this callsite, but the value-to-state mapping is visible:
 
 | XML value read in traversal order | Resulting command state |
 |---|---|
@@ -339,17 +300,53 @@ The values `none/jpg/yes/no` are confirmed constants used by `VerifyConstraints`
 | Fifth value is not `no` | `+0x19=1`; equals `no` gives `+0x19=0` |
 | Sixth value is not `no` | `+0x1A=1`; equals `no` gives `+0x1A=0` |
 
-This is a positional XML traversal/value comparison map, not a recovered tag-name schema. The warning text is a UI prompt, not a protocol response. The `PlugIn` key does not by itself establish which image-editing operation the plugin selects.
+The embedded UI warning asks in Persian whether the operation should be repeated when image constraints are not satisfied. It is UI text, not an HTTP response.
 
+#### 12.3.2 Result-image hierarchy and file ownership
 
+Run 29/30 symbol and body traces resolve the Windows result-image hierarchy:
 
-### 12.4 Linux implementation boundary
+- `TResultImage.Create`: `0x004EC8B4`, accepts a `UnicodeString` path and `TImageFormat`.
+- `TResultImage.ShiftSerial`: `0x004ECFC8`; resolves `GetScanFilePath` (`0x004ED03C`) and checks file existence.
+- `TResultImage.NextFile`: `0x004ECF50`.
+- `TResultImage.GetFilesCount`: `0x004ECC84`; count comes from the internal collection at `+0x08`.
+- `TResultImage.GetFileNamePath`: `0x004ECBD8); for a positive one-based index it calls `GetScanFilePath(index-1)`.
+- `TResultImage.FileNameOf`: `0x004ECB6C); returns a filename only when the resolved file exists.
+- `TResultImage.GetFileStream`: `0x004ECD60); opens the resolved file through helper `0x004041BC`.
+- `TResultImage.GetFileSize`: `0x004ECCAC); repeatedly calls `ShiftSerial` while serial/path values exist.
+- `TSetOfSinglePageImages.Create`: `0x004ED168`.
+- `TSetOfMultiPageImages.Create`: `0x004ED298); stores one base path at `+0x10` and calls `ShiftSerial` to choose a non-colliding serial.
+- `TSetOfMultiPageImages.GetScanFilePath`: `0x004ED4C0`; uses a format string at `0x004ED584`, still awaiting exact string decode.
+- Base `TResultImage.GetScanFilePath` (`0x004ED03C`) uses a format string at `0x004ED144`, also awaiting exact decode.
 
-- The procedure labelled `TScanDocument.PerformMethod` at `0x005EE82C` is mapped to `TEditWordDocument.PerformMethod`; it is already part of the Word document-edit path.
-- `TImageEdition.PerformMethod` is a separate image-edition connector, but its exact operation/response contract is not yet recovered.
-- `TScanCommand` is an internal stateful XML/result object. Its connection to any public connector method remains unproven; do not infer a `ScanDocument` endpoint from the TD32 label.
-- Preserve the generic native `ScanResult` distinction between a page-file set and a multipage file, but do not map unnamed result-image helpers to concrete methods.
-- Do not register a Linux `ScanDocument` handler yet. The `TImageEdition` key is now confirmed as `PlugIn`, but its operation and response schema remain unknown. Map the `TScanCommand` XML constraint strings to their fields, trace helper `0x0050357C` and the remaining result-image methods, and recover response serialization before implementing a wire-compatible image/scanner method. The third XML value is copied into command path field `+0x2C` and later participates in result-file handling; any future Linux implementation must canonicalize it beneath an approved output root and reject absolute-path/traversal escapes.
+This confirms the Windows scan-result layer distinguishes a collection of single-page files from one multipage image result, matching native `ScanOutput = variant<SinglePageFileSet, MultiPageFile>`. Exact suffix syntax, extension policy, serial advancement, and response filename serialization remain open.
 
-Evidence: run `45764043847`, artifact `15090469945`, `image-ui/procedure-005EE82C.md`, `procedure-005EF24C.md`, and `procedure-004F22AC.md` through `procedure-004F2C4C.md`.
+### 12.4 ImageEdition and Upgrade are separate runtime methods
 
+**Runtime `TImageEdition` — `0x005EF300` (TD32 label `TEditExcelWorkBook.PerformMethod`)**
+
+- Embedded log prefix: `[Invoke EditImages]`.
+- Reads dictionary keys `data` and `config`.
+- Validates null/missing input and opens file streams through `0x004041BC`.
+- The complete image-edit operation, plugin payload, output ownership and response schema remain unresolved.
+- File/path values must be confined beneath an approved application data root.
+
+**Runtime `TUpgradeEmwat` — `0x005EF24C` (TD32 label `TImageEdition.PerformMethod`)**
+
+- Reads dictionary key `PlugIn`.
+- Delegates to `@Applicationactivities.Finalization` at `0x0050357C` in module `imageEditionResposeXML`.
+- The finalization routine distinguishes null input (status byte `2`) from missing file (status byte `1`), builds a path from the selected value and a static suffix, checks it with `FileExists`, and on the existing-file path opens a stream through `0x004041BC`.
+- The path/payload format is still unknown. Treat `PlugIn` as untrusted and constrain it to an approved plugin/data root; reject absolute-path and traversal escapes.
+
+Do not conflate the `PlugIn`/Finalization upgrade method with the runtime ImageEdition `data/config` method.
+
+### 12.5 Linux implementation boundary
+
+- Runtime `TEditWordDocument` is implemented as the current Linux default handler.
+- A public Windows `TScanDocument` connector is confirmed at `0x005EEB48`; Linux has not yet implemented its request/result/response contract.
+- Runtime `TImageEdition` is confirmed at `0x005EF300`, with `data` and `config` inputs; its operation and response serialization remain open.
+- `TFaxDocument`, version, upgrade, Excel, comparison, settings, last-edited-documents and send-log methods have runtime VMT targets, but require their complete request/response contracts.
+- Do not add handler stubs or infer HTTP methods from TD32 labels. Use the service runtime class/VMT map, not stale procedure labels.
+- Canonicalize every request-derived file path beneath an approved root.
+
+Evidence: `docs/EMWAT-SERVICE-EXECUTABLE-ANALYSIS.md`; run `45764043847` (connector/ScanCommand body traces); run `45764787287` (string and result-image symbol inventory); run `45765541247` (result-image body traces); run `45766302144` (remaining connector/helper traces).
