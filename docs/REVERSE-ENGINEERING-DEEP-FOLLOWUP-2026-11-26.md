@@ -75,7 +75,7 @@ This is an integration gap, not a failing test. The independent scan_result_cont
 
 ## 4. Workflow implementation note
 
-The scanner lane's state-table pointer step used scan_pe_pointer_refs.py without its output-path argument. The script therefore wrote its detailed report to its default bpl-analysis/PE-pointer-refs.md, outside the uploaded artifact directory; only the one-line summary was captured. The next workflow revision should pass an explicit artifact path. The scanner procedure/caller traces themselves were uploaded successfully.
+The scanner lane's state-table pointer step used scan_pe_pointer_refs.py without its output-path argument. The script therefore wrote its detailed report to its default bpl-analysis/PE-pointer-refs.md, outside the uploaded artifact directory; only the one-line summary was captured. The workflow was corrected in commit 7c4ac0ea70ac1d6485d7be614f41de7e15a7911a to pass an explicit artifact path. Run 50's already-uploaded artifact still lacks the detailed pointer report; the corrected step has not yet been rerun. The scanner procedure/caller traces themselves were uploaded successfully.
 
 ## 5. Next steps
 
