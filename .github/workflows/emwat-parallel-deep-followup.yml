@@ -8,6 +8,7 @@ on:
       - 'tools/trace_td32_callers.py'
       - 'tools/scan_pe_pointer_refs.py'
       - 'tools/trace_td32_procedure_skipdata.py'
+      - 'tools/dump_pe_delphi_pointer_table.py'
       - '.github/workflows/emwat-parallel-deep-followup.yml'
       - 'native/**'
       - 'python/**'
@@ -80,6 +81,8 @@ jobs:
         run: |
           python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 0x0062A7F0 \
             deep-followup/scanner-result/state-table-pointer-refs.md
+          python tools/dump_pe_delphi_pointer_table.py analysis-input/EmwatMethods.bpl1 0x0062A7F0 4 \\
+            deep-followup/scanner-result/next-page-state-table.md
           python tools/trace_td32_procedure_skipdata.py analysis-input/EmwatMethods.bpl1 0x004F2558 \
             deep-followup/scanner-result/get-next-page-control-flow.md
       - name: Trace fax temporary-path helper and result serial dispatch
