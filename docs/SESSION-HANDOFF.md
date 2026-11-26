@@ -1,3 +1,9 @@
+## 2026-11-26 — connector base wrapper and SendLog target traced
+
+- Run 32 (`45767912737`) native regression and Word connector lane passed. The Word artifact confirms the base wrapper `TEmwatMethod.Finalization` at `0x0046C9E0`: it calls `TEmwatMethod.Invoke` (`0x0046C82C`) to serialize dictionary pairs into XML parameter nodes, then calls the concrete handler via VMT slot `+0x10`. The `+0x54` interface call inside `Invoke` is the XML getter, not the handler dispatch.
+- Runtime `TShowSendLog` target `0x005EFF4C` is now body-traced: it obtains global service object `0x0062B4F0` through `0x00404D5C`, calls service vtable slot `+0x13C`, gets the result through interface slot `+0x54`, and inserts it into the result dictionary. Its output key/value serialization remains unresolved.
+- The run-32 Image job is finishing its result-image and ImageEn/TIFF callsite artifact. Native CMake/CTest and Python regression have passed in this run; the Image lane must complete before run 32 is marked fully green.
+
 ## 2026-11-26 — runtime connector mappings and request keys reconciled
 
 - The service-side VMT map in `docs/EMWAT-SERVICE-EXECUTABLE-ANALYSIS.md` is authoritative for runtime class names. TD32 `PerformMethod` labels are shifted for multiple methods; the connector inventory now separates runtime class, `VMT+0x10` target, and TD32 label.
