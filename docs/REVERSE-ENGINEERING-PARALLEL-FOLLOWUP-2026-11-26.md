@@ -241,3 +241,16 @@ The type hierarchy remains explicit: TSetOfSinglePageImages and TSetOfMultiPageI
 Run 5 confirms 0x004BCA88 has exactly three direct callers: two GetCaptionItemFont callsites and WordAppDocumentBeforeClose at 0x004CCCC9. The helper is the large GetXmlFieldInfo routine, not a close/archive routine. 0x004CD154 remains a TD32-labelled BeforeSave method but has no direct CALL xrefs; the callback registration/RTTI mapping to OnDocumentBeforeClose remains the stronger event identity evidence. Its visible path queries Word document state, uses the close-cancel result word, manipulates internal flags at +0x5E/+0x5F/+0x58 and may call an application-level event hook. Full semantics and undecoded tail remain open.
 
 No production Linux scanner, ImageEn, Word or printer behavior changed in this track.
+
+
+## Track J — Scanner table probe failure analysis and workflow repair
+
+Run 5 (45797672865) completed with overall failure because the scanner/result-ownership job failed in the 'Inspect global scan-state table and paging references' step. The preceding symbol extraction succeeded, and its artifact confirms exactly one raw reference to global 0x0062A7F0 at code address 0x004F25C8 (the immediate operand of the load at 0x004F25C6). The table-inspector output was absent, so no string values were recovered in that run. The independent ImageEn and Word/printer jobs succeeded, as did native regression.
+
+Inspection of the committed workflow identified a shell line-continuation defect: the table-inspector invocation contained a doubled trailing backslash, causing the output-path continuation to be parsed incorrectly. Commit 1a6729a2 fixes the continuation and captures stdout, stderr and exit status as artifacts; a probe failure is now recorded without skipping the remaining scanner helper traces. This is a diagnostic/CI-only correction, not a change to the parser's semantic assumptions.
+
+Run 7 (45798441917), on commit 1a6729a2, is the validation run for this repair. Its completion and the scanner table artifact must be checked before treating the static table inspection as successful. Run 6 (45798176238) was cancelled by the newer push while its independent lanes had completed; do not count it as a completed green run.
+
+### Confirmed GetNextPage selection mechanics from the Run 50 trace
+
+The full skipdata-enabled procedure trace for TScanCommand.GetNextPage (0x004F2558–0x004F2A93) shows it loads the global at 0x0062A7F0, then compares the PreviousImageName-derived string against four successive pointer entries, advancing the table pointer by four bytes and stopping on a match or after four entries. It stores the matched zero-based index in command byte +0x1D. A separate comparison against a constant string at 0x004F29E0 can set command byte +0x1E to 2. The method then constructs a TResultImage object using these state bytes and writes the result object pointer to command field +0x20. The table's string labels remain unknown until the static/runtime data is recovered; do not infer semantic names from the indices.
