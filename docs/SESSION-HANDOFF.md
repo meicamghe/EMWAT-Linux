@@ -1,3 +1,13 @@
+## 2026-11-26 — GAM printer configuration APIs and INI contract recovered
+
+- Run 32 Word/print job (`45767912737`, artifact `15092617354`) completed successfully; native regression also passed. The parallel image job was still running at handoff.
+- Resolved the Windows API boundary used by the GAM/Zan printer path: `RegOpenKeyExW`, `RegQueryValueExW`, `RegCloseKey`, `GetPrivateProfileIntW`, `GetPrivateProfileStringW`, `WritePrivateProfileStringW`, `SHGetFolderPathW`, `ShellExecuteW`, `GetVersionExW`, `Sleep`, VCL `Printer/Refresh`, and Delphi `FileExists/DirectoryExists/ExtractFileName/StrComp`.
+- `GetZanConfigurationDir` reads `HKLM\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\zvprt50\\UninstallString`; fallback uses CSIDL `0x26` (Program Files) plus `zvprt50`.
+- `SetPrinterForTiffout` reads `configure.ini` / `[policy]` / `allusersfolder`, selects a Windows special-folder path based on the policy and OS version, and falls back to user AppData if needed.
+- `CheckPrinterPaused` writes exact settings to `save.ini`, `image.ini`, and `general.ini`: TIFF, 256 image color, LZW compression, page type 0, one strip per page, no dialogs, hidden status dialog, and the `JobFinishes.GAM` sentinel. Exact section/key/value mappings are in `docs/GAM-PRINTER-CONFIGURATION-RECOVERY.md`.
+- The printer setup path references `GAMPrinterSetup.exe`, `zvprt1`, `ZVPsrc\\save.ini`, and `zvprt50\\`; launching the installer and observing a printer appear are separate from proving the driver can emit a correct TIFF.
+- No Linux printer implementation was added. Keep the Windows CSIDL/registry path logic separate from the Linux application-owned output directory.
+
 ## 2026-11-26 — connector base wrapper and SendLog target traced
 
 - Run 32 (`45767912737`) native regression and Word connector lane passed. The Word artifact confirms the base wrapper `TEmwatMethod.Finalization` at `0x0046C9E0`: it calls `TEmwatMethod.Invoke` (`0x0046C82C`) to serialize dictionary pairs into XML parameter nodes, then calls the concrete handler via VMT slot `+0x10`. The `+0x54` interface call inside `Invoke` is the XML getter, not the handler dispatch.
