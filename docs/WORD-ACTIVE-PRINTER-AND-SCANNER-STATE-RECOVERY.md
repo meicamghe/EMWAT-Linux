@@ -1,6 +1,6 @@
 # Word printer automation and scanner preview state recovery
 
-Evidence source: workflow run `45562585651`, artifact files generated from `analysis-input/EmwatMethods.bpl1`. This report records wrapper-level and state-management evidence only; it does not claim a completed end-to-end print or scanner hardware protocol.
+Evidence source: workflow runs `45562585651` and `45563007730`, with the latter's `emwat-parallel-image-ui` artifact generated from `analysis-input/EmwatMethods.bpl1`. This report records wrapper, import-table, and static control-flow evidence only; it does not claim a completed end-to-end print or scanner hardware protocol.
 
 ## 1. Word ActivePrinter wrappers
 
@@ -15,7 +15,7 @@ The wrappers do not identify the concrete printer string format, whether Word's 
 
 ## 2. Legacy Word PrintOut dispatch
 
-`0x00441E44` is `TWordApplication.PrintOutOld`. It resolves the application automation interface through `0x0043E210` and dispatches through vtable slot `+0x1E4`. This is distinct from the ActivePrinter getter/setter slots and distinct from the 18-Variant callsite in `BGPrintWithGamPrintOptions` (`0x004C5FF8`). The previously documented 18-vs-17 argument discrepancy remains unresolved; this wrapper does not resolve it.
+`0x00441E44` is `TWordApplication.PrintOutOld`. It resolves the application automation interface through `0x0043E210` and dispatches through vtable slot `+0x1E4`. This is distinct from the ActivePrinter getter/setter slots and distinct from the 18-Variant callsite in `BGPrintWithGamPrintOptions` (`0x004C5FF8`). The 18-vs-17 argument discrepancy remains unresolved; this wrapper does not resolve it.
 
 ## 3. TEmwatDocPrintHandler lifecycle
 
@@ -31,31 +31,54 @@ TD32 identifies the following methods in `frmWordPrintOptionUnit`:
 - `0x004A9884`: `SetReceiversValue`
 - `0x004A9A08`: `SetReceiversValueForSelected`
 
-The constructor initializes several interface/object fields at offsets `+0xC8` through `+0xD8`, stores a controller-like reference at `+0x48), and retains another object at `+0x50`. `DoOnTerminate` releases the five fields at `+0xC8..+0xD8`, releases and clears `+0x48` and `+0x40`, and invokes a method through the interface stored at `+0x44`. This is lifecycle/ownership evidence, not enough to assign semantic names to each field.
+The constructor initializes several interface/object fields at offsets `+0xC8` through `+0xD8`, stores a controller-like reference at `+0x48`, and retains another object at `+0x50`. `DoOnTerminate` releases the five fields at `+0xC8..+0xD8`, releases and clears `+0x48) and `+0x40`, and invokes a method through the interface stored at `+0x44`. This is lifecycle/ownership evidence, not enough to assign semantic names to each field.
 
 The CC/receiver routines enumerate two interface-backed collections and merge values into string fields at `+0x60` and `+0x64`, with a delimiter/formatting helper. This supports that the handler prepares recipient/CC metadata for document processing. The exact collection types, field names, and business meaning are not yet proven.
 
-## 4. Scanner preview page metadata
+## 4. Scanner preview error aggregation (symbol name is misleading)
 
-`0x0061D100` is `TfrmGScanPreview.GetImagePageNumber`. It obtains a count through ImageGear helper `0x004AFED8`, loops over page indices, and calls `0x004AFEE8` to retrieve per-page metadata into local output values. It assembles a three-field Variant-like record (each field tagged `0x11`) and calls `0x00403368` to serialize/format it into a shared state field. It also clears/updates shared status fields around the operation. This method is therefore a page-metadata aggregation/request helper, not merely a page-number getter.
+`0x0061D100` is named `TfrmGScanPreview.GetImagePageNumber` in TD32, but the expanded import-table and body trace shows that it is not a page-number getter:
 
-`0x0061D250` is `GetImgSize`. It calls `IG_page_count_get` (thunk `0x004AFEA8`) on the preview path, reads a value through interface slot `+0x114`, and for multipage input iterates page indices to call interface slot `+0x3C` with each index. It then updates an interface property through slot `+0x10C` and toggles a control's visibility. This establishes a page-count-driven UI refresh path; it does not prove image resampling or scanner resolution behavior.
+- `0x004AFED8` is an import thunk to `IG_error_check` (IAT `0x00630D0C`).
+- `0x004AFEE8` is an import thunk to `IG_error_get` (IAT `0x00630D04`).
+- `0x004AFEE0` is an import thunk to `IG_error_clear` (IAT `0x00630D08`).
 
-## 5. Scanner selection
+The body calls `IG_error_check`, uses its return value as the iteration bound, calls `IG_error_get` for each zero-based index with several output pointers, builds an aggregated string, and publishes a three-field Variant-like record through `0x00403368`. It then calls `IG_error_clear`. The exact meaning and types of the error fields, and the external serialization contract, remain to be recovered. Do not model this method as scanner page metadata.
 
-`0x0061DEF4` is `TfrmGScanPreview.SelectScanner`. It resets a state byte at `this+0x456`, consults a helper at `0x0061E3C8`, and on the selection path uses the form's window handle and path/configuration field at `this+0x458) to call `0x004AFF30` with mode-like values `0x28` or `2`. It then refreshes UI/state through `0x0061D100`, invokes `0x0061D3BC`, and validates the ImageGear handle at `this+0x428` using `IG_image_is_valid` (`0x004AFEC0`). The call target `0x004AFF30` has not yet been semantically resolved; do not assume its mode values mean scanner selection modes until the next import/caller trace establishes that.
+The actual page-count path is separate: `0x0061D250` (`GetImgSize`) calls `IG_page_count_get` through thunk `0x004AFEA8`, then iterates page indices and updates the preview/page interface. This is page-count-driven UI behavior, not evidence of source-image resampling or scanner resolution changes.
+
+## 5. Scanner API import identities and callsites
+
+The PE import inventory resolves the relevant ImageGear thunks exactly:
+
+| Thunk VA | IAT VA | Imported API |
+|---|---:|---|
+| `0x004AFF30` | `0x00630CE4` | `IG_scan_pages` |
+| `0x004AFF28` | `0x00630CE8` | `IG_scan_source_select` |
+| `0x004AFED8` | `0x00630D0C` | `IG_error_check` |
+| `0x004AFEE8` | `0x00630D04` | `IG_error_get` |
+| `0x004AFEE0` | `0x00630D08` | `IG_error_clear` |
+
+Two independently named high-level methods call the `IG_scan_pages` thunk:
+
+- `TfrmGScanPreview.SelectScanner` at `0x0061DEF4` calls `0x004AFF30` with the form window handle, path/configuration string, a mode-like value of `0x28` or `2`, and a final value of `1`.
+- `TGearImgProc.SelectScanner` at `0x004EF9CC` also calls `0x004AFF30`, then stores the returned value in its result/state field at `+0x4C`.
+
+This establishes the imported function identity and the observed callsite argument shapes. It does **not** establish the ImageGear prototype, calling convention, ownership rules, or the meaning of the `0x28` / `2` values. In particular, do not rename the imported API to scanner-source selection based on the Delphi wrapper name.
+
+The import `IG_scan_source_select` (`0x004AFF28`) is present in the PE import table, but its callsites have not yet been established by the inspected artifact. Its relationship to the two `SelectScanner` methods remains open.
 
 ## 6. Implementation constraints and open work
 
 - Model Word active-printer access as an automation adapter with separate get/set operations. Keep OS default-printer discovery as a separate capability.
 - Recover `Zanprinter.GetPrinterName`, `SetPrinterForTiffout`, `CheckPrinterPaused`, install/configuration paths, and their callsites before implementing printer selection or TIFF routing.
 - Keep the 18-Variant print callsite separate from the 17-argument wrapper until the true dispatch ABI is established.
-- Keep scanner page metadata separate from physical output-file count and from a multipage TIFF container's page count.
-- Resolve `0x004AFF30`, `0x004AFED8`, and `0x004AFEE8` against imports/callers before assigning external API names or C prototypes.
+- Keep scanner error aggregation, scanner page metadata, physical output-file count, and a multipage TIFF container's internal page count as distinct concepts.
+- Recover the import callsites and ABI for `IG_scan_pages` and `IG_scan_source_select`; do not infer prototypes from the stack shape alone.
 - Static disassembly does not validate actual Word, printer driver, scanner, ADF, duplex, or hardware behavior.
 
 ## Evidence
 
-- Workflow: `https://github.com/meicamghe/EMWAT-Linux/actions/runs/45562585651`
-- Word artifact: `emwat-parallel-word-print`
-- Image artifact: `emwat-parallel-image-ui`
+- Workflow runs: `https://github.com/meicamghe/EMWAT-Linux/actions/runs/45562585651`, `https://github.com/meicamghe/EMWAT-Linux/actions/runs/45563007730`
+- Artifacts: `emwat-parallel-word-print`, `emwat-parallel-image-ui`
+- Import inventory: `parallel-re/image-io/imports.md` from run `45563007730`
