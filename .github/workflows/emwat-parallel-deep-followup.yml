@@ -82,6 +82,16 @@ jobs:
             deep-followup/scanner-result/state-table-pointer-refs.md
           python tools/trace_td32_procedure_skipdata.py analysis-input/EmwatMethods.bpl1 0x004F2558 \
             deep-followup/scanner-result/get-next-page-control-flow.md
+      - name: Trace fax temporary-path helper and result serial dispatch
+        run: |
+          python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x00454B9C \
+            deep-followup/scanner-result/fax-temp-path-helper.md
+          python tools/trace_td32_procedure_skipdata.py analysis-input/EmwatMethods.bpl1 0x00454B9C \
+            deep-followup/scanner-result/fax-temp-path-helper-skipdata.md
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x00454B9C \
+            deep-followup/scanner-result/fax-temp-path-helper-callers.md
+          python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 0x00454B9C \
+            deep-followup/scanner-result/fax-temp-path-helper-pointer-refs.md
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -141,6 +151,16 @@ jobs:
                   f"deep-followup/imageen/callers-{safe}.md"
               ], check=True)
           PY
+      - name: Resolve ImageEn acquisition helper thunk
+        run: |
+          python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x004B0154 \
+            deep-followup/imageen/acquisition-helper-004B0154.md
+          python tools/trace_td32_procedure_skipdata.py analysis-input/EmwatMethods.bpl1 0x004B0154 \
+            deep-followup/imageen/acquisition-helper-004B0154-skipdata.md
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004B0154 \
+            deep-followup/imageen/acquisition-helper-004B0154-callers.md
+          python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 0x004B0154 \
+            deep-followup/imageen/acquisition-helper-004B0154-pointer-refs.md
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -212,6 +232,17 @@ jobs:
                   f"deep-followup/word-printer/procedure-skipdata-{safe}.md"
               ], check=True)
           PY
+      - name: Resolve Word close and archive helper candidates
+        run: |
+          for target in 0x004BCA88 0x004AEBBC 0x004CD154; do
+            safe=${target#0x}
+            python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 "$target" \
+              "deep-followup/word-printer/helper-$safe.md"
+            python tools/trace_td32_procedure_skipdata.py analysis-input/EmwatMethods.bpl1 "$target" \
+              "deep-followup/word-printer/helper-$safe-skipdata.md"
+            python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 "$target" \
+              "deep-followup/word-printer/helper-$safe-callers.md"
+          done
       - uses: actions/upload-artifact@v4
         if: always()
         with:
