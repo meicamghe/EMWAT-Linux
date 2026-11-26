@@ -2,7 +2,6 @@ name: EMWAT parallel deep follow-up lanes
 on:
   push:
     paths:
-      - '.github/workflows/emwat-parallel-deep-followup.yml'
       - 'analysis-input/EmwatMethods.bpl1'
       - 'tools/list_td32_symbols.py'
       - 'tools/trace_td32_procedure.py'
@@ -78,7 +77,7 @@ jobs:
       - name: Inspect global scan-state table and paging references
         run: |
           python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 0x0062A7F0 \
-            > deep-followup/scanner-result/state-table-pointer-refs.md
+            deep-followup/scanner-result/state-table-pointer-refs.md
           python tools/trace_td32_procedure_skipdata.py analysis-input/EmwatMethods.bpl1 0x004F2558 \
             deep-followup/scanner-result/get-next-page-control-flow.md
       - uses: actions/upload-artifact@v4
@@ -162,7 +161,7 @@ jobs:
           mkdir -p deep-followup/word-printer
           python tools/list_td32_symbols.py analysis-input/EmwatMethods.bpl1 \
             THidePrintingThread TCreateTiff SeparteImages GetPrinterName \
-            SetPrinterForTiffout Finalization Get_ActivePrinter Set_ActivePrinter \
+            SetPrinterForTiffout CheckPrinterPaused Get_ActivePrinter Set_ActivePrinter \
             > deep-followup/word-printer/symbol-index.md
           python - <<'PY'
           from pathlib import Path
@@ -178,7 +177,7 @@ jobs:
               address, name = cols[0].strip("`"), cols[4].strip("`")
               if any(term in name.casefold() for term in (
                   "thideprintingthread", "separteimages", "getprintername",
-                  "setprinterfortiffout", "finalization", "get_activeprinter",
+                  "setprinterfortiffout", "checkprinterpaused", "zanprinter@finalization", "get_activeprinter",
                   "set_activeprinter"
               )):
                   rows.append((address, name))
