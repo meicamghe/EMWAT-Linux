@@ -521,3 +521,32 @@ The constructor creates `TXMLResponseScanType` through `0x004EB7F4` and stores i
 Do not collapse response filename and physical output path into one property. The exact relationship between `imageName`, the response filename, the actual TIFF/JPEG file, and multi-page collection cardinality still requires the outer connector caller trace and a controlled runtime capture.
 
 Evidence: Run 39 artifacts `15095104593`/`15096235579`; Run 40 Image artifact `15098092258`.
+
+
+## 12.7 Run 42 — ScanCommand ownership and connector separation (2026-11-26)
+
+Run `45782764971` completed successfully on commit `295fc6e513664abe211d2ebeeda1964f1fcd584f`; the Image/Scanner artifact is `15099188562`.
+
+The new direct-constructor caller scan found:
+
+- `TScanCommand.Create` (`0x004F21DC`) is directly called from `TFaxDocument.PerformMethod` at `0x005EECA1`.
+- `TScanCommand.GetNextPage` (`0x004F2558`) is called from the same `TFaxDocument.PerformMethod` at `0x005EECBD`.
+- The separately named `TScanDocument.PerformMethod` begins at `0x005EE82C`. Its recovered body reads the outer dictionary keys `wordConfig`, `wordBody`, `letterImages`, and `signData`, then calls helper `0x004B7724`. The direct callsite scan did not identify this method as the direct constructor caller of `TScanCommand`.
+
+Therefore, do not collapse the `TFaxDocument`/scanner-command path into the public `TScanDocument` connector path based on names alone. Their relationship, any indirect dispatch between them, and the actual runtime invocation sequence still need proof.
+
+The field-reference pass found 59 references across seven `TScanCommand` methods. It corroborates the instance field table already recorded in section 12.5:
+
+- `ImgProc` at `+0x04`, `Options` at `+0x08`, `ResultImage` at `+0x20`, `FEditorForm` at `+0x24`.
+- `FCommandState` at `+0x28`, `FIsNextPageRequest` at `+0x29`, `FPreviousReturnedFileName` at `+0x2C`, request/response XML objects at `+0x30`/`+0x34`, and `FHasConstratints` at `+0x38`.
+- The code assigns numeric values 1, 2, 3 and 4 to `FCommandState` on different paths. Their public semantic meanings and their mapping to serialized `status`/ `errorCode` remain unresolved.
+- Offset `+0x18` is read by `DoRequest` as an option passed to the image processor, but it is not named in the recovered published field table. Keep it unnamed.
+- `VerifyConstraints` sets `FIsNextPageRequest` based on the request/previous-returned-filename path. This confirms a stateful next-page branch, not a stateless one-shot scan API.
+
+The attempt to inspect parent VMT `0x0062EEA4` returned clearly invalid metadata (including an implausible instance size); reject that parser output and do not use it to infer inheritance. The response-helper IAT probe at `0x0062ECDC` also found no absolute import thunk; it did not resolve a serializer/helper identity.
+
+Evidence:
+- Run 42 Image artifact `15099188562`.
+- Run 42 Word artifact `15098978072`.
+- Run 42 workflow `45782764971`: all three jobs passed.
+- All findings are static binary analysis; no physical scanner, ADF or duplex behavior is claimed.
