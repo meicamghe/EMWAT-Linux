@@ -145,3 +145,22 @@ Evidence:
 - Run 42 Word artifact `15098978072`.
 - Run 42 Image artifact `15099188562`.
 - Run 42 workflow `45782764971`: all three jobs passed.
+
+## 11. Run 43 — configuration preparation versus spooler state (2026-11-26)
+
+Workflow run `45783897821` completed its Word/Printer job successfully on workflow commit `e372fc188936ffcbeb54986630fe4981483a9577`. The Word artifact is `15099392610`.
+
+The expanded traces refine the printer boundary:
+
+- `Zanprinter.GetPrinterName` (`0x0047CAF0`) enumerates local Level-2 printer records and matches `PRINTER_INFO_2A.pDriverName` to `zvprt1`; it stores the first matching `pPrinterName` in global active-printer storage. This routine is discovery, not queue-state validation.
+- `Zanprinter.SetPrinterForTiffout` (`0x0047D238`) resolves the GAM configuration directory, reads the `allusersfolder/policy` value from `configure.ini`, selects a Windows special-folder branch, constructs the output directory and checks directory availability. It is output-path/configuration preparation, not a spooler status query.
+- `Zanprinter.CheckPrinterPaused` (`0x0047D448`) calls the two routines above and writes the recovered `save.ini`, `image.ini`, and `general.ini` settings through `WritePrivateProfileStringW`. Despite its symbol name, this body is the GAM INI configuration writer; do not interpret its Boolean return as a direct Winspool paused-state result.
+- The separate `Zanprinter.Finalization` procedure (`0x0047D8BC`) is the actual queue-handle/status path: it discovers the queue, opens it with `OpenPrinterA`, obtains `PRINTER_INFO_2` using `GetPrinterA`, checks the status field at offset `+0x48` for `PRINTER_STATUS_PAUSED`, and closes the handle. See `docs/EMWAT-PRINTER-SPOOLER-ANALYSIS.md`.
+- `Emwatutils.getPrinterNumJobs` (`0x00456258`) is a separate helper called from `TWordViewer.BGPrintWithGamPrintOptions`; the helper opens a queue through `OpenPrinterW`. Its name and caller establish a job-count role, but the complete API/result path is not yet decoded.
+- `TCreateTiff.SeparteImages` (`0x004A0148`) calls printer discovery/configuration, checks a separate readiness helper, then iterates the image collection using virtual count/index operations. It subsequently enters a per-image processing loop. The precise VCL canvas and spool submission mapping remains unresolved.
+
+### Linux design consequence
+
+Keep four interfaces distinct: (1) queue discovery/selection, (2) GAM-compatible TIFF output-directory and INI policy, (3) queue paused-state inspection, and (4) queued-job counting/correlation. A CUPS implementation should map these to separate IPP/CUPS operations and must not treat successful configuration as proof that a queue is ready. Preserve the TIFF options as metadata until a real GAM-produced TIFF fixture establishes byte-level and multipage equivalence.
+
+Evidence: Run 43 Word artifact `15099392610`, including `procedure-0047CAF0.md`, `procedure-0047D238.md`, `procedure-0047D448.md`, `printer-api/status-callers/open-printer-jobs-procedure.md`, and `printer-api/print-pipeline/procedure-004A0148.md`. Static analysis only; no Wine/Linux printer runtime success is claimed.
