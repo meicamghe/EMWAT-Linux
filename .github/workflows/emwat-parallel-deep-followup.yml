@@ -113,9 +113,7 @@ jobs:
               if len(cols) != 5 or not cols[0].startswith("`0x"):
                   continue
               address, name = cols[0].strip("`"), cols[4].strip("`")
-              folded = name.casefold()
-              if any(term in folded for term in ("getnextpage", "performmethod", "execute")):
-                  rows.append((address, name))
+              rows.append((address, name))
           rows = sorted(set(rows))
           (Path("deep-followup/scanner-result/scan-command-selected-symbols.txt")).write_text(
               "\n".join(f"{address} {name}" for address, name in rows) + "\n"
@@ -357,8 +355,9 @@ jobs:
               address, name = cols[0].strip("`"), cols[4].strip("`")
               folded = name.casefold()
               if any(term in folded for term in (
-                  "create", "destroy", "connect", "wordappdocumentbeforeclose",
-                  "wordappdocumentbeforesave", "beforeclose", "beforesave"
+                  "create", "destroy", "bctr", "bdtr", "connect", "ontmrautosave",
+                  "wordappdocumentbeforeclose", "wordappdocumentbeforesave",
+                  "beforeclose", "beforesave"
               )):
                   rows.append((address, name))
           rows = sorted(set(rows))
@@ -383,6 +382,38 @@ jobs:
                   f"deep-followup/word-printer/word-viewer-event-pointers-{safe}.md"
               ], check=True)
           PY
+          python tools/list_td32_symbols.py analysis-input/EmwatMethods.bpl1 FillImgFldsForPrint \
+            > deep-followup/word-printer/fill-img-fields-symbols.md
+          python - <<'PY'
+          from pathlib import Path
+          import subprocess
+          import sys
+
+          source = Path("deep-followup/word-printer/fill-img-fields-symbols.md").read_text()
+          rows = []
+          for line in source.splitlines():
+              cols = [part.strip() for part in line.strip().strip("|").split("|")]
+              if len(cols) == 5 and cols[0].startswith("`0x"):
+                  rows.append((cols[0].strip("`"), cols[4].strip("`")))
+          rows = sorted(set(rows))
+          (Path("deep-followup/word-printer/fill-img-fields-selected.txt")).write_text(
+              "\n".join(f"{address} {name}" for address, name in rows) + "\n"
+          )
+          for address, name in rows:
+              safe = address.replace("0x", "")
+              subprocess.run([
+                  sys.executable, "tools/trace_td32_procedure_skipdata.py",
+                  "analysis-input/EmwatMethods.bpl1", address,
+                  f"deep-followup/word-printer/fill-img-fields-{safe}.md"
+              ], check=True)
+              subprocess.run([
+                  sys.executable, "tools/trace_td32_callers.py",
+                  "analysis-input/EmwatMethods.bpl1", address,
+                  f"deep-followup/word-printer/fill-img-fields-callers-{safe}.md"
+              ], check=True)
+          PY
+          python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x004B8C80 0x004B8CE0 \
+            deep-followup/word-printer/on-timer-pointer-context.md
       - uses: actions/upload-artifact@v4
         if: always()
         with:
