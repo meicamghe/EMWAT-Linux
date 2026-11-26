@@ -60,7 +60,7 @@ class BridgeHTTPServerTests(unittest.TestCase):
             try:
                 connection.request(
                     "POST",
-                    "/?invoke=54320",
+                    "/?invoke=active",
                     body=b"request",
                     headers={
                         "Origin": "https://office.example",
@@ -282,7 +282,7 @@ class BridgeHTTPServerTests(unittest.TestCase):
             "/?invoke=",
             "/?invoke=54320",
             "/?invoke=12x",
-            "/?invoke=１２３",
+            "/?invoke=%EF%BC%91%EF%BC%92%EF%BC%93",
             "/?invoke=1&invoke=2",
             "/?other=1",
         )
