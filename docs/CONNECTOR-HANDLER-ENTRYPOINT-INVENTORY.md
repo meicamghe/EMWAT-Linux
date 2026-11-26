@@ -36,7 +36,7 @@ HTTP XML class attribute
 | Runtime class selected by XML | VMT+0x10 target | TD32 procedure label at that VA | Body/string evidence |
 |---|---:|---|---|
 | `TEditWordDocument` | `0x005EE82C` | `TScanDocument.PerformMethod` | Reads `wordConfig`, `wordBody`, `letterImages`, `signData`; calls `TWordViwer.LoadDocument` (`0x004B7724`). |
-| `TScanDocument` | `0x005EEB48` | `TFaxDocument.PerformMethod` | Reads key `document`, converts it to a path, opens a file stream (`0x004041BC`), logs `[Invoke ScanDocument]`, constructs `TScanCommand` (`0x004F21DC`), calls `GetNextPage` (`0x004F2558`), extracts the result through interface slot `+0x54`, and inserts it into the result dictionary. Output key/serialization still pending. |
+| `TScanDocument` | `0x005EEB48` | `TFaxDocument.PerformMethod` | Reads key `document`, converts it to a path, opens a file stream (`0x004041BC`), logs `[Invoke ScanDocument]`, constructs `TScanCommand` (`0x004F21DC`), calls `GetNextPage` (`0x004F2558`), reads `FResponseXML` (field `+0x34`) through interface slot `+0x54`, then calls unresolved external helper `0x004012F8`. Output dictionary key, XML root/tag and serialization still pending. |
 | `TFaxDocument` | `0x005EEDFC` | `TGetEmwatVersion.PerformMethod` | Reads key `fax`; opens two streams and passes the result through helper `0x00500C68`. Exact fax result/error contract pending. |
 | `TGetEmwatVersion` | `0x005EF110` | `TSetEmwatVersion.PerformMethod` | Logs COM initialization/uninitialization, calls `UpgradeEmwatPlugin` helper `0x00502F70` with mode 0 and `SetEmwatVersion` helper `0x0050291C`. Version source/result still need mapping. |
 | `TSetEmwatVersion` | `0x005EF218` | `TUpgradeEmwat.PerformMethod` | Calls `UpgradeEmwatPlugin` helper `0x00502F70` with mode 1; mutation/validation contract pending. |
@@ -53,7 +53,7 @@ HTTP XML class attribute
 ## 3. Implementation status
 
 - Linux currently registers `EditWordDocument` by default.
-- A public Windows `ScanDocument` connector is now confirmed. It delegates to `TScanCommand` and the `TResultImage` single-page/multipage result hierarchy; Linux has not yet implemented the matching handler.
+- A public Windows `ScanDocument` connector is now confirmed. It delegates to `TScanCommand` and the `TResultImage` single-page/multipage result hierarchy; Linux has not yet implemented the matching handler. Run 34 also recovered the `TScanCommand` field table (`ImgProc`, `Options`, `ResultImage`, `FEditorForm`, state/flag fields, `FPreviousReturnedFileName`, `FRequsetXML`, `FResponseXML`, `FHasConstratints`); its parent VMT pointer remains outside the BPL image, so virtual-slot layout is not fully verified.
 - `ImageEdition` is also confirmed as a distinct runtime connector with `data` and `config` inputs. Its output format and response schema remain open.
 - Fax, version, upgrade, Excel, comparison, settings, last-edited-documents and send-log methods have runtime VMT targets, but their complete input/output contracts are not all recovered.
 - No handler stubs or guessed success responses have been added.
