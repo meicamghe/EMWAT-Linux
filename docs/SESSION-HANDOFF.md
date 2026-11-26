@@ -1,3 +1,11 @@
+## 2026-11-26 — SANE ADF boundary audited against source and tests
+
+- Current SANE backend supports single-page/flatbed capture and explicitly selected simplex ADF batches. It does not silently repeat flatbed scans.
+- Simplex ADF classification requires an explicit feeder prefix plus a positive simplex/front/one-sided marker; ambiguous `ADF` and generic `Automatic Document Feeder` labels are rejected.
+- Duplex labels are rejected before SANE initialization with `duplex_adf_batch_not_supported`; this is intentional until true front/back acquisition and Almas protocol semantics are established.
+- ADF batch is bounded to 100 pages / 4 GiB, with bounded per-frame reads, end-of-feeder handling and one-time cancellation/reset.
+- Detailed source/test evidence and hardware acceptance gaps: `docs/SANE-SCANNER-ADF-CAPABILITY-STATUS.md`.
+
 ## 2026-11-26 — parallel follow-up: distinct scanner backends and file lifecycle
 
 - Run 49 artifacts were re-downloaded and reviewed in parallel across GEAR32PD scanning, ImageEn image tools, and Word/GAM printing. Detailed report: `docs/REVERSE-ENGINEERING-PARALLEL-FOLLOWUP-2026-11-26.md`.
