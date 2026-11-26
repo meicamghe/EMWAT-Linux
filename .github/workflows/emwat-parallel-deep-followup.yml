@@ -204,6 +204,11 @@ jobs:
                   "analysis-input/EmwatMethods.bpl1", address,
                   f"deep-followup/word-printer/pointers-{safe}.md"
               ], check=True)
+              subprocess.run([
+                  sys.executable, "tools/trace_td32_procedure_skipdata.py",
+                  "analysis-input/EmwatMethods.bpl1", address,
+                  f"deep-followup/word-printer/procedure-skipdata-{safe}.md"
+              ], check=True)
           PY
       - uses: actions/upload-artifact@v4
         if: always()
