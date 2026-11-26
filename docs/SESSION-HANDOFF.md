@@ -1836,9 +1836,16 @@ This is a contract/documentation correction, not a behavior change. Existing coo
 - Added an optional raw response-metadata structure to `ScanResult`, reflecting the recovered XML split: `Status`, `ErrorCode`, nested `Scanedimage.ImageName`, and `Scanedimage.Encoding`.
 - Kept `scan_path`, outer `response_filename`, physical `ScanOutput`, and response metadata as separate values. No enum meanings, encoding-to-extension conversion, or path inference are assumed.
 - Added focused regression coverage proving these fields remain independent. Commits: header `faba1970efe44a36cd1a398711ac0f9eee6f2d9f`; test `6f75b41edb0643029479cbc2f1cf1f644d69ac6e`.
-- The test commit currently has no visible workflow/status result. Verify CI before treating this native model change as green. Do not claim hardware or Almas protocol acceptance.
+- The first CI attempt exposed a missing-field-initializer warning under `-Werror`; fixed by adding the explicit `{}` default member initializer to `response_metadata`. Follow-up commit `35ffc42ef1717aecfdd065378c9cd249c3ff0ce8` passed Native regression run `45786665652` (C++ build, CTest, Python bridge) and Native image core run `45786665929` (build/test, sanitizer, Debian package lifecycle). This is native software verification only; it does not prove physical scanner or Almas protocol acceptance.
 
 
 ## 2026-11-26 — Corrected TFaxDocument dictionary analysis
 
 The first interpretation of `.tmp` and `document` as two input keys was disproved by the call targets. `.tmp` is passed as a literal to helper `0x00454B9C`; the resulting string is forwarded to `GetNextPage`. `document` is the key passed to `TDictionary<String, Variant>.SetItem` at `0x0046D2E4`, so this is a write/update. The Variant payload and semantic intent remain unknown. Added a skipdata-aware trace script and extended the reverse-engineering workflow to inspect the complete paging routine and relevant helper internals. Workflow will validate these tools on push.
+
+
+## 2026-11-26 — Native scanner metadata CI recovery
+
+- Initial run `45786489435` correctly caught missing-field-initializer warnings after adding `response_metadata` under `-Werror`. Fixed with `std::optional<ScanResponseMetadata> response_metadata{};`, retaining compatibility with existing three-field aggregate initializers.
+- Follow-up commit `35ffc42ef1717aecfdd065378c9cd249c3ff0ce8`: reverse-engineering run `45786665652` Native regression passed (C++ build, CTest, Python bridge tests); Native image core run `45786665929` passed build/test, sanitizer and Debian package lifecycle.
+- Image/Scanner and Word/Printer analysis jobs in run `45786665652` are still running at handoff time. Do not report those lanes complete until artifacts are uploaded and inspected.
