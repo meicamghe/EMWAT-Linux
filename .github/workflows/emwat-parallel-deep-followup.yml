@@ -164,6 +164,26 @@ jobs:
             deep-followup/imageen/acquisition-helper-004B0154-callers.md
           python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 0x004B0154 \
             deep-followup/imageen/acquisition-helper-004B0154-pointer-refs.md
+          python tools/trace_td32_procedure_skipdata.py analysis-input/EmwatMethods.bpl1 0x004B01A4 \
+            deep-followup/imageen/helper-004B01A4.md
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004B01A4 \
+            deep-followup/imageen/helper-004B01A4-callers.md
+          python tools/trace_td32_procedure_skipdata.py analysis-input/EmwatMethods.bpl1 0x004B01F4 \
+            deep-followup/imageen/helper-004B01F4.md
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004B01F4 \
+            deep-followup/imageen/helper-004B01F4-callers.md
+          python tools/trace_td32_procedure_skipdata.py analysis-input/EmwatMethods.bpl1 0x004B01FC \
+            deep-followup/imageen/helper-004B01FC.md
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004B01FC \
+            deep-followup/imageen/helper-004B01FC-callers.md
+          python tools/trace_td32_procedure_skipdata.py analysis-input/EmwatMethods.bpl1 0x004B0204 \
+            deep-followup/imageen/helper-004B0204.md
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004B0204 \
+            deep-followup/imageen/helper-004B0204-callers.md
+          python tools/trace_td32_procedure_skipdata.py analysis-input/EmwatMethods.bpl1 0x00404F3C \
+            deep-followup/imageen/helper-00404F3C.md
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x00404F3C \
+            deep-followup/imageen/helper-00404F3C-callers.md
       - uses: actions/upload-artifact@v4
         if: always()
         with:
