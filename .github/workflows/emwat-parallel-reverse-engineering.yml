@@ -359,9 +359,59 @@ jobs:
             0x00630D80 0x00630D84 0x00630D8C 0x00630D90 \
             > parallel-re/image-io/imageen/imageen-iat-callsites.md
           python tools/list_td32_symbols.py analysis-input/EmwatMethods.bpl1 \
-            TScanDocument TImageEdition TScanCommand TResultImage TSetOfSinglePageImages TSetOfMultiPageImages TImageEnMIO Acquire \
+            TScanDocument TImageEdition TScanCommand TResultImage TSetOfSinglePageImages TSetOfMultiPageImages TXMLResponseScanType TXMLScanedImageType TXMLConfigType TXMLOutputType TImageEnMIO Acquire \
             SaveToFileTIFF LoadFromFileAuto PrintImage \
             > parallel-re/image-io/imageen/imageen-symbols.md
+      - name: Trace scanner XML classes and property accessors
+        shell: bash
+        run: |
+          mkdir -p parallel-re/image-io/scan-command/xml-classes
+          python - <<'PY'
+          from concurrent.futures import ThreadPoolExecutor, as_completed
+          from pathlib import Path
+          import re
+          import subprocess
+          import sys
+
+          source = Path("parallel-re/image-io/imageen/imageen-symbols.md").read_text()
+          rows = []
+          wanted = ("TXMLResponseScanType", "TXMLScanedImageType", "TXMLConfigType", "TXMLOutputType")
+          pattern = re.compile(r"^\|\s*\x60(0x[0-9A-Fa-f]+)\x60\s*\|\s*(\d+)\s*\|[^|]*\|\s*\d+\s*\|\s*\x60([^\x60]+)\x60\s*\|")
+          for line in source.splitlines():
+              match = pattern.match(line)
+              if not match:
+                  continue
+              address, _size, symbol = match.groups()
+              if any(token.lower() in symbol.lower() for token in wanted):
+                  rows.append((address, symbol))
+          rows = sorted(set(rows))
+          out = Path("parallel-re/image-io/scan-command/xml-classes")
+          (out / "selected-symbols.txt").write_text(
+              "\n".join(f"{address} {symbol}" for address, symbol in rows) + "\n"
+          )
+
+          def trace(item):
+              address, symbol = item
+              safe = address.replace("0x", "")
+              subprocess.run([
+                  sys.executable, "tools/trace_td32_procedure.py",
+                  "analysis-input/EmwatMethods.bpl1", address,
+                  str(out / f"procedure-{safe}.md")
+              ], check=True)
+              subprocess.run([
+                  sys.executable, "tools/trace_td32_callers.py",
+                  "analysis-input/EmwatMethods.bpl1", address,
+                  str(out / f"callers-{safe}.md")
+              ], check=True)
+              return address, symbol
+
+          with ThreadPoolExecutor(max_workers=6) as pool:
+              futures = [pool.submit(trace, item) for item in rows]
+              for future in as_completed(futures):
+                  address, symbol = future.result()
+                  print(f"traced {address} {symbol}")
+          print(f"scanner XML procedures traced: {len(rows)}")
+          PY
       - name: Decode scanner connector keys and trace result-image helpers
         shell: bash
         run: |
