@@ -1,3 +1,11 @@
+## 2026-11-26 — parallel follow-up: scanner and ImageEn paths separated
+
+- The GEAR32PD scanner path and ImageEn image-tools acquisition path are distinct in the current binary evidence. GEAR32PD exposes `IG_scan_pages`, `IG_scan_source_select`, `IG_load_FD`, `IG_save_FD`, `IG_save_file`, page-count and image-validity APIs. ImageEn `Acquire` is called from `TfrmImageTools.InsertPicture`.
+- `TGearImgProc.ScanToFile` is a file-validation/save path, not the device adapter. The preview `Scan` method processes intermediate page files through Gear handles; the multipage save method contains explicit JPEG/TIFF and edited-image branches.
+- Word/GAM print preparation reaches `THidePrintingThread.Execute` after printer and pause-state checks, but actual spool submission and completion have not yet been resolved.
+- Detailed static evidence and architecture implications: `docs/REVERSE-ENGINEERING-PARALLEL-FOLLOWUP-2026-11-26.md`.
+- Physical scanner, ADF/Duplex, and real printer acceptance remain unverified.
+
 ## 2026-11-26 — result-image ownership and serial path clarified
 
 - Base `TResultImage` has distinct location, response-filename, and scan-path fields (`+0x04`, `+0x08`, `+0x10`).
