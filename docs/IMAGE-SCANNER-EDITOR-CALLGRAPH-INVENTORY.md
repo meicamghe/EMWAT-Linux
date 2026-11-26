@@ -1,3 +1,11 @@
+## 2026-11-26 — Linux SANE ADF implementation boundary
+
+- Native `SaneScannerBackend::scan_pages` supports bounded simplex ADF batches only when the source label explicitly identifies a feeder and a simplex/front/one-sided mode.
+- Ambiguous `ADF` labels are not assumed simplex; duplex/double-sided/two-sided labels fail explicitly before SANE device initialization.
+- Batch caps: 100 pages and 4 GiB; feeder-empty and partial-frame I/O errors are distinguished; cancel/reset is guarded once.
+- This implementation is backed by fake-SANE regression tests, not yet by physical ADF/duplex hardware acceptance.
+- Details: `docs/SANE-SCANNER-ADF-CAPABILITY-STATUS.md`.
+
 ## 2026-11-26 — separate GEAR32PD scanner and ImageEn image-tools paths
 
 - GEAR32PD imports resolve `IG_scan_pages` (IAT `0x00630CE4`, thunk `0x004AFF30`), `IG_scan_source_select` (IAT `0x00630CE8`, thunk `0x004AFF28`), `IG_image_is_valid`, `IG_page_count_get`, `IG_load_FD`, `IG_save_FD`, `IG_save_file`, and `IG_image_delete`.
