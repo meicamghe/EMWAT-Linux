@@ -137,3 +137,15 @@ The complete `TScanDocument.PerformMethod` body (`0x005EE82C–0x005EEB47`) show
 - The handler sets a state byte on its receiver after the LoadDocument call and logs its thread uninitialization path.
 
 This narrows the connector contract: `wordConfig` is explicitly required by this entrypoint; the other three keys are consumed and forwarded, but their optionality and exact serialized types are not yet proven. Do not treat the names as a complete schema or assume that each value is a plain string without inspecting the downstream stream/Variant handling.
+
+## 10. Result-image ownership and serial-path behavior
+
+The result-image class traces provide a more concrete ownership model:
+
+- Base `TResultImage` exposes a one-byte location value at instance offset `+0x04`, a response filename string at `+0x08`, and a scan-path string at `+0x10` (the latter is used by `GetScanFilePath`).
+- The class hierarchy contains distinct `TSetOfSinglePageImages` and `TSetOfMultiPageImages` implementations. Their constructors and overrides are separate; the native `ScanOutput` mapping must preserve that distinction rather than flattening every result into one generic path.
+- `TSetOfMultiPageImages.GetScanFilePath` and `GetResponseFileName` apply class-specific filename transformations. The source includes the literal `_P` marker and uses the three-digit `%.3d` formatting path in related serial handling. Exact complete filename concatenation still needs confirmation from a controlled runtime sample.
+- `TResultImage.ShiftSerial(1)` asks the virtual `GetScanFilePath` implementation for the next serial candidate and checks whether that candidate exists. `TScanCommand.HasError` uses this Boolean to choose command state 2 (candidate exists) or 4 (candidate absent) on the next-page path.
+- The `GetScanFilePath` routines contain bounds checks around a parsed numeric serial (including a maximum of 999) before formatting. This is evidence of a bounded three-digit sequence, not proof of the external connector's complete page numbering policy.
+
+This supports retaining distinct single-page/multipage ownership and a separate response filename in the Linux data model. It does not yet justify changing the native mapping or assuming that the file existence check alone defines the complete scanner protocol.
