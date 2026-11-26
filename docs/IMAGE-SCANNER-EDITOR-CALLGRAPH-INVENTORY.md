@@ -550,3 +550,23 @@ Evidence:
 - Run 42 Word artifact `15098978072`.
 - Run 42 workflow `45782764971`: all three jobs passed.
 - All findings are static binary analysis; no physical scanner, ADF or duplex behavior is claimed.
+
+
+## 12.8 Run 42 — response-name versus numbered scan-file paths
+
+The expanded result-container traces in Image artifact `15099188562` make the filename ownership split more concrete:
+
+- `TResultImage.GetResponseFileName` (`0x004ECF38`) returns the string stored at object offset `+0x08`.
+- `TResultImage.GetScanFilePath` (`0x004ED03C`) operates on the separate path string at offset `+0x10`.
+- `TResultImage.GetFileNamePath` (`0x004ECBD8`) starts from the `+0x10` path and delegates indexed resolution through `GetScanFilePath`; it is not simply an alias for the response filename.
+- The single-page path routine parses the trailing three-character numeric suffix, adds the requested page/index offset, rejects values outside the 000–999 range, formats the replacement with `%.3d`, and replaces that trailing suffix. This is a bounded serial filename scheme.
+- The multipage collection has a separate `GetScanFilePath` implementation (`0x004ED4C0`). It uses the stored page collection and the literal `_P` when constructing a page-specific path. The binary also contains `_P000`; do not assume that this exact literal is emitted in every branch without a runtime output fixture.
+- The binary contains both `.tif` and `.jpg` image extensions, plus `_New.tif`; these strings alone do not establish which extension is used for every scan mode or whether the response name includes the extension.
+
+This strengthens the Linux ownership model: keep at least three concepts separate—response-visible image name, collection/base output path, and resolved per-page physical file path. Apply bounded serial generation and collision handling explicitly; never derive a physical path by trusting an unconfined response filename.
+
+The exact interaction between `forceSinglePageFiles`, the two collection constructors, the response XML cardinality, and the final extension still needs the `TFaxDocument.PerformMethod` trace now queued in Run 43 and a controlled output capture.
+
+Evidence:
+- Run 42 Image artifact `15099188562`, especially `image-ui/result-path-callers/procedure-004ED03C.md`, `procedure-004ED4C0.md`, and the `TResultImage`/collection constructor traces.
+- Run 42 workflow `45782764971` passed all three jobs.
