@@ -223,12 +223,14 @@ The `Acquire` call is inside `TfrmImageTools.InsertPicture`; the `PrintImage` ca
 
 ### 11.2 Protocol connector methods
 
-The symbol index also identifies two concrete connector entry points in module `Winapi.MMSystem`:
+The symbol index labels two procedures in module `Winapi.MMSystem`:
 
-- `TScanDocument.PerformMethod` at `0x005EE82C` (796 bytes)
+- TD32 label `TScanDocument.PerformMethod` at `0x005EE82C` (796 bytes)
 - `TImageEdition.PerformMethod` at `0x005EF24C` (180 bytes)
 
-Both `PerformMethod` symbols expose a parameter typed as a Delphi generic `TDictionary` with `System.AnsiString` keys; the dictionary value type and exact key/value schema remain unresolved. This is a stronger indication of a dictionary-driven connector method than a positional argument list, but it does not reveal the HTTP/XML mapping by itself.
+**Important reconciliation:** the runtime class/VMT analysis in `docs/WORD-DOCUMENT-PROTOCOL-ANALYSIS.md` maps `0x005EE82C` to the concrete `TEditWordDocument.PerformMethod` target for the `EditWordDocument` request. That method reads `wordConfig`, `wordBody`, `letterImages`, and `signData`, then calls `TWordViwer.LoadDocument` at `0x004B7724`. The TD32 `TScanDocument` name is therefore a stale/misleading symbol label for this runtime Word handler; do not treat `0x005EE82C` as proof of a public `ScanDocument` endpoint.
+
+Both procedures expose a parameter typed as a Delphi generic `TDictionary` with `System.AnsiString` keys; the dictionary value type and exact key/value schema are not encoded in the symbol name. The `TImageEdition.PerformMethod` entry remains a separate image-edition connector target, but its key and operation are still unknown.
 
 The same index identifies the `TScanCommand` lifecycle/request methods:
 
@@ -282,10 +284,11 @@ The `TScanCommand` object stores distinct status/mode flags at offsets `+0x18), 
 
 ### 12.4 Consequence for Linux handler design
 
-- There is a concrete Windows `TScanDocument.PerformMethod` entry point and a separate `TImageEdition.PerformMethod` entry point; both are dictionary-driven.
-- `TScanCommand` is a stateful request/result object with XML constraint validation and page/file iteration. This is not the same code path as the `TfrmGScanPreview.Scan` UI handler.
-- `TResultImage.NextFile` and `TResultImage.HasError` are part of the scan-result lifecycle; preserve this file-set/result abstraction while mapping it to the native `ScanResult`.
-- Do not register either Linux handler yet. Decode the dictionary keys and XML constraint strings, trace `0x004B7724` / `0x0050357C`, and recover response serialization before implementing a wire-compatible method.
+- The procedure labelled `TScanDocument.PerformMethod` by TD32 at `0x005EE82C` is mapped by runtime VMT evidence to `TEditWordDocument.PerformMethod`; it is the Word handler, not a proven scanner endpoint.
+- `TImageEdition.PerformMethod` is a separate dictionary-driven image-edition entry point.
+- `TScanCommand` is a stateful internal request/result object with XML constraint validation and page/file iteration. Its relationship to a public connector method remains unproven; do not infer a `ScanDocument` endpoint from the TD32 class label.
+- Result-image helper identities remain unresolved; preserve the generic `ScanResult` file-set/multipage model without mapping the unnamed helpers to specific methods.
+- Do not register a Linux `ScanDocument` handler yet. Decode the `TImageEdition` key and `TScanCommand` XML constraint strings, trace helper `0x0050357C` and the result-image methods, and recover response serialization before implementing a wire-compatible scanner or image-edition method.
 
 Evidence: run `45764043847`, artifact `15090469945`, `image-ui/procedure-005EE82C.md`, `procedure-005EF24C.md`, and `procedure-004F22AC.md` through `procedure-004F2C4C.md`.
 
