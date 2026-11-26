@@ -2037,3 +2037,12 @@ Next probes: recover the four filename-table strings and state-byte meanings; re
 - Run 9 (45799375720) completed successfully: all four jobs passed (scanner/result ownership, ImageEn acquisition, Word/printer thread, native regression). Artifacts: scanner 15105863767, ImageEn 15106033536, Word/printer 15106722095.
 - ImageEn IAT names are resolved: 0x004B0154=TImageEnMIO.PrintImage, 0x004B01A4=GetImageCount, 0x004B01F4=GetMultiSelectedImages, 0x004B01FC=GetMultiSelectedImagesCount, 0x004B0204=MultiSelectSortList; Acquire remains 0x004B012C. See Track N.
 - Word callback trace at 0x004CCCC9 executed successfully but its output was outside the uploaded artifact directory. Commit 56b9777d fixes the output path. Validate the corrected artifact in Run 10 before using the callback body.
+
+
+## 2026-11-26 — Run 10 green; Word close procedure resolved
+
+- Run 10 (45799833716) completed successfully on workflow commit 56b9777d39d31c007d686066a0929452cffef9ec; all four jobs passed. Artifacts: Word/printer 15105214824, scanner/result ownership 15106039295, ImageEn 15106642640.
+- The corrected Word artifact now includes word-app-document-before-close.md. Address 0x004CCCC9 is inside TD32 procedure TWordViwer.WordAppDocumentBeforeClose (0x004CCBBC–0x004CCDC7, 524 bytes fully decoded apart from six skipdata pseudo-instructions); it calls TWordViwer.GetXmlFieldInfo at 0x004BCA88. This resolves the containing procedure and callsite, not the full COM hookup or Save/Discard/Cancel wire semantics. Keep it distinct from the separately labelled 0x004CD154 method.
+- Scanner table probe remains green (exit_status=0, empty stderr) and returns empty/.tif/.jpg/.bmp. Shared helper 0x00454B9C is Emwatutils.euGetASFileName, with 17 direct callers across TIFF, Word, fax, Excel and connector code; no direct GetNextPage caller.
+- ImageEn thunk identities reconfirmed: PrintImage, GetImageCount, GetMultiSelectedImages, GetMultiSelectedImagesCount, and MultiSelectSortList; Acquire is a separate thunk.
+- Details and evidence limits: Track P in docs/REVERSE-ENGINEERING-PARALLEL-FOLLOWUP-2026-11-26.md. No production Linux runtime behavior changed. Run 10 is green for its own workflow commit, not the later PR head 84e596f811b2c0b32f4ed9f50b602f05f38c304b.
