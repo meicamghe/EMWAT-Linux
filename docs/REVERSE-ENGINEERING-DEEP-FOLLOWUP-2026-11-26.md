@@ -10,7 +10,7 @@ Analyzed input: analysis-input/EmwatMethods.bpl1
 - imageen-acquisition: passed; artifact 15104267112.
 - scanner-result-ownership: passed; artifact 15102809326.
 - native-regression: passed (native build/CTest and Python bridge tests).
-- word-printer-thread: still running when this report was started. No conclusion from that lane is included here.
+- word-printer-thread: passed; artifact 15104841284. Its findings are recorded in section 6.
 
 These are static-analysis and CI results. They do not establish physical scanner, ADF/duplex, Windows printer-driver, or live Almas acceptance.
 
@@ -90,3 +90,30 @@ The scanner lane's state-table pointer step used scan_pe_pointer_refs.py without
 - emwat-deep-scanner-result-ownership — result-image procedures, callers and GetNextPage control-flow trace.
 - emwat-deep-imageen-acquisition — ImageEn InsertPicture/ScanPicture/printing-panel procedures and callers.
 - Word/Printer artifact will be appended after its lane completes.
+
+
+## 6. Word/GAM hidden print thread — Run 50
+
+Artifact: emwat-deep-word-printer-thread (15104841284). The word-printer-thread lane passed.
+
+### Call chain and printer selection
+
+- TCreateTiff.SeparteImages (0x004A0148–0x004A0A67) has two direct callers in TWordViewer.LoadDocument, at 0x004B7A9C and 0x004B7ABD.
+- SeparteImages calls Zanprinter.GetPrinterName (0x0047CAF0), checks the printer configuration path through SetPrinterForTiffout (0x0047D238), calls Zanprinter.Finalization (0x0047D8BC) for pause-state handling, then directly calls THidePrintingThread.Execute (0x004A0E88).
+- GetPrinterName resolves EnumPrintersA level-2 records. It walks PRINTER_INFO_2A records with a 0x54-byte stride, compares the configured driver-name string with the record field at +0x10, and returns the matching printer-name field at +0x04. This is printer discovery by driver identity, not proof that a print job was submitted.
+- The pause-state path checks PRINTER_INFO_2A +0x48 against PRINTER_STATUS_PAUSED (1). SeparteImages tests the Boolean result from Finalization before entering the hidden thread.
+- The hidden thread has one direct caller in the current TD32 direct-call scan: SeparteImages at 0x004A02B8. SeparteImages tests its Boolean return and has an error branch if it returns false.
+
+### Hidden thread behavior and limits
+
+- THidePrintingThread.Execute spans 0x004A0E88–0x004A1A9F (3,096 bytes). The current decoder produced 514 instructions covering 1,885 bytes; 1,211 bytes remain undecoded and must not be treated as instructions.
+- The decoded portion contains repeated indirect interface/VMT dispatches (including slots +0x1C, +0x20, +0x58, +0x5C, +0x70 and +0x74), file-stream construction/size/read operations, page-index loops, and repeated file-existence checks with short sleeps/retries. This is consistent with a per-page print-to-file coordination path, but the exact interface method identities and final completion contract remain unresolved.
+- The generated TWordApplication.Get_ActivePrinter and Set_ActivePrinter wrappers at 0x0043FF40 and 0x0043FFA0 have no direct TD32 CALL xrefs in this artifact. Do not claim that this path explicitly sets Word.ActivePrinter based only on the presence of those wrappers.
+- No decoded callsite yet proves the final Winspool submission, a completed spool job, or a successful TIFF/page handoff to Almas. Winspool imports and a hidden thread are insufficient evidence for those claims.
+
+### Next probes
+
+1. Decode the 1,211 remaining bytes with data-aware boundaries and resolve the hidden thread's interface/VMT objects.
+2. Resolve the file path literals and stream operations around the polling loops; distinguish temporary render files from final output files.
+3. Trace the actual Winspool/Word COM submission and completion signal, if present, before designing the Linux printer bridge.
+4. Keep the Word/GAM print path separate from ImageEn DoPrintingPanel until a shared backend is proven.
