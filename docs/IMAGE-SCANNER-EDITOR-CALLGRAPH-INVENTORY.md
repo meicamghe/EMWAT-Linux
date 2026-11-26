@@ -272,7 +272,7 @@ The four request keys `wordConfig`, `wordBody`, `letterImages`, and `signData` a
 - The finalization routine distinguishes a null input (status byte `2`) from a missing input file (status byte `1`), builds a path from the selected value and a static suffix, checks it with `FileExists`, and on the existing-file path opens a stream through `0x004041BC`. It then reads/decodes image-related data and populates shared response state through global interfaces. The exact payload format and response keys are not yet known.
 - Uses a separate two-argument cleanup path and global interface notification.
 
-The key is confirmed as `PlugIn`; the plugin path/payload format, operation selection, result schema and image-editor object contract remain unknown. The string constants used by `Finalization` are queued for decoding in the next pass. This remains a distinct image-edition connector target.
+The key is confirmed as `PlugIn`; the plugin path/payload format, operation selection, result schema and image-editor object contract remain unknown. Because the value participates in a filesystem path that is checked and opened as a stream, any Linux implementation must treat it as untrusted input and constrain resolution to an approved plugin/data root; do not pass it directly to file APIs or allow traversal/absolute-path escape. The string constants used by `Finalization` are queued for decoding in the next pass. This remains a distinct image-edition connector target.
 
 ### 12.3 Internal `TScanCommand` request/page lifecycle
 
