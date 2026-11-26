@@ -1,3 +1,14 @@
+## Run 49 follow-up — request constraints and next-page detection
+
+A follow-up pass over `VerifyConstraints` and `HasError` resolves:
+
+- `PreviousImageName` is copied to `FPreviousReturnedFileName +0x2C`; if non-empty, `FIsNextPageRequest +0x29` becomes true.
+- `TXMLConstraintsType` numeric properties: `ColorDepth`, `MinResolution`, `MaxResolution`, `MaxFileSize`. Their values occupy four slots beginning at `TScanCommand +0x08`; `FHasConstraints +0x38` is set when their sum is nonzero.
+- `HasError` calls `TResultImage.ShiftSerial` with the previous filename; success sets command state `+0x28=2`, failure sets it to `+0x28=4`.
+- External page numbering and exact XML option/value semantics remain open. Full details are in `docs/REVERSE-ENGINEERING-RUN49.md`.
+
+---
+
 ## Run 49 — scanner paging, XML contract, ImageGear/ImageEn and preserved UI resources
 
 Run 49's complete artifact review adds the following evidence (full details in `docs/REVERSE-ENGINEERING-RUN49.md`):
