@@ -200,3 +200,44 @@ The `IG_device_rect_set` calls establish that the scanner/image path also update
 
 Evidence: run `45763380148`, artifact `15090612978`, `image-io/image-operations/`.
 
+
+
+## 11. Separate ImageEn I/O path and connector handler entry points (workflow run 45763574936)
+
+The run-26 symbol and IAT inventory confirms that EMWAT contains a second imaging path based on ImageEn, distinct from the ImageGear `IG_*` scanner-preview path.
+
+### 11.1 ImageEn `TImageEnMIO` API callsites
+
+| IAT thunk | Resolved ImageEn method | Direct callsites |
+|---|---|---|
+| `0x004B0154` | `TImageEnMIO.PrintImage` | `0x0050A7C3`, `0x0050A8A6`, `0x0050A999`, `0x0050AA85` |
+| `0x004B014C` | `TImageEnMIO.LoadFromFileAuto` | `0x00508B88`, `0x0050A4D3` |
+| `0x004B0144` | `TImageEnMIO.GetParams` | `0x00508CD1`, `0x00508CE6`, `0x0050B648`, `0x0050B659`, `0x0050B676` |
+| `0x004B013C` | `TImageEnMIO.ExecuteSaveDialog` | `0x0050AFAE` |
+| `0x004B0134` | `TImageEnMIO.ExecuteOpenDialog` | `0x0050A48C`, `0x0050A4BF` |
+| `0x004B012C` | `TImageEnMIO.Acquire` | `0x0050A364` |
+| `0x004B011C` | `TImageEnMIO.SaveToFile` | `0x0050AFC4` |
+| `0x004B0114` | `TImageEnMIO.SaveToFileTIFF` | `0x0050B6A0` |
+
+The `Acquire` call is inside `TfrmImageTools.InsertPicture`; the `PrintImage` calls belong to `TfrmImageTools.DoPrintingPanel`. The save/load/dialog calls are distributed across image-tools handlers. This confirms a separate ImageEn capture, file-open/save and print-preview workflow. It must not be conflated with `TfrmGScanPreview.Scan` / ImageGear's `IG_scan_pages` and `IG_save_FD` path.
+
+### 11.2 Protocol connector methods
+
+The symbol index also identifies two concrete connector entry points in module `Winapi.MMSystem`:
+
+- `TScanDocument.PerformMethod` at `0x005EE82C` (796 bytes)
+- `TImageEdition.PerformMethod` at `0x005EF24C` (180 bytes)
+
+The same index identifies the `TScanCommand` lifecycle/request methods:
+
+- `DoNewScan` `0x004F22AC`
+- `DoRequest` `0x004F22E4`
+- `GetNextPage` `0x004F2558`
+- `HasError` `0x004F2A94`
+- `LoadRequestXML` `0x004F2B18`
+- `VerifyConstraints` `0x004F2C4C`
+
+These names are now confirmed symbol inventory only. The actual XML method names, dictionary keys, input validation, scan session state, response structure, error mapping, and page ownership are not yet established. The next workflow pass traces all eight procedures and their direct callers. Do not register Linux `ScanDocument` or `ImageEdition` handlers from names alone.
+
+Evidence: run `45763574936`, artifact `15090488790`, files under `image-io/imageen/`.
+
