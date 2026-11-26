@@ -1,3 +1,22 @@
+## 2026-11-26 — GAM printer Win32/INI helper APIs resolved
+
+- Run 24 (`45763269503`, workflow commit `07fa8be`) completed successfully in all three jobs. Its Word artifact `15091306103` was downloaded and inspected; image artifact `15091500582` is available. Native regression also passed in this run.
+- Helper thunks now resolve exactly:
+  - `0x00402674` = `RegOpenKeyExW`; `0x0040267C` = `RegQueryValueExW`; `0x0040266C` = `RegCloseKey`.
+  - `0x00402754` = `GetPrivateProfileIntW`; `0x00402910` = `WritePrivateProfileStringW`.
+  - `0x004044AC` = `SHGetFolderPathW`; `0x00402818` = `GetVersionExW`.
+  - `0x004032C0` = Delphi `FileExists`; `0x004032C8` = `DirectoryExists`; `0x00403320` = `ExtractFileName`; `0x00403350` = `StrComp`.
+  - `0x00404F4C` = VCL `Printer()`; `0x00404F54` = VCL `TPrinter.Refresh`; `0x00403438` = `Sleep`.
+- Corrected the INI argument mapping using the actual Win32 function prototypes and push order:
+  - `configure.ini`: `GetPrivateProfileIntW(section="allusersfolder", key="policy", default=1)`. The earlier report reversed section and key; that is withdrawn.
+  - `CheckPrinterPaused` uses `WritePrivateProfileStringW`, so it writes, rather than merely reads, the observed values:
+    - `save.ini`, section `save`: `folder` (runtime path), `basefilename` (runtime base name), `popupdialog=No Dialogs`, `filexistact=1`.
+    - `image.ini`, section `image`: `fileformat=tiff`, `imagecolor=256`, `compression=lzw`, `pagetype=0`, `rowsperstrip=Each page as a single strip`.
+    - `general.ini`, section `general`: `hidestsdialog=1`, `sentinel=1`, `sentinelfile=JobFinishes.GAM`.
+- `SetPrinterForTiffout` uses `GetVersionExW`, `GetPrivateProfileIntW`, and `SHGetFolderPathW`; the selected CSIDL is raw `0x23` or `0x2e`, depending on the policy and OS major version. The final runtime path under each Windows/account policy remains unverified.
+- Updated `docs/WORD-ACTIVE-PRINTER-AND-SCANNER-STATE-RECOVERY.md` with exact API identities, INI sections/keys/values, and the corrected config.ini mapping. No Linux defaults were hardcoded.
+- Runs 25 and 26 are active with additional ImageGear rotate/flip and ImageEn acquisition/TIFF callsite scans. Do not report their findings until the corresponding artifacts are inspected.
+
 ## 2026-11-26 — bridge fixture repair CI verification
 
 - Run 23 (`45763089199`, commit `9cf55fbcc2b3befc899ae8d46505ca13e8586173`) completed successfully across all three parallel jobs.
