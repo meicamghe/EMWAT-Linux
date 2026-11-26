@@ -1,3 +1,12 @@
+## 2026-11-26 — run 34 completed: ScanCommand and ImageEn caller contracts expanded
+
+- Run 34 (`45768861461`) completed successfully in all three lanes: Native regression, Word/print analysis, and Image/UI analysis. Artifacts: Word `15093730448`, Image `15092409839`. Native C++ and Python bridge tests passed.
+- `TScanCommand` constructor `0x004F21DC` is directly called by runtime `TScanDocument.PerformMethod`. Class-name/field-table metadata identifies `TScanCommand` with instance size `0x40`; field offsets include `ResultImage +0x20`, `FEditorForm +0x24`, `FCommandState +0x28`, `FIsNextPageRequest +0x29`, `FPreviousReturnedFileName +0x2C`, `FRequsetXML +0x30`, and `FResponseXML +0x34`. Parent VMT pointer `0x0062EEA4` is outside the BPL image, so its virtual layout remains unverified.
+- After `GetNextPage`, the public scanner handler reads field `FResponseXML` at `+0x34` through interface slot `+0x54`, then calls unresolved helper `0x004012F8`. Its IAT target is outside the image; the output dictionary key/XML root/tag/serialization remain unknown. No response schema was guessed.
+- ImageEn caller procedures are now mapped: `Acquire` from `TfrmImageTools.InsertPicture`; `LoadFromFileAuto` from `FreeRotate` and `DeletePicture`; `SaveToFileTIFF` from `btnPrinterSetupClick`; `SaveToFile` from `CreateParams`; `PrintImage` from `DoPrintingPanel`. Keep ImageEn acquisition/edit/print separate from ImageGear preview and public `ScanDocument` until a shared file/session handoff is proven.
+- GAM printer analysis now confirms `EnumPrintersA` Level-2 enumeration, stride `0x54`, and driver-name match `zvprt1`; the matching `pPrinterName` is copied to active-printer storage. Full INI/registry contract is in `docs/GAM-PRINTER-CONFIGURATION-RECOVERY.md`.
+- Updated `docs/IMAGE-SCANNER-EDITOR-CALLGRAPH-INVENTORY.md`, `docs/CONNECTOR-HANDLER-ENTRYPOINT-INVENTORY.md`, and GAM printer docs. No production Linux scanner or printer handler was added.
+
 ## 2026-11-26 — run 34 supersedes the cancelled run 33
 
 - Run 33 (`45768755921`) was cancelled when the expanded workflow commit `34a2900e9c53ca5262c227f9ab977322bb01fc74` queued run 34 (`45768861461`). This is a superseded CI run, not a test failure.
