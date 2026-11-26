@@ -112,3 +112,17 @@ Run 49's Word/Printer/COM artifact reconfirms the previously documented static c
 
 - `emwat-parallel-image-ui` — scanner, XML, ImageGear/ImageEn, VMT and form-resource analysis.
 - `emwat-parallel-word-print` — Word, GAM printer, Winspool and COM analysis.
+
+## 8. Request constraints and next-page detection — follow-up trace
+
+A second pass over `TScanCommand.VerifyConstraints` (`0x004F2C4C–0x004F323F`) and `HasError` (`0x004F2A94–0x004F2B17`) narrows several previously open questions:
+
+- The request parser constructs/stores the request XML object in `FRequestXML +0x30`.
+- `TXMLConfigType` properties are read, including `Type`, `DriverDialog`, `ImageEditor`, `MultiJpegSupport`, and `PreviousImageName`.
+- `PreviousImageName` is copied into `FPreviousReturnedFileName +0x2C`. Its string length is checked; a non-empty value sets `FIsNextPageRequest +0x29` to true. Thus the next-page branch is driven by the presence of the previous image name, not by an independently proven Boolean request flag.
+- The four `TXMLConstraintsType` numeric properties are `ColorDepth`, `MinResolution`, `MaxResolution`, and `MaxFileSize`. Their parsed values are stored in the constraint area beginning at `TScanCommand +0x08` (four numeric slots at `+0x08/+0x0C/+0x10/+0x14`).
+- `FHasConstraints +0x38` is set according to whether the sum of those four stored values is greater than zero. A zero-valued constraint set is therefore treated as no active constraints by this code path.
+- The request parser also reads literal values `none`, `jpg`, `yes`, and `no` while setting format/option flags. Their precise XML element-to-field mapping should be retained from the individual getter traces rather than inferred solely from string order.
+- In `HasError`, when `FIsNextPageRequest` is true, the code passes `FPreviousReturnedFileName` into `TResultImage.ShiftSerial` (`0x004ECFC8`). A successful shift sets command state `+0x28` to 2; failure sets it to 4.
+
+These findings substantially clarify how the current request is classified and how numeric scan constraints are represented. They do not yet identify the external connector's page-sequence numbering convention, nor the exact meaning of the four-entry table at `0x0062A7F0`.
