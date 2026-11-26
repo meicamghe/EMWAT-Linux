@@ -243,3 +243,49 @@ These names are now confirmed symbol inventory only. The actual XML method names
 
 Evidence: run `45763574936`, artifact `15090488790`, files under `image-io/imageen/`.
 
+
+
+## 12. Scanner connector and `TScanCommand` body traces (workflow run 45764043847)
+
+The run-27 artifact now contains body-level traces for the two connector methods and the `TScanCommand` request lifecycle. The dictionary key strings have not yet been decoded, so no XML field names are assigned in this section.
+
+### 12.1 `TScanDocument.PerformMethod` — `0x005EE82C`
+
+- Receives a generic dictionary with `AnsiString` keys in `EDX` and a result dictionary in `ECX` (per Delphi register calling convention).
+- Performs four key lookups through helper `0x0046DC8C`, using string constants at `0x005EE9F4`, `0x005EEA88`, `0x005EEAA0`, and `0x005EEABC`.
+- Converts selected values through helper `0x004735D0`; one value is checked/normalized through helper `0x00401270`.
+- Calls helper `0x004B7724` with the collected values and a local output pointer. It then inserts the returned value into the result dictionary through helper `0x004012F8`.
+- Sets a byte flag at offset `+0x04` on the result object and notifies a global interface through vtable slot `+0x14` on both success and exception cleanup paths.
+
+The method clearly performs dictionary-driven argument extraction and delegates to a scan/result operation. The key strings, dictionary value type, helper `0x004B7724` contract, result object schema, and relationship to the HTTP `Invoke` response remain unresolved.
+
+### 12.2 `TImageEdition.PerformMethod` — `0x005EF24C`
+
+- Performs one dictionary lookup through `0x0046DC8C` using string constant `0x005EF2F8`.
+- Converts the selected value through `0x004735D0`, then calls helper `0x0050357C` with that value and the result dictionary.
+- Uses a separate two-argument cleanup path and global interface notification.
+
+This is a much smaller dictionary-driven operation than `TScanDocument.PerformMethod`. Its key, operation, result schema and image-editor object contract are still unknown.
+
+### 12.3 `TScanCommand` request/page lifecycle
+
+| Procedure | VA | Body-level observations |
+|---|---:|---|
+| `DoNewScan` | `0x004F22AC` | Clears/reinitializes object fields at `+0x24` and `+0x04`, masks an input flag with `0xFC`, and calls a state-reset helper; if the input flag is positive it calls an additional initialization helper. |
+| `DoRequest` | `0x004F22E4` | Loads/parses request XML, checks the result image count, calls result/controller helpers, runs a constraint check, and updates status byte `+0x28` with several distinct values. One branch recurses after a result-object callback. |
+| `GetNextPage` | `0x004F2558` | Calls `VerifyConstraints` and `LoadRequestXML`; uses a multi-file branch when flag `+0x29` is set; calls `TResultImage.NextFile` (`0x004EC8B4`) with page/selection arguments and stores the returned page/result object at `+0x20`; then calls `HasError`. |
+| `HasError` | `0x004F2A94` | For the multi-file branch, constructs a path from field `+0x2C`, passes it to a result-object method, then calls `TResultImage.HasError` (`0x004ECFC8`) and maps the result into status byte `+0x28`. |
+| `LoadRequestXML` | `0x004F2B18` | Checks global service/controller state; obtains a string from an object at `+0x34`, combines it with global path/config state, and passes it to a global interface method at slot `+0x14`. Returns a Boolean-like result. |
+| `VerifyConstraints` | `0x004F2C4C` | Reads multiple child/attribute values through XML-like interfaces (vtable slots `+0xAC`, `+0xB0`, `+0xB4`, `+0xB8`, `+0xBC`), compares them against static strings, and sets several validation/mode flags in the command object. |
+
+The `TScanCommand` object stores distinct status/mode flags at offsets `+0x18), `+0x19), `+0x1A), `+0x1B), `+0x1C), `+0x1D), `+0x1E), `+0x28), and `+0x29), as well as result/path references at `+0x20), `+0x2C), `+0x30), and `+0x34`. These are object offsets only; names are deliberately not inferred from the values until XML strings and constructors are decoded.
+
+### 12.4 Consequence for Linux handler design
+
+- There is a concrete Windows `TScanDocument.PerformMethod` entry point and a separate `TImageEdition.PerformMethod` entry point; both are dictionary-driven.
+- `TScanCommand` is a stateful request/result object with XML constraint validation and page/file iteration. This is not the same code path as the `TfrmGScanPreview.Scan` UI handler.
+- `TResultImage.NextFile` and `TResultImage.HasError` are part of the scan-result lifecycle; preserve this file-set/result abstraction while mapping it to the native `ScanResult`.
+- Do not register either Linux handler yet. Decode the dictionary keys and XML constraint strings, trace `0x004B7724` / `0x0050357C`, and recover response serialization before implementing a wire-compatible method.
+
+Evidence: run `45764043847`, artifact `15090469945`, `image-ui/procedure-005EE82C.md`, `procedure-005EF24C.md`, and `procedure-004F22AC.md` through `procedure-004F2C4C.md`.
+
