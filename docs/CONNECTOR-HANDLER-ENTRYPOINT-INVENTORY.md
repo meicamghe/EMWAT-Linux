@@ -35,7 +35,7 @@ HTTP XML class attribute
 | Runtime class selected by XML | VMT+0x10 target | TD32 procedure label at that VA | Body/string evidence |
 |---|---:|---|---|
 | `TEditWordDocument` | `0x005EE82C` | `TScanDocument.PerformMethod` | Reads `wordConfig`, `wordBody`, `letterImages`, `signData`; calls `TWordViwer.LoadDocument` (`0x004B7724`). |
-| `TScanDocument` | `0x005EEB48` | `TFaxDocument.PerformMethod` | Reads key `document`; embedded log prefix `[Invoke ScanDocument]`; opens a stream, constructs the `TScanCommand` path and calls `GetNextPage` (`0x004F2558`). This is the public scanner connector. |
+| `TScanDocument` | `0x005EEB48` | `TFaxDocument.PerformMethod` | Reads key `document`, converts it to a path, opens a file stream (`0x004041BC`), logs `[Invoke ScanDocument]`, constructs `TScanCommand` (`0x004F21DC`), calls `GetNextPage` (`0x004F2558`), extracts the result through interface slot `+0x54`, and inserts it into the result dictionary. Output key/serialization still pending. |
 | `TFaxDocument` | `0x005EEDFC` | `TGetEmwatVersion.PerformMethod` | Reads key `fax`; opens two streams and passes the result through helper `0x00500C68`. Exact fax result/error contract pending. |
 | `TGetEmwatVersion` | `0x005EF110` | `TSetEmwatVersion.PerformMethod` | Logs COM initialization/uninitialization, calls `UpgradeEmwatPlugin` helper `0x00502F70` with mode 0 and `SetEmwatVersion` helper `0x0050291C`. Version source/result still need mapping. |
 | `TSetEmwatVersion` | `0x005EF218` | `TUpgradeEmwat.PerformMethod` | Calls `UpgradeEmwatPlugin` helper `0x00502F70` with mode 1; mutation/validation contract pending. |
