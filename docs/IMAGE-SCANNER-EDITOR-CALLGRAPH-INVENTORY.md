@@ -267,7 +267,7 @@ The four request keys are identified in the existing Word protocol analysis as `
 
 ### 12.2 Image-edition connector — `TImageEdition.PerformMethod`, `0x005EF24C`
 
-- Performs one dictionary lookup through `0x0046DC8C` using string constant `0x005EF2F8`.
+- Performs one dictionary lookup through `0x0046DC8C` using string constant `0x005EF2F8`, decoded as `PlugIn`.
 - Converts the selected value through `0x004735D0`, then calls helper `0x0050357C` with that value and the result dictionary.
 - Uses a separate two-argument cleanup path and global interface notification.
 
@@ -285,6 +285,30 @@ The key, operation, result schema and image-editor object contract are still unk
 | `VerifyConstraints` | `0x004F2C4C` | Reads multiple child/attribute values through XML-like interfaces (vtable slots `+0xAC`, `+0xB0`, `+0xB4`, `+0xB8`, `+0xBC`), compares them against static strings, and sets validation/mode flags. |
 
 The command object stores state flags at offsets `+0x18` through `+0x1E`, plus `+0x28` and `+0x29`; result/path references are observed at `+0x20`, `+0x2C`, `+0x30`, and `+0x34`. These are object offsets only; do not assign semantic field names until XML strings and constructors are decoded.
+
+### 12.3.1 Result-image hierarchy and recovered XML literals
+
+The run-29 symbol inventory resolves the two helper addresses that were previously left unnamed:
+
+- `0x004EC8B4` is `TResultImage.Create(UnicodeString, TImageFormat)`.
+- `0x004ECFC8` is `TResultImage.ShiftSerial`, not a `HasError` method.
+- `0x004ED03C` is `TResultImage.GetScanFilePath`.
+- `0x004ECF50` is `TResultImage.NextFile`.
+- `0x004ED168` and `0x004ED298` are constructors for `TSetOfSinglePageImages` and `TSetOfMultiPageImages`, respectively.
+
+The constructor dispatches to concrete result-image implementations based on the format/mode arguments. This directly confirms that the Windows scan-result layer distinguishes a single-page-file collection from a multipage result object, matching the native `ScanOutput` variant model. Exact file naming, serial advancement, and response publication still need method-body traces.
+
+The decoded `TScanCommand` / connector literals are:
+
+- Word request keys at `0x005EE9F4`, `0x005EEA88`, `0x005EEAA0`, `0x005EEABC`: `wordConfig`, `wordBody`, `letterImages`, `signData`.
+- Image-edition dictionary key at `0x005EF2F8`: `PlugIn`.
+- Scanner log strings: `SCAN: NewDocument.`, `SCAN: NextPage Requested.`, and ` - Gam Scanner`.
+- Scanner validation literals: `none`, `jpg`, `yes`, `no`.
+- Scanner error prefix: `<ScanDoc HasError>. ErrorXML: `.
+- A Persian warning string is embedded at `0x004F24C8`: «محدوديتهاي زير در تصوير رعايت نشده است. آيا مايليد عمليات تكرار شود؟» (the image did not satisfy listed constraints; the UI asks whether to retry).
+
+The values `none/jpg/yes/no` are confirmed constants used by `VerifyConstraints`, but their exact XML field-to-value mapping is not yet recovered. The warning text is a UI prompt, not a protocol response. The `PlugIn` key does not by itself establish which image-editing operation the plugin selects.
+
 
 ### 12.4 Linux implementation boundary
 
