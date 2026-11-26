@@ -7,6 +7,8 @@ on:
       - 'tools/trace_td32_procedure.py'
       - 'tools/trace_td32_callers.py'
       - 'tools/scan_pe_pointer_refs.py'
+      - 'tools/trace_td32_procedure_skipdata.py'
+      - '.github/workflows/emwat-parallel-deep-followup.yml'
       - 'native/**'
       - 'python/**'
   workflow_dispatch:
