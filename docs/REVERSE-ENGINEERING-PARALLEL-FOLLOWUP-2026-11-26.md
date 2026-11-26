@@ -87,7 +87,7 @@ This proves a second image acquisition/import capability in the image-tools UI. 
 - calls `Zanprinter.GetPrinterName` (`0x0047CAF0`);
 - consults the printer configuration/policy path through `SetPrinterForTiffout` (`0x0047D238`);
 - checks queue pause state through `Zanprinter.Finalization` (`0x0047D8BC`);
-- invokes the thread execution path `TCreateTiff.TH idePrintingThread.Execute` (`0x004A0E88`);
+- invokes the thread execution path `TCreateTiff.THidePrintingThread.Execute` (`0x004A0E88`);
 - walks the document page collection and processes each page through indexed interface calls.
 
 The method includes explicit error branches for unavailable printer, paused queue, and failures in the subsequent page/print path. The pause check itself opens the selected printer and reads the status field at `PRINTER_INFO_2A + 0x48`, comparing it with `PRINTER_STATUS_PAUSED`.
