@@ -307,7 +307,23 @@ The decoded `TScanCommand` / connector literals are:
 - Scanner error prefix: `<ScanDoc HasError>. ErrorXML: `.
 - A Persian warning string is embedded at `0x004F24C8`: «محدوديتهاي زير در تصوير رعايت نشده است. آيا مايليد عمليات تكرار شود؟» (the image did not satisfy listed constraints; the UI asks whether to retry).
 
-The values `none/jpg/yes/no` are confirmed constants used by `VerifyConstraints`, but their exact XML field-to-value mapping is not yet recovered. The warning text is a UI prompt, not a protocol response. The `PlugIn` key does not by itself establish which image-editing operation the plugin selects.
+The values `none/jpg/yes/no` are confirmed constants used by `VerifyConstraints`. Their exact XML tag names are not available in this callsite, but the value-to-state mapping is visible:
+
+| XML value read in traversal order | Resulting command state |
+|---|---|
+| First value equals `none` | `+0x1D=1`, `+0x1B=1` |
+| First value is not `none`, equals `jpg` | `+0x1D=2`, `+0x1B=0` |
+| First value is neither `none` nor `jpg` | `+0x1D=1`, `+0x1B=0` |
+| Second value equals `none` | `+0x1E=1`, `+0x1C=1` |
+| Second value is not `none`, equals `yes` | `+0x1E=2`, `+0x1C=0` |
+| Second value is neither `none` nor `yes` | `+0x1E=1`, `+0x1C=0` |
+| Third value is nonempty | `+0x29=1`; empty gives `+0x29=0` |
+| Fourth value equals `yes` | `+0x18=1`; otherwise `+0x18=0` |
+| Fifth value is not `no` | `+0x19=1`; equals `no` gives `+0x19=0` |
+| Sixth value is not `no` | `+0x1A=1`; equals `no` gives `+0x1A=0` |
+
+This is a positional XML traversal/value comparison map, not a recovered tag-name schema. The warning text is a UI prompt, not a protocol response. The `PlugIn` key does not by itself establish which image-editing operation the plugin selects.
+
 
 
 ### 12.4 Linux implementation boundary
