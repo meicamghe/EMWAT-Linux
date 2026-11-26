@@ -2009,3 +2009,11 @@ Next probes: recover the four filename-table strings and state-byte meanings; re
 - 0x004B01FC has three callers; DoPrinting compares it to 0x004B01A4 and DoPrintingPanel uses it as a loop bound. Current/selected-image state is plausible but unconfirmed.
 - 0x004B01F4 and 0x004B0204 are print/drag-panel helpers with unresolved identities; 0x00404F3C likewise has no TD32 procedure range. Keep all these names as address-only candidates.
 - Detailed caller evidence is in Track K of docs/REVERSE-ENGINEERING-PARALLEL-FOLLOWUP-2026-11-26.md. Overall Run 7 status still needs verification; native regression and ImageEn job were green at last check.
+
+
+## 2026-11-26 — GetNextPage table decoded and Run 7 green
+
+- Run 7 (45798441917) completed successfully; all four jobs passed: scanner/result ownership, ImageEn acquisition, Word/printer thread and native regression. Scanner artifact 15106421845.
+- The corrected static inspector decoded global 0x0062A7F0 -> table 0x00628250. Four entries: index 0 null/empty; index 1 `.tif`; index 2 `.jpg`; index 3 `.bmp` (Delphi UnicodeString candidates at 0x004EC0BC, 0x004EC0D4, 0x004EC0EC). GetNextPage compares a command-derived string against this table and stores the matching index at +0x1D.
+- Treat these as statically recovered string values only. Full Almas connector filename semantics and runtime use still require request/response capture; do not implement extension rules based only on this table.
+- The table probe shell fix is validated: exit_status=0, empty stderr, table output present. Detailed evidence in Track L of docs/REVERSE-ENGINEERING-PARALLEL-FOLLOWUP-2026-11-26.md.
