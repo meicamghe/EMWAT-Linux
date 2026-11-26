@@ -1,3 +1,16 @@
+## 2026-11-26 — Run 49 all green; scanner and printer static evidence expanded
+
+- Run 49 (`45788814934`) completed successfully across all three CI lanes: Native regression, Word/Printer/COM, and Image/UI/VMT. Native build/regression and Python bridge tests passed.
+- Both Run 49 artifacts were downloaded and inspected. Detailed evidence is recorded in `docs/REVERSE-ENGINEERING-RUN49.md`.
+- `TScanCommand.GetNextPage` deep trace covers 1,340/1,340 bytes using Capstone skipdata, with 16 `.byte` pseudo-instructions. Do not mistake full byte coverage for complete instruction decoding; embedded data and control-flow targets still require validation.
+- Paging evidence confirms the `FIsNextPageRequest` branch, previous filename comparison against `_P`, state updates at offsets `+0x1D/+0x1E`, and `ResultImage` update at `+0x20`. The four-entry table at `0x0062A7F0` and protocol meaning remain unresolved.
+- Response XML names are now backed by class/property traces: `response-scan` / `scaned-image`, with `status`, `errorCode`, `imageName`, `encoding`. The binary's response path contains `success` and `base64` constants; real external protocol semantics remain to be validated.
+- `TScanDocument.PerformMethod` checks dictionary keys `wordConfig`, `wordBody`, `letterImages`, and `signData`; value types and required/optional status remain unknown.
+- ImageGear `IG_IP_flip` / `IG_IP_rotate_multiple_90` and ImageEn `Acquire`, `LoadFromFileAuto`, `SaveToFileTIFF`, `PrintImage` callsites are indexed. Preserved resources show scan-preview and image-tools controls, but not runtime success.
+- Word/Printer static evidence confirms local printer enumeration by driver `zvprt1` and the `GetPrinterA` paused-status check. A complete real spool submission is not yet proven.
+- PR #2 remains Draft/open/unmerged. This run does not prove physical scanner, ADF/Duplex, printer, or full Almas end-to-end compatibility.
+- Next priorities: validate skipdata control flow/state table; recover request/response semantics; trace ImageEn acquisition and TIFF output; finish Word-to-spool submission; rerun host acceptance tests.
+
 ## 2026-11-26 — SANE variable-height frames, Run 40 green, and Run 39 artifact review
 
 - Current feature-branch head: `f956e40b1ad3d7dfd4959a7d3df1ce77f0a9dba1` (`native: support SANE frames with unknown line counts`).
