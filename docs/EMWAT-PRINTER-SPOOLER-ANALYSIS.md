@@ -13,7 +13,7 @@ Procedure: `0x0047CAF0` (`GdiPlus` module).
 - Reads `pDriverName` at record offset `+0x10` and compares it with the embedded string at `0x0047CC64`.
 - When a match is found, reads `pPrinterName` at offset `+0x04` and stores it in global `0x0062B310`.
 
-**Interpretation:** the queue is selected by matching its installed driver name, then retaining the corresponding queue name. The literal at `0x0047CC64` has not yet been independently decoded. Do not infer that it is exactly `Zan Image Printer` or `GAM Virtual Printer` solely from adjacent branding strings.
+**Interpretation:** the queue is selected by matching its installed driver name, then retaining the corresponding queue name. Run 42's decoded string inventory independently resolves the literal at `0x0047CC64` as `zvprt1`. The comparison is therefore against the installed printer **driver name** `zvprt1`, not a queue-name or product-brand string. The routine then copies the matching `pPrinterName` into the active queue-name global. This is static string/disassembly evidence; it does not establish which queue is selected when multiple local queues share that driver.
 
 Direct callers identified:
 - `Zanprinter.InstallZanPrinter`
@@ -80,3 +80,10 @@ These are static callsites. They do not prove that every helper runs for every p
 3. Find the higher-level caller of `ExtractFileNameEX` (including VMT/indirect callsites).
 4. Correlate the matching `JOB_INFO_1W` document name and job ID with the GAM port monitor/server output file.
 5. Determine whether the three timer-triggered `Document.PrintOutOld` calls create separate queue jobs or are coordinated by the BeforePrint handler.
+
+
+## Run 42 confirmation — driver identity literal (2026-11-26)
+
+The Word/Printer artifact from workflow run `45782764971` decoded VA `0x0047CC64` as the ANSI string `zvprt1`. This closes open question 1 above: queue discovery matches `PRINTER_INFO_2A.pDriverName` against `zvprt1`, then stores the corresponding `pPrinterName`. Queue selection is still first-match enumeration behavior; there is no evidence here of default-queue preference or multi-queue disambiguation.
+
+Evidence: Run 42 Word artifact `15098978072`, `printer-string-constants.md` and `printer-api/full-procedures/procedure-0047CAF0.md`.
