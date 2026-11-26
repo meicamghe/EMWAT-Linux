@@ -16,6 +16,7 @@ on:
       - 'tools/decode_pe_strings.py'
       - 'tools/trace_pe_target.py'
       - 'native/**'
+      - 'python/**'
       - '.github/workflows/native-core.yml'
   workflow_dispatch:
 
