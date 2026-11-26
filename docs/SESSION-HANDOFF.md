@@ -1955,3 +1955,13 @@ Next probes: recover the four filename-table strings and state-byte meanings; re
 - Native boundary remains an integration gap: scanner `vector<ImagePage>` acquisition and `ScanResult` persisted-output ownership are separate public contracts; no production adapter is proven. Do not implement guessed page cardinality/naming.
 - Printer boundary remains incomplete: `TCreateTiff.SeparteImages` reaches `THidePrintingThread.Execute`, but the hidden thread trace is partial and real spool submission/completion is not proven.
 - No native production code changed in this follow-up. No new CI was triggered; existing green workflow runs are not evidence for this documentation-only commit.
+
+
+## 2026-11-26 — Cross-audit and next printer trace instrumentation
+
+- Reconciled the scanner preview output interpretation: `TfrmGScanPreview.Scan` writes successive 1-based pages to one `_New.tif` destination opened with `OPEN_ALWAYS` and `IG_save_FD`; it is strongly consistent with a single multipage TIFF. See `docs/SCANNER-PREVIEW-OUTPUT-RECOVERY.md` and Track E in `docs/REVERSE-ENGINEERING-PARALLEL-FOLLOWUP-2026-11-26.md`.
+- Updated the parallel follow-up, project status and this handoff to withdraw older per-page-file/CREATE_NEW interpretations.
+- Improved `.github/workflows/emwat-parallel-deep-followup.yml`: the Word/GAM lane now writes skipdata-aware procedure traces for each resolved print procedure, including the 3,096-byte `THidePrintingThread.Execute`. The previous artifact decoded only 1,885 bytes; the next manual run should capture the remaining undecoded region while explicitly labeling `.byte` data.
+- Commits: `16cde304` (parallel report), `621f2700` (handoff), `5fae54cf` (project status), `938e4431` (workflow instrumentation), `dddfcc9d` (deep follow-up report).
+- Run 50 (45794156659) verified all four jobs successful. The new skipdata workflow instrumentation has **not** been dispatched; no CI result is claimed for it. No production native code changed.
+- PR #2 remains Draft/open/unmerged and mergeable=false. The branch remains 9 commits behind main; no rebase or merge was performed.
