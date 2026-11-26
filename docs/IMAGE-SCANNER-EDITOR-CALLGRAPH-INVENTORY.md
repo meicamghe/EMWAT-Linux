@@ -308,6 +308,7 @@ The embedded UI warning asks in Persian whether the operation should be repeated
 Run 29/30 symbol and body traces resolve the Windows result-image hierarchy:
 
 - `TResultImage.Create`: `0x004EC8B4`, accepts a `UnicodeString` path and `TImageFormat`.
+- `TResultImage.Create` is a factory-style dispatcher: its format/mode switch selects VMT/class references `0x004EC558`, `0x004EC628`, or `0x004EC788`, then calls constructors/helpers at `0x004ECA58`, `0x004ED344`, or `0x004ED298`. The `0x004ED344` TD32 label is `TSetOfMultiPageImages.DeleteImageFile` despite its use in a constructor branch; do not infer the concrete result class from that symbol label. `TSetOfSinglePageImages.Create` at `0x004ED168` is a separate constructor called from `Finalization` at `0x004ED634`. The three VMT identities and exact format/mode mapping remain to be resolved.
 - `TResultImage.ShiftSerial`: `0x004ECFC8`; resolves `GetScanFilePath` (`0x004ED03C`) and checks file existence.
 - `TResultImage.NextFile`: `0x004ECF50`.
 - `TResultImage.GetFilesCount`: `0x004ECC84`; count comes from the internal collection at `+0x08`.
