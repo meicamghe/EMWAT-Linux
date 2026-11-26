@@ -3280,8 +3280,10 @@ The next meaningful Almas acceptance input is a sanitized, synthetic-or-test-acc
 ## Run 43 — scanner connector and paging trace completed (2026-11-26)
 
 - Workflow run `45783897821` completed successfully on analysis commit `e372fc188936ffcbeb54986630fe4981483a9577`: Word/Printer, Image/Scanner and Native regression all passed. Artifacts: Word `15099392610`, Image `15099174916`.
-- The Image/Scanner trace now proves that `TFaxDocument.PerformMethod` directly constructs `TScanCommand`, calls `GetNextPage`, and retrieves the `Scanedimage` child from the command's response XML. Its two input dictionary keys remain undecoded.
+- The Image/Scanner trace now proves that `TFaxDocument.PerformMethod` directly constructs `TScanCommand`, calls `GetNextPage`, and retrieves the `Scanedimage` child from the command's response XML. Its input dictionary keys are decoded as `.tmp` and `document` by the Run 43 Word/Printer artifact; their value types and exact semantics remain open.
 - The public `TScanDocument.PerformMethod` remains a distinct path consuming `wordConfig`, `wordBody`, `letterImages`, and `signData`, then calling helper `0x004B7724`. No indirect relationship or live Almas invocation sequence is claimed.
-- Response XML separates `Status`, `ErrorCode`, and `Scanedimage`; the nested image separates `ImageName` and `Encoding`. The ScanCommand paging path uses a previous-returned-filename and next-page flag. Exact command-state meanings, physical output cardinality, final extension, and two FaxDocument input keys remain open.
+- Response XML separates `Status`, `ErrorCode`, and `Scanedimage`; the nested image separates `ImageName` and `Encoding`. The ScanCommand paging path uses a previous-returned-filename and next-page flag. Exact command-state meanings, physical output cardinality, final extension, and the value types/semantics of the `.tmp` and `document` inputs remain open.
 - ImageEn wrappers are confirmed as a distinct imaging path from ImageGear, but complete ABI and ownership semantics are still incomplete. No physical scanner, ADF/duplex, or live Almas validation was performed.
 - Detailed evidence and limitations: `docs/IMAGE-SCANNER-EDITOR-CALLGRAPH-INVENTORY.md`, section 12.9. The CI result validates analysis scripts and native regressions only; it is not hardware or end-to-end acceptance.
+
+- Cross-lane string evidence resolves the `TFaxDocument` input keys as `.tmp` and `document`; `.tmp` is passed to `GetNextPage`. The values' full types/meaning remain unverified.
