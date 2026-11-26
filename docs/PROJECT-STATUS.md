@@ -1,3 +1,9 @@
+## 2026-11-26 — scanner request constraints and next-page detection clarified
+
+- Follow-up trace of `VerifyConstraints` confirms that `PreviousImageName` is copied to `FPreviousReturnedFileName +0x2C`; a non-empty string sets `FIsNextPageRequest +0x29`. The next-page branch is therefore selected from this request property.
+- Four numeric constraints are identified: `ColorDepth`, `MinResolution`, `MaxResolution`, and `MaxFileSize`, stored in the constraint slots beginning at `TScanCommand +0x08`. `FHasConstraints +0x38` is set when their sum is nonzero.
+- `HasError` shifts the result serial using the previous filename; success maps to command state 2 and failure to state 4. External page-number convention and exact meanings of option literals remain unresolved.
+- See `docs/REVERSE-ENGINEERING-RUN49.md` for exact procedure ranges and caveats.
 ## 2026-11-26 — Run 49 all green; scanner and printer static evidence expanded
 
 - Run 49 (`45788814934`) completed successfully across all three CI lanes: Native regression, Word/Printer/COM, and Image/UI/VMT. Native build/regression and Python bridge tests passed.
