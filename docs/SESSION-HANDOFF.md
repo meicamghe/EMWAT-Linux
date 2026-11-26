@@ -2030,3 +2030,10 @@ Next probes: recover the four filename-table strings and state-byte meanings; re
 - Run 9 ImageEn artifact 15106033536 maps import thunks in PKIECtrl23.bpl: 0x004B012C=TImageEnMIO.Acquire; 0x004B0154=TImageEnMIO.PrintImage; 0x004B01A4=TImageEnMView.GetImageCount; 0x004B01F4=TImageEnMView.GetMultiSelectedImages; 0x004B01FC=TImageEnMView.GetMultiSelectedImagesCount; 0x004B0204=TImageEnMView.MultiSelectSortList.
 - The earlier unknown helper 0x004B0154 is conclusively PrintImage, not acquisition. DoPrintingPanel loops print images to a canvas; its second branch iterates the multi-selection list. Do not conflate with Acquire or GEAR32PD scanning, and do not infer physical printer/spool success from the call.
 - Full Run 9 completion plus scanner and Word artifacts still need checking. Detailed evidence in Track N of docs/REVERSE-ENGINEERING-PARALLEL-FOLLOWUP-2026-11-26.md.
+
+
+## 2026-11-26 — Run 9 green; Word callback trace artifact path fixed
+
+- Run 9 (45799375720) completed successfully: all four jobs passed (scanner/result ownership, ImageEn acquisition, Word/printer thread, native regression). Artifacts: scanner 15105863767, ImageEn 15106033536, Word/printer 15106722095.
+- ImageEn IAT names are resolved: 0x004B0154=TImageEnMIO.PrintImage, 0x004B01A4=GetImageCount, 0x004B01F4=GetMultiSelectedImages, 0x004B01FC=GetMultiSelectedImagesCount, 0x004B0204=MultiSelectSortList; Acquire remains 0x004B012C. See Track N.
+- Word callback trace at 0x004CCCC9 executed successfully but its output was outside the uploaded artifact directory. Commit 56b9777d fixes the output path. Validate the corrected artifact in Run 10 before using the callback body.
