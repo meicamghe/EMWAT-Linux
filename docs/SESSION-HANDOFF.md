@@ -1965,3 +1965,12 @@ Next probes: recover the four filename-table strings and state-byte meanings; re
 - Commits: `16cde304` (parallel report), `621f2700` (handoff), `5fae54cf` (project status), `938e4431` (workflow instrumentation), `dddfcc9d` (deep follow-up report).
 - Run 50 (45794156659) verified all four jobs successful. The new skipdata workflow instrumentation has **not** been dispatched; no CI result is claimed for it. No production native code changed.
 - PR #2 remains Draft/open/unmerged and mergeable=false. The branch remains 9 commits behind main; no rebase or merge was performed.
+
+
+## 2026-11-26 — Scanner paging layers and workflow trigger audit
+
+- Separated three scanner layers in `docs/REVERSE-ENGINEERING-PARALLEL-FOLLOWUP-2026-11-26.md`: local preview TIFF generation (`TfrmGScanPreview.Scan`), connector continuation (`PreviousImageName` → `FIsNextPageRequest` → `GetNextPage`), and persisted result ownership (`TResultImage` single/multipage classes). Do not infer connector file cardinality from the local preview TIFF behavior.
+- The response protocol still needs one captured scan request/response sequence linking `PreviousImageName`, `imageName`, response filename, physical scan path and bytes. No production adapter or guessed mapping was added.
+- Updated `.github/workflows/emwat-parallel-deep-followup.yml` push filters to include changes to that workflow and `tools/trace_td32_procedure_skipdata.py`; intended to make the next instrumentation update eligible to start the lanes.
+- GitHub reports no workflow run for the trigger-filter commit (`dedfccaf53ac9be2fbf9ba2ce738a335ab8d6acd`) when checked. Do not claim the workflow ran; no direct workflow-dispatch action is available in the connected GitHub operations. Run 50 (`45794156659`) remains the latest verified run with all four jobs successful.
+- Follow-up docs commit: `4efa8939`; latest handoff commit follows. PR #2 remains Draft/open/unmerged, mergeable=false; branch remains 9 commits behind `main`. No rebase/merge, no native production code changes.
