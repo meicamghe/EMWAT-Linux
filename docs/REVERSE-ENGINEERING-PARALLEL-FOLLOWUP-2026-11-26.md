@@ -315,3 +315,12 @@ This definitively resolves the earlier ambiguity: 0x004B0154 is PrintImage, not 
 The import mapping is direct PE evidence from PKIECtrl23.bpl's import table, not a name inferred from call patterns. Full runtime behavior of the ImageEn print method (actual device output/spool success) remains unproven; the imports and calls alone do not establish successful physical printing.
 
 Run 9 overall completion and Word/scanner artifacts remain pending at the time of this update; the ImageEn job itself completed successfully.
+
+
+## Track O — Run 9 full validation and Word callback artifact-path correction
+
+Run 9 (45799375720) completed successfully on workflow commit f440723152a4c72c27585aa9945ea500f52b4c61. All four jobs passed: scanner/result ownership, ImageEn acquisition, Word/printer thread and native regression. Artifacts: scanner 15105863767, ImageEn 15106033536, Word/printer 15106722095. The ImageEn artifact confirms the import-thunk names recorded in Track N.
+
+The Word callback trace step at address 0x004CCCC9 executed successfully, but its output was initially written under deep-followup/word/, outside the Word artifact upload path deep-followup/word-printer/. This is an artifact-path omission, not a trace failure. Commit 56b9777d corrects the output path so the next workflow run retains the callback trace in the uploaded artifact. Run 10 should be checked for the file before interpreting the callback body.
+
+No production Linux behavior changed. Run 9's native regression, scanner trace and ImageEn import-resolution lanes are green; the exact Word close callback artifact remains pending the corrected upload.
