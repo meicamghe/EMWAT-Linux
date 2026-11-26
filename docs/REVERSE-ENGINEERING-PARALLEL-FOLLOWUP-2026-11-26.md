@@ -167,3 +167,44 @@ The deep-follow-up workflow has been extended with bounded, reproducible helper 
 The workflow file itself is included in the push path filter, so this workflow-only change is eligible to trigger a push run. The current GitHub connector's commit-run lookup is PR-trigger-only and therefore cannot establish whether a push-triggered run started. Do not interpret an empty result from that lookup as evidence that no push run exists; verify the Actions run list/artifacts when available.
 
 No runtime behavior, native production code, or Windows protocol mapping was changed in this instrumentation-only pass.
+
+
+## Track H — Run 51 helper identity corrections and next-page table follow-up
+
+Run 51 (45796645461) completed successfully on workflow commit 4a729f6d1daf736fb57bc8ffc26a2c1ea8c25425. All four jobs passed: scanner/result ownership, ImageEn acquisition, Word/printer thread, and native regression (native CTest plus Python bridge suite). Artifacts were downloaded and inspected:
+- scanner/result ownership: 15106015637
+- ImageEn acquisition: 15105256757
+- Word/printer thread: 15105750858
+
+### Scanner filename helper correction
+
+The target 0x00454B9C is now symbol-resolved as Emwatutils.euGetASFileName (236 bytes; 236/236 byte coverage, with two skipdata pseudo-instructions). It is a shared filename utility, not a fax-only or scanner-specific helper. Direct callers include:
+- TCreateTiff.SeparteImages at 0x004A01EB and 0x004A0201
+- CreateImageFile at 0x004A0C8B
+- TWordViwer.LoadDocument at 0x004B7796
+- TCreateTiff.PrintWordDoc at 0x004C1809
+- TWordViwer.BGPrintWithGamPrintOptions at 0x004C6B50
+- TWordViwer.ProtectDocument at 0x004CA00B
+- TFaxDocument.SendFax at 0x00500E12
+- TFaxDocument.PerformMethod at 0x005EEB91
+- additional Excel, connector-finalization and version-handler callsites.
+
+The body builds candidate names and loops through a file-existence check while changing a candidate component. The exact suffix formatting, helper-call semantics and per-caller output contract are not yet fully resolved. The direct-call inventory does not show a call from TScanCommand.GetNextPage; therefore the earlier Track G association of this helper with a scanner-specific .tmp path passed to GetNextPage is withdrawn. Do not infer a filename extension or connector output rule from this utility name alone.
+
+### ImageEn helper remains a print-path helper candidate
+
+0x004B0154 has no TD32 procedure range. Its four direct callsites are all inside TfrmImageTools.DoPrintingPanel (0x0050A7C3, 0x0050A8A6, 0x0050A999, 0x0050AA85), arranged in two page-iteration loops. This is distinct from the TImageEnMIO.Acquire import thunk 0x004B012C called by InsertPicture. The helper identity and its precise arguments/results remain unresolved; do not label it as Acquire or as the main GEAR32PD scanner path.
+
+### Word close/archive candidate corrections
+
+- 0x004BCA88 resolves to TWordViwer.GetXmlFieldInfo (0x004BCA88–0x004BFC17, 12,688 bytes). Its direct callers include two GetCaptionItemFont sites and TWordViwer.WordAppDocumentBeforeClose at 0x004CCCC9. It is an XML field-information lookup, not a generic close/archive helper. The callback's use of this helper is now explicit, but the helper's full field-selection semantics still need targeted analysis.
+- 0x004AEBBC resolves to TfrmWordPrintOption.FreePrinters (0x004AEBBC–0x004AED10, 341 bytes). Its direct callers are WordAppDocumentBeforePrintBGPrint, GetOptionsFromReg, and SilentSaveEmwatDoc; this is a printer-options/UI lifecycle helper, not a close/archive helper.
+- 0x004CD154 resolves to the TD32-labelled TWordViwer.WordAppDocumentBeforeSave callback (0x004CD154–0x004CD54B, 1,016 bytes; 536 bytes decoded in the ordinary trace). It has no direct CALL xrefs, consistent with its event-registration path. Existing RTTI/event-source evidence maps the registered event slot to OnDocumentBeforeClose; retain that stronger registration evidence over the misleading TD32 label. The callback calls GetXmlFieldInfo and manipulates close-state fields; its complete undecoded tail and exact UI/wire behavior remain open.
+
+### Four-entry next-page state table
+
+The pointer-reference artifact finds one raw reference to global 0x0062A7F0, at 0x004F25C6 inside TScanCommand.GetNextPage. The trace loads the table pointer from that global, iterates four pointer slots, compares the previous returned filename against each entry, and writes the selected index into command field +0x1D; a separate comparison can set field +0x1E. This confirms the table's use and four-entry cardinality, but not its actual string contents or semantic labels.
+
+A new static inspector tools/dump_pe_delphi_pointer_table.py and a workflow step now attempt to decode the global pointer and its four Delphi UnicodeString candidates from raw PE data. The workflow push filter includes both the new tool and workflow definition. The inspector explicitly reports unavailable/runtime-initialized pointers instead of fabricating table contents. Results are pending the newly triggered workflow run.
+
+No production Linux scanner, ImageEn, Word or printer behavior changed in this track.
