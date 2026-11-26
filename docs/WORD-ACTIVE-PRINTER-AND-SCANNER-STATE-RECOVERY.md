@@ -100,19 +100,31 @@ Direct callers of `EnumPrintersA` are the two calls inside `GetPrinterName` at `
 
 - `Zanprinter.InstallZanPrinter` (`0x0047CC6C`) calls `GetPrinterName`; when a matching queue is found it copies global `0x0062B310` into its output string and returns success.
 - `Zanprinter.GetZanInstallDir` (`0x0047CC94`) polls `GetPrinterName` up to 300 times, sleeping `0x64` ms between attempts. This is a bounded ~30-second wait for the driver queue to appear, not proof that the installer completed successfully.
-- Its missing-printer branch constructs a path containing `GAMPrinterSetup.exe` and passes the decoded verb strings `Open` / `RunAs` through helper `0x00404494`. The exact helper/API contract and which branch selects each verb remain pending.
-- `Zanprinter.GetZanConfigurationDir` (`0x0047D054`) opens the exact registry subkey `HKLM\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\zvprt50` (root handle `0x80000002`, access mask `0x20019`) and queries value `UninstallString`. If the registry path/value cannot be used, it falls back to appending `zvprt50\\` to the supplied path. The precise normalization of the returned uninstall string is still being traced.
-- `Zanprinter.SetPrinterForTiffout` (`0x0047D238`) calls `GetZanConfigurationDir`, reads `configure.ini` / section `policy` / key `allusersfolder`, and constructs paths involving `zvprt50\\` and `save.ini`. The same routine references `save.ini` keys `basefilename` and `save`. The meaning of the numeric return/branch values and exact helper API semantics are not yet mapped.
+- Its missing-printer branch constructs a path containing `GAMPrinterSetup.exe` and passes decoded verb strings `Open` / `RunAs` through helper `0x00404494`. The exact helper/API contract and which branch selects each verb remain pending.
+- `Zanprinter.GetZanConfigurationDir` (`0x0047D054`) uses `RegOpenKeyExW` (`0x00402674`), `RegQueryValueExW` (`0x0040267C`) and `RegCloseKey` (`0x0040266C`). It opens `HKLM\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\zvprt50` (root `HKEY_LOCAL_MACHINE`, access mask `0x20019`) and queries `UninstallString`. If the registry path/value cannot be used, it falls back to appending `zvprt50\\` to the supplied path. The precise normalization of the returned uninstall string remains open.
+- `Zanprinter.SetPrinterForTiffout` (`0x0047D238`) calls `GetVersionExW` (`0x00402818`), reads `configure.ini` with `GetPrivateProfileIntW` (`0x00402754`), and resolves a Windows shell folder with `SHGetFolderPathW` (`0x004044AC`). The INI lookup is **section `[allusersfolder]`, key `policy`, default value `1`**; the earlier report had section and key reversed and is corrected here. The selected shell-folder ID is `0x23` or `0x2e`, depending on the policy result and OS major version. It then constructs paths involving `zvprt50\\` and `save.ini`.
+- The shell-folder IDs are preserved as raw CSIDL values in this report; no assumption is made about the final resolved path under different Windows versions or account policies.
 
-### 6.3 INI keys consumed by the pause/configuration check
+### 6.3 INI values written by the pause/configuration routine
 
-`Zanprinter.CheckPrinterPaused` (`0x0047D448`) references these decoded literals:
+The helper trace resolves `0x00402910` to `kernel32!WritePrivateProfileStringW`. Thus `Zanprinter.CheckPrinterPaused` (`0x0047D448`) is not merely inspecting these strings: its observed calls write these key/value pairs into the corresponding INI files.
 
-- `save.ini`: `folder`, `save`, `basefilename`, `No Dialogs`, `popupdialog`, `filexistact` (with literal default/value strings including `1`)
-- `image.ini`: `fileformat=tiff`, `image=256`, `imagecolor=lzw`, `compression=0`, `pagetype=Each page as a single strip`, `rowsperstrip`
-- `general.ini`: `hidestsdialog`, `sentinel`, `sentinelfile=JobFinishes.GAM`
+| File | Section | Key | Written value |
+|---|---|---|---|
+| `save.ini` | `save` | `folder` | Runtime path string from the printer object |
+| `save.ini` | `save` | `basefilename` | Runtime base-filename string from the printer object |
+| `save.ini` | `save` | `popupdialog` | `No Dialogs` |
+| `save.ini` | `save` | `filexistact` | `1` |
+| `image.ini` | `image` | `fileformat` | `tiff` |
+| `image.ini` | `image` | `imagecolor` | `256` |
+| `image.ini` | `image` | `compression` | `lzw` |
+| `image.ini` | `image` | `pagetype` | `0` |
+| `image.ini` | `image` | `rowsperstrip` | `Each page as a single strip` |
+| `general.ini` | `general` | `hidestsdialog` | `1` |
+| `general.ini` | `general` | `sentinel` | `1` |
+| `general.ini` | `general` | `sentinelfile` | `JobFinishes.GAM` |
 
-These are static key/value strings and the observed sequence of helper calls, not proof of every effective value under every installed-driver version. Do not hardcode these as Linux defaults until their read/write helper contracts, path resolution and actual generated INI files are verified.
+The path construction and values above are directly visible in the callsite argument order, with the API identity confirmed by the thunk. The exact runtime folder and base-filename strings still depend on the object state supplied to `CheckPrinterPaused`. Do not hardcode these as Linux defaults until the complete printer invocation and output-publication contract are verified.
 
 
 ## Evidence
