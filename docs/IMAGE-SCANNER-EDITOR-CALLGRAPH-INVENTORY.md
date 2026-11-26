@@ -377,6 +377,26 @@ The `TScanCommand` fields `FRequestXML` (`+0x30`) and `FResponseXML` (`+0x34`) a
 - These are recovered Delphi property names and setter callsites, not yet a complete XML schema. The XML hierarchy, element/tag spelling, required/optional status, values and relationship to `VerifyConstraints` must be verified from the XML resources and setter callers before implementing a parser/serializer.
 - The same external thunk `0x004012F8` is used by many unrelated generated XML setters (Word, Excel, scanner and global response types); its target is outside this BPL image, so do not assign it a dictionary-specific semantic name.
 
+Run 38's symbol-driven TD32 pass now recovers the actual getter/setter procedures even though the generic VMT scan remains unverified:
+
+| XML class | Property | Getter VA | Setter VA | Setter's external XML assignment callsite |
+|---|---|---:|---:|---:|
+| `TXMLConfigType` (`Scanrequestxml`) | `Type` | `0x004E9FFC` | `0x004EA0B0` | `0x004EA047` |
+| `TXMLConfigType` | `DriverDialog` | `0x004EA164` | `0x004EA1E8` | `0x004EA1AC` |
+| `TXMLConfigType` | `ImageEditor` | `0x004EA2AC` | `0x004EA340` | `0x004EA3A9` |
+| `TXMLConfigType` | `MultiJpegSupport` | `0x004EA400` | `0x004EA490` | `0x004EA4F9` |
+| `TXMLConfigType` | `PreviousImageName` | `0x004EA55C` | `0x004EA5F8` | `0x004EA661` |
+| `TXMLOutputType` (`Scanrequestxml`) | `ForceSinglePageFiles` | `0x004EA760` | `0x004EA7A8` | `0x004EA820` |
+| `TXMLOutputType` | `Constraints` | `0x004EA8A8` | not present in this symbol pass | — |
+| `TXMLResponseScanType` (`Scanresponsexml`) | `Status` | `0x004EB8BC` | `0x004EB908` | `0x004EB964` |
+| `TXMLResponseScanType` | `ErrorCode` | `0x004EB9C0` | `0x004EBA48` | `0x004EBAA4` |
+| `TXMLResponseScanType` | `Scanedimage` | `0x004EBB04` | not present in this symbol pass | — |
+| `TXMLScanedImageType` (`Scanresponsexml`) | `ImageName` | `0x004EBB90` | `0x004EBC50` | `0x004EBCAC` |
+| `TXMLScanedImageType` | `Encoding` | `0x004EBD0C` | `0x004EBD98` | `0x004EBDF4` |
+
+The response object therefore exposes a scan-image collection property named `Scanedimage` (spelling as compiled), whose element type has `ImageName` and `Encoding`. This establishes the property-level object model but not the serialized XML element names, list cardinality/ownership, or the final outer result dictionary key. The property getters/setters route through XMLRTL interface helpers; the external `0x004012F8` call is an assignment helper, not a direct dictionary insertion.
+
+
 ### 12.4 ImageEdition and Upgrade are separate runtime methods
 
 **Runtime `TImageEdition` — `0x005EF300` (TD32 label `TEditExcelWorkBook.PerformMethod`)**
