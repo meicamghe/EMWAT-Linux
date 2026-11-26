@@ -124,3 +124,20 @@ A focused source audit confirms that the native model already contains both side
 This confirms that the two contracts are not accidentally conflated in their public types. It does **not** prove a production adapter that turns captured `ImagePage` values into saved page files and then constructs the correct `ScanResult`. The inspected public scanner API and CMake test graph do not demonstrate that handoff. Do not add an implicit mapping based only on page count: the Windows binary has separate single-page/multipage result classes and distinct path/response-name fields, while final file naming and connector cardinality remain unresolved.
 
 Next implementation gate: recover the Windows output naming/cardinality semantics and identify the service-layer owner for persistence; then add an explicit orchestration adapter with tests for one-page file set, multi-page TIFF, response filename independence, partial-save failure cleanup, and no false success before durable output exists. Keep scanner acquisition, image-document editing, and persisted-result ownership as three separate responsibilities.
+
+## Track E — Corrected preview Scan output cardinality (cross-check against scanner output report)
+
+A cross-document audit found that the preview output report contains stronger evidence than the earlier Run 49 paragraph about `TfrmGScanPreview.Scan`. Use the following as the current interpretation and treat any older wording that leaves its output cardinality open as superseded:
+
+- `Scan` derives one destination ending in `_New.tif` from the preview path field at `this+0x458`.
+- It queries the source page count through an interface at `this+0x3FC+0x2CC`, slot `+0x14`, then iterates page indices from 1.
+- It opens the source with `_lopen`; for non-current pages it loads the indexed page with `IG_load_FD`.
+- The destination is opened on each iteration with `CreateFileW` and `dwCreationDisposition=OPEN_ALWAYS`, not `CREATE_NEW`. It then calls `IG_save_FD` with the current 1-based page index, enabling successive page insertion into the same destination.
+- The output handle is closed per iteration and temporary ImageGear handles are deleted. The original current-page handle is retained.
+- Vendor ImageGear API documentation corroborates the `IG_save_FD(hIGear, fd, nPage, nReserved, lFormatType)` multipage-page-index semantics. This is API-version corroboration, not proof of the exact bundled version or runtime success.
+
+Current conclusion: this particular `Scan` path is strongly consistent with one page-indexed multipage TIFF container, not a page-file set. `Save_Tiff_MultyPages` is a separate operation with its own branches and must not be merged into this interpretation. Keep `ScanResult` capable of both output variants because other result classes exist, but do not infer that this particular method creates `SinglePageFileSet`.
+
+The exact format constants, unusual CreateFile template argument, final byte-level TIFF structure, and response publication remain unverified. This does not establish physical scanner/ADF/duplex operation or end-to-end Almas compatibility.
+
+Source report: `docs/SCANNER-PREVIEW-OUTPUT-RECOVERY.md` (procedures `0x0061DC80`, `0x0061D888`).
