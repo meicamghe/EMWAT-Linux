@@ -11,6 +11,7 @@ TARGET_CLASSES = (
     "TResultImage", "TMultiPageImage", "TSetOfMultiPageImages",
     "TSetOfSinglePageImages", "TProcessResult", "TScanCommand",
     "TEmwatMethod", "TEditWordDocument", "TScanDocument", "TWordViwer", "TEDPController",
+    "TXMLResponseScanType", "TXMLScanedImageType", "TXMLConfigType", "TXMLOutputType",
     "TEmwatDocPrintHandler", "TWordDocument", "TWordFields", "TWordField",
     "TWordFieldCollection", "T7zArchive", "T7zPlugin", "T7zInArchive", "T7zOutArchive",
 )
