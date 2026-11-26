@@ -607,3 +607,8 @@ The Run 43 evidence narrows the Linux contract but does not authorize a guessed 
 ### Run 43 key cross-reference correction
 
 The `.tmp` and `document` keys were decoded in the Run 43 Word/Printer artifact's `connector-handlers/handler-string-constants.md`, not in the Image/Scanner artifact. Their use sites are in the Image/Scanner `TFaxDocument.PerformMethod` trace. This is a cross-lane join within workflow run `45783897821`; the dictionary value types and exact meaning of `document` remain open.
+
+
+### Native response-metadata model follow-up
+
+The native `ScanResult` now has an optional `ScanResponseMetadata` member with separate raw `status`, `error_code`, and nested `scanned_image.image_name` / `encoding` fields. These are intentionally strings/optionals: no public status enum, encoding-to-extension mapping, or path inference is introduced. `scan_path`, `response_filename`, and the physical `ScanOutput` remain separate. A focused `test_scan_result` case verifies all four response fields remain independent from the physical output path and outer response filename. Code commit `faba1970efe44a36cd1a398711ac0f9eee6f2d9f`; test commit `6f75b41edb0643029479cbc2f1cf1f644d69ac6e`. No CI result is currently visible for the test commit; do not mark it verified until the native workflow runs.
