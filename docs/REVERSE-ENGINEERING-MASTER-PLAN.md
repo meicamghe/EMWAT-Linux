@@ -1,3 +1,12 @@
+## 2026-11-26 — runtime VMT map reconciles connector names
+
+- The service-side `GetClass("T"+className)` / `VMT+0x10` mapping in `docs/EMWAT-SERVICE-EXECUTABLE-ANALYSIS.md` resolves the actual connector class names; TD32 `PerformMethod` labels are shifted for many methods.
+- Runtime `TScanDocument` is confirmed at `0x005EEB48` (TD32 label `TFaxDocument.PerformMethod`). It reads `document`, logs `[Invoke ScanDocument]`, and delegates to `TScanCommand.GetNextPage`. A public scanner connector exists.
+- Runtime `TEditWordDocument` remains `0x005EE82C` (TD32 label `TScanDocument.PerformMethod`).
+- Runtime `TImageEdition` is `0x005EF300` (TD32 label `TEditExcelWorkBook.PerformMethod`), reads `data/config`, and logs `[Invoke EditImages]`.
+- Runtime `TUpgradeEmwat` is `0x005EF24C` (TD32 label `TImageEdition.PerformMethod`), reads `PlugIn`, and calls `Applicationactivities.Finalization` (`0x0050357C`). Do not conflate it with ImageEdition.
+- Updated `docs/CONNECTOR-HANDLER-ENTRYPOINT-INVENTORY.md`, `docs/IMAGE-SCANNER-EDITOR-CALLGRAPH-INVENTORY.md`, and `docs/SESSION-HANDOFF.md` to use runtime class/VMT names and retain TD32 labels only as aliases.
+
 ## 2026-11-26 — connector handler inventory update
 
 - Runtime dispatch is now traced through `TEmwatMethod.Invoke` (`0x0046C82C`): it enumerates the incoming `TDictionary<AnsiString, T>`, invokes a handler through interface slot `+0x54`, and inserts the returned value into a result dictionary.
