@@ -83,7 +83,18 @@ jobs:
             0x0047D790 0x0047D798 0x0047D7B0 0x0047D7B4 0x0047D7C8 \
             0x0047D800 0x0047D828 0x0047D840 0x0047D85C 0x0047D86C \
             0x0047D880 0x0047D8A0 \
+            0x0047D161 0x0047D170 0x0047D1EC 0x0047D218 0x0047D228 0x0047D168 \
             > parallel-re/word-print/printer-string-constants.md
+      - name: Resolve Winspool printer enumeration helper
+        run: |
+          mkdir -p parallel-re/word-print/printer-api
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004044CC \
+            parallel-re/word-print/printer-api/helper-004044CC.md 100 ret
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004044CC \
+            parallel-re/word-print/printer-api/callers-004044CC.md
+          python tools/scan_pe_iat_callers.py analysis-input/EmwatMethods.bpl1 \
+            0x0062F9E4 0x0062F9E8 0x0062F9EC 0x0062F9F0 0x0062F9F4 \
+            > parallel-re/word-print/printer-api/winspool-iat-callsites.md
       - uses: actions/upload-artifact@v4
         with:
           name: emwat-parallel-word-print
