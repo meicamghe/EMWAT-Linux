@@ -188,7 +188,7 @@ class ApplicationCompositionTests(unittest.TestCase):
             conn = http.client.HTTPConnection("127.0.0.1", port, timeout=3)
             conn.request(
                 "POST",
-                "/?invoke=local-nonce",
+                "/?invoke=12345",
                 body=body,
                 headers={
                     "Content-Type": "text/plain;charset=UTF-8",
