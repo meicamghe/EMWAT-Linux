@@ -266,7 +266,7 @@ This is the Word handler, not the scanner endpoint.
 - The service VMT map resolves runtime class `TScanDocument` to this `VMT+0x10` target.
 - Reads dictionary key `document` and emits the embedded log prefix `[Invoke ScanDocument]`.
 - Converts the `document` value to a path and opens it as a file stream through `0x004041BC` (access flags `0xFF00`), then logs `[Invoke ScanDocument]`.
-- Constructs `TScanCommand` at `0x004F21DC`, calls `GetNextPage` at `0x004F2558` with the opened stream, reads the result through interface slot `+0x54` from the command's result field at `+0x34`, and inserts the returned value into the output dictionary.
+- Constructs `TScanCommand` at `0x004F21DC`, calls `GetNextPage` at `0x004F2558` with the opened stream, reads the value through interface slot `+0x54` from command field `+0x34` (RTTI field name `FResponseXML`), and passes it to an unresolved external insertion helper at `0x004012F8`. The output dictionary key and value encoding are still unknown.
 - The output dictionary key and final response serialization are not yet decoded.
 
 This confirms that a public Windows `ScanDocument` connector exists. It is not the same code path as the `TfrmGScanPreview.Scan` UI method; it consumes a document/result request and delegates to the stateful `TScanCommand`/result-image layer. The `document` path value is untrusted and must be confined beneath an approved application data/output root in any Linux implementation.
@@ -322,6 +322,30 @@ Run 29/30 symbol and body traces resolve the Windows result-image hierarchy:
 - A related literal `_P000` is present at `0x004ED338`; its exact callsite/format role must be kept distinct from the `_P` format string until the full argument flow is reconciled.
 
 This confirms two distinct Windows result-collection classes (`TSetOfSinglePageImages` and `TSetOfMultiPageImages`) and partially decodes their naming machinery: base result paths use a three-digit (`%.3d`) serial format; the multipage subclass uses `_P` in its path format; `_P000` is another decoded literal whose precise role remains under callsite review. This is not enough to determine the complete filename concatenation order, whether the serial identifies a scan session or collision retry, or the exact one-to-one mapping to native `SinglePageFileSet` versus `MultiPageFile`: both classes expose indexed `GetScanFilePath`/file-count operations. Separately, the preview UI's `TfrmGScanPreview.Scan` path is strong evidence for one page-indexed `_New.tif` multipage container via `IG_save_FD`. Keep connector result ownership open until path callsites and actual output bytes are traced.
+
+### 12.3.3 `TScanCommand` class metadata and response handoff
+
+Run 34 traced the constructor and inspected the class metadata around `0x004F1F94`:
+
+- Runtime `TScanDocument.PerformMethod` creates the command using class pointer `0x004F1F3C` and constructor `0x004F21DC`; this is a direct constructor callsite from the public scanner connector.
+- The class-name metadata at `0x004F20D7` decodes to `TScanCommand`; the field table gives instance size `0x40` and these exact names/offsets:
+
+| Field name in RTTI | Offset | Evidence/use |
+|---|---:|---|
+| `ImgProc` | `+0x04` | Initialized by constructor |
+| `Options` | `+0x08` | Field-table entry; detailed use pending |
+| `ResultImage` | `+0x20` | Assigned by `GetNextPage` after constructing `TResultImage` |
+| `FEditorForm` | `+0x24` | Initialized by constructor; reset by `DoNewScan` |
+| `FCommandState` | `+0x28` | Updated by `DoRequest`/error paths |
+| `FIsNextPageRequest` | `+0x29` | Branches the next-page path in `GetNextPage` |
+| `FPreviousReturnedFileName` | `+0x2C` | Used for previous-output comparison/path selection |
+| `FRequsetXML` | `+0x30` | Exact RTTI spelling; request XML state |
+| `FResponseXML` | `+0x34` | Read by `TScanDocument.PerformMethod` after `GetNextPage` |
+| `FHasConstratints` | `+0x38` | Exact RTTI spelling; constraint state |
+
+The class metadata is strongly corroborated by the constructor symbol, class-name string, field table and direct connector constructor call. However, the candidate parent VMT pointer is `0x0062EEA4`, outside the BPL image; do not treat the generic VMT scanner's virtual-slot layout as fully verified until that parent metadata is resolved.
+
+The constructor initializes `ImgProc`, `FEditorForm` and `FResponseXML`. The connector then calls `GetNextPage`, reads `FResponseXML` through interface slot `+0x54`, and calls helper `0x004012F8`. That helper is an unresolved external/relocated thunk (IAT slot `0x0062ECDC` resolves outside the image); its generic callers include XML property setters and dictionary-related paths, so it does not prove a specific output key. Preserve the output dictionary key, XML root/tag and response schema as unknown.
 
 ### 12.4 ImageEdition and Upgrade are separate runtime methods
 
