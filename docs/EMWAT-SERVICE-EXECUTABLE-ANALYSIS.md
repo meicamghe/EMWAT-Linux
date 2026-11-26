@@ -503,3 +503,22 @@ The form method table identifies `IdHTTPServerCommandGet` at `0x0047BF30` and `F
 The service also contains the startup error message stating that port `1984` must be free if binding fails. This corroborates the DFM configuration.
 
 **Compatibility consequence:** the original service is loopback-only by configuration. The native Linux bridge should preserve that boundary and should not bind to `0.0.0.0` by default. The 15-second `TerminateWaitTime` is an Indy server shutdown setting; it is not evidence that document requests themselves have a 15-second timeout.
+
+
+### Run 30/31 body and string cross-check of concrete connector targets
+
+The VMT map above is independently corroborated by the handler body traces and embedded string constants:
+
+| Runtime VMT target | Embedded method/key evidence |
+|---|---|
+| `TScanDocument` `0x005EEB48` | key `document`; log prefix `[Invoke ScanDocument]`; body reaches `TScanCommand.GetNextPage`. |
+| `TFaxDocument` `0x005EEDFC` | key `fax`; file-stream processing. |
+| `TGetEmwatVersion` `0x005EF110` | COM init/uninit log strings; calls version/update helpers `0x00502F70` and `0x0050291C`. |
+| `TSetEmwatVersion` `0x005EF218` | calls `UpgradeEmwatPlugin` helper `0x00502F70` in mode 1. |
+| `TUpgradeEmwat` `0x005EF24C` | key `PlugIn`; delegates to `Applicationactivities.Finalization` (`0x0050357C`), whose strings identify the UpgradeEmwat flow and `EmwatUpdate.exe`. |
+| `TImageEdition` `0x005EF300` | keys `data` and `config`; log prefix `[Invoke EditImages]`; file-stream processing. |
+| `TEditExcelWorkBook` `0x005EF8AC` | keys `ExcelConfig` and `ExcelWorkBookContent`; log prefix `[Invoke EditExcelWorkBook]`. |
+| `TCompareWordDocument` `0x005EFC54` | key `documentsData`; calls `TCompareCommand.DoRequest` and `Finalization`. |
+
+This confirms that the TD32 procedure labels are not a safe substitute for runtime class names. The body/string cross-check supports the service VMT map rather than renaming methods from their TD32 symbols. Runtime `TShowSendLog` at `0x005EFF4C` is in the VMT map but still awaits its own body/caller trace.
+
