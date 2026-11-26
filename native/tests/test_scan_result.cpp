@@ -35,6 +35,37 @@ int main() {
     assert(multipage.is_multipage_file());
     assert(multipage.output_file_count() == 1);
 
+    // Preserve the response XML's independent status/error/image fields.
+    // ImageName is not the same field as the response filename or scan path.
+    ScanResponseMetadata response{
+        std::string("success"),
+        std::string("0"),
+        ScanResponseImageMetadata{
+            std::string("returned-image-name"),
+            std::string("base64")
+        }
+    };
+    ScanResult with_response{
+        MultiPageFile{"physical-output.tif"},
+        std::string("physical-scan-path"),
+        std::string("outer-response-filename"),
+        response
+    };
+    with_response.validate();
+    assert(with_response.scan_path == std::optional<std::string>("physical-scan-path"));
+    assert(with_response.response_filename ==
+           std::optional<std::string>("outer-response-filename"));
+    assert(with_response.response_metadata.has_value());
+    assert(with_response.response_metadata->status ==
+           std::optional<std::string>("success"));
+    assert(with_response.response_metadata->error_code ==
+           std::optional<std::string>("0"));
+    assert(with_response.response_metadata->scanned_image.has_value());
+    assert(with_response.response_metadata->scanned_image->image_name ==
+           std::optional<std::string>("returned-image-name"));
+    assert(with_response.response_metadata->scanned_image->encoding ==
+           std::optional<std::string>("base64"));
+
     ScanResult empty_set{SinglePageFileSet{{}}, {}, {}};
     assert(throws_invalid([&] { empty_set.validate(); }));
 
