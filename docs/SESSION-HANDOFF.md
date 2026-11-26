@@ -1,7 +1,7 @@
 ## 2026-11-26 — run 34 supersedes the cancelled run 33
 
 - Run 33 (`45768755921`) was cancelled when the expanded workflow commit `34a2900e9c53ca5262c227f9ab977322bb01fc74` queued run 34 (`45768861461`). This is a superseded CI run, not a test failure.
-- Run 34 includes the same `TScanCommand` constructor/VMT inspection and ImageEn caller-procedure traces, plus the expanded scanner result-ownership/GAM analysis steps. All three jobs are currently running; no result is claimed until completion.
+- Run 34 includes the same `TScanCommand` constructor/VMT inspection and ImageEn caller-procedure traces, plus the expanded scanner result-ownership/GAM analysis steps. Native regression (C++ and Python bridge) has completed successfully; the Word/print and Image/UI analysis lanes are still running. No result is claimed for those lanes until their artifacts are available.
 
 ## 2026-11-26 — preview scanner UI output and ImageGear API boundaries traced
 
