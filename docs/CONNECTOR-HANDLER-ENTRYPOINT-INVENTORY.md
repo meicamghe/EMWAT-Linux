@@ -9,6 +9,7 @@ This inventory distinguishes three separate identities:
 3. the TD32 procedure label, which is demonstrably stale/misaligned for several methods.
 
 Runtime VMT dispatch and the service's `GetClass("T"+className)` resolution take precedence over TD32 procedure labels.
+The `TUpgradeEmwat` finalization helper also contains an old `[Invoke EditWordDocument]` log literal, but its runtime VMT target, `UpgradeEmwat method called` message, and updater filenames (`EmwatMethods.bpl`, `.zip`, `EmwatUpdate.exe`) identify the operation as upgrade. Do not use that single stale log string to relabel the handler.
 
 ## 1. Common service dispatch contract
 
