@@ -1,3 +1,16 @@
+## 2026-11-26 — run 36 ScanResponseXML object and scanner property names recovered
+
+- Run 36 (`45769890366`) completed successfully across Native, Word/print and Image/UI jobs.
+- `TScanCommand.FResponseXML` is created through `0x004EB7F4`, whose TD32 identity is `Scanresponsexml.TXMLResponseScanType.AfterConstruction`. The constructor then stores it at field `+0x34) and calls its interface slot `+0xB8) with callback address `0x004F22A4`; that address lies inside the `TScanCommand` constructor body, so callback semantics remain unresolved.
+- Property setter inventory from direct callers of external thunk `0x004012F8`:
+  - `TXMLResponseScanType`: `Status` (`0x004EB964`), `ErrorCode` (`0x004EBAA4`).
+  - `TXMLScanedImageType`: `ImageName` (`0x004EBCAC)), `Encoding` (`0x004EBDF4`).
+  - `TXMLConfigType`: `Type`, `DriverDialog`, `ImageEditor`, `MultiJpegSupport`, `PreviousImageName`.
+  - `TXMLOutputType`: `ForceSinglePageFiles`.
+- These are Delphi property names and setter callsites, not a complete XML schema. Root/tag hierarchy, required values, image list ownership, outer result key and serialization remain open. `0x004012F8` is an external/relocated thunk whose target is outside the BPL; do not name it as a dictionary API.
+- ImageEn wrapper/caller traces remain a distinct `TfrmImageTools` path; no shared handoff to `TScanDocument` or the ImageGear preview path has been demonstrated.
+- Updated `docs/IMAGE-SCANNER-EDITOR-CALLGRAPH-INVENTORY.md` and `docs/CONNECTOR-HANDLER-ENTRYPOINT-INVENTORY.md` with the response/request property inventory and method-name caveat.
+
 ## 2026-11-26 — run 36 supersedes cancelled run 35
 
 - Run 35 (`45769864678`) was cancelled by the newer workflow commit `713cb7a1878a90aadf8c2137433b606d23575cb5`, which queued run 36 (`45769890366`). This is a superseded run, not a test failure.
@@ -8,7 +21,7 @@
 - Run 35 (`45769864678`, workflow commit `a1f0c7ae5853f5bf004dbb9e697e8f08b5e180a3`) was cancelled when the next workflow commit queued run 36 (`45769890366`). This is a superseded CI run, not a test failure.
 - Run 36 (`713cb7a1878a90aadf8c2137433b606d23575cb5`) traces the `FResponseXML` factory/helper `0x004EB7F4`, constructor callback `0x004F22A4`, and ImageEn wrapper/call targets used by `TfrmImageTools` (`Acquire`, `SaveToFileTIFF`, `PrintImage`, `SaveToFile`, `ExecuteSaveDialog`, `GetParams`, and supporting MView calls).
 - Goal: identify the concrete response XML object behind `TScanCommand.FResponseXML`, its interface slots `+0xB8` and `+0x54`, and the handoff that populates the scanner result dictionary. Separately clarify whether ImageEn Acquire is a scanner/device source or another image insertion path. Do not merge it with ImageGear/ScanDocument without a shared handoff.
-- Run 36 is running; no results claimed yet.
+- Run 36 completed successfully in all three jobs. Native regression passed; the Image and Word artifacts are available for follow-up.
 
 ## 2026-11-26 — run 34 completed: ScanCommand and ImageEn caller contracts expanded
 
