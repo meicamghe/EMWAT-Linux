@@ -172,7 +172,7 @@ jobs:
               candidates = []
               for encoding in ("utf-16le", "utf-8", "cp1252"):
                   try:
-                      text = sample.decode(encoding, errors="strict").split("\x00", 1)[0].split("\x00\x00", 1)[0]
+                  text = sample.decode(encoding, errors="strict").split("\x00", 1)[0]
                   except UnicodeError:
                       continue
                   if len(text) >= 2:
