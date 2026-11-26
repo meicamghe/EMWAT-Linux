@@ -3287,3 +3287,9 @@ The next meaningful Almas acceptance input is a sanitized, synthetic-or-test-acc
 - Detailed evidence and limitations: `docs/IMAGE-SCANNER-EDITOR-CALLGRAPH-INVENTORY.md`, section 12.9. The CI result validates analysis scripts and native regressions only; it is not hardware or end-to-end acceptance.
 
 - Cross-lane string evidence resolves the `TFaxDocument` input keys as `.tmp` and `document`; `.tmp` is passed to `GetNextPage`. The values' full types/meaning remain unverified.
+
+
+### Native scanner response metadata boundary — 2026-11-26
+- Added optional `ScanResponseMetadata` to the native `ScanResult`: raw `status`, `error_code`, and nested `scanned_image.image_name` / `encoding`. This mirrors the recovered XML structure without assigning status semantics or mapping encoding to file extensions.
+- Physical `ScanOutput`, `scan_path`, outer `response_filename`, and XML response metadata remain distinct. A focused native regression case covers the separation.
+- Commits: implementation/header `faba1970efe44a36cd1a398711ac0f9eee6f2d9f`; test `6f75b41edb0643029479cbc2f1cf1f644d69ac6e`. No CI status has been returned for the test commit yet; verification is pending.
