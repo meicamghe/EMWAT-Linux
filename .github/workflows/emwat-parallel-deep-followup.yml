@@ -8,6 +8,7 @@ on:
       - 'tools/trace_td32_callers.py'
       - 'tools/scan_pe_pointer_refs.py'
       - 'tools/trace_td32_procedure_skipdata.py'
+      - 'tools/trace_pe_range.py'
       - 'tools/dump_pe_delphi_pointer_table.py'
       - '.github/workflows/emwat-parallel-deep-followup.yml'
       - 'native/**'
@@ -163,6 +164,10 @@ jobs:
                   f"deep-followup/imageen/callers-{safe}.md"
               ], check=True)
           PY
+      - name: Disassemble ImageEn helper region without TD32 bounds
+        run: |
+          python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x004B0100 0x004B0240 \
+            deep-followup/imageen/imageen-helper-region-004B0100-004B0240.md
       - name: Resolve ImageEn acquisition helper thunk
         run: |
           python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x004B0154 \
@@ -275,6 +280,10 @@ jobs:
             python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 "$target" \
               "deep-followup/word-printer/helper-$safe-callers.md"
           done
+      - name: Resolve Word close callback containing GetXmlFieldInfo call
+        run: |
+          python tools/trace_td32_procedure_skipdata.py analysis-input/EmwatMethods.bpl1 0x004CCCC9 \
+            deep-followup/word/word-app-document-before-close.md
       - uses: actions/upload-artifact@v4
         if: always()
         with:
