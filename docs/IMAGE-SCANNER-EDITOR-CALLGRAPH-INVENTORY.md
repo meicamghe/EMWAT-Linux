@@ -265,8 +265,9 @@ This is the Word handler, not the scanner endpoint.
 - TD32 label: `TFaxDocument.PerformMethod`.
 - The service VMT map resolves runtime class `TScanDocument` to this `VMT+0x10` target.
 - Reads dictionary key `document` and emits the embedded log prefix `[Invoke ScanDocument]`.
-- Opens the supplied document value as a file stream, constructs the `TScanCommand` path through `0x004F21DC`, then calls `TScanCommand.GetNextPage` at `0x004F2558`.
-- The returned page/result object is inserted into the output dictionary.
+- Converts the `document` value to a path and opens it as a file stream through `0x004041BC` (access flags `0xFF00`), then logs `[Invoke ScanDocument]`.
+- Constructs `TScanCommand` at `0x004F21DC`, calls `GetNextPage` at `0x004F2558` with the opened stream, reads the result through interface slot `+0x54` from the command's result field at `+0x34`, and inserts the returned value into the output dictionary.
+- The output dictionary key and final response serialization are not yet decoded.
 
 This confirms that a public Windows `ScanDocument` connector exists. It is not the same code path as the `TfrmGScanPreview.Scan` UI method; it consumes a document/result request and delegates to the stateful `TScanCommand`/result-image layer. The `document` path value is untrusted and must be confined beneath an approved application data/output root in any Linux implementation.
 
