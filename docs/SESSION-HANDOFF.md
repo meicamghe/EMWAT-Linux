@@ -1,3 +1,9 @@
+## 2026-11-26 — VerifyConstraints follow-up: previous-image detection and numeric constraints
+
+- Follow-up review of Run 49 traces resolves next-page detection: `VerifyConstraints` reads `TXMLConfigType.PreviousImageName`, copies it into `FPreviousReturnedFileName +0x2C`, and sets `FIsNextPageRequest +0x29` when the string is non-empty.
+- The four numeric `TXMLConstraintsType` properties are `ColorDepth`, `MinResolution`, `MaxResolution`, and `MaxFileSize`; their values occupy four constraint slots starting at `TScanCommand +0x08`. `FHasConstraints +0x38` is true when their sum is greater than zero.
+- `HasError` calls `TResultImage.ShiftSerial` with the previous returned filename; success sets command state `+0x28=2`, failure sets `+0x28=4`.
+- Exact XML value mapping for `none`, `jpg`, `yes`, `no` and the external connector's page numbering remain open. Full details are in `docs/REVERSE-ENGINEERING-RUN49.md`.
 ## 2026-11-26 — Run 49 green; ScanCommand paging trace and connector contract extended
 
 Current branch: `feature/recovery-retention-policy`  
