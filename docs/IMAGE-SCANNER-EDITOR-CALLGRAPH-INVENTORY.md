@@ -345,6 +345,8 @@ Run 34 traced the constructor and inspected the class metadata around `0x004F1F9
 
 The class metadata is strongly corroborated by the constructor symbol, class-name string, field table and direct connector constructor call. However, the candidate parent VMT pointer is `0x0062EEA4`, outside the BPL image; do not treat the generic VMT scanner's virtual-slot layout as fully verified until that parent metadata is resolved.
 
+**Method-name conflict to preserve:** the RTTI published-method table bytes at `0x004F20B9` contain a `DoRequest` entry pointing to `0x004F2558`, while the TD32 symbol index labels `0x004F2558` as `TScanCommand.GetNextPage`. A separate TD32 `TScanCommand.DoRequest(UnicodeString)` symbol exists at `0x004F22E4`. The public `TScanDocument` handler calls `0x004F2558`. Keep the address-level call graph, but do not collapse the two methods or choose one name until the RTTI method-table encoding and call signatures are reconciled.
+
 The constructor initializes `ImgProc`, `FEditorForm` and `FResponseXML`. The connector then calls `GetNextPage`, reads `FResponseXML` through interface slot `+0x54`, and calls helper `0x004012F8`. That helper is an unresolved external/relocated thunk (IAT slot `0x0062ECDC` resolves outside the image); its generic callers include XML property setters and string-assignment paths, so it does not prove a specific output key. Preserve the output dictionary key, XML root/tag and response schema as unknown.
 
 ### 12.4 ImageEdition and Upgrade are separate runtime methods
