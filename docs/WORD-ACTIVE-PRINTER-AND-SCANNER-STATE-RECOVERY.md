@@ -77,6 +77,18 @@ The import `IG_scan_source_select` (`0x004AFF28`) is present in the PE import ta
 - Recover the import callsites and ABI for `IG_scan_pages` and `IG_scan_source_select`; do not infer prototypes from the stack shape alone.
 - Static disassembly does not validate actual Word, printer driver, scanner, ADF, duplex, or hardware behavior.
 
+## 6. GAM printer selection and configuration string inventory
+
+The expanded Word/printer artifact decodes the following static evidence:
+
+- `Zanprinter.GetPrinterName` is `0x0047CAF0`. It calls helper `0x004044CC` with arguments shaped like a Winspool `EnumPrinters` level-2 query (flags value 8, level 2, initially null output buffer, and output pointers). It then walks returned records with a `0x54`-byte stride, compares the field at `+0x10` with the exact string `zvprt1`, and copies the field at `+0x04` into global string storage `0x0062B310`.
+- The `0x54` stride and `+0x04`/`+0x10` fields match the layout positions of `pPrinterName` and `pDriverName` in Winspool `PRINTER_INFO_2`. This strongly suggests that EMWAT locates the installed printer by driver name `zvprt1` and returns its printer name. The helper thunk `0x004044CC` has not yet been resolved to `EnumPrintersA` versus `EnumPrintersW`; keep the ANSI/Unicode API variant unconfirmed.
+- `Zanprinter.InstallZanPrinter` (`0x0047CC6C`) calls `GetPrinterName` and updates global printer-name state when it succeeds.
+- The decoded string constants used by the printer configuration routines include `GAMPrinterSetup.exe`, `ZVPsrc\\save.ini`, `configure.ini`, `policy`, `allusersfolder`, and `zvprt50\\`.
+- The `CheckPrinterPaused` path (`0x0047D448`) references `save.ini` keys/values including `folder`, `save`, `basefilename`, `No Dialogs`, `popupdialog`, `filexistact`; `image.ini` strings include `tiff`, `fileformat`, `image`, `256`, `imagecolor`, `lzw`, `compression`, `0`, `pagetype`, `Each page as a single strip`, and `rowsperstrip`; `general.ini` strings include `hidestsdialog`, `general`, `sentinel`, `JobFinishes.GAM`, and `sentinelfile`.
+
+These are recovered literals and structure/call-shape evidence, not proof of every configuration value's active runtime effect. The `EnumPrinters` thunk, registry/path resolution, and the actual queue/driver installation state still require confirmation.
+
 ## Evidence
 
 - Workflow runs: `https://github.com/meicamghe/EMWAT-Linux/actions/runs/45562585651`, `https://github.com/meicamghe/EMWAT-Linux/actions/runs/45563007730`
