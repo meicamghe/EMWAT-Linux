@@ -476,6 +476,31 @@ jobs:
               parallel-re/image-io/connector-contract/helpers/callers-$target.md
           done
           exit "$status"
+      - name: Trace ScanCommand response XML factory and ImageEn wrappers
+        shell: bash
+        run: |
+          mkdir -p parallel-re/image-io/scan-command/response-xml parallel-re/image-io/imageen/wrappers
+          for target in 004EB7F4 004F22A4; do
+            python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x$target \
+              parallel-re/image-io/scan-command/response-xml/procedure-$target.md
+            python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x$target \
+              parallel-re/image-io/scan-command/response-xml/callers-$target.md
+          done
+          targets=(004B012C 004B0114 004B0154 004B011C 004B013C 004B0144 004B0104 004B0124 004B01A4 004B01EC 004B020C 004B0204)
+          pids=()
+          for target in "${targets[@]}"; do
+            (
+              set -e
+              python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x$target \
+                parallel-re/image-io/imageen/wrappers/helper-$target.md 100 ret
+              python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x$target \
+                parallel-re/image-io/imageen/wrappers/callers-$target.md
+            ) &
+            pids+=("$!")
+          done
+          status=0
+          for pid in "${pids[@]}"; do wait "$pid" || status=1; done
+          exit "$status"
       - name: Inventory preserved image form resources without changing them
         run: |
           python - <<'PY'
