@@ -1,3 +1,10 @@
+## 2026-11-26 — run 33 scanner/result and ImageEn caller tracing
+
+- Workflow commit `543ebb072b34c24b149df09a45b684a9ab8dd11d` starts run 33.
+- New parallel Image tasks: inspect the `TScanCommand` class/VMT candidate (`0x004F1F94`) and class pointer (`0x004F1F3C`); trace constructor `0x004F21DC` and callers; trace dictionary insertion helper `0x004012F8); and resolve enclosing procedures for ImageEn `Acquire`, `SaveToFileTIFF`, `SaveToFile`, `LoadFromFileAuto`, `GetParams`, print and dialog callsites.
+- Also tracing path/stream helpers `0x00454B9C`, `0x00403268`, `0x00403378`, `0x00401348`, and `0x00401370` used by runtime `TImageEdition`/file paths.
+- Keep ImageEn and ImageGear paths separate until caller procedures prove their relationship. No production connector code is being guessed or added.
+
 ## 2026-11-26 — run 32 completed; next scanner/result trace targets
 
 - Run 32 (`45767912737`) completed successfully across all three jobs; native regression, Word connector traces, and Image/VMT traces passed.
@@ -20,7 +27,7 @@
 
 - Run 32 (`45767912737`) native regression and Word connector lane passed. The Word artifact confirms the base wrapper `TEmwatMethod.Finalization` at `0x0046C9E0`: it calls `TEmwatMethod.Invoke` (`0x0046C82C`) to serialize dictionary pairs into XML parameter nodes, then calls the concrete handler via VMT slot `+0x10`. The `+0x54` interface call inside `Invoke` is the XML getter, not the handler dispatch.
 - Runtime `TShowSendLog` target `0x005EFF4C` is now body-traced: it obtains global service object `0x0062B4F0` through `0x00404D5C`, calls service vtable slot `+0x13C`, gets the result through interface slot `+0x54`, and inserts it into the result dictionary. Its output key/value serialization remains unresolved.
-- The run-32 Image job is finishing its result-image and ImageEn/TIFF callsite artifact. Native CMake/CTest and Python regression have passed in this run; the Image lane must complete before run 32 is marked fully green.
+- Run 32 completed successfully in all three jobs, including the Image/VMT lane and native CMake/CTest/Python regression.
 
 ## 2026-11-26 — runtime connector mappings and request keys reconciled
 
