@@ -73,7 +73,7 @@ jobs:
           python tools/list_td32_symbols.py analysis-input/EmwatMethods.bpl1 \
             TWordDocument TWordApplication PrintOut PrintOutOld PrintOut2000 PerformMethod TEditWordDocument TCompareWordDocument TEditExcelWorkBook TFaxDocument TScanDocument TImageEdition TGetEmwatVersion TSetEmwatVersion TShowEmwatSetting TShowLastEditedDocs TShowSendLog TUpgradeEmwat TEmwatMethod EmwatServiceCommandGet LoadDocument Invoke Finalization \
             BGPrintWithGamPrintOptions TEmwatDocPrintHandler TEDPController TWordViwer \
-            Zanprinter GetPrinterName ActivePrinter TPrinter \
+            Zanprinter GetPrinterName ActivePrinter TPrinter CreateTiff SeparteImages \
             > parallel-re/word-print/symbol-index.md
       - name: Trace concrete connector PerformMethod and dispatch targets
         shell: bash
@@ -184,6 +184,7 @@ jobs:
             parallel-re/word-print/printer-api/callers-004044CC.md
           python tools/scan_pe_iat_callers.py analysis-input/EmwatMethods.bpl1 \
             0x0062F9E4 0x0062F9E8 0x0062F9EC 0x0062F9F0 0x0062F9F4 \
+            0x0062F9F8 0x0062F9FC \
             > parallel-re/word-print/printer-api/winspool-iat-callsites.md
       - name: Decode Winspool IAT import names
         run: |
@@ -232,6 +233,64 @@ jobs:
           status=0
           for pid in "${pids[@]}"; do wait "$pid" || status=1; done
           exit "$status"
+      - name: Trace GAM TIFF producer and VCL printer API callers
+        shell: bash
+        run: |
+          mkdir -p parallel-re/word-print/printer-api/print-pipeline
+          python tools/list_td32_symbols.py analysis-input/EmwatMethods.bpl1 \
+            CreateTiff SeparteImages TPrinter \
+            > parallel-re/word-print/printer-api/print-pipeline/selected-symbols.md
+          python tools/scan_pe_iat_callers.py analysis-input/EmwatMethods.bpl1 \
+            0x0062F9E4 0x0062F9E8 0x0062F9EC 0x0062F9F8 0x0062F9FC \
+            0x00630150 0x00630158 0x0063015C 0x00630160 \
+            0x00630164 0x00630168 0x0063016C \
+            > parallel-re/word-print/printer-api/print-pipeline/printer-iat-callsites.md
+          python - <<'PY'
+          from concurrent.futures import ThreadPoolExecutor, as_completed
+          from pathlib import Path
+          import re
+          import subprocess
+          import sys
+
+          source = Path("parallel-re/word-print/printer-api/print-pipeline/selected-symbols.md").read_text()
+          pattern = re.compile(r"^\\|\\s*\\x60(0x[0-9A-Fa-f]+)\\x60\\s*\\|\\s*(\\d+)\\s*\\|[^|]*\\|\\s*\\d+\\s*\\|\\s*\\x60([^\\x60]+)\\x60\\s*\\|")
+          rows = []
+          for line in source.splitlines():
+              match = pattern.match(line)
+              if match and "SeparteImages" in match.group(3):
+                  rows.append((match.group(1), match.group(3)))
+          rows = sorted(set(rows))
+          out = Path("parallel-re/word-print/printer-api/print-pipeline")
+          (out / "separte-images-targets.txt").write_text(
+              "\\n".join(f"{address} {symbol}" for address, symbol in rows) + ("\\n" if rows else "")
+          )
+          if not rows:
+              print("No TD32 SeparteImages symbol matched; retaining symbol index and IAT callsites.")
+          def trace(item):
+              address, symbol = item
+              safe = address.replace("0x", "")
+              subprocess.run([
+                  sys.executable, "tools/trace_td32_procedure.py",
+                  "analysis-input/EmwatMethods.bpl1", address,
+                  str(out / f"procedure-{safe}.md")
+              ], check=True)
+              subprocess.run([
+                  sys.executable, "tools/trace_td32_callers.py",
+                  "analysis-input/EmwatMethods.bpl1", address,
+                  str(out / f"callers-{safe}.md")
+              ], check=True)
+              subprocess.run([
+                  sys.executable, "tools/scan_pe_pointer_refs.py",
+                  "analysis-input/EmwatMethods.bpl1", address,
+                  str(out / f"pointers-{safe}.md")
+              ], check=True)
+              return address, symbol
+          with ThreadPoolExecutor(max_workers=4) as pool:
+              futures = [pool.submit(trace, item) for item in rows]
+              for future in as_completed(futures):
+                  address, symbol = future.result()
+                  print(f"traced {address} {symbol}")
+          PY
       - uses: actions/upload-artifact@v4
         with:
           name: emwat-parallel-word-print
