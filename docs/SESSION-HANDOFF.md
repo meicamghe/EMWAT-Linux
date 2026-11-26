@@ -1,3 +1,11 @@
+## 2026-11-26 — run 32 completed; next scanner/result trace targets
+
+- Run 32 (`45767912737`) completed successfully across all three jobs; native regression, Word connector traces, and Image/VMT traces passed.
+- The runtime `TShowSendLog` target `0x005EFF4C` and base wrapper `0x0046C9E0` are now traced. The wrapper invokes the XML-building `TEmwatMethod.Invoke` then the concrete VMT `+0x10` method. `TShowSendLog` calls global service object `0x0062B4F0`, service slot `+0x13C`, and result getter slot `+0x54`.
+- The Image artifact includes a `TScanCommand` class RTTI/VMT candidate at `0x004F1F94` (unverified by the generic VMT scanner; instance size `0x40`) and a type/class pointer used at `0x004F1F3C` by runtime `TScanDocument`. The constructor target is `0x004F21DC`; it has not yet been body-traced. The result object at `TScanCommand+0x34` exposes interface slots `+0x14` (request XML path) and `+0x54` (result value); exact interface class/slot names remain open.
+- Run 32 also found a separate ImageEn I/O family: `TImageEnMIO.Acquire` caller `0x0050A364`, `SaveToFileTIFF` `0x0050B6A0`, `SaveToFile` `0x0050AFC4`, `LoadFromFileAuto` `0x00508B88`/`0x0050A4D3`, and several `GetParams`/print/dialog callers. These are distinct from the ImageGear `IG_save_FD` scanner preview path; their enclosing procedures must be traced before assigning semantics.
+- Next parallel pass: trace `TScanCommand.Create` (`0x004F21DC`) and VMT/class pointer `0x004F1F3C`/`0x004F1F94`; resolve the `+0x14`/`+0x54` result interface; trace ImageEn caller procedures `0x0050A364`, `0x0050B6A0`, `0x0050AFC4`, `0x00508B88`, `0x0050A4D3`, `0x0050B648`, and related callers. Keep ImageEn and ImageGear paths separate until correlated.
+
 ## 2026-11-26 — GAM printer configuration APIs and INI contract recovered
 
 - Run 32 Word/print job (`45767912737`, artifact `15092617354`) completed successfully; native regression also passed. The parallel image job was still running at handoff.
