@@ -249,7 +249,7 @@ Evidence: run `45763574936`, artifact `15090488790`, files under `image-io/image
 
 ## 12. Connector and `TScanCommand` body traces (workflow run 45764043847)
 
-The run-27 artifact contains body traces for the Word handler's runtime VMT target, the image-edition connector target, and the internal `TScanCommand` lifecycle. Keep the TD32 symbol names separate from runtime class resolution.
+The run-27 body traces and run-29 string/symbol inventory cover the Word handler's runtime VMT target, the image-edition connector target, the internal `TScanCommand` lifecycle, and the first result-image class methods. Keep TD32 symbol names separate from runtime class resolution.
 
 ### 12.1 Word handler at `0x005EE82C`
 
@@ -263,7 +263,7 @@ Body observations:
 - Calls `TWordViwer.LoadDocument` at `0x004B7724` with the collected values and a local output pointer, then inserts the returned value into the result dictionary through helper `0x004012F8`.
 - Sets a byte flag at offset `+0x04` on the result object and notifies a global interface through vtable slot `+0x14` on success and exception cleanup paths.
 
-The four request keys are identified in the existing Word protocol analysis as `wordConfig`, `wordBody`, `letterImages`, and `signData`; run 29's string decode will independently verify the embedded literals. **This is the Word document-edit handler, not evidence of a public `ScanDocument` endpoint.**
+The four request keys `wordConfig`, `wordBody`, `letterImages`, and `signData` are independently confirmed by the run-29 embedded string decode. **This is the Word document-edit handler, not evidence of a public `ScanDocument` endpoint.**
 
 ### 12.2 Image-edition connector — `TImageEdition.PerformMethod`, `0x005EF24C`
 
@@ -316,7 +316,7 @@ The values `none/jpg/yes/no` are confirmed constants used by `VerifyConstraints`
 - `TImageEdition.PerformMethod` is a separate image-edition connector, but its exact operation/response contract is not yet recovered.
 - `TScanCommand` is an internal stateful XML/result object. Its connection to any public connector method remains unproven; do not infer a `ScanDocument` endpoint from the TD32 label.
 - Preserve the generic native `ScanResult` distinction between a page-file set and a multipage file, but do not map unnamed result-image helpers to concrete methods.
-- Do not register a Linux `ScanDocument` handler yet. Decode the `TImageEdition` key and `TScanCommand` XML constraint strings, trace helper `0x0050357C` and the result-image methods, and recover response serialization before implementing a wire-compatible image/scanner method.
+- Do not register a Linux `ScanDocument` handler yet. The `TImageEdition` key is now confirmed as `PlugIn`, but its operation and response schema remain unknown. Map the `TScanCommand` XML constraint strings to their fields, trace helper `0x0050357C` and the remaining result-image methods, and recover response serialization before implementing a wire-compatible image/scanner method.
 
 Evidence: run `45764043847`, artifact `15090469945`, `image-ui/procedure-005EE82C.md`, `procedure-005EF24C.md`, and `procedure-004F22AC.md` through `procedure-004F2C4C.md`.
 
