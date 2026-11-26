@@ -210,6 +210,29 @@ jobs:
           status=0
           for pid in "${pids[@]}"; do wait "$pid" || status=1; done
           exit "$status"
+      - name: Resolve ImageGear rotate, flip, and page-handle API callsites
+        shell: bash
+        run: |
+          mkdir -p parallel-re/image-io/image-operations
+          targets=(004AFEC8 004AFED0 004AFF00)
+          pids=()
+          for target in "${targets[@]}"; do
+            (
+              set -e
+              python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x$target \
+                parallel-re/image-io/image-operations/helper-$target.md 100 ret
+              python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x$target \
+                parallel-re/image-io/image-operations/callers-$target.md
+            ) &
+            pids+=("$!")
+          done
+          status=0
+          for pid in "${pids[@]}"; do wait "$pid" || status=1; done
+          python tools/scan_pe_iat_callers.py analysis-input/EmwatMethods.bpl1 \
+            0x00630D00 0x00630D10 0x00630D14 0x00630D18 0x00630D1C \
+            0x00630D20 0x00630D24 0x00630D28 0x00630D2C 0x00630D30 0x00630D34 \
+            > parallel-re/image-io/image-operations/imagegear-operation-callsites.md
+          exit "$status"
       - name: Decode scanner and ImageGear output-path constants
         run: |
           python tools/decode_pe_strings.py analysis-input/EmwatMethods.bpl1 \
