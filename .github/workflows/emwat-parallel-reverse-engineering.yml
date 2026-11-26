@@ -71,7 +71,7 @@ jobs:
       - name: Index Word automation and print-handler symbols
         run: |
           python tools/list_td32_symbols.py analysis-input/EmwatMethods.bpl1 \
-            TWordDocument TWordApplication PrintOut PrintOutOld PrintOut2000 PerformMethod TEditWordDocument TCompareWordDocument TEditExcelWorkBook TFaxDocument TScanDocument TImageEdition TGetEmwatVersion TSetEmwatVersion TShowEmwatSetting TShowLastEditedDocs TShowSendLog TUpgradeEmwat TEmwatMethod EmwatServiceCommandGet LoadDocument Invoke \
+            TWordDocument TWordApplication PrintOut PrintOutOld PrintOut2000 PerformMethod TEditWordDocument TCompareWordDocument TEditExcelWorkBook TFaxDocument TScanDocument TImageEdition TGetEmwatVersion TSetEmwatVersion TShowEmwatSetting TShowLastEditedDocs TShowSendLog TUpgradeEmwat TEmwatMethod EmwatServiceCommandGet LoadDocument Invoke Finalization \
             BGPrintWithGamPrintOptions TEmwatDocPrintHandler TEDPController TWordViwer \
             Zanprinter GetPrinterName ActivePrinter TPrinter \
             > parallel-re/word-print/symbol-index.md
@@ -101,7 +101,7 @@ jobs:
               if not match:
                   continue
               address, _size, symbol = match.groups()
-              if ("PerformMethod" in symbol or "LoadDocument" in symbol or "Invoke" in symbol or "EmwatServiceCommandGet" in symbol) and any(token in symbol for token in wanted):
+              if ("PerformMethod" in symbol or "LoadDocument" in symbol or "Invoke" in symbol or "EmwatServiceCommandGet" in symbol or "Finalization" in symbol) and any(token in symbol for token in wanted):
                   rows.append((address, symbol))
           rows = sorted(set(rows))
           Path("parallel-re/word-print/connector-handlers/selected-symbols.txt").write_text(
@@ -146,7 +146,7 @@ jobs:
         shell: bash
         run: |
           mkdir -p parallel-re/word-print/connector-handlers/shared-helpers
-          targets=(00502F70 0050291C 005E72B8 005E9B4C 005E9BC0 00404D5C 0044CE44 0046D2E4 0046DE84 0046E324 0046E3CC 004738CC)
+          targets=(0046C9E0 005EFF4C 00502F70 0050291C 005E72B8 005E9B4C 005E9BC0 00404D5C 0044CE44 0046D2E4 0046DE84 0046E324 0046E3CC 004738CC)
           pids=()
           for target in "${targets[@]}"; do
             (
