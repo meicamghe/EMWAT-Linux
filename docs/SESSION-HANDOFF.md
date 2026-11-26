@@ -1,3 +1,11 @@
+## 2026-11-26 — scanner API caller map completed
+
+- The run-20 image artifact `15088974707` now supplies exact direct callsites for the scanner-related imports. `IG_scan_pages` (`0x004AFF30`) has three calls: `TGearImgProc.SelectScanner` at `0x004EFA96`, and `TfrmGScanPreview.SelectScanner` at `0x0061E036` and `0x0061E059`. `IG_scan_source_select` (`0x004AFF28`) has two calls: `TGearImgProc.SetCurrentPage` at `0x004EFF83` and `TfrmGScanPreview.ShowCropRectangle` at `0x0061E3DF`. The latter two uses are semantically surprising; do not assume the API name alone explains them.
+- The same scan shows `IG_error_check/get/clear` used not only by `TfrmGScanPreview.GetImagePageNumber`, but also by `TGearImgProc.CheckOutputParameter`; `TGearImgProc.GetForceSinglePage` also calls `IG_error_get`. The active-printer/scanner report now records these direct callsites and leaves the vendor API prototypes open.
+- Updated `docs/WORD-ACTIVE-PRINTER-AND-SCANNER-STATE-RECOVERY.md` accordingly. This is static callsite evidence; it does not prove scanner-source selection or crop semantics.
+- Corrected run `45761732772`: the Word and image jobs have passed; its native job passed CMake/CTest and is currently running the Python bridge suite after the test-fixture fixes. Run `45762129809` is running with the new Winspool `0x004044CC` trace and expanded string decode; inspect its artifact before identifying the ANSI/Unicode `EnumPrinters` variant.
+- Latest docs-only commit at this checkpoint: `7002216cc63477bee5d709fb2febb41bebdca654`. No local repository was changed.
+
 ## 2026-11-26 — scanner output model correction, GAM printer evidence, and CI fixture repair
 
 - A deeper argument-order audit corrected a material scanner finding. In both `TfrmGScanPreview.Scan` (`0x0061DC80`) and `TGearImgProc.SavePage` (`0x004EF510`), the seven arguments pushed before `CreateFileW` map in reverse order to the Win32 signature. The fifth parameter is the pushed value `4` (`OPEN_ALWAYS`), not the pushed value `1`; the latter is the share-mode argument. The previous `CREATE_NEW` / one-physical-file-per-page interpretation is withdrawn.
