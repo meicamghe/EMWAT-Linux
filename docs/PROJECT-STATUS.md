@@ -1,3 +1,9 @@
+## 2026-11-26 — result-image ownership and serial path clarified
+
+- Base `TResultImage` has distinct location, response-filename, and scan-path fields (`+0x04`, `+0x08`, `+0x10`).
+- Single-page and multipage result implementations are separate. `ShiftSerial(1)` checks whether the next virtual scan-path candidate exists; the next-page command state depends on that result.
+- Preserve separate physical output ownership and response filename in native design. Complete external page numbering and exact filename concatenation remain unverified. See `docs/REVERSE-ENGINEERING-RUN49.md`.
+
 ## 2026-11-26 — TScanDocument connector handoff resolved further
 
 - `wordConfig` is explicitly required by `TScanDocument.PerformMethod`; absence triggers a specific request-invalid error.
