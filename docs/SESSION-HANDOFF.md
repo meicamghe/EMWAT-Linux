@@ -2046,3 +2046,11 @@ Next probes: recover the four filename-table strings and state-byte meanings; re
 - Scanner table probe remains green (exit_status=0, empty stderr) and returns empty/.tif/.jpg/.bmp. Shared helper 0x00454B9C is Emwatutils.euGetASFileName, with 17 direct callers across TIFF, Word, fax, Excel and connector code; no direct GetNextPage caller.
 - ImageEn thunk identities reconfirmed: PrintImage, GetImageCount, GetMultiSelectedImages, GetMultiSelectedImagesCount, and MultiSelectSortList; Acquire is a separate thunk.
 - Details and evidence limits: Track P in docs/REVERSE-ENGINEERING-PARALLEL-FOLLOWUP-2026-11-26.md. No production Linux runtime behavior changed. Run 10 is green for its own workflow commit, not the later PR head 84e596f811b2c0b32f4ed9f50b602f05f38c304b.
+
+
+## 2026-11-26 — Run 11 green; scanner and Word dispatch paths narrowed
+
+- Run 11 (45802366826) passed all four jobs on commit e72935d8af774bf51a6133041eed94fd1ecab103. Artifacts: scanner 15106629688, ImageEn 15107712030, Word/printer 15108501022.
+- TScanCommand has seven TD32 methods: constructor 0x004F21DC, DoNewScan 0x004F22AC, DoRequest 0x004F22E4, GetNextPage 0x004F2558, HasError 0x004F2A94, LoadRequestXML 0x004F2B18, VerifyConstraints 0x004F2C4C. Run 11's filter traced only GetNextPage. Its sole direct caller is TFaxDocument.PerformMethod at 0x005EECBD, which constructs TScanCommand, calls GetNextPage, then reads a command interface property via VMT slot +0x54 from field +0x34. Trace the remaining request methods next before inferring the XML protocol.
+- WordAppDocumentBeforeClose (0x004CCBBC) has a direct caller from FillImgFldsForPrint at 0x004CCF8F, so the method name alone does not prove a COM event dispatch. WordAppDocumentBeforeSave (0x004CD154) has no direct CALL xrefs; a raw code-section pointer reference at 0x004B8CA8 falls inside TWordViwer.OnTmrAutoSave (0x004B8A84). Its instruction context is not decoded yet; this is a candidate, not proof of event registration.
+- Detailed evidence and limits are in Track Q of docs/REVERSE-ENGINEERING-PARALLEL-FOLLOWUP-2026-11-26.md. No production Linux behavior changed.
