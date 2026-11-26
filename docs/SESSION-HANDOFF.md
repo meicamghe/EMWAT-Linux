@@ -1822,13 +1822,13 @@ This is a contract/documentation correction, not a behavior change. Existing coo
 ## 2026-11-26 — Run 43 scanner trace completed
 
 - Run `45783897821` completed with all three jobs successful: `word-print-com`, `image-ui-and-vmt`, and `native-regression`. The Image/Scanner artifact `15099174916` was downloaded and reviewed.
-- `TFaxDocument.PerformMethod` (`0x005EEB48`) directly constructs `TScanCommand` (`0x004F21DC`), calls `GetNextPage` (`0x004F2558`), and retrieves the `Scanedimage` property from its `ResponseXML` object. The handler's two dictionary keys are decoded by the parallel Word/Printer artifact as `.tmp` and `document`; their value types and full semantics remain to be confirmed.
+- `TFaxDocument.PerformMethod` (`0x005EEB48`) directly constructs `TScanCommand` (`0x004F21DC`), calls `GetNextPage` (`0x004F2558`), and retrieves the `Scanedimage` property from its `ResponseXML` object. The earlier note treating `.tmp` and `document` as two dictionary keys is corrected: `.tmp` is a literal passed through helper `0x00454B9C` to form the local string sent to `GetNextPage`; `document` is passed to generic `TDictionary<String, Variant>.SetItem` (`0x0046D2E4`), i.e. it is written/updated, not retrieved. The Variant value's purpose is not yet known.
 - The separate `TScanDocument.PerformMethod` (`0x005EE82C`) reads `wordConfig`, `wordBody`, `letterImages`, and `signData`, then calls `0x004B7724`. Do not merge these handlers or assume an indirect relationship without further evidence.
 - Response XML is structurally split into `Status`, `ErrorCode`, and `Scanedimage`; the nested image has `ImageName` and `Encoding`. The `TScanCommand` path is stateful: it uses `FIsNextPageRequest` and `FPreviousReturnedFileName` while resolving the next image result.
 - Updated scanner call-graph inventory with the new evidence and explicit unknowns. The native regression job passed, but that does not validate a physical scanner, ADF/duplex, or Almas wire compatibility.
 - Next: compare this recovered handler contract against the native scan-result/connector boundary; implement only the parts whose semantics are now grounded. Capture real single-page and multipage outputs before finalizing response-name and file-cardinality rules. PR #2 remains Draft and unmerged; do not merge or rebase.
 
-- Cross-lane follow-up: Run 43 Word/Printer string inventory resolves the `TFaxDocument` keys as `.tmp` and `document`. The `.tmp` value is passed to `GetNextPage`; do not equate it with the returned image path. The `document` value's semantic type is still unknown.
+- Cross-lane follow-up (corrected): `.tmp` is a literal used by helper `0x00454B9C` and the resulting local string is passed to `GetNextPage`; `document` is the key of a `SetItem` write/update, not a dictionary read. The Variant value type and intent remain unknown.
 
 
 ## 2026-11-26 — Native scanner response metadata model
@@ -1837,3 +1837,8 @@ This is a contract/documentation correction, not a behavior change. Existing coo
 - Kept `scan_path`, outer `response_filename`, physical `ScanOutput`, and response metadata as separate values. No enum meanings, encoding-to-extension conversion, or path inference are assumed.
 - Added focused regression coverage proving these fields remain independent. Commits: header `faba1970efe44a36cd1a398711ac0f9eee6f2d9f`; test `6f75b41edb0643029479cbc2f1cf1f644d69ac6e`.
 - The test commit currently has no visible workflow/status result. Verify CI before treating this native model change as green. Do not claim hardware or Almas protocol acceptance.
+
+
+## 2026-11-26 — Corrected TFaxDocument dictionary analysis
+
+The first interpretation of `.tmp` and `document` as two input keys was disproved by the call targets. `.tmp` is passed as a literal to helper `0x00454B9C`; the resulting string is forwarded to `GetNextPage`. `document` is the key passed to `TDictionary<String, Variant>.SetItem` at `0x0046D2E4`, so this is a write/update. The Variant payload and semantic intent remain unknown. Added a skipdata-aware trace script and extended the reverse-engineering workflow to inspect the complete paging routine and relevant helper internals. Workflow will validate these tools on push.
