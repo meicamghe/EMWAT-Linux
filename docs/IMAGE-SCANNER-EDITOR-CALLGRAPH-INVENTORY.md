@@ -1,3 +1,34 @@
+## Run 49 — scanner paging, XML contract, ImageGear/ImageEn and preserved UI resources
+
+Run 49's complete artifact review adds the following evidence (full details in `docs/REVERSE-ENGINEERING-RUN49.md`):
+
+### ScanCommand paging
+
+- Deep trace for `TScanCommand.GetNextPage` at `0x004F2558` spans `0x004F2558–0x004F2A93`, 1,340 bytes. Skipdata coverage is 1,340/1,340 with 16 `.byte` pseudo-instructions.
+- Coverage means all bytes were traversed, not that every byte is executable code. Embedded data and branch destinations need validation.
+- The method calls `VerifyConstraints` and `LoadRequestXML`, then branches on `FIsNextPageRequest +0x29`. The next-page path examines `FPreviousReturnedFileName +0x2C`, compares `_P`, updates bytes `+0x1D/+0x1E`, and writes `ResultImage +0x20`.
+- The four-entry table referenced through `0x0062A7F0` and exact enum/protocol semantics remain unresolved.
+
+### Connector and response XML
+
+- `TScanDocument.PerformMethod` looks up `wordConfig`, `wordBody`, `letterImages`, and `signData` in its dictionary. This does not establish each value's type or optionality.
+- `TScanCommand` response class evidence confirms `response-scan` / `scaned-image`, with `status`, `errorCode`, `imageName`, and `encoding`.
+- `success` and `base64` occur as constants in the response path; external runtime semantics still require a real connector capture.
+- In `TFaxDocument.PerformMethod`, `.tmp` is passed through helper `0x00454B9C` and the helper-produced string reaches `GetNextPage`. `document` is passed to `TDictionary<String, Variant>.SetItem`, i.e. a write/update rather than a read.
+
+### Image operations and resources
+
+- ImageGear callsites resolve `IG_IP_flip` and `IG_IP_rotate_multiple_90`; ImageEn IAT inventory identifies `Acquire`, `LoadFromFileAuto`, `SaveToFileTIFF`, and `PrintImage`.
+- Preserved `TfrmGScanPreview` resource includes scan preview, cancel/register, rotate, crop, H/V flip, original-image, TIFF/JPEG controls.
+- Preserved `TfrmImageTools` resource includes ImageEn multi-view and add-image/scan/print toolbar controls.
+- These are static resource/API observations, not proof of runtime behavior or hardware support.
+
+### CI
+
+Run 49 completed successfully in all three lanes. The separate artifact report is authoritative for the exact callsites and caveats. Physical scanner, ADF/Duplex and real printer acceptance remain open.
+
+---
+
 # Image, scanner and editor call-graph inventory
 
 Date: 2026-11-25  
