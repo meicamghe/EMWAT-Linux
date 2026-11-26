@@ -1981,3 +1981,13 @@ Next probes: recover the four filename-table strings and state-byte meanings; re
 - Extended `.github/workflows/emwat-parallel-deep-followup.yml` with three independent helper investigations: Fax temp-path helper `0x00454B9C` (procedure/skipdata/callers/pointer refs), ImageEn helper `0x004B0154` (same four reports), and Word close/archive candidates `0x004BCA88`, `0x004AEBBC`, `0x004CD154` (procedure/skipdata/callers).
 - The workflow's push path filter includes the workflow YAML and skipdata tracer. This makes instrumentation-only changes eligible for a push run; the available commit-run lookup only returns PR-triggered runs, so an empty response is not evidence that the push workflow did not start. Check Actions run list and artifacts before reporting results.
 - Added the targets and evidence boundaries to `docs/REVERSE-ENGINEERING-PARALLEL-FOLLOWUP-2026-11-26.md` (Track G). No native production code or runtime mapping changed.
+
+
+## 2026-11-26 — Run 51 helper-level results and next-page table probe
+
+- Run 51 (45796645461) passed all four jobs on 4a729f6d1daf736fb57bc8ffc26a2c1ea8c25425: scanner/result ownership, ImageEn acquisition, Word/printer thread, and native regression.
+- Scanner helper 0x00454B9C is Emwatutils.euGetASFileName, a shared candidate-filename utility with multiple Word, Fax, Excel and connector callers. It is not proven to be a scanner-specific .tmp helper and has no direct callsite from TScanCommand.GetNextPage. Its exact suffix/output contract remains open.
+- ImageEn helper 0x004B0154 has no TD32 procedure range; four direct callsites are all in TfrmImageTools.DoPrintingPanel page loops. It is not the TImageEnMIO.Acquire thunk (0x004B012C); identity remains unresolved.
+- Word target 0x004BCA88 is TWordViwer.GetXmlFieldInfo and is called by WordAppDocumentBeforeClose; 0x004AEBBC is TfrmWordPrintOption.FreePrinters. Neither is a generic archive/close helper. 0x004CD154 has no direct CALL xrefs; keep its registered OnDocumentBeforeClose identity based on RTTI/event-source evidence, not its misleading TD32 name.
+- GetNextPage references global table pointer 0x0062A7F0 at 0x004F25C6 and iterates four pointer entries. Added tools/dump_pe_delphi_pointer_table.py and a workflow step to attempt static decoding of the four Delphi UnicodeString candidates. The follow-up run is pending; no table labels are claimed yet.
+- Detailed trace corrections and artifact IDs are in docs/REVERSE-ENGINEERING-PARALLEL-FOLLOWUP-2026-11-26.md, Track H. No production scanner, image or printer behavior changed.
