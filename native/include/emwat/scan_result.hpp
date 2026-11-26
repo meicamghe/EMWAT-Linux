@@ -22,10 +22,25 @@ struct MultiPageFile {
 
 using ScanOutput = std::variant<SinglePageFileSet, MultiPageFile>;
 
+// Raw response XML metadata recovered from TXMLResponseScanType and its
+// nested TXMLScanedImageType. Keep each field independent: no status enum,
+// encoding-to-extension mapping, or path inference is assumed here.
+struct ScanResponseImageMetadata {
+    std::optional<std::string> image_name;
+    std::optional<std::string> encoding;
+};
+
+struct ScanResponseMetadata {
+    std::optional<std::string> status;
+    std::optional<std::string> error_code;
+    std::optional<ScanResponseImageMetadata> scanned_image;
+};
+
 struct ScanResult {
     ScanOutput output;
     std::optional<std::string> scan_path;
     std::optional<std::string> response_filename;
+    std::optional<ScanResponseMetadata> response_metadata;
 
     [[nodiscard]] bool is_single_page_file_set() const noexcept {
         return std::holds_alternative<SinglePageFileSet>(output);
@@ -44,7 +59,7 @@ struct ScanResult {
     }
 
     // Validate structural invariants only. This does not touch the filesystem
-    // or assert undocumented EMWAT path/filename semantics.
+    // or assert undocumented EMWAT path/filename/response semantics.
     void validate() const {
         if (scan_path && scan_path->empty())
             throw std::invalid_argument("scan_path_must_not_be_empty");
