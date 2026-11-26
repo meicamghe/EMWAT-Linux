@@ -1943,3 +1943,15 @@ Next probes: recover the four filename-table strings and state-byte meanings; re
 - Hidden thread is 3,096 bytes; only 1,885 bytes are decoded. It contains indirect dispatches, page loops, file-stream operations and file polling, but spool submission/completion is still unproven. TWordApplication ActivePrinter wrappers have no direct CALL xrefs.
 - Native regression passed, but ScanResult remains unconnected to production scan_pages output. Do not implement speculative page/file cardinality mapping.
 - Detailed report: docs/REVERSE-ENGINEERING-DEEP-FOLLOWUP-2026-11-26.md. No physical printer/scanner, Wine or live Almas acceptance is claimed.
+
+
+
+## 2026-11-26 — Follow-up cross-audit: preview output and response boundary
+
+- Cross-checked Run 49 scanner/response evidence against `docs/SCANNER-PREVIEW-OUTPUT-RECOVERY.md`. Correct current interpretation of `TfrmGScanPreview.Scan` (`0x0061DC80`): it opens one `_New.tif` destination with `CreateFileW(OPEN_ALWAYS)` and calls `IG_save_FD` for successive 1-based page indices. This is strongly consistent with one multipage TIFF, not a per-page file set. Older tentative CREATE_NEW/per-page-file interpretations are withdrawn.
+- `Save_Tiff_MultyPages` (`0x0061D888`) is a separate save path; do not conflate its format/path branches with `Scan`.
+- Result-image classes still distinguish physical scan path, response filename and class-specific single/multipage naming. The exact complete filename/response publication mapping remains unverified.
+- Protocol boundary: `TScanDocument.PerformMethod` requires `wordConfig` and forwards `wordBody`, `letterImages`, and `signData` to `TWordViewer.LoadDocument`; do not assume the latter three serialized types or optionality. Scan response XML field names are known (`status`, `errorCode`, `scaned-image.imageName`, `encoding`), but runtime values/error semantics and full page-sequence exchange remain incomplete.
+- Native boundary remains an integration gap: scanner `vector<ImagePage>` acquisition and `ScanResult` persisted-output ownership are separate public contracts; no production adapter is proven. Do not implement guessed page cardinality/naming.
+- Printer boundary remains incomplete: `TCreateTiff.SeparteImages` reaches `THidePrintingThread.Execute`, but the hidden thread trace is partial and real spool submission/completion is not proven.
+- No native production code changed in this follow-up. No new CI was triggered; existing green workflow runs are not evidence for this documentation-only commit.
