@@ -59,3 +59,15 @@ Direct callers include `TGearImgProc.RotateLeft`, `TGearImgProc.FlipHorizontal`,
 `LoadImageToGearHandle` passes the handle at `this+0x428` and output pointers for fields `+0x42C`, `+0x430`, and `+0x434` to `IG_image_dimensions_get`. Their grouping is confirmed, but individual field meanings/units are not. `IG_device_rect_set` has direct callsites at `0x004EEF0F` and `0x0061D853`; its relation to preview geometry/crop still needs body-level tracing.
 
 The current native quarter-turn and horizontal/vertical pixel transforms provide the required algorithmic building blocks, but exact parity still depends on recovering ImageGear argument semantics, transform direction, metadata updates, and device-rectangle behavior. No native transform code was changed in this update.
+
+
+## 2026-11-26 update — Windows result-image class hierarchy confirms native output variants
+
+Run 29 (`45764787287`, artifact `15091627434`) resolved the Windows result-image symbol hierarchy:
+
+- `TResultImage.Create` at `0x004EC8B4` accepts a `UnicodeString` path and `TImageFormat`.
+- Concrete collection classes exist: `TSetOfSinglePageImages` constructor at `0x004ED168` and `TSetOfMultiPageImages` constructor at `0x004ED298`.
+- `TResultImage.NextFile` is `0x004ECF50`; `GetFilesCount` is `0x004ECC84`; `GetFileNamePath` is `0x004ECBD8`; `GetScanFilePath` is `0x004ED03C`; `GetResponseFileName` is `0x004ECF38`; `SetResponseFileName` is `0x004ED150`.
+- `TResultImage.ShiftSerial` is `0x004ECFC8`, not a `HasError` method. Its body obtains a scan path through `GetScanFilePath` and checks file existence. `TScanCommand.HasError` calls this helper and maps the result to its own status flag.
+
+This is type-level confirmation that Windows represents both a page-file collection and a multipage image result. The existing native `ScanOutput = variant<SinglePageFileSet, MultiPageFile>` model therefore matches the recovered top-level distinction. Exact file naming, serial increment rules, page-to-file ownership, and response serialization are still open; no native adapter or output policy was changed.
