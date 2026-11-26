@@ -533,7 +533,7 @@ The new direct-constructor caller scan found:
 - `TScanCommand.GetNextPage` (`0x004F2558`) is called from the same `TFaxDocument.PerformMethod` at `0x005EECBD`.
 - The separately named `TScanDocument.PerformMethod` begins at `0x005EE82C`. Its recovered body reads the outer dictionary keys `wordConfig`, `wordBody`, `letterImages`, and `signData`, then calls helper `0x004B7724`. The direct callsite scan did not identify this method as the direct constructor caller of `TScanCommand`.
 
-Therefore, do not collapse the `TFaxDocument`/scanner-command path into the public `TScanDocument` connector path based on names alone. Their relationship, any indirect dispatch between them, and the actual runtime invocation sequence still need proof.
+Therefore, do not collapse the `TFaxDocument`/scanner-command path into the public `TScanDocument` connector path based on names alone. The Run 43 trace now resolves the `TFaxDocument` route described in section 12.9. It still does not establish an indirect dispatch relationship between these methods or the live Almas invocation order.
 
 The field-reference pass found 59 references across seven `TScanCommand` methods. It corroborates the instance field table already recorded in section 12.5:
 
@@ -565,8 +565,40 @@ The expanded result-container traces in Image artifact `15099188562` make the fi
 
 This strengthens the Linux ownership model: keep at least three concepts separate—response-visible image name, collection/base output path, and resolved per-page physical file path. Apply bounded serial generation and collision handling explicitly; never derive a physical path by trusting an unconfined response filename.
 
-The exact interaction between `forceSinglePageFiles`, the two collection constructors, the response XML cardinality, and the final extension still needs the `TFaxDocument.PerformMethod` trace now queued in Run 43 and a controlled output capture.
+The Run 43 `TFaxDocument.PerformMethod` trace is now available (section 12.9). The exact interaction between `forceSinglePageFiles`, the two collection constructors, response XML cardinality, and final extension still needs a controlled output capture.
 
 Evidence:
 - Run 42 Image artifact `15099188562`, especially `image-ui/result-path-callers/procedure-004ED03C.md`, `procedure-004ED4C0.md`, and the `TResultImage`/collection constructor traces.
 - Run 42 workflow `45782764971` passed all three jobs.
+
+
+## 12.9 Run 43 — ScanCommand response and FaxDocument paging trace (2026-11-26)
+
+Workflow run `45783897821` completed successfully on analysis commit `e372fc188936ffcbeb54986630fe4981483a9577`. All three jobs passed: Word/Printer, Image/Scanner, and Native regression. The Image/Scanner artifact is `15099174916`.
+
+### Connector boundary: two different handlers
+
+The expanded trace confirms two distinct connector methods:
+
+- `TScanDocument.PerformMethod` at `0x005EE82C` reads the outer dictionary keys `wordConfig`, `wordBody`, `letterImages`, and `signData`, then calls helper `0x004B7724`. The helper's complete semantic contract remains unresolved.
+- `TFaxDocument.PerformMethod` at `0x005EEB48` directly constructs `TScanCommand` at `0x004F21DC`, calls `GetNextPage` at `0x004F2558`, then reads the command's `ResponseXML` object at `+0x34` and invokes its `Scanedimage` property accessor (VMT slot `+0x54`, corroborated by `TXMLResponseScanType.Get_Scanedimage` at `0x004EBB04`). The returned value is inserted into the handler's output dictionary. This is the concrete FaxDocument-to-ScanCommand path; it is not evidence that the public TScanDocument handler delegates to the same command.
+
+The two input dictionary keys used by `TFaxDocument.PerformMethod` at static addresses `0x005EED54` and `0x005EED6C` were not reliably decoded in this artifact. Do not name or map them by guessing.
+
+### ScanCommand request and state
+
+- `TScanCommand` instance size is `0x40`. The field table identifies `ImgProc` `+0x04`, `Options` `+0x08`, `ResultImage` `+0x20`, `FEditorForm` `+0x24`, `FCommandState` `+0x28`, `FIsNextPageRequest` `+0x29`, `FPreviousReturnedFileName` `+0x2C`, `FRequsetXML` `+0x30`, `FResponseXML` `+0x34`, and `FHasConstratints` `+0x38`.
+- The constructor creates the image-processing object and options object, associates the editor form, and creates a `TXMLResponseScanType` response object through `0x004EB7F4`.
+- `GetNextPage` calls `VerifyConstraints` and `LoadRequestXML`, branches on `FIsNextPageRequest`, consults `FPreviousReturnedFileName`, recognizes the literal `_P` in the prior name path, and updates `ResultImage`. This confirms a stateful continuation contract rather than a stateless one-shot call. The exact meaning of all internal state values and the full response cardinality remain unresolved.
+- `DoRequest` distinguishes multiple command outcomes and writes observed `FCommandState` values 1, 2, and 3; `HasError` can additionally write 2 or 4. These numeric values must not be exposed as public status enums until their complete transitions and serialization are decoded.
+- `VerifyConstraints` reads request XML fields including output/type, driver-dialog, image-editor, multi-JPEG support, previous-image name and constraints. The constraint model includes color depth, min/max resolution and max file size. Keep validation distinct from scanner acquisition and response serialization.
+
+### Response XML model
+
+The response object has separate `Status`, `ErrorCode`, and `Scanedimage` properties. The nested `TXMLScanedImageType` has separate `ImageName` and `Encoding` properties. Preserve these as distinct fields; do not infer that a response filename is the physical output path, that encoding is an extension, or that status can be inferred from file existence.
+
+### ImageEn boundary and remaining gaps
+
+Run 43 also expanded ImageEn wrapper and caller traces, including `TImageEnMIO.PrintImage`, `LoadFromFileAuto`, `GetParams`, and `PreviewPrintImage` callsites. These establish a separate ImageEn path alongside the ImageGear scanner path, but do not yet recover all method ABIs, object ownership, or the complete output-file/response cardinality.
+
+The Run 43 evidence narrows the Linux contract but does not authorize a guessed protocol implementation. Next implementation work should preserve the separate handler contracts, response metadata, previous-page continuation state, and file-collection ownership. Before claiming Almas compatibility, obtain a controlled request/response capture and actual generated files for single-page and multipage cases. No physical scanner, ADF/duplex, or live Almas run was part of this workflow.
