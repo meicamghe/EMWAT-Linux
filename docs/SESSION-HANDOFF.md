@@ -1974,3 +1974,10 @@ Next probes: recover the four filename-table strings and state-byte meanings; re
 - Updated `.github/workflows/emwat-parallel-deep-followup.yml` push filters to include changes to that workflow and `tools/trace_td32_procedure_skipdata.py`; intended to make the next instrumentation update eligible to start the lanes.
 - GitHub reports no workflow run for the trigger-filter commit (`dedfccaf53ac9be2fbf9ba2ce738a335ab8d6acd`) when checked. Do not claim the workflow ran; no direct workflow-dispatch action is available in the connected GitHub operations. Run 50 (`45794156659`) remains the latest verified run with all four jobs successful.
 - Follow-up docs commit: `4efa8939`; latest handoff commit follows. PR #2 remains Draft/open/unmerged, mergeable=false; branch remains 9 commits behind `main`. No rebase/merge, no native production code changes.
+
+
+## 2026-11-26 — Parallel helper tracing expanded
+
+- Extended `.github/workflows/emwat-parallel-deep-followup.yml` with three independent helper investigations: Fax temp-path helper `0x00454B9C` (procedure/skipdata/callers/pointer refs), ImageEn helper `0x004B0154` (same four reports), and Word close/archive candidates `0x004BCA88`, `0x004AEBBC`, `0x004CD154` (procedure/skipdata/callers).
+- The workflow's push path filter includes the workflow YAML and skipdata tracer. This makes instrumentation-only changes eligible for a push run; the available commit-run lookup only returns PR-triggered runs, so an empty response is not evidence that the push workflow did not start. Check Actions run list and artifacts before reporting results.
+- Added the targets and evidence boundaries to `docs/REVERSE-ENGINEERING-PARALLEL-FOLLOWUP-2026-11-26.md` (Track G). No native production code or runtime mapping changed.
