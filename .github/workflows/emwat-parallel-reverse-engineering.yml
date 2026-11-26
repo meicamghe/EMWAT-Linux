@@ -370,6 +370,44 @@ jobs:
             0x0061DC20 0x0061DC38 0x0061DC7C 0x004EF708 \
             0x004EF844 0x004EF878 0x004EF9B0 \
             > parallel-re/image-io/scanner-api/output-path-constants.md
+      - name: Trace ScanCommand construction and ImageEn caller procedures
+        shell: bash
+        run: |
+          mkdir -p parallel-re/image-io/scan-command parallel-re/image-io/imageen/callers parallel-re/image-io/connector-contract/helpers
+          python tools/inspect_delphi_vmt_address.py analysis-input/EmwatMethods.bpl1 0x004F1F94 \
+            parallel-re/image-io/scan-command/vmt-004F1F94.md
+          python tools/inspect_delphi_vmt_address.py analysis-input/EmwatMethods.bpl1 0x004F1F3C \
+            parallel-re/image-io/scan-command/class-pointer-004F1F3C.md
+          python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x004F21DC \
+            parallel-re/image-io/scan-command/constructor-004F21DC.md
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004F21DC \
+            parallel-re/image-io/scan-command/constructor-callers.md
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004012F8 \
+            parallel-re/image-io/scan-command/dictionary-insert-004012F8.md 120 ret
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004012F8 \
+            parallel-re/image-io/scan-command/dictionary-insert-callers.md
+          targets=(0050A364 0050B6A0 0050AFC4 00508B88 0050A4D3 0050B648 0050B659 0050B676 0050A7C3 0050A8A6 0050A999 0050AA85 0050A48C 0050A4BF 0050AFAE)
+          pids=()
+          for target in "${targets[@]}"; do
+            (
+              set -e
+              python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x$target \
+                parallel-re/image-io/imageen/callers/procedure-$target.md
+              python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x$target \
+                parallel-re/image-io/imageen/callers/callers-$target.md
+            ) &
+            pids+=("$!")
+          done
+          status=0
+          for pid in "${pids[@]}"; do wait "$pid" || status=1; done
+          helper_targets=(00454B9C 00403268 00403378 00401348 00401370)
+          for target in "${helper_targets[@]}"; do
+            python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x$target \
+              parallel-re/image-io/connector-contract/helpers/helper-$target.md 120 ret
+            python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x$target \
+              parallel-re/image-io/connector-contract/helpers/callers-$target.md
+          done
+          exit "$status"
       - name: Inventory preserved image form resources without changing them
         run: |
           python - <<'PY'
