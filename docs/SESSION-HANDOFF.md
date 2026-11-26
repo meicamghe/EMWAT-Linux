@@ -1922,3 +1922,15 @@ The first interpretation of `.tmp` and `document` as two input keys was disprove
 - PR #2 remains Draft/open/unmerged. No merge or rebase was attempted.
 
 Next probes: recover the four filename-table strings and state-byte meanings; resolve response XML virtual targets and the `Scanedimage` update; trace `TResultImage` ownership/finalization; clarify the `.tmp` helper contract.
+
+
+## 2026-11-26 — Deep parallel follow-up run 50 (partial handoff)
+
+- Added a dedicated four-lane workflow in commit 730b818c4117de02e43f0e55d158b84f40e3d375; run 45794156659 is active on that workflow commit. The report commit 8fb2bef8cc1481428915888a91da85cfba587e12 records the completed lanes so far.
+- ImageEn lane passed: artifact 15104267112. TfrmImageTools.ScanPicture at 0x0050A298 is a one-byte ret stub with no direct callers in the TD32 scan. The actual observed ImageEn acquisition call is TfrmImageTools.InsertPicture at 0x0050A29C -> TImageEnMIO.Acquire thunk 0x004B012C at 0x0050A364. Do not treat ScanPicture as a working scanner route.
+- Scanner result ownership lane passed: artifact 15102809326. Base TResultImage stores response filename at +0x08 and scan path at +0x10; GetScanFilePath parses/increments a trailing three-digit serial and bounds it to 0..999. ShiftSerial checks candidate existence. TSetOfMultiPageImages has its own GetScanFilePath/GetResponseFileName overrides and collision handling. Complete filename composition and Almas page numbering remain unverified.
+- Native regression lane passed in run 45794156659: CMake native build/CTest and Python bridge tests succeeded.
+- Native boundary audit: scan_pages returns vector<ImagePage>; ScanResult is currently referenced only by its header and isolated test. No production composition yet persists scan_pages output into SinglePageFileSet/MultiPageFile or serializes response metadata. This is an integration gap, not a test failure; do not invent cardinality rules.
+- Word/Printer thread lane was still running at this handoff update. Do not report it complete until its artifact is uploaded and inspected.
+- Workflow note: the scanner state-table pointer scan omitted its output-path argument, so its detailed report went to the default bpl-analysis path and was not included in the artifact. The procedure/caller traces are present; fix the workflow path before relying on that pointer report.
+- Detailed report: docs/REVERSE-ENGINEERING-DEEP-FOLLOWUP-2026-11-26.md. Run 50 does not establish physical scanner, ADF/duplex, real printer queue, Wine, or live Almas acceptance.
