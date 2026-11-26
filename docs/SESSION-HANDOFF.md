@@ -3,12 +3,12 @@
 - Run 35 (`45769864678`) was cancelled by the newer workflow commit `713cb7a1878a90aadf8c2137433b606d23575cb5`, which queued run 36 (`45769890366`). This is a superseded run, not a test failure.
 - Run 36 contains the new `FResponseXML` factory/callback and ImageEn wrapper traces described below. It is pending; wait for its jobs before recording results.
 
-## 2026-11-26 — run 35 response XML and ImageEn wrapper tracing
+## 2026-11-26 — run 35 superseded by run 36 response XML and ImageEn tracing
 
-- Workflow commit `713cb7a1878a90aadf8c2137433b606d23575cb5` starts run 35.
-- New parallel traces target the `FResponseXML` factory/helper `0x004EB7F4`, constructor callback `0x004F22A4`, and the ImageEn wrapper/call targets used by `TfrmImageTools` (`Acquire`, `SaveToFileTIFF`, `PrintImage`, `SaveToFile`, `ExecuteSaveDialog`, `GetParams`, and supporting MView calls).
+- Run 35 (`45769864678`, workflow commit `a1f0c7ae5853f5bf004dbb9e697e8f08b5e180a3`) was cancelled when the next workflow commit queued run 36 (`45769890366`). This is a superseded CI run, not a test failure.
+- Run 36 (`713cb7a1878a90aadf8c2137433b606d23575cb5`) traces the `FResponseXML` factory/helper `0x004EB7F4`, constructor callback `0x004F22A4`, and ImageEn wrapper/call targets used by `TfrmImageTools` (`Acquire`, `SaveToFileTIFF`, `PrintImage`, `SaveToFile`, `ExecuteSaveDialog`, `GetParams`, and supporting MView calls).
 - Goal: identify the concrete response XML object behind `TScanCommand.FResponseXML`, its interface slots `+0xB8` and `+0x54`, and the handoff that populates the scanner result dictionary. Separately clarify whether ImageEn Acquire is a scanner/device source or another image insertion path. Do not merge it with ImageGear/ScanDocument without a shared handoff.
-- Run 35 is queued/running; no results claimed yet.
+- Run 36 is running; no results claimed yet.
 
 ## 2026-11-26 — run 34 completed: ScanCommand and ImageEn caller contracts expanded
 
