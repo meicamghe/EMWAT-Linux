@@ -124,3 +124,24 @@ Evidence:
 - Run 39 Word artifact `15096235579`, Image artifact `15095104593`.
 - Run 40 Word artifact `15097418557`, Image artifact `15098092258`.
 - Static binary evidence only; no Windows runtime print or Wine hardware acceptance is claimed.
+
+
+## 10. Run 42 — TIFF producer and printer configuration chain (2026-11-26)
+
+Workflow run `45782764971` completed successfully on commit `295fc6e513664abe211d2ebeeda1964f1fcd584f`. The Word/Printer and Image/Scanner jobs both uploaded artifacts; Native regression also passed. The Word artifact is `15098978072`.
+
+The expanded `TCreateTiff.SeparteImages` trace (`0x004A0148`) establishes the following caller and setup chain:
+
+- Direct callers are `TWordViwer.LoadDocument` at `0x004B7A9C` and `0x004B7ABD`.
+- It calls `Zanprinter.GetPrinterName` (`0x0047CAF0`). If no matching local queue is found, it calls `InstallZanPrinter` (`0x0047CC94`); a failed install follows an error/abort branch.
+- It then enters the printer configuration/finalization path and iterates the image collection through count/index virtual calls. The complete mapping from those virtual slots to the final printer canvas call remains open.
+- `Zanprinter.CheckPrinterPaused` (`0x0047D448`) is a misleading method name: the recovered body reads/writes the GAM INI configuration defaults listed in section 5. The separately traced `Zanprinter.Finalization` routine (`0x0047D8BC`) is the queue-handle/status path documented in `EMWAT-PRINTER-SPOOLER-ANALYSIS.md`. Do not describe `CheckPrinterPaused` itself as the spooler pause-state check.
+
+The same artifact confirms the imported VCL printer surface: `TPrinter.Refresh`, `Printer`, `GetPrinterIndex`, `GetCanvas`, `NewPage`, `EndDoc`, `BeginDoc`, and the ImageEn `TImageEnIO.PreviewPrintImage` import. Their presence is not yet a complete caller-level proof that all of them participate in `SeparteImages`; the VCL canvas/print submission chain remains a target for the next pass.
+
+The workflow parser fix is now verified: the TIFF trace step completed and the Word/Printer artifact was uploaded. This is static reverse-engineering evidence only; it does not establish that GAM printing works under Wine or on a physical printer.
+
+Evidence:
+- Run 42 Word artifact `15098978072`.
+- Run 42 Image artifact `15099188562`.
+- Run 42 workflow `45782764971`: all three jobs passed.
