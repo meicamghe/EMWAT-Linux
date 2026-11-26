@@ -1796,3 +1796,16 @@ Commits:
 - `b0304651b49af1fd89d2eb115624bb619c3a75bb`
 
 This is a contract/documentation correction, not a behavior change. Existing coordinator and LibreOffice tests were inspected; no test execution is claimed for these commits. The bridge's synchronous handler waits inside its request worker while the threaded server can continue serving heartbeat requests, as covered by the existing `test_document_post_waits_for_close_while_heartbeat_remains_responsive`. The captured ~54.56-second wait is compatible with this design; the socket timeout applies to socket I/O, not to elapsed time spent waiting in the office adapter.
+
+
+---
+
+## 2026-11-26 — Run 42 verified; parser fix and scanner ownership clarified
+
+- Workflow run `45782764971` completed successfully on commit `295fc6e513664abe211d2ebeeda1964f1fcd584f`. All three jobs passed: `word-print-com`, `image-ui-and-vmt`, and `native-regression`.
+- The fixed Word/Printer TIFF trace parser completed and produced Word artifact `15098978072`; the expanded Image/Scanner trace produced artifact `15099188562`.
+- Word/Printer: `TCreateTiff.SeparteImages` (`0x004A0148`) has direct callers in `TWordViwer.LoadDocument` at `0x004B7A9C` and `0x004B7ABD`. It checks `GetPrinterName`, conditionally calls `InstallZanPrinter`, enters the GAM configuration path, and iterates the image collection. VCL `TPrinter` imports are present, but the complete caller-to-canvas/print-job chain remains unresolved.
+- Clarification: `Zanprinter.CheckPrinterPaused` (`0x0047D448`) writes the recovered `save.ini`, `image.ini`, and `general.ini` configuration defaults; the actual queue status check is in the separately traced `Zanprinter.Finalization` (`0x0047D8BC`). Avoid using the method name as evidence of pause detection.
+- Scanner: direct calls to `TScanCommand.Create` (`0x004F21DC`) and `GetNextPage` (`0x004F2558`) were found in `TFaxDocument.PerformMethod` at `0x005EECA1` and `0x005EECBD`. The public `TScanDocument.PerformMethod` at `0x005EE82C` is a separate path reading `wordConfig`, `wordBody`, `letterImages`, and `signData`. Do not conflate these paths without further evidence.
+- The `TScanCommand` field-reference pass confirmed its field offsets and observed state values 1–4; state meanings remain unresolved. The attempted parent-VMT parse was invalid and is explicitly rejected.
+- New workflow expansion committed after Run 42 as `e372fc188936ffcbeb54986630fe4981483a9577` (`ci: trace fax scanner command integration`). A fresh workflow run is expected from that commit; inspect it before accepting the next FaxDocument trace. No merge/rebase was performed; PR #2 remains Draft and unmerged.
