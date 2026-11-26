@@ -208,3 +208,36 @@ The pointer-reference artifact finds one raw reference to global 0x0062A7F0, at 
 A new static inspector tools/dump_pe_delphi_pointer_table.py and a workflow step now attempt to decode the global pointer and its four Delphi UnicodeString candidates from raw PE data. The workflow push filter includes both the new tool and workflow definition. The inspector explicitly reports unavailable/runtime-initialized pointers instead of fabricating table contents. Results are pending the newly triggered workflow run.
 
 No production Linux scanner, ImageEn, Word or printer behavior changed in this track.
+
+
+## Track I — Run 5 ImageEn loop context and result-image ownership methods
+
+Run 5 (45797672865) has completed the ImageEn and Word/printer jobs successfully; the scanner/result-ownership job was still running at the time of this inspection. Native regression passed, including the Python bridge suite. Run 5 Word artifact: 15106390855; ImageEn artifact: 15104489976.
+
+### ImageEn helper 0x004B0154 — caller context narrowed, identity still open
+
+The Run 5 artifact confirms no TD32 procedure range and no raw pointer references for 0x004B0154. All four direct calls are in TfrmImageTools.DoPrintingPanel. The full caller trace shows two separate page-iteration loops:
+- First branch: 0x0050A7C3 is called after preparing an ImageEn/page-related object via 0x00404F3C; 0x004B01A4 immediately follows and its return value controls a count loop. The per-page loop passes a one-based counter from local [ebp-8] to 0x004B0154.
+- Second branch: 0x0050A999 is called after 0x004B01F4 and a VMT call at slot +0x158; 0x004B01FC immediately follows and its return value controls another one-based page loop. The per-page loop again calls 0x004B0154.
+- The same routine also uses 0x004B0204 in a third branch. The four calls to 0x004B0154 are therefore part of ImageEn printing/page iteration, not proof of device acquisition. They remain separate from TImageEnMIO.Acquire at thunk 0x004B012C and from the GEAR32PD scan preview path.
+
+The workflow now traces 0x004B01A4, 0x004B01F4, 0x004B01FC, 0x004B0204 and 0x00404F3C with skipdata and caller scans to resolve the count/dispatch helpers. Those results are pending. Do not name 0x004B0154 until its target and call convention are identified.
+
+### TResultImage result ownership methods — stronger field-level evidence
+
+Run 50 artifact 15102809326 exposes additional methods in Ipresultimageunit:
+- TResultImage.GetLocation (0x004ECF30) returns the byte at object offset +0x04.
+- TResultImage.GetResponseFileName (0x004ECF38) reads the string field at +0x08.
+- TResultImage.SetResponseFileName (0x004ED150) writes through the string-property setter at +0x08.
+- TResultImage.GetScanFilePath (0x004ED03C) reads the string field at +0x10, validates/extracts a suffix-like component and composes a derived string. Its exact path naming rule is not established here.
+- TResultImage.NextFile (0x004ECF50) checks the object at +0x04 and either clears the output string or delegates to a string-conversion helper. This is not evidence of a physical file write by itself.
+- TResultImage.ShiftSerial (0x004ECFC8) checks whether the string at +0x10 is non-empty and calls GetScanFilePath; the boolean result depends on a file/path predicate.
+- TResultImage.GetFileStream (0x004ECD60) returns a zero stream-size pair when the path at +0x10 is empty; otherwise it constructs a stream from that path and reads its size. This is stronger evidence that the object can open its scan-path file, but it does not prove when/how that file was produced.
+
+The type hierarchy remains explicit: TSetOfSinglePageImages and TSetOfMultiPageImages have separate constructors and path/response filename overrides. The multipage class has its own response filename and scan path methods; do not collapse these into the base class or infer that every connector response uses one multipage file. The connector adapter gap remains: these Delphi ownership methods do not prove a Linux production adapter currently persists native ImagePage vectors or emits the corresponding XML response.
+
+### Word callback helper review
+
+Run 5 confirms 0x004BCA88 has exactly three direct callers: two GetCaptionItemFont callsites and WordAppDocumentBeforeClose at 0x004CCCC9. The helper is the large GetXmlFieldInfo routine, not a close/archive routine. 0x004CD154 remains a TD32-labelled BeforeSave method but has no direct CALL xrefs; the callback registration/RTTI mapping to OnDocumentBeforeClose remains the stronger event identity evidence. Its visible path queries Word document state, uses the close-cancel result word, manipulates internal flags at +0x5E/+0x5F/+0x58 and may call an application-level event hook. Full semantics and undecoded tail remain open.
+
+No production Linux scanner, ImageEn, Word or printer behavior changed in this track.
