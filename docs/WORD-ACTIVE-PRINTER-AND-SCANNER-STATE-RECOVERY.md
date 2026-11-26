@@ -31,7 +31,7 @@ TD32 identifies the following methods in `frmWordPrintOptionUnit`:
 - `0x004A9884`: `SetReceiversValue`
 - `0x004A9A08`: `SetReceiversValueForSelected`
 
-The constructor initializes several interface/object fields at offsets `+0xC8` through `+0xD8`, stores a controller-like reference at `+0x48`, and retains another object at `+0x50`. `DoOnTerminate` releases the five fields at `+0xC8..+0xD8`, releases and clears `+0x48) and `+0x40`, and invokes a method through the interface stored at `+0x44`. This is lifecycle/ownership evidence, not enough to assign semantic names to each field.
+The constructor initializes several interface/object fields at offsets `+0xC8` through `+0xD8`, stores a controller-like reference at `+0x48`, and retains another object at `+0x50`. `DoOnTerminate` releases the five fields at `+0xC8..+0xD8`, releases and clears `+0x48` and `+0x40`, and invokes a method through the interface stored at `+0x44`. This is lifecycle/ownership evidence, not enough to assign semantic names to each field.
 
 The CC/receiver routines enumerate two interface-backed collections and merge values into string fields at `+0x60` and `+0x64`, with a delimiter/formatting helper. This supports that the handler prepares recipient/CC metadata for document processing. The exact collection types, field names, and business meaning are not yet proven.
 
