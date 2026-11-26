@@ -161,3 +161,42 @@ The native backend should replace these calls at the semantic boundary:
 
 This confirms why a thin CUPS or Wine compatibility shim is insufficient: the original scanner/image pipeline is coupled to ImageGear image objects, page streams and format operations. Native libtiff/libjpeg/libpng plus a well-defined Linux image-document/result model is the appropriate replacement boundary, after exact output semantics are verified.
 
+
+
+## 10. ImageGear operation imports and editor callsites (workflow run 45763380148)
+
+The expanded IAT scan and thunk traces identify additional image-operation APIs and their exact direct callsites:
+
+| Import thunk | Resolved ImageGear API | Direct callsites / TD32 method names |
+|---|---|---|
+| `0x004AFED0` | `IG_IP_flip` | `TGearImgProc.FlipHorizontal` at `0x004F021F`; preview methods at `0x0061E5CC` and `0x0061E65C` |
+| `0x004AFEC8` | `IG_IP_rotate_multiple_90` | `TGearImgProc.RotateLeft` at `0x004EF187`; preview methods at `0x0061E5FC` and `0x0061E62C` |
+| `0x004AFF00` | `IG_image_dimensions_get` | `TGearImgProc.ReloadPage` at `0x004EF107`; `TfrmGScanPreview.GearErrorHandling` at `0x0061D09C`; `TfrmGScanPreview.LoadImageToGearHandle` at `0x0061D39B` |
+| `0x004AFEF0` | `IG_device_rect_set` | Direct calls at `0x004EEF0F` and `0x0061D853`; containing method semantics are not yet identified |
+
+The exact IAT identities are:
+
+- `0x00630D10` → `IG_IP_flip`
+- `0x00630D14` → `IG_IP_rotate_multiple_90`
+- `0x00630CF8` → `IG_image_dimensions_get`
+- `0x00630D00` → `IG_device_rect_set`
+
+### Important name/operation mismatch
+
+The Delphi method names do not consistently match the imported operation at the callsite:
+
+- The preview method named `btnLRotateClick` calls `IG_IP_flip` with argument 0.
+- The method named `btnRRotateClick` calls `IG_IP_rotate_multiple_90` with argument 3.
+- The method named `btnVFlipClick` calls `IG_IP_rotate_multiple_90` with argument 1.
+- `TGearImgProc.RotateLeft` calls `IG_IP_rotate_multiple_90`; `TGearImgProc.FlipHorizontal` calls `IG_IP_flip`.
+
+This is direct evidence that the imported API, not the Delphi event-handler name, must govern the Linux operation mapping. It is **not** enough to conclude that the UI labels are wrong: the arguments, coordinate/orientation state and surrounding refresh handlers may encode a different transform convention. Do not assign final user-visible semantics until the relevant ImageGear prototypes and state updates are recovered.
+
+### Image dimension outputs
+
+`TfrmGScanPreview.LoadImageToGearHandle` passes the image handle at `this+0x428` to `IG_image_dimensions_get` and passes addresses of fields `this+0x42C`, `this+0x430`, and `this+0x434` as output pointers. The same thunk is used by `TGearImgProc.ReloadPage` and `TfrmGScanPreview.GearErrorHandling`. The three output fields are confirmed as a grouped dimensions/result tuple, but their individual meanings and units are not yet proven. Do not label them width/height/DPI or copy them into Linux metadata without the vendor API contract.
+
+The `IG_device_rect_set` calls establish that the scanner/image path also updates a device rectangle through ImageGear; the exact rectangle source and relation to crop/preview coordinates remain open.
+
+Evidence: run `45763380148`, artifact `15090612978`, `image-io/image-operations/`.
+
