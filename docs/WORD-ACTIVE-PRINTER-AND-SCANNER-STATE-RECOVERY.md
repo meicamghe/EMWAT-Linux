@@ -43,7 +43,7 @@ The CC/receiver routines enumerate two interface-backed collections and merge va
 - `0x004AFEE8` is an import thunk to `IG_error_get` (IAT `0x00630D04`).
 - `0x004AFEE0` is an import thunk to `IG_error_clear` (IAT `0x00630D08`).
 
-The body calls `IG_error_check`, uses its return value as the iteration bound, calls `IG_error_get` for each zero-based index with several output pointers, builds an aggregated string, and publishes a three-field Variant-like record through `0x00403368`. It then calls `IG_error_clear`. The exact meaning and types of the error fields, and the external serialization contract, remain to be recovered. Do not model this method as scanner page metadata.
+The body calls `IG_error_check`, uses its return value as the iteration bound, calls `IG_error_get` for each zero-based index with several output pointers, builds an aggregated string, and publishes a three-field Variant-like record through `0x00403368`. It then calls `IG_error_clear`. The direct callsite inventory also shows these error APIs used by `TGearImgProc.CheckOutputParameter` (`IG_error_check` at `0x004EEB81`, `IG_error_get` at `0x004EEBBA`, `IG_error_clear` at `0x004EEC09`) and `TGearImgProc.GetForceSinglePage` (`IG_error_get` at `0x004EF0A7`). The exact meaning and types of the error fields, and the external serialization contract, remain to be recovered. Do not model `GetImagePageNumber` as scanner page metadata.
 
 The actual page-count path is separate: `0x0061D250` (`GetImgSize`) calls `IG_page_count_get` through thunk `0x004AFEA8`, then iterates page indices and updates the preview/page interface. This is page-count-driven UI behavior, not evidence of source-image resampling or scanner resolution changes.
 
@@ -59,14 +59,17 @@ The PE import inventory resolves the relevant ImageGear thunks exactly:
 | `0x004AFEE8` | `0x00630D04` | `IG_error_get` |
 | `0x004AFEE0` | `0x00630D08` | `IG_error_clear` |
 
-Two independently named high-level methods call the `IG_scan_pages` thunk:
+Direct IAT/thunk scanning found three callsites to `IG_scan_pages`:
 
-- `TfrmGScanPreview.SelectScanner` at `0x0061DEF4` calls `0x004AFF30` with the form window handle, path/configuration string, a mode-like value of `0x28` or `2`, and a final value of `1`.
-- `TGearImgProc.SelectScanner` at `0x004EF9CC` also calls `0x004AFF30`, then stores the returned value in its result/state field at `+0x4C`.
+- `TGearImgProc.SelectScanner` at `0x004EFA96`; it stores the return value in object field `+0x4C`.
+- `TfrmGScanPreview.SelectScanner` at `0x0061E036` and `0x0061E059`; these are two separate calls in the same method, with the second call followed by error aggregation through `0x0061D100`.
 
-This establishes the imported function identity and the observed callsite argument shapes. It does **not** establish the ImageGear prototype, calling convention, ownership rules, or the meaning of the `0x28` / `2` values. In particular, do not rename the imported API to scanner-source selection based on the Delphi wrapper name.
+The import `IG_scan_source_select` (`0x004AFF28`) has two direct callsites:
 
-The import `IG_scan_source_select` (`0x004AFF28`) is present in the PE import table, but its callsites have not yet been established by the inspected artifact. Its relationship to the two `SelectScanner` methods remains open.
+- `TGearImgProc.SetCurrentPage` at `0x004EFF83`, after an interface/vtable call whose return value is passed as the sole stack argument.
+- `TfrmGScanPreview.ShowCropRectangle` at `0x0061E3DF`, after helper `0x004049CC` produces the argument.
+
+This establishes the imported function identities and direct callsite shapes, but the usage of `IG_scan_source_select` in `SetCurrentPage` and `ShowCropRectangle` is not self-explanatory. It does **not** establish either API's full prototype, calling convention, ownership rules, or the meaning of the `0x28` / `2` values. Do not infer semantic equivalence from the Delphi wrapper names.
 
 ## 6. Implementation constraints and open work
 
