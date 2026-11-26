@@ -248,42 +248,39 @@ jobs:
           python - <<'PY'
           from concurrent.futures import ThreadPoolExecutor, as_completed
           from pathlib import Path
-          import re
           import subprocess
           import sys
 
-          source = Path("parallel-re/word-print/printer-api/print-pipeline/selected-symbols.md").read_text()
-          pattern = re.compile(r"^\\|\\s*\\x60(0x[0-9A-Fa-f]+)\\x60\\s*\\|\\s*(\\d+)\\s*\\|[^|]*\\|\\s*\\d+\\s*\\|\\s*\\x60([^\\x60]+)\\x60\\s*\\|")
-          rows = []
-          for line in source.splitlines():
-              match = pattern.match(line)
-              if match and "SeparteImages" in match.group(3):
-                  rows.append((match.group(1), match.group(3)))
-          rows = sorted(set(rows))
+          source = Path("parallel-re/word-print/printer-api/print-pipeline/selected-symbols.md")
           out = Path("parallel-re/word-print/printer-api/print-pipeline")
+          rows = []
+          for line in source.read_text().splitlines():
+              columns = [part.strip() for part in line.split("|")]
+              if len(columns) < 7 or not columns[1].startswith("`0x"):
+                  continue
+              address = columns[1].strip("`")
+              symbol = columns[5].strip("`")
+              if "SeparteImages" in symbol:
+                  rows.append((address, symbol))
+          rows = sorted(set(rows))
           (out / "separte-images-targets.txt").write_text(
-              "\\n".join(f"{address} {symbol}" for address, symbol in rows) + ("\\n" if rows else "")
+              "\n".join(f"{address} {symbol}" for address, symbol in rows)
+              + ("\n" if rows else "")
           )
           if not rows:
               print("No TD32 SeparteImages symbol matched; retaining symbol index and IAT callsites.")
           def trace(item):
               address, symbol = item
               safe = address.replace("0x", "")
-              subprocess.run([
-                  sys.executable, "tools/trace_td32_procedure.py",
-                  "analysis-input/EmwatMethods.bpl1", address,
-                  str(out / f"procedure-{safe}.md")
-              ], check=True)
-              subprocess.run([
-                  sys.executable, "tools/trace_td32_callers.py",
-                  "analysis-input/EmwatMethods.bpl1", address,
-                  str(out / f"callers-{safe}.md")
-              ], check=True)
-              subprocess.run([
-                  sys.executable, "tools/scan_pe_pointer_refs.py",
-                  "analysis-input/EmwatMethods.bpl1", address,
-                  str(out / f"pointers-{safe}.md")
-              ], check=True)
+              for script, suffix in (
+                  ("tools/trace_td32_procedure.py", "procedure"),
+                  ("tools/trace_td32_callers.py", "callers"),
+                  ("tools/scan_pe_pointer_refs.py", "pointers"),
+              ):
+                  subprocess.run([
+                      sys.executable, script, "analysis-input/EmwatMethods.bpl1",
+                      address, str(out / f"{suffix}-{safe}.md")
+                  ], check=True)
               return address, symbol
           with ThreadPoolExecutor(max_workers=4) as pool:
               futures = [pool.submit(trace, item) for item in rows]
