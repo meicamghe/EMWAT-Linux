@@ -349,3 +349,29 @@ This establishes the containing method's TD32 symbol and the exact helper callsi
 - ImageEn artifact independently reconfirms the import thunk identities: 0x004B0154=TImageEnMIO.PrintImage, 0x004B01A4=TImageEnMView.GetImageCount, 0x004B01F4=TImageEnMView.GetMultiSelectedImages, 0x004B01FC=TImageEnMView.GetMultiSelectedImagesCount, and 0x004B0204=TImageEnMView.MultiSelectSortList; 0x004B012C remains TImageEnMIO.Acquire.
 
 No production Linux runtime behavior changed. Run 10 is green for its workflow commit; it is not a CI result for the later PR head 84e596f811b2c0b32f4ed9f50b602f05f38c304b.
+
+
+## Track Q — Run 11 command-dispatch and Word event-pointer findings
+
+Run 11 (45802366826) completed successfully on workflow commit e72935d8af774bf51a6133041eed94fd1ecab103. All four jobs passed: native regression, scanner/result ownership, Word/printer thread, and ImageEn. Artifacts: scanner 15106629688, ImageEn 15107712030, Word/printer 15108501022.
+
+### Scanner command dispatch narrowed to Fax PerformMethod
+
+The TD32 symbol search returns seven TScanCommand methods:
+- Constructor: 0x004F21DC
+- DoNewScan: 0x004F22AC
+- DoRequest: 0x004F22E4
+- GetNextPage: 0x004F2558
+- HasError: 0x004F2A94
+- LoadRequestXML: 0x004F2B18
+- VerifyConstraints: 0x004F2C4C
+
+The Run 11 selection filter traced only GetNextPage; the other command methods were discovered in the symbol inventory but were not yet traced. A direct TD32 CALL-site scan found one direct caller of GetNextPage: TFaxDocument.PerformMethod at 0x005EECBD. The caller constructs TScanCommand via 0x004F21DC, invokes GetNextPage, then reads a command interface property through VMT slot +0x54 at command field +0x34 and copies the result into its own local response value. This is a concrete connector dispatch path worth tracing end-to-end, but the exact XML field names and response schema remain unproven until DoRequest/LoadRequestXML and surrounding dictionary handling are decoded.
+
+### Word callback/event evidence requires a further distinction
+
+The TWordViwer symbol inventory contains 50 methods. WordAppDocumentBeforeClose (0x004CCBBC) has one direct TD32 caller: FillImgFldsForPrint at 0x004CCF8F. This means the named method is also directly reused from a print-field helper; its name alone cannot establish that the callsite is a COM event dispatch.
+
+WordAppDocumentBeforeSave (0x004CD154) has no direct CALL xrefs. The raw PE pointer scan finds a code-section reference at VA 0x004B8CA8, within the TD32 range of TWordViwer.OnTmrAutoSave (0x004B8A84, size 10,540 bytes), plus a separate debug-section symbol-table occurrence. The code-section reference is a promising event/method-pointer assignment candidate, but the containing instruction and object-field semantics have not yet been decoded. Do not call this proof of OnDocumentBeforeClose registration.
+
+Next useful targets are the full TScanCommand request methods and the precise instruction context around 0x004B8CA8, together with FillImgFldsForPrint. No production Linux behavior changed in Run 11.
