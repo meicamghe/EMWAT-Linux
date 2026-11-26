@@ -2,7 +2,7 @@
 
 - The service-side VMT map in `docs/EMWAT-SERVICE-EXECUTABLE-ANALYSIS.md` is authoritative for runtime class names. TD32 `PerformMethod` labels are shifted for multiple methods; the connector inventory now separates runtime class, `VMT+0x10` target, and TD32 label.
 - Confirmed request keys and embedded log/error literals:
-  - Runtime `TScanDocument` (`0x005EEB48`, TD32 label `TFaxDocument`): key `document`, log `[Invoke ScanDocument]`, delegates to `TScanCommand.GetNextPage`.
+  - Runtime `TScanDocument` (`0x005EEB48`, TD32 label `TFaxDocument`): key `document`; opens it as a stream via `0x004041BC`, creates `TScanCommand` (`0x004F21DC`), calls `GetNextPage` (`0x004F2558`), extracts the result through interface slot `+0x54`, and inserts it into the result dictionary. The output key/serializer remains unknown.
   - Runtime `TFaxDocument` (`0x005EEDFC`, TD32 label `TGetEmwatVersion`): key `fax`.
   - Runtime `TImageEdition` (`0x005EF300`, TD32 label `TEditExcelWorkBook`): keys `data` and `config`, log `[Invoke EditImages]`, null-input errors.
   - Runtime `TUpgradeEmwat` (`0x005EF24C`, TD32 label `TImageEdition`): key `PlugIn`; finalization helper logs `UpgradeEmwat method called`, references `EmwatMethods.bpl`, `.zip`, and `EmwatUpdate.exe`.
