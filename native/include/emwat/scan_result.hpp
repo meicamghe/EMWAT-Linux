@@ -40,7 +40,7 @@ struct ScanResult {
     ScanOutput output;
     std::optional<std::string> scan_path;
     std::optional<std::string> response_filename;
-    std::optional<ScanResponseMetadata> response_metadata;
+    std::optional<ScanResponseMetadata> response_metadata{};
 
     [[nodiscard]] bool is_single_page_file_set() const noexcept {
         return std::holds_alternative<SinglePageFileSet>(output);
