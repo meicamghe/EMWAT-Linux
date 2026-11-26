@@ -1,3 +1,12 @@
+## 2026-11-26 — separate GEAR32PD scanner and ImageEn image-tools paths
+
+- GEAR32PD imports resolve `IG_scan_pages` (IAT `0x00630CE4`, thunk `0x004AFF30`), `IG_scan_source_select` (IAT `0x00630CE8`, thunk `0x004AFF28`), `IG_image_is_valid`, `IG_page_count_get`, `IG_load_FD`, `IG_save_FD`, `IG_save_file`, and `IG_image_delete`.
+- `TfrmGScanPreview.Scan` (`0x0061DC80`) iterates intermediate page files and uses Gear load/save file-descriptor calls; it also deletes temporary image handles.
+- `TGearImgProc.ScanToFile` (`0x004EF8C0`) validates the Gear image handle and persists it via `IG_save_file`. It is not the scanner acquisition implementation.
+- `TfrmGScanPreview.Save_Tiff_MultyPages` (`0x0061D888`) has page-count/save branches and the literals `_New.tif`, `.jpg`, `.tif`, `SaveEditedImages1/2/3`; exact filename composition and final container semantics still need runtime verification.
+- ImageEn `TImageEnMIO.Acquire` is called directly from `TfrmImageTools.InsertPicture` (`0x0050A364`). Treat this as a distinct image-tools acquisition/import workflow, not proof that the GEAR32PD preview scan path uses ImageEn.
+- Full trace and caveats: `docs/REVERSE-ENGINEERING-PARALLEL-FOLLOWUP-2026-11-26.md`.
+
 ## Run 49 follow-up — result-image ownership and serial path
 
 - Base `TResultImage` exposes location at `+0x04`, response filename at `+0x08`, and scan path at `+0x10`.
