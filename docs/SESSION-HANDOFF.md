@@ -1,3 +1,19 @@
+## 2026-11-26 — full connector handler inventory completed
+
+- Run 30 (`45765541247`) completed successfully across all three jobs. The Word artifact `15092201094` dynamically traced 12 symbols: central `TEmwatMethod.Invoke` (`0x0046C82C`), `TWordViwer.LoadDocument`, and 10 concrete connector `PerformMethod` procedures. The image artifact `15091712828` includes the corrected `TResultImage`/single-page/multipage result methods. Native regression passed.
+- The common dispatcher iterates a `TDictionary<AnsiString, T>`, invokes each handler through interface slot `+0x54`, and inserts its return value into a result dictionary.
+- Discovered connector handler inventory:
+  - Word edit (runtime `TEditWordDocument`, TD32 label `TScanDocument`) — four known keys; calls `TWordViwer.LoadDocument`.
+  - Fax — reads one value, opens a file stream, uses `TScanCommand.GetNextPage`.
+  - Get/Set version and Upgrade — separate version/service helper paths.
+  - ImageEdition — key `PlugIn`, calls `Applicationactivities.Finalization`.
+  - EditExcelWorkBook — two dictionary values and file-stream processing.
+  - CompareWordDocument — two dictionary values and helper `0x005E72B8`.
+  - ShowEmwatSetting — one dictionary key and settings helpers.
+  - ShowLastEditedDocs and ShowSendLog — service-object calls through vtable slot `+0x13C`, then response getters.
+- Created `docs/CONNECTOR-HANDLER-ENTRYPOINT-INVENTORY.md` with procedure addresses, body observations, confidence boundaries, and implementation status. These are discovered Windows entry points; Linux currently registers only EditWordDocument by default. No handler stubs or guessed request keys were added.
+- Run 31 (`45766298102`) is running with remaining handler-key/response-string decoding, ImageEdition/result-path string decoding, and shared version/settings/compare/dispatch helper traces.
+
 ## 2026-11-26 — run 29 scanner constraints and result-image details
 
 - Run 29 (`45764787287`) passed all three jobs, including native regression.
