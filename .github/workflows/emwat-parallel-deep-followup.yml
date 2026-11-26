@@ -9,6 +9,7 @@ on:
       - 'tools/scan_pe_pointer_refs.py'
       - 'tools/trace_td32_procedure_skipdata.py'
       - 'tools/trace_pe_range.py'
+      - 'tools/trace_pe_target.py'
       - 'tools/dump_pe_delphi_pointer_table.py'
       - '.github/workflows/emwat-parallel-deep-followup.yml'
       - 'native/**'
@@ -168,6 +169,20 @@ jobs:
         run: |
           python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x004B0100 0x004B0240 \
             deep-followup/imageen/imageen-helper-region-004B0100-004B0240.md
+      - name: Resolve ImageEn import-thunk targets
+        run: |
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004B012C \
+            deep-followup/imageen/import-004B012C-acquire.md 8
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004B0154 \
+            deep-followup/imageen/import-004B0154.md 8
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004B01A4 \
+            deep-followup/imageen/import-004B01A4.md 8
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004B01F4 \
+            deep-followup/imageen/import-004B01F4.md 8
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004B01FC \
+            deep-followup/imageen/import-004B01FC.md 8
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004B0204 \
+            deep-followup/imageen/import-004B0204.md 8
       - name: Resolve ImageEn acquisition helper thunk
         run: |
           python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x004B0154 \
