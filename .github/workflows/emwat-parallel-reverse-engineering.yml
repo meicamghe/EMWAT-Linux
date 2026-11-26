@@ -23,6 +23,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: emwat-parallel-re-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   word-print-com:
     runs-on: ubuntu-latest
@@ -144,7 +148,7 @@ jobs:
       - name: Trace scanner, multipage TIFF, and image-editor operations in parallel
         shell: bash
         run: |
-          targets=(005EE82C 005EF24C 004F22AC 004F22E4 004F2558 004F2A94 004F2B18 004F2C4C 0061D888 0061DC80 0061D070 0061D100 0061D250 0061D36C 0061CF9C 0061DEF4 0061E3C8 0061E3F0 004EF9CC 0061E470 0061E510 0061E548 0061E5C0 0061E5F0 0061E620 0061E680 004EEE24 004F17B4 004F1064 004F109C 004F11E8 004F1274 004F1308 004F1404 004F1660 004F1890 004F1A04 004F1D04 004EF138 004EF40C 004EF510 004EF714 004EF8C0 004EF9CC 004EEDB4 004F01F0 00508A90 0050A29C 0050A414 0050A534 0050AB2C 0050ABA4 0050ACDC 0050BBB8)
+          targets=(005EE82C 005EF24C 004EC8B4 004ECFC8 004EC8C6 004ECB93 004ECD8E 004ECE59 004ECF7A 004ED006 004ED395 004ED4EC 004ED5BA 004B7724 0050357C 004F22AC 004F22E4 004F2558 004F2A94 004F2B18 004F2C4C 0061D888 0061DC80 0061D070 0061D100 0061D250 0061D36C 0061CF9C 0061DEF4 0061E3C8 0061E3F0 004EF9CC 0061E470 0061E510 0061E548 0061E5C0 0061E5F0 0061E620 0061E680 004EEE24 004F17B4 004F1064 004F109C 004F11E8 004F1274 004F1308 004F1404 004F1660 004F1890 004F1A04 004F1D04 004EF138 004EF40C 004EF510 004EF714 004EF8C0 004EF9CC 004EEDB4 004F01F0 00508A90 0050A29C 0050A414 0050A534 0050AB2C 0050ABA4 0050ACDC 0050BBB8)
           pids=()
           for target in "${targets[@]}"; do
             (
@@ -241,9 +245,34 @@ jobs:
             0x00630D80 0x00630D84 0x00630D8C 0x00630D90 \
             > parallel-re/image-io/imageen/imageen-iat-callsites.md
           python tools/list_td32_symbols.py analysis-input/EmwatMethods.bpl1 \
-            TScanDocument TImageEdition TScanCommand TImageEnMIO Acquire \
+            TScanDocument TImageEdition TScanCommand TResultImage TSetOfSinglePageImages TSetOfMultiPageImages TImageEnMIO Acquire \
             SaveToFileTIFF LoadFromFileAuto PrintImage \
             > parallel-re/image-io/imageen/imageen-symbols.md
+      - name: Decode scanner connector keys and trace result-image helpers
+        shell: bash
+        run: |
+          mkdir -p parallel-re/image-io/connector-contract
+          python tools/decode_pe_strings.py analysis-input/EmwatMethods.bpl1 \
+            0x005EE9F4 0x005EEA88 0x005EEAA0 0x005EEABC 0x005EEAD4 \
+            0x005EEA0C 0x005EEB0C 0x005EF2F8 \
+            0x004F2490 0x004F24C8 0x004F29A0 0x004F29E0 0x004F29F4 \
+            0x004F2BF8 0x004F2C0C 0x004F31F8 0x004F3210 0x004F3224 0x004F3238 \
+            > parallel-re/image-io/connector-contract/dictionary-and-xml-keys.md
+          targets=(0046DC8C 004735D0)
+          pids=()
+          for target in "${targets[@]}"; do
+            (
+              set -e
+              python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x$target \
+                parallel-re/image-io/connector-contract/helper-$target.md 180 ret
+              python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x$target \
+                parallel-re/image-io/connector-contract/callers-$target.md
+            ) &
+            pids+=("$!")
+          done
+          status=0
+          for pid in "${pids[@]}"; do wait "$pid" || status=1; done
+          exit "$status"
       - name: Decode scanner and ImageGear output-path constants
         run: |
           python tools/decode_pe_strings.py analysis-input/EmwatMethods.bpl1 \
