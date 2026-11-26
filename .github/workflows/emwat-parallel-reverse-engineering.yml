@@ -185,6 +185,13 @@ jobs:
           python tools/scan_pe_iat_callers.py analysis-input/EmwatMethods.bpl1 \
             0x0062F9E4 0x0062F9E8 0x0062F9EC 0x0062F9F0 0x0062F9F4 \
             > parallel-re/word-print/printer-api/winspool-iat-callsites.md
+      - name: Decode Winspool IAT import names
+        run: |
+          mkdir -p parallel-re/word-print/printer-api
+          python tools/list_pe_imports.py analysis-input/EmwatMethods.bpl1 \
+            parallel-re/word-print/printer-api/all-imports.md
+          python tools/trace_import_and_callers.py analysis-input/EmwatMethods.bpl1 0x0062F9F0 0x004044CC \
+            > parallel-re/word-print/printer-api/enum-printers-import.md
       - name: Expand GAM printer installer and status procedure traces
         shell: bash
         run: |
@@ -412,6 +419,25 @@ jobs:
             0x0061DC20 0x0061DC38 0x0061DC7C 0x004EF708 \
             0x004EF844 0x004EF878 0x004EF9B0 \
             > parallel-re/image-io/scanner-api/output-path-constants.md
+      - name: Resolve TScanCommand VMT parent, fields, and response helper import
+        shell: bash
+        run: |
+          mkdir -p parallel-re/image-ui/scan-command/metadata
+          python tools/inspect_delphi_vmt_address.py analysis-input/EmwatMethods.bpl1 0x004F1F94 \
+            parallel-re/image-ui/scan-command/metadata/vmt-004F1F94.md
+          python tools/inspect_delphi_vmt_address.py analysis-input/EmwatMethods.bpl1 0x0062EEA4 \
+            parallel-re/image-ui/scan-command/metadata/parent-vmt-0062EEA4.md
+          python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 0x0062EEA4 \
+            parallel-re/image-ui/scan-command/metadata/parent-vmt-pointer-refs.md
+          python tools/scan_td32_class_field_refs.py analysis-input/EmwatMethods.bpl1 TScanCommand \
+            parallel-re/image-ui/scan-command/metadata/field-usage.md \
+            --offsets 0x04 0x08 0x18 0x20 0x24 0x28 0x29 0x2c 0x30 0x34 0x38
+          python tools/list_pe_imports.py analysis-input/EmwatMethods.bpl1 \
+            parallel-re/image-ui/scan-command/metadata/all-imports.md
+          python tools/trace_import_and_callers.py analysis-input/EmwatMethods.bpl1 0x0062ECDC 0x004012F8 \
+            > parallel-re/image-ui/scan-command/metadata/response-helper-import.md
+          python tools/scan_pe_import_thunks.py analysis-input/EmwatMethods.bpl1 0x0062ECDC \
+            > parallel-re/image-ui/scan-command/metadata/response-helper-thunks.md
       - name: Trace ScanCommand construction and ImageEn caller procedures
         shell: bash
         run: |
