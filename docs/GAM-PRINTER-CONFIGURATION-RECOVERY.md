@@ -1,7 +1,7 @@
 # GAM / Zan printer configuration recovery
 
 Date: 2026-11-26  
-Evidence: parallel reverse-engineering run 32 (`45767912737`), Word/print artifact `15092617354`; TD32 procedure traces and PE IAT thunk resolution for `EmwatMethods.bpl1`.
+Evidence: parallel reverse-engineering runs 22, 24, 27, 28, 32 and 34; Word/print artifacts and TD32 procedure traces plus PE IAT thunk resolution for `EmwatMethods.bpl1`.
 
 This document records static evidence for the EMWAT GAM/Zan virtual-printer setup/configuration path. It does not claim that the driver installs or prints successfully under Wine or Linux.
 
@@ -60,11 +60,12 @@ If the registry lookup does not provide a usable directory, the procedure falls 
 `Zanprinter.SetPrinterForTiffout` (`0x0047D238`) first reads OS version and calls `GetZanConfigurationDir`. It reads:
 
 - File: `configure.ini`
-- Section: `policy`
-- Key: `allusersfolder`
+- Section: `allusersfolder`
+- Key: `policy`
+- Default: `1`
 - API: `GetPrivateProfileIntW`
 
-The resulting policy and OS major-version branch select Windows CSIDL `0x23` or `0x2e`. The routine then constructs a `zvprt50\\` path and checks it with `DirectoryExists`; if unavailable, it falls back through CSIDL `0x1a` (user AppData). This is a Windows folder policy; Linux must use an application-owned writable data/output directory rather than reproducing CSIDL values.
+The `GetPrivateProfileIntW` call is `GetPrivateProfileIntW(L"allusersfolder", L"policy", 1, configure_ini_path)`. The resulting policy and OS major-version branch select Windows CSIDL `0x23` or `0x2e`. The routine then constructs a `zvprt50\\` path and checks it with `DirectoryExists`; if unavailable, it falls back through CSIDL `0x1a` (user AppData). This is a Windows folder policy; Linux must use an application-owned writable data/output directory rather than reproducing CSIDL values.
 
 ## 5. INI values written by printer configuration
 
@@ -74,7 +75,7 @@ The resulting policy and OS major-version branch select Windows CSIDL `0x23` or 
 |---|---|---|---|
 | `save.ini` | `save` | `folder` | dynamically assembled output directory |
 | `save.ini` | `save` | `basefilename` | value read/assembled from the printer configuration path |
-| `save.ini` | `popupdialog` | `No Dialogs` | `1` |
+| `save.ini` | `save` | `popupdialog` | `No Dialogs` |
 | `save.ini` | `save` | `filexistact` | `1` |
 | `image.ini` | `image` | `fileformat` | `tiff` |
 | `image.ini` | `image` | `imagecolor` | `256` |
