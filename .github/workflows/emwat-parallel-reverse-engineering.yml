@@ -233,6 +233,17 @@ jobs:
             0x00630D20 0x00630D24 0x00630D28 0x00630D2C 0x00630D30 0x00630D34 \
             > parallel-re/image-io/image-operations/imagegear-operation-callsites.md
           exit "$status"
+      - name: Inventory ImageEn acquisition and TIFF save callsites
+        run: |
+          mkdir -p parallel-re/image-io/imageen
+          python tools/scan_pe_iat_callers.py analysis-input/EmwatMethods.bpl1 \
+            0x00630D70 0x00630D74 0x00630D78 0x00630D7C \
+            0x00630D80 0x00630D84 0x00630D8C 0x00630D90 \
+            > parallel-re/image-io/imageen/imageen-iat-callsites.md
+          python tools/list_td32_symbols.py analysis-input/EmwatMethods.bpl1 \
+            TScanDocument TImageEdition TScanCommand TImageEnMIO Acquire \
+            SaveToFileTIFF LoadFromFileAuto PrintImage \
+            > parallel-re/image-io/imageen/imageen-symbols.md
       - name: Decode scanner and ImageGear output-path constants
         run: |
           python tools/decode_pe_strings.py analysis-input/EmwatMethods.bpl1 \
