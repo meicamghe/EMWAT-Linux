@@ -692,6 +692,54 @@ jobs:
               for future in as_completed([pool.submit(trace, target) for target in targets]):
                   print("traced ImageGear/connector target", future.result())
           PY
+      - name: Trace TFaxDocument ScanCommand integration and paging caller
+        shell: bash
+        run: |
+          mkdir -p parallel-re/image-ui/fax-scan-command
+          python tools/list_td32_symbols.py analysis-input/EmwatMethods.bpl1 \
+            TFaxDocument TScanCommand PerformMethod GetNextPage \
+            > parallel-re/image-ui/fax-scan-command/symbol-index.md
+          python - <<'PY'
+          from pathlib import Path
+          import subprocess
+          import sys
+
+          source = Path("parallel-re/image-ui/fax-scan-command/symbol-index.md").read_text()
+          rows = []
+          for line in source.splitlines():
+              columns = [part.strip() for part in line.split("|")]
+              if len(columns) < 6 or not columns[1].startswith("`0x"):
+                  continue
+              address = columns[1].strip("`")
+              symbol = columns[5].strip("`")
+              if "TFaxDocument" in symbol and "PerformMethod" in symbol:
+                  rows.append((address, symbol))
+          rows = sorted(set(rows))
+          (Path("parallel-re/image-ui/fax-scan-command/selected-methods.txt")).write_text(
+              "\n".join(f"{address} {symbol}" for address, symbol in rows)
+              + ("\n" if rows else "")
+          )
+          if not rows:
+              raise SystemExit("No TFaxDocument.PerformMethod TD32 symbol was resolved")
+          for address, symbol in rows:
+              safe = address.replace("0x", "")
+              subprocess.run([
+                  sys.executable, "tools/trace_td32_procedure.py",
+                  "analysis-input/EmwatMethods.bpl1", address,
+                  f"parallel-re/image-ui/fax-scan-command/procedure-{safe}.md"
+              ], check=True)
+              subprocess.run([
+                  sys.executable, "tools/trace_td32_callers.py",
+                  "analysis-input/EmwatMethods.bpl1", address,
+                  f"parallel-re/image-ui/fax-scan-command/callers-{safe}.md"
+              ], check=True)
+              subprocess.run([
+                  sys.executable, "tools/scan_pe_pointer_refs.py",
+                  "analysis-input/EmwatMethods.bpl1", address,
+                  f"parallel-re/image-ui/fax-scan-command/pointers-{safe}.md"
+              ], check=True)
+              print(f"traced {address} {symbol}")
+          PY
       - name: Inventory preserved image form resources without changing them
         run: |
           python - <<'PY'
