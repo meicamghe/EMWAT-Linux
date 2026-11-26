@@ -1,3 +1,15 @@
+## 2026-11-26 — run 38 XML getter/setter methods and Word helper trace completed
+
+- Run 38 (`45773058079`) completed successfully in all three jobs: Native, Word/print and Image/UI. Native regression passed.
+- The image artifact (`15094674346`) now provides symbol-driven body traces for the scanner XML classes. Exact getter/setter procedures are recorded in `docs/IMAGE-SCANNER-EDITOR-CALLGRAPH-INVENTORY.md`:
+  - `TXMLResponseScanType`: `Status` getter/setter (`0x004EB8BC`/`0x004EB908`), `ErrorCode` getter/setter (`0x004EB9C0`/`0x004EBA48`), and `Scanedimage` getter (`0x004EBB04`).
+  - `TXMLScanedImageType`: `ImageName` getter/setter (`0x004EBB90`/`0x004EBC50`), `Encoding` getter/setter (`0x004EBD0C`/`0x004EBD98`).
+  - `TXMLConfigType`: getters/setters for `Type`, `DriverDialog`, `ImageEditor`, `MultiJpegSupport`, and `PreviousImageName`.
+  - `TXMLOutputType`: `ForceSinglePageFiles` getter/setter and `Constraints` getter.
+- This recovers the Delphi XML object model, but not XML element/tag spelling, list ownership/cardinality, actual values, or the outer result dictionary key. The generic VMT candidates remain unverified; symbol-driven method traces are the trusted evidence.
+- The Word artifact (`15095336625`) found 451 callers of `0x0042ABA0`; its body is a shared interface-property getter used by `TWordDocument.Get_*` methods, not a print worker callback. It calls helper `0x00401428`; this does not resolve the 18-vs-17 Variant PrintOut discrepancy. Added this correction to `docs/WORD-PRINT-DISPATCH-AND-WORKER-ANALYSIS.md`.
+- Next pass: decode the embedded XML property/tag strings from the traced getter/setter addresses; trace `TXMLConstraintsType` and helper `0x00401428`; keep the `Scanedimage` list/response serialization open until the class/collection contract is established.
+
 ## 2026-11-26 — Word PrintOut helper 0x0042ABA0 reclassified
 
 - Run 38 Word artifact `15095336625` traces `0x0042ABA0` and 451 direct callers. Its TD32 label claims `TWordDocument.$bctr`, but the body is a shared interface-property getter used by `TWordDocument.Get_*` accessors: it checks object field `+0x78`, calls VMT slot `+0x50` if null, then passes the interface reference to `0x00401428` for output assignment.
