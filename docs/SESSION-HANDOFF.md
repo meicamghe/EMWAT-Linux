@@ -1,3 +1,9 @@
+## 2026-11-26 — connector key decoding and stale-run control queued
+
+- Run 29 (`45764787287`, workflow commit `fed7d6e`) is running with the next scanner connector pass: decode dictionary/XML string constants, trace dictionary conversion helpers, and include `TResultImage` / `TSetOfMultiPageImages` procedures and callers.
+- Added a branch-scoped workflow concurrency group with `cancel-in-progress: true`. Future pushes to the same branch will replace older parallel-analysis runs rather than leave overlapping runs consuming Actions minutes. This does not retroactively add concurrency metadata to older runs; run 21 is now cancelled, while run 22 still shows stale in-progress status at last poll.
+- The new connector analysis step does not add Linux handlers. Its purpose is to recover exact dictionary keys, XML constraints, result-file methods and response schema before implementation.
+
 ## 2026-11-26 — ScanDocument body trace and GAM installer/profile APIs resolved
 
 - Run 27 (`45764043847`) completed successfully across Word, Image and Native jobs. Artifacts: `15090968111` (Word) and `15090469945` (Image). Run 28 (`45764222813`) also completed successfully across all three jobs; artifacts: `15091790290` (Word) and `15091725676` (Image). Native regression passed in both.
