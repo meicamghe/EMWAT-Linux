@@ -298,3 +298,20 @@ Confirmed thunk-to-IAT-slot mapping from the range trace:
 - 0x004B0204 -> IAT slot 0x00630DB0
 
 This proves that the addresses are imported entry points, not code that can be understood by extending a local disassembly. The import names must be resolved from the PE import table. A new workflow step invokes trace_pe_target.py on these addresses to resolve the IAT targets; results are pending Run 9. Do not infer helper API names from caller patterns alone.
+
+
+## Track N — ImageEn import thunk identities resolved (Run 9 ImageEn artifact)
+
+Run 9 ImageEn artifact 15106033536 resolves the thunk addresses through the PE import table into named methods in PKIECtrl23.bpl:
+- 0x004B012C -> TImageEnMIO.Acquire
+- 0x004B0154 -> TImageEnMIO.PrintImage
+- 0x004B01A4 -> TImageEnMView.GetImageCount
+- 0x004B01F4 -> TImageEnMView.GetMultiSelectedImages
+- 0x004B01FC -> TImageEnMView.GetMultiSelectedImagesCount
+- 0x004B0204 -> TImageEnMView.MultiSelectSortList
+
+This definitively resolves the earlier ambiguity: 0x004B0154 is PrintImage, not Acquire. The four DoPrintingPanel callsites are image-print operations on a canvas, and the nearby count/selection calls explain the two page-iteration loops: one iterates the image collection via GetImageCount; the other works with multi-selected images via GetMultiSelectedImagesCount/GetMultiSelectedImages, with MultiSelectSortList used in the selected-image branch. This is a distinct ImageEn printing UI path and must not be conflated with the main GEAR32PD scanner preview or with TImageEnMIO.Acquire.
+
+The import mapping is direct PE evidence from PKIECtrl23.bpl's import table, not a name inferred from call patterns. Full runtime behavior of the ImageEn print method (actual device output/spool success) remains unproven; the imports and calls alone do not establish successful physical printing.
+
+Run 9 overall completion and Word/scanner artifacts remain pending at the time of this update; the ImageEn job itself completed successfully.
