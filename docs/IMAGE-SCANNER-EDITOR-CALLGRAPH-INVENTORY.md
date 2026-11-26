@@ -345,7 +345,7 @@ Run 34 traced the constructor and inspected the class metadata around `0x004F1F9
 
 The class metadata is strongly corroborated by the constructor symbol, class-name string, field table and direct connector constructor call. However, the candidate parent VMT pointer is `0x0062EEA4`, outside the BPL image; do not treat the generic VMT scanner's virtual-slot layout as fully verified until that parent metadata is resolved.
 
-The constructor initializes `ImgProc`, `FEditorForm` and `FResponseXML`. The connector then calls `GetNextPage`, reads `FResponseXML` through interface slot `+0x54`, and calls helper `0x004012F8`. That helper is an unresolved external/relocated thunk (IAT slot `0x0062ECDC` resolves outside the image); its generic callers include XML property setters and dictionary-related paths, so it does not prove a specific output key. Preserve the output dictionary key, XML root/tag and response schema as unknown.
+The constructor initializes `ImgProc`, `FEditorForm` and `FResponseXML`. The connector then calls `GetNextPage`, reads `FResponseXML` through interface slot `+0x54`, and calls helper `0x004012F8`. That helper is an unresolved external/relocated thunk (IAT slot `0x0062ECDC` resolves outside the image); its generic callers include XML property setters and string-assignment paths, so it does not prove a specific output key. Preserve the output dictionary key, XML root/tag and response schema as unknown.
 
 ### 12.4 ImageEdition and Upgrade are separate runtime methods
 
@@ -418,5 +418,5 @@ The same BPL also imports ImageEn `TImageEnMIO` methods. The run-32 IAT scan fou
 | `TImageEnMIO.ExecuteOpenDialog` | `0x00630D80` | `0x0050A48C`, `0x0050A4BF` |
 | `TImageEnMIO.ExecuteSaveDialog` | `0x00630D7C` | `0x0050AFAE` |
 
-These are ImageEn imports/callsites, separate from the ImageGear `IG_save_FD` / `IG_save_file` path recovered in `TfrmGScanPreview.Scan` and `Save_Tiff_MultyPages`. The enclosing procedure names and the relationship between these ImageEn calls, the scanner UI, and the `TScanDocument` connector are not yet established. Trace the callers before merging the two paths or assigning scanner semantics.
+These are ImageEn imports/callsites, separate from the ImageGear `IG_save_FD` / `IG_save_file` path recovered in `TfrmGScanPreview.Scan` and `Save_Tiff_MultyPages`. Run 34 resolved the enclosing procedures: `Acquire` is called by `TfrmImageTools.InsertPicture` (`0x0050A29C`); `LoadFromFileAuto` is called by `FreeRotate` (`0x00508A90`) and `DeletePicture` (`0x0050A414`); `SaveToFileTIFF` is called by `btnPrinterSetupClick` (`0x0050B61C`); `SaveToFile` is called by `CreateParams` (`0x0050AF74`); `PrintImage` belongs to `DoPrintingPanel`; and the open/save dialog methods are used by image-tools handlers. This proves ImageEn is used by the image-tools acquisition/edit/save/print surface, but does not establish that its acquisition is the same scanner session as the ImageGear preview or the public `TScanDocument` connector. Keep the three paths separate until a shared file/session/result handoff is demonstrated.
 
