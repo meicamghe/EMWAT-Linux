@@ -1849,3 +1849,15 @@ The first interpretation of `.tmp` and `document` as two input keys was disprove
 - Initial run `45786489435` correctly caught missing-field-initializer warnings after adding `response_metadata` under `-Werror`. Fixed with `std::optional<ScanResponseMetadata> response_metadata{};`, retaining compatibility with existing three-field aggregate initializers.
 - Follow-up commit `35ffc42ef1717aecfdd065378c9cd249c3ff0ce8`: reverse-engineering run `45786665652` Native regression passed (C++ build, CTest, Python bridge tests); Native image core run `45786665929` passed build/test, sanitizer and Debian package lifecycle.
 - Image/Scanner and Word/Printer analysis jobs in run `45786665652` are still running at handoff time. Do not report those lanes complete until artifacts are uploaded and inspected.
+
+## 2026-11-26 — Run 48 complete; GetNextPage skipdata trace recovered
+
+- Run 48 ([45786665652](https://github.com/meicamghe/EMWAT-Linux/actions/runs/45786665652)) completed successfully in all three lanes: Native regression, Image/UI/VMT, and Word/COM/Printer. Native C++/CTest and Python bridge tests passed. Image artifact `15102155195` and Word/Printer artifact `15101725038` were downloaded and inspected.
+- The skipdata-aware trace covers all 1,340 bytes of `TScanCommand.GetNextPage` at `0x004F2558`; 16 bytes remain explicitly marked as undecoded data. New evidence confirms the `FIsNextPageRequest` branch, four-entry lookup against `FPreviousReturnedFileName`, the `_P` marker test, `ResultImage` construction, and response-XML virtual update/finalization path. Exact enum values, response property slots, output filename semantics and collection cardinality remain open.
+- `0x00454B9C` receives the `.tmp` literal in `TFaxDocument.PerformMethod` and produces a derived local string through Delphi string/list operations. Do not call it a full path or a confirmed temporary filename yet.
+- `document` remains a dictionary write via `TDictionary<String, Variant>.SetItem` at `0x0046D2E4`; `0x0046D210` and `0x0046D2C0` are generic dictionary lookup/hash helpers, not semantic decoders for the Variant.
+- Full findings and next probes: `docs/REVERSE-ENGINEERING-RUN48.md`; scanner callgraph inventory also updated.
+- Run 48 is a successful static-analysis/CI result, not physical scanner, printer, Wine, or live Almas acceptance. No production scanner implementation changed.
+- PR #2 remains Draft/open/unmerged. No merge or rebase was attempted.
+
+Next probes: recover the four filename-table strings and state-byte meanings; resolve response XML virtual targets and the `Scanedimage` update; trace `TResultImage` ownership/finalization; clarify the `.tmp` helper contract.
