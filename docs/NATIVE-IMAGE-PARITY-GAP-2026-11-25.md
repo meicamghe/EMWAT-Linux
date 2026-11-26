@@ -43,3 +43,19 @@ Inputs: current native image source/tests on `feature/recovery-retention-policy`
 - Do not treat `TfrmGScanPreview`'s `Save_Tiff_MultyPages` method name as proof of exact TIFF tags, compression, page order or finalization behavior.
 - Do not infer a valid Delphi VMT layout from heuristic candidates.
 - No physical scanner or Windows hardware capture was part of this comparison.
+
+
+## 2026-11-26 update — ImageGear transform imports are now identified
+
+The expanded run-25 image artifact (`45763380148`, artifact `15090612978`) resolves:
+
+- `0x004AFEC8` → `IG_IP_rotate_multiple_90`
+- `0x004AFED0` → `IG_IP_flip`
+- `0x004AFF00` → `IG_image_dimensions_get`
+- `0x004AFEF0` → `IG_device_rect_set`
+
+Direct callers include `TGearImgProc.RotateLeft`, `TGearImgProc.FlipHorizontal`, `TfrmGScanPreview.btnRRotateClick`, `btnLRotateClick`, `btnVFlipClick`, and `CalculateBestFitSize`. The names are not a reliable transform contract: for example, the handler named `btnLRotateClick` calls `IG_IP_flip`, while `btnVFlipClick` calls `IG_IP_rotate_multiple_90`. Preserve this mismatch as an open finding; do not assign UI semantics or axis/direction from Delphi method names alone.
+
+`LoadImageToGearHandle` passes the handle at `this+0x428` and output pointers for fields `+0x42C`, `+0x430`, and `+0x434` to `IG_image_dimensions_get`. Their grouping is confirmed, but individual field meanings/units are not. `IG_device_rect_set` has direct callsites at `0x004EEF0F` and `0x0061D853`; its relation to preview geometry/crop still needs body-level tracing.
+
+The current native quarter-turn and horizontal/vertical pixel transforms provide the required algorithmic building blocks, but exact parity still depends on recovering ImageGear argument semantics, transform direction, metadata updates, and device-rectangle behavior. No native transform code was changed in this update.
