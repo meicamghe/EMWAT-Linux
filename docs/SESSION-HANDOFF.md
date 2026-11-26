@@ -1,3 +1,10 @@
+## 2026-11-26 — GAM configuration document argument-order correction
+
+- Cross-checked `docs/GAM-PRINTER-CONFIGURATION-RECOVERY.md` against the actual `SetPrinterForTiffout` and `CheckPrinterPaused` stack argument order.
+- Corrected `configure.ini` to section `[allusersfolder]`, key `policy`, default `1` (the previous GAM-specific page had section/key reversed).
+- Corrected `save.ini` to section `[save]`, key `popupdialog`, value `No Dialogs` (the previous table had section/key/value transposed).
+- The other `save.ini`, `image.ini`, and `general.ini` key/value mappings remain as decoded. This is documentation-only; no Linux printer behavior was implemented.
+
 ## 2026-11-26 — run 37 VMT scan inconclusive; run 38 symbol-driven XML tracing
 
 - Run 37 (`45771016476`) completed successfully across Native, Word and Image jobs. The VMT extension found class-name-associated candidates for `TXMLResponseScanType`, `TXMLScanedImageType`, `TXMLConfigType`, and `TXMLOutputType`, but all were explicitly marked **unverified**. Parsed slots `+0x54`/`+0xB8` were unmapped/implausible and the parent metadata pointed outside the BPL to XMLRTL; do not use these candidates to infer the response interface.
