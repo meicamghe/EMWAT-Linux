@@ -1,3 +1,10 @@
+## 2026-11-26 — run 35 response XML and ImageEn wrapper tracing
+
+- Workflow commit `713cb7a1878a90aadf8c2137433b606d23575cb5` starts run 35.
+- New parallel traces target the `FResponseXML` factory/helper `0x004EB7F4`, constructor callback `0x004F22A4`, and the ImageEn wrapper/call targets used by `TfrmImageTools` (`Acquire`, `SaveToFileTIFF`, `PrintImage`, `SaveToFile`, `ExecuteSaveDialog`, `GetParams`, and supporting MView calls).
+- Goal: identify the concrete response XML object behind `TScanCommand.FResponseXML`, its interface slots `+0xB8` and `+0x54`, and the handoff that populates the scanner result dictionary. Separately clarify whether ImageEn Acquire is a scanner/device source or another image insertion path. Do not merge it with ImageGear/ScanDocument without a shared handoff.
+- Run 35 is queued/running; no results claimed yet.
+
 ## 2026-11-26 — run 34 completed: ScanCommand and ImageEn caller contracts expanded
 
 - Run 34 (`45768861461`) completed successfully in all three lanes: Native regression, Word/print analysis, and Image/UI analysis. Artifacts: Word `15093730448`, Image `15092409839`. Native C++ and Python bridge tests passed.
