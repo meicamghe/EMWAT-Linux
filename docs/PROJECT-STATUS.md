@@ -3357,3 +3357,15 @@ The next meaningful Almas acceptance input is a sanitized, synthetic-or-test-acc
 - The `.tmp` helper and `document` dictionary write are better bounded but not semantically decoded. The Variant payload, filename policy, response collection cardinality, exact XML property mapping, and result-image file ownership remain open.
 - Detailed evidence: `docs/REVERSE-ENGINEERING-RUN48.md`; updated callgraph: `docs/IMAGE-SCANNER-EDITOR-CALLGRAPH-INVENTORY.md`.
 - This run does not prove physical scanner/printer, Wine, or live Almas acceptance. No production native scanner code changed. PR #2 remains Draft/open/unmerged; no merge/rebase was attempted.
+
+
+## Run 50 — parallel deep follow-up completed (2026-11-26)
+
+- Workflow run 45794156659 passed all four lanes: scanner result ownership, ImageEn acquisition, Word/GAM hidden print thread, and Native regression (C++ build/CTest plus Python bridge tests).
+- Artifacts: scanner 15102809326; ImageEn 15104267112; Word/Printer 15104841284.
+- ImageEn correction: TfrmImageTools.ScanPicture is a one-byte ret stub with no direct callers in the TD32 scan. InsertPicture calls TImageEnMIO.Acquire at 0x0050A364. Keep this image-tools workflow separate from GEAR32PD scanner acquisition.
+- Result ownership: TResultImage maintains distinct scan-path and response-filename fields; serial path logic uses a bounded three-digit sequence and filesystem collision checks. TSetOfMultiPageImages has specialized path/response-name overrides.
+- Word/GAM: TWordViewer.LoadDocument calls SeparteImages, which resolves the configured printer using EnumPrintersA, checks PRINTER_STATUS_PAUSED, and calls THidePrintingThread.Execute. The hidden thread trace is partial (1,885/3,096 bytes); final spool submission/completion remains unproven.
+- Native integration gap: scan_pages returns vector<ImagePage>, while ScanResult is currently only referenced by its header and isolated test. No production adapter/persistence/response serialization connects these models yet. Treat this as a documented integration gap, not a failing test.
+- The scanner pointer-ref step in this workflow omitted its output-path argument, so its detailed report was not included in the artifact; procedure/caller traces are available. Correct this in the next workflow revision.
+- Full report: docs/REVERSE-ENGINEERING-DEEP-FOLLOWUP-2026-11-26.md. CI success is not physical scanner/ADF/duplex, printer, Wine or live Almas acceptance.
