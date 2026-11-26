@@ -2017,3 +2017,9 @@ Next probes: recover the four filename-table strings and state-byte meanings; re
 - The corrected static inspector decoded global 0x0062A7F0 -> table 0x00628250. Four entries: index 0 null/empty; index 1 `.tif`; index 2 `.jpg`; index 3 `.bmp` (Delphi UnicodeString candidates at 0x004EC0BC, 0x004EC0D4, 0x004EC0EC). GetNextPage compares a command-derived string against this table and stores the matching index at +0x1D.
 - Treat these as statically recovered string values only. Full Almas connector filename semantics and runtime use still require request/response capture; do not implement extension rules based only on this table.
 - The table probe shell fix is validated: exit_status=0, empty stderr, table output present. Detailed evidence in Track L of docs/REVERSE-ENGINEERING-PARALLEL-FOLLOWUP-2026-11-26.md.
+
+
+## 2026-11-26 — ImageEn IAT thunk mapping
+
+- Run 8 ImageEn artifact 15106526888 shows 0x004B0100–0x004B0240 is a dense import-thunk range. 0x004B0154 is `jmp [0x00630D70]`, not a local function body. Nearby mappings: Acquire 0x004B012C -> IAT 0x00630D84; 0x004B01A4 -> 0x00630DE0; 0x004B01F4 -> 0x00630DB8; 0x004B01FC -> 0x00630DB4; 0x004B0204 -> 0x00630DB0.
+- Exact imported API names are being resolved in Run 9 with trace_pe_target.py. Until then, keep these as IAT slot mappings only. Details in Track M of docs/REVERSE-ENGINEERING-PARALLEL-FOLLOWUP-2026-11-26.md.
