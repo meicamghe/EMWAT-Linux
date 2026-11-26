@@ -307,3 +307,18 @@ The expanded field/path artifact `15011890875` shows:
 ### Run 39 — Saved accessor semantics resolved
 
 The wrapper trace confirms that TD32 names are reversed relative to actual COM behavior: `Get_Saved` (`0x0042BD34`) invokes slot `+0xD4` with an input WordBool (setter), while `Set_Saved` (`0x0042BD94`) invokes slot `+0xD8` with an output WordBool (getter). The registered `OnDocumentBeforeClose` callback at `0x004CD154` reads `Document.Saved` through `+0xD8` and branches on the returned value.
+
+
+## Run 152 — disambiguate same numeric field offset by object owner
+
+Source: successful controller-notify workflow artifact `15016516836` (run `45602986551`), cross-checked against event-sink artifact `15015875555` (run `45599975084`).
+
+The numeric offset `+0x80` occurs in two different objects in this path. Do not merge these into one field:
+
+1. **Word application event record.** In `TWordViwer.OnTmrAutoSave` (`0x004B8A84`), the code first loads `[Self+0x44]` and passes that object to `TWordApplication` methods, including `SetConnectKind` (`0x00404FBC`) and `Get_DisplayAutoCompleteTips` (`0x00440950`). It then writes callback/context pairs through that object pointer: `[object+0x80] = 0x004CD154`, `[object+0x84] = Self`; corresponding pairs are written at `+0x90/+0x94`, `+0x98/+0x9C`, and conditionally `+0x88/+0x8C`. The TWordApplication RTTI crosswalk maps its event field `+0x80` to `OnDocumentBeforeClose`. This is the event callback slot, not the viewer's archive-path field.
+
+2. **Word viewer base-path string.** In `TWordViwer.OnControlerNotify` (`0x004BB3B0`), the method's viewer instance pointer (`[ebp-4]`) is used directly to read `[Self+0x80]` at `0x004BB596` and `0x004BB5C4`. Both values are passed to `FixDirectionInFarsiNumericMode` (`0x004563A8`); the resulting paths receive `.easd` and `.easz` suffixes and are passed to the archive helper. This is the viewer's base-path use.
+
+The controller workflow's class-field scan groups references by the enclosing TD32 class/procedure, but the `OnTmrAutoSave` writes above are through the nested object at `Self+0x44`. They are not writes to `TWordViwer+0x80`. The current scan has not identified the initialization/write site for the viewer's base-path string.
+
+**Next trace:** inspect `TWordViwer.$bctr` (`0x004D08B4`), `TWordViwer.$bdtr` (`0x004D0D24`), and their callers/field references. The controller workflow now emits these constructor/destructor traces. Do not infer the path's directory/filename derivation until those traces or runtime evidence establish it.

@@ -51,6 +51,11 @@ jobs:
           python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004B999A controller-notify-dispatch/registration-callers.md
           python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004B999A controller-notify-dispatch/registration-target.md 1800 ret
           python tools/find_td32_class_procedures.py analysis-input/EmwatMethods.bpl1 TWordViwer TWordViewer TWordDocument TEditWordDocument > controller-notify-dispatch/word-class-procedures.md
+          python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x004D08B4 controller-notify-dispatch/TWordViwer-constructor-4D08B4.md
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004D08B4 controller-notify-dispatch/TWordViwer-constructor-4D08B4-disasm.md 1800 ret
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004D08B4 controller-notify-dispatch/TWordViwer-constructor-callers.md
+          python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x004D0D24 controller-notify-dispatch/TWordViwer-destructor-4D0D24.md
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004D0D24 controller-notify-dispatch/TWordViwer-destructor-callers.md
           python tools/resolve_delphi_vmt_slots.py analysis-input/EmwatMethods.bpl1 controller-notify-dispatch/word-vmt-slots.md
       - uses: actions/upload-artifact@v4
         with:

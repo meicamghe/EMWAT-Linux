@@ -24,6 +24,11 @@ Current reviewed baseline: `main` HEAD `0f95be8577718e16b6c59afb1f43fe561dabe517
 
 See [WORD-CLOSE-RESPONSE-CONTRACT-2026-11-25.md](WORD-CLOSE-RESPONSE-CONTRACT-2026-11-25.md), [RUNTIME-CAPTURE-2026-11-25.md](RUNTIME-CAPTURE-2026-11-25.md), and [PCAP-EDITWORD-DOCUMENT-ROUNDTRIP.md](PCAP-EDITWORD-DOCUMENT-ROUNDTRIP.md).
 
+### Field-offset ownership correction — 2026-11-25
+
+Do not conflate the two `+0x80` offsets. `OnTmrAutoSave` writes callback `0x004CD154` through the nested `TWordApplication` object at `TWordViwer+0x44`; its event-record `+0x80` is the `OnDocumentBeforeClose` callback slot. Separately, `OnControlerNotify` reads `TWordViwer+0x80` as the base path used to derive the `.easd` and `.easz` paths. The viewer base-path initialization site remains unresolved. See [WORD-LIFECYCLE-STATIC-TRACE.md](WORD-LIFECYCLE-STATIC-TRACE.md), Run 152. The controller-notify workflow now traces the viewer constructor/destructor and their callers.
+
+
 ---
 
 ## 2026-11-18 — CI verification and recovery trigger coverage
