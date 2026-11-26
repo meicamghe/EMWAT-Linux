@@ -353,3 +353,22 @@ Do not conflate the `PlugIn`/Finalization upgrade method with the runtime ImageE
 - Canonicalize every request-derived file path beneath an approved root.
 
 Evidence: `docs/EMWAT-SERVICE-EXECUTABLE-ANALYSIS.md`; run `45764043847` (connector/ScanCommand body traces); run `45764787287` (string and result-image symbol inventory); run `45765541247` (result-image body traces); run `45766302144` (remaining connector/helper traces).
+
+
+### 12.6 Separate ImageEn I/O callsite family (run 32)
+
+The same BPL also imports ImageEn `TImageEnMIO` methods. The run-32 IAT scan found these direct callsites:
+
+| Imported method | IAT | Direct caller VAs |
+|---|---:|---|
+| `TImageEnMIO.Acquire` | `0x00630D84` | `0x0050A364` |
+| `TImageEnMIO.SaveToFileTIFF` | `0x00630D90` | `0x0050B6A0` |
+| `TImageEnMIO.SaveToFile` | `0x00630D8C` | `0x0050AFC4` |
+| `TImageEnMIO.LoadFromFileAuto` | `0x00630D74` | `0x00508B88`, `0x0050A4D3` |
+| `TImageEnMIO.GetParams` | `0x00630D78` | `0x00508CD1`, `0x00508CE6`, `0x0050B648`, `0x0050B659`, `0x0050B676` |
+| `TImageEnMIO.PrintImage` | `0x00630D70` | `0x0050A7C3`, `0x0050A8A6`, `0x0050A999`, `0x0050AA85` |
+| `TImageEnMIO.ExecuteOpenDialog` | `0x00630D80` | `0x0050A48C`, `0x0050A4BF` |
+| `TImageEnMIO.ExecuteSaveDialog` | `0x00630D7C` | `0x0050AFAE` |
+
+These are ImageEn imports/callsites, separate from the ImageGear `IG_save_FD` / `IG_save_file` path recovered in `TfrmGScanPreview.Scan` and `Save_Tiff_MultyPages`. The enclosing procedure names and the relationship between these ImageEn calls, the scanner UI, and the `TScanDocument` connector are not yet established. Trace the callers before merging the two paths or assigning scanner semantics.
+
