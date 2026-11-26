@@ -1829,3 +1829,11 @@ This is a contract/documentation correction, not a behavior change. Existing coo
 - Next: compare this recovered handler contract against the native scan-result/connector boundary; implement only the parts whose semantics are now grounded. Capture real single-page and multipage outputs before finalizing response-name and file-cardinality rules. PR #2 remains Draft and unmerged; do not merge or rebase.
 
 - Cross-lane follow-up: Run 43 Word/Printer string inventory resolves the `TFaxDocument` keys as `.tmp` and `document`. The `.tmp` value is passed to `GetNextPage`; do not equate it with the returned image path. The `document` value's semantic type is still unknown.
+
+
+## 2026-11-26 — Native scanner response metadata model
+
+- Added an optional raw response-metadata structure to `ScanResult`, reflecting the recovered XML split: `Status`, `ErrorCode`, nested `Scanedimage.ImageName`, and `Scanedimage.Encoding`.
+- Kept `scan_path`, outer `response_filename`, physical `ScanOutput`, and response metadata as separate values. No enum meanings, encoding-to-extension conversion, or path inference are assumed.
+- Added focused regression coverage proving these fields remain independent. Commits: header `faba1970efe44a36cd1a398711ac0f9eee6f2d9f`; test `6f75b41edb0643029479cbc2f1cf1f644d69ac6e`.
+- The test commit currently has no visible workflow/status result. Verify CI before treating this native model change as green. Do not claim hardware or Almas protocol acceptance.
