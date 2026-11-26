@@ -1,3 +1,12 @@
+## 2026-11-26 — bridge fixture repair CI verification
+
+- Run 23 (`45763089199`, commit `9cf55fbcc2b3befc899ae8d46505ca13e8586173`) completed successfully across all three parallel jobs.
+- Native regression: CTest 5/5 passed.
+- Python bridge regression: 317 passed, 9 skipped, 339 subtests passed in 10.78 seconds.
+- Word print and Image UI/VMT static-analysis jobs both passed. Artifacts: `15090746518` (Word), `15090318746` (Image).
+- This confirms that the nonce fixture correction removed the pytest process hang; it is a test-data repair only, with no production bridge change.
+- Runs 21 and 22 still show stale in-progress status from the broken test fixtures and are not evidence of passing. Run 24 includes the new printer helper trace; run 25 adds ImageGear rotate/flip traces; run 26 adds ImageEn acquisition/TIFF callsite inventory. Those are separate runs and still require inspection.
+
 ## 2026-11-26 — Winspool ANSI API confirmed; bridge regression hang root cause fixed
 
 - Downloaded and inspected run-22 Word artifact `15090546185`. The `0x004044CC` thunk is exactly `winspool.drv!EnumPrintersA` through IAT `0x0062F9F0`; it is not `EnumPrintersW`. `GetPrinterName` calls it twice with Flags=8, Name=NULL, Level=2: first a null-buffer size query, then a second call with allocated buffer. It iterates `0x54)-byte `PRINTER_INFO_2A` records, compares `pDriverName` at +0x10 with `zvprt1`, and copies `pPrinterName` at +0x04 to global `0x0062B310`. Driver matching and queue-name extraction are now confirmed at the static callsite/API level.
@@ -5,7 +14,7 @@
 - `SetPrinterForTiffout` (`0x0047D238`) reads `configure.ini` / `policy` / `allusersfolder` and references `save.ini` / `basefilename` / `save`. `CheckPrinterPaused` reads the previously inventoried `save.ini`, `image.ini`, and `general.ini` keys. Updated `docs/WORD-ACTIVE-PRINTER-AND-SCANNER-STATE-RECOVERY.md` with the confirmed ANSI API, x86 record layout, registry path, and exact limitations.
 - Added a new parallel workflow pass for helpers called by the printer registry/INI routines (`0x00402674`, `0x0040267C`, `0x0040266C`, `0x00402754`, `0x004044AC`, `0x004032C0`, `0x004032C8`, `0x00402818`, `0x00403438`, `0x00404F4C`, `0x00404F54`, `0x00402910`, `0x00403320`, `0x00403350`, `0x00401368`, `0x00401370`, `0x00401378`). Workflow commit: `07fa8beec752cb941563cc573ffc3b3c6e73bfce`.
 - Re-audited the bridge test fixtures after runs 21/22 appeared stuck. The request used by `test_server_close_waits_for_active_document_request` had `invoke=active`, so the server correctly rejected it before calling the blocking handler; the test then failed before shutting down its non-daemon serving thread, keeping pytest alive. Separately, the negative nonce list still used valid numeric `54320`, which contradicted the decimal-only rule. Corrected the active request to decimal `54320` and the negative case to nonnumeric `active`; production code was not changed. Commit: `9cf55fbcc2b3befc899ae8d46505ca13e8586173`.
-- Run 23 (`45763089199`) was triggered by the fixture correction and was in progress at this handoff; it does not include the subsequently added helper-trace workflow step. The workflow update at `07fa8be` should trigger the next run. Runs 21/22 are still marked in progress at last poll and must not be counted as passing.
+- Run 23 (`45763089199`, commit `9cf55fb`) completed successfully in all three jobs after the fixture correction: native CTest 5/5 passed; Python bridge suite 317 passed, 9 skipped, 339 subtests passed in 10.78 s; Word and Image static-analysis jobs passed. Its artifact IDs are `15090746518` (Word) and `15090318746` (Image). This verifies the corrected test fixture and removes the apparent pytest hang for the new run. Runs 21/22 were launched with the broken fixtures and remain marked in progress; they are stale and must not be counted as passing.
 - This batch is remote-only. No local checkout, Wine prefix, physical printer, scanner, or EMWAT installation was touched.
 
 ## 2026-11-26 — scanner API caller map completed
