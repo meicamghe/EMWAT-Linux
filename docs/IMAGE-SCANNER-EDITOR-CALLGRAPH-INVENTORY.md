@@ -296,7 +296,23 @@ The run-29 symbol inventory resolves the two helper addresses that were previous
 - `0x004ECF50` is `TResultImage.NextFile`.
 - `0x004ED168` and `0x004ED298` are constructors for `TSetOfSinglePageImages` and `TSetOfMultiPageImages`, respectively.
 
-The constructor dispatches to concrete result-image implementations based on the format/mode arguments. This directly confirms that the Windows scan-result layer distinguishes a single-page-file collection from a multipage result object, matching the native `ScanOutput` variant model. Exact file naming, serial advancement, and response publication still need method-body traces.
+The constructor dispatches to concrete result-image implementations based on the format/mode arguments. This directly confirms that the Windows scan-result layer distinguishes a single-page-file collection from a multipage result object, matching the native `ScanOutput` variant model.
+
+The run-30 body traces further establish the following ownership behavior:
+
+| Method | Recovered behavior |
+|---|---|
+| `TResultImage.GetFilesCount` (`0x004ECC84`) | Returns the count from the internal collection stored under the result object at `+0x08`. |
+| `TResultImage.GetFileNamePath` (`0x004ECBD8`) | For a positive one-based index, calls `GetScanFilePath(index-1)`; otherwise returns the base path held at `+0x10`. |
+| `TResultImage.FileNameOf` (`0x004ECB6C`) | Resolves the path through the object's virtual path getter and returns a filename only when the file exists. |
+| `TResultImage.NextFile` (`0x004ECF50`) | Checks the current path; when it exists, passes the path and requested serial/index through helper `0x00403320` to derive the next filename. |
+| `TResultImage.GetFileStream` (`0x004ECD60`) | Checks the resolved file path and, if present, opens a stream through helper `0x004041BC`; absent files return an empty stream result. |
+| `TResultImage.GetFileSize` (`0x004ECCAC`) | Repeatedly calls `ShiftSerial` while the serial/path exists, then returns the final serial counter. |
+| `TSetOfMultiPageImages.Create` (`0x004ED298`) | Clears previous result state, stores a single base path at `+0x10`, then calls `ShiftSerial` to choose a non-colliding serial. |
+| `TSetOfMultiPageImages.GetScanFilePath` (`0x004ED4C0`) | Resolves the base file and builds a formatted path using an embedded format string at `0x004ED584`; the literal still needs decoding. |
+| `TSetOfMultiPageImages.SetResponseFileName` (`0x004ED58C`) | Normalizes/checks a candidate path and stores it only when the directory/file conditions pass. |
+
+The base `TResultImage.GetScanFilePath` (`0x004ED03C`) builds an indexed path using format string `0x004ED144`; the exact suffix format is still pending string decoding. The single-page collection uses this indexed-path behavior, while the multipage subclass overrides it with its one-container path. This is stronger evidence for the two native output variants than the class names alone, but exact path syntax, extension policy, and response filename serialization remain unresolved.
 
 The decoded `TScanCommand` / connector literals are:
 
