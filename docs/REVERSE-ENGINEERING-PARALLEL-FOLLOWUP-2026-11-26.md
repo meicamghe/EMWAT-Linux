@@ -254,3 +254,15 @@ Run 7 (45798441917), on commit 1a6729a2, is the validation run for this repair. 
 ### Confirmed GetNextPage selection mechanics from the Run 50 trace
 
 The full skipdata-enabled procedure trace for TScanCommand.GetNextPage (0x004F2558–0x004F2A93) shows it loads the global at 0x0062A7F0, then compares the PreviousImageName-derived string against four successive pointer entries, advancing the table pointer by four bytes and stopping on a match or after four entries. It stores the matched zero-based index in command byte +0x1D. A separate comparison against a constant string at 0x004F29E0 can set command byte +0x1E to 2. The method then constructs a TResultImage object using these state bytes and writes the result object pointer to command field +0x20. The table's string labels remain unknown until the static/runtime data is recovered; do not infer semantic names from the indices.
+
+
+## Track K — ImageEn helper cross-caller context (Run 7 artifact)
+
+Run 7 ImageEn artifact 15106012257 completed successfully and adds cross-caller evidence for the nearby helper targets:
+- 0x004B01A4 has nine direct callsites across InsertPicture, DeletePicture, DoPrinting, DoPrintingPanel, mouse interaction and printer setup. In DoPrintingPanel its return value is decremented and used as a loop bound; in InsertPicture and DeletePicture it is used in image-index/count checks. This strongly suggests a collection/count-related ImageEn view helper, but no TD32 symbol range or definitive method identity was recovered. Do not promote the likely role to a named API without VMT/import evidence.
+- 0x004B01FC has three direct callsites: DoPrinting compares its return value with 0x004B01A4's result, DoPrintingPanel uses it as a loop bound, and a drag/drop handler tests it for zero. This is consistent with a current/selected-image state query but is not conclusive.
+- 0x004B01F4 appears only twice in DoPrintingPanel and receives the loop index plus floating-point print parameters before a VMT dispatch at slot +0x158. Its exact role remains unknown.
+- 0x004B0204 is called from DoPrintingPanel and a drag-over handler; it appears to participate in print/drag state gating, not image acquisition.
+- 0x00404F3C appears only in the four DoPrintingPanel calls immediately before 0x004B0154. Its target also has no TD32 procedure range in this artifact.
+
+The helper procedures themselves all lack TD32 procedure ranges. The caller inventory narrows their roles but cannot resolve VMT method names, return types or full argument semantics. The 0x004B0154 conclusion remains unchanged: a page-loop helper in the ImageEn printing panel, not established as scanner acquisition. This track is based on Run 7 artifact output; overall Run 7 completion still needs checking.
