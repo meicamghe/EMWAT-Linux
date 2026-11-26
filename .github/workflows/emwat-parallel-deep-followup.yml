@@ -96,6 +96,45 @@ jobs:
           fi
           python tools/trace_td32_procedure_skipdata.py analysis-input/EmwatMethods.bpl1 0x004F2558 \
             deep-followup/scanner-result/get-next-page-control-flow.md
+      - name: Trace TScanCommand request methods and GetNextPage callers
+        shell: bash
+        run: |
+          python tools/list_td32_symbols.py analysis-input/EmwatMethods.bpl1 TScanCommand \
+            > deep-followup/scanner-result/scan-command-symbols.md
+          python - <<'PY'
+          from pathlib import Path
+          import subprocess
+          import sys
+
+          source = Path("deep-followup/scanner-result/scan-command-symbols.md").read_text()
+          rows = []
+          for line in source.splitlines():
+              cols = [part.strip() for part in line.strip().strip("|").split("|")]
+              if len(cols) != 5 or not cols[0].startswith("`0x"):
+                  continue
+              address, name = cols[0].strip("`"), cols[4].strip("`")
+              folded = name.casefold()
+              if any(term in folded for term in ("getnextpage", "performmethod", "execute")):
+                  rows.append((address, name))
+          rows = sorted(set(rows))
+          (Path("deep-followup/scanner-result/scan-command-selected-symbols.txt")).write_text(
+              "\n".join(f"{address} {name}" for address, name in rows) + "\n"
+          )
+          for address, name in rows:
+              safe = address.replace("0x", "")
+              subprocess.run([
+                  sys.executable, "tools/trace_td32_procedure_skipdata.py",
+                  "analysis-input/EmwatMethods.bpl1", address,
+                  f"deep-followup/scanner-result/scan-command-{safe}.md"
+              ], check=True)
+              subprocess.run([
+                  sys.executable, "tools/trace_td32_callers.py",
+                  "analysis-input/EmwatMethods.bpl1", address,
+                  f"deep-followup/scanner-result/scan-command-callers-{safe}.md"
+              ], check=True)
+          PY
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004F2558 \
+            deep-followup/scanner-result/get-next-page-callers.md
       - name: Trace fax temporary-path helper and result serial dispatch
         run: |
           python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x00454B9C \
@@ -299,6 +338,51 @@ jobs:
         run: |
           python tools/trace_td32_procedure_skipdata.py analysis-input/EmwatMethods.bpl1 0x004CCCC9 \
             deep-followup/word-printer/word-app-document-before-close.md
+      - name: Trace Word viewer event registration candidates
+        shell: bash
+        run: |
+          python tools/list_td32_symbols.py analysis-input/EmwatMethods.bpl1 TWordViwer \
+            > deep-followup/word-printer/word-viewer-symbols.md
+          python - <<'PY'
+          from pathlib import Path
+          import subprocess
+          import sys
+
+          source = Path("deep-followup/word-printer/word-viewer-symbols.md").read_text()
+          rows = []
+          for line in source.splitlines():
+              cols = [part.strip() for part in line.strip().strip("|").split("|")]
+              if len(cols) != 5 or not cols[0].startswith("`0x"):
+                  continue
+              address, name = cols[0].strip("`"), cols[4].strip("`")
+              folded = name.casefold()
+              if any(term in folded for term in (
+                  "create", "destroy", "connect", "wordappdocumentbeforeclose",
+                  "wordappdocumentbeforesave", "beforeclose", "beforesave"
+              )):
+                  rows.append((address, name))
+          rows = sorted(set(rows))
+          (Path("deep-followup/word-printer/word-viewer-event-candidates.txt")).write_text(
+              "\n".join(f"{address} {name}" for address, name in rows) + "\n"
+          )
+          for address, name in rows:
+              safe = address.replace("0x", "")
+              subprocess.run([
+                  sys.executable, "tools/trace_td32_procedure_skipdata.py",
+                  "analysis-input/EmwatMethods.bpl1", address,
+                  f"deep-followup/word-printer/word-viewer-event-{safe}.md"
+              ], check=True)
+              subprocess.run([
+                  sys.executable, "tools/trace_td32_callers.py",
+                  "analysis-input/EmwatMethods.bpl1", address,
+                  f"deep-followup/word-printer/word-viewer-event-callers-{safe}.md"
+              ], check=True)
+              subprocess.run([
+                  sys.executable, "tools/scan_pe_pointer_refs.py",
+                  "analysis-input/EmwatMethods.bpl1", address,
+                  f"deep-followup/word-printer/word-viewer-event-pointers-{safe}.md"
+              ], check=True)
+          PY
       - uses: actions/upload-artifact@v4
         if: always()
         with:
