@@ -1,3 +1,15 @@
+## 2026-11-26 — scanner result-image hierarchy confirmed; connector trace expansion running
+
+- Run 29 (`45764787287`) completed successfully in all three jobs; native regression passed. Its Image artifact `15091627434` and Word artifact `15090789687` were inspected.
+- Embedded strings independently confirm the Word handler keys `wordConfig`, `wordBody`, `letterImages`, `signData`; the `TImageEdition.PerformMethod` key is `PlugIn`. Scanner literals include `none`, `jpg`, `yes`, `no`, log strings `SCAN: NewDocument.` / `SCAN: NextPage Requested.`, and error prefix `<ScanDoc HasError>. ErrorXML: `. The Farsi retry prompt is embedded as well; exact XML field mapping remains open.
+- Result-image symbol resolution corrected two earlier helper assumptions:
+  - `0x004EC8B4` is `TResultImage.Create(UnicodeString, TImageFormat)`, called by `TScanCommand.GetNextPage`.
+  - `0x004ECFC8` is `TResultImage.ShiftSerial`, called by `TScanCommand.HasError`; it uses `GetScanFilePath` (`0x004ED03C`) and checks file existence. It is not a `HasError` method.
+  - `TResultImage.NextFile` is `0x004ECF50`; `TSetOfSinglePageImages` and `TSetOfMultiPageImages` constructors are `0x004ED168` and `0x004ED298`. This confirms the native `ScanOutput` single-page-set/multipage distinction at the model level. See `docs/NATIVE-IMAGE-PARITY-GAP-2026-11-25.md`.
+- A critical naming reconciliation: TD32 labels `0x005EE82C` as `TScanDocument.PerformMethod`, but runtime VMT evidence and body/string traces map it to `TEditWordDocument.PerformMethod` for `EditWordDocument`; it extracts the four Word keys and calls `TWordViwer.LoadDocument`. The TD32 label is stale/misleading and is not evidence of a public scanner endpoint. Corrected `docs/IMAGE-SCANNER-EDITOR-CALLGRAPH-INVENTORY.md`, `docs/REVERSE-ENGINEERING-MASTER-PLAN.md`, and this handoff.
+- Updated the Image trace target list to use the exact current TD32 addresses for all `TResultImage`, `TSetOfSinglePageImages`, and `TSetOfMultiPageImages` methods. Added a dynamic Word-lane pass that indexes and traces all concrete connector `PerformMethod` procedures plus `TEmwatMethod.Invoke`, `EmwatServiceCommandGet`, and `TWordViwer.LoadDocument`. Workflow commit `ac88ea14d0bfcaeabef736fde7f087065338159f`; run 30 (`45765541247`) is in progress.
+- The branch-scoped concurrency group is active; stale runs 21 and 22 are now both cancelled. Do not count them as regression passes.
+
 ## 2026-11-26 — connector key decoding and stale-run control queued
 
 - Run 29 (`45764787287`, workflow commit `fed7d6e`) is running with the next scanner connector pass: decode dictionary/XML string constants, trace dictionary conversion helpers, and include `TResultImage` / `TSetOfMultiPageImages` procedures and callers.
