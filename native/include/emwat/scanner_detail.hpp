@@ -112,7 +112,7 @@ inline bool planar_rgb_frame_matches(
     return actual_format == expected_format &&
            actual_depth == expected_depth &&
            actual_width > 0 && actual_width == expected_width &&
-           actual_lines > 0 && actual_lines == expected_lines &&
+           actual_lines >= -1 && actual_lines != 0 && actual_lines == expected_lines &&
            actual_stride >= actual_width &&
            actual_last_frame == expected_last_frame;
 }

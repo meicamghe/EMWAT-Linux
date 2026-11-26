@@ -221,6 +221,102 @@ int main() {
         assert(state.cancel_calls == 1);
     }
 
+    // SANE permits unknown line counts. Interleaved frames are read to EOF,
+    // then their height is derived from the complete row-stride byte count.
+    {
+        FakeSaneState state;
+        auto frame = fake_frame(SANE_FRAME_GRAY, true, {1, 2, 3, 4});
+        frame.parameters.lines = -1;
+        state.frames = {std::move(frame)};
+        const auto handle = reinterpret_cast<SANE_Handle>(&state);
+        assert(fake_sane_api.start(handle) == SANE_STATUS_GOOD);
+        const auto page = sane_detail::read_started_sane_page(
+            handle, std::nullopt, std::nullopt, fake_sane_api, 1024, false
+        );
+        assert(page.pixels.width == 2 && page.pixels.height == 2);
+        assert((page.pixels.bytes == std::vector<std::uint8_t>{1, 2, 3, 4}));
+        fake_sane_api.cancel(handle);
+        assert(state.cancel_calls == 1);
+    }
+
+    // Unknown-height planar RGB resolves the same height for all three planes.
+    {
+        FakeSaneState state;
+        auto red = fake_frame(SANE_FRAME_RED, false, {1, 2, 3, 4});
+        auto green = fake_frame(SANE_FRAME_GREEN, false, {5, 6, 7, 8});
+        auto blue = fake_frame(SANE_FRAME_BLUE, true, {9, 10, 11, 12});
+        red.parameters.lines = green.parameters.lines = blue.parameters.lines = -1;
+        state.frames = {std::move(red), std::move(green), std::move(blue)};
+        const auto handle = reinterpret_cast<SANE_Handle>(&state);
+        assert(fake_sane_api.start(handle) == SANE_STATUS_GOOD);
+        const auto page = sane_detail::read_started_sane_page(
+            handle, std::nullopt, std::nullopt, fake_sane_api, 1024, false
+        );
+        assert(page.pixels.width == 2 && page.pixels.height == 2);
+        assert((page.pixels.bytes == std::vector<std::uint8_t>{
+            1, 5, 9, 2, 6, 10, 3, 7, 11, 4, 8, 12
+        }));
+        fake_sane_api.cancel(handle);
+        assert(state.cancel_calls == 1);
+    }
+
+    // Variable-height output must end on a complete row and remain within budget.
+    {
+        FakeSaneState state;
+        auto frame = fake_frame(SANE_FRAME_GRAY, true, {1, 2, 3});
+        frame.parameters.lines = -1;
+        state.frames = {std::move(frame)};
+        const auto handle = reinterpret_cast<SANE_Handle>(&state);
+        assert(fake_sane_api.start(handle) == SANE_STATUS_GOOD);
+        bool rejected = false;
+        try {
+            (void)sane_detail::read_started_sane_page(
+                handle, std::nullopt, std::nullopt, fake_sane_api, 1024, false
+            );
+        } catch (const ScannerError&) {
+            rejected = true;
+        }
+        fake_sane_api.cancel(handle);
+        assert(rejected);
+        assert(state.cancel_calls == 1);
+    }
+    {
+        FakeSaneState state;
+        auto frame = fake_frame(SANE_FRAME_GRAY, true, {1, 2, 3, 4});
+        frame.parameters.lines = -1;
+        state.frames = {std::move(frame)};
+        const auto handle = reinterpret_cast<SANE_Handle>(&state);
+        assert(fake_sane_api.start(handle) == SANE_STATUS_GOOD);
+        bool rejected = false;
+        try {
+            (void)sane_detail::read_started_sane_page(
+                handle, std::nullopt, std::nullopt, fake_sane_api, 3, false
+            );
+        } catch (const ScannerError&) {
+            rejected = true;
+        }
+        fake_sane_api.cancel(handle);
+        assert(rejected);
+        assert(state.cancel_calls == 1);
+    }
+
+    // Interleaved row padding is retained in PixelBuffer stride and bytes.
+    {
+        FakeSaneState state;
+        auto frame = fake_frame(SANE_FRAME_RGB, true, {1, 2, 3, 0, 4, 5, 6, 0});
+        frame.parameters.bytes_per_line = 8;
+        state.frames = {std::move(frame)};
+        const auto handle = reinterpret_cast<SANE_Handle>(&state);
+        assert(fake_sane_api.start(handle) == SANE_STATUS_GOOD);
+        const auto page = sane_detail::read_started_sane_page(
+            handle, std::nullopt, std::nullopt, fake_sane_api, 1024, false
+        );
+        assert(page.pixels.stride == 8 && page.pixels.valid());
+        assert((page.pixels.bytes == std::vector<std::uint8_t>{1, 2, 3, 0, 4, 5, 6, 0}));
+        fake_sane_api.cancel(handle);
+        assert(state.cancel_calls == 1);
+    }
+
     // The production page reader and bounded collector cooperate across ADF pages.
     {
         FakeSaneState state;

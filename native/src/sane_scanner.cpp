@@ -272,28 +272,41 @@ ScannerCapabilities SaneScannerBackend::get_capabilities(const std::string& devi
 
 namespace sane_detail {
 namespace {
-std::vector<std::uint8_t> read_sane_frame_bytes(
+struct SaneFrameData {
+    std::vector<std::uint8_t> bytes;
+    std::size_t height{};
+};
+
+SaneFrameData read_sane_frame_bytes(
     SANE_Handle handle,
     const SANE_Parameters& params,
     std::uint64_t max_frame_bytes,
     const SaneScanApi& api,
     bool allow_feeder_empty = false
 ) {
-    if (params.pixels_per_line <= 0 || params.lines <= 0 || params.bytes_per_line <= 0)
-        throw ScannerError("Scanner returned invalid or variable scan dimensions");
+    if (params.pixels_per_line <= 0 || params.lines == 0 || params.lines < -1 ||
+        params.bytes_per_line <= 0 || max_frame_bytes == 0)
+        throw ScannerError("Scanner returned invalid scan dimensions");
 
     const auto width = static_cast<std::size_t>(params.pixels_per_line);
-    const auto height = static_cast<std::size_t>(params.lines);
     const auto stride = static_cast<std::size_t>(params.bytes_per_line);
-    if (stride < width || max_frame_bytes == 0 ||
-        static_cast<std::uint64_t>(height) >
+    if (stride < width)
+        throw ScannerError("Scanner returned an invalid frame stride");
+
+    const bool line_count_known = params.lines > 0;
+    std::size_t height = 0;
+    std::size_t frame_bytes = 0;
+    if (line_count_known) {
+        height = static_cast<std::size_t>(params.lines);
+        if (static_cast<std::uint64_t>(height) >
             max_frame_bytes / static_cast<std::uint64_t>(stride)) {
-        throw ScannerError("Scanner frame exceeds the active safety limit or has invalid stride");
+            throw ScannerError("Scanner frame exceeds the active safety limit");
+        }
+        frame_bytes = stride * height;
     }
 
-    const auto frame_bytes = stride * height;
     std::vector<std::uint8_t> bytes;
-    bytes.reserve(frame_bytes);
+    if (line_count_known) bytes.reserve(frame_bytes);
     std::array<SANE_Byte, 64 * 1024> chunk{};
     for (;;) {
         SANE_Int received = 0;
@@ -303,8 +316,14 @@ std::vector<std::uint8_t> read_sane_frame_bytes(
         if (received < 0 || static_cast<std::size_t>(received) > chunk.size())
             throw ScannerError("Scanner returned an invalid read length");
         if (received > 0) {
-            if (static_cast<std::size_t>(received) > frame_bytes - bytes.size())
-                throw ScannerError("Scanner returned more image data than declared");
+            const auto byte_limit = line_count_known
+                ? static_cast<std::uint64_t>(frame_bytes)
+                : max_frame_bytes;
+            const auto current_size = static_cast<std::uint64_t>(bytes.size());
+            if (current_size > byte_limit ||
+                static_cast<std::uint64_t>(received) > byte_limit - current_size) {
+                throw ScannerError("Scanner returned more image data than the active limit");
+            }
             bytes.insert(bytes.end(), chunk.begin(), chunk.begin() + received);
         }
         if (status == SANE_STATUS_EOF) break;
@@ -315,9 +334,18 @@ std::vector<std::uint8_t> read_sane_frame_bytes(
         if (received == 0)
             throw ScannerError("Scanner returned no data before end-of-frame");
     }
-    if (bytes.size() != frame_bytes)
-        throw ScannerError("Scanner returned an incomplete image frame");
-    return bytes;
+
+    if (line_count_known) {
+        if (bytes.size() != frame_bytes)
+            throw ScannerError("Scanner returned an incomplete image frame");
+    } else {
+        // SANE permits lines == -1. EOF is the only reliable frame boundary;
+        // the byte count must still describe an integral number of scan lines.
+        if (bytes.empty() || bytes.size() % stride != 0)
+            throw ScannerError("Scanner returned an incomplete variable-height image frame");
+        height = bytes.size() / stride;
+    }
+    return SaneFrameData{std::move(bytes), height};
 }
 
 void copy_planar_channel(
@@ -360,7 +388,7 @@ ImagePage read_started_sane_page(
         if (!params.last_frame)
             throw ScannerError("Scanner returned a non-terminal interleaved frame");
         const std::size_t channels = params.format == SANE_FRAME_GRAY ? 1 : 3;
-        if (params.pixels_per_line <= 0 ||
+        if (params.pixels_per_line <= 0 || params.lines == 0 || params.lines < -1 ||
             static_cast<std::size_t>(params.pixels_per_line) >
                 std::numeric_limits<std::size_t>::max() / channels)
             throw ScannerError("Scanner returned invalid scan dimensions");
@@ -371,14 +399,19 @@ ImagePage read_started_sane_page(
         if (stride < row_bytes)
             throw ScannerError("Scanner returned an invalid interleaved stride");
 
-        PixelBuffer pixels;
-        pixels.width = static_cast<std::uint32_t>(params.pixels_per_line);
-        pixels.height = static_cast<std::uint32_t>(params.lines);
-        pixels.stride = stride;
-        pixels.format = channels == 1 ? PixelFormat::Gray8 : PixelFormat::RGB8;
-        pixels.bytes = read_sane_frame_bytes(
+        auto frame = read_sane_frame_bytes(
             handle, params, page_byte_limit, api, allow_feeder_empty
         );
+        if (frame.height == 0 ||
+            frame.height > std::numeric_limits<std::uint32_t>::max())
+            throw ScannerError("Scanner returned an unsupported image height");
+
+        PixelBuffer pixels;
+        pixels.width = static_cast<std::uint32_t>(params.pixels_per_line);
+        pixels.height = static_cast<std::uint32_t>(frame.height);
+        pixels.stride = stride;
+        pixels.format = channels == 1 ? PixelFormat::Gray8 : PixelFormat::RGB8;
+        pixels.bytes = std::move(frame.bytes);
         if (!pixels.valid())
             throw ScannerError("Scanner produced an invalid pixel buffer");
         return ImagePage{std::move(pixels), dpi_x, dpi_y};
@@ -387,26 +420,46 @@ ImagePage read_started_sane_page(
     if (params.format != SANE_FRAME_RED || params.last_frame)
         throw ScannerError("Scanner returned an unsupported or incomplete frame sequence");
 
-    if (params.pixels_per_line <= 0 || params.lines <= 0 ||
+    if (params.pixels_per_line <= 0 || params.lines == 0 || params.lines < -1 ||
         static_cast<std::size_t>(params.pixels_per_line) >
             std::numeric_limits<std::size_t>::max() / 3)
         throw ScannerError("Scanner returned invalid planar RGB dimensions");
 
     const auto width = static_cast<std::size_t>(params.pixels_per_line);
-    const auto height = static_cast<std::size_t>(params.lines);
     const auto output_stride = width * 3;
-    if (height > std::numeric_limits<std::size_t>::max() / output_stride)
-        throw ScannerError("Scanner planar RGB image size overflow");
-    const auto output_bytes = output_stride * height;
-    if (output_bytes >= page_byte_limit)
-        throw ScannerError("Scanner planar RGB image exceeds the active safety limit");
+    if (params.bytes_per_line <= 0 ||
+        static_cast<std::uint64_t>(params.bytes_per_line) < width)
+        throw ScannerError("Scanner returned an invalid planar RGB stride");
+
+    std::uint64_t output_bytes = 0;
+    std::uint64_t first_plane_limit = 0;
+    if (params.lines > 0) {
+        const auto known_height = static_cast<std::size_t>(params.lines);
+        if (known_height > std::numeric_limits<std::size_t>::max() / output_stride)
+            throw ScannerError("Scanner planar RGB image size overflow");
+        output_bytes = static_cast<std::uint64_t>(output_stride * known_height);
+        if (output_bytes >= page_byte_limit)
+            throw ScannerError("Scanner planar RGB image exceeds the active safety limit");
+        first_plane_limit = page_byte_limit - output_bytes;
+    } else {
+        // For an unknown-height planar frame, reserve enough budget for both
+        // the interleaved output and the first source plane while reading it.
+        const auto plane_stride = static_cast<std::uint64_t>(params.bytes_per_line);
+        const auto output_row_bytes = static_cast<std::uint64_t>(output_stride);
+        if (output_row_bytes >= page_byte_limit ||
+            plane_stride > page_byte_limit - output_row_bytes)
+            throw ScannerError("Scanner planar RGB image exceeds the active safety limit");
+        const auto maximum_height = page_byte_limit / (output_row_bytes + plane_stride);
+        if (maximum_height == 0)
+            throw ScannerError("Scanner planar RGB image exceeds the active safety limit");
+        first_plane_limit = maximum_height * plane_stride;
+    }
 
     PixelBuffer pixels;
     pixels.width = static_cast<std::uint32_t>(params.pixels_per_line);
-    pixels.height = static_cast<std::uint32_t>(params.lines);
     pixels.stride = output_stride;
     pixels.format = PixelFormat::RGB8;
-    pixels.bytes.resize(output_bytes);
+    std::size_t resolved_height = 0;
 
     const std::array<int, 3> expected_formats{
         static_cast<int>(SANE_FRAME_RED),
@@ -441,12 +494,33 @@ ImagePage read_started_sane_page(
         },
         [&](const SANE_Parameters& frame, std::size_t channel) {
             const auto frame_stride = static_cast<std::size_t>(frame.bytes_per_line);
+            const auto frame_limit = channel == 0
+                ? first_plane_limit
+                : page_byte_limit - output_bytes;
             auto plane = read_sane_frame_bytes(
-                handle, frame,
-                page_byte_limit - static_cast<std::uint64_t>(output_bytes), api,
+                handle, frame, frame_limit, api,
                 channel == 0 && allow_feeder_empty
             );
-            copy_planar_channel(plane, frame_stride, pixels, channel);
+
+            if (channel == 0) {
+                resolved_height = plane.height;
+                if (resolved_height == 0 ||
+                    resolved_height > std::numeric_limits<std::uint32_t>::max() ||
+                    output_stride > std::numeric_limits<std::size_t>::max() / resolved_height)
+                    throw ScannerError("Scanner returned an unsupported planar RGB image height");
+                output_bytes = static_cast<std::uint64_t>(output_stride * resolved_height);
+                if (output_bytes > page_byte_limit ||
+                    static_cast<std::uint64_t>(plane.bytes.size()) > page_byte_limit - output_bytes)
+                    throw ScannerError("Scanner planar RGB image exceeds the active safety limit");
+                pixels.height = static_cast<std::uint32_t>(resolved_height);
+                pixels.bytes.resize(static_cast<std::size_t>(output_bytes));
+            } else {
+                if (plane.height != resolved_height)
+                    throw ScannerError("Scanner returned inconsistent planar RGB frame heights");
+                if (static_cast<std::uint64_t>(plane.bytes.size()) > page_byte_limit - output_bytes)
+                    throw ScannerError("Scanner planar RGB image exceeds the active safety limit");
+            }
+            copy_planar_channel(plane.bytes, frame_stride, pixels, channel);
         }
     );
 
