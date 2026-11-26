@@ -117,3 +117,10 @@ Artifact: emwat-deep-word-printer-thread (15104841284). The word-printer-thread 
 2. Resolve the file path literals and stream operations around the polling loops; distinguish temporary render files from final output files.
 3. Trace the actual Winspool/Word COM submission and completion signal, if present, before designing the Linux printer bridge.
 4. Keep the Word/GAM print path separate from ImageEn DoPrintingPanel until a shared backend is proven.
+
+
+## 7. Next-run instrumentation improvement — hidden-thread skipdata trace
+
+The next manual invocation of `.github/workflows/emwat-parallel-deep-followup.yml` will now emit an additional Capstone skipdata-aware procedure trace for every resolved Word/GAM printer procedure, including `THidePrintingThread.Execute`. Each report is written inside the uploaded `deep-followup/word-printer/` artifact directory as `procedure-skipdata-<VA>.md`. This is intended to expose the currently undecoded 1,211-byte portion without treating `.byte` pseudo-instructions as executable code.
+
+The workflow change is committed, but the workflow has **not** been dispatched. Run 50 remains the last verified execution; no new analysis or CI result is claimed for this instrumentation change.
