@@ -1,3 +1,9 @@
+## 2026-11-26 — Word PrintOut helper 0x0042ABA0 reclassified
+
+- Run 38 Word artifact `15095336625` traces `0x0042ABA0` and 451 direct callers. Its TD32 label claims `TWordDocument.$bctr`, but the body is a shared interface-property getter used by `TWordDocument.Get_*` accessors: it checks object field `+0x78`, calls VMT slot `+0x50` if null, then passes the interface reference to `0x00401428` for output assignment.
+- This is not a print worker callback or constructor path. Updated `docs/WORD-PRINT-DISPATCH-AND-WORKER-ANALYSIS.md`; the 18-Variant caller versus 17-Variant wrapper discrepancy remains unresolved.
+- Next Word trace target is helper `0x00401428`, followed by a focused re-audit of interface construction and argument transfer at `0x004C70B6`.
+
 ## 2026-11-26 — GAM configuration document argument-order correction
 
 - Cross-checked `docs/GAM-PRINTER-CONFIGURATION-RECOVERY.md` against the actual `SetPrinterForTiffout` and `CheckPrinterPaused` stack argument order.
