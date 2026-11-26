@@ -1,3 +1,14 @@
+## 2026-11-26 — ImageEn path and protocol connector entry points found
+
+- Run 26 (`45763574936`) completed successfully across Word, Image and native regression jobs. Its Image artifact `15090488790` was inspected.
+- The ImageEn import scan proves a second image I/O stack, separate from the ImageGear scanner-preview API:
+  - `TImageEnMIO.Acquire` thunk `0x004B012C`, callsite `0x0050A364` in `TfrmImageTools.InsertPicture`.
+  - `TImageEnMIO.PrintImage` thunk `0x004B0154`, four callsites in `TfrmImageTools.DoPrintingPanel`.
+  - `LoadFromFileAuto`, `GetParams`, `ExecuteSaveDialog`, `ExecuteOpenDialog`, `SaveToFile`, and `SaveToFileTIFF` are also identified with exact IAT thunks/callsites. Documented in `docs/IMAGE-SCANNER-EDITOR-CALLGRAPH-INVENTORY.md`.
+- The symbol index also reveals the actual connector handlers `TScanDocument.PerformMethod` (`0x005EE82C`, 796 bytes) and `TImageEdition.PerformMethod` (`0x005EF24C`, 180 bytes), plus `TScanCommand.DoNewScan`, `DoRequest`, `GetNextPage`, `HasError`, `LoadRequestXML`, and `VerifyConstraints`.
+- Added all eight procedures to the parallel image trace target list. Workflow commit `7d31f79aecb7c31699cd51d85abfb28397825d0d`; next run should produce the bodies and direct caller traces. These are connector symbols only until the request dictionaries/XML fields and response contract are decoded.
+- No `ScanDocument` or `ImageEdition` Linux handler was added; exact method names, parameter keys, page state, errors and output serialization remain unknown.
+
 ## 2026-11-26 — ImageGear transform and dimensions callsites recovered
 
 - Run 25 (`45763380148`) image job completed successfully; artifact `15090612978` was inspected. The run's Word helper pass was still active at last poll; native regression passed.
