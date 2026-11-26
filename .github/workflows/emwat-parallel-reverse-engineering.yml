@@ -71,10 +71,66 @@ jobs:
       - name: Index Word automation and print-handler symbols
         run: |
           python tools/list_td32_symbols.py analysis-input/EmwatMethods.bpl1 \
-            TWordDocument TWordApplication PrintOut PrintOutOld PrintOut2000 \
+            TWordDocument TWordApplication PrintOut PrintOutOld PrintOut2000 PerformMethod TEditWordDocument TCompareWordDocument TEditExcelWorkBook TFaxDocument TScanDocument TImageEdition TGetEmwatVersion TSetEmwatVersion TShowEmwatSetting TShowLastEditedDocs TShowSendLog TUpgradeEmwat TEmwatMethod EmwatServiceCommandGet LoadDocument Invoke \
             BGPrintWithGamPrintOptions TEmwatDocPrintHandler TEDPController TWordViwer \
             Zanprinter GetPrinterName ActivePrinter TPrinter \
             > parallel-re/word-print/symbol-index.md
+      - name: Trace concrete connector PerformMethod and dispatch targets
+        shell: bash
+        run: |
+          mkdir -p parallel-re/word-print/connector-handlers
+          python - <<'PY'
+          from concurrent.futures import ThreadPoolExecutor, as_completed
+          from pathlib import Path
+          import re
+          import subprocess
+          import sys
+
+          source = Path("parallel-re/word-print/symbol-index.md").read_text()
+          rows = []
+          wanted = (
+              "EditWordDocument", "CompareWordDocument", "EditExcelWorkBook",
+              "FaxDocument", "ScanDocument", "ImageEdition", "GetEmwatVersion",
+              "SetEmwatVersion", "ShowEmwatSetting", "ShowLastEditedDocs",
+              "ShowSendLog", "UpgradeEmwat", "TEmwatMethod", "EmwatServiceCommandGet",
+              "TWordViwer"
+          )
+          pattern = re.compile(r"^\|\s*\x60(0x[0-9A-Fa-f]+)\x60\s*\|\s*(\d+)\s*\|[^|]*\|\s*\d+\s*\|\s*\x60([^\x60]+)\x60\s*\|")
+          for line in source.splitlines():
+              match = pattern.match(line)
+              if not match:
+                  continue
+              address, _size, symbol = match.groups()
+              if ("PerformMethod" in symbol or "LoadDocument" in symbol or "Invoke" in symbol or "EmwatServiceCommandGet" in symbol) and any(token in symbol for token in wanted):
+                  rows.append((address, symbol))
+          rows = sorted(set(rows))
+          Path("parallel-re/word-print/connector-handlers/selected-symbols.txt").write_text(
+              "\n".join(f"{address} {symbol}" for address, symbol in rows) + "\n"
+          )
+
+          def trace(item):
+              address, symbol = item
+              safe = address.replace("0x", "")
+              out = Path("parallel-re/word-print/connector-handlers")
+              subprocess.run([
+                  sys.executable, "tools/trace_td32_procedure.py",
+                  "analysis-input/EmwatMethods.bpl1", address,
+                  str(out / f"procedure-{safe}.md")
+              ], check=True)
+              subprocess.run([
+                  sys.executable, "tools/trace_td32_callers.py",
+                  "analysis-input/EmwatMethods.bpl1", address,
+                  str(out / f"callers-{safe}.md")
+              ], check=True)
+              return address, symbol
+
+          with ThreadPoolExecutor(max_workers=6) as pool:
+              futures = [pool.submit(trace, item) for item in rows]
+              for future in as_completed(futures):
+                  address, symbol = future.result()
+                  print(f"traced {address} {symbol}")
+          print(f"connector targets traced: {len(rows)}")
+          PY
       - name: Decode printer selection and installation string constants
         run: |
           python tools/decode_pe_strings.py analysis-input/EmwatMethods.bpl1 \
@@ -148,7 +204,7 @@ jobs:
       - name: Trace scanner, multipage TIFF, and image-editor operations in parallel
         shell: bash
         run: |
-          targets=(005EE82C 005EF24C 004EC8B4 004ECFC8 004EC8C6 004ECB93 004ECD8E 004ECE59 004ECF7A 004ED006 004ED395 004ED4EC 004ED5BA 004B7724 0050357C 004F22AC 004F22E4 004F2558 004F2A94 004F2B18 004F2C4C 0061D888 0061DC80 0061D070 0061D100 0061D250 0061D36C 0061CF9C 0061DEF4 0061E3C8 0061E3F0 004EF9CC 0061E470 0061E510 0061E548 0061E5C0 0061E5F0 0061E620 0061E680 004EEE24 004F17B4 004F1064 004F109C 004F11E8 004F1274 004F1308 004F1404 004F1660 004F1890 004F1A04 004F1D04 004EF138 004EF40C 004EF510 004EF714 004EF8C0 004EF9CC 004EEDB4 004F01F0 00508A90 0050A29C 0050A414 0050A534 0050AB2C 0050ABA4 0050ACDC 0050BBB8)
+          targets=(005EE82C 005EF24C 004EC8B4 004EC8C6 004ECB6C 004ECBD8 004ECC84 004ECCAC 004ECD60 004ECE2C 004ECF30 004ECF38 004ECF50 004ECFC8 004ED03C 004ED150 004ED168 004ED298 004ED344 004ED438 004ED4C0 004ED58C 004B7724 0050357C 004F22AC 004F22E4 004F2558 004F2A94 004F2B18 004F2C4C 0061D888 0061DC80 0061D070 0061D100 0061D250 0061D36C 0061CF9C 0061DEF4 0061E3C8 0061E3F0 004EF9CC 0061E470 0061E510 0061E548 0061E5C0 0061E5F0 0061E620 0061E680 004EEE24 004F17B4 004F1064 004F109C 004F11E8 004F1274 004F1308 004F1404 004F1660 004F1890 004F1A04 004F1D04 004EF138 004EF40C 004EF510 004EF714 004EF8C0 004EF9CC 004EEDB4 004F01F0 00508A90 0050A29C 0050A414 0050A534 0050AB2C 0050ABA4 0050ACDC 0050BBB8)
           pids=()
           for target in "${targets[@]}"; do
             (
