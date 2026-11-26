@@ -711,3 +711,12 @@ Helper follow-up:
 Open probes: recover the four global filename strings and meanings of state bytes `+0x1D/+0x1E`; resolve response XML virtual targets and exact `Scanedimage` updates; trace `TResultImage` ownership/finalization; clarify `0x00454B9C` without assuming the `.tmp` literal is a complete path.
 
 Detailed artifact findings: `docs/REVERSE-ENGINEERING-RUN48.md`. No production native scanner behavior was changed, and this static analysis does not constitute physical scanner/printer or Wine runtime acceptance.
+
+
+## Run 50 — Word/GAM hidden print thread and ImageEn caller correction
+
+- The ImageEn image-tools symbol ScanPicture at 0x0050A298 is only a one-byte ret stub and has no direct caller in the current TD32 scan. The observed ImageEn acquisition path is InsertPicture -> TImageEnMIO.Acquire (thunk 0x004B012C at 0x0050A364).
+- TCreateTiff.SeparteImages is called by TWordViewer.LoadDocument at 0x004B7A9C and 0x004B7ABD. It discovers the printer by EnumPrintersA level-2 records, checks the configured driver identity, checks the PRINTER_INFO_2A paused bit, then invokes THidePrintingThread.Execute.
+- The hidden print thread's current trace covers 1,885 of 3,096 bytes. It contains indirect interface dispatches, per-page loops and file-stream/polling behavior, but not a proven spool completion signal.
+- TWordApplication.Get_ActivePrinter and Set_ActivePrinter wrappers have no direct TD32 CALL xrefs in the artifact.
+- Full evidence and caveats: docs/REVERSE-ENGINEERING-DEEP-FOLLOWUP-2026-11-26.md. These findings do not establish physical printer or live Almas acceptance.
