@@ -71,3 +71,14 @@ Run 29 (`45764787287`, artifact `15091627434`) resolved the Windows result-image
 - `TResultImage.ShiftSerial` is `0x004ECFC8`, not a `HasError` method. Its body obtains a scan path through `GetScanFilePath` and checks file existence. `TScanCommand.HasError` calls this helper and maps the result to its own status flag.
 
 This confirms two distinct Windows result-collection classes for single-page and multi-page image modes, but does not yet prove that `TSetOfMultiPageImages` maps one-to-one to a single `MultiPageFile`; both classes expose indexed file-path/count operations. The native `ScanOutput` variants are consistent with the recovered distinction, but the exact mapping remains open. Separately, the preview UI `Scan` routine's `_New.tif`/`IG_save_FD` path supports a single page-indexed multipage container. Exact file naming, serial increment rules, page-to-file ownership, and response serialization remain open; no native adapter or output policy was changed.
+
+
+## 2026-11-26 update — scanner result path formats partially decoded
+
+The result-image trace has now resolved three relevant string literals:
+
+- Base `TResultImage.GetScanFilePath` uses `%.3d` at `0x004ED144`, establishing a three-digit serial formatting component.
+- `TSetOfMultiPageImages.GetScanFilePath` uses `_P` at `0x004ED584`, establishing a page-marker component in that subclass's path format.
+- `_P000` is present at `0x004ED338`; its exact callsite/format role is still being reconciled and must not be merged with the other format string by assumption.
+
+These literals narrow the filename contract but do not yet establish concatenation order, serial ownership (session number versus collision retry), extension placement, or which concrete collection corresponds to one physical multipage file. The native `ScanResult` model therefore remains intentionally semantic rather than encoding guessed Windows suffix rules. Next work is to trace all callers/arguments around `0x004ED03C`, `0x004ED4C0`, and `0x004ED338`, then compare a real output directory and response filename from a sanitized Windows capture.
