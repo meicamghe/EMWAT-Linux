@@ -319,7 +319,7 @@ Run 29/30 symbol and body traces resolve the Windows result-image hierarchy:
 - `TSetOfMultiPageImages.GetScanFilePath`: `0x004ED4C0`; uses a format string at `0x004ED584`, still awaiting exact string decode.
 - Base `TResultImage.GetScanFilePath` (`0x004ED03C`) uses a format string at `0x004ED144`, also awaiting exact decode.
 
-This confirms the Windows scan-result layer distinguishes a collection of single-page files from one multipage image result, matching native `ScanOutput = variant<SinglePageFileSet, MultiPageFile>`. Exact suffix syntax, extension policy, serial advancement, and response filename serialization remain open.
+This confirms two distinct Windows result-collection classes (`TSetOfSinglePageImages` and `TSetOfMultiPageImages`). Their exact one-to-one mapping to native `SinglePageFileSet` versus `MultiPageFile` is **not yet proven**: both classes expose indexed `GetScanFilePath`/file-count operations, and the multi-page subclass also builds `_P`-indexed paths. Separately, the preview UI's `TfrmGScanPreview.Scan` path is strong evidence for one page-indexed `_New.tif` multipage container via `IG_save_FD`. Keep the connector result-collection mapping open until file ownership and actual output bytes are traced.
 
 ### 12.4 ImageEdition and Upgrade are separate runtime methods
 
