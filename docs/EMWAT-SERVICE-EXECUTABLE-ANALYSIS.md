@@ -520,5 +520,5 @@ The VMT map above is independently corroborated by the handler body traces and e
 | `TEditExcelWorkBook` `0x005EF8AC` | keys `ExcelConfig` and `ExcelWorkBookContent`; log prefix `[Invoke EditExcelWorkBook]`. |
 | `TCompareWordDocument` `0x005EFC54` | key `documentsData`; calls `TCompareCommand.DoRequest` and `Finalization`. |
 
-This confirms that the TD32 procedure labels are not a safe substitute for runtime class names. The body/string cross-check supports the service VMT map rather than renaming methods from their TD32 symbols. Runtime `TShowSendLog` at `0x005EFF4C` is in the VMT map but still awaits its own body/caller trace.
+This confirms that the TD32 procedure labels are not a safe substitute for runtime class names. The body/string cross-check supports the service VMT map rather than renaming methods from their TD32 symbols. Runtime `TShowSendLog` at `0x005EFF4C` is now body-traced: it obtains the service object through `0x00404D5C` (global object `0x0062B4F0`), invokes service vtable slot `+0x13C`, obtains the returned interface value through slot `+0x54`, and inserts it into the result dictionary. Its output key/value serialization remains open.
 
