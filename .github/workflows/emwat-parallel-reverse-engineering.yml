@@ -41,7 +41,7 @@ jobs:
         shell: bash
         run: |
           mkdir -p parallel-re/word-print
-          targets=(004C5FF8 004309F8 00441E44 00436030 004360F0 004361B0 00445B70 004677B8 00467788 004A5C10 004A5D78 004A5EA8 004D2EC8 004D2F44 00403550 004034E8 00403520 004034D0 00403368 00403480 0042ABA0 004ADA4C 0043EC28 0043EAB8 0043F308 00440B2C 00403488 0043FF40 0043FFA0 004A8F78 004A8FCC 004A8E58 004A90D4 004A9464 004A9884 004A9A08 0047CAF0 0047CC6C 0047CC94 0047D054 0047D238 0047D448)
+          targets=(004C5FF8 004309F8 00441E44 00436030 004360F0 004361B0 00445B70 004677B8 00467788 004A5C10 004A5D78 004A5EA8 004D2EC8 004D2F44 00403550 004034E8 00403520 004034D0 00403368 00403480 0042ABA0 00401428 004ADA4C 0043EC28 0043EAB8 0043F308 00440B2C 00403488 0043FF40 0043FFA0 004A8F78 004A8FCC 004A8E58 004A90D4 004A9464 004A9884 004A9A08 0047CAF0 0047CC6C 0047CC94 0047D054 0047D238 0047D448)
           pids=()
           for target in "${targets[@]}"; do
             (
@@ -59,7 +59,7 @@ jobs:
         shell: bash
         run: |
           mkdir -p parallel-re/word-print/rtl-helpers
-          targets=(00403550 004034E8 00403520 004034D0 00403368 00403480 00401420 00401478)
+          targets=(00403550 004034E8 00403520 004034D0 00403368 00403480 00401420 00401428 00401478)
           pids=()
           for target in "${targets[@]}"; do
             (python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x$target parallel-re/word-print/rtl-helpers/helper-$target.md 100 ret) &
@@ -359,7 +359,7 @@ jobs:
             0x00630D80 0x00630D84 0x00630D8C 0x00630D90 \
             > parallel-re/image-io/imageen/imageen-iat-callsites.md
           python tools/list_td32_symbols.py analysis-input/EmwatMethods.bpl1 \
-            TScanDocument TImageEdition TScanCommand TResultImage TSetOfSinglePageImages TSetOfMultiPageImages TXMLResponseScanType TXMLScanedImageType TXMLConfigType TXMLOutputType TImageEnMIO Acquire \
+            TScanDocument TImageEdition TScanCommand TResultImage TSetOfSinglePageImages TSetOfMultiPageImages TXMLResponseScanType TXMLScanedImageType TXMLConfigType TXMLOutputType TXMLConstraintsType TImageEnMIO Acquire \
             SaveToFileTIFF LoadFromFileAuto PrintImage \
             > parallel-re/image-io/imageen/imageen-symbols.md
       - name: Trace scanner XML classes and property accessors
@@ -375,7 +375,7 @@ jobs:
 
           source = Path("parallel-re/image-io/imageen/imageen-symbols.md").read_text()
           rows = []
-          wanted = ("TXMLResponseScanType", "TXMLScanedImageType", "TXMLConfigType", "TXMLOutputType")
+          wanted = ("TXMLResponseScanType", "TXMLScanedImageType", "TXMLConfigType", "TXMLOutputType", "TXMLConstraintsType")
           pattern = re.compile(r"^\|\s*\x60(0x[0-9A-Fa-f]+)\x60\s*\|\s*(\d+)\s*\|[^|]*\|\s*\d+\s*\|\s*\x60([^\x60]+)\x60\s*\|")
           for line in source.splitlines():
               match = pattern.match(line)
@@ -425,6 +425,18 @@ jobs:
             0x00503DE4 0x00503E28 0x00503E58 0x00503E90 0x00503ED0 0x00503EE8 \
             0x00503F2C 0x00503FA8 0x00503FC8 0x00503FD8 0x00503FE8 \
             0x00504170 0x005041D4 0x00504278 0x00504288 \
+            0x004EA077 0x004EA090 0x004EA0A0 0x004EA13F 0x004EA158 0x004EA146 \
+            0x004EA1C2 0x004EA1DC 0x004EA1C9 0x004EA277 0x004EA290 0x004EA27E \
+            0x004EA30A 0x004EA324 0x004EA311 0x004EA3CF 0x004EA3E8 0x004EA3D6 \
+            0x004EA45E 0x004EA478 0x004EA465 0x004EA51F 0x004EA538 0x004EA526 \
+            0x004EA5BA 0x004EA5D4 0x004EA5C1 0x004EA687 0x004EA6A0 0x004EA68E \
+            0x004EA722 0x004EA73C 0x004EA729 0x004EA790 0x004EA853 0x004EA86C \
+            0x004EA87C 0x004EA85A 0x004EA906 0x004EA920 0x004EA90D \
+            0x004EB863 0x004EB87C 0x004EB890 0x004EB8AC 0x004EB8EC 0x004EB86A \
+            0x004EB997 0x004EB9B0 0x004EB99E 0x004EBA1E 0x004EBA38 0x004EBA25 \
+            0x004EBAD7 0x004EBAF0 0x004EBADE 0x004EBB62 0x004EBB7C 0x004EBB69 \
+            0x004EBC0B 0x004EBC24 0x004EBC40 0x004EBC12 0x004EBCDF 0x004EBCF8 0x004EBCE6 \
+            0x004EBD6A 0x004EBD84 0x004EBD71 0x004EBE27 0x004EBE40 0x004EBE2E \
             > parallel-re/image-io/connector-contract/dictionary-and-xml-keys.md
           targets=(0046DC8C 004735D0)
           pids=()
