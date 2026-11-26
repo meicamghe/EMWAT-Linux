@@ -133,6 +133,69 @@ jobs:
           PY
           python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004F2558 \
             deep-followup/scanner-result/get-next-page-callers.md
+      - name: Decode scanner XML constants and trace Fax response dispatch
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          import pefile
+
+          path = Path("analysis-input/EmwatMethods.bpl1")
+          blob = path.read_bytes()
+          pe = pefile.PE(data=blob, fast_load=True)
+          image_base = pe.OPTIONAL_HEADER.ImageBase
+          traces = [
+              Path("deep-followup/scanner-result/scan-command-004F2B18.md"),
+              Path("deep-followup/scanner-result/scan-command-004F2C4C.md"),
+              Path("deep-followup/scanner-result/scan-command-004F22E4.md"),
+          ]
+          addresses = set()
+          for trace in traces:
+              if trace.exists():
+                  addresses.update(int(value, 16) for value in re.findall(r"0x[0-9A-Fa-f]{6,8}", trace.read_text()))
+          rows = []
+          for va in sorted(addresses):
+              rva = va - image_base
+              if rva < 0:
+                  continue
+              try:
+                  offset = pe.get_offset_from_rva(rva)
+              except Exception:
+                  continue
+              if offset < 0 or offset >= len(blob):
+                  continue
+              section = next((s for s in pe.sections if s.VirtualAddress <= rva < s.VirtualAddress + max(s.Misc_VirtualSize, s.SizeOfRawData)), None)
+              if section is None:
+                  continue
+              sample = blob[offset:offset + 160]
+              candidates = []
+              for encoding in ("utf-16le", "utf-8", "cp1252"):
+                  try:
+                      text = sample.decode(encoding, errors="strict").split("\x00", 1)[0].split("\x00\x00", 1)[0]
+                  except UnicodeError:
+                      continue
+                  if len(text) >= 2:
+                      printable = sum(ch.isprintable() for ch in text) / len(text)
+                      if printable >= 0.85 and any(ch.isalpha() for ch in text):
+                          candidates.append((len(text), encoding, text))
+              if candidates:
+                  _, encoding, value = max(candidates)
+                  rows.append((va, section.Name.rstrip(b"\x00").decode("ascii", "replace"), offset, encoding, value))
+          out = ["# Candidate strings referenced by TScanCommand XML parsing traces", "",
+                 "Candidates are byte-decoded from immediate addresses in the TD32 traces; validate each against the surrounding procedure before assigning a protocol field name.", ""]
+          for va, section, offset, encoding, value in rows:
+              out.append(f"- VA 0x{va:08X} ({section}, raw 0x{offset:08X}, {encoding}): {value!r}")
+          Path("deep-followup/scanner-result/request-xml-string-candidates.md").write_text("\n".join(out) + "\n")
+          PY
+          python tools/trace_td32_procedure_skipdata.py analysis-input/EmwatMethods.bpl1 0x005EEB48 \
+            deep-followup/scanner-result/fax-perform-method.md
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x005EEB48 \
+            deep-followup/scanner-result/fax-perform-method-callers.md
+          python tools/trace_td32_procedure_skipdata.py analysis-input/EmwatMethods.bpl1 0x004F32F4 \
+            deep-followup/scanner-result/request-state-helper.md
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004F32F4 \
+            deep-followup/scanner-result/request-state-helper-callers.md
       - name: Trace fax temporary-path helper and result serial dispatch
         run: |
           python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x00454B9C \
@@ -414,6 +477,15 @@ jobs:
           PY
           python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x004B8C80 0x004B8CE0 \
             deep-followup/word-printer/on-timer-pointer-context.md
+      - name: Resolve registered Word event target methods
+        run: |
+          for target in 0x004D00AC 0x004CE030 0x004CD154 0x004CD54C 0x004CD9C0; do
+            safe=${target#0x}
+            python tools/trace_td32_procedure_skipdata.py analysis-input/EmwatMethods.bpl1 "$target" \
+              "deep-followup/word-printer/event-target-$safe.md"
+            python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 "$target" \
+              "deep-followup/word-printer/event-target-callers-$safe.md"
+          done
       - uses: actions/upload-artifact@v4
         if: always()
         with:
