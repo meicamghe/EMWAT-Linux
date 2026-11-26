@@ -9,6 +9,7 @@ This document records static evidence for the EMWAT GAM/Zan virtual-printer setu
 
 | VA | Resolved target | Use evidenced by callers |
 |---|---|---|
+| `0x004044CC` | `winspool.drv!EnumPrintersA` | Enumerate Level-2 printer records to locate the GAM driver instance |
 | `0x00402674` | `advapi32!RegOpenKeyExW` | Open the GAM printer uninstall registry key |
 | `0x0040267C` | `advapi32!RegQueryValueExW` | Read its `UninstallString` value |
 | `0x0040266C` | `advapi32!RegCloseKey` | Close the opened registry key |
@@ -28,9 +29,17 @@ This document records static evidence for the EMWAT GAM/Zan virtual-printer setu
 | `0x00401368` | RTL `UStrCat` | Concatenate two Unicode strings |
 | `0x00401370` | RTL `UStrCat3` | Concatenate three Unicode strings |
 
+### 1.1 Exact printer-instance match
+
+`Zanprinter.GetPrinterName` (`0x0047CAF0`) calls `EnumPrintersA` (`0x004044CC`) twice: first to obtain the required buffer size, then to retrieve Level-2 printer records. The call uses enumeration flags `8` and information level `2`.
+
+The returned records are traversed with stride `0x54`, consistent with the x86 `PRINTER_INFO_2A` record layout. The routine compares the record's driver-name pointer at offset `+0x10` against the exact literal `zvprt1`; on a match it copies the printer-name pointer at offset `+0x04` into global active-printer-name storage (`0x0062B310`). This is stronger than matching a friendly printer display name: the driver identity is the filter.
+
+`Zanprinter.InstallZanPrinter` (`0x0047CC6C`) calls this lookup and returns a status based on whether the matching driver instance is found. Keep this discovery check separate from the later installer launch and TIFF configuration routines.
+
 ## 2. Installer discovery and launch
 
-- The driver name literal is `zvprt1`; the setup executable literal is `GAMPrinterSetup.exe`.
+- The driver name literal is `zvprt1`; `GetPrinterName` enumerates `PRINTER_INFO_2A` records and selects the record whose driver-name field equals that literal. The setup executable literal is `GAMPrinterSetup.exe`.
 - `Zanprinter.GetZanInstallDir` (`0x0047CC94`) calls the printer-install check (`0x0047CAF0`). When installation is needed, it constructs a path to `GAMPrinterSetup.exe` and calls `ShellExecuteW`; the verb literals are `Open` and `RunAs`.
 - The routine calls `GetVersionExW` and chooses the launch verb through an OS-version branch. It then waits in a loop of at most 300 iterations, with `Sleep(100)` and VCL printer refresh calls, before continuing. The loop is bounded at roughly 30 seconds of requested sleep time, excluding call overhead.
 - The helper inspects the installed-printer state; its exact return/result contract is not a Linux API and should not be emulated as a successful install merely because the process launched.
@@ -88,7 +97,7 @@ The method also reads `save.ini` section `save`, key `basefilename`, through `Ge
 ## 7. Remaining questions
 
 1. Decode the full return contract of `GetZanInstallDir` and `CheckPrinterPaused`, including all branches beyond the TD32 bounded output.
-2. Trace `GetPrinterName`/Winspool enumeration and determine whether the `zvprt1` name is the only accepted printer instance.
+2. Trace how `InstallZanPrinter`/`GetPrinterName` handles multiple matching `zvprt1` instances, queue state and default-printer selection.
 3. Establish how `ZVPsrc\\save.ini` and the selected `zvprt50` folder are related on clean installs versus upgrades.
 4. Compare the configured TIFF output with a real file emitted by GAM Printer, including compression, strip organization, multipage handling and sentinel lifecycle.
 5. Keep Wine/Windows driver installation experiments separate from native Linux printing implementation; do not claim parity until a real output fixture is compared.
