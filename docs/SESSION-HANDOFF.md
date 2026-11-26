@@ -10,7 +10,7 @@
 
 - Workflow commit `3f53f522208c45f94261bf6f5321808dcc4a7496` queued run 37 (`45771016531`).
 - Extended `resolve_delphi_vmt_slots.py` to include `TXMLResponseScanType`, `TXMLScanedImageType`, `TXMLConfigType`, and `TXMLOutputType`. The goal is to identify the response object's concrete VMT and map interface slots `+0x54` and `+0xB8` without guessing.
-- Run 37 is queued; no new VMT result claimed yet.
+- Run 37 completed successfully; its VMT candidates were unverified and did not resolve interface slots `+0x54`/`+0xB8`. See the newer run-37 audit entry at the top of this handoff.
 
 ## 2026-11-26 — run 36 ScanResponseXML object and scanner property names recovered
 
@@ -28,7 +28,7 @@
 ## 2026-11-26 — run 36 supersedes cancelled run 35
 
 - Run 35 (`45769864678`) was cancelled by the newer workflow commit `713cb7a1878a90aadf8c2137433b606d23575cb5`, which queued run 36 (`45769890366`). This is a superseded run, not a test failure.
-- Run 36 contains the new `FResponseXML` factory/callback and ImageEn wrapper traces described below. It is pending; wait for its jobs before recording results.
+- Run 36 completed successfully and produced the `FResponseXML` factory/callback and ImageEn wrapper artifacts described below.
 
 ## 2026-11-26 — run 35 superseded by run 36 response XML and ImageEn tracing
 
