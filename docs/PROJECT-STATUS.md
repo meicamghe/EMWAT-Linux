@@ -3275,3 +3275,13 @@ The next meaningful Almas acceptance input is a sanitized, synthetic-or-test-acc
 - Image/Scanner artifact `15099188562` confirms that `TScanCommand.Create` and `GetNextPage` are directly used by `TFaxDocument.PerformMethod`, while the public `TScanDocument.PerformMethod` is a separate dictionary-driven path using `wordConfig`, `wordBody`, `letterImages`, and `signData`. Do not merge these contracts by name alone.
 - The next analysis expansion was committed as `e372fc188936ffcbeb54986630fe4981483a9577` to trace the full `TFaxDocument.PerformMethod` body and callers. Workflow run `45783897821` is active on that code commit; its results are pending. Later documentation-only commits update this status and the session handoff but are not part of that run's tested tree.
 - Detailed evidence: `docs/GAM-PRINTER-CONFIGURATION-RECOVERY.md` and `docs/IMAGE-SCANNER-EDITOR-CALLGRAPH-INVENTORY.md`. No live Almas E2E, physical scanner/ADF/duplex, Wine printer output, or Windows `.easz` interoperability is claimed.
+
+
+## Run 43 — scanner connector and paging trace completed (2026-11-26)
+
+- Workflow run `45783897821` completed successfully on analysis commit `e372fc188936ffcbeb54986630fe4981483a9577`: Word/Printer, Image/Scanner and Native regression all passed. Artifacts: Word `15099392610`, Image `15099174916`.
+- The Image/Scanner trace now proves that `TFaxDocument.PerformMethod` directly constructs `TScanCommand`, calls `GetNextPage`, and retrieves the `Scanedimage` child from the command's response XML. Its two input dictionary keys remain undecoded.
+- The public `TScanDocument.PerformMethod` remains a distinct path consuming `wordConfig`, `wordBody`, `letterImages`, and `signData`, then calling helper `0x004B7724`. No indirect relationship or live Almas invocation sequence is claimed.
+- Response XML separates `Status`, `ErrorCode`, and `Scanedimage`; the nested image separates `ImageName` and `Encoding`. The ScanCommand paging path uses a previous-returned-filename and next-page flag. Exact command-state meanings, physical output cardinality, final extension, and two FaxDocument input keys remain open.
+- ImageEn wrappers are confirmed as a distinct imaging path from ImageGear, but complete ABI and ownership semantics are still incomplete. No physical scanner, ADF/duplex, or live Almas validation was performed.
+- Detailed evidence and limitations: `docs/IMAGE-SCANNER-EDITOR-CALLGRAPH-INVENTORY.md`, section 12.9. The CI result validates analysis scripts and native regressions only; it is not hardware or end-to-end acceptance.
