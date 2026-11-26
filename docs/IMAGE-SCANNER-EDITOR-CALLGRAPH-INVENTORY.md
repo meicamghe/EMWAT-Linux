@@ -1,3 +1,10 @@
+## Run 49 follow-up — result-image ownership and serial path
+
+- Base `TResultImage` exposes location at `+0x04`, response filename at `+0x08`, and scan path at `+0x10`.
+- `TSetOfSinglePageImages` and `TSetOfMultiPageImages` are distinct result implementations. Keep this distinction when mapping to native output variants.
+- `ShiftSerial(1)` asks the virtual `GetScanFilePath` for the next serial candidate and checks existence. `HasError` maps success to command state 2 and failure to 4. Related code has a three-digit serial bound of 999 and uses `_P` / `%.3d` naming components; complete filename assembly still requires runtime validation.
+- See `docs/REVERSE-ENGINEERING-RUN49.md` for exact procedure evidence.
+
 ## Run 49 follow-up — request constraints and next-page detection
 
 A follow-up pass over `VerifyConstraints` and `HasError` resolves:
