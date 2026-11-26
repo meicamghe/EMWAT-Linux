@@ -1,3 +1,11 @@
+## 2026-11-26 — ImageGear scanner import identity correction and next trace lane
+
+- Inspected the complete artifacts from parallel workflow run `45563007730`; all three jobs passed (`image-ui-and-vmt`, `word-print-com`, `native-regression`). The image artifact's import table resolves `0x004AFF30` to `IG_scan_pages`, `0x004AFF28` to `IG_scan_source_select`, `0x004AFED8` to `IG_error_check`, `0x004AFEE8` to `IG_error_get`, and `0x004AFEE0` to `IG_error_clear`.
+- Corrected a material documentation error: `TfrmGScanPreview.GetImagePageNumber` at `0x0061D100` is a misleading TD32 symbol name; its body aggregates ImageGear errors using `IG_error_check/get/clear` and publishes a Variant-like status record. It is not the page-metadata enumerator. The actual page-count UI path is `GetImgSize` at `0x0061D250`, which calls `IG_page_count_get` at `0x004AFEA8`.
+- Both `TfrmGScanPreview.SelectScanner` (`0x0061DEF4`) and `TGearImgProc.SelectScanner` (`0x004EF9CC`) call the `IG_scan_pages` thunk. The observed argument values and wrapper names do not establish the vendor API prototype or mode semantics. `IG_scan_source_select` is imported, but its callers remain unverified.
+- Updated `docs/WORD-ACTIVE-PRINTER-AND-SCANNER-STATE-RECOVERY.md` with these exact import identities and the corrected error-aggregation interpretation. Extended `.github/workflows/emwat-parallel-reverse-engineering.yml` to scan IAT callsites and trace scanner import wrappers in a dedicated artifact directory.
+- The new workflow-triggering commit must be checked for all three job results and the scanner API callsite artifact before accepting any further ABI conclusions. No scanner handler or ImageGear prototype has been implemented; those remain blocked on the recovered contract. No physical scanner, printer, Wine prefix, or user system was touched.
+
 ## 2026-11-25 — crop coordinate conversion helper resolved
 
 - The image lane in run `45561529517` completed successfully, as did its Word and native-regression jobs. Its artifact was inspected.
