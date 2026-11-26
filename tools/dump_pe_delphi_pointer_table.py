@@ -61,7 +61,7 @@ def main() -> None:
             return None
         raw = blob[data_offset:data_offset + length * 2]
         try:
-            return raw.decode("utf-16le").replace("\\x00", "\\\\0")
+            return raw.decode("utf-16le").replace("\x00", "\\0")
         except UnicodeDecodeError:
             return None
 
@@ -112,7 +112,7 @@ def main() -> None:
                 lines.append("")
 
     output.parent.mkdir(parents=True, exist_ok=True)
-    output.write_text("\\n".join(lines) + "\\n", encoding="utf-8")
+    output.write_text("\n".join(lines) + "\n", encoding="utf-8")
     print(f"Wrote {output}")
 
 
