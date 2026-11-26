@@ -1,3 +1,10 @@
+## 2026-11-26 — run 39 XML tag strings and Word Variant helper targets
+
+- Run 38 (`45773058079`) completed successfully across all three jobs. Its Image artifact (`15094674346`) traced all available TD32 getters/setters for `TXMLResponseScanType`, `TXMLScanedImageType`, `TXMLConfigType`, and `TXMLOutputType`; details and exact procedure VAs are in `docs/IMAGE-SCANNER-EDITOR-CALLGRAPH-INVENTORY.md`.
+- `TXMLResponseScanType` exposes `Status`, `ErrorCode`, and `Scanedimage`; each image entry exposes `ImageName` and `Encoding`. Request-side `TXMLConfigType` exposes `Type`, `DriverDialog`, `ImageEditor`, `MultiJpegSupport`, `PreviousImageName`; `TXMLOutputType` exposes `ForceSinglePageFiles` and `Constraints`. The XML property model is now known, but serialized tag strings and `TXMLConstraintsType` details are not yet recovered.
+- Reclassified `0x0042ABA0`: its 451 callers are Word document property getters; it lazily obtains an interface via object field `+0x78`/VMT slot `+0x50`, then calls `0x00401428` to assign the interface reference. This is not a print worker callback. The 18-vs-17 `PrintOut` discrepancy remains open.
+- Run 39 (`45774122169`, workflow commit `7305d59`) is queued. It adds decoding of all scanner XML property-name/tag string constants, a TD32 trace of `TXMLConstraintsType`, and a trace of helper `0x00401428` to the Word print lane.
+
 ## 2026-11-26 — run 38 XML getter/setter methods and Word helper trace completed
 
 - Run 38 (`45773058079`) completed successfully in all three jobs: Native, Word/print and Image/UI. Native regression passed.
