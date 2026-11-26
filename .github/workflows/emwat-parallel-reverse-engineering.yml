@@ -131,6 +131,36 @@ jobs:
                   print(f"traced {address} {symbol}")
           print(f"connector targets traced: {len(rows)}")
           PY
+      - name: Decode remaining connector handler keys and response strings
+        run: |
+          mkdir -p parallel-re/word-print/connector-handlers
+          python tools/decode_pe_strings.py analysis-input/EmwatMethods.bpl1 \
+            0x005EED54 0x005EED6C 0x005EEDB4 0x005EEDCC \
+            0x005EEE81 0x005EEE88 0x005EEEFF 0x005EF0EC 0x005EF10C \
+            0x005EF1A4 0x005EF1DC \
+            0x005EF6E8 0x005EF6FC 0x005EF750 0x005EF768 0x005EF804 0x005EF818 \
+            0x005EFAF0 0x005EFB20 0x005EFB48 0x005EFB60 0x005EFBA8 \
+            0x005EFD3C 0x005EFE44 0x005EFF44 \
+            > parallel-re/word-print/connector-handlers/handler-string-constants.md
+      - name: Trace shared connector dispatch and service helpers
+        shell: bash
+        run: |
+          mkdir -p parallel-re/word-print/connector-handlers/shared-helpers
+          targets=(00502F70 0050291C 005E72B8 005E9B4C 005E9BC0 00404D5C 0044CE44 0046D2E4 0046DE84 0046E324 0046E3CC 004738CC)
+          pids=()
+          for target in "${targets[@]}"; do
+            (
+              set -e
+              python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x$target \
+                parallel-re/word-print/connector-handlers/shared-helpers/procedure-$target.md
+              python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x$target \
+                parallel-re/word-print/connector-handlers/shared-helpers/callers-$target.md
+            ) &
+            pids+=("$!")
+          done
+          status=0
+          for pid in "${pids[@]}"; do wait "$pid" || status=1; done
+          exit "$status"
       - name: Decode printer selection and installation string constants
         run: |
           python tools/decode_pe_strings.py analysis-input/EmwatMethods.bpl1 \
@@ -313,6 +343,10 @@ jobs:
             0x005EEA0C 0x005EEB0C 0x005EF2F8 \
             0x004F2490 0x004F24C8 0x004F29A0 0x004F29E0 0x004F29F4 \
             0x004F2BF8 0x004F2C0C 0x004F31F8 0x004F3210 0x004F3224 0x004F3238 \
+            0x004ED144 0x004ED290 0x004ED338 0x004ED584 \
+            0x00503DE4 0x00503E28 0x00503E58 0x00503E90 0x00503ED0 0x00503EE8 \
+            0x00503F2C 0x00503FA8 0x00503FC8 0x00503FD8 0x00503FE8 \
+            0x00504170 0x005041D4 0x00504278 0x00504288 \
             > parallel-re/image-io/connector-contract/dictionary-and-xml-keys.md
           targets=(0046DC8C 004735D0)
           pids=()
