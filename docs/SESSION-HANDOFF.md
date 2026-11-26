@@ -1931,6 +1931,15 @@ Next probes: recover the four filename-table strings and state-byte meanings; re
 - Scanner result ownership lane passed: artifact 15102809326. Base TResultImage stores response filename at +0x08 and scan path at +0x10; GetScanFilePath parses/increments a trailing three-digit serial and bounds it to 0..999. ShiftSerial checks candidate existence. TSetOfMultiPageImages has its own GetScanFilePath/GetResponseFileName overrides and collision handling. Complete filename composition and Almas page numbering remain unverified.
 - Native regression lane passed in run 45794156659: CMake native build/CTest and Python bridge tests succeeded.
 - Native boundary audit: scan_pages returns vector<ImagePage>; ScanResult is currently referenced only by its header and isolated test. No production composition yet persists scan_pages output into SinglePageFileSet/MultiPageFile or serializes response metadata. This is an integration gap, not a test failure; do not invent cardinality rules.
-- Word/Printer thread lane was still running at this handoff update. Do not report it complete until its artifact is uploaded and inspected.
+- Word/Printer thread lane completed successfully; artifact 15104841284 was downloaded and inspected. Findings are appended in section 6 of docs/REVERSE-ENGINEERING-DEEP-FOLLOWUP-2026-11-26.md.
 - Workflow note: the scanner state-table pointer scan omitted its output-path argument, so its detailed report went to the default bpl-analysis path and was not included in the artifact. The procedure/caller traces are present; fix the workflow path before relying on that pointer report.
 - Detailed report: docs/REVERSE-ENGINEERING-DEEP-FOLLOWUP-2026-11-26.md. Run 50 does not establish physical scanner, ADF/duplex, real printer queue, Wine, or live Almas acceptance.
+
+
+### Run 50 completion update
+
+- Run 45794156659 completed successfully in all four lanes. Artifacts: scanner 15102809326, ImageEn 15104267112, Word/Printer 15104841284.
+- Word/GAM trace: TWordViewer.LoadDocument -> TCreateTiff.SeparteImages -> THidePrintingThread.Execute. Printer selection uses EnumPrintersA level-2 records; the driver name is compared at PRINTER_INFO_2A +0x10 and the selected printer name comes from +0x04. Pause-state gate checks +0x48 == PRINTER_STATUS_PAUSED.
+- Hidden thread is 3,096 bytes; only 1,885 bytes are decoded. It contains indirect dispatches, page loops, file-stream operations and file polling, but spool submission/completion is still unproven. TWordApplication ActivePrinter wrappers have no direct CALL xrefs.
+- Native regression passed, but ScanResult remains unconnected to production scan_pages output. Do not implement speculative page/file cardinality mapping.
+- Detailed report: docs/REVERSE-ENGINEERING-DEEP-FOLLOWUP-2026-11-26.md. No physical printer/scanner, Wine or live Almas acceptance is claimed.
