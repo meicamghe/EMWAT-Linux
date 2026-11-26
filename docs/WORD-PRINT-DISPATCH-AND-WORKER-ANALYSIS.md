@@ -117,3 +117,21 @@ The next artifact pass resolved the helper thunks through the `rtl230.bpl` IAT. 
 - The semantic Word PrintOut parameter names/order are still not proven. In particular, do not map the three populated values to generic Word object-model parameter names based only on current values.
 - The eighteen-record callsite still cannot be equated with the independently identified 17-parameter `TWordDocument.PrintOut` wrapper at `0x004361B0`. The exact interface slot target/signature, register-vs-stack convention, and any overload/proxy layer remain unresolved. The wrapper/callsite mismatch warning remains active.
 - Artifact source: run `45561529517`, artifact `emwat-parallel-word-print` (RTL helper disassembly plus procedure/caller traces).
+
+
+## 10. Reclassification of helper `0x0042ABA0` (run 38, 2026-11-26)
+
+The run-38 direct-caller scan found 451 callers of `0x0042ABA0`, predominantly `TWordDocument.Get_*` property accessors. Examples include `Get_Application`, `Get_Creator`, `Get_Parent`, `Get_Path`, `Get_Bookmarks`, `Get_Tables`, and many other document properties.
+
+Its 32-byte body:
+
+- receives the `TWordDocument` object in `EAX`, output interface pointer in `EDX`;
+- checks object field `+0x78`;
+- if the field is null, calls the document object's VMT slot `+0x50`;
+- passes the resulting interface reference to helper `0x00401428` with the caller's output pointer.
+
+This is consistent with a shared lazy interface-property getter/reference-assignment helper, **not** a print worker callback dispatcher. The TD32 label `TWordDocument.$bctr` is therefore misleading for the observed use and should not be used to infer constructor or worker semantics. The exact helper contract at `0x00401428` still needs tracing.
+
+**Print ABI impact:** this result does not resolve the 18-Variant caller versus 17-Variant `TWordDocument.PrintOut` wrapper discrepancy. The argument-count/dispatch warning in sections 6–9 remains active. Next targeted step is to trace `0x00401428` and re-audit the COM interface construction/argument transfer at `0x004C70B6`; do not collapse the 18 local Variant records into a 17-argument call without proof.
+
+Evidence: run `45773058079`, Word artifact `15095336625`, files `procedure-0042ABA0.md` and `callers-0042ABA0.md`.
