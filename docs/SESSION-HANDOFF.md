@@ -1822,8 +1822,10 @@ This is a contract/documentation correction, not a behavior change. Existing coo
 ## 2026-11-26 — Run 43 scanner trace completed
 
 - Run `45783897821` completed with all three jobs successful: `word-print-com`, `image-ui-and-vmt`, and `native-regression`. The Image/Scanner artifact `15099174916` was downloaded and reviewed.
-- `TFaxDocument.PerformMethod` (`0x005EEB48`) directly constructs `TScanCommand` (`0x004F21DC`), calls `GetNextPage` (`0x004F2558`), and retrieves the `Scanedimage` property from its `ResponseXML` object. The two dictionary keys used by this handler remain undecoded.
+- `TFaxDocument.PerformMethod` (`0x005EEB48`) directly constructs `TScanCommand` (`0x004F21DC`), calls `GetNextPage` (`0x004F2558`), and retrieves the `Scanedimage` property from its `ResponseXML` object. The handler's two dictionary keys are decoded by the parallel Word/Printer artifact as `.tmp` and `document`; their value types and full semantics remain to be confirmed.
 - The separate `TScanDocument.PerformMethod` (`0x005EE82C`) reads `wordConfig`, `wordBody`, `letterImages`, and `signData`, then calls `0x004B7724`. Do not merge these handlers or assume an indirect relationship without further evidence.
 - Response XML is structurally split into `Status`, `ErrorCode`, and `Scanedimage`; the nested image has `ImageName` and `Encoding`. The `TScanCommand` path is stateful: it uses `FIsNextPageRequest` and `FPreviousReturnedFileName` while resolving the next image result.
 - Updated scanner call-graph inventory with the new evidence and explicit unknowns. The native regression job passed, but that does not validate a physical scanner, ADF/duplex, or Almas wire compatibility.
 - Next: compare this recovered handler contract against the native scan-result/connector boundary; implement only the parts whose semantics are now grounded. Capture real single-page and multipage outputs before finalizing response-name and file-cardinality rules. PR #2 remains Draft and unmerged; do not merge or rebase.
+
+- Cross-lane follow-up: Run 43 Word/Printer string inventory resolves the `TFaxDocument` keys as `.tmp` and `document`. The `.tmp` value is passed to `GetNextPage`; do not equate it with the returned image path. The `document` value's semantic type is still unknown.
