@@ -349,7 +349,7 @@ This is a positional XML traversal/value comparison map, not a recovered tag-nam
 - `TImageEdition.PerformMethod` is a separate image-edition connector, but its exact operation/response contract is not yet recovered.
 - `TScanCommand` is an internal stateful XML/result object. Its connection to any public connector method remains unproven; do not infer a `ScanDocument` endpoint from the TD32 label.
 - Preserve the generic native `ScanResult` distinction between a page-file set and a multipage file, but do not map unnamed result-image helpers to concrete methods.
-- Do not register a Linux `ScanDocument` handler yet. The `TImageEdition` key is now confirmed as `PlugIn`, but its operation and response schema remain unknown. Map the `TScanCommand` XML constraint strings to their fields, trace helper `0x0050357C` and the remaining result-image methods, and recover response serialization before implementing a wire-compatible image/scanner method.
+- Do not register a Linux `ScanDocument` handler yet. The `TImageEdition` key is now confirmed as `PlugIn`, but its operation and response schema remain unknown. Map the `TScanCommand` XML constraint strings to their fields, trace helper `0x0050357C` and the remaining result-image methods, and recover response serialization before implementing a wire-compatible image/scanner method. The third XML value is copied into command path field `+0x2C` and later participates in result-file handling; any future Linux implementation must canonicalize it beneath an approved output root and reject absolute-path/traversal escapes.
 
 Evidence: run `45764043847`, artifact `15090469945`, `image-ui/procedure-005EE82C.md`, `procedure-005EF24C.md`, and `procedure-004F22AC.md` through `procedure-004F2C4C.md`.
 
