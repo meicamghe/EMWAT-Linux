@@ -179,6 +179,13 @@ jobs:
           status=0
           for pid in "${pids[@]}"; do wait "$pid" || status=1; done
           exit "$status"
+      - name: Decode scanner and ImageGear output-path constants
+        run: |
+          python tools/decode_pe_strings.py analysis-input/EmwatMethods.bpl1 \
+            0x0061DEE8 0x0061DB8E 0x0061DBA8 0x0061DBC0 0x0061DBF0 \
+            0x0061DC20 0x0061DC38 0x0061DC7C 0x004EF708 \
+            0x004EF844 0x004EF878 0x004EF9B0 \
+            > parallel-re/image-io/scanner-api/output-path-constants.md
       - name: Inventory preserved image form resources without changing them
         run: |
           python - <<'PY'
