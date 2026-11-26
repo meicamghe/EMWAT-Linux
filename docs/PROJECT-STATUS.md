@@ -1,3 +1,9 @@
+## 2026-11-26 — SANE ADF capability boundary documented
+
+- Source/test audit confirms simplex ADF batches are implemented behind explicit source-label detection, capped at 100 pages and 4 GiB. Ambiguous feeder labels are rejected.
+- Duplex ADF remains explicitly unsupported and returns `duplex_adf_batch_not_supported`; no fake one-sided success is reported as duplex.
+- Real scanner/ADF/duplex hardware acceptance remains open. See `docs/SANE-SCANNER-ADF-CAPABILITY-STATUS.md`.
+
 ## 2026-11-26 — parallel follow-up: scanner and ImageEn paths separated
 
 - The GEAR32PD scanner path and ImageEn image-tools acquisition path are distinct in the current binary evidence. GEAR32PD exposes `IG_scan_pages`, `IG_scan_source_select`, `IG_load_FD`, `IG_save_FD`, `IG_save_file`, page-count and image-validity APIs. ImageEn `Acquire` is called from `TfrmImageTools.InsertPicture`.
