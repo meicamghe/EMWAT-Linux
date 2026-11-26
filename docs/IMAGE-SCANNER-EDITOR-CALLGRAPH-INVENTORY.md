@@ -338,6 +338,7 @@ This confirms two distinct Windows result-collection classes (`TSetOfSinglePageI
 - Reads dictionary key `PlugIn`.
 - Delegates to `@Applicationactivities.Finalization` at `0x0050357C` in module `imageEditionResposeXML`.
 - The finalization routine distinguishes null input (status byte `2`) from missing file (status byte `1`), builds a path from the selected value and a static suffix, checks it with `FileExists`, and on the existing-file path opens a stream through `0x004041BC`.
+- The routine also embeds an `[Invoke EditWordDocument]` log literal, but the runtime VMT target and the `UpgradeEmwat method called`/updater-file strings identify this as an old copied log message, not a Word handler.
 - The path/payload format is still unknown. Treat `PlugIn` as untrusted and constrain it to an approved plugin/data root; reject absolute-path and traversal escapes.
 
 Do not conflate the `PlugIn`/Finalization upgrade method with the runtime ImageEdition `data/config` method.
