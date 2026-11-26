@@ -268,10 +268,11 @@ The four request keys `wordConfig`, `wordBody`, `letterImages`, and `signData` a
 ### 12.2 Image-edition connector — `TImageEdition.PerformMethod`, `0x005EF24C`
 
 - Performs one dictionary lookup through `0x0046DC8C` using string constant `0x005EF2F8`, decoded as `PlugIn`.
-- Converts the selected value through `0x004735D0`, then calls helper `0x0050357C` with that value and the result dictionary.
+- Converts the selected value through `0x004735D0`, then calls `@Applicationactivities.Finalization` at `0x0050357C` (module `imageEditionResposeXML`, procedure size `0xD48`) with that value and the result dictionary.
+- The finalization routine distinguishes a null input (status byte `2`) from a missing input file (status byte `1`), builds a path from the selected value and a static suffix, checks it with `FileExists`, and on the existing-file path opens a stream through `0x004041BC`. It then reads/decodes image-related data and populates shared response state through global interfaces. The exact payload format and response keys are not yet known.
 - Uses a separate two-argument cleanup path and global interface notification.
 
-The key, operation, result schema and image-editor object contract are still unknown. This remains a distinct image-edition connector target.
+The key is confirmed as `PlugIn`; the plugin path/payload format, operation selection, result schema and image-editor object contract remain unknown. The string constants used by `Finalization` are queued for decoding in the next pass. This remains a distinct image-edition connector target.
 
 ### 12.3 Internal `TScanCommand` request/page lifecycle
 
