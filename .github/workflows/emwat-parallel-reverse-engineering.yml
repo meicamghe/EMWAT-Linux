@@ -761,6 +761,18 @@ jobs:
           status=0
           for pid in "${pids[@]}"; do wait "$pid" || status=1; done
           exit "$status"
+      - name: Decode ScanCommand paging and connector temporary-string constants
+        run: |
+          mkdir -p parallel-re/paging-contract
+          python tools/decode_pe_strings.py analysis-input/EmwatMethods.bpl1 \
+            0x004F29A0 0x004F29E0 0x004F29F4 0x004F2A28 0x004F2A78 0x004F2A8C \
+            0x004F2BF8 0x004F2C0C 0x005EED54 0x005EED6C 0x005EEDB4 \
+            0x005EEDCC 0x005EF0D0 0x005EF0EC 0x005EF0FC 0x005EF10C \
+            > parallel-re/paging-contract/paging-and-document-constants.md
+          python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 0x004F29A0 \
+            > parallel-re/paging-contract/refs-004F29A0.md
+          python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 0x005EF0D0 \
+            > parallel-re/paging-contract/refs-005EF0D0.md
       - name: Inventory preserved image form resources without changing them
         run: |
           python - <<'PY'
