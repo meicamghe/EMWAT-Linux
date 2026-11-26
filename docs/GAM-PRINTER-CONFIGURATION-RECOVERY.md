@@ -1,3 +1,9 @@
+## 2026-11-26 — Word/GAM print-thread handoff
+
+Run 49's Word/Printer/COM artifact confirms that `TCreateTiff.SeparteImages` (`0x004A0148–0x004A0A67`) performs document/page preparation, calls printer discovery/configuration and pause-state checks, then enters `TCreateTiff.THidePrintingThread.Execute` (`0x004A0E88`). The pause-state check remains the `GetPrinterA` status-field check at `PRINTER_INFO_2A + 0x48` against `PRINTER_STATUS_PAUSED`.
+
+The next unresolved stage is the hidden thread's indirect Word/Printer interface dispatch and its final spool-submission/completion signal. Presence of Winspool/VCL imports and this thread entrypoint is not proof of a successful real print job. See `docs/REVERSE-ENGINEERING-PARALLEL-FOLLOWUP-2026-11-26.md`.
+
 # GAM / Zan printer configuration recovery
 
 Date: 2026-11-26  
