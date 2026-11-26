@@ -1,3 +1,20 @@
+## 2026-11-26 — ImageGear transform and dimensions callsites recovered
+
+- Run 25 (`45763380148`) image job completed successfully; artifact `15090612978` was inspected. The run's Word helper pass was still active at last poll; native regression passed.
+- Exact imports:
+  - `0x004AFEC8` → `IG_IP_rotate_multiple_90`
+  - `0x004AFED0` → `IG_IP_flip`
+  - `0x004AFF00` → `IG_image_dimensions_get`
+  - `0x004AFEF0` → `IG_device_rect_set`
+- Direct caller inventory:
+  - `IG_IP_rotate_multiple_90`: `TGearImgProc.RotateLeft` (`0x004EF187`), preview handlers `0x0061E5FC` and `0x0061E62C).
+  - `IG_IP_flip`: `TGearImgProc.FlipHorizontal` (`0x004F021F)), preview methods `0x0061E5CC` and `0x0061E65C).
+  - `IG_image_dimensions_get`: `TGearImgProc.ReloadPage` (`0x004EF107`), `TfrmGScanPreview.GearErrorHandling` (`0x0061D09C)), and `LoadImageToGearHandle` (`0x0061D39B`).
+  - `IG_device_rect_set`: direct calls at `0x004EEF0F` and `0x0061D853`.
+- The names are misleading relative to the imported operations: `btnLRotateClick` calls `IG_IP_flip`; `btnVFlipClick` calls `IG_IP_rotate_multiple_90`. Do not infer user-visible behavior from event-handler names. `LoadImageToGearHandle` passes image handle `this+0x428` and output addresses `+0x42C/+0x430/+0x434` to `IG_image_dimensions_get`; individual output meanings/units remain unknown.
+- Updated `docs/IMAGE-SCANNER-EDITOR-CALLGRAPH-INVENTORY.md` and `docs/NATIVE-IMAGE-PARITY-GAP-2026-11-25.md`. Native transform code was not changed; current quarter-turn and flip algorithms exist, but exact vendor argument semantics and metadata parity remain open.
+- Run 26 (`45763574936`) adds ImageEn acquisition/TIFF callsite inventory and is still in progress; its results are not yet inspected.
+
 ## 2026-11-26 — GAM printer Win32/INI helper APIs resolved
 
 - Run 24 (`45763269503`, workflow commit `07fa8be`) completed successfully in all three jobs. Its Word artifact `15091306103` was downloaded and inspected; image artifact `15091500582` is available. Native regression also passed in this run.
