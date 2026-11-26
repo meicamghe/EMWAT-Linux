@@ -1,3 +1,11 @@
+## 2026-11-26 — preview scanner UI output and ImageGear API boundaries traced
+
+- Run 32 Image/UI job (`45767912737`, artifact `15092827056`) completed successfully; the parallel Word/print job and native regression also passed.
+- `TfrmGScanPreview.Scan` (`0x0061DC80`) builds a path ending in `_New.tif`, iterates one-based page indices, reuses the current page handle or loads another with `IG_load_FD`, opens the same output path with `CreateFileW(OPEN_ALWAYS)` per page, calls `IG_save_FD` with the page index, and closes each handle. Format argument is `0x40028` or `0x80028` depending on form field `+0x434`.
+- This is strong evidence for a single page-indexed multipage `_New.tif` container in the preview UI path only. Do not assume the public `ScanDocument` connector's `TSetOfMultiPageImages` uses the same ownership semantics.
+- Resolved GEAR imports: `IG_scan_source_select`, `IG_scan_pages`, `IG_error_check`, `IG_error_clear`, and `IG_error_get`. Argument/callback/error contracts remain open.
+- Added details to `docs/IMAGE-SCANNER-EDITOR-CALLGRAPH-INVENTORY.md` and `docs/NATIVE-IMAGE-PARITY-GAP-2026-11-25.md`. No native scanner code was changed.
+
 ## 2026-11-26 — run 33 scanner/result and ImageEn caller tracing
 
 - Workflow commit `543ebb072b34c24b149df09a45b684a9ab8dd11d` starts run 33.
