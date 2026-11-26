@@ -64,7 +64,7 @@ Therefore this method is a post-acquisition save path; do not treat it as the de
 - `Can not save page: `
 - `Can not save page: File is in use.`
 
-The method branches on the form/controller format state and uses page-count checks before invoking save operations. It logs which save branch is used and includes a specific file-in-use failure message. The complete filename assembly, exact meaning of every mode constant, and whether the final output is always a single multipage TIFF still need runtime confirmation.
+The method branches on the form/controller format state and uses an indirect collection-count query before invoking save operations. It logs which save branch is used and includes a specific file-in-use failure message. The current trace does not justify identifying that virtual call as the GEAR32PD `IG_page_count_get` export. The complete filename assembly, exact meaning of every mode constant, and whether the final output is always a single multipage TIFF still need runtime confirmation.
 
 ## Track B — ImageEn acquisition and image-tools are a distinct path
 
