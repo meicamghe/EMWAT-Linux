@@ -3280,16 +3280,21 @@ The next meaningful Almas acceptance input is a sanitized, synthetic-or-test-acc
 ## Run 43 — scanner connector and paging trace completed (2026-11-26)
 
 - Workflow run `45783897821` completed successfully on analysis commit `e372fc188936ffcbeb54986630fe4981483a9577`: Word/Printer, Image/Scanner and Native regression all passed. Artifacts: Word `15099392610`, Image `15099174916`.
-- The Image/Scanner trace now proves that `TFaxDocument.PerformMethod` directly constructs `TScanCommand`, calls `GetNextPage`, and retrieves the `Scanedimage` child from the command's response XML. Its input dictionary keys are decoded as `.tmp` and `document` by the Run 43 Word/Printer artifact; their value types and exact semantics remain open.
+- The Image/Scanner trace now proves that `TFaxDocument.PerformMethod` directly constructs `TScanCommand`, calls `GetNextPage`, and retrieves the `Scanedimage` child from the command's response XML. The earlier claim that `.tmp` and `document` are both input keys is corrected: `.tmp` is a literal passed to helper `0x00454B9C` to form the string sent to `GetNextPage`; `document` is used as the key in a generic `TDictionary<String, Variant>.SetItem` write/update at `0x0046D2E4`. The Variant payload's type and purpose remain unresolved.
 - The public `TScanDocument.PerformMethod` remains a distinct path consuming `wordConfig`, `wordBody`, `letterImages`, and `signData`, then calling helper `0x004B7724`. No indirect relationship or live Almas invocation sequence is claimed.
 - Response XML separates `Status`, `ErrorCode`, and `Scanedimage`; the nested image separates `ImageName` and `Encoding`. The ScanCommand paging path uses a previous-returned-filename and next-page flag. Exact command-state meanings, physical output cardinality, final extension, and the value types/semantics of the `.tmp` and `document` inputs remain open.
 - ImageEn wrappers are confirmed as a distinct imaging path from ImageGear, but complete ABI and ownership semantics are still incomplete. No physical scanner, ADF/duplex, or live Almas validation was performed.
 - Detailed evidence and limitations: `docs/IMAGE-SCANNER-EDITOR-CALLGRAPH-INVENTORY.md`, section 12.9. The CI result validates analysis scripts and native regressions only; it is not hardware or end-to-end acceptance.
 
-- Cross-lane string evidence resolves the `TFaxDocument` input keys as `.tmp` and `document`; `.tmp` is passed to `GetNextPage`. The values' full types/meaning remain unverified.
+- Cross-lane evidence correction: `.tmp` is a literal, not a dictionary key; `document` is the key of a dictionary SetItem write/update, not a read. The Variant payload's semantic type remains unknown.
 
 
 ### Native scanner response metadata boundary — 2026-11-26
 - Added optional `ScanResponseMetadata` to the native `ScanResult`: raw `status`, `error_code`, and nested `scanned_image.image_name` / `encoding`. This mirrors the recovered XML structure without assigning status semantics or mapping encoding to file extensions.
 - Physical `ScanOutput`, `scan_path`, outer `response_filename`, and XML response metadata remain distinct. A focused native regression case covers the separation.
 - Commits: implementation/header `faba1970efe44a36cd1a398711ac0f9eee6f2d9f`; test `6f75b41edb0643029479cbc2f1cf1f644d69ac6e`. No CI status has been returned for the test commit yet; verification is pending.
+
+
+### Follow-up: corrected FaxDocument data flow
+- `.tmp` is a literal consumed by helper `0x00454B9C`; its resulting string is passed to `GetNextPage`. `document` is the key in a generic dictionary `SetItem` operation, not a fetched input key. The value's exact Variant type/purpose is unresolved.
+- Added `tools/trace_td32_procedure_skipdata.py` and extended the parallel workflow to continue GetNextPage disassembly across embedded data and inspect helper internals. CI is pending.
