@@ -161,7 +161,7 @@ jobs:
           mkdir -p deep-followup/word-printer
           python tools/list_td32_symbols.py analysis-input/EmwatMethods.bpl1 \
             THidePrintingThread TCreateTiff SeparteImages GetPrinterName \
-            SetPrinterForTiffout CheckPrinterPaused Get_ActivePrinter Set_ActivePrinter \
+            SetPrinterForTiffout CheckPrinterPaused Zanprinter@Finalization Get_ActivePrinter Set_ActivePrinter \
             > deep-followup/word-printer/symbol-index.md
           python - <<'PY'
           from pathlib import Path
