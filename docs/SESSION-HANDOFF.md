@@ -1,3 +1,9 @@
+## 2026-11-26 — TScanDocument required key and WordViewer handoff
+
+- `TScanDocument.PerformMethod` (`0x005EE82C–0x005EEB47`) explicitly requires `wordConfig`; if absent it raises the source message `Requset XML is not valid (wordConfig parameter is null)`.
+- It also retrieves `wordBody`, `letterImages`, and `signData`, then forwards all four values into `TWordViewer.LoadDocument` (`0x004B7724`). Their serialized types and optionality remain unproven.
+- Details: `docs/REVERSE-ENGINEERING-RUN49.md`.
+
 ## 2026-11-26 — VerifyConstraints follow-up: previous-image detection and numeric constraints
 
 - Follow-up review of Run 49 traces resolves next-page detection: `VerifyConstraints` reads `TXMLConfigType.PreviousImageName`, copies it into `FPreviousReturnedFileName +0x2C`, and sets `FIsNextPageRequest +0x29` when the string is non-empty.
