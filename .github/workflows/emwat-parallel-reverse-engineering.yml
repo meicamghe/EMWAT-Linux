@@ -288,7 +288,51 @@ jobs:
                   address, symbol = future.result()
                   print(f"traced {address} {symbol}")
           PY
+      - name: Trace Winspool status callers and WordViewer load path
+        shell: bash
+        run: |
+          mkdir -p parallel-re/word-print/printer-api/status-callers
+          python - <<'PY'
+          from concurrent.futures import ThreadPoolExecutor, as_completed
+          from pathlib import Path
+          import subprocess
+          import sys
+
+          binary = "analysis-input/EmwatMethods.bpl1"
+          out = Path("parallel-re/word-print/printer-api/status-callers")
+          targets = (
+              "0047D908", "0047D92A", "0047D948", "0047D95B",
+              "0045628E", "00456309", "0045632F",
+              "004A7AEF", "004C8B72", "004AF199",
+              "0050A6DC", "0050A7C3", "0050AA99",
+              "004A0BA8", "004A0E88",
+          )
+          def trace(target):
+              subprocess.run([
+                  sys.executable, "tools/trace_pe_target.py", binary,
+                  "0x" + target, str(out / f"site-{target}.md"), "160", "ret"
+              ], check=True)
+              return target
+          with ThreadPoolExecutor(max_workers=5) as pool:
+              for future in as_completed([pool.submit(trace, target) for target in targets]):
+                  print("traced local callsite", future.result())
+          for target, stem in (
+              ("0x004B7A9C", "wordviewer-load-document"),
+              ("0x0047D908", "open-printer-status"),
+              ("0x0045628E", "open-printer-jobs"),
+          ):
+              safe = target.replace("0x", "")
+              subprocess.run([
+                  sys.executable, "tools/trace_td32_procedure.py", binary,
+                  target, str(out / f"{stem}-procedure.md")
+              ], check=True)
+              subprocess.run([
+                  sys.executable, "tools/trace_td32_callers.py", binary,
+                  target, str(out / f"{stem}-callers.md")
+              ], check=True)
+          PY
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: emwat-parallel-word-print
           path: parallel-re/word-print/
@@ -619,6 +663,35 @@ jobs:
           status=0
           for pid in "${pids[@]}"; do wait "$pid" || status=1; done
           exit "$status"
+      - name: Trace ImageGear acquisition and connector document handler
+        shell: bash
+        run: |
+          mkdir -p parallel-re/image-io/scanner-api/scan-path
+          python - <<'PY'
+          from concurrent.futures import ThreadPoolExecutor, as_completed
+          from pathlib import Path
+          import subprocess
+          import sys
+
+          binary = "analysis-input/EmwatMethods.bpl1"
+          out = Path("parallel-re/image-io/scanner-api/scan-path")
+          targets = ("004EFA96", "004EFF83", "004B7724", "005EE82C")
+          def trace(target):
+              safe = target
+              for script, suffix in (
+                  ("tools/trace_td32_procedure.py", "procedure"),
+                  ("tools/trace_td32_callers.py", "callers"),
+                  ("tools/scan_pe_pointer_refs.py", "pointers"),
+              ):
+                  subprocess.run([
+                      sys.executable, script, binary, "0x" + target,
+                      str(out / f"{suffix}-{safe}.md")
+                  ], check=True)
+              return target
+          with ThreadPoolExecutor(max_workers=4) as pool:
+              for future in as_completed([pool.submit(trace, target) for target in targets]):
+                  print("traced ImageGear/connector target", future.result())
+          PY
       - name: Inventory preserved image form resources without changing them
         run: |
           python - <<'PY'
@@ -645,6 +718,7 @@ jobs:
               "\n".join(out) + "\n", encoding="utf-8")
           PY
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: emwat-parallel-image-ui
           path: parallel-re/
