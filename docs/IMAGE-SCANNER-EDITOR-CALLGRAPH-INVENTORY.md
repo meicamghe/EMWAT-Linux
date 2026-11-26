@@ -317,10 +317,11 @@ Run 29/30 symbol and body traces resolve the Windows result-image hierarchy:
 - `TResultImage.GetFileSize`: `0x004ECCAC); repeatedly calls `ShiftSerial` while serial/path values exist.
 - `TSetOfSinglePageImages.Create`: `0x004ED168`.
 - `TSetOfMultiPageImages.Create`: `0x004ED298); stores one base path at `+0x10` and calls `ShiftSerial` to choose a non-colliding serial.
-- `TSetOfMultiPageImages.GetScanFilePath`: `0x004ED4C0`; uses a format string at `0x004ED584`, still awaiting exact string decode.
-- Base `TResultImage.GetScanFilePath` (`0x004ED03C`) uses a format string at `0x004ED144`, also awaiting exact decode.
+- `TSetOfMultiPageImages.GetScanFilePath`: `0x004ED4C0`; its format string at `0x004ED584` is `_P`.
+- Base `TResultImage.GetScanFilePath` (`0x004ED03C`) uses `%.3d` at `0x004ED144`.
+- A related literal `_P000` is present at `0x004ED338`; its exact callsite/format role must be kept distinct from the `_P` format string until the full argument flow is reconciled.
 
-This confirms two distinct Windows result-collection classes (`TSetOfSinglePageImages` and `TSetOfMultiPageImages`). Their exact one-to-one mapping to native `SinglePageFileSet` versus `MultiPageFile` is **not yet proven**: both classes expose indexed `GetScanFilePath`/file-count operations, and the multi-page subclass also builds `_P`-indexed paths. Separately, the preview UI's `TfrmGScanPreview.Scan` path is strong evidence for one page-indexed `_New.tif` multipage container via `IG_save_FD`. Keep the connector result-collection mapping open until file ownership and actual output bytes are traced.
+This confirms two distinct Windows result-collection classes (`TSetOfSinglePageImages` and `TSetOfMultiPageImages`) and partially decodes their naming machinery: base result paths use a three-digit (`%.3d`) serial format; the multipage subclass uses `_P` in its path format; `_P000` is another decoded literal whose precise role remains under callsite review. This is not enough to determine the complete filename concatenation order, whether the serial identifies a scan session or collision retry, or the exact one-to-one mapping to native `SinglePageFileSet` versus `MultiPageFile`: both classes expose indexed `GetScanFilePath`/file-count operations. Separately, the preview UI's `TfrmGScanPreview.Scan` path is strong evidence for one page-indexed `_New.tif` multipage container via `IG_save_FD`. Keep connector result ownership open until path callsites and actual output bytes are traced.
 
 ### 12.4 ImageEdition and Upgrade are separate runtime methods
 
