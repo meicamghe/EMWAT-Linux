@@ -3369,3 +3369,11 @@ The next meaningful Almas acceptance input is a sanitized, synthetic-or-test-acc
 - Native integration gap: scan_pages returns vector<ImagePage>, while ScanResult is currently only referenced by its header and isolated test. No production adapter/persistence/response serialization connects these models yet. Treat this as a documented integration gap, not a failing test.
 - The scanner pointer-ref step in Run 50 omitted its output-path argument, so its detailed report was not included in that artifact. The workflow was corrected in commit 7c4ac0ea70ac1d6485d7be614f41de7e15a7911a; the corrected step has not yet been rerun.
 - Full report: docs/REVERSE-ENGINEERING-DEEP-FOLLOWUP-2026-11-26.md. CI success is not physical scanner/ADF/duplex, printer, Wine or live Almas acceptance.
+
+
+
+### Scanner preview output cardinality correction — 2026-11-26
+- The stronger procedure trace in `docs/SCANNER-PREVIEW-OUTPUT-RECOVERY.md` resolves `TfrmGScanPreview.Scan` to one destination `_New.tif`, opened with `CreateFileW(OPEN_ALWAYS)`, then successive 1-based page writes through `IG_save_FD`. Current interpretation: one multipage TIFF container, not one output file per page.
+- `Save_Tiff_MultyPages` is a separate operation; its path/format branches are not interchangeable with `Scan`.
+- Keep both `SinglePageFileSet` and `MultiPageFile` in the native model because Windows has distinct result classes, but do not map this Scan method to a page-file set or implement a production adapter until final naming and connector response semantics are recovered.
+- This is static disassembly plus ImageGear API-reference corroboration, not physical scanner/ADF/duplex or live Almas acceptance. No native production code changed.
