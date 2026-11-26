@@ -3292,9 +3292,15 @@ The next meaningful Almas acceptance input is a sanitized, synthetic-or-test-acc
 ### Native scanner response metadata boundary — 2026-11-26
 - Added optional `ScanResponseMetadata` to the native `ScanResult`: raw `status`, `error_code`, and nested `scanned_image.image_name` / `encoding`. This mirrors the recovered XML structure without assigning status semantics or mapping encoding to file extensions.
 - Physical `ScanOutput`, `scan_path`, outer `response_filename`, and XML response metadata remain distinct. A focused native regression case covers the separation.
-- Commits: implementation/header `faba1970efe44a36cd1a398711ac0f9eee6f2d9f`; test `6f75b41edb0643029479cbc2f1cf1f644d69ac6e`. No CI status has been returned for the test commit yet; verification is pending.
+- Commits: implementation/header `faba1970efe44a36cd1a398711ac0f9eee6f2d9f`; test `6f75b41edb0643029479cbc2f1cf1f644d69ac6e`. CI verification subsequently passed on commit `35ffc42ef1717aecfdd065378c9cd249c3ff0ce8`: reverse-engineering run `45786665652` passed Native regression (C++ build, CTest, Python bridge); Native image core run `45786665929` passed build/test, sanitizer, and Debian package lifecycle. The initial `-Werror=missing-field-initializers` failure was fixed by explicitly default-initializing the optional member.
 
 
 ### Follow-up: corrected FaxDocument data flow
 - `.tmp` is a literal consumed by helper `0x00454B9C`; its resulting string is passed to `GetNextPage`. `document` is the key in a generic dictionary `SetItem` operation, not a fetched input key. The value's exact Variant type/purpose is unresolved.
 - Added `tools/trace_td32_procedure_skipdata.py` and extended the parallel workflow to continue GetNextPage disassembly across embedded data and inspect helper internals. CI is pending.
+
+
+### Native metadata CI result
+- Commit `35ffc42ef1717aecfdd065378c9cd249c3ff0ce8` fixed the `-Werror=missing-field-initializers` warning with `response_metadata{}`.
+- Reverse-engineering run `45786665652`: Native regression passed (C++ build, CTest, Python bridge). Native image core run `45786665929`: build/test, sanitizer, and Debian package lifecycle all passed.
+- Word/Printer and Image/Scanner lanes in the reverse-engineering run remain under analysis; their results are separate from Native verification.
