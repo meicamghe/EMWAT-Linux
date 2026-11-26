@@ -1,3 +1,11 @@
+## 2026-11-26 — scanner preview output and ImageGear acquisition APIs traced
+
+- Run 32 Image/UI job (`45767912737`, artifact `15092827056`) completed successfully alongside Word/print and native regression.
+- `TfrmGScanPreview.Scan` now has a traced page-indexed output contract: one `_New.tif` path, `CreateFileW(OPEN_ALWAYS)` per page, `IG_save_FD` with one-based page index, and `CloseHandle`; the selected format argument is `0x40028` or `0x80028`.
+- Confirmed GEAR scanner import identities: `IG_scan_source_select`, `IG_scan_pages`, `IG_error_check`, `IG_error_clear`, `IG_error_get`. Argument and callback ABI remain open.
+- This preview UI evidence is not transferred to the public `ScanDocument` connector's `TResultImage` ownership model without additional evidence.
+- Detailed findings are in `docs/IMAGE-SCANNER-EDITOR-CALLGRAPH-INVENTORY.md` and `docs/NATIVE-IMAGE-PARITY-GAP-2026-11-25.md`.
+
 ## 2026-11-26 — GAM printer configuration contract recovered
 
 - Run 32 Word/print job (`45767912737`, artifact `15092617354`) completed successfully; native regression passed. The image/UI job remained active while this update was written.
