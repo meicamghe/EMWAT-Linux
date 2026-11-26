@@ -266,3 +266,20 @@ Run 7 ImageEn artifact 15106012257 completed successfully and adds cross-caller 
 - 0x00404F3C appears only in the four DoPrintingPanel calls immediately before 0x004B0154. Its target also has no TD32 procedure range in this artifact.
 
 The helper procedures themselves all lack TD32 procedure ranges. The caller inventory narrows their roles but cannot resolve VMT method names, return types or full argument semantics. The 0x004B0154 conclusion remains unchanged: a page-loop helper in the ImageEn printing panel, not established as scanner acquisition. This track is based on Run 7 artifact output; overall Run 7 completion still needs checking.
+
+
+## Track L — Four-entry GetNextPage table contents recovered (Run 7)
+
+Run 7 (45798441917) completed successfully on commit 1a6729a2ab71d2616ddfd5d06b3e232934d7667c. All four jobs passed: scanner/result ownership, ImageEn acquisition, Word/printer thread and native regression. Scanner artifact: 15106421845.
+
+The corrected static Delphi pointer-table inspector completed with exit_status=0 and decoded the global at 0x0062A7F0:
+- Global raw offset: 0x002285F0
+- Stored table pointer: 0x00628250
+- Entry 0: null pointer (empty/uninitialized string slot)
+- Entry 1: 0x004EC0BC -> `.tif`
+- Entry 2: 0x004EC0D4 -> `.jpg`
+- Entry 3: 0x004EC0EC -> `.bmp`
+
+The GetNextPage trace loads this four-entry pointer table and compares a string derived from command field +0x2C against the entries. The static contents are therefore one empty slot followed by three image-extension strings. This does not yet prove the complete connector protocol meaning of each entry, nor whether the compared string is always a basename suffix in every runtime path. Preserve the exact observation and obtain a runtime request/response capture before encoding an external file-naming rule.
+
+Run 7 also confirms the shell-continuation repair: the table output, stdout, stderr and status artifacts are present, with no stderr and exit_status=0. All four workflow lanes are green.
