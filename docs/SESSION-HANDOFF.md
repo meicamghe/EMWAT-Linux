@@ -1,3 +1,11 @@
+## 2026-11-26 — bridge nonce fixture drift found and corrected
+
+- Parallel workflow run `45761480118` (run 19) exposed a Python regression-suite failure: native CMake/CTest passed; Python reported `315 passed, 9 skipped` with four failures/subfailures in two tests.
+- Root cause is stale test data, not a transport implementation regression: commit `9dee565` intentionally changed POST routing validation to require ASCII decimal digits, while commit `9f44941` accidentally changed the invalid test case from nonnumeric `active` to numeric `54320`. The same valid decimal nonce was already used by positive fixtures. `test_application.py` also still sent `local-nonce`, which contradicts the now-required decimal contract. The fullwidth-digit test placed raw Unicode in an HTTP request target, so Python's HTTP client failed before the server could validate it.
+- Corrected tests only: restored `/?invoke=active` as the nonnumeric negative case; percent-encoded fullwidth digits so the server receives a valid ASCII URI and decodes the Unicode query value; changed the application integration fixture to a decimal nonce. No production bridge behavior was changed.
+- Commits: `9d9d15a54bae7f4259dde757d4d4ccd03f4d55da` and `070730ac93672d4d9504f616098eab84199944c6`.
+- The corrected tests are awaiting a fresh CI run; do not mark Python regression green until that run completes. The earlier run 19 failure must remain in history as a test-fixture failure and not be rewritten as a pass.
+
 ## 2026-11-26 — ImageGear scanner import identity correction and next trace lane
 
 - Inspected the complete artifacts from parallel workflow run `45563007730`; all three jobs passed (`image-ui-and-vmt`, `word-print-com`, `native-regression`). The image artifact's import table resolves `0x004AFF30` to `IG_scan_pages`, `0x004AFF28` to `IG_scan_source_select`, `0x004AFED8` to `IG_error_check`, `0x004AFEE8` to `IG_error_get`, and `0x004AFEE0` to `IG_error_clear`.
