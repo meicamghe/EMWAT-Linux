@@ -1,3 +1,9 @@
+## 2026-11-26 — TScanDocument connector handoff resolved further
+
+- `wordConfig` is explicitly required by `TScanDocument.PerformMethod`; absence triggers a specific request-invalid error.
+- `wordBody`, `letterImages`, and `signData` are also retrieved and forwarded with it to `TWordViewer.LoadDocument` at `0x004B7724`. Value types and optionality remain open.
+- This is static reverse-engineering evidence, not an end-to-end payload acceptance test. See `docs/REVERSE-ENGINEERING-RUN49.md`.
+
 ## 2026-11-26 — scanner request constraints and next-page detection clarified
 
 - Follow-up trace of `VerifyConstraints` confirms that `PreviousImageName` is copied to `FPreviousReturnedFileName +0x2C`; a non-empty string sets `FIsNextPageRequest +0x29`. The next-page branch is therefore selected from this request property.
