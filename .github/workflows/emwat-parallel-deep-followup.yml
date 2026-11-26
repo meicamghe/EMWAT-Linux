@@ -81,8 +81,17 @@ jobs:
         run: |
           python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 0x0062A7F0 \
             deep-followup/scanner-result/state-table-pointer-refs.md
-          python tools/dump_pe_delphi_pointer_table.py analysis-input/EmwatMethods.bpl1 0x0062A7F0 4 \\
-            deep-followup/scanner-result/next-page-state-table.md
+          mkdir -p deep-followup/scanner-result
+          set +e
+          python tools/dump_pe_delphi_pointer_table.py analysis-input/EmwatMethods.bpl1 0x0062A7F0 4 \
+            deep-followup/scanner-result/next-page-state-table.md \
+            >deep-followup/scanner-result/next-page-state-table.stdout.txt \
+            2>deep-followup/scanner-result/next-page-state-table.stderr.txt
+          status=$?
+          printf 'exit_status=%s\n' "$status" > deep-followup/scanner-result/next-page-state-table.status.txt
+          if [ "$status" -ne 0 ]; then
+            echo "Static table inspection failed; see stderr artifact. Continue collecting independent traces."
+          fi
           python tools/trace_td32_procedure_skipdata.py analysis-input/EmwatMethods.bpl1 0x004F2558 \
             deep-followup/scanner-result/get-next-page-control-flow.md
       - name: Trace fax temporary-path helper and result serial dispatch
