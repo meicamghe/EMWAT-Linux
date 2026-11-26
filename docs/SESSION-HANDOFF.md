@@ -2001,3 +2001,11 @@ Next probes: recover the four filename-table strings and state-byte meanings; re
 - ImageEn Run 5 trace narrows 0x004B0154 to two page-iteration loops in TfrmImageTools.DoPrintingPanel. Count-returning calls 0x004B01A4 and 0x004B01FC follow it; another branch uses 0x004B0204. These are not proof of acquisition; helper traces were added for 0x004B01A4, 0x004B01F4, 0x004B01FC, 0x004B0204 and 0x00404F3C.
 - Additional TResultImage evidence: GetLocation reads +0x04; GetResponseFileName/SetResponseFileName use +0x08; GetScanFilePath uses +0x10; GetFileStream opens the +0x10 path and reads stream size; ShiftSerial validates path state. Single-page and multipage subclasses remain distinct.
 - Detailed results and evidence boundaries are in docs/REVERSE-ENGINEERING-PARALLEL-FOLLOWUP-2026-11-26.md, Tracks I and J. No production Linux scanner, ImageEn, Word or printer behavior changed.
+
+
+## 2026-11-26 — ImageEn helper cross-caller findings
+
+- Run 7 ImageEn artifact 15106012257 succeeded. 0x004B01A4 has nine direct callsites across image insertion/deletion, printing, panel printing, mouse and printer setup; its return is used in image-count/index checks and print loop bounds. Likely collection/count-related, but exact API name is not proven.
+- 0x004B01FC has three callers; DoPrinting compares it to 0x004B01A4 and DoPrintingPanel uses it as a loop bound. Current/selected-image state is plausible but unconfirmed.
+- 0x004B01F4 and 0x004B0204 are print/drag-panel helpers with unresolved identities; 0x00404F3C likewise has no TD32 procedure range. Keep all these names as address-only candidates.
+- Detailed caller evidence is in Track K of docs/REVERSE-ENGINEERING-PARALLEL-FOLLOWUP-2026-11-26.md. Overall Run 7 status still needs verification; native regression and ImageEn job were green at last check.
