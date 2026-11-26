@@ -622,3 +622,26 @@ The initial cross-lane interpretation in this section and the first Run 43 notes
 ### Native metadata model CI result — 2026-11-26
 
 The first CI attempt on the metadata test commit exposed `-Werror=missing-field-initializers` for the newly added optional member. `response_metadata` now has an explicit `{}` default member initializer. On follow-up commit `35ffc42ef1717aecfdd065378c9cd249c3ff0ce8`, reverse-engineering run `45786665652` passed the Native regression job, including C++ build, CTest, and Python bridge tests; Native image core run `45786665929` passed all three jobs (build/test, sanitizer, and Debian package lifecycle). This validates the native model/test change, not scanner hardware or Almas end-to-end behavior.
+
+## 11. Run 48 — full GetNextPage trace and connector helper follow-up (2026-11-26)
+
+Workflow run `45786665652` completed successfully in all three lanes (Native regression, Image/UI/VMT, Word/COM/Printer). The Image artifact `15102155195` and Word/Printer artifact `15101725038` were downloaded and inspected. Native C++/CTest and Python bridge regression passed.
+
+The skipdata-aware trace covers all 1,340 bytes of `TScanCommand.GetNextPage` (`0x004F2558–0x004F2A93`); it marks 16 bytes as undecoded `.byte` data. Do not interpret those pseudo-instructions as code. The trace establishes:
+
+- `VerifyConstraints` and `LoadRequestXML` are called before request handling; XML-load failure exits through the error path.
+- The `FIsNextPageRequest` field at `TScanCommand+0x29` selects the paging branch.
+- The paging branch compares `FPreviousReturnedFileName` (`+0x2C`) against a four-entry global string table, writes the matched index to byte field `+0x1D`, and checks for the `_P` marker. A positive marker check sets byte field `+0x1E` to 2.
+- Both paging and new-document paths construct a `TResultImage` at `+0x20` through constructor `0x004EC8B4`. Constructor arguments include the selected string and format byte; the exact enum-to-format mapping is not yet established.
+- The routine then uses virtual calls on `FResponseXML` (`+0x34`) and `ResultImage` to update response state and finalize the result. The virtual slot offsets alone do not prove XML property names or lifecycle semantics.
+
+Helper follow-up:
+
+- `0x00454B9C` receives the `.tmp` literal in `TFaxDocument.PerformMethod` and produces a derived local string through Delphi string/list operations. Exact caller-specific filename/path semantics remain unresolved.
+- The `document` argument remains a dictionary write via `0x0046D2E4` (`TDictionary<String, Variant>.SetItem`), not a read.
+- `0x0046D210` and `0x0046D2C0` are generic dictionary lookup/hash helpers; their callers include `AddOrSetValue`, `ContainsKey`, and `ContainsValue`. They do not decode the semantic meaning of the `document` Variant.
+- `0x004738CC` is a string/Base64-related conversion wrapper; the current trace does not tie it to the `.tmp` value.
+
+Open probes: recover the four global filename strings and meanings of state bytes `+0x1D/+0x1E`; resolve response XML virtual targets and exact `Scanedimage` updates; trace `TResultImage` ownership/finalization; clarify `0x00454B9C` without assuming the `.tmp` literal is a complete path.
+
+Detailed artifact findings: `docs/REVERSE-ENGINEERING-RUN48.md`. No production native scanner behavior was changed, and this static analysis does not constitute physical scanner/printer or Wine runtime acceptance.
