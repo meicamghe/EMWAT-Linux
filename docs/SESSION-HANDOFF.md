@@ -1,3 +1,13 @@
+## 2026-11-26 — parallel follow-up: distinct scanner backends and file lifecycle
+
+- Run 49 artifacts were re-downloaded and reviewed in parallel across GEAR32PD scanning, ImageEn image tools, and Word/GAM printing. Detailed report: `docs/REVERSE-ENGINEERING-PARALLEL-FOLLOWUP-2026-11-26.md`.
+- Main preview scanner uses GEAR32PD exports including `IG_scan_pages`, `IG_scan_source_select`, `IG_load_FD`, `IG_save_FD`, `IG_save_file`, page-count and image-validity operations.
+- `TGearImgProc.ScanToFile` is a validation/persistence method (`IG_image_is_valid` then `IG_save_file`), not the device acquisition method.
+- `TfrmImageTools.InsertPicture` has a separate direct call to `TImageEnMIO.Acquire`; keep this ImageEn/TWAIN/WIA image-tools route separate from the GEAR32PD preview scan route until runtime evidence proves a shared backend.
+- `TfrmGScanPreview.Scan` iterates intermediate page files, uses `IG_load_FD` / `IG_save_FD`, and deletes temporary image handles. `Save_Tiff_MultyPages` contains `_New.tif`, `.jpg`, `.tif`, and three `SaveEditedImages` log branches.
+- Word/GAM `SeparteImages` page preparation calls the hidden printing thread `THidePrintingThread.Execute` after printer discovery/policy/pause checks. Final spool submission and completion remain unresolved.
+- No runtime hardware claim is made. Native implementation changes are deferred until the remaining filename/state/dispatch contracts are proven.
+
 ## 2026-11-26 — result-image ownership and serial candidate check
 
 - `TResultImage` separates location byte `+0x04`, response filename `+0x08`, and scan path `+0x10`.
