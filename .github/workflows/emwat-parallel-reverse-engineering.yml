@@ -185,6 +185,27 @@ jobs:
           python tools/scan_pe_iat_callers.py analysis-input/EmwatMethods.bpl1 \
             0x0062F9E4 0x0062F9E8 0x0062F9EC 0x0062F9F0 0x0062F9F4 \
             > parallel-re/word-print/printer-api/winspool-iat-callsites.md
+      - name: Expand GAM printer installer and status procedure traces
+        shell: bash
+        run: |
+          mkdir -p parallel-re/word-print/printer-api/full-procedures
+          targets=(0047CC94 0047D054 0047D238 0047D448 0047CAF0)
+          pids=()
+          for target in "${targets[@]}"; do
+            (
+              set -e
+              python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x$target \
+                parallel-re/word-print/printer-api/full-procedures/procedure-$target.md 1800 ret
+              python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x$target \
+                parallel-re/word-print/printer-api/full-procedures/callers-$target.md
+              python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 0x$target \
+                parallel-re/word-print/printer-api/full-procedures/pointers-$target.md
+            ) &
+            pids+=("$!")
+          done
+          status=0
+          for pid in "${pids[@]}"; do wait "$pid" || status=1; done
+          exit "$status"
       - name: Resolve GAM printer registry and INI helper APIs
         shell: bash
         run: |
@@ -357,6 +378,27 @@ jobs:
                 parallel-re/image-io/connector-contract/helper-$target.md 180 ret
               python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x$target \
                 parallel-re/image-io/connector-contract/callers-$target.md
+            ) &
+            pids+=("$!")
+          done
+          status=0
+          for pid in "${pids[@]}"; do wait "$pid" || status=1; done
+          exit "$status"
+      - name: Trace result-image path and response-name ownership callers
+        shell: bash
+        run: |
+          mkdir -p parallel-re/image-ui/result-path-callers
+          targets=(004ED03C 004ED4C0 004ED338 004ECF38 004ED150 004ECB6C 004ECBD8 004ECC84 004ECCAC 004ECD60 004ED168 004ED298)
+          pids=()
+          for target in "${targets[@]}"; do
+            (
+              set -e
+              python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x$target \
+                parallel-re/image-ui/result-path-callers/procedure-$target.md
+              python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x$target \
+                parallel-re/image-ui/result-path-callers/callers-$target.md
+              python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 0x$target \
+                parallel-re/image-ui/result-path-callers/pointers-$target.md
             ) &
             pids+=("$!")
           done
