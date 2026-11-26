@@ -110,3 +110,17 @@ The artifacts do not yet establish a complete successful chain from the page col
 - Image tools: trace ImageEn `Acquire` through the TWAIN/WIA objects, and trace TIFF save options from the image-tools UI.
 - Word/Printer: decode `THidePrintingThread.Execute` and the indirect interface dispatches to the actual print submission and completion stages.
 - Native model: compare confirmed single/multipage ownership and response-file fields against the current C++ types; change code only where a binary contract is fully supported.
+
+
+## Track D — Native scanner page vector versus filesystem result contract
+
+A focused source audit confirms that the native model already contains both sides of the ownership distinction, but does not yet establish their integration:
+
+- `ScannerBackend::scan_one` returns one decoded `ImagePage`; `scan_pages` returns `std::vector<ImagePage>`. The SANE override performs bounded simplex ADF collection and returns the decoded page vector.
+- `ImageDocument` owns decoded in-memory pages and provides append/select/edit operations. It is not a filesystem output manifest.
+- `ScanResult` separately models physical output as `SinglePageFileSet` or `MultiPageFile`, plus independent optional `scan_path`, `response_filename`, and response XML metadata.
+- `tests/test_scanner.cpp` exercises the scanner contract and SANE frame decoding; `tests/test_scan_result.cpp` independently exercises output ownership and response-field separation. CMake registers these as distinct test targets (`scanner_backend_contract` and `scan_result_contract`).
+
+This confirms that the two contracts are not accidentally conflated in their public types. It does **not** prove a production adapter that turns captured `ImagePage` values into saved page files and then constructs the correct `ScanResult`. The inspected public scanner API and CMake test graph do not demonstrate that handoff. Do not add an implicit mapping based only on page count: the Windows binary has separate single-page/multipage result classes and distinct path/response-name fields, while final file naming and connector cardinality remain unresolved.
+
+Next implementation gate: recover the Windows output naming/cardinality semantics and identify the service-layer owner for persistence; then add an explicit orchestration adapter with tests for one-page file set, multi-page TIFF, response filename independence, partial-save failure cleanup, and no false success before durable output exists. Keep scanner acquisition, image-document editing, and persisted-result ownership as three separate responsibilities.
