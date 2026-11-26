@@ -1,3 +1,17 @@
+## 2026-11-26 — ScanDocument body trace and GAM installer/profile APIs resolved
+
+- Run 27 (`45764043847`) completed successfully across Word, Image and Native jobs. Artifacts: `15090968111` (Word) and `15090469945` (Image). Run 28 (`45764222813`) also completed successfully across all three jobs; artifacts: `15091790290` (Word) and `15091725676` (Image). Native regression passed in both.
+- Run-28 helper identities:
+  - `0x0040275C` = `kernel32!GetPrivateProfileStringW`.
+  - `0x00404494` = `shell32!ShellExecuteW`.
+- `GetZanInstallDir` now has an exact installer call contract: relative `GAMPrinterSetup.exe`, checked with `FileExists`; `ShellExecuteW(hwnd=0, lpOperation=Open|RunAs, lpFile=GAMPrinterSetup.exe, lpParameters=NULL, lpDirectory=NULL, nShowCmd=0)`. `GetVersionExW` selects `Open` on Windows major <=5 and `RunAs` on major >5.
+- After the GAM queue appears, the same routine reads `[save]/basefilename` from both relative `ZVPsrc\\save.ini` and the resolved configuration-directory `save.ini` using `GetPrivateProfileStringW` (default NULL, 0x104-character buffers), comparing them in a 100 ms retry loop until they match. This is a config synchronization handshake, separate from the 300-iteration printer queue discovery loop.
+- Run-27 Image artifact confirms body traces for `TScanDocument.PerformMethod`, `TImageEdition.PerformMethod`, and `TScanCommand` methods. Both connector methods receive generic dictionaries with `AnsiString` keys. `TScanDocument` looks up four keys and delegates through `0x004B7724`; `TImageEdition` looks up one key and delegates through `0x0050357C`. The exact key names are not decoded yet.
+- `TScanCommand.DoRequest` parses request XML, examines result-image state, validates constraints, and updates state flags; `GetNextPage` validates constraints and request XML then calls result-image helper `0x004EC8B4`; `HasError` calls helper `0x004ECFC8`. Their method identities and response schemas are still open. The exact procedure observations are in `docs/IMAGE-SCANNER-EDITOR-CALLGRAPH-INVENTORY.md`.
+- Corrected the report to leave `0x004EC8B4` and `0x004ECFC8` unnamed pending symbol resolution; do not assume they are `TResultImage.NextFile/HasError`.
+- The next high-value pass is decoding dictionary/XML constants at `0x005EE9F4`, `0x005EEA88`, `0x005EEAA0`, `0x005EEABC`, `0x005EEAD4`, `0x005EF2F8`, and `0x004F31F8`/nearby addresses; trace helpers `0x0046DC8C`, `0x004735D0`, `0x004B7724`, `0x0050357C`, and map `TResultImage` methods.
+- Runs 21 and 22 remain stale/in-progress from the broken nonce fixtures. Runs 23–28 are completed successfully on corrected code. Add workflow concurrency cancellation after the current analysis batch so future pushes do not leave old runs consuming Actions minutes.
+
 ## 2026-11-26 — ImageEn path and protocol connector entry points found
 
 - Run 26 (`45763574936`) completed successfully across Word, Image and native regression jobs. Its Image artifact `15090488790` was inspected.
