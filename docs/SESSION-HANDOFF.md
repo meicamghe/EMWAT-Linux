@@ -1,3 +1,11 @@
+## 2026-11-26 — run 29 scanner constraints and result-image details
+
+- Run 29 (`45764787287`) passed all three jobs, including native regression.
+- The embedded `TScanCommand.VerifyConstraints` constants map to command flags by traversal position: first value `none/jpg` → `+0x1B/+0x1D`; second `none/yes` → `+0x1C/+0x1E`; third nonempty value → `+0x29`; fourth `yes` → `+0x18`; fifth and sixth values not equal to `no` → `+0x19/+0x1A`. Exact XML tag names are still not visible at this callsite. A Persian retry prompt is shown when image constraints are not satisfied; it is UI text, not an HTTP response.
+- Corrected result-image method identities: `TResultImage.Create` `0x004EC8B4`; `ShiftSerial` `0x004ECFC8`; `GetScanFilePath` `0x004ED03C`; `NextFile` `0x004ECF50`; `TSetOfSinglePageImages.Create` `0x004ED168`; `TSetOfMultiPageImages.Create` `0x004ED298`. `ShiftSerial` checks whether the resolved scan path exists. Native `ScanOutput` has the same top-level two-variant distinction; actual filename/serial policy remains unimplemented pending further traces.
+- `TImageEdition.PerformMethod` key `PlugIn` is confirmed, but helper `0x0050357C` and the operation/response contract are still being traced.
+- Run 30 (`45765541247`) is running with corrected result-image method addresses and a dynamic connector-symbol pass for all connector `PerformMethod` entries, the service dispatcher, `TEmwatMethod.Invoke`, and `TWordViwer.LoadDocument`.
+
 ## 2026-11-26 — scanner result-image hierarchy confirmed; connector trace expansion running
 
 - Run 29 (`45764787287`) completed successfully in all three jobs; native regression passed. Its Image artifact `15091627434` and Word artifact `15090789687` were inspected.
