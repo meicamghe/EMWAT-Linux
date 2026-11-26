@@ -75,6 +75,7 @@ The resulting policy and OS major-version branch select Windows CSIDL `0x23` or 
 | `save.ini` | `save` | `folder` | dynamically assembled output directory |
 | `save.ini` | `save` | `basefilename` | value read/assembled from the printer configuration path |
 | `save.ini` | `popupdialog` | `No Dialogs` | `1` |
+| `save.ini` | `save` | `filexistact` | `1` |
 | `image.ini` | `image` | `fileformat` | `tiff` |
 | `image.ini` | `image` | `imagecolor` | `256` |
 | `image.ini` | `image` | `compression` | `lzw` |
