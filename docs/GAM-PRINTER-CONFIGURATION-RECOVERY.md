@@ -103,3 +103,24 @@ The method also reads `save.ini` section `save`, key `basefilename`, through `Ge
 3. Establish how `ZVPsrc\\save.ini` and the selected `zvprt50` folder are related on clean installs versus upgrades.
 4. Compare the configured TIFF output with a real file emitted by GAM Printer, including compression, strip organization, multipage handling and sentinel lifecycle.
 5. Keep Wine/Windows driver installation experiments separate from native Linux printing implementation; do not claim parity until a real output fixture is compared.
+
+
+## 9. Run 39/40 confirmation — queue identity and print-layer boundary (2026-11-26)
+
+The successful Word artifacts from runs `45774122169` and `45779391301` independently confirm the printer-selection routine at `0x0047CAF0`:
+
+- It calls `EnumPrintersA` with `PRINTER_ENUM_LOCAL` (`flags=8`), information level 2, and the standard size-query/fill-buffer sequence.
+- It walks `PRINTER_INFO_2A` records using the observed `0x54`-byte stride.
+- It compares `pDriverName` at record offset `+0x10` to the literal `zvprt1`; on the first match it copies `pPrinterName` at offset `+0x04` to global active-printer storage `0x0062B310`, then exits the loop.
+- It does not select by queue name, default-printer status, or a status field in this routine. If multiple local queues use the same driver, the first enumeration match wins; no explicit disambiguation is visible here.
+
+The `TCreateTiff.SeparteImages` caller checks `GetPrinterName` and calls `InstallZanPrinter` if no match is found. The same caller later enters the routine named `CheckPrinterPaused`, which invokes the recovered configuration writer path. The exact queue-status decision is still not fully mapped.
+
+The VCL import inventory includes `TPrinter.Refresh`, `GetPrinterIndex`, `GetCanvas`, `NewPage`, `EndDoc`, and `BeginDoc`. The inspected Winspool import inventory does not show `StartDocPrinter`/`WritePrinter`; this is **not** proof that no spooler operation occurs elsewhere. It means the Linux design must not assume the Windows code submits a raw spooler buffer: the VCL printer/canvas path still needs a caller trace.
+
+Next: trace `TCreateTiff.SeparteImages`, VCL `TPrinter` callsites, and the imported `OpenPrinter`/`GetPrinter`/`EnumJobsW` routines before finalizing queue-state or job-correlation behavior.
+
+Evidence:
+- Run 39 Word artifact `15096235579`, Image artifact `15095104593`.
+- Run 40 Word artifact `15097418557`, Image artifact `15098092258`.
+- Static binary evidence only; no Windows runtime print or Wine hardware acceptance is claimed.

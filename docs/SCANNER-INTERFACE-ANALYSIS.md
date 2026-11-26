@@ -1,3 +1,17 @@
+# Status clarification — Linux SANE versus legacy Windows ImageGear (2026-11-26)
+
+This file's historical disassembly sections describe the **Windows ImageGear scanner path** in `EmwatMethods.bpl1`. They must not be read as the capability list for the separate Linux SANE backend.
+
+Current Linux backend status, verified against `native/src/sane_scanner.cpp`, the Fake SANE test seam, and the feature-branch status documents:
+
+- Interleaved Gray8/RGB8 and planar RGB frame collection are implemented.
+- Bounded simplex ADF batch scanning is implemented when an explicit simplex feeder source is selected (maximum 100 pages / 4 GiB batch budget).
+- SANE `lines == -1` is now supported for interleaved and planar frames; height is derived from complete rows at EOF.
+- Row padding/stride is preserved; malformed partial rows and byte-budget overruns are rejected.
+- Duplex remains unsupported by design. No physical scanner hardware acceptance has been claimed; ADF and variable-height behavior are currently covered by the fake backend, not a device matrix.
+
+The Windows ImageGear path remains a separate reverse-engineering target. Its device enumeration, preview, page editing, and TIFF save behavior are not evidence that the Linux backend has equivalent hardware behavior.
+
 # Scanner interface and acquisition contract — Run 61
 
 Date: 2026-11-11  

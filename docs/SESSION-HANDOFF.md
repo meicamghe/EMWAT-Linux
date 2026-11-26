@@ -1,9 +1,29 @@
+## 2026-11-26 — Run 40 complete; SANE variable-height support committed
+
+Current branch: `feature/recovery-retention-policy`  
+Current head: `f956e40b1ad3d7dfd4959a7d3df1ce77f0a9dba1`
+
+- Commit `f956e40` supports SANE `lines == -1` for interleaved Gray/RGB and planar RGB frames, deriving height at EOF and rejecting incomplete rows or over-budget frames. Padded row stride remains preserved.
+- Run 40 (`45779391301`) is complete and successful on this exact SHA: Native CTest 5/5; Python 317 passed, 9 skipped, 339 subtests passed; Word and Image reverse-engineering jobs both succeeded.
+- Artifacts: Run 39 Word `15096235579`, Image `15095104593`; Run 40 Word `15097418557`, Image `15098092258`. Run 39/40 artifacts were downloaded and inspected.
+- Run 39/40 scanner evidence: response root `response-scan`, child `scaned-image`, fields `status`, `errorCode`, `imageName`, `encoding`; request properties and `TScanCommand` field offsets are documented in `IMAGE-SCANNER-EDITOR-CALLGRAPH-INVENTORY.md`.
+- Run 39/40 printer evidence: `GetPrinterName` enumerates local Level-2 printers, matches driver `zvprt1`, and selects the first matching queue in enumeration order. The configuration/INI path remains in `GAM-PRINTER-CONFIGURATION-RECOVERY.md`.
+- `0x00401428` still resolves only to an external RTL target `0x002312F2`; 395 callers are mostly Word property accessors. It is not proven to be a print-worker callback.
+- PR #2 remains Draft/open/unmerged; compare is 994 ahead / 9 behind and GitHub says not mergeable. Do not merge/rebase without an explicit decision.
+
+Next parallel targets:
+1. Trace `TCreateTiff.SeparteImages` and direct/indirect VCL `TPrinter.BeginDoc/GetCanvas/NewPage/EndDoc` callers.
+2. Trace Winspool `OpenPrinter`, `GetPrinter`, and `EnumJobsW` callsites; determine whether the apparent paused/status path is separate from the INI writer.
+3. Resolve `TScanCommand` response-list cardinality, `imageName` meaning, and the outer result dictionary key.
+4. Keep CUPS backend work behind the confirmed TIFF/job-output contract; do not port the Windows driver installer as if it were a Linux CUPS driver.
+5. Obtain physical simplex ADF and Duplex acceptance evidence; current SANE tests use the fake backend.
+
 ## 2026-11-26 — run 39 XML tag strings and Word Variant helper targets
 
 - Run 38 (`45773058079`) completed successfully across all three jobs. Its Image artifact (`15094674346`) traced all available TD32 getters/setters for `TXMLResponseScanType`, `TXMLScanedImageType`, `TXMLConfigType`, and `TXMLOutputType`; details and exact procedure VAs are in `docs/IMAGE-SCANNER-EDITOR-CALLGRAPH-INVENTORY.md`.
 - `TXMLResponseScanType` exposes `Status`, `ErrorCode`, and `Scanedimage`; each image entry exposes `ImageName` and `Encoding`. Request-side `TXMLConfigType` exposes `Type`, `DriverDialog`, `ImageEditor`, `MultiJpegSupport`, `PreviousImageName`; `TXMLOutputType` exposes `ForceSinglePageFiles` and `Constraints`. The XML property model is now known, but serialized tag strings and `TXMLConstraintsType` details are not yet recovered.
 - Reclassified `0x0042ABA0`: its 451 callers are Word document property getters; it lazily obtains an interface via object field `+0x78`/VMT slot `+0x50`, then calls `0x00401428` to assign the interface reference. This is not a print worker callback. The 18-vs-17 `PrintOut` discrepancy remains open.
-- Run 39 (`45774122169`, workflow commit `7305d59`) is queued. It adds decoding of all scanner XML property-name/tag string constants, a TD32 trace of `TXMLConstraintsType`, and a trace of helper `0x00401428` to the Word print lane.
+- Run 39 (`45774122169`, workflow commit `7305d59`) completed successfully. Word artifact `15096235579` and Image artifact `15095104593` were downloaded and reviewed. Run 40 (`45779391301`) then completed successfully on `f956e40`; Word artifact `15097418557` and Image artifact `15098092258` add the ScanCommand constructor/VMT/response path and the external RTL helper trace.
 
 ## 2026-11-26 — run 38 XML getter/setter methods and Word helper trace completed
 

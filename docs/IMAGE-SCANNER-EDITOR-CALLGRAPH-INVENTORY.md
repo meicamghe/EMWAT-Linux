@@ -472,3 +472,52 @@ Run 36 thunk resolution confirms the wrappers are imported package methods from 
 
 These are ImageEn imports/callsites, separate from the ImageGear `IG_save_FD` / `IG_save_file` path recovered in `TfrmGScanPreview.Scan` and `Save_Tiff_MultyPages`. Run 34 resolved the enclosing procedures: `Acquire` is called by `TfrmImageTools.InsertPicture` (`0x0050A29C`); `LoadFromFileAuto` is called by `FreeRotate` (`0x00508A90`) and `DeletePicture` (`0x0050A414`); `SaveToFileTIFF` is called by `btnPrinterSetupClick` (`0x0050B61C`); `SaveToFile` is called by `CreateParams` (`0x0050AF74`); `PrintImage` belongs to `DoPrintingPanel`; and the open/save dialog methods are used by image-tools handlers. This proves ImageEn is used by the image-tools acquisition/edit/save/print surface, but does not establish that its acquisition is the same scanner session as the ImageGear preview or the public `TScanDocument` connector. Keep the three paths separate until a shared file/session/result handoff is demonstrated.
 
+
+
+## 12. Run 39/40 — scanner XML contract, ScanCommand state, and result ownership (2026-11-26)
+
+### Response XML strings
+
+The string inventory and response factory trace confirm:
+
+- Root element: `response-scan` (version `1.0`).
+- Child element: `scaned-image` (the single-`n` spelling is present in the original binary).
+- Response properties/serialized keys: `status`, `errorCode`, `imageName`, and `encoding`.
+- The Delphi property name is `Scanedimage`; the image entry exposes `ImageName` and `Encoding`.
+
+### Request property surface
+
+The recovered request-side object model exposes:
+
+- `TXMLConfigType`: `type`, `driverDialog`, `imageEditor`, `multiJpegSupport`, `previousImageName`.
+- `TXMLOutputType`: `forceSinglePageFiles`, `constraints`.
+- `TXMLConstraintsType` property methods: `ColorDepth`, `MinResolution`, `MaxResolution`, `MaxFileSize`.
+
+The first two groups have corresponding string keys in the binary inventory. The constraint names above are recovered Delphi property identities; do not assume their serialized casing/spelling until the XMLRTL serializer mapping is proven. The request root element and outer result-dictionary key are still open.
+
+### TScanCommand object and request flow
+
+Run 40 recovers `TScanCommand` at VMT `0x004F1F94`, instance size `0x40`, constructor `0x004F21DC`, and `DoRequest` `0x004F22E4`. Relevant fields:
+
+| Offset | Field |
+|---:|---|
+| `+0x04` | `ImgProc` |
+| `+0x08` | `Options` |
+| `+0x20` | `ResultImage` |
+| `+0x24` | `FEditorForm` |
+| `+0x28` | `FCommandState` |
+| `+0x29` | `FIsNextPageRequest` |
+| `+0x2c` | `FPreviousReturnedFileName` |
+| `+0x30` | `FRequestXML` |
+| `+0x34` | `FResponseXML` |
+| `+0x38` | `FHasConstraints` |
+
+The constructor creates `TXMLResponseScanType` through `0x004EB7F4` and stores it at `+0x34`. `DoRequest` checks command/next-page state, uses `ResultImage`, and invokes constraint verification at `0x004F32F4`. The constraint-failure path contains a Persian retry prompt. Exact meanings of the numeric command-state values and the full response serialization/list cardinality are not yet established. RTTI contains spelling irregularities such as `FRequsetXML` and `FHasConstratints`; these are binary metadata typos, not recommended Linux API names.
+
+### Result-file ownership
+
+`TResultImage` keeps distinct values for the response filename and scan-file path: `GetResponseFileName` reads the response-name field at `+0x08`, while `GetScanFilePath` uses the scan path field at `+0x10` and serial/page helpers. Separate result classes exist for `TSetOfSinglePageImages` and `TSetOfMultiPageImages`. Binary strings include `%.3d`, `_P`, `_P000`, `_New.tif`, `.tif`, and `.jpg`.
+
+Do not collapse response filename and physical output path into one property. The exact relationship between `imageName`, the response filename, the actual TIFF/JPEG file, and multi-page collection cardinality still requires the outer connector caller trace and a controlled runtime capture.
+
+Evidence: Run 39 artifacts `15095104593`/`15096235579`; Run 40 Image artifact `15098092258`.

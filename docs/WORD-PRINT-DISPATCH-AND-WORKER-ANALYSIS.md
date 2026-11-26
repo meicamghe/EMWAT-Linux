@@ -135,3 +135,19 @@ This is consistent with a shared lazy interface-property getter/reference-assign
 **Print ABI impact:** this result does not resolve the 18-Variant caller versus 17-Variant `TWordDocument.PrintOut` wrapper discrepancy. The argument-count/dispatch warning in sections 6–9 remains active. Next targeted step is to trace `0x00401428` and re-audit the COM interface construction/argument transfer at `0x004C70B6`; do not collapse the 18 local Variant records into a 17-argument call without proof.
 
 Evidence: run `45773058079`, Word artifact `15095336625`, files `procedure-0042ABA0.md` and `callers-0042ABA0.md`.
+
+
+## 11. Run 40 — helper 0x00401428 remains an external RTL target (2026-11-26)
+
+The Word artifact from run `45779391301` traced helper `0x00401428` and its caller set:
+
+- The helper is a thunk into external runtime address `0x002312F2`, which is not mapped to a file-backed section in the analyzed `EmwatMethods.bpl1` image.
+- The caller inventory contains 395 direct callers, predominantly Word document property accessors and interface-valued property assignments.
+- This caller distribution is consistent with a shared Delphi interface-reference helper, but the exact external RTL export identity is not proven from this artifact.
+- Do not reclassify this helper as a print callback or worker dispatcher. The 18-Variant caller versus 17-Variant wrapper discrepancy remains unresolved.
+
+The same run's printer subtrace confirms the local `zvprt1` driver-name enumeration and the VCL `TPrinter` import surface; details are recorded in `GAM-PRINTER-CONFIGURATION-RECOVERY.md`.
+
+Next targeted work: resolve the runtime helper against the exact `rtl230.bpl` export map if available, trace `TCreateTiff.SeparteImages`, and enumerate direct/indirect callers of VCL `TPrinter.BeginDoc/GetCanvas/NewPage/EndDoc` and Winspool `OpenPrinter/GetPrinter/EnumJobsW`. Until then, keep COM argument mapping and print-job ownership open.
+
+Evidence: Run 40 Word artifact `15097418557`, workflow run `45779391301`.

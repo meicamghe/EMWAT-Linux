@@ -210,3 +210,17 @@ The extracted color, BW and Fax INIs all use `fileformat=1`; therefore their bas
 Because the shipped GAM queue profiles all set `image.fileformat=1`, and the `zvprtcfg` usage examples explicitly define value 1 as TIFF, **TIFF is now the first compatibility-test output target** for the Linux virtual printer. The color, BW and Fax profiles all select TIFF; their compression/profile differences must be preserved.
 
 PDF may still be useful as an internal CUPS interchange format or an alternate output, but it must not be treated as the original GAM output contract. The exact EMWAT consumer hand-off (file path, stream, extension and whether it reads the TIFF directly) remains unresolved. Do not freeze the native architecture around PDF until that path is traced.
+
+
+## Linux adapter direction after Run 39/40 evidence (2026-11-26)
+
+The Windows printer identity and Linux queue identity are different contracts:
+
+- Windows EMWAT searches local Level-2 printer records and matches the driver name `zvprt1`, then retains the matching queue's printer name. A CUPS destination does not inherently expose this Windows driver name.
+- The Linux implementation should therefore use an explicit configured logical GAM destination (or a future, documented queue marker), not guess by a CUPS queue name that happens to resemble `GAMPrinter`.
+- Printer discovery can use LibreOffice UNO's printer server; document submission can use `XPrintable.setPrinter` and `XPrintable.print`. CUPS/IPP attributes should be queried for supported media, sides, color, and resolution rather than assuming Windows driver defaults.
+- Use existing user-visible CUPS queues for normal application operation. Queue administration such as `lpadmin` is a privileged setup concern and should not run silently inside EMWAT.
+- A virtual IPP/CUPS queue can provide a hardware-independent integration test for queue discovery and job submission. It does not validate the GAM TIFF profile.
+- Do not implement a TIFF-producing CUPS filter until a controlled Windows-generated sample and the exact output path, file naming, page ordering, compression, and completion/sentinel contract are confirmed. The Windows setup executable is not itself a Linux CUPS driver.
+
+Current state remains **no Linux printer backend, selection adapter, or submission implementation**. This section is a design boundary, not a claim of completed code.
