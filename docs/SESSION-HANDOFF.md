@@ -1,3 +1,17 @@
+## 2026-11-26 — runtime connector mappings and request keys reconciled
+
+- The service-side VMT map in `docs/EMWAT-SERVICE-EXECUTABLE-ANALYSIS.md` is authoritative for runtime class names. TD32 `PerformMethod` labels are shifted for multiple methods; the connector inventory now separates runtime class, `VMT+0x10` target, and TD32 label.
+- Confirmed request keys and embedded log/error literals:
+  - Runtime `TScanDocument` (`0x005EEB48`, TD32 label `TFaxDocument`): key `document`, log `[Invoke ScanDocument]`, delegates to `TScanCommand.GetNextPage`.
+  - Runtime `TFaxDocument` (`0x005EEDFC`, TD32 label `TGetEmwatVersion`): key `fax`.
+  - Runtime `TImageEdition` (`0x005EF300`, TD32 label `TEditExcelWorkBook`): keys `data` and `config`, log `[Invoke EditImages]`, null-input errors.
+  - Runtime `TUpgradeEmwat` (`0x005EF24C`, TD32 label `TImageEdition`): key `PlugIn`; finalization helper logs `UpgradeEmwat method called`, references `EmwatMethods.bpl`, `.zip`, and `EmwatUpdate.exe`.
+  - Runtime `TEditExcelWorkBook` (`0x005EF8AC`, TD32 label `TCompareWordDocument`): keys `ExcelConfig` and `ExcelWorkBookContent`, log `[Invoke EditExcelWorkBook]`.
+  - Runtime `TCompareWordDocument` (`0x005EFC54`, TD32 label `TShowEmwatSetting`): key `documentsData`; calls `TCompareCommand.DoRequest` and its finalization.
+- Version targets: runtime `TGetEmwatVersion` at `0x005EF110` calls helper `UpgradeEmwatPlugin` (`0x00502F70`, mode 0) and `SetEmwatVersion` (`0x0050291C`); runtime `TSetEmwatVersion` at `0x005EF218` calls `UpgradeEmwatPlugin` with mode 1. Do not infer the business meaning from helper names alone.
+- Result-path literals decoded: `%.3d` at `0x004ED144`, `_P` at `0x004ED290)/`0x004ED584`, and `_P000` at `0x004ED338`. This proves page/serial suffix formatting but not the exact one-to-one mapping of `TSetOfMultiPageImages` to a single physical file. Updated the imaging/native parity docs to keep that mapping open.
+- Run 32 workflow update adds explicit traces for the shared wrapper `0x0046C9E0` and runtime `TShowSendLog` target `0x005EFF4C`; workflow commit `99896e936724750335348787075194c7b95a49dc`.
+
 ## 2026-11-26 — full connector handler inventory completed
 
 - Run 30 (`45765541247`) completed successfully across all three jobs. The Word artifact `15092201094` dynamically traced 12 symbols: central `TEmwatMethod.Invoke` (`0x0046C82C`), `TWordViwer.LoadDocument`, and 10 concrete connector `PerformMethod` procedures. The image artifact `15091712828` includes the corrected `TResultImage`/single-page/multipage result methods. Native regression passed.
