@@ -298,7 +298,7 @@ jobs:
       - name: Resolve Word close callback containing GetXmlFieldInfo call
         run: |
           python tools/trace_td32_procedure_skipdata.py analysis-input/EmwatMethods.bpl1 0x004CCCC9 \
-            deep-followup/word/word-app-document-before-close.md
+            deep-followup/word-printer/word-app-document-before-close.md
       - uses: actions/upload-artifact@v4
         if: always()
         with:
