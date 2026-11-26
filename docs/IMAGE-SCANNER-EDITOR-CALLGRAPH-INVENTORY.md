@@ -228,6 +228,8 @@ The symbol index also identifies two concrete connector entry points in module `
 - `TScanDocument.PerformMethod` at `0x005EE82C` (796 bytes)
 - `TImageEdition.PerformMethod` at `0x005EF24C` (180 bytes)
 
+Both `PerformMethod` symbols expose a parameter typed as a Delphi generic `TDictionary` with `System.AnsiString` keys; the dictionary value type and exact key/value schema remain unresolved. This is a stronger indication of a dictionary-driven connector method than a positional argument list, but it does not reveal the HTTP/XML mapping by itself.
+
 The same index identifies the `TScanCommand` lifecycle/request methods:
 
 - `DoNewScan` `0x004F22AC`
