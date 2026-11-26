@@ -3266,3 +3266,12 @@ The next meaningful Almas acceptance input is a sanitized, synthetic-or-test-acc
   selection so the controller selects the newest remaining valid snapshot.
 - Added a GTK smoke test for rendering a populated catalog and selecting the
   controller-provided newest entry. Current-head GTK CI is pending.
+
+
+## Reverse-engineering checkpoint — 2026-11-26
+
+- Parallel workflow run `45782764971` on code commit `295fc6e513664abe211d2ebeeda1964f1fcd584f` passed all three jobs: Word/Printer, Image/Scanner, and Native regression. This verifies the repaired TD32 symbol-table parser path; it does not establish Windows/Wine hardware printing or physical scanner compatibility.
+- Word/Printer artifact `15098978072` traced `TCreateTiff.SeparteImages` (`0x004A0148`) and its two direct `TWordViwer.LoadDocument` callers. It confirms the GAM queue discovery/install branch and the configuration path. The misleadingly named `Zanprinter.CheckPrinterPaused` (`0x0047D448`) writes GAM INI defaults; the separately traced `Zanprinter.Finalization` (`0x0047D8BC`) contains the printer-handle/status path. Full VCL canvas-to-job ownership remains open.
+- Image/Scanner artifact `15099188562` confirms that `TScanCommand.Create` and `GetNextPage` are directly used by `TFaxDocument.PerformMethod`, while the public `TScanDocument.PerformMethod` is a separate dictionary-driven path using `wordConfig`, `wordBody`, `letterImages`, and `signData`. Do not merge these contracts by name alone.
+- The next analysis expansion was committed as `e372fc188936ffcbeb54986630fe4981483a9577` to trace the full `TFaxDocument.PerformMethod` body and callers. Workflow run `45783897821` is active on that code commit; its results are pending. Later documentation-only commits update this status and the session handoff but are not part of that run's tested tree.
+- Detailed evidence: `docs/GAM-PRINTER-CONFIGURATION-RECOVERY.md` and `docs/IMAGE-SCANNER-EDITOR-CALLGRAPH-INVENTORY.md`. No live Almas E2E, physical scanner/ADF/duplex, Wine printer output, or Windows `.easz` interoperability is claimed.
