@@ -352,6 +352,29 @@ The constructor body at `0x004F21DC` shows the ownership setup: it creates `ImgP
 
 The connector then calls method address `0x004F2558`, reads `FResponseXML` through interface slot `+0x54`, and calls helper `0x004012F8`. That helper is an unresolved external/relocated thunk (IAT slot `0x0062ECDC` resolves outside the image); its generic callers include XML property setters and string-assignment paths, so it does not prove a specific output key. Preserve the output dictionary key, XML root/tag and response schema as unknown.
 
+### 12.3.4 Scan request/response XML property inventory
+
+The run-36 cross-reference of the external dictionary-assignment thunk `0x004012F8` identifies XML property setters used by the scanner request/response types:
+
+| XML type | Property setter | Setter callsite |
+|---|---|---:|
+| `TXMLConfigType` | `Type` | `0x004EA10C` |
+| `TXMLConfigType` | `DriverDialog` | `0x004EA244` |
+| `TXMLConfigType` | `ImageEditor` | `0x004EA39C` |
+| `TXMLConfigType` | `MultiJpegSupport` | `0x004EA4EC` |
+| `TXMLConfigType` | `PreviousImageName` | `0x004EA654` |
+| `TXMLOutputType` | `ForceSinglePageFiles` | `0x004EA820` |
+| `TXMLResponseScanType` | `Status` | `0x004EB964` |
+| `TXMLResponseScanType` | `ErrorCode` | `0x004EBAA4` |
+| `TXMLScanedImageType` | `ImageName` | `0x004EBCAC` |
+| `TXMLScanedImageType` | `Encoding` | `0x004EBDF4` |
+
+- The `TScanCommand` fields `FRequestXML` (`+0x30`) and `FResponseXML` (`+0x34`) are therefore XML request/response objects, not raw image buffers.
+- `FResponseXML` is initialized through `TXMLResponseScanType.AfterConstruction` at `0x004EB7F4`. The `TScanCommand` constructor then calls its interface slot `+0xB8` with callback address `0x004F22A4`; the callback/event semantics remain unresolved.
+- The public `TScanDocument` handler obtains the response object through interface slot `+0x54` and inserts that value into the outer result dictionary. The output key and final XML serialization are still unknown.
+- These are recovered Delphi property names and setter callsites, not yet a complete XML schema. The XML hierarchy, element/tag spelling, required/optional status, values and relationship to `VerifyConstraints` must be verified from the XML resources and setter callers before implementing a parser/serializer.
+- The same external thunk `0x004012F8` is used by many unrelated generated XML setters (Word, Excel, scanner and global response types); its target is outside this BPL image, so do not assign it a dictionary-specific semantic name.
+
 ### 12.4 ImageEdition and Upgrade are separate runtime methods
 
 **Runtime `TImageEdition` — `0x005EF300` (TD32 label `TEditExcelWorkBook.PerformMethod`)**
