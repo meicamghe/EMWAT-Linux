@@ -79,7 +79,7 @@ jobs:
         with:
           python-version: '3.12'
       - run: pip install pefile capstone
-      - name: Trace actual TGPImage Save/SaveAdd and encoder Add wrappers
+      - name: Trace actual TGPImage Save/SaveAdd wrappers and resolve PE import targets
         shell: bash
         run: |
           mkdir -p gdiplus-followup/tiff-page-save
@@ -94,13 +94,44 @@ jobs:
             0x00490A18 0x00490A84 \
             0x0048F308 0x0048F328 0x0048F364 0x0048F410 \
             0x0048F514 0x0048F68C 0x0048F780 \
-            0x00481C5C 0x00481C64 0x00481C6C 0x00481C74; do
+            0x00481C5C 0x00481C64 0x00481C6C 0x00481C74 \
+            0x00481C7C 0x00481D14; do
             safe=${target#0x}
             python tools/trace_td32_procedure_skipdata.py analysis-input/EmwatMethods.bpl1 "$target" \
               "gdiplus-followup/tiff-page-save/procedure-$safe.md" || true
             python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 "$target" \
               "gdiplus-followup/tiff-page-save/callers-$safe.md" || true
           done
+          python - <<'PY'
+          from pathlib import Path
+          import pefile
+          blob=Path("analysis-input/EmwatMethods.bpl1").read_bytes()
+          pe=pefile.PE(data=blob,fast_load=True)
+          base=pe.OPTIONAL_HEADER.ImageBase
+          imports={}
+          for desc in getattr(pe,"DIRECTORY_ENTRY_IMPORT",[]):
+              dll=desc.dll.decode("ascii","replace")
+              for imp in desc.imports:
+                  name=imp.name.decode("ascii","replace") if imp.name else f"ordinal_{imp.ordinal}"
+                  imports[imp.address]=f"{dll}!{name}"
+          out=["# GDI+ code thunk to actual PE import map","",
+               "This maps each 6-byte JMP [IAT] thunk to the import address and imported symbol; TD32 names are not treated as authoritative.",""]
+          for va in (0x00481C5C,0x00481C64,0x00481C6C,0x00481C74,0x00481C7C,0x00481D14):
+              try:
+                  off=pe.get_offset_from_rva(va-base)
+                  raw=blob[off:off+6]
+                  iat=int.from_bytes(raw[2:6],"little") if raw[:2]==b"\xff\x25" else None
+                  out.append(f"## thunk 0x{va:08X}")
+                  out.append(f"- bytes: {raw.hex(' ')}")
+                  if iat is not None:
+                      out.append(f"- IAT VA: 0x{iat:08X}")
+                      out.append(f"- imported symbol: {imports.get(iat,'NOT FOUND IN IMPORT DIRECTORY')}")
+                  else:
+                      out.append("- not a simple JMP [absolute IAT] thunk")
+              except Exception as exc: out.append(f"- error: {exc}")
+              out.append("")
+          Path("gdiplus-followup/tiff-page-save/pe-import-thunk-map.md").write_text("\n".join(out)+"\n")
+          PY
       - uses: actions/upload-artifact@v4
         if: always()
         with:
