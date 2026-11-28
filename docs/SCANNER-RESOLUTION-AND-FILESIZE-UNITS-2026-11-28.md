@@ -48,7 +48,7 @@ The factors correspond to inches-per-meter and inches-per-centimeter. The conver
 
 ## 3. Remaining caveats
 
-- The helper `0x004AFF08` populates the source resolution fields; its field-to-output mapping should be checked before naming the two values horizontal/vertical DPI.
+- `0x004AFF08` is an import thunk to the external ImageGear API `IG_image_resolution_set`, not an internal helper. It is called by `TGearImgProc.GearType` and `TWordViewer.EmbedTextToImage`. Its exact argument-to-field semantics should be checked against the matching ImageGear SDK before naming the two values horizontal/vertical DPI.
 - The exact external ImageGear enum names for selectors 2/3/4 remain to be matched.
 - Runtime scanner samples are still needed to confirm rounding behavior and edge cases (zero/one resolution, unsupported unit, non-square DPI).
 
