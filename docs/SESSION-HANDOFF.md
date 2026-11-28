@@ -1,3 +1,11 @@
+## 2026-11-28 — Run 67 automatic workflow outcome
+
+- Run 67 was automatically triggered by the push that changed Python code; it was not manually dispatched.
+- Jobs `word-print-com` and `image-ui-and-vmt` completed successfully.
+- In `native-regression`, the native build/regression step completed successfully, but the Python bridge regression step ended cancelled. The full Python suite therefore has no pass/fail result.
+- Run ID `46136978712`, conclusion `cancelled`, updated `2026-11-28T11:15:17Z`. No local clone/test run succeeded because GitHub DNS was unavailable in the container.
+- No additional workflow was dispatched. Do not report the Python suite as passed.
+
 ## 2026-11-28 — Run 46 authoritative handler/VMT and wire closure
 
 - Correction to Run 40: the Run-67 generic VMT resolver's no-candidate result was a false negative. The direct VMT/interface crosswalk already establishes TEditWordDocument VMT 0x005ED764, parent TEmwatMethod, slot +0x10 -> 0x005EE82C. TScanDocument VMT 0x005ED884 slot +0x10 -> 0x005EEB48.
