@@ -39,3 +39,5 @@ No production Linux code changed. No Windows/Linux release build, merge or rebas
 - TIFF path is now better bounded: LoadDocument calls SeparteImages; it performs printer checks and the hidden worker before GDI+ TGPImage/TGPEncoderParameters page processing. Exact GDI+ save API, output filename, and worker completion signal remain open. See `docs/TIFF-OUTPUT-GDIPLUS-PIPELINE-2026-11-28.md`.
 
 - Queue-name handling: before the `EnumJobsW` comparison, Word passes the candidate through `FixDirectionInFarsiNumericMode`. The caller waits while a matching job remains; no explicit timeout was seen. Queue disappearance is a heuristic, not a success result.
+
+- Delay-call cross-check: `0x004028D0` is `kernel32!Sleep` (IAT `0x0062F09C`), despite a misleading TD32 `SuspendThread` symbol. Word polls every 5 ms while the matching job remains. The following `0x00404F04` import is still unresolved.
