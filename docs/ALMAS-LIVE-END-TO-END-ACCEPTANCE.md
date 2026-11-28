@@ -67,6 +67,12 @@ after a Don't Save choice.
    guessed response policy.
 5. **Almas persistence:** no test has yet shown that Almas receives, accepts,
    and persists the returned edited document.
+6. **In-flight shutdown policy:** the HTTP server has concurrent request
+   workers, but the desktop shutdown path has no explicit, tested policy for a
+   user quitting EMWAT while an EditWordDocument request is waiting on Writer.
+   Define and test whether shutdown drains the session or performs a verified
+   cancellation; it must not silently abandon the Almas request or leave an
+   orphaned Writer process.
 
 ## Required live acceptance procedure
 
@@ -96,6 +102,10 @@ and document contents before sharing artifacts.
    Linux.
 9. Repeat the accepted workflow after restarting the desktop application and
    after rebooting the test machine.
+10. While a real EditWordDocument request is pending, attempt to quit the
+    EMWAT desktop application. Verify the chosen drain/cancel behavior, that
+    Almas receives no false success, and that no Writer/soffice process or
+    temporary session is orphaned.
 
 ## Release decision
 
