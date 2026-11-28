@@ -70,3 +70,5 @@ GDI+ Save/SaveAdd methods `46119662918`, VMT/encoder GUIDs `46120082255`, GNU ob
 
 
 Corrected VMT pass: global slot 0x00483F4C contains 0x00483FA4 (not 0x00483FA0); TGPImage global slot 0x00484728 contains 0x00484780. The structures are Delphi class/interface metadata with interleaved records, not flat method arrays; interface dispatch semantics remain the reliable contract.
+
+- Scanner XML strings now establish root `scan-document`, constraints object `constraints`, fields `colorDepth`, `minResolution`, `maxResolution`, `maxFileSize`, and error property `error`. Required/default semantics remain open.
