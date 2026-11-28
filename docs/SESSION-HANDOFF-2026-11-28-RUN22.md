@@ -88,3 +88,17 @@ The 5 ms wait call is now verified as `kernel32!Sleep` at thunk `0x004028D0` / I
 
 
 The second call in the retry loop is now identified as `Vcl.Forms.TApplication.ProcessMessages` at thunk `0x00404F04` / IAT `0x00630038`. Thus the loop is explicitly `Sleep(5 ms)` + VCL message pumping + queue recheck; no timeout was observed.
+
+
+## Additional parallel lanes (after Run 22)
+
+- TIFF output lifecycle: run `46118848571`, success, artifact `15252563510`.
+- GearType resolution constants: run `46118936944`, success, artifact `15253185071`.
+- GearType resolution consumer: run `46119039684`, success, artifact `15252484299`.
+- GDI+ TIFF save API surface: run `46119009748`, success, artifact `15252962538`.
+- Word spool loop/document-name helper: run `46119247319`, success, artifact `15253240740`.
+- Wait API verification: run `46119407268`, success, artifact `15252639245`.
+- VCL companion import resolution: run `46119495733`, success, artifact `15252544710`.
+- GDI+ Save/SaveAdd method and encoder-parameter trace: run `46119662918`, in progress at handoff time.
+
+The 5 ms queue loop is confirmed as `kernel32!Sleep(5)` followed by `Vcl.Forms.TApplication.ProcessMessages`, then a fresh `EnumJobsW` lookup. It waits while the matching job exists and advances when absent; no timeout was observed. The candidate name is normalized by `FixDirectionInFarsiNumericMode` before comparison.
