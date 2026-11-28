@@ -41,3 +41,10 @@ At `0x004A1236`, the worker initializes the first DWORD of a 276-byte structure 
 This narrows the fallback behavior but does not identify the executable/file/parameters because the strings at `0x004A1864`, `0x004A1894`, `0x004A18B0`, `0x004A18BC`, `0x004A18D8`, `0x004A18E0`, and `0x004A18FC` have not been recovered from raw data. Crucially, successful `ShellExecuteW` return alone does not set the worker's success byte. The success byte is set at `0x004A1370` only after the final `FileExists` check at `0x004A121B` succeeds.
 
 **Correct completion contract:** stale-output deletion → timed file polling → optional OS-version-specific ShellExecuteW fallback → final file-existence predicate → worker success byte. Keep this separate from Word's `EnumJobsW` queue-disappearance loop and the `JobFinishes.GAM` sentinel.
+
+
+## Caller-side success gate
+
+The direct caller scan contains exactly one direct callsite for THidePrintingThread.Execute: TCreateTiff.SeparteImages at 0x004A02B8. The caller immediately executes test AL,AL and branches to its failure path at 0x004A02C1 when the worker returns false; only a true return reaches the continuation at 0x004A02D7. This confirms that the worker's Boolean result is a hard precondition for the GDI+ TIFF continuation, not a detached background status signal.
+
+The combined print-to-TIFF acceptance chain has two separate gates: the earlier spooler path waits for the print queue job to disappear; THidePrintingThread then waits for the generated output file and returns true only after the final FileExists predicate. Queue disappearance alone is not sufficient to accept the TIFF output.
