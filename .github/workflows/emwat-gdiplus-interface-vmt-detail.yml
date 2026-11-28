@@ -118,12 +118,7 @@ jobs:
           out=["# GDI+ code thunk to actual PE import map","",
                "This maps each 6-byte JMP [IAT] thunk to the import address and imported symbol; TD32 names are not treated as authoritative.","",
                "## Parsed GDI+ imports"]
-          for va in (0x00481C5C,0x00481C64,0x00481C6C,0x00481C74,0x00481C7C,0x00481D14):
-              try:
-                  off=pe.get_offset_from_rva(va-base)
-                  raw=blob[off:off+6]
-                  iat=int.from_bytes(raw[2:6],"little") if raw[:2]==b"\xff\x25" else None
-                  for slot, symbol in sorted(imports.items()):
+          for slot,symbol in sorted(imports.items()):
               if "gdip" in symbol.lower():
                   out.append(f"- {symbol} — IAT VA 0x{slot:08X}")
           out.append("")
@@ -139,7 +134,8 @@ jobs:
                       out.append(f"- imported symbol: {imports.get(iat,'NOT FOUND IN IMPORT DIRECTORY')}")
                   else:
                       out.append("- not a simple JMP [absolute IAT] thunk")
-              except Exception as exc: out.append(f"- error: {exc}")
+              except Exception as exc:
+                  out.append(f"- error: {exc}")
               out.append("")
           Path("gdiplus-followup/tiff-page-save/pe-import-thunk-map.md").write_text("\n".join(out)+"\n")
           PY
