@@ -61,3 +61,8 @@ The scanner artifact confirms these direct relationships:
 ## Guardrails
 
 No production Linux code was changed by this static pass. No Windows or Linux release build was started. No merge/rebase was performed. Keep Windows binaries as evidence inputs only; do not start implementation until the reverse-engineering contracts are sufficiently closed.
+
+
+## Superseding follow-up — 2026-11-28 Run 24
+
+Run 22's four-job completion remains valid. The later Word/printer/GDI+/scanner static-analysis results and corrections are recorded in docs/REVERSE-ENGINEERING-PARALLEL-FOLLOWUP-2026-11-28-RUN24.md. In particular, the Word activation callbacks are not the close bridge; the GAM printer setup path and INI sentinel settings are now mapped; GDI+ PE imports supersede stale TD32 thunk labels; scanner inline error-property evidence is recovered. The remaining open contracts are listed in the Run 24 report.
