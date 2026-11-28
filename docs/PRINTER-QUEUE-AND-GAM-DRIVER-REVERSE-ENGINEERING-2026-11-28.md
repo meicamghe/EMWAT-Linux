@@ -54,10 +54,10 @@ A second pass over `BGPrintWithGamPrintOptions` at `0x004C5FF8` confirms the dir
 
 - At `0x004C6099`, the routine calls `getPrinterNumJobs` and stores the returned printer handle in local `[EBP-0xDC]`.
 - For each generated document-name candidate, it calls `0x004563A8` to prepare the UnicodeString, places that name in `EDX`, the printer handle in `EAX`, and calls `ExtractFileNameEX` at `0x004C8949`.
-- If the helper returns false, the caller enters a retry/wait branch (including a `push 5` delay) and repeats the queue check. A true result advances the per-document loop.
+- If the helper returns true (matching job is still present), the caller waits via the `push 5` delay and repeats the same queue check. A false result advances to the next document/page.
 - The routine closes the printer handle through `ClosePrinter` at `0x004C8B72`.
 
-This proves that the Word print path actively waits for the corresponding job document name to appear in the spool queue. It proves job appearance/matching, not successful completion, spool drain, or final TIFF archive completion. The queue helper's direct caller is now established even though the separate TD32 direct-caller report missed this callsite.
+This proves that the Word print path waits while the matching document job remains in the spool queue and advances when that job is no longer found. The code treats queue disappearance as its completion condition, but absence can also result from cancellation, deletion, or a name mismatch; it does not independently prove successful printing or final TIFF archive completion. The queue helper's direct caller is now established even though the separate TD32 direct-caller report missed this callsite.
 
 ## 4. Other printer enumeration path
 
