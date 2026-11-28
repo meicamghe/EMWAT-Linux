@@ -169,6 +169,8 @@ def dump_range(image: PEImage, va: int, length: int) -> str:
 
     ansi = list(find_printable_runs(chunk, va, wide=False))
     wide = list(find_printable_runs(chunk, va, wide=True))
+    wide.extend(find_printable_runs(chunk[1:], va + 1, wide=True))
+    wide = sorted(set(wide))
     if ansi or wide:
         lines.append("  printable strings:")
         for address, value in ansi:
