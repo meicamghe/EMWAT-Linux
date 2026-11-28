@@ -215,8 +215,8 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
     writeln!(report)?;
     writeln!(report, "## Word Automation method signatures")?;
     writeln!(report, "The following decoded overloads are included to expose the actual COM wrapper parameters; names alone are not treated as proof of close/save semantics.")?;
-    let signature_targets = ["TWordDocument", "TWordApplication"];
-    let signature_names = ["Close", "Save", "SaveAs2000", "Quit", "Connect", "ConnectTo", "Disconnect"];
+    let signature_targets = ["TWordDocument", "TWordApplication", "TWordViwer"];
+    let signature_names = ["Close", "Save", "SaveAs2000", "Quit", "Connect", "ConnectTo", "Disconnect", "Create", "Destroy"];
     for class in bin.classes().iter().filter(|class| signature_targets.contains(&class.name())) {
         writeln!(report)?;
         writeln!(report, "### {}", class.name())?;
@@ -243,6 +243,37 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             writeln!(report, "```text")?;
             writeln!(report, "{:#?}", signature)?;
             writeln!(report, "```")?;
+        }
+    }
+
+    writeln!(report)?;
+    writeln!(report, "## Target class properties")?;
+    let property_targets = ["TWordViwer", "TWordApplication", "TWordDocument"];
+    for class in bin.classes().iter().filter(|class| property_targets.contains(&class.name())) {
+        writeln!(report)?;
+        writeln!(report, "### {} — published properties", class.name())?;
+        let published = bin.properties(class);
+        if published.is_empty() {
+            writeln!(report, "- None decoded")?;
+        }
+        for property in published {
+            let ty = bin.property_type_detail(class, &property)
+                .map(|detail| detail.header().name().to_string())
+                .unwrap_or_else(|| format!("type-ref 0x{:X}", property.prop_type_ref));
+            writeln!(report, "- `{}`: type=`{}`, get=`{:?}`, set=`{:?}`, stored=`{:?}`, index={}, default={}",
+                property.name(), ty, property.get, property.set, property.stored, property.index, property.default)?;
+        }
+        writeln!(report, "### {} — extended properties", class.name())?;
+        let extended = bin.extended_properties(class);
+        if extended.is_empty() {
+            writeln!(report, "- None decoded")?;
+        }
+        for property in extended {
+            let ty = bin.property_type_detail(class, &property)
+                .map(|detail| detail.header().name().to_string())
+                .unwrap_or_else(|| format!("type-ref 0x{:X}", property.prop_type_ref));
+            writeln!(report, "- [{:?}] `{}`: type=`{}`, get=`{:?}`, set=`{:?}`, stored=`{:?}`, index={}, default={}",
+                property.visibility, property.name(), ty, property.get, property.set, property.stored, property.index, property.default)?;
         }
     }
 

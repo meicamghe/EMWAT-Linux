@@ -90,6 +90,29 @@ jobs:
           for pid in "${pids[@]}"; do wait "$pid" || status=1; done
           exit "$status"
 
+      - name: Trace print worker, TIFF and Word connection helpers
+        shell: bash
+        run: |
+          set -euo pipefail
+          out=analysis-output/undelphi/print-worker
+          mkdir -p "$out"
+          targets=(004A1AA0 004A609C 004A5C10 004A5D78 004A8F78 004AA340 004AA33C 004AA148 004AA310 004A0148)
+          pids=()
+          for target in "${targets[@]}"; do
+            (
+              python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 \
+                "0x$target" "$out/procedure-$target.md"
+              python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 \
+                "0x$target" "$out/callers-$target.md"
+            ) &
+            pids+=("$!")
+          done
+          status=0
+          for pid in "${pids[@]}"; do wait "$pid" || status=1; done
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 \
+            0x00404FAC "$out/word-connection-helper-00404FAC.md" || status=1
+          exit "$status"
+
       - name: Merge TD32 and undelphi function seeds
         shell: bash
         run: |
