@@ -85,3 +85,33 @@ If REA's output conflicts with existing direct VMT, call-ABI, import-table or PC
 ## Completion criteria
 
 The REA pilot is useful only if it produces at least one reproducible, cross-checked finding that either closes a currently unresolved native question or yields a deterministic Linux regression fixture. Otherwise keep REA optional and continue with the existing scripts/workflows.
+
+
+## REA Delphi/Ghidra compatibility finding — 2026-11-28
+
+A current-source review of REA adds an important implementation constraint:
+
+- REA's Ghidra provider supports native analysis on Linux x64/arm64 with an existing compatible Ghidra installation and full JDK; the Linux process supervisor also requires a procps-compatible system `ps`. REA does not install Ghidra or Java. Exact version requirements must be taken from the selected REA release's installation guide and verified with `rea doctor --json`, because the current `main` guide and the tagged `rea-agents-6.5.0` guide have different Ghidra/JDK minimums.
+- REA issue [#2811](https://github.com/morluto/rea/issues/2811) is still an open/proposed feature request for a provider-free Delphi VMT/class/method/field parser. The issue explicitly states that REA has no built-in Delphi VMT parser in the described 6.4.0 environment. Do not assume a native Delphi symbol-recovery tool is already available.
+- The issue demonstrates an external-parser-to-Ghidra path: generate a seed file and set `REA_GHIDRA_SEED_FILE`. The documented seed line format is `address<TAB>kind[<TAB>name]`; for named methods use `function` plus the recovered class/method name. Ghidra applies seeds before auto-analysis. The seed digest is part of the analysis profile and failed/overlapping seeds are reported rather than silently accepted.
+- The issue's author reports a Delphi 7 PE32 experiment where an external VMT parser produced 1,610 published method labels and Ghidra imported all 1,610 with zero failures. This is evidence that the seed mechanism can work for one sample, not proof of compatibility with EMWAT's exact compiler/runtime.
+- `REA_GHIDRA_COMPILER_SPEC_ID=borlanddelphi` was tested in that report against five pseudocode outputs and was byte-identical for those five only. Treat it as a controlled experiment, not a default to apply without checking Ghidra's installed language catalog and EMWAT's compiler profile.
+
+### Revised EMWAT-specific pilot
+
+1. Preserve the exact EMWAT PE/BPL SHA-256 and verify PE32 image base and section mapping before opening the target in Ghidra.
+2. Run the selected REA release's doctor/provider checks first; do not install or mutate the user's analysis host from this repository workflow.
+3. Use an external, read-only Delphi VMT parser only after validating the actual layout against multiple structural invariants (self pointer, class-name string, parent pointer, and method/field table bounds). Record VA, RVA and file offset separately.
+4. Do not assume Delphi 7 merely because the target is PE32. First test candidate VMT anchors against known class/method addresses from the existing EMWAT disassembly and the actual VMT metadata.
+5. Emit a seed file only for method entries whose code address is validated as an executable PE mapping. Keep class/field metadata in a separate report; do not turn arbitrary field addresses into function seeds.
+6. Import the original PE into an isolated Ghidra project through REA, apply the seed file, and compare the recovered names and call graph around `TWordViwer.LoadDocument`, `TEditWordDocument.PerformMethod`, and the Word close callback against the existing static crosswalks.
+7. Keep all seed lines, parser version, input digest, Ghidra/REA versions, rejected candidates and collision counts as a reproducible analysis artifact.
+
+### What this does not close
+
+- REA has not been run against the EMWAT PE/BPL in this work session.
+- The Delphi compiler/VMT layout for the exact EMWAT binary is not yet proven.
+- No EMWAT class count, method count, or newly recovered symbol is claimed.
+- This is an analyst-side workflow only; REA remains outside EMWAT-Linux runtime dependencies.
+
+Primary references: [REA README](https://github.com/morluto/rea), [REA Ghidra provider](https://github.com/morluto/rea/blob/main/docs/providers/ghidra-provider.md), [REA installation guide](https://github.com/morluto/rea/blob/main/docs/getting-started/installation.md), [REA Delphi VMT issue #2811](https://github.com/morluto/rea/issues/2811).
