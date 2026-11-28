@@ -45,6 +45,6 @@ This narrows the fallback behavior but does not identify the executable/file/par
 
 ## Caller-side success gate
 
-The direct caller scan contains exactly one direct callsite for THidePrintingThread.Execute: TCreateTiff.SeparteImages at 0x004A02B8. The caller immediately executes test AL,AL and branches to its failure path at 0x004A02C1 when the worker returns false; only a true return reaches the continuation at 0x004A02D7. This confirms that the worker's Boolean result is a hard precondition for the GDI+ TIFF continuation, not a detached background status signal.
+The direct caller scan contains exactly one direct callsite for THidePrintingThread.Execute: TCreateTiff.SeparteImages at 0x004A02B8. The caller immediately executes test AL,AL and branches to its failure path at 0x004A02C1 when the worker returns false; only a true return reaches the continuation at 0x004A02D7. The false branch routes the message string at 0x004A09C0 through the existing application error/logging helper; its literal is still part of the raw-string extraction target. This confirms that the worker's Boolean result is a hard precondition for the GDI+ TIFF continuation, not a detached background status signal.
 
 The combined print-to-TIFF acceptance chain has two separate gates: the earlier spooler path waits for the print queue job to disappear; THidePrintingThread then waits for the generated output file and returns true only after the final FileExists predicate. Queue disappearance alone is not sufficient to accept the TIFF output.
