@@ -53,11 +53,11 @@ This is strong evidence that EMWAT correlates an Office/Word print operation wit
 A second pass over `BGPrintWithGamPrintOptions` at `0x004C5FF8` confirms the direct queue-match call that was previously only inferred from the helper:
 
 - At `0x004C6099`, the routine calls `getPrinterNumJobs` and stores the returned printer handle in local `[EBP-0xDC]`.
-- For each generated document-name candidate, it calls `0x004563A8` to prepare the UnicodeString, places that name in `EDX`, the printer handle in `EAX`, and calls `ExtractFileNameEX` at `0x004C8949`.
-- If the helper returns true (matching job is still present), the caller waits via the `push 5` delay and repeats the same queue check. A false result advances to the next document/page.
+- For each document-name candidate, it calls `0x004563A8` (`FixDirectionInFarsiNumericMode`) to normalize the UnicodeString, places the normalized name in `EDX`, the printer handle in `EAX`, and calls `ExtractFileNameEX` at `0x004C8949`.
+- If the helper returns true (matching job is still present), the caller waits via a one-argument delay call (`push 5`; target `0x004028D0`) and repeats the same queue check. A false result advances to the next document/page. The delay target's import identity is being verified separately.
 - The routine closes the printer handle through `ClosePrinter` at `0x004C8B72`.
 
-This proves that the Word print path waits while the matching document job remains in the spool queue and advances when that job is no longer found. The code treats queue disappearance as its completion condition, but absence can also result from cancellation, deletion, or a name mismatch; it does not independently prove successful printing or final TIFF archive completion. The queue helper's direct caller is now established even though the separate TD32 direct-caller report missed this callsite.
+This proves that the Word print path waits while the matching document job remains in the spool queue and advances when that job is no longer found. No explicit timeout was observed in this loop. The code treats queue disappearance as its completion condition, but absence can also result from cancellation, deletion, a job that was never submitted, or a document-name mismatch; it does not independently prove successful printing or final TIFF archive completion. The queue helper's direct caller is now established even though the separate TD32 direct-caller report missed this callsite.
 
 ## 4. Other printer enumeration path
 
