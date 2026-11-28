@@ -1,3 +1,13 @@
+## 2026-11-28 — parallel CI cancellation fix and REA-assisted analysis plan
+
+- PR #6 work branch: `work/parallel-closure-2026-11-28`. GTK startup composition is implemented, but live Almas persistence is still not verified.
+- Corrected both reverse-engineering workflow concurrency groups to include `github.sha` and set `cancel-in-progress: false`. Previously, each newer push on the same ref cancelled the active reverse-engineering run, which explains the repeated cancelled run 78 / run 51 pattern. The change allows distinct commit runs to proceed independently; it does not guarantee unlimited runner capacity.
+- Python bridge workflow already uses `cancel-in-progress: false`; run 1307 is pending/queued, not a pass.
+- Updated `docs/ALMAS-LIVE-END-TO-END-ACCEPTANCE.md`: the old Run-47 statement that GTK startup injection was absent is now explicitly superseded by the work-branch implementation.
+- REA is documented as an optional analyst-side tool, not an EMWAT runtime dependency. No REA execution against the Windows binary is claimed.
+- No merge to the feature branch or main; PR #6 remains the integration boundary.
+- Detailed tool workflow and evidence gates: `docs/REA-ASSISTED-REVERSE-ENGINEERING-PLAN-2026-11-28.md`.
+
 ## 2026-11-28 — isolated GTK bridge startup integration
 
 - New work branch: `work/parallel-closure-2026-11-28`, based on feature HEAD `00bb6a3387dddc7b25d331f879ad5c60db846fa8`.
