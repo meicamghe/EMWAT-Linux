@@ -19,12 +19,13 @@ The separate procedure labelled `TFaxDocument.PerformMethod` at `0x005EEB48` rea
 
 ## Current Linux request/office parity gap
 
-Current implementation inspection shows:
+Current implementation inspection and existing WordConfig docs show a more specific boundary:
 
 - `editword_request.py` decodes `wordConfig` and `wordBody`.
-- `signData` is preserved as opaque text.
-- Unknown fields, including `letterImages`, remain in `extra_parameters`.
-- `LibreOfficeAdapter.open_document` currently writes and opens only `request.document_bytes`; it does not apply `letterImages`, `signData`, or EMWAT WordConfig field substitutions.
+- `signData` is preserved as opaque text; `letterImages` remains in `extra_parameters`.
+- Stage-A image inventory can decode inline Base64 `image/*` WordConfig fields, classify signer slots, and identify `paramId` external-image references.
+- Controlled Writer image replacement and text-field update APIs exist, but they require explicit evidence-backed field-index-to-existing-target maps and are not automatically invoked during open.
+- The separate outer `letterImages` parameter is not yet resolved against WordConfig `paramId`/separator/`concater` metadata; `signData` is not split or applied. `LibreOfficeAdapter.open_document` opens the document and captures read-only inventories, but does not apply unverified field mappings.
 - A TD32 symbol exists for `TWordViwer.AddImagesToDoc` at `0x004C0410`, with a signature involving Word fields, two integers, a UnicodeString, and an `IXMLFieldType`. The actual callsite and payload format have not yet been proven.
 
 Therefore the Linux route can exercise the basic document open/edit/save lifecycle, but cannot yet claim full Windows parity for embedded letter images, signatures, and EMWAT field substitution. Do not invent the `letterImages` or `signData` encodings.
