@@ -232,3 +232,8 @@ The MaxFileSize unit is now closed as KiB: `TResultImage.GetFileStream` returns 
 ## TIFF output lifecycle gate
 
 The current static call graph ties `TWordViewer.LoadDocument` to `TCreateTiff.SeparteImages`, then to printer checks, `THidePrintingThread.Execute`, and GDI+ page processing via `TGPImage`/`TGPEncoderParameters`. The remaining gate is to identify the exact GDI+ save API, output naming, compression parameters, and how the Word queue-disappearance condition/hidden worker result gates TIFF completion. Evidence: `docs/TIFF-OUTPUT-GDIPLUS-PIPELINE-2026-11-28.md`.
+
+
+## GDI+ TIFF encoder parameters resolved
+
+The two GUIDs passed by `SeparteImages` resolve to standard GDI+ `EncoderCompression` and `EncoderSaveFlag`. Their values are 2 (LZW compression) and 18 (MultiFrame), respectively. This establishes the intended multi-page TIFF encoding configuration. Remaining work: map the interface VMT slots to initial Save, SaveAdd, and final flush, then confirm page ordering and output filename.
