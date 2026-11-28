@@ -36,7 +36,7 @@ Direct callers include `Zanprinter.InstallZanPrinter`, `Zanprinter.GetZanInstall
 
 Its direct callers include:
 - `TWordViewer.BGPrintWithGamPrintOptions` at `0x004C6099`
-- `TrimLF` in module `frmWordPrintOptionUnit` at `0x004A6173` (procedure start `0x004A609C`). This routine opens the printer handle and later closes it; its broader role is still being analyzed. It is not a `TCreateTiff.TrimLF` method.
+- `TrimLF` in module `frmWordPrintOptionUnit` at `0x004A6173` (procedure start `0x004A609C`). This routine only tests whether `OpenPrinterW` returned a nonzero handle, reports an error if it did not, and closes the handle later; it does not call `EnumJobsW` or use the handle for queue polling. It is not a `TCreateTiff.TrimLF` method.
 
 `Emwatutils.ExtractFileNameEX` at `0x004562C4` calls `EnumJobsW` through thunk `0x004044BC` twice:
 
