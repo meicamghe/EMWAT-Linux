@@ -1,3 +1,16 @@
+## 2026-11-28 — continuation snapshot (latest observed CI state)
+
+- Work branch: `work/parallel-closure-2026-11-28`; PR #6 is Draft/open, unmerged, targeting `feature/recovery-retention-policy`.
+- Latest checked head: `eb5933a10c443cc3cba54fb8204b1239b677700b`.
+- Current code validation on that head: GTK desktop run 365 succeeded; Debian package run 132 succeeded; Python bridge run 1313 was still in progress and has no pass/fail result yet.
+- Reverse-engineering run 78: image/UI/VMT and Word/print/COM jobs succeeded; native regression job's native build/regression step succeeded and Python regression was still running.
+- Deep-follow-up run 51: scanner result ownership, ImageEn acquisition, and Word printer-thread jobs succeeded; native regression job's native build/regression step succeeded and Python regression was still running.
+- Uploaded artifacts exist for the completed analysis jobs. They must be inspected before treating their output as confirmed findings. Static analysis does not prove hardware behavior or live Almas acceptance.
+- Do not claim signData parity, TIFF/GDI+ parity, physical scanner/printer acceptance, Duplex ADF, or full Almas persistence. A non-empty Windows signData fixture and live Almas save/reopen test remain release gates.
+- The older snapshot immediately below is retained as historical context and is superseded by this one. No merge was performed.
+
+---
+
 ## 2026-11-28 — latest continuation snapshot (after CI concurrency repair)
 
 - Current work branch head at this note: `a1d7ef24ca6459c751c23c29cea49cbc53de2926`; PR #6 remains Draft/open and targets `feature/recovery-retention-policy`. Do not merge to `main`.
