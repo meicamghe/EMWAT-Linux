@@ -452,3 +452,28 @@ This establishes a concrete distinction between connector XML parsing and the su
 The helper at 0x004E9D5C is TD32-labelled ScanResponseXML.NewScanDocument, not a generic XML conversion helper. It reads a value through the supplied object's VMT slot +0x8C and passes it, together with a constant at 0x004E9E00, into a dictionary/response setter. Keep the exact response key unresolved until the inline data and caller context are decoded.
 
 Run 16 now dereferences the four global constraint-string slots (0x00628260–0x0062826C) and traces current-resolution helper 0x004EEF30 plus request setup helper 0x004EFF94. This should identify the selector labels and clarify where the resolution value is sourced. No production Linux code changed.
+
+
+## Track U — Run 16 green: scan color-mode constraints identified
+
+Run 16 (46109194651) completed successfully on commit d44699cdcf5ae9da2d5a4191e5358b819be79262. All four jobs passed: ImageEn acquisition, scanner/result ownership, Word/printer thread, and native regression. Artifacts: scanner 15249375549, Word/printer 15249236179, ImageEn 15248776617.
+
+### Color-mode selector decoded
+
+The four global pointers consumed by the 0x004F32F4 validation helper now resolve as:
+- selector 1 -> 'سياه/سفيد' (black/white)
+- selector 4 -> 'طيف سياه و سفيد' (grayscale)
+- selector 8 -> 'طيف سياه و سفيد يا 256 رنگ' (grayscale or 256 colors)
+- selector 0x10 -> pointer 0x004F32DC; the first strict UTF-16 pass encountered malformed trailing bytes, so the exact text is not yet confirmed.
+
+This confirms the selector at command field +0x08 represents an image color-mode requirement, not a file extension or connector request type. The Persian message 'تصوير بايد %s باشد.' is the validation message for this constraint. The other helper fields remain: +0x0C/+0x10 resolution lower/upper bounds and +0x14 maximum file size, with the file size read from TResultImage.GetFileStream and compared against the configured value scaled by 1024.
+
+### Helper-name correction
+
+The procedure at 0x004EEF30 is TD32-labelled TGearImgProc.GearType. Its caller inside the validation helper uses its numeric return as the measured value compared with the configured resolution bounds. It is safer to call it the image metric/resolution helper in this context, not simply a generic current-resolution getter, until its source metadata is fully resolved.
+
+The helper at 0x004EFF94 is TGearImgProc.SetEditorForm, not a request setup helper. Its direct callers include SaveCPinMultiPageFile, Flip, TfrmSimpleImageEditor.doCommand, and the validation helper. It updates an editor page/index and associated state. The previous Track T wording 'request setup helper' was an incorrect descriptive label; the TD32 symbol and callsites establish its editor-form role.
+
+The 0x004E9D5C helper remains ScanResponseXML.NewScanDocument, which accesses an interface VMT slot +0x8C and stores a returned value in a response/dictionary path; exact key semantics are still unresolved.
+
+Run 17 instrumentation changes the fourth color-mode string decode to replacement-safe UTF-16 handling and traces the image metadata helper at 0x004AFF08, which feeds TGearImgProc.GearType. No production Linux code changed.
