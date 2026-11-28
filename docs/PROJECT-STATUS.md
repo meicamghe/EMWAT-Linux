@@ -3482,3 +3482,10 @@ Base64/GDI+ load closure (run 46121270958): Base64Decode is a shared AnsiString-
 - SevenZip SaveToStream is confirmed to create a TFileStream with fmCreate and pass it to SetCompleted. SaveToFile is only an out-parameter callback; output SetPassword remains a stub. Callback installer/owner and output encryption remain unresolved.
 - Scanner numeric getters initialize fallback storage to zero before XML helper calls, supporting a probable zero fallback. XMLRTL behavior for absent/empty/malformed attributes and required/optional fields remains unproven.
 - No production code, build, release, merge/rebase or new Actions run was performed. See the Run-26 report for exact artifact IDs and caveats.
+
+
+### External GAM printer package lead (2026-11-28)
+
+- Public installer evidence for Zan Image Printer 5.0.14.18 corroborates the `zvprt1` driver family and identifies `zvprtmon5.dll`, `zvprtmonui5.dll`, `zvprtsrv.exe`, `zvprtcfg.exe`, `zvprt1.gpd`, `zvprt5.ini`, `configure.ini`, and `sentineltemplate.txt` as high-value external reverse-engineering targets. The installer log records `AddZvprtMonitor` and an INI profile list containing `save.ini`, `image_bw.ini`, `general.ini` and other profiles. These are family-level leads; exact version parity with EMWAT's GAMPrinterSetup.exe is not proven.
+- A third-party Emwat Service inventory lists GAMPrinterSetup.exe plus AccuSoft `Gear32pd.dll` and `IGLZW32S.DLL`. This suggests an additional ImageGear/LZW component may be shipped, but no BPL call path to it has been proven.
+- Sources and evidence boundaries are recorded in the Run-26 report, section 7. The sentinel consumer is still not proven; the monitor DLL/server process are candidates only.
