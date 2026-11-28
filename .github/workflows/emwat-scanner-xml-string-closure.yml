@@ -1,0 +1,75 @@
+name: EMWAT scanner XML root and property string closure
+on:
+  push:
+    paths:
+      - 'analysis-input/EmwatMethods.bpl1'
+      - 'tools/trace_td32_procedure_skipdata.py'
+      - 'tools/list_td32_symbols.py'
+      - '.github/workflows/emwat-scanner-xml-string-closure.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: emwat-scanner-xml-string-closure-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  scanner-xml-strings:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install pefile capstone
+      - name: Trace XML getters and decode property names
+        shell: bash
+        run: |
+          mkdir -p scanner-xml-strings
+          python tools/list_td32_symbols.py analysis-input/EmwatMethods.bpl1 \
+            Get_ColorDepth Set_ColorDepth Get_MinResolution Set_MinResolution \
+            Get_MaxResolution Set_MaxResolution Get_MaxFileSize Set_MaxFileSize \
+            NewScanDocument LoadRequestXML VerifyConstraints \
+            > scanner-xml-strings/symbol-index.md
+          for target in 0x004E9D5C 0x004EA94C 0x004EAA08 0x004EAAD8 0x004EAB58 0x004EAC2C 0x004EACB0 0x004EAD84 0x004EAE08 0x004F2B18 0x004F2C4C; do
+            safe=${target#0x}
+            python tools/trace_td32_procedure_skipdata.py analysis-input/EmwatMethods.bpl1 "$target" \
+              "scanner-xml-strings/procedure-$safe.md" || true
+          done
+          python - <<'PY'
+          from pathlib import Path
+          import pefile,re
+          blob=Path("analysis-input/EmwatMethods.bpl1").read_bytes()
+          pe=pefile.PE(data=blob,fast_load=True)
+          base=pe.OPTIONAL_HEADER.ImageBase
+          procdir=Path("scanner-xml-strings")
+          addrs={0x004E9188,0x004E9DE4,0x004E9E00,0x004F2BF8,0x004F2C0C,
+                 0x004F31F8,0x004F3210,0x004F3224,0x004F3238}
+          for p in procdir.glob("procedure-*.md"):
+              txt=p.read_text()
+              for m in re.finditer(r"(?:mov|push)\s+(?:edx|ecx|eax)?,?\s*(0x[0-9a-fA-F]{6,8})",txt):
+                  try: addrs.add(int(m.group(1),16))
+                  except Exception: pass
+          out=["# Scanner XML inline strings and candidate keys",""]
+          for va in sorted(addrs):
+              try:
+                  off=pe.get_offset_from_rva(va-base)
+                  raw=blob[off:off+160]
+                  out.append(f"## 0x{va:08X} (raw 0x{off:08X})")
+                  out.append(f"- bytes: {raw[:72].hex(' ')}")
+                  for enc in ("utf-16le","latin1"):
+                      s=raw.decode(enc,"ignore").split("\0",1)[0]
+                      if s and sum(ch.isprintable() for ch in s)>3:
+                          out.append(f"- {enc}: {s!r}")
+              except Exception as exc: out.append(f"0x{va:08X}: {exc}")
+          Path("scanner-xml-strings/decoded-strings.md").write_text("\n".join(out)+"\n")
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: emwat-scanner-xml-root-strings
+          path: scanner-xml-strings/
+          if-no-files-found: error
