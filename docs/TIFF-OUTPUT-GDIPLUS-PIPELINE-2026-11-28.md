@@ -65,6 +65,11 @@ The CreateTiff module imports these GDI+ APIs:
 
 TD32 also contains `TGPImage.Save` file/stream overloads at `0x004908AC`, `0x004908E4`, `0x00490950`, and `0x004909B4`, plus `SaveAdd` overloads at `0x00490A18` and `0x00490A84`. This confirms the GDI+ save surface exists in the exact module. The direct VMT/call path from `SeparteImages` to the specific Save/SaveAdd overload and the encoder GUID/value pair are being cross-checked.
 
+
+### Symbol/import discrepancy to resolve
+
+The PE import scan and TD32 thunk labels disagree for the GDI+ save thunks. The PE import table maps `0x00481C64` to `GdipSaveImageToFile`, `0x00481C6C` to `GdipSaveImageToStream`, `0x00481C74` to `GdipSaveAdd`, and `0x00481C7C` to `GdipSaveAddImage`. TD32 labels at those addresses are shifted/different (for example, it labels `0x00481C64` as `GdipSaveImageToStream`). Since the same TD32 symbol table mislabeled the confirmed `Sleep` thunk as `SuspendThread`, do not use those thunk symbols alone to identify the APIs. The PE import mapping is currently primary, but the import table should be cross-checked with a second parser and the actual TGPImage VMT callsites before assigning a specific Save overload to a specific API.
+
 ## 4. Important separation from SevenZip
 
 The observed `SeparteImages` direct helper at `0x00454B9C` is `euGetASFileName` (EmailUtil). The current call graph does not establish that `T7zOutArchive` writes the TIFF page files. Keep the SevenZip output-archive investigation separate until a direct caller or output-stream hand-off connects it to this TIFF path.
