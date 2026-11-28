@@ -23,7 +23,7 @@ Observed flow:
 - The initial preflight removes an existing/stale file before waiting, preventing an old artifact from satisfying the next conversion attempt.
 - The 10 ms polling cadence and a computed deadline are explicit in the machine code.
 - The exact path strings referenced from `0x004A1784` and the related string/data addresses are not yet decoded. Therefore the file's extension, producer process, and exact hand-off to `TCreateTiff.SeparteImages` are not yet named.
-- The fallback launch path is now cross-mapped: `0x00402818` is `GetVersionExW`, the 276-byte structure at `0x004A1236` is `OSVERSIONINFOEXW`, and `0x00404494` is `shell32!ShellExecuteW` (IAT `0x0062F9CC`). The exact launch target/argument strings remain undecoded.
+- The fallback launch path is now cross-mapped: `0x00402818` is `GetVersionExW`, the 276-byte structure at `0x004A1236` is `OSVERSIONINFOW`-sized (the decorated helper symbol says `OSVERSIONINFOEXW`, which conflicts with the caller's size), and `0x00404494` is `shell32!ShellExecuteW` (IAT `0x0062F9CC`). The exact launch target/argument strings remain undecoded.
 
 ## Next proof gates
 
@@ -36,7 +36,7 @@ Observed flow:
 
 The previously unresolved `0x00404494` call is not a printer-status API. The printer helper artifact maps it to a six-argument thunk that jumps through IAT `0x0062F9CC` to `shell32.dll!ShellExecuteW`. The same artifact maps `0x00402818` to `GetVersionExW`.
 
-At `0x004A1236`, the worker initializes the first DWORD of a 276-byte structure (`0x114`) and passes it to `GetVersionExW`. The subsequent comparison at `0x004A1258` reads the `dwMajorVersion` field at structure offset `+0x04` and branches on whether it is greater than 5. The two OS-version branches use different operation-string pointers (`0x004A18B0` versus `0x004A18FC`) for their `ShellExecuteW` calls. Each branch can make up to three launch/open attempts; the observed inter-attempt delays include 3,000 ms and 50 ms. Every returned `HINSTANCE` is compared with `32`, matching the documented ShellExecute success threshold.
+At `0x004A1236`, the worker initializes the first DWORD of a 276-byte structure (`0x114`) and passes it to the `GetVersionEx` thunk. The byte size matches `OSVERSIONINFOW` (276 bytes), not the extended `OSVERSIONINFOEXW` layout (284 bytes); the TD32 decorated helper name carries an `OSVERSIONINFOEXW` suffix, so the symbol/type label and actual caller allocation disagree. Treat the runtime buffer as the basic `OSVERSIONINFOW` layout unless raw type metadata proves otherwise. The subsequent comparison at `0x004A1258` reads the `dwMajorVersion` field at structure offset `+0x04` and branches on whether it is greater than 5. The two OS-version branches use different operation-string pointers (`0x004A18B0` versus `0x004A18FC`) for their `ShellExecuteW` calls. Each branch can make up to three launch/open attempts; the observed inter-attempt delays include 3,000 ms and 50 ms. Every returned `HINSTANCE` is compared with `32`, matching the documented ShellExecute success threshold.
 
 This narrows the fallback behavior but does not identify the executable/file/parameters because the strings at `0x004A1864`, `0x004A1894`, `0x004A18B0`, `0x004A18BC`, `0x004A18D8`, `0x004A18E0`, and `0x004A18FC` have not been recovered from raw data. Crucially, successful `ShellExecuteW` return alone does not set the worker's success byte. The success byte is set at `0x004A1370` only after the final `FileExists` check at `0x004A121B` succeeds.
 
