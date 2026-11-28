@@ -1,9 +1,12 @@
-name: EMWAT GDI+ interface method table detail
+name: EMWAT GDI+ TIFF save dispatch follow-up
 on:
   push:
     paths:
       - 'analysis-input/EmwatMethods.bpl1'
-      - 'tools/trace_pe_range.py'
+      - 'tools/list_td32_symbols.py'
+      - 'tools/trace_td32_procedure_skipdata.py'
+      - 'tools/trace_td32_callers.py'
+      - 'tools/scan_pe_pointer_refs.py'
       - '.github/workflows/emwat-gdiplus-interface-vmt-detail.yml'
   workflow_dispatch:
 
@@ -15,45 +18,85 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  interface-methods:
+  gdiplus-class-interface:
     runs-on: ubuntu-latest
-    timeout-minutes: 12
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
       - run: pip install pefile capstone
-      - name: Resolve interface VMT and encoder Add implementation
+      - name: Resolve corrected TGPImage and encoder metadata references
         shell: bash
         run: |
-          mkdir -p gdiplus-interface-detail
+          mkdir -p gdiplus-followup/class-interface
+          python tools/list_td32_symbols.py analysis-input/EmwatMethods.bpl1 \
+            TGPImage TGPEncoderParameters EncoderParameters GdipSaveImageToFile \
+            GdipSaveImageToStream GdipSaveAddImage GdipSaveAdd SeparteImages \
+            > gdiplus-followup/class-interface/symbol-index.md
+          for target in 0x00483FA4 0x00484780 0x00483F4C 0x00484728; do
+            safe=${target#0x}
+            python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 "$target" \
+              "gdiplus-followup/class-interface/pointers-$safe.md" || true
+          done
           python - <<'PY'
           from pathlib import Path
           import pefile
           blob=Path("analysis-input/EmwatMethods.bpl1").read_bytes()
           pe=pefile.PE(data=blob,fast_load=True)
           base=pe.OPTIONAL_HEADER.ImageBase
-          def read(va,n):
-              return blob[pe.get_offset_from_rva(va-base):pe.get_offset_from_rva(va-base)+n]
-          out=["# GDI+ interface method table detail",""]
-          for label,va in (("TGPImage interface VMT candidate",0x0047DD84),
-                           ("TGPEncoderParameters interface VMT candidate",0x00632BB8)):
-              out.append(f"## {label} at 0x{va:08X}")
+          out=["# Corrected Delphi GDI+ class/interface metadata bytes","",
+               "Raw DWORDs are recorded as data only; do not interpret these blocks as flat VMTs.",""]
+          for name,va,size in (("TGPEncoderParameters",0x00483FA4,0x180),
+                               ("TGPImage",0x00484780,0x180),
+                               ("TGPEncoderParameters class slot",0x00483F4C,0x40),
+                               ("TGPImage class slot",0x00484728,0x40)):
+              out.append(f"## {name} @ 0x{va:08X}")
               try:
-                  raw=read(va,0xA0)
-                  for off in range(0,0x80,4):
-                      ptr=int.from_bytes(raw[off:off+4],"little")
-                      out.append(f"- +0x{off:02X}: 0x{ptr:08X}")
-              except Exception as exc: out.append(f"- error: {exc}")
-          Path("gdiplus-interface-detail/vmt-candidates.md").write_text("\n".join(out)+"\n")
+                  off=pe.get_offset_from_rva(va-base)
+                  raw=blob[off:off+size]
+                  for pos in range(0,len(raw)-3,4):
+                      value=int.from_bytes(raw[pos:pos+4],"little")
+                      out.append(f"- +0x{pos:03X}: 0x{value:08X}")
+              except Exception as exc: out.append(f"- read error: {exc}")
+              out.append("")
+          Path("gdiplus-followup/class-interface/class-metadata-dwords.md").write_text("\n".join(out)+"\n")
           PY
-          python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x00484050 0x004840B0 gdiplus-interface-detail/encoder-add-range.md
-          python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x0047DD84 0x0047DE50 gdiplus-interface-detail/tgpimage-interface-range.md
-          python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x00632BB8 0x00632C80 gdiplus-interface-detail/encoder-interface-range.md
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: emwat-gdiplus-interface-method-detail
-          path: gdiplus-interface-detail/
+          name: emwat-gdiplus-class-interface-followup
+          path: gdiplus-followup/class-interface/
+          if-no-files-found: error
+
+  tiff-page-save:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install pefile capstone
+      - name: Trace TIFF page orchestration and GDI+ save dispatch callsites
+        shell: bash
+        run: |
+          mkdir -p gdiplus-followup/tiff-page-save
+          python tools/list_td32_symbols.py analysis-input/EmwatMethods.bpl1 \
+            SeparteImages THidePrintingThread Execute TGPImage TGPEncoderParameters \
+            > gdiplus-followup/tiff-page-save/symbol-index.md
+          for target in 0x004A0148 0x004A0E88 0x004A071C 0x004A07F4 \
+                        0x004A08E4 0x004A08F4 0x004A0960 0x004A09C0; do
+            safe=${target#0x}
+            python tools/trace_td32_procedure_skipdata.py analysis-input/EmwatMethods.bpl1 "$target" \
+              "gdiplus-followup/tiff-page-save/procedure-$safe.md" || true
+            python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 "$target" \
+              "gdiplus-followup/tiff-page-save/callers-$safe.md" || true
+          done
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: emwat-gdiplus-tiff-page-save-followup
+          path: gdiplus-followup/tiff-page-save/
           if-no-files-found: error
