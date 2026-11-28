@@ -86,7 +86,10 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
     writeln!(report)?;
 
     let text_section = bin.ctx().sections().text;
-    let text_range = text_section.map(|section| {\n        let size = u64::try_from(section.size).unwrap_or(u64::MAX);\n        (section.va, section.va.saturating_add(size))\n    });
+    let text_range = text_section.map(|section| {
+        let size = u64::try_from(section.size).unwrap_or(u64::MAX);
+        (section.va, section.va.saturating_add(size))
+    });
     if let Some((start, end)) = text_range {
         writeln!(report, "## Executable section")?;
         writeln!(report, "- .text VA range: `0x{start:08X}–0x{end:08X}`")?;
