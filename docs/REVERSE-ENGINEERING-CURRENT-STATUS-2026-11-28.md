@@ -31,3 +31,5 @@ Parallel static-analysis runs 22–25 have produced several new contracts. The e
 No production Linux code changed. No Windows/Linux release build, merge or rebase was performed. Reverse engineering remains the only active project phase.
 
 - Word-to-spool queue gate is now direct: `BGPrintWithGamPrintOptions` opens a printer handle, checks each generated document name with `ExtractFileNameEX` / `EnumJobsW`, waits/retries while the matching queue entry exists, and advances when it disappears. This is the program's queue-disappearance condition, not an independent proof of successful printing or final TIFF success.
+
+- SevenZip output ownership is more bounded: T7zPlugin creates the T7zOutArchive initializer via constructor-style call to 0x004543C4, stores it at +0x44, and passes it through plugin slot +0x30. The object keeps an interface at +0x2C and callback/context at +0x30/+0x34. SetPassword remains a stub; encryption remains unproven. See `docs/SEVENZIP-OUTPUT-ARCHIVE-OWNERSHIP-2026-11-28.md`.
