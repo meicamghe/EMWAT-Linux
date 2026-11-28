@@ -320,6 +320,21 @@ jobs:
                       out.append(f"- [+0x{delta:X}] read failed: {exc}")
           Path("deep-followup/scanner-result/xml-global-pointer-chains.md").write_text("\n".join(out) + "\n")
           PY
+      - name: Trace scanner XML global initialization and interface implementation candidates
+        shell: bash
+        run: |
+          for target in 0x0062A7FC 0x0062A850 0x0062A800; do
+            safe=${target#0x}
+            python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 "$target" \
+              "deep-followup/scanner-result/global-refs-$safe.md"
+          done
+          python tools/trace_td32_procedure_skipdata.py analysis-input/EmwatMethods.bpl1 0x004E9D5C \
+            deep-followup/scanner-result/new-scan-document-full.md
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004E9D5C \
+            deep-followup/scanner-result/new-scan-document-callers.md
+          python tools/list_td32_symbols.py analysis-input/EmwatMethods.bpl1 \
+            IXMLNode TXMLNode TXMLDocument XMLNode XMLDocument \
+            > deep-followup/scanner-result/xml-interface-symbol-candidates.md
       - name: Decode exact scanner XML property and value constants
         shell: bash
         run: |
@@ -651,6 +666,16 @@ jobs:
             python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 "$target" \
               "deep-followup/word-printer/event-target-callers-$safe.md"
           done
+      - name: Search Word COM event sink and connection-point symbols
+        shell: bash
+        run: |
+          python tools/list_td32_symbols.py analysis-input/EmwatMethods.bpl1 \
+            TWordApplicationEvents TWordAppEvents TWordXPEvents TWordViwer \
+            > deep-followup/word-printer/word-com-event-symbol-candidates.md
+          python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 0x004B8A84 \
+            deep-followup/word-printer/on-timer-method-pointer-refs.md
+          python tools/trace_td32_procedure_skipdata.py analysis-input/EmwatMethods.bpl1 0x004B8A84 \
+            deep-followup/word-printer/on-timer-autosave-full.md
       - uses: actions/upload-artifact@v4
         if: always()
         with:
