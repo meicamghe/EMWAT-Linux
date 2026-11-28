@@ -108,3 +108,6 @@ GDI+ caveat: the PE import table and TD32 thunk labels disagree for the save API
 
 
 GDI+ encoder parameters are now decoded: `0x0062A84C` points to the standard `EncoderCompression` GUID and is passed value 2 (LZW); `0x0062A804` points to the standard `EncoderSaveFlag` GUID and is passed value 18 (MultiFrame). This is strong evidence for multipage TIFF with LZW compression. Interface VMT mapping for initial Save / SaveAdd / final flush remains open.
+
+
+GDI+ import identity is now independently confirmed: GNU `objdump -p` agrees with the PE import parser for GdipGetImageGraphicsContext, GdipSaveAddImage, GdipSaveAdd, GdipSaveImageToStream, and GdipSaveImageToFile. The TD32 labels on the corresponding thunk addresses are shifted/stale. Remaining work is the TGPImage interface VMT slot-to-call mapping.
