@@ -30,7 +30,7 @@ Current branch: `feature/recovery-retention-policy`
 - `Zanprinter.Finalization` opens that printer, gets `PRINTER_INFO_2A` level 2, closes it, and checks Status at +0x48 for value 1 (paused).
 - `getPrinterNumJobs` actually calls `OpenPrinterW` and returns the handle; it does not count jobs itself.
 - `ExtractFileNameEX` calls `EnumJobsW` twice (buffer sizing + data), iterates `JOB_INFO_1W` records at 0x40 stride, reads `pDocument` at +0x10, and compares the job document name with the supplied UnicodeString.
-- Direct callers of `getPrinterNumJobs` include `TWordViewer.BGPrintWithGamPrintOptions` and `TCreateTiff.TrimLF`. The direct link from `BGPrintWithGamPrintOptions` to `ExtractFileNameEX` is now proven: it waits while the matching `JOB_INFO_1W.pDocument` remains in the queue, retries after a short delay, and advances when the match disappears; it then closes the printer handle. The final TIFF/archive gate remains open.
+- Direct callers of `getPrinterNumJobs` include `TWordViewer.BGPrintWithGamPrintOptions` and `TrimLF` in module `frmWordPrintOptionUnit` (procedure start `0x004A609C`; not a `TCreateTiff` method). The direct link from `BGPrintWithGamPrintOptions` to `ExtractFileNameEX` is now proven: it waits while the matching `JOB_INFO_1W.pDocument` remains in the queue, retries after a short delay, and advances when the match disappears; it then closes the printer handle. The final TIFF/archive gate remains open.
 - No direct EMWAT `StartDocPrinter`/`WritePrinter` calls were recovered. Word may own job submission through its print stack; do not mistake missing direct imports for missing spool jobs.
 
 ## Confirmed Word PrintOut discrepancy
@@ -48,8 +48,8 @@ Current branch: `feature/recovery-retention-policy`
 
 ## Immediate parallel priorities
 
-1. Trace `TCreateTiff.TrimLF` and pointer/VMT references to `ExtractFileNameEX`; connect queue match to TIFF output.
-2. Decode `0x0047CC64`, trace `InstallZanPrinter`, and prove the exact GAM driver literal.
+1. Resolve the exact role of `frmWordPrintOptionUnit.TrimLF`; connect the queue-disappearance result to TIFF output/archive completion.
+2. Trace `GetZanInstallDir`, helper `0x00401240`, and the full printer setup/installation branch; driver literal `zvprt1` is already decoded.
 3. Trace `Zanprinter.CheckPrinterPaused` at `0x0047D448` and reconcile it with Finalization.
 4. Resolve the 18-vs-17 Word PrintOut ABI against exact WordXP type-library metadata.
 5. Map SevenZip output callback construction and `euResetMemory` VMT slots.
