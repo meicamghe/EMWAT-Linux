@@ -3578,3 +3578,13 @@ Base64/GDI+ load closure (run 46121270958): Base64Decode is a shared AnsiString-
 - The workflow runs the complete `unittest discover -s tests -v` suite. Active job logs were unavailable through the GitHub connector while the jobs were running, so the exact blocking test is not yet identified. Do not call this a test failure or pass.
 - Added a diagnostic safety bound to `.github/workflows/python-bridge.yml`: job timeout 15 minutes, test command timeout 12 minutes, and recurring faulthandler thread dumps after 5 minutes. This should expose stack traces if a test deadlocks and prevent unbounded runner consumption.
 - This is CI diagnostic hardening, not a product behavior change. The next run must be inspected for traceback output and the exact hanging test; only then should a targeted fix be made.
+
+
+## 2026-11-28 — latest parallel continuation: Bridge CI and REA Delphi lane
+
+- Current work-branch head after documentation updates: `dd25acff8a58e11031f6788b2b01dc2e5894de51`; PR #6 remains Draft/open/unmerged and mergeable. Compare against `feature/recovery-retention-policy`: 40 commits ahead, 0 behind.
+- Latest observed Python Bridge run `46149684182` / job `140993392222` remains in `Run bridge transport tests`; dependency installation and CLI checks passed, but no test conclusion or diagnostic artifact is available yet. Active job-log retrieval returned 404/BlobNotFound. GTK and Debian package workflows passed on the same source commit.
+- Added `docs/BRIDGE-CI-STALL-INVESTIGATION-2026-11-28.md`. Source audit found most explicit test waits/joins are bounded. `BridgeRuntime.start()` still calls an unbounded `wait_until_serving()`, but the concrete server signals it on serve-loop entry and exit; this is a hardening candidate, not a proven CI root cause. Wait for the per-test artifact/traceback before changing runtime behavior.
+- Updated `docs/REA-ASSISTED-REVERSE-ENGINEERING-PLAN-2026-11-28.md` with a newly verified REA limitation: issue [morluto/rea#2811](https://github.com/morluto/rea/issues/2811) is an open proposal for native Delphi VMT recovery; REA's existing `REA_GHIDRA_SEED_FILE` path can import externally recovered method labels. The issue author reports one Delphi 7 PE32 sample with 1,610 method seeds accepted, but this is not an EMWAT result.
+- Revised REA lane: verify the exact EMWAT compiler/VMT profile against multiple invariants, then use an external read-only parser to produce validated function seeds for Ghidra. Keep class/field metadata separate, and do not infer Delphi 7 from PE32 alone. REA has not yet been executed against EMWAT artifacts.
+- No runtime source changes, local test/build, Windows binary execution, live Almas acceptance, merge, or release were performed in this continuation.
