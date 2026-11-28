@@ -24,7 +24,7 @@ Added `test_request_drain_counts_accepted_socket_before_worker_first_instruction
 - Verifies the drain hook still sees one active request while the worker is paused.
 - Releases the worker, verifies the HTTP 200 `TickTack` response, then closes the runtime.
 
-Test commit: `063f0c63666040b2d4d149fae08a3382db168a30`.
+Test commits: `063f0c63666040b2d4d149fae08a3382db168a30` (worker-start race) and `eba0ddb803d264ad6c469394b866eb2d7806b64a` (counter rollback when worker creation raises).
 
 The test has not been executed. A local shallow clone attempt could not resolve github.com in this environment; no GitHub Actions run was started.
 
