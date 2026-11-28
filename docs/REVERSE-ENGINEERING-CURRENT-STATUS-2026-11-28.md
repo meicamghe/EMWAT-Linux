@@ -7,6 +7,7 @@ The latest verified static-analysis run is Run 22 (`46112005385`), with all four
 - Word callback correction is maintained: `0x004CD154` is BeforeSave, not BeforeClose. Active BeforeClose registration and browser close bridge are still open.
 - `SeparteImages` orchestrates printer checks, hidden worker invocation and per-image processing. Actual Winspool job submission, completion and GAM artifact hand-off remain unproven.
 - SevenZip output callback storage/dispatch is now visible at +0x30/+0x34. Output `SetPassword` is a stub; encryption must not be assumed.
+- Word PrintOut ABI re-check found four repeated callsites through slot `+0x3F0`, each passing 18 Variant-record pointers (15 EmptyParam plus three prepared records); generated wrappers stop at 17 arguments. Exact COM ABI remains unresolved. See `docs/WORD-PRINTOUT-18-VARIANT-ABI-RECHECK-2026-11-28.md`.
 - A new four-lane workflow was added at `.github/workflows/emwat-parallel-contract-followup.yml` (commit `743b619af9a139c84fd2de3099ef4f09a3bc9ff4`) to investigate scanner XML, Word PrintOut ABI, Winspool import xrefs and SevenZip output callbacks. Verify that GitHub Actions actually started it before claiming results.
 
 No production Linux code changed. No release build, merge or rebase was performed. Physical scanner, printer, Office and Almas end-to-end acceptance remain outstanding.
