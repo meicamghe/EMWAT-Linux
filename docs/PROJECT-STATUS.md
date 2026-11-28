@@ -3502,3 +3502,14 @@ Base64/GDI+ load closure (run 46121270958): Base64Decode is a shared AnsiString-
 - **Scanner:** integer accessors for `colorDepth`, `minResolution`, `maxResolution`, `maxFileSize` explicitly test `HasAttribute`; absent returns initialized 0 without calling GetAttribute. Present values go through Variant-to-integer conversion; Delphi docs say nonnumeric strings raise. Thus absent numeric fields are confirmed zero, while empty/malformed values are not zero defaults. Required/optional string-field semantics remain open.
 - **GDI+:** rechecked first-page flag and confirmed initial Save writes first frame; first SaveAddImage iteration is skipped, later frames appended, final SaveAdd Flush follows. Runtime TIFF fixture/Almas acceptance remains.
 - No production code, build, release, merge/rebase or new Actions run was performed.
+
+
+## 2026-11-28 — Run 28 exact EMWAT GAM payload audit
+
+- Added `docs/REVERSE-ENGINEERING-PARALLEL-FOLLOWUP-2026-11-28-RUN28.md` and extended `docs/GAM-VIRTUAL-PRINTER-REVERSE-ENGINEERING.md`.
+- Correction: the exact EMWAT-bundled `GAMPrinterSetup.exe` is already inside repository `EMWAT_Extracted.zip`; the public Zan 5.0.19 package is only family-level comparison evidence, not a missing prerequisite.
+- Exact hashes are recorded for `GAMPrinterSetup.exe`, `zvprtsrv_x86.exe`, `zvprtmon5_x86.dll`, `zvprtuni5_x86.dll`, `zvprtui5_x86.dll`, `general.ini`, `save.ini`, and the 40-byte `sentineltemplate.txt`.
+- Exact package analysis records monitor entry points `InitializePrintMonitor2/LcmOpenPort/LcmStartDocPort/LcmWritePort/LcmEndDocPort`, OEM driver render stages through `Render_SendPage`, server GDI page APIs, TIFF/PDF/PNG/BMP codecs and `Global\\zvprtapi...` shared-memory/event names.
+- BPL's `sentinel=1` / `sentinelfile=JobFinishes.GAM` and package's `sentineltemplate.txt` are now tied to the exact payload inventory, but the template contents and writer component remain unproven.
+- Agent's `TEmwatSentinel` is separately identified as loopback heartbeat GET `/?heartbeat` expecting `TickTack`; it is not the printer's `JobFinishes.GAM` sentinel.
+- No new Actions run, binary execution, production code change, build/release, merge or rebase was performed.
