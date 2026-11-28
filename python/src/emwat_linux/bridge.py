@@ -12,6 +12,7 @@ import math
 import re
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import threading
+import time
 from ipaddress import ip_address
 from typing import Callable
 from urllib.parse import parse_qsl, urlsplit
@@ -60,10 +61,6 @@ class _ServingThreadingHTTPServer(ThreadingHTTPServer):
 
     def wait_for_requests_idle(self, timeout_seconds: float) -> bool:
         """Wait at most timeout_seconds for all accepted HTTP workers to finish."""
-        deadline = threading.current_thread()
-        del deadline
-        import time
-
         end = time.monotonic() + timeout_seconds
         with self._request_condition:
             while self._active_requests:
