@@ -157,3 +157,14 @@ The full `0x005EE82C` procedure proves the outer request-key requirements more p
 - The loader call at `0x005EE961` receives `wordConfig`, `wordBody`, `letterImages`, and `signData` (plus the handler's output/owner arguments).
 
 **Success-path requirement:** although the connector handler's dictionary lookup does not explicitly reject a missing `wordBody`, the full `TWordViwer.LoadDocument` trace decodes it and checks the decoded length at `0x004B77AB–0x004B77B5`; an empty result enters an error path. Therefore the Linux parser's non-empty Base64 body requirement matches the native successful-load path. The remaining mismatch is error timing/response semantics for missing or empty bodies, not support for successful body-less document creation. Do not add blank-document creation without evidence of a successful native empty-body branch. The current Writer adapter cannot safely open an empty payload as a document.
+
+
+## Run 44 — request argument routing inside TWordViwer.LoadDocument
+
+The complete Run-50 skipdata trace narrows the three non-config inputs:
+
+- `wordBody` is passed through helper `0x00457050` and `0x00454B9C`, stored as a decoded string, checked for non-zero length, and used to construct the temporary source stream/file before WordViewer proceeds. This supports the Linux parser's non-empty decoded-body requirement for successful opens.
+- `letterImages` is passed as EDX to `TCreateTiff.SeparteImages` at `0x004B7A9C` / `0x004B7ABD`. Its currently proven consumer is therefore the print-to-TIFF/preview side, not the basic Word body open/save path. This can remain deferred while TIFF is out of scope.
+- `signData` is passed as an additional argument and is subsequently used in XML-node/interface operations around `0x004B7AEB–0x004B7B2F`. It is not safe to discard, but its exact schema and effect on Writer fields are still unresolved.
+
+This refines the parity priorities: preserve `signData` and recover its mapping before claiming signature parity; do not block the basic Word edit/save milestone solely on `letterImages`/TIFF generation, provided the real Almas acceptance fixture does not require those preview artifacts.
