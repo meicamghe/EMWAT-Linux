@@ -151,3 +151,10 @@ The same run's printer subtrace confirms the local `zvprt1` driver-name enumerat
 Next targeted work: resolve the runtime helper against the exact `rtl230.bpl` export map if available, trace `TCreateTiff.SeparteImages`, and enumerate direct/indirect callers of VCL `TPrinter.BeginDoc/GetCanvas/NewPage/EndDoc` and Winspool `OpenPrinter/GetPrinter/EnumJobsW`. Until then, keep COM argument mapping and print-job ownership open.
 
 Evidence: Run 40 Word artifact `15097418557`, workflow run `45779391301`.
+
+
+## 2026-11-28 repeated PrintOut ABI re-check
+
+The `BGPrintWithGamPrintOptions` procedure contains four calls through document interface slot `+0x3F0` (`0x004C70B6`, `0x004C78A4`, `0x004C7F50`, `0x004C87FA`). Each argument setup pushes 18 local Variant-record pointers: 15 initialized via `@System@Variants@EmptyParam` plus three prepared records. The generated `TWordDocument.PrintOut` wrappers found in TD32 stop at 17 Variants (15/16/17 overloads); the 18-vs-17 discrepancy is therefore repeated, not a single bad callsite. Do not drop a Variant or infer Word parameter names until the exact WordXP type-library ABI is established. See `docs/WORD-PRINTOUT-18-VARIANT-ABI-RECHECK-2026-11-28.md`.
+
+The same routine obtains a printer handle, repeatedly checks each generated document name with `ExtractFileNameEX` / `EnumJobsW`, waits while the matching `JOB_INFO_1W.pDocument` remains in the queue, and advances when it disappears. This is the code's queue-disappearance heuristic, not independent proof of successful printing.
