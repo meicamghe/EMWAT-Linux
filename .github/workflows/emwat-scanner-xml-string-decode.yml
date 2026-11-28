@@ -1,0 +1,94 @@
+name: EMWAT scanner XML serialized-name recovery
+on:
+  push:
+    paths:
+      - 'analysis-input/EmwatMethods.bpl1'
+      - '.github/workflows/emwat-scanner-xml-string-decode.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: emwat-scanner-xml-strings-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  scanner-xml-string-constants:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install pefile
+      - name: Decode XML root and property constants from accessor callsites
+        shell: bash
+        run: |
+          mkdir -p scanner-xml-strings
+          python - <<'PY'
+          from pathlib import Path
+          import pefile
+
+          path = Path("analysis-input/EmwatMethods.bpl1")
+          blob = path.read_bytes()
+          pe = pefile.PE(data=blob, fast_load=True)
+          base = pe.OPTIONAL_HEADER.ImageBase
+          targets = {
+              "NewScanDocument.root-or-type": 0x004E9DE4,
+              "NewScanDocument.interface-or-namespace": 0x004E9E00,
+              "Config.Type.get": 0x004EA158,
+              "Config.DriverDialog.get": 0x004EA1DC,
+              "Config.ImageEditor.get": 0x004EA290,
+              "Config.MultiJpegSupport.get": 0x004EA324,
+              "Config.PreviousImageName.get": 0x004EA3E8,
+              "Output.ForceSinglePageFiles.get": 0x004EA86C,
+              "Output.ForceSinglePageFiles.set": 0x004EA87C,
+              "Output.Constraints": 0x004EA920,
+              "Constraints.ColorDepth.get": 0x004EA9E0,
+              "Constraints.ColorDepth.get-conversion": 0x004EA9F8,
+              "Constraints.ColorDepth.set": 0x004EAAC0,
+              "Constraints.MinResolution.get": 0x004EAB40,
+              "Constraints.MinResolution.set": 0x004EAC10,
+              "Constraints.MaxResolution.get": 0x004EAC94,
+              "Constraints.MaxResolution.set": 0x004EAD68,
+              "Constraints.MaxFileSize.get": 0x004EADEC,
+              "Constraints.MaxFileSize.set": 0x004EAEC0,
+          }
+
+          def offset(va):
+              return pe.get_offset_from_rva(va - base)
+
+          def decode(va, enc):
+              off = offset(va)
+              raw = blob[off:off+192]
+              if enc == "utf-16le":
+                  end = next((i for i in range(0,len(raw)-1,2) if raw[i:i+2] == b"\\x00\\x00"), len(raw)//2*2)
+                  return raw[:end].decode(enc, errors="replace")
+              end = raw.find(b"\\x00")
+              if end < 0: end = len(raw)
+              return raw[:end].decode(enc, errors="replace")
+
+          out = ["# Scanner XML serialized-name string candidates","",
+                 "Each address is an immediate string/data pointer observed in the corresponding generated getter/setter or document factory. Both UTF-16LE and ANSI decodings are recorded; confirm encoding and field role against accessor callsites.",""]
+          for label, va in targets.items():
+              try:
+                  off = offset(va)
+                  a = decode(va,"utf-16le")
+                  b = decode(va,"cp1252")
+                  out.append(f"## {label} — VA 0x{va:08X}, raw 0x{off:08X}")
+                  out.append(f"- UTF-16LE: {a!r}")
+                  out.append(f"- ANSI: {b!r}")
+                  out.append(f"- raw[0:64]: {blob[off:off+64].hex(' ')}")
+              except Exception as exc:
+                  out.append(f"## {label} — VA 0x{va:08X}")
+                  out.append(f"- decode failed: {exc}")
+          Path("scanner-xml-strings/serialized-name-candidates.md").write_text("\n".join(out)+"\n")
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: emwat-scanner-xml-serialized-names
+          path: scanner-xml-strings/
+          if-no-files-found: error
