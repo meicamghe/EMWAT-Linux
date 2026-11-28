@@ -3402,4 +3402,4 @@ The current follow-up workflow `emwat-print-queue-completion` is tracing TrimLF,
 
 Reverse engineering only. No production Linux code or release builds were changed; no merge/rebase was performed.
 
-- Additional direct correlation: `BGPrintWithGamPrintOptions` obtains the printer handle, checks each generated document name against `JOB_INFO_1W.pDocument` through `ExtractFileNameEX`, retries after a short delay until the queue entry appears, and then closes the handle. This closes the previously open call-chain link from Word to the spool queue, but not the final completion/TIFF gate.
+- Additional direct correlation: `BGPrintWithGamPrintOptions` obtains the printer handle, checks each generated document name against `JOB_INFO_1W.pDocument` through `ExtractFileNameEX`, waits/retries while the queue entry exists, and advances when it disappears. This proves the program's queue-disappearance heuristic, not successful printing or final TIFF/archive completion.
