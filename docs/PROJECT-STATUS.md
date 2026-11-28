@@ -3427,3 +3427,5 @@ Reverse engineering only. No production Linux code or release builds were change
 
 
 GDI+ import identity is now independently confirmed: GNU `objdump -p` agrees with the PE import parser for GdipGetImageGraphicsContext, GdipSaveAddImage, GdipSaveAdd, GdipSaveImageToStream, and GdipSaveImageToFile. The TD32 labels on the corresponding thunk addresses are shifted/stale. Remaining work is the TGPImage interface VMT slot-to-call mapping.
+
+- SevenZip output detail: `SaveToFile` is a stub; `SaveToStream` wraps a stream and calls `SetCompleted`. Separate callbacks exist for progress (+0x38) and operation result (+0x30/+0x34). Output password-setting remains unimplemented in the traced stub.
