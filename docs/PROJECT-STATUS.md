@@ -3460,3 +3460,14 @@ Base64/GDI+ load closure (run 46121270958): Base64Decode is a shared AnsiString-
 - GDI+ thunk map is corrected from PE imports, not TD32 labels: 0x481C64=GdipSaveImageToFile, 0x481C6C=GdipSaveImageToStream, 0x481C74=GdipSaveAdd, 0x481C7C=GdipSaveAddImage; 0x481C5C=GdipDisposeImage and 0x481D14=GdipImageRotateFlip. TGPImage interface slot → Save/SaveAdd/final-flush mapping remains open; raw pointer scans found no runtime-section references to the candidate wrappers.
 - Scanner LoadRequestXML passes inline property error to XML interface slot +0xB8; adjacent diagnostic prefix is <ScanDoc HasError>. ErrorXML:. Required/optional/default semantics and external XMLRTL slot identity remain open.
 - No production Linux/Windows code or release build was changed; no merge/rebase was performed.
+
+
+## 2026-11-28 — five-track reverse-engineering follow-up (Run 25 artifact re-analysis)
+
+- Added the detailed evidence report: docs/REVERSE-ENGINEERING-PARALLEL-FOLLOWUP-2026-11-28-RUN25.md. This is a re-analysis of completed Run-24 artifacts, not a new CI run.
+- GDI+ TIFF lifecycle is now statically closed at sequence level: initial file save with MultiFrame/LZW, Page-dimension frame count and selection, SaveAddImage for page frames, and SaveAdd with Flush flag 20. The first-iteration dual-image construction is explicitly preserved as an unresolved output-order/duplication check.
+- GAM printer producer-side contract is clarified: CheckPrinterPaused writes save.ini, image.ini and general.ini; the latter sets sentinel=1 and sentinelfile=JobFinishes.GAM. The actual PRINTER_STATUS_PAUSED check is Zanprinter.Finalization. The external sentinel consumer is not present in the inspected EMWAT module.
+- Word close boundary is narrowed: the BeforeClose-named helper is a print-field validator; QuitWord only checks the Word Caption against Activation; the embedded service bridge is generic. The actual parent-page/host close notification and Windows Save/Discard/Cancel path remain unresolved.
+- SevenZip output wrapper and separate progress/operation-result callbacks are confirmed. SaveToFile and SetPassword are stubs; callback installer/owner and encryption policy remain unproven.
+- Scanner XML: root, case-sensitive keys, error property and numeric constraint behavior are consolidated. Values none/jpg/yes/no are recognized but not assigned to specific properties without the XMLRTL interface implementation. XML defaults and required/optional behavior remain open.
+- No production implementation, build, release, merge or rebase was performed.
