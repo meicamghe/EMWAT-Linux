@@ -254,6 +254,93 @@ class GtkDesktopRuntimeTests(unittest.TestCase):
         window.close()
 
 
+    def test_window_close_keeps_desktop_open_until_bridge_request_drains(self):
+        import threading
+        import time
+        from types import SimpleNamespace
+        from gi.repository import GLib
+        import emwat_linux.gtk_desktop as gtk_desktop
+
+        class FakeSupervisor:
+            def __init__(self):
+                self._state = "running"
+                self._failure = None
+                self.stop_entered = threading.Event()
+                self.release_first_stop = threading.Event()
+                self.stop_attempts = 0
+
+            @property
+            def state(self):
+                return SimpleNamespace(value=self._state)
+
+            @property
+            def failure(self):
+                return self._failure
+
+            def stop(self):
+                self.stop_attempts += 1
+                if self.stop_attempts == 1:
+                    self.stop_entered.set()
+                    if not self.release_first_stop.wait(3):
+                        raise TimeoutError("test_stop_release_timeout")
+                    self._state = "failed"
+                    self._failure = TimeoutError(
+                        "bridge_request_workers_did_not_drain_before_timeout"
+                    )
+                    raise self._failure
+                self._state = "stopped"
+                self._failure = None
+
+        supervisor = FakeSupervisor()
+        original_application_id = gtk_desktop.APPLICATION_ID
+        gtk_desktop.APPLICATION_ID = "org.emwat.Linux.WindowDrainTest"
+        try:
+            application = gtk_desktop.create_desktop_application(
+                bridge_supervisor=supervisor
+            )
+        finally:
+            gtk_desktop.APPLICATION_ID = original_application_id
+        application.register(None)
+        application.activate()
+        window = application.get_active_window()
+        self.extra_windows.append(window)
+        self.addCleanup(application.quit)
+
+        context = GLib.MainContext.default()
+        window.close()
+        self.assertTrue(supervisor.stop_entered.wait(2))
+        self.assertTrue(window.get_visible(), "window must remain open during bridge drain")
+        supervisor.release_first_stop.set()
+
+        deadline = time.monotonic() + 3
+        while time.monotonic() < deadline:
+            while context.pending():
+                context.iteration(False)
+            labels = [
+                item.get_text()
+                for item in self._walk_widgets(window.get_child())
+                if isinstance(item, self.Gtk.Label)
+            ]
+            if any("توقف کامل نشد" in label for label in labels):
+                break
+            time.sleep(0.005)
+        self.assertTrue(any("توقف کامل نشد" in label for label in labels), labels)
+        self.assertTrue(window.get_visible())
+        self.assertEqual(supervisor.stop_attempts, 1)
+
+        window.close()
+        deadline = time.monotonic() + 3
+        while time.monotonic() < deadline:
+            while context.pending():
+                context.iteration(False)
+            if not window.get_visible():
+                break
+            time.sleep(0.005)
+        self.assertFalse(window.get_visible(), "window should close after successful drain")
+        self.assertEqual(supervisor.stop_attempts, 2)
+        self.assertEqual(supervisor.state.value, "stopped")
+
+
     def test_application_shutdown_waits_for_inflight_start_then_stops_bridge(self):
         import threading
         import time
