@@ -3491,3 +3491,14 @@ Base64/GDI+ load closure (run 46121270958): Base64Decode is a shared AnsiString-
 - Sources and evidence boundaries are recorded in the Run-26 report, section 7. The sentinel consumer is still not proven; the monitor DLL/server process are candidates only.
 
 - Additional community uninstall guidance says `zvprtsrv.exe` runs as a process and `zvprtmon5.dll`/`zvprtmonui5.dll` are removed from system32 only after stopping the spooler. Together with the installer's `AddZvprtMonitor` step, this supports their monitor/companion-process roles, but still does not identify the exact `JobFinishes.GAM` consumer. Source and caveat are in Run-26 section 7.
+
+
+## 2026-11-28 — Run 27 cross-artifact/API reconciliation
+
+- Added `docs/REVERSE-ENGINEERING-PARALLEL-FOLLOWUP-2026-11-28-RUN27.md`. This re-opened the underlying scanner, Word, SevenZip and GDI+ procedure artifacts and cross-checked public API contracts; no new Actions run or production implementation was performed.
+- **GAM/Zan:** public Zan Image Printer 5.0.19 record identifies `zvprt5.exe`, hashes and multi-file append into TIFF/PDF. It is family-level evidence, not proof of exact EMWAT GAM payload/version. Separate suspicious Hybrid Analysis sample has a different hash and was not executed/downloaded. Sentinel producer/consumer remains unresolved.
+- **Word:** callback at `0x004CD154` strongly maps to Word `Application.DocumentBeforeClose` by its Doc/Cancel signature and behavior (Saved check, three-way prompt, Cancel output, Document.Close). TD32's `BeforeSave` symbol label is misleading; numeric DISPID/type-library confirmation and Almas parent response handling remain open.
+- **SevenZip:** `SaveToStream` creates `TFileStream(fmCreate)`; `SetCompleted` dispatches through interface slot +0x0C, matching 7-Zip `ISequentialOutStream.Write`. The `CryptoGetTextPassword2`-labelled procedure at `0x004543C4` is invoked in constructor shape; `SetPassword` remains a stub. Output encryption is unproven.
+- **Scanner:** integer accessors for `colorDepth`, `minResolution`, `maxResolution`, `maxFileSize` explicitly test `HasAttribute`; absent returns initialized 0 without calling GetAttribute. Present values go through Variant-to-integer conversion; Delphi docs say nonnumeric strings raise. Thus absent numeric fields are confirmed zero, while empty/malformed values are not zero defaults. Required/optional string-field semantics remain open.
+- **GDI+:** rechecked first-page flag and confirmed initial Save writes first frame; first SaveAddImage iteration is skipped, later frames appended, final SaveAdd Flush follows. Runtime TIFF fixture/Almas acceptance remains.
+- No production code, build, release, merge/rebase or new Actions run was performed.
