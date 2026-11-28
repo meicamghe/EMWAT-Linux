@@ -1,3 +1,10 @@
+## 2026-11-28 — Runs 32–33 XMLRTL and GDI+ crosswalk refinements
+
+- XMLRTL helper map corrected from full generated-accessor call shapes: 0x0044B498 HasAttribute; 0x0044B488 AttributeNodes list getter; 0x0044B4C0 GetAttribute-style value getter (medium-high); 0x0044B4D8 ChildNodes list getter. The earlier Run 30 labels for 0x0044B488/0x0044B4C0 are superseded. 0x0044B508 remains open.
+- GDI+ interface metadata now yields candidate table bases: TGPImage class slot 0x00484728+0x28 -> metadata 0x0047DD2C; RTTI block 0x0047DD84 +0x58 -> candidate VTable base 0x0062EEA0. TGPEncoderParameters class slot +0x28 -> 0x0062EE88. Candidate TGPImage slot addresses include 0x0062EEE8 (+0x48), 0x0062EEF8 (+0x58), 0x0062EEFC (+0x5C), 0x0062EF10 (+0x70), and 0x0062EF14 (+0x74). Actual pointer contents are not present in the artifacts.
+- Reports: Run 32 XMLRTL helper correction; Run 33 GDI+ VTable candidates. XML contract commit 835a4d0, Run 32 report e21b8d5, GDI+ crosswalk update 9db37a1, Run 33 report d179b4e.
+- No tests, CI, or packages were run. The raw PE range 0x0062EE88–0x0062EF18 and the helper body 0x0044B508 remain the exact next static-analysis targets.
+
 ## 2026-11-28 — Run 32 XMLRTL helper correction
 
 - Rechecked all generated scanner accessor callsites against the XMLRTL interface contract. The previous Run 30 helper labels were too broad and are superseded.
