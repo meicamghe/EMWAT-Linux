@@ -1,0 +1,81 @@
+name: EMWAT thread wait API verification
+on:
+  push:
+    paths:
+      - 'analysis-input/EmwatMethods.bpl1'
+      - 'tools/trace_td32_procedure_skipdata.py'
+      - 'tools/trace_td32_callers.py'
+      - '.github/workflows/emwat-thread-wait-api.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: emwat-thread-wait-api-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  wait-api-crosscheck:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install pefile capstone
+      - name: Resolve IAT function behind delay-like callsites
+        shell: bash
+        run: |
+          mkdir -p wait-api
+          python - <<'PY'
+          from pathlib import Path
+          import pefile
+          from capstone import Cs, CS_ARCH_X86, CS_MODE_32
+          blob=Path("analysis-input/EmwatMethods.bpl1").read_bytes()
+          pe=pefile.PE(data=blob,fast_load=False)
+          base=pe.OPTIONAL_HEADER.ImageBase
+          md=Cs(CS_ARCH_X86,CS_MODE_32); md.detail=True
+          out=["# Wait/delay API import verification",""]
+          wanted={"sleep","sleepex","suspendthread","resumethread","waitforsingleobject",
+                  "waitformultipleobjects","msgwaitformultipleobjects","waitmessage","switchtothread"}
+          for entry in getattr(pe,"DIRECTORY_ENTRY_IMPORT",[]):
+              dll=entry.dll.decode("ascii","replace")
+              for imp in entry.imports:
+                  if not imp.name: continue
+                  name=imp.name.decode("ascii","replace")
+                  if name.casefold() not in wanted and imp.address not in (0x0062F09C,):
+                      continue
+                  iat=imp.address
+                  pattern=b"\\xff\\x25"+iat.to_bytes(4,"little")
+                  thunks=[]
+                  for sec in pe.sections:
+                      if not (sec.Characteristics & 0x20000000): continue
+                      st,en=sec.PointerToRawData,sec.PointerToRawData+sec.SizeOfRawData
+                      pos=st
+                      while True:
+                          pos=blob.find(pattern,pos,en)
+                          if pos<0: break
+                          thunks.append(base+sec.VirtualAddress+(pos-st));pos+=1
+                  out.append(f"## {dll}!{name} IAT=0x{iat:08X}")
+                  for thunk in sorted(set(thunks)):
+                      out.append(f"- thunk 0x{thunk:08X}")
+                      for sec in pe.sections:
+                          if not (sec.Characteristics & 0x20000000): continue
+                          raw=blob[sec.PointerToRawData:sec.PointerToRawData+sec.SizeOfRawData]
+                          va=base+sec.VirtualAddress
+                          for ins in md.disasm(raw,va):
+                              if ins.mnemonic in ("call","jmp") and ins.operands and ins.operands[0].type==2 and ins.operands[0].imm==thunk:
+                                  out.append(f"  - {ins.mnemonic} at 0x{ins.address:08X}")
+          Path("wait-api/import-map.md").write_text("\n".join(out)+"\n")
+          PY
+          python tools/trace_td32_procedure_skipdata.py analysis-input/EmwatMethods.bpl1 0x004028D0 wait-api/procedure-004028D0.md
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004028D0 wait-api/callers-004028D0.md
+          python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x00404EF0 0x00404F20 wait-api/range-00404F04.md
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: emwat-thread-wait-api
+          path: wait-api/
+          if-no-files-found: error
