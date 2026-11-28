@@ -2208,3 +2208,18 @@ Run 27 re-opened existing procedure artifacts and checked public API documentati
 - **GDI+:** initial Save includes first frame; first frame is skipped by SaveAddImage; remaining frames and later files are appended; Flush is final. Runtime TIFF output fixture is still required.
 
 Keep the five paths separate until real evidence connects their hand-offs. Next useful evidence: exact EMWAT GAMPrinterSetup payload and a queue/TIFF/sentinel trace; Word type-library and browser exchange; controlled .easz fixture; XML samples covering omitted/empty/invalid fields; original-runtime multipage TIFF fixture.
+
+
+## 2026-11-28 — Run 28 exact bundled printer payload handoff
+
+Detailed report: [REVERSE-ENGINEERING-PARALLEL-FOLLOWUP-2026-11-28-RUN28.md](REVERSE-ENGINEERING-PARALLEL-FOLLOWUP-2026-11-28-RUN28.md)
+
+Correction to Run 27: exact EMWAT `GAMPrinterSetup.exe` is already inside repository `EMWAT_Extracted.zip` and has been unpacked/static-analyzed. Public Zan 5.0.19 is only family comparison evidence.
+
+- Exact hashes now pinned for GAMPrinterSetup, x86 server `zvprtsrv`, x86 monitor `zvprtmon5`, x86 OEM driver `zvprtuni5`, and `sentineltemplate.txt` (40 bytes).
+- Monitor methods: InitializePrintMonitor2, LcmOpenPort, LcmStartDocPort, LcmWritePort, LcmEndDocPort. Driver stages: Render_StartDoc/Page/Band/NextBand/EndBand/SendPage/EndDoc. Server uses GDI page APIs and contains TIFF/PDF/PNG/BMP codecs plus Global\\zvprtapi shared-memory/event names.
+- BPL configures `sentinel=1` and `sentinelfile=JobFinishes.GAM`; the exact template file exists but only its size/hash are currently in text inventory. Writer component and relation to TIFF flush remain open.
+- Agent TEmwatSentinel is a separate loopback health check (GET /?heartbeat, expected body TickTack), not the printer sentinel.
+- No new CI, binary execution, build, production-code edit, merge or rebase.
+
+Next: recover template content, follow LcmEndDocPort into server IPC and file-create/write calls, and identify which exact-hash component creates JobFinishes.GAM.
