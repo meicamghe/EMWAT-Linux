@@ -2101,3 +2101,12 @@ Next probes: recover the four filename-table strings and state-byte meanings; re
 - 0x004AFF08 is an import thunk to ImageGear `IG_image_resolution_set` via IAT slot 0x00630CF4, not a local metadata helper. It is called from TGearImgProc.GearType and WordViewer.EmbedTextToImage. GearType returns the metric used in the scan resolution-bound comparisons.
 - Track U's generic 'image metadata helper' wording is superseded by this exact import identification. 0x004EFF94 remains TGearImgProc.SetEditorForm.
 - Run 18 instrumentation commit (to be recorded after push) inspects pointer chains and Delphi string headers for globals 0x0062A800, 0x0062A7FC and 0x0062A850 to recover exact XML field names. No production runtime changes.
+
+
+## 2026-11-28 — Run 18 green; scanner globals bounded; Word event target symbols confirmed
+
+- Run 18 (46109783738) passed all four jobs on a11690bd5ecb1976708a440d4f862868ef6bd499. Artifacts: scanner 15249461514, Word/printer 15249466339, ImageEn 15249311917.
+- Scanner global 0x0062A800 points to an error/message string table (Err_0, Err_20000…Err_20008, Err_Ignore, Exception prefix), not XML property names. Globals 0x0062A7FC and 0x0062A850 point to zero-filled static regions; runtime initialization remains possible. Exact XML property names remain unresolved.
+- Next scanner direction: trace writes/initialization of 0x0062A7FC and 0x0062A850 and resolve the concrete interface implementations for VerifyConstraints VMT slots +0xAC/+0xB0/+0xB4/+0xB8/+0xBC and NewScanDocument at 0x004E9D5C. Do not infer XML keys from the globals alone.
+- Word event target TD32 identities confirmed: 0x004CD154 WordAppDocumentBeforeSave; 0x004CD54C WordAppNewDocument; 0x004CD9C0 WordAppWindowActivate; 0x004CE030 WordAppDocumentBeforePrintBGPrint; 0x004D00AC LoadOptions. OnTimer writes event-sink offsets +0x80/+0x90/+0x98 to the first three and conditionally +0x88 to one of the latter two. COM DISPIDs/interface ordering still require independent confirmation.
+- Native regression and Python bridge regression passed. No production Linux code changed; PR #2 remains Draft and main untouched.
