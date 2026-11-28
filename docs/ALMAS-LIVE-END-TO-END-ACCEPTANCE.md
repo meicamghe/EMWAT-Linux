@@ -67,12 +67,15 @@ after a Don't Save choice.
    guessed response policy.
 5. **Almas persistence:** no test has yet shown that Almas receives, accepts,
    and persists the returned edited document.
-6. **In-flight shutdown policy:** the HTTP server has concurrent request
-   workers, but the desktop shutdown path has no explicit, tested policy for a
-   user quitting EMWAT while an EditWordDocument request is waiting on Writer.
-   Define and test whether shutdown drains the session or performs a verified
-   cancellation; it must not silently abandon the Almas request or leave an
-   orphaned Writer process.
+6. **In-flight shutdown acceptance:** the implementation now stops the
+   accept loop, tracks accepted request workers, and waits for a bounded drain
+   before closing the socket. If a Writer-backed request remains pending, the
+   GTK window stays open and allows the user to close Writer and retry shutdown.
+   The worker-count registration race was found and corrected: requests are
+   counted synchronously in the accept-loop thread before ThreadingMixIn starts
+   the worker. The deterministic regression test for that race and the existing
+   drain/retry tests have not yet been executed. Live Almas shutdown behavior
+   and forced process termination remain unverified.
 
 ## Required live acceptance procedure
 
