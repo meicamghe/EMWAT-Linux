@@ -28,13 +28,15 @@ class PEImage:
     size_of_headers: int
     sections: tuple[PESection, ...]
 
-    def va_to_offset(self, va: int) -> int:
+    def va_to_offset(self, va: int, length: int = 1) -> int:
         rva = va - self.image_base
+        if length <= 0:
+            raise ValueError("range length must be positive")
         if rva < 0:
             raise ValueError(f"VA 0x{va:X} is below image base 0x{self.image_base:X}")
 
         if rva < self.size_of_headers:
-            if rva >= len(self.data):
+            if rva + length > self.size_of_headers or rva + length > len(self.data):
                 raise ValueError(f"header RVA 0x{rva:X} is outside the file")
             return rva
 
@@ -43,7 +45,7 @@ class PEImage:
             start = section.virtual_address
             if start <= rva < start + extent:
                 delta = rva - start
-                if delta >= section.raw_size:
+                if delta + length > section.raw_size:
                     raise ValueError(
                         f"VA 0x{va:X} lies in zero-filled virtual data of "
                         f"section {section.name!r}, not in the file"
@@ -155,7 +157,6 @@ def dump_range(image: PEImage, va: int, length: int) -> str:
     ]
     for row in range(0, len(chunk), 16):
         row_bytes = chunk[row:row + 16]
-        padded = row_bytes.ljust(16, b" ")
         dword = (
             f"0x{struct.unpack('<I', row_bytes[:4])[0]:08X}"
             if len(row_bytes) >= 4 else " " * 10
