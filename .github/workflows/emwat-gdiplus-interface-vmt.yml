@@ -1,0 +1,70 @@
+name: EMWAT GDI+ interface VMT slot resolution
+on:
+  push:
+    paths:
+      - 'analysis-input/EmwatMethods.bpl1'
+      - 'tools/trace_td32_procedure_skipdata.py'
+      - '.github/workflows/emwat-gdiplus-interface-vmt.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: emwat-gdiplus-interface-vmt-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  interface-vmt:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install pefile capstone
+      - name: Dump interface method slots and trace targets
+        shell: bash
+        run: |
+          mkdir -p gdiplus-interface-vmt
+          python - <<'PY'
+          from pathlib import Path
+          import pefile
+          blob=Path("analysis-input/EmwatMethods.bpl1").read_bytes()
+          pe=pefile.PE(data=blob,fast_load=True)
+          base=pe.OPTIONAL_HEADER.ImageBase
+          def read(va,n):
+              return blob[pe.get_offset_from_rva(va-base):pe.get_offset_from_rva(va-base)+n]
+          out=["# GDI+ interface VMT slots",""]
+          for label,va,slots in (
+              ("TGPEncoderParameters interface",0x0062EE88,[0x20]),
+              ("TGPImage interface",0x0047DD2C,[0x1C,0x20,0x48,0x58,0x5C,0x70,0x74]),
+          ):
+              out.append(f"## {label} at 0x{va:08X}")
+              raw=read(va,0xA0)
+              for off in range(0,0x80,4):
+                  ptr=int.from_bytes(raw[off:off+4],"little")
+                  marker=" <-- relevant" if off in slots else ""
+                  out.append(f"- +0x{off:02X}: 0x{ptr:08X}{marker}")
+          out += ["","## TGPImageFormat singleton"]
+          raw=read(0x0062B33C,0x40)
+          out.append(f"- global bytes: {raw.hex(' ')}")
+          for off in range(0,0x20,4):
+              ptr=int.from_bytes(raw[off:off+4],"little")
+              if 0x00400000 <= ptr < 0x00700000:
+                  try: out.append(f"- +0x{off:02X} pointer 0x{ptr:08X}: {read(ptr,32).hex(' ')}")
+                  except Exception: pass
+          Path("gdiplus-interface-vmt/interface-slots.md").write_text("\n".join(out)+"\n")
+          PY
+          for target in 0x00484070 0x0048BED0 0x0048BEB4 0x00490048 0x004847B7 0x00484813 0x0048486D 0x00484894 0x004848EF; do
+            safe=${target#0x}
+            python tools/trace_td32_procedure_skipdata.py analysis-input/EmwatMethods.bpl1 "$target" \
+              "gdiplus-interface-vmt/procedure-$safe.md" || true
+          done
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: emwat-gdiplus-interface-vmt
+          path: gdiplus-interface-vmt/
+          if-no-files-found: error
