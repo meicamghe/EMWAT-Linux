@@ -36,7 +36,7 @@ No production Linux code changed. No Windows/Linux release build, merge or rebas
 
 - Scanner unit closure: `TResultImage.GetFileStream` returns the 64-bit `TStream.Size` byte count, and `Finalization` compares it to `MaxFileSize * 1024`, proving the XML field is KiB. `TGearImgProc.GearType` uses 39.37008 and 0.3937 conversion constants; selectors 2/3/4 map to divide-by-39.37008 / unchanged / divide-by-0.3937. Exact ImageGear enum names and rounding are still open. See `docs/SCANNER-RESOLUTION-AND-FILESIZE-UNITS-2026-11-28.md`.
 
-- TIFF path is now better bounded: LoadDocument calls SeparteImages; it performs printer checks and the hidden worker before GDI+ TGPImage/TGPEncoderParameters page processing. Exact GDI+ save API, output filename, and worker completion signal remain open. See `docs/TIFF-OUTPUT-GDIPLUS-PIPELINE-2026-11-28.md`.
+- TIFF path is now better bounded: LoadDocument calls SeparteImages; it performs printer checks and the hidden worker before GDI+ TGPImage/TGPEncoderParameters page processing. GDI+ Save/SaveAdd wrappers and GdipSaveImageToFile/Stream imports are confirmed; the specific SeparteImages overload, output filename, encoder parameters, and worker completion signal remain open. See `docs/TIFF-OUTPUT-GDIPLUS-PIPELINE-2026-11-28.md`.
 
 - Queue-name handling: before the `EnumJobsW` comparison, Word passes the candidate through `FixDirectionInFarsiNumericMode`. The caller waits while a matching job remains; no explicit timeout was seen. Queue disappearance is a heuristic, not a success result.
 
