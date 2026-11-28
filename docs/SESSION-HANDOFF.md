@@ -1,3 +1,13 @@
+## 2026-11-28 — latest continuation snapshot (after CI concurrency repair)
+
+- Current work branch head at this note: `a1d7ef24ca6459c751c23c29cea49cbc53de2926`; PR #6 remains Draft/open and targets `feature/recovery-retention-policy`. Do not merge to `main`.
+- GTK startup composition is implemented in `deployment.py` and wired into the normal GTK entry point. The old Run-47 statements saying it was not implemented are superseded. Live Almas persistence is still unverified.
+- Fixed reverse-engineering and deep-follow-up workflow concurrency: each commit now has its own group and `cancel-in-progress: false`. Python bridge workflow was also changed to include `github.sha` in its concurrency group because GitHub retains only one pending run per group; a pending run for an older commit can otherwise be replaced even with cancellation disabled.
+- Latest observed independent analysis runs: reverse-engineering run 78 / ID `46146592017` has `image-ui-and-vmt`, `word-print-com`, and `native-regression` in progress; deep-follow-up run 51 / ID `46146595651` has all four jobs in progress (`scanner-result-ownership`, `imageen-acquisition`, `native-regression`, `word-printer-thread`). Do not mark these passed until completed.
+- Latest completed code validations on commit `4b93639859d7971eb2060deb3557bec6a69b026b`: GTK run 359 and Debian package run 126 passed. Python bridge run on that commit was cancelled before jobs started. Newer docs/workflow commits have fresh validation runs queued/in progress; check Actions before claiming a pass.
+- New analysis plan: `docs/REA-ASSISTED-REVERSE-ENGINEERING-PLAN-2026-11-28.md`. REA is optional analyst tooling only, not a product dependency; no REA execution against the Windows binary is claimed.
+- Workflow cancellation root cause and repair are recorded in `docs/PROJECT-STATUS.md`. The acceptance document now records GTK startup as implemented while keeping real Almas acceptance as a release gate.
+
 ## 2026-11-28 — isolated parallel closure branch
 
 - Working branch: `work/parallel-closure-2026-11-28`; based on `feature/recovery-retention-policy` HEAD `00bb6a3387dddc7b25d331f879ad5c60db846fa8`.
@@ -21,10 +31,10 @@
 
 - Static EditWordDocument dispatch is closed: TEditWordDocument VMT 0x005ED764 -> concrete method 0x005EE82C; TEmwatMethod Invoke wrapper is 0x0046C9E0; WordViewer loader 0x004B7724.
 - Successful wire response is established from PCAP: HTTP 200, text/html; charset=ISO-8859-1, response-word status=success, application/msword/base64, decoded CFB DOC. PCAP response has 68 missing TCP payload bytes.
-- XHR Origin and init Referer origin are both http://127.0.0.1:1984. GTK startup wiring plan is documented but not implemented.
+- XHR Origin and init Referer origin are both http://127.0.0.1:1984. GTK startup composition is implemented on the isolated work branch; live Almas acceptance remains pending.
 - Writer local Save/Don't Save/Cancel behavior and pending HTTP lifecycle are implemented/tested in previous local acceptance, but real Almas persistence is not verified.
 - Run67 word-print-com and image-ui-and-vmt analysis jobs passed. Native regression step passed. Python regression step was cancelled; no full Python test result.
-- Current release blockers: GTK BridgeSupervisor startup injection; live Almas->Writer->save->response->Almas persistence; full response bytes if exact parity required; targeted WordConfig/signData mappings; local execution of new drain/race tests. No Linux package is built or released.
+- Current release blockers: live Almas->Writer->save->response->Almas persistence; full response bytes if exact parity required; targeted WordConfig/signData mappings; exact print/TIFF and scanner acceptance; Python bridge suite on the current commit. GTK startup injection is implemented but not live-accepted. No release is approved.
 
 ## 2026-11-28 — Run 49 ClassType/EFOpenError wait interpretation
 
