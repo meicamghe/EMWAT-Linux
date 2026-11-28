@@ -98,9 +98,9 @@
 
 ## 2026-11-28 — Run 40 connector class VMT resolution boundary
 
-- Run-67 artifact `15260427307` reports two shortstring occurrences each for `TEmwatMethod`, `TEditWordDocument`, and `TScanDocument`, but no standard-layout VMT candidate for any of them.
+- Run-67 artifact `15260427307` generic resolver reported no standard-layout candidate, but this was a tooling false negative superseded by the direct VMT map: TEditWordDocument VMT 0x005ED764 slot +0x10 -> 0x005EE82C.
 - The only `TWordViwer` candidate (`0x004B10A4`) is explicitly unverified and has an implausible parent/type profile; do not treat it as a true VMT.
-- The Word-edit handler class name exists in the BPL, but its VMT/registration association is not resolved. Next analysis target is custom RTTI/interface/registration references, not more guessing from TD32 labels.
+- The Word-edit handler class/VMT association is resolved through the direct VMT/interface crosswalk; only the generic resolver's class-layout heuristic failed. The runtime handler identity is closed.
 - Updated Almas acceptance doc commit `770af79`; Run 40 report commit `b1b66c9`.
 
 ## 2026-11-28 — Run 39 TD32 handler-name caveat
@@ -113,7 +113,7 @@
 ## 2026-11-28 — Run 38 WordViewer/connector distinction
 
 - Run-67 artifact `15260640277` shows `TWordViwer.LoadDocument` calls `TCreateTiff.SeparteImages` at `0x004B7A9C` and `0x004B7ABD`. This connects viewer document-load to the Word-to-TIFF path, not to the Almas browser edit protocol.
-- The same connector symbol scan finds `TEmwatMethod.Invoke`, ScanDocument, FaxDocument, EditExcelWorkBook, and CompareWordDocument handlers, but no `TEditWordDocument.PerformMethod` TD32 symbol. Because runtime dispatch is indirect/VMT-based, this is an unresolved handler discovery gap, not proof of absence.
+- The Run-67 connector symbol scan omitted a TEditWordDocument.PerformMethod TD32 symbol, but direct VMT evidence resolves the concrete handler at 0x005EE82C. This is a symbol-selection/label mismatch, not an unresolved handler identity.
 - Updated Almas acceptance doc commit `b2c0cc4`; Run 38 report commit `aad3209`.
 - Exact EditWordDocument handler registration, dictionary keys, and Windows wire response remain unproven. Real sanitized request/response is still required.
 
