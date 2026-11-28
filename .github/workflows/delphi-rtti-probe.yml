@@ -35,6 +35,43 @@ jobs:
             analysis-input/EmwatMethods.bpl1 analysis-output/undelphi \
             2>&1 | tee analysis-output/undelphi/build-and-probe.log
 
+      - name: Install PE analysis dependencies
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Trace WordViewer lifecycle flags and close prompt
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check pefile capstone
+          out=analysis-output/undelphi/wordviewer-state
+          mkdir -p "$out"
+          python tools/decode_pe_strings.py analysis-input/EmwatMethods.bpl1 \
+            0x004CD3C0 0x004CD3DC 0x004CD3F0 0x004CD40C 0x004CD41C 0x004CD42C \
+            > "$out/close-prompt-strings.md"
+          for target in 004CD154 004CD54C 004CD9C0 004CE030 004D00AC; do
+            python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 \
+              "0x$target" "$out/event-$target.md"
+            python tools/trace_td32_immediate_refs.py analysis-input/EmwatMethods.bpl1 \
+              "0x$target" "$out/event-$target-immediate-refs.md"
+          done
+          targets=(5C 5D 5E 5F 79 F4)
+          pids=()
+          for target in "${targets[@]}"; do
+            (
+              set -e
+              python tools/trace_field_accesses.py analysis-input/EmwatMethods.bpl1 \
+                "0x$target" "$out/field-$target-all.md"
+              grep -F 'TWordViwer' "$out/field-$target-all.md" \
+                > "$out/field-$target-wordviewer.md" || true
+            ) &
+            pids+=("$!")
+          done
+          status=0
+          for pid in "${pids[@]}"; do wait "$pid" || status=1; done
+          exit "$status"
+
       - name: Upload Delphi metadata and REA seeds
         if: always()
         uses: actions/upload-artifact@v4
