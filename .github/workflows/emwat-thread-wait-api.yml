@@ -48,7 +48,7 @@ jobs:
                   if name.casefold() not in wanted and imp.address not in (0x0062F09C,):
                       continue
                   iat=imp.address
-                  pattern=b"\\xff\\x25"+iat.to_bytes(4,"little")
+                  pattern=b"\xff\x25"+iat.to_bytes(4,"little")
                   thunks=[]
                   for sec in pe.sections:
                       if not (sec.Characteristics & 0x20000000): continue
