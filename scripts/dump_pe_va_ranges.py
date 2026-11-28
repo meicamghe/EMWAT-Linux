@@ -52,7 +52,9 @@ class PEImage:
                     )
                 offset = section.raw_offset + delta
                 if offset >= len(self.data):
-                    raise ValueError(f"mapped file offset 0x{offset:X} is outside the file")
+                    raise ValueError(
+                        f"mapped file offset 0x{offset:X} is outside the file"
+                    )
                 return offset
 
         raise ValueError(f"VA 0x{va:X} is not covered by a PE section")
@@ -162,7 +164,9 @@ def dump_range(image: PEImage, va: int, length: int) -> str:
             if len(row_bytes) >= 4 else " " * 10
         )
         hex_part = " ".join(f"{value:02X}" for value in row_bytes)
-        ascii_part = "".join(chr(value) if 0x20 <= value <= 0x7E else "." for value in row_bytes)
+        ascii_part = "".join(
+            chr(value) if 0x20 <= value <= 0x7E else "." for value in row_bytes
+        )
         lines.append(
             f"  0x{va + row:08X} {dword:10} {hex_part:<47} {ascii_part}"
         )
@@ -199,7 +203,9 @@ def parse_range(value: str) -> tuple[int, int]:
             "range must be VA:LENGTH, for example 0x0062EE88:0x90"
         ) from exc
     if address < 0 or length <= 0:
-        raise argparse.ArgumentTypeError("range address must be non-negative and length positive")
+        raise argparse.ArgumentTypeError(
+            "range address must be non-negative and length positive"
+        )
     return address, length
 
 
@@ -225,7 +231,8 @@ def main() -> int:
     for index, section in enumerate(image.sections):
         print(
             f"  {section.name:8} RVA=0x{section.virtual_address:08X} "
-            f"VS=0x{section.virtual_size:X} RAW=0x{section.raw_offset:X}/0x{section.raw_size:X}"
+            f"VS=0x{section.virtual_size:X} "
+            f"RAW=0x{section.raw_offset:X}/0x{section.raw_size:X}"
         )
     for va, length in ranges:
         print()
