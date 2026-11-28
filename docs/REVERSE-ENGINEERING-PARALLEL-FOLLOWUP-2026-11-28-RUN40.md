@@ -30,3 +30,14 @@ Evidence:
 - Run-67 artifact `15260640277`, `connector-handlers/selected-symbols.txt` and `symbol-index.md`.
 
 No source code or workflow was modified.
+
+
+## Correction — superseded by the authoritative direct VMT crosswalk
+
+Run 40's observation is limited to the Run-67 generic resolve_delphi_vmt_slots.py heuristic, which failed to identify a standard-layout candidate. It must not be read as saying the class has no VMT. The earlier direct VMT/interface analysis in docs/WORD-LIFECYCLE-STATIC-TRACE.md and docs/WORD-DOCUMENT-PROTOCOL-ANALYSIS.md establishes:
+
+- TEditWordDocument VMT 0x005ED764, parent TEmwatMethod VMT header 0x0046ABA4, concrete slot +0x10 = 0x005EE82C.
+- TScanDocument VMT 0x005ED884, concrete slot +0x10 = 0x005EEB48.
+- The service calls the common TEmwatMethod.Invoke wrapper at VMT +0x0C, which invokes the concrete subclass method through +0x10.
+
+Thus the EditWordDocument handler is resolved; Run 40 records a limitation of one generic resolver, not an unresolved class existence/VMT question. See Run 46 in docs/ALMAS-LIVE-END-TO-END-ACCEPTANCE.md.
