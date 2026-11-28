@@ -220,3 +220,10 @@ The browser screenshot pair records Referer http://127.0.0.1:1984/?init=...; the
 6. Wire the evidence-backed loopback service configuration into normal GTK startup; do not start the listener with wildcard origins or an unverified host.
 
 The earlier Run-40 statement that TEditWordDocument had no VMT is superseded: it describes only a false negative in the newer generic resolver, not the overall evidence. The direct VMT mapping above is authoritative.
+
+
+## Run 47 — GTK deployment wiring values are now evidence-backed
+
+The bridge already supports separate XHR Origin and parent-page Referer allowlists. The PCAP/screenshot establishes both origins as http://127.0.0.1:1984, with the bridge bound to 127.0.0.1:1984. The external Almas web page hostname is not the Origin of the captured loopback XHR and should not be guessed or required for this listener. A precise startup composition and explicit-discard fallback policy are documented in docs/ALMAS-GTK-STARTUP-WIRING-PLAN.md.
+
+The remaining gap is implementation: the normal GTK entry point still creates the desktop without an injected BridgeSupervisor. The plan specifies the exact composition but no code was changed here. The CancelResponseFactory remains a fail-closed local 409 only for explicit operation-level DISCARDED; Writer's Save/Don't Save/Cancel lifecycle is separate and already modeled.
