@@ -148,3 +148,6 @@ New Word finding: `WordAppDocumentBeforeClose` is a Boolean print-field helper c
 
 
 Scanner XML root/property names are now recovered: `scan-document` root; `constraints` child; `colorDepth`, `minResolution`, `maxResolution`, `maxFileSize` fields; `error` property and its XML error prefix. See `docs/SCANNER-XML-ROOT-AND-PROPERTY-NAMES-2026-11-28.md`. Required/optional/default semantics remain open.
+
+
+TIFF load path resolved: `SeparteImages` pushes zero for both `TGPImage` constructor calls, obtains a UnicodeString path via object interface slot +0x0C, and selects the constructor branch that calls `GdipLoadImageFromFile`. Thus the observed page input is file-backed; the alternate stream branch is not used in this path.
