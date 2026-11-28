@@ -278,3 +278,13 @@ No Linux release package was built. No additional workflow was dispatched. PR #2
 - Next REA step is a read-only, external VMT parser pilot on the exact EMWAT PE/BPL after compiler-layout invariants are proven. Do not assume Delphi 7 from PE32 alone, and do not claim any REA run or recovered EMWAT class/method count yet.
 - Ghidra/REA installation is an analyst-host prerequisite and version-sensitive; run `rea doctor --json` on the actual analyst host before selecting a provider. REA is not an EMWAT runtime dependency.
 - Detailed boundary and procedure: `docs/REA-ASSISTED-REVERSE-ENGINEERING-PLAN-2026-11-28.md`.
+
+
+## 2026-11-28 — Python Bridge root cause and fix handoff
+
+- Artifact `python-bridge-diagnostics-46149684182` identifies the stall: 337 tests finished in 11.037s, then interpreter shutdown hung on a non-daemon fake serve thread left alive by two Runtime cleanup failures.
+- Fixed `BridgeRuntime._close_once()` to close the listening socket after a successful bounded request drain even when shutdown raises, preserving the first error and retry behavior.
+- `EditWordDocumentRequest.external_parameter_bindings` now defaults to `()` for backward-compatible manual construction; parser-created requests continue to pass actual resolved bindings.
+- Added optional pytest test extra and installed it in the Python Bridge workflow; this addresses the `test_pe_va_ranges` import error.
+- Latest validation queued on head `714b06f10e390688e584eec87c87a8d3dcf32544`: Python `46150833510`, GTK `46150833548`, Debian `46150833597`. Inspect results before claiming green.
+- Full diagnostic and failure list: `docs/BRIDGE-CI-STALL-INVESTIGATION-2026-11-28.md`.
