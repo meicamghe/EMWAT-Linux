@@ -64,9 +64,9 @@ jobs:
               off = offset(va)
               raw = blob[off:off+192]
               if enc == "utf-16le":
-                  end = next((i for i in range(0,len(raw)-1,2) if raw[i:i+2] == b"\\x00\\x00"), len(raw)//2*2)
+                  end = next((i for i in range(0,len(raw)-1,2) if raw[i:i+2] == b"\x00\x00"), len(raw)//2*2)
                   return raw[:end].decode(enc, errors="replace")
-              end = raw.find(b"\\x00")
+              end = raw.find(b"\x00")
               if end < 0: end = len(raw)
               return raw[:end].decode(enc, errors="replace")
 
