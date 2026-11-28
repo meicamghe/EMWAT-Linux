@@ -1,0 +1,84 @@
+name: EMWAT printer queue and output correlation
+on:
+  push:
+    paths:
+      - 'analysis-input/EmwatMethods.bpl1'
+      - 'tools/list_td32_symbols.py'
+      - 'tools/trace_td32_procedure.py'
+      - 'tools/trace_td32_procedure_skipdata.py'
+      - 'tools/trace_td32_callers.py'
+      - 'tools/trace_pe_range.py'
+      - '.github/workflows/emwat-printer-queue-correlate.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: emwat-printer-queue-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  printer-queue-api-ownership:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install pefile capstone
+      - name: Trace Winspool caller methods and queue correlation helpers
+        shell: bash
+        run: |
+          mkdir -p printer-queue
+          python tools/list_td32_symbols.py analysis-input/EmwatMethods.bpl1 \
+            ExtractFileNameEX getPrinterNumJobs euIsValidFileName \
+            Zanprinter@Finalization Zanprinter@GetPrinterName \
+            TCreateTiff SeparteImages THidePrintingThread \
+            > printer-queue/symbol-index.md
+          python - <<'PY'
+          from pathlib import Path
+          import subprocess, sys
+          source = Path("printer-queue/symbol-index.md").read_text()
+          rows = []
+          for line in source.splitlines():
+              cols = [part.strip() for part in line.strip().strip("|").split("|")]
+              if len(cols) != 5 or not cols[0].startswith("`0x"):
+                  continue
+              address, name = cols[0].strip("`"), cols[4].strip("`")
+              folded = name.casefold()
+              if any(term in folded for term in (
+                  "extractfilenameex", "getprinternumjobs", "euisvalidfilename",
+                  "zanprinter@finalization", "zanprinter@getprintername",
+                  "separteimages", "thideprintingthread"
+              )):
+                  rows.append((address,name))
+          rows = sorted(set(rows))
+          Path("printer-queue/selected-symbols.txt").write_text(
+              "\n".join(f"{a} {n}" for a,n in rows)+"\n")
+          for address,name in rows:
+              safe = address.replace("0x","")
+              subprocess.run([sys.executable,"tools/trace_td32_procedure_skipdata.py",
+                  "analysis-input/EmwatMethods.bpl1",address,
+                  f"printer-queue/procedure-{safe}.md"],check=True)
+              subprocess.run([sys.executable,"tools/trace_td32_callers.py",
+                  "analysis-input/EmwatMethods.bpl1",address,
+                  f"printer-queue/callers-{safe}.md"],check=True)
+          PY
+      - name: Trace direct callers of exact Winspool import thunks
+        shell: bash
+        run: |
+          for target in 0x004044B4 0x004044BC 0x004044C4 0x004044CC 0x004044D4 0x004044DC 0x004044E4; do
+            safe=${target#0x}
+            python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 "$target" \
+              "printer-queue/thunk-callers-$safe.md"
+            python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 "$target" "$((target+8))" \
+              "printer-queue/thunk-body-$safe.md"
+          done
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: emwat-printer-queue-ownership
+          path: printer-queue/
+          if-no-files-found: error
