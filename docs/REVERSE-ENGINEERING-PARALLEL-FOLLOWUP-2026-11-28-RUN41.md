@@ -39,3 +39,8 @@ Therefore the Linux route can exercise the basic document open/edit/save lifecyc
 5. Add explicit opaque fields to the Linux request model before implementing their format-specific behavior; only after a confirmed fixture should image/signature processing be added.
 
 No production code or workflow source was changed in this run.
+
+
+## Run 46 correction — authoritative handler identity now established
+
+The earlier observation that the Run-67 symbol scan did not include TEditWordDocument.PerformMethod is superseded by the direct VMT/service-dispatch crosswalk in docs/WORD-LIFECYCLE-STATIC-TRACE.md and docs/WORD-DOCUMENT-PROTOCOL-ANALYSIS.md. TEditWordDocument VMT 0x005ED764 has slot +0x10 -> 0x005EE82C; the service resolves class EditWordDocument via GetClass("T"+className), calls TEmwatMethod VMT +0x0C Invoke, and the wrapper dispatches through subclass slot +0x10. TD32's TScanDocument.PerformMethod label on 0x005EE82C is stale. The handler identity is therefore confirmed; only the generic Run-67 VMT resolver produced a false negative.
