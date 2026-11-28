@@ -236,7 +236,7 @@ jobs:
               try:
                   off = raw_offset(ptr)
                   raw = blob[off:off + 160]
-                  value = raw.decode("utf-16le", errors="strict").split("\x00", 1)[0]
+                  value = raw.decode("utf-16le", errors="replace").split("\x00", 1)[0]
               except Exception as exc:
                   value = f"<decode failed: {exc}>"
               out.append(f"- slot 0x{slot:08X} -> pointer 0x{ptr:08X}: {value!r}")
@@ -250,6 +250,10 @@ jobs:
             deep-followup/scanner-result/request-setup-helper.md
           python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004EFF94 \
             deep-followup/scanner-result/request-setup-helper-callers.md
+          python tools/trace_td32_procedure_skipdata.py analysis-input/EmwatMethods.bpl1 0x004AFF08 \
+            deep-followup/scanner-result/image-metadata-helper.md
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004AFF08 \
+            deep-followup/scanner-result/image-metadata-helper-callers.md
       - name: Decode exact scanner XML property and value constants
         shell: bash
         run: |
