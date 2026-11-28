@@ -2110,3 +2110,14 @@ Next probes: recover the four filename-table strings and state-byte meanings; re
 - Next scanner direction: trace writes/initialization of 0x0062A7FC and 0x0062A850 and resolve the concrete interface implementations for VerifyConstraints VMT slots +0xAC/+0xB0/+0xB4/+0xB8/+0xBC and NewScanDocument at 0x004E9D5C. Do not infer XML keys from the globals alone.
 - Word event target TD32 identities confirmed: 0x004CD154 WordAppDocumentBeforeSave; 0x004CD54C WordAppNewDocument; 0x004CD9C0 WordAppWindowActivate; 0x004CE030 WordAppDocumentBeforePrintBGPrint; 0x004D00AC LoadOptions. OnTimer writes event-sink offsets +0x80/+0x90/+0x98 to the first three and conditionally +0x88 to one of the latter two. COM DISPIDs/interface ordering still require independent confirmation.
 - Native regression and Python bridge regression passed. No production Linux code changed; PR #2 remains Draft and main untouched.
+
+
+## 2026-11-28 — next-session handoff: parallel reverse engineering
+
+- Start from docs/REVERSE-ENGINEERING-PARALLEL-FOLLOWUP-2026-11-28.md and current branch feature/recovery-retention-policy.
+- Current analysis workflow commit: 9ac31f053c3fe8724f2d00819c7e49562f93a7d6; report commit: 196e03d530c4b9837683fb7d46556521701e7507.
+- Run 22 (46112005385) passed scanner-result-ownership, imageen-acquisition and native-regression. The Word/Printer job was still in progress when this handoff was written; retrieve its artifacts before updating the final conclusions.
+- Do not mislabel 0x004CD154 as BeforeClose: OnTmrAutoSave registers it as BeforeSave. The separately named 0x004CCBBC handler has no proven active event registration.
+- ImageEn Acquire is an external PKIECtrl23.bpl import reached from TfrmImageTools.InsertPicture. The package binary is absent from analysis-input; do not invent its internal behavior.
+- Continue with the 15-Variant Word PrintOut arguments, print-worker to JOB_INFO_1W/GAM artifact correlation, archive output slot +0x44 mapping, scanner XML property names and the opaque +0x14 threshold.
+- Keep this session in reverse-engineering mode. No production Linux implementation, merge or rebase until the Windows behavior contracts are sufficiently recovered.
