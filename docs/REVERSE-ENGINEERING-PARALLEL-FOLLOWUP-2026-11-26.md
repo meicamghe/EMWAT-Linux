@@ -429,3 +429,26 @@ Run 14's broad address-to-string probe is intentionally treated as a candidate g
 VerifyConstraints (0x004F2C4C) repeatedly fetches interface properties through VMT slots +0xAC/+0xB0/+0xB4/+0xB8 and compares/converts them using helpers at 0x00401348, 0x00401380 and 0x00403230. It also uses literals 'none', 'jpg', 'yes', 'no'; the surrounding sequence contains distinct branches for format/state-like fields. The exact XML property names are still not established. LoadRequestXML (0x004F2B18) obtains request XML through the command's interface object at +0x34 and uses VMT slots +0xB8/+0xBC/+0x68/+0x54; it then forwards a returned property into a dictionary/interface setter. Do not equate these calls to a specific external connector schema until the property names are decoded.
 
 A new Run 15 instrumentation step now decodes only explicitly referenced string VAs (rather than every address mentioned in a disassembly) and traces the XML conversion helper at 0x004E9D5C plus request-state helper at 0x004F32F4. This is designed to avoid the false positives seen in the broad probe. No production Linux code changed.
+
+
+## Track T — Run 15 green: scanner validation constraints recovered
+
+Run 15 (46108848523) completed successfully on commit ca1fcdd4cc5ed03add211aededab09c89074b172. All four jobs passed: word/printer thread, ImageEn acquisition, native regression, and scanner/result ownership. Artifacts: scanner 15248996936, ImageEn 15248821979, Word/printer 15248538749.
+
+### TScanCommand validation helper is now identified by behavior
+
+The procedure at 0x004F32F4 is TD32-labelled ScanCommandUnit.Finalization, but its sole direct caller is TScanCommand.DoRequest at 0x004F23B4. DoRequest calls it after setting command state byte +0x28 to 1; if the helper returns true, DoRequest sets +0x28 to 2. Therefore the body is a request validation/constraint check in this call path, not merely a unit-finalization routine.
+
+Observed fields and checks in the helper:
+- +0x38 is a gate; if zero, validation returns true without checking the remaining constraints.
+- +0x08 is a small selector with cases 1, 4, 8 and 0x10. Each case selects one of four global string pointers at 0x00628260/64/68/6C, then formats the Persian message at 0x004F358C ('تصوير بايد %s باشد.'). The exact selector labels are pending dereferencing those global pointers.
+- +0x0C and +0x10 are lower/upper resolution bounds. The current resolution is obtained by helper 0x004EEF30. The code emits the Persian messages at 0x004F35C0 (minimum), 0x004F3614 (range), and 0x004F366C (maximum) according to the configured bounds.
+- +0x14 is a maximum-size constraint. The helper obtains TResultImage.GetFileStream (0x004ECD60), compares its size against the configured value scaled by 1024, and emits a size-related message when exceeded. The exact unit label/format string at 0x004F36C0 still needs to be decoded with its formatting context.
+
+This establishes a concrete distinction between connector XML parsing and the subsequent local image validation policy: the validation helper consumes populated command fields and returns a Boolean used by DoRequest to advance state. It does not establish the external XML property names by itself.
+
+### XML helper naming correction and next probe
+
+The helper at 0x004E9D5C is TD32-labelled ScanResponseXML.NewScanDocument, not a generic XML conversion helper. It reads a value through the supplied object's VMT slot +0x8C and passes it, together with a constant at 0x004E9E00, into a dictionary/response setter. Keep the exact response key unresolved until the inline data and caller context are decoded.
+
+Run 16 now dereferences the four global constraint-string slots (0x00628260–0x0062826C) and traces current-resolution helper 0x004EEF30 plus request setup helper 0x004EFF94. This should identify the selector labels and clarify where the resolution value is sourced. No production Linux code changed.
