@@ -60,6 +60,8 @@ def create_desktop_application(
     windows: dict[str, Any] = {"main": None, "recovery": None}
     bridge_operation_lock = threading.RLock()
     shutting_down = False
+    close_worker_active = False
+    close_approved = False
 
     def shutdown_bridge(_app: Any) -> None:
         nonlocal shutting_down
@@ -82,11 +84,6 @@ def create_desktop_application(
         windows["main"] = window
         window.set_title("EMWAT Linux")
         window.set_default_size(620, 460)
-        window.connect(
-            "close-request",
-            lambda *_args: windows.__setitem__("main", None) or False,
-        )
-
         root = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=12)
         root.set_margin_top(20)
         root.set_margin_bottom(20)
@@ -225,6 +222,75 @@ def create_desktop_application(
             )
             bridge_stop.connect(
                 "clicked", lambda _button: run_bridge_operation(bridge_supervisor.stop)
+            )
+
+            def request_window_close(_window: Any) -> bool:
+                nonlocal close_worker_active, close_approved, shutting_down
+                if close_approved:
+                    windows["main"] = None
+                    return False
+
+                state = bridge_supervisor.state
+                if state.value in ("idle", "stopped"):
+                    windows["main"] = None
+                    return False
+                if close_worker_active:
+                    return True
+
+                close_worker_active = True
+                bridge_start.set_sensitive(False)
+                bridge_stop.set_sensitive(False)
+                bridge_status.set_text(
+                    "در حال توقف سرویس؛ اگر سندی در Writer باز باشد، ابتدا باید بسته شود…"
+                )
+
+                def stop_before_close() -> None:
+                    nonlocal shutting_down
+                    failure: BaseException | None = None
+                    try:
+                        # Wait for any button-triggered operation to finish,
+                        # then stop the bridge away from GTK's main thread.
+                        with bridge_operation_lock:
+                            shutting_down = True
+                            _stop_bridge_supervisor_on_shutdown(bridge_supervisor)
+                    except BaseException as exc:
+                        failure = exc
+                        with bridge_operation_lock:
+                            shutting_down = False
+
+                    def finish_close() -> bool:
+                        nonlocal close_worker_active, close_approved
+                        close_worker_active = False
+                        current_state = bridge_supervisor.state
+                        if (
+                            failure is None
+                            and current_state.value in ("idle", "stopped")
+                        ):
+                            close_approved = True
+                            window.close()
+                        else:
+                            bridge_status.set_text(
+                                "توقف کامل نشد؛ اگر سند Writer باز است آن را ببندید، "
+                                "سپس دوباره پنجره را ببندید. "
+                                + f"جزئیات: {failure or bridge_supervisor.failure}"
+                            )
+                            refresh_bridge_controls()
+                        return GLib.SOURCE_REMOVE
+
+                    GLib.idle_add(finish_close)
+
+                threading.Thread(
+                    target=stop_before_close,
+                    name="emwat-bridge-window-close",
+                    daemon=False,
+                ).start()
+                return True
+
+            window.connect("close-request", request_window_close)
+        else:
+            window.connect(
+                "close-request",
+                lambda *_args: windows.__setitem__("main", None) or False,
             )
 
         if recovery_controller is None:
