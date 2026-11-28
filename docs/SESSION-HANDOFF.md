@@ -1,3 +1,13 @@
+## 2026-11-28 — reviewed CI artifacts and evidence report
+
+- Latest PR head at this note: `811b91760d390a95de36c71783a130b038fbfb48`; PR #6 remains Draft/open and unmerged.
+- Manually downloaded and reviewed the five uploaded artifacts from reverse-engineering run 78 and deep-follow-up run 51. The evidence review is documented in `docs/REVERSE-ENGINEERING-RUN78-RUN51-2026-11-28.md`.
+- Safe static findings: separate Word BeforeSave/BeforePrint procedure ranges; concrete `TCreateTiff.SeparteImages` range at `0x004A0148–0x004A0A67` (partial disassembly); scanner colour labels recovered from four global pointers. The numeric scanner enum values, exact close callback, GDI+ encoder lifecycle, and full ImageEn/WIA backend selection remain unresolved.
+- Do not treat TD32 names or skipdata pseudo-instructions as runtime proof without event-registration and control-flow cross-checks. No runtime code was changed based on these artifact outputs.
+- Validation on preceding code head `eb5933a...`: GTK and Debian package passed; Python bridge remained in progress. New documentation commits triggered another CI set; check the latest run for head `08ca4263...` / current PR head before claiming validation. The artifact review itself is static analysis only.
+
+---
+
 ## 2026-11-28 — continuation snapshot (latest observed CI state)
 
 - Work branch: `work/parallel-closure-2026-11-28`; PR #6 is Draft/open, unmerged, targeting `feature/recovery-retention-policy`.
