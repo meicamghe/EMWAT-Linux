@@ -182,3 +182,14 @@ Current evidence covers the synthetic successful response path, real Writer
 roundtrip, and manual Writer Save / Don't Save / Cancel-retry acceptance. It
 does not cover live Almas E2E, full WordConfig field mapping, or the Windows
 discard/cancel response envelopes.
+
+
+## 6. Application shutdown while Invoke is pending
+
+The HTTP server uses non-daemon request workers so a Writer-backed Invoke is not silently abandoned when the listener stops. Python's `ThreadingMixIn.server_close()` joins those workers without a timeout; calling it directly while Writer is open can therefore block the caller indefinitely.
+
+The bridge now counts active request workers and exposes a condition-based bounded drain. `BridgeRuntime.close()` stops accepting new requests, waits up to `request_drain_timeout_seconds` (default 5 seconds), and only calls `server_close()` after the active count reaches zero. A timeout raises `bridge_request_workers_did_not_drain_before_timeout`, leaves socket cleanup retryable, and does not fabricate a response or kill the active request.
+
+The GTK main-window close path performs supervisor shutdown off the GTK main thread. If the drain times out, the window remains open and the user can close Writer and retry. This is a bounded, retryable lifecycle policy for normal window closure; forced process termination and live Almas acceptance remain outside this guarantee.
+
+Regression tests were added for a real loopback HTTP handler held open across the first close attempt and for GTK window-close retry. They were not executed in the 2026-11-28 implementation session, and no CI run was started.
