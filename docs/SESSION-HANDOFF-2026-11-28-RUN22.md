@@ -116,7 +116,7 @@ GDI+ import identity is now independently confirmed: GNU `objdump -p` agrees wit
 SevenZip callback-detail run `46119766144` further shows `SaveToFile` is a stub (fixed out values, returns zero), while `SaveToStream` creates a stream wrapper and calls `SetCompleted`. Progress callback is stored separately at +0x38; operation-result callback/context are +0x30/+0x34. See `docs/SEVENZIP-OUTPUT-ARCHIVE-OWNERSHIP-2026-11-28.md`.
 
 
-GDI+ interface boundary: SeparteImages creates TGPEncoderParameters (VMT pointer 0x00483FA0 loaded from global slot 0x00483F4C) and obtains its interface at object +0x28, then calls interface slot +0x20 with the compression/save-flag GUIDs. TGPImage is created with VMT pointer 0x00484780 loaded from global slot 0x00484728; its interface is called through slots +0x48/+0x70/+0x74/+0x5C/+0x58. The interface metadata blocks are complex Delphi RTTI structures, not simple pointer arrays; exact Save/SaveAdd/final-flush identities remain open.
+GDI+ interface boundary: SeparteImages creates TGPEncoderParameters (VMT pointer 0x00483FA4 loaded from global slot 0x00483F4C) and obtains its interface at object +0x28, then calls interface slot +0x20 with the compression/save-flag GUIDs. TGPImage is created with VMT pointer 0x00484780 loaded from global slot 0x00484728; its interface is called through slots +0x48/+0x70/+0x74/+0x5C/+0x58. The interface metadata blocks are complex Delphi RTTI structures, not simple pointer arrays; exact Save/SaveAdd/final-flush identities remain open.
 
 
 ## GDI+ and SevenZip closure run updates
@@ -132,3 +132,6 @@ Latest branch head at this handoff: `37dbd31b38a1a89dcbe88e8ad23f9f02f39a9d0f`. 
 
 
 Word close-handler correction: the TD32-named `WordAppDocumentBeforeClose` is now identified as a Boolean print-field helper. Call chain: `GetFieldIndexInList` → `FillImgFldsForPrint` → `WordAppDocumentBeforeClose`; it inspects field arrays and document metadata. It is not an active COM close callback in the observed wiring. See `docs/WORD-BEFORECLOSE-NAMED-HELPER-AND-PRINT-FIELD-CHAIN-2026-11-28.md`.
+
+
+Corrected VMT pass: global slot 0x00483F4C contains 0x00483FA4 (not 0x00483FA0); TGPImage global slot 0x00484728 contains 0x00484780. The structures are Delphi class/interface metadata with interleaved records, not flat method arrays; interface dispatch semantics remain the reliable contract.
