@@ -100,6 +100,11 @@ Inline constants in `SeparteImages` establish the `.tif` extension at `0x004A071
 
 `Base64Decode` is called from `SeparteImages` at `0x004A05EF`, but it is a shared utility: other direct callers include `TWordViewer.StoreFieldValuesForPrint` and `TfrmImageTools.FreeRotate`. Therefore its presence in `SeparteImages` does not by itself prove it decodes an output filename; the exact source string and decoded destination still need to be traced. The TD32-named `TGPImage.FromFile` wrapper at `0x00490048` calls the `GdipDisposeImage` thunk on an existing native handle, so its symbol name alone also does not prove that this call loads a file. GDI+ file/stream load imports exist, but their callsites remain open.
 
+
+## 3D. TGPImage constructor load branch
+
+The `TGPImage` constructor at `0x0048FF60` has two load branches. Based on the constructor's stack flag, it calls either thunk `0x00481C4C` or `0x00481C3C`, then wraps the returned native image handle. The PE import scan maps `0x00481C3C` to `GdipLoadImageFromFile`; the import behind `0x00481C4C` is not yet identified. The separate TD32-named `TGPImage.FromFile` method at `0x00490048` only disposes an existing native handle via `GdipDisposeImage` and resets the object; its name is not evidence of a load call. The exact file-vs-stream branch used by `SeparteImages` remains to be confirmed from its stack argument and the `0x00481C4C` import.
+
 ## 4. Important separation from SevenZip
 
 The observed `SeparteImages` direct helper at `0x00454B9C` is `euGetASFileName` (EmailUtil). The current call graph does not establish that `T7zOutArchive` writes the TIFF page files. Keep the SevenZip output-archive investigation separate until a direct caller or output-stream hand-off connects it to this TIFF path.
