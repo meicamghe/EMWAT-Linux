@@ -5,7 +5,7 @@
 - Implemented on this work branch: `deployment.py` composes a fresh LibreOffice bridge server per start using the captured loopback bind/Origin/Referer `127.0.0.1:1984`; normal GTK entry point injects the supervisor and auto-starts after required Python/LibreOffice/UNO checks pass.
 - Explicit operation-level `DISCARDED` gets a local HTTP 409/plain-text fail-closed response only. This is not Windows wire parity. Writer Don't Save returns the last confirmed saved document; close-prompt Cancel keeps Writer open and the HTTP request pending.
 - Added tests for deployment composition, fresh server factory behavior, explicit-discard guard, GTK main injection, and missing-supervisor auto-start rejection.
-- CI runs automatically triggered by the PR: Python bridge run 1297 (ID `46141924560`), GTK desktop run 349 (ID `46141924566`), Debian package run 116 (ID `46141924590`). At handoff, Python was pending with no jobs reported; GTK and package jobs were still installing dependencies. Recheck these exact runs before claiming a result.
+- CI on code commit `2863933ea90079fd3ba011207cea6a84c64bd57a`: GTK desktop run 353 (ID `46142068190`) passed, including the shutdown retry test after fixing the error-label overwrite; Debian package run 120 (ID `46142068204`) passed build/install/upgrade/remove; Python bridge run 1301 (ID `46142068195`) remained pending with no jobs reported. The preceding GTK run 349 failed because refresh overwrote the actionable drain-failure label; that bug is fixed in the current head.
 - No local test/build, live Almas, Writer, printer, or scanner hardware acceptance was performed in this work session.
 - Full five-workstream boundaries and acceptance criteria: `docs/PARALLEL-CLOSURE-WORKLOG-2026-11-28.md`.
 
