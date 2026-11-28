@@ -1,3 +1,11 @@
+## 2026-11-28 — Run 47 GTK startup wiring plan
+
+- Exact loopback values are evidence-backed: bind 127.0.0.1:1984; allowed XHR Origin http://127.0.0.1:1984; allowed parent Referer origin http://127.0.0.1:1984; numeric invoke nonce.
+- Added docs/ALMAS-GTK-STARTUP-WIRING-PLAN.md with the exact factory composition: LibreOfficeAdapter -> EditWordDocumentService -> create_editword_handler -> XMLMethodDispatcher -> BridgeHTTPServer -> BridgeSupervisor -> GTK injection.
+- Explicit DISCARDED gets a fail-closed local 409 policy only; this is not claimed to match Windows. Writer Don't Save is a successful return of last confirmed state; Writer Cancel keeps the request pending.
+- Normal GTK entry point still does not inject/start BridgeSupervisor. The wiring plan is documented but not implemented.
+- Startup plan commit cda1173; acceptance update commit 825618c.
+
 ## 2026-11-28 — Run 67 automatic workflow outcome
 
 - Run 67 was automatically triggered by the push that changed Python code; it was not manually dispatched.
