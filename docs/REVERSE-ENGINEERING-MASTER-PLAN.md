@@ -201,3 +201,19 @@ Immediate execution order:
 3. Resolve the SevenZip output object +0x44 callback and prove or exclude encryption.
 4. Continue scanner XML property names and the +0x14 image-derived threshold.
 5. Obtain the exact PKIECtrl23.bpl from this EMWAT build before attempting to reverse the ImageEn Acquire implementation.
+
+
+## 2026-11-28 evidence update and next gates
+
+Newly recovered contracts are recorded in:
+- `docs/SCANNER-XML-SERIALIZATION-CONTRACT-2026-11-28.md`
+- `docs/PRINTER-QUEUE-AND-GAM-DRIVER-REVERSE-ENGINEERING-2026-11-28.md`
+- `docs/WORD-PRINTOUT-18-VARIANT-ABI-RECHECK-2026-11-28.md`
+
+Scanner XML root/key names are now known from UTF-16LE setter constants. Remaining scanner gates are root metadata/defaults, runtime request/response examples, and the `MaxFileSize` unit/conversion.
+
+Printer analysis now establishes GAM-printer discovery by `PRINTER_INFO_2A.pDriverName`, paused-state inspection through `PRINTER_INFO_2A.Status`, and queue matching through `EnumJobsW` / `JOB_INFO_1W.pDocument`. The next gate is proving how `TrimLF` and indirect references invoke `ExtractFileNameEX`, and whether the match gates TIFF/archive completion. Decode the driver-name constant at `0x0047CC64` and map `InstallZanPrinter` / `CheckPrinterPaused`.
+
+Word PrintOut remains blocked on a reproducible 18-Variant caller versus 17-Variant generated-wrapper mismatch. Resolve against the exact WordXP type-library metadata; do not drop an argument or infer parameter names.
+
+ImageEn `TImageEnMIO.Acquire` remains an external `PKIECtrl23.bpl` dependency. SevenZip output encryption and `euResetMemory` VMT identities remain open. No implementation/release work until these contracts are closed and runtime acceptance is available.
