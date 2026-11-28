@@ -3434,3 +3434,5 @@ GDI+ import identity is now independently confirmed: GNU `objdump -p` agrees wit
 GDI+ interface boundary: SeparteImages creates TGPEncoderParameters (VMT pointer 0x00483FA0 loaded from global slot 0x00483F4C) and obtains its interface at object +0x28, then calls interface slot +0x20 with the compression/save-flag GUIDs. TGPImage is created with VMT pointer 0x00484780 loaded from global slot 0x00484728; its interface is called through slots +0x48/+0x70/+0x74/+0x5C/+0x58. The interface metadata blocks are complex Delphi RTTI structures, not simple pointer arrays; exact Save/SaveAdd/final-flush identities remain open.
 
 - GDI+ and SevenZip follow-up static lanes all passed (Save/SaveAdd, encoder GUIDs, independent import parser, interface metadata, output callbacks). Latest multi-lane Word/TIFF/scanner workflow file was added in commit `37dbd31b38a1a89dcbe88e8ad23f9f02f39a9d0f`; its execution is not yet confirmed.
+
+- The BeforeClose-named Word routine is a print-field helper (GetFieldIndexInList → FillImgFldsForPrint → helper), not a COM close callback. Actual close-to-Almas return mechanism remains unresolved.
