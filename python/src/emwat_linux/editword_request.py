@@ -26,7 +26,7 @@ class EditWordDocumentRequest:
     document_bytes: bytes = field(repr=False)
     sign_data_text: str = field(repr=False)
     extra_parameters: Mapping[str, str] = field(repr=False)
-    external_parameter_bindings: tuple[ExternalParameterBinding, ...] = field(repr=False)
+    external_parameter_bindings: tuple[ExternalParameterBinding, ...] = field(default=(), repr=False)
 
 
 def parse_editword_request(
