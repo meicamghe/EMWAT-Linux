@@ -405,3 +405,27 @@ This is direct code evidence that 0x004CD154, 0x004CD54C and 0x004CD9C0 are inst
 By contrast, 0x004CCBBC (TD32-named WordAppDocumentBeforeClose) has no raw code pointer registration and its only direct CALL is from FillImgFldsForPrint at 0x004CCF8F. FillImgFldsForPrint (0x004CCDC8–0x004CD153) iterates document image fields and calls 0x004CCBBC in that print-field path. Treat 0x004CCBBC as a reusable field/print helper, not the registered COM close callback.
 
 No production Linux runtime behavior changed. Exact XML node names for TScanCommand and the semantic names of the conditional Word event slots remain open.
+
+
+## Track S — Run 14 green: registered Word callbacks and scanner XML constant extraction
+
+Run 14 (45804829668) completed successfully on commit 0fee55712cad7f46e1755b35ee64d983764039f0. All four jobs passed: word/printer thread, ImageEn acquisition, native regression, and scanner/result ownership. Artifacts: Word/printer 15109695301, ImageEn 15108723614, scanner 15107709681.
+
+### Word event registration targets
+
+The follow-up traced every callback address written by TWordViwer.OnTmrAutoSave (0x004B8A84):
+- 0x004CD154 is TD32-labelled WordAppDocumentBeforeSave, and is written into event-source +0x80 with instance pointer at +0x84. This registration is direct evidence of its event-sink role; the separate RTTI/slot evidence identifies the slot as the document-before-close event. Its body performs a substantial pre-close document path, so do not infer save semantics from the TD32 label.
+- 0x004CD54C is TD32-labelled WordAppNewDocument and is installed at +0x90/+0x94.
+- 0x004CD9C0 is TD32-labelled WordAppWindowActivate and is installed at +0x98/+0x9C.
+- The conditional +0x88/+0x8C pair selects 0x004D00AC (TD32 name LoadOptions) or 0x004CE030 (WordAppDocumentBeforePrintBGPrint), depending on this+0x3C. The same selection is repeated in another branch of OnTmrAutoSave. The precise event-source slot names for this conditional pair remain to be tied to the COM event interface metadata.
+- Direct-call xref scans show no direct CALL sites to the registered targets, as expected for callbacks installed as code-pointer/instance pairs and invoked indirectly.
+
+The helper at 0x004CCBBC remains separate: it is called from FillImgFldsForPrint, not registered in the event-source pairs. The distinction between actual callback and similarly named helper is now backed by both installation evidence and caller evidence.
+
+### Scanner XML findings and extraction quality
+
+Run 14's broad address-to-string probe is intentionally treated as a candidate generator, not as a validated string table: it also decoded code bytes and global data as garbage when a code VA was mistakenly treated as a string VA. Valid obvious constants include the Persian user-facing retry/cancel/constraint warning strings at 0x004F2454–0x004F24C8 and the UTF-16 literals 'none', 'jpg', 'yes', and 'no' at 0x004F31F8, 0x004F3210, 0x004F3224 and 0x004F3238 respectively. The latter are passed through XML/interface helper calls in VerifyConstraints, but their precise property/value mapping must be read from call context before assigning field names.
+
+VerifyConstraints (0x004F2C4C) repeatedly fetches interface properties through VMT slots +0xAC/+0xB0/+0xB4/+0xB8 and compares/converts them using helpers at 0x00401348, 0x00401380 and 0x00403230. It also uses literals 'none', 'jpg', 'yes', 'no'; the surrounding sequence contains distinct branches for format/state-like fields. The exact XML property names are still not established. LoadRequestXML (0x004F2B18) obtains request XML through the command's interface object at +0x34 and uses VMT slots +0xB8/+0xBC/+0x68/+0x54; it then forwards a returned property into a dictionary/interface setter. Do not equate these calls to a specific external connector schema until the property names are decoded.
+
+A new Run 15 instrumentation step now decodes only explicitly referenced string VAs (rather than every address mentioned in a disassembly) and traces the XML conversion helper at 0x004E9D5C plus request-state helper at 0x004F32F4. This is designed to avoid the false positives seen in the broad probe. No production Linux code changed.
