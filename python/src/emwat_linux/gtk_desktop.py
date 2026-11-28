@@ -1,8 +1,8 @@
-"""Minimal GTK 4 control shell for EMWAT Linux.
+"""GTK 4 desktop shell for EMWAT Linux diagnostics, recovery, and bridge control.
 
-This is deliberately a diagnostics/recovery shell, not a bridge launcher:
-the Almas Origin allowlist and Cancel wire response must be supplied by a
-deployment-specific, evidence-backed configuration before a bridge can start.
+The normal entry point injects the captured loopback deployment configuration.
+Explicit operation discard remains fail-closed with a local 409 response; this
+is a safety policy, not a claim of Windows wire compatibility.
 """
 from __future__ import annotations
 
@@ -40,8 +40,13 @@ def create_desktop_application(
     *,
     recovery_controller: Any | None = None,
     bridge_supervisor: Any | None = None,
+    auto_start_bridge: bool = False,
 ) -> Any:
-    """Create GTK; a deployment must explicitly inject any bridge supervisor."""
+    """Create GTK with optional, explicitly configured bridge auto-start."""
+    if type(auto_start_bridge) is not bool:
+        raise ValueError("auto_start_bridge must be a boolean")
+    if auto_start_bridge and bridge_supervisor is None:
+        raise ValueError("auto_start_bridge_requires_bridge_supervisor")
     try:
         import gi
         gi.require_version("Gtk", "4.0")
@@ -269,12 +274,15 @@ def create_desktop_application(
                             close_approved = True
                             window.close()
                         else:
+                            # Refresh button sensitivity first; then preserve the
+                            # actionable drain failure instead of overwriting it
+                            # with the generic FAILED state label.
+                            refresh_bridge_controls()
                             bridge_status.set_text(
                                 "توقف کامل نشد؛ اگر سند Writer باز است آن را ببندید، "
                                 "سپس دوباره پنجره را ببندید. "
                                 + f"جزئیات: {failure or bridge_supervisor.failure}"
                             )
-                            refresh_bridge_controls()
                         return GLib.SOURCE_REMOVE
 
                     GLib.idle_add(finish_close)
@@ -317,8 +325,10 @@ def create_desktop_application(
 
         note = Gtk.Label(
             label=(
-                "Bridge فقط با پیکربندی صریح و معتبر قابل اجراست؛ Origin و قرارداد "
-                "پاسخ Cancel حدس زده نمی‌شوند. بدون Supervisor تزریق‌شده، سرویس غیرفعال است."
+                "Bridge فقط روی 127.0.0.1:1984 و با Origin ثبت‌شده الماس گام اجرا می‌شود. "
+                "Discard صریح تا زمان بازیابی پاسخ ویندوز با خطای محلی 409 متوقف می‌شود."
+                if bridge_supervisor is not None
+                else "بدون Supervisor پیکربندی‌شده، سرویس غیرفعال است."
             )
         )
         note.set_xalign(0)
@@ -327,20 +337,26 @@ def create_desktop_application(
         root.append(note)
 
         window.present()
+        if auto_start_bridge and bridge_supervisor is not None and not missing:
+            run_bridge_operation(bridge_supervisor.start)
 
     application.connect("activate", activate)
     return application
 
 
 def main(argv: Sequence[str] | None = None) -> int:
-    """Launch the local GTK control shell without starting the Almas bridge."""
+    """Launch GTK and auto-start the evidence-configured loopback bridge."""
     parser = argparse.ArgumentParser(
         prog="emwat-linux",
         description="Open EMWAT Linux diagnostics and recovery controls.",
     )
     parser.parse_args(argv)
+    from emwat_linux.deployment import create_default_bridge_supervisor
+
     application = create_desktop_application(
-        recovery_controller=create_default_recovery_controller()
+        recovery_controller=create_default_recovery_controller(),
+        bridge_supervisor=create_default_bridge_supervisor(),
+        auto_start_bridge=True,
     )
     return int(application.run([]))
 

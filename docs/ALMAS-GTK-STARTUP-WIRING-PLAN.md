@@ -64,4 +64,15 @@ The 409 response is a local safety policy, not a claim of Windows protocol parit
 6. Repeat with Don't Save and Writer Cancel; verify original-body return and pending-request behavior respectively.
 7. Close GTK while Writer is open; verify bounded drain keeps the window alive, then close Writer and retry shutdown.
 
-No production startup wiring is implemented by this plan. It is the exact next implementation contract; no external origin or response behavior should be guessed.
+## Implementation status — work branch 2026-11-28
+
+The evidence-backed composition is now implemented in `python/src/emwat_linux/deployment.py` and wired by the normal `emwat-linux` entry point in `gtk_desktop.py`:
+
+- The default server factory binds only to `127.0.0.1:1984`.
+- Both captured loopback Origin allowlists are set to `http://127.0.0.1:1984`.
+- Each supervisor start constructs a fresh LibreOffice adapter, service, handler, dispatcher, and HTTP server.
+- The ordinary GTK entry point requests auto-start after required Python, LibreOffice, and UNO dependency checks pass.
+- The existing manual Stop control, asynchronous lifecycle operations, state polling, and bounded close/drain behavior remain available.
+- Explicit operation-level discard returns a local HTTP 409/plain-text response only when the coordinator state is exactly `DISCARDED`. This is deliberately not represented as the native Windows response.
+
+The implementation and regression tests are committed on `work/parallel-closure-2026-11-28` and proposed in PR #6. Python tests, GTK smoke tests, package lifecycle, and live Almas acceptance remain pending. The plan is therefore implemented at the composition level, not yet accepted as a working Almas deployment.

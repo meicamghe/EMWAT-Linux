@@ -66,18 +66,21 @@ after a Don't Save choice.
    outcomes. The exact Windows wire response for explicit operation-level
    discard is not established; use a fail-closed local policy and do not claim
    Windows parity for it.
-4. **Desktop bootstrap:** the ordinary GTK entry point still does not inject
-   a deployment-configured `BridgeSupervisor`. The exact loopback composition
-   is documented in `docs/ALMAS-GTK-STARTUP-WIRING-PLAN.md`, but startup
-   wiring is not implemented.
+4. **Desktop bootstrap:** the work branch now implements the normal GTK
+   entry-point composition in `python/src/emwat_linux/deployment.py` and
+   `gtk_desktop.py`, including the captured loopback-only bind and Origin /
+   Referer allowlists. This is implementation evidence, not live deployment
+   acceptance; verify dependency failure, port conflict, start/stop, and the
+   real Almas browser workflow before release.
 5. **Almas persistence:** no test has yet shown that the real Almas application
    receives, accepts, and persists the returned edited document from Linux.
 6. **In-flight shutdown acceptance and test result:** the bridge now tracks
    accepted workers and performs bounded drain before closing the socket.
-   The worker-count registration race was corrected, but the new Python
-   regression suite did not complete: the automatically triggered Run-67
-   Python step was cancelled. Live Almas shutdown behavior and forced process
-   termination remain unverified.
+   The worker-count registration race was corrected. Run 67's Python step was
+   cancelled; a new PR CI cycle is in progress on the isolated work branch.
+   A GTK smoke run exposed a failure-message ordering bug in the close retry
+   path; the fix is committed and the GTK workflow is being rerun. Live Almas
+   shutdown behavior and forced process termination remain unverified.
 7. **WordConfig/signature parity:** controlled Writer text/image update APIs
    and inline Base64 image inventory exist, but no automatic field map is
    enabled. The outer `letterImages` payload is TIFF/preview-side; `signData`
@@ -219,9 +222,9 @@ The browser screenshot pair records Referer http://127.0.0.1:1984/?init=...; the
 1. Run the real Almas browser workflow against the GTK application with the captured loopback Origin/Referer behavior and LibreOffice Writer.
 2. Verify the same Invoke remains pending while Writer is open; Save then close; ensure Almas receives and persists the returned DOC; reopen it and verify the saved marker.
 3. Capture a gap-free response or otherwise validate the complete serialized response body against the native implementation.
-4. Execute the new bridge drain/race tests and GTK shutdown retry tests locally; Run-67's native regression build/test step completed successfully, but its Python bridge regression step was cancelled before completion. No Python-suite pass/fail result is available.
+4. Complete the current PR CI cycle for Python bridge, GTK smoke, and Debian package lifecycle. The previous GTK run failed on shutdown-error label ordering; the fix is committed on the isolated work branch. Run-67's Python step was cancelled, so it is not a pass/fail result.
 5. Resolve WordConfig field mapping and signData only to the extent required by the live acceptance fixture. letterImages is currently tied to the TIFF/preview path and remains deferred while TIFF is out of scope.
-6. Wire the evidence-backed loopback service configuration into normal GTK startup; do not start the listener with wildcard origins or an unverified host.
+6. Run the configured GTK bridge against a real Almas page using the exact loopback origins; verify Almas accepts and persists the returned DOC. Do not enable wildcard origins or an unverified host.
 
 The earlier Run-40 statement that TEditWordDocument had no VMT is superseded: it describes only a false negative in the newer generic resolver, not the overall evidence. The direct VMT mapping above is authoritative.
 
@@ -230,7 +233,12 @@ The earlier Run-40 statement that TEditWordDocument had no VMT is superseded: it
 
 The bridge already supports separate XHR Origin and parent-page Referer allowlists. The PCAP/screenshot establishes both origins as http://127.0.0.1:1984, with the bridge bound to 127.0.0.1:1984. The external Almas web page hostname is not the Origin of the captured loopback XHR and should not be guessed or required for this listener. A precise startup composition and explicit-discard fallback policy are documented in docs/ALMAS-GTK-STARTUP-WIRING-PLAN.md.
 
-The remaining gap is implementation: the normal GTK entry point still creates the desktop without an injected BridgeSupervisor. The plan specifies the exact composition but no code was changed here. The CancelResponseFactory remains a fail-closed local 409 only for explicit operation-level DISCARDED; Writer's Save/Don't Save/Cancel lifecycle is separate and already modeled.
+This Run-47 implementation-gap statement is superseded by the isolated
+work-branch implementation recorded in the implementation-status section of
+`docs/ALMAS-GTK-STARTUP-WIRING-PLAN.md` and by PR #6. The remaining gate is
+runtime acceptance against real Almas, not the existence of the GTK composition.
+The CancelResponseFactory remains a fail-closed local 409 only for explicit
+operation-level DISCARDED; Writer's Save/Don't Save/Cancel lifecycle is separate.
 
 
 ## Run 50 — preserve the native pending-request duration

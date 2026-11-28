@@ -20,8 +20,9 @@ permissions:
   contents: read
 
 concurrency:
-  group: emwat-deep-followup-${{ github.ref }}
-  cancel-in-progress: true
+  # Preserve independent commit evidence runs; newer pushes must not cancel active analysis.
+  group: emwat-deep-followup-${{ github.ref }}-${{ github.sha }}
+  cancel-in-progress: false
 
 jobs:
   scanner-result-ownership:

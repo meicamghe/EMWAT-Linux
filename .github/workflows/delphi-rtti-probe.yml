@@ -1,0 +1,154 @@
+name: Delphi RTTI Probe
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - work/parallel-closure-2026-11-28
+    paths:
+      - "analysis-input/EmwatMethods.bpl1"
+      - "tools/undelphi_probe/**"
+      - ".github/workflows/delphi-rtti-probe.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install stable Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Run read-only Delphi metadata probe
+        shell: bash
+        run: |
+          set -o pipefail
+          mkdir -p analysis-output/undelphi
+          sha256sum analysis-input/EmwatMethods.bpl1 | tee analysis-output/undelphi/input-sha256.txt
+          timeout --kill-after=30s 8m cargo run --release \
+            --manifest-path tools/undelphi_probe/Cargo.toml -- \
+            analysis-input/EmwatMethods.bpl1 analysis-output/undelphi \
+            2>&1 | tee analysis-output/undelphi/build-and-probe.log
+
+      - name: Install PE analysis dependencies
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Trace WordViewer lifecycle flags and close prompt
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check pefile capstone
+          out=analysis-output/undelphi/wordviewer-state
+          mkdir -p "$out"
+          python tools/decode_pe_strings.py analysis-input/EmwatMethods.bpl1 \
+            0x004CD3C0 0x004CD3DC 0x004CD3F0 0x004CD40C 0x004CD41C 0x004CD42C \
+            0x004CD84C 0x004CD864 0x004CD89C 0x004CD8B4 0x004CD8F0 0x004CD928 0x004CD95C \
+            0x004C2718 0x004C26B8 0x004C26BC 0x004C26C4 0x004C26E0 0x004C2730 \
+            0x004CA2E4 0x004CA300 0x004CA314 0x004CA324 0x004CA334 0x004CA398 \
+            0x004D0FF4 0x004D103C 0x004D1074 0x004D10B0 0x004D10E0 \
+            0x004BB6CC 0x004BB754 0x004BB76C \
+            0x0062E9FC 0x0062EEB4 0x0062EF18 0x0062EEC4 \
+            > "$out/close-prompt-strings.md"
+          for target in 004CD154 004CD54C 004CD9C0 004CE030 004D00AC; do
+            python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 \
+              "0x$target" "$out/event-$target.md"
+            python tools/trace_td32_immediate_refs.py analysis-input/EmwatMethods.bpl1 \
+              "0x$target" "$out/event-$target-immediate-refs.md"
+          done
+          for target in 004BB3B0 004BB81C 004CB1B4 004C9EA8 004C1A18 004D0E9B; do
+            python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 \
+              "0x$target" "$out/state-procedure-$target.md"
+            python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 \
+              "0x$target" "$out/state-callers-$target.md"
+          done
+          for target in 004C5E04 004D281C 0043E0FC 0043E174 0043E1D8; do
+            python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 \
+              "0x$target" "$out/deep-procedure-$target.md"
+            python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 \
+              "0x$target" "$out/deep-callers-$target.md"
+          done
+          targets=(5C 5D 5E 5F 79 F4)
+          pids=()
+          for target in "${targets[@]}"; do
+            (
+              set -e
+              python tools/trace_field_accesses.py analysis-input/EmwatMethods.bpl1 \
+                "0x$target" "$out/field-$target-all.md"
+              grep -F 'TWordViwer' "$out/field-$target-all.md" \
+                > "$out/field-$target-wordviewer.md" || true
+            ) &
+            pids+=("$!")
+          done
+          status=0
+          for pid in "${pids[@]}"; do wait "$pid" || status=1; done
+          exit "$status"
+
+      - name: Trace print worker, TIFF and Word connection helpers
+        shell: bash
+        run: |
+          set -euo pipefail
+          out=analysis-output/undelphi/print-worker
+          mkdir -p "$out"
+          targets=(004A1AA0 004A609C 004A5C10 004A5D78 004A8F78 004AA340 004AA33C 004AA148 004AA310 004A0148)
+          pids=()
+          for target in "${targets[@]}"; do
+            (
+              python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 \
+                "0x$target" "$out/procedure-$target.md"
+              python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 \
+                "0x$target" "$out/callers-$target.md"
+            ) &
+            pids+=("$!")
+          done
+          status=0
+          for pid in "${pids[@]}"; do wait "$pid" || status=1; done
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 \
+            0x00404FAC "$out/word-connection-helper-00404FAC.md" || status=1
+          exit "$status"
+
+      - name: CFG trace print worker, TIFF and signData paths
+        shell: bash
+        run: |
+          set -euo pipefail
+          out=analysis-output/undelphi/cfg
+          mkdir -p "$out"
+          for target in 004A609C 004A1AA0 004A0148 004C1A18 004C2B20 004C436C; do
+            python tools/trace_td32_cfg.py analysis-input/EmwatMethods.bpl1 \
+              "0x$target" "$out/cfg-$target.md"
+          done
+          python tools/decode_pe_strings.py analysis-input/EmwatMethods.bpl1 \
+            0x004A1AF4 0x004A1AF8 0x004A0B24 0x004A0E88 0x004A0BA8 \
+            0x004A07F4 0x004A08F4 0x004A09C0 > "$out/print-worker-strings.md"
+          for target in 00402A38 00402AF0 00404224 0040271C 00404FAC; do
+            python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 \
+              "0x$target" "$out/helper-$target.md"
+          done
+          for class_pointer in 004A00E8 004A22F0 004B10A4; do
+            python tools/inspect_delphi_vmt_address.py analysis-input/EmwatMethods.bpl1 \
+              "0x$class_pointer" "$out/vmt-$class_pointer.md"
+          done
+
+      - name: Merge TD32 and undelphi function seeds
+        shell: bash
+        run: |
+          set -euo pipefail
+          python tools/emit_td32_ghidra_seeds.py \
+            analysis-input/EmwatMethods.bpl1 \
+            analysis-output/undelphi/rea-method-seeds.tsv \
+            analysis-output/undelphi
+
+      - name: Upload Delphi metadata and REA seeds
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: emwat-undelphi-rtti-and-rea-seeds
+          path: analysis-output/undelphi/
+          if-no-files-found: warn
+          retention-days: 14

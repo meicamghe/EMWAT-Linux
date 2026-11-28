@@ -720,3 +720,16 @@ Detailed artifact findings: `docs/REVERSE-ENGINEERING-RUN48.md`. No production n
 - The hidden print thread's current trace covers 1,885 of 3,096 bytes. It contains indirect interface dispatches, per-page loops and file-stream/polling behavior, but not a proven spool completion signal.
 - TWordApplication.Get_ActivePrinter and Set_ActivePrinter wrappers have no direct TD32 CALL xrefs in the artifact.
 - Full evidence and caveats: docs/REVERSE-ENGINEERING-DEEP-FOLLOWUP-2026-11-26.md. These findings do not establish physical printer or live Almas acceptance.
+
+
+## Run 51 — scanner ColorDepth enum crosswalk
+
+The deep scanner artifact `15263439921` cross-checks `TScanCommand.VerifyConstraints` (`0x004F2C4C`) with `TScanCommand.Finalization` (`0x004F32F4`) and closes the exact internal colour selector mapping:
+
+- `1` = black/white (`سياه/سفيد`)
+- `4` = grayscale (`طيف سياه و سفيد`)
+- `8` = grayscale or 256 colours (`طيف سياه و سفيد يا 256 رنگ`)
+- `24` = 24-bit colour (`رنگي 24 بيت`)
+- `0` is the unmatched/default stored value, not a fifth supported mode.
+
+The selector is a byte at `TScanCommand+0x08`; the adjacent option fields are min resolution `+0x0C`, max resolution `+0x10`, and max file size `+0x14`. This closes the static numeric enum crosswalk, not physical-device or SANE parity. Detailed evidence: `docs/SCANNER-XML-SERIALIZATION-CONTRACT-2026-11-28.md`.

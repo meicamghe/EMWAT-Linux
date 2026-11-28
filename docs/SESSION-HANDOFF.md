@@ -1,3 +1,71 @@
+## 2026-11-28 — persistent per-test Python CI diagnostics
+
+- Current diagnostic workflow commit: `adb12c426c3fbc0baef73f4bb516e7310f747e69`.
+- The Python Bridge run on prior head `0fea5f9...` remained stuck in the transport-test step; the GitHub job-log endpoint returned 404 while the job was active, so the blocked test is still unknown.
+- Improved the workflow to stream and flush each unittest's start line, keep the 5-minute faulthandler dumps, tee all output to `python/bridge-test.log`, and upload that log with `if: always()` so a timeout still leaves a downloadable diagnostic artifact.
+- This is CI-only instrumentation; no EMWAT runtime behavior changed. The new run must complete or time out before the artifact can be inspected. Do not claim the Python suite passes until then.
+- Latest status before this commit: PR #6 Draft/open/unmerged; GTK succeeded on `0fea5f9`; Debian lifecycle succeeded on the same head; Python remained in progress.
+- Current priority: inspect the uploaded per-test log and faulthandler trace, isolate the exact hanging test/thread, then make the smallest runtime/test fix with a targeted regression test. Keep PR #6 unmerged.
+
+---
+
+## 2026-11-28 — Python CI timeout diagnostics and current continuation
+
+- PR #6 remains Draft/open/unmerged. The workflow code change is commit `556c99379544c80c9b0521d11d76b9627ad71e4f`; the accompanying status note is `c83338ff53f5b7f096112031ba05fa7fcf80a491`.
+- Python Bridge workflow repeatedly reaches `Run bridge transport tests` after successful dependency installation and CLI entrypoint checks, but does not report completion. Active job logs could not be retrieved from GitHub while running; the exact test is unknown.
+- Added a 15-minute job limit, 12-minute test-command timeout, and faulthandler thread dumps every 5 minutes to expose a stuck test on the next run. Latest observed Python run for the diagnostic workflow commit was still executing the test step; do not mark it passed.
+- On the preceding commit `0725cd2...`, GTK and Debian package workflows passed. New GTK and package runs for `556c993...` were still running at last check.
+- The static WordConfig/signData implementation remains deliberately conservative: request binding and metadata inventory are implemented, but non-empty signData decoding/placement is not. No synthetic decoder should be added without a paired Windows fixture and trace.
+- Reviewed RE run 78 / deep run 51 artifacts; findings and caveats are in `docs/REVERSE-ENGINEERING-RUN78-RUN51-2026-11-28.md`. TIFF procedure remains partially disassembled; scanner colour labels are known but numeric protocol values are not.
+- Next action: inspect the timed Python workflow output after the 5-minute faulthandler dump, identify the exact blocked test, then make a narrowly targeted fix and rerun. Do not change runtime semantics based on speculation.
+
+---
+
+## 2026-11-28 — reviewed CI artifacts and evidence report
+
+- Latest PR head at this note: `811b91760d390a95de36c71783a130b038fbfb48`; PR #6 remains Draft/open and unmerged.
+- Manually downloaded and reviewed the five uploaded artifacts from reverse-engineering run 78 and deep-follow-up run 51. The evidence review is documented in `docs/REVERSE-ENGINEERING-RUN78-RUN51-2026-11-28.md`.
+- Safe static findings: separate Word BeforeSave/BeforePrint procedure ranges; concrete `TCreateTiff.SeparteImages` range at `0x004A0148–0x004A0A67` (partial disassembly); scanner colour labels recovered from four global pointers. The numeric scanner enum values, exact close callback, GDI+ encoder lifecycle, and full ImageEn/WIA backend selection remain unresolved.
+- Do not treat TD32 names or skipdata pseudo-instructions as runtime proof without event-registration and control-flow cross-checks. No runtime code was changed based on these artifact outputs.
+- Validation on preceding code head `eb5933a...`: GTK and Debian package passed; Python bridge remained in progress. New documentation commits triggered another CI set; check the latest run for head `08ca4263...` / current PR head before claiming validation. The artifact review itself is static analysis only.
+
+---
+
+## 2026-11-28 — continuation snapshot (latest observed CI state)
+
+- Work branch: `work/parallel-closure-2026-11-28`; PR #6 is Draft/open, unmerged, targeting `feature/recovery-retention-policy`.
+- Latest checked head: `eb5933a10c443cc3cba54fb8204b1239b677700b`.
+- Current code validation on that head: GTK desktop run 365 succeeded; Debian package run 132 succeeded; Python bridge run 1313 was still in progress and has no pass/fail result yet.
+- Reverse-engineering run 78: image/UI/VMT and Word/print/COM jobs succeeded; native regression job's native build/regression step succeeded and Python regression was still running.
+- Deep-follow-up run 51: scanner result ownership, ImageEn acquisition, and Word printer-thread jobs succeeded; native regression job's native build/regression step succeeded and Python regression was still running.
+- Uploaded artifacts exist for the completed analysis jobs. They must be inspected before treating their output as confirmed findings. Static analysis does not prove hardware behavior or live Almas acceptance.
+- Do not claim signData parity, TIFF/GDI+ parity, physical scanner/printer acceptance, Duplex ADF, or full Almas persistence. A non-empty Windows signData fixture and live Almas save/reopen test remain release gates.
+- The older snapshot immediately below is retained as historical context and is superseded by this one. No merge was performed.
+
+---
+
+## 2026-11-28 — latest continuation snapshot (after CI concurrency repair)
+
+- Current work branch head at this note: `a1d7ef24ca6459c751c23c29cea49cbc53de2926`; PR #6 remains Draft/open and targets `feature/recovery-retention-policy`. Do not merge to `main`.
+- GTK startup composition is implemented in `deployment.py` and wired into the normal GTK entry point. The old Run-47 statements saying it was not implemented are superseded. Live Almas persistence is still unverified.
+- Fixed reverse-engineering and deep-follow-up workflow concurrency: each commit now has its own group and `cancel-in-progress: false`. Python bridge workflow was also changed to include `github.sha` in its concurrency group because GitHub retains only one pending run per group; a pending run for an older commit can otherwise be replaced even with cancellation disabled.
+- Latest observed independent analysis runs: reverse-engineering run 78 / ID `46146592017` has `image-ui-and-vmt`, `word-print-com`, and `native-regression` in progress; deep-follow-up run 51 / ID `46146595651` has all four jobs in progress (`scanner-result-ownership`, `imageen-acquisition`, `native-regression`, `word-printer-thread`). Do not mark these passed until completed.
+- Latest completed code validations on commit `4b93639859d7971eb2060deb3557bec6a69b026b`: GTK run 359 and Debian package run 126 passed. Python bridge run on that commit was cancelled before jobs started. Newer docs/workflow commits have fresh validation runs queued/in progress; check Actions before claiming a pass.
+- New analysis plan: `docs/REA-ASSISTED-REVERSE-ENGINEERING-PLAN-2026-11-28.md`. REA is optional analyst tooling only, not a product dependency; no REA execution against the Windows binary is claimed.
+- Workflow cancellation root cause and repair are recorded in `docs/PROJECT-STATUS.md`. The acceptance document now records GTK startup as implemented while keeping real Almas acceptance as a release gate.
+
+## 2026-11-28 — isolated parallel closure branch
+
+- Working branch: `work/parallel-closure-2026-11-28`; based on `feature/recovery-retention-policy` HEAD `00bb6a3387dddc7b25d331f879ad5c60db846fa8`.
+- PR #6: https://github.com/meicamghe/EMWAT-Linux/pull/6 — Draft, base `feature/recovery-retention-policy`; do not merge to `main` until the long-lived branch's 9-commit divergence is reconciled.
+- Implemented on this work branch: `deployment.py` composes a fresh LibreOffice bridge server per start using the captured loopback bind/Origin/Referer `127.0.0.1:1984`; normal GTK entry point injects the supervisor and auto-starts after required Python/LibreOffice/UNO checks pass.
+- Explicit operation-level `DISCARDED` gets a local HTTP 409/plain-text fail-closed response only. This is not Windows wire parity. Writer Don't Save returns the last confirmed saved document; close-prompt Cancel keeps Writer open and the HTTP request pending.
+- Added tests for deployment composition, fresh server factory behavior, explicit-discard guard, GTK main injection, and missing-supervisor auto-start rejection.
+- CI on code commit `2863933ea90079fd3ba011207cea6a84c64bd57a`: GTK desktop run 353 (ID `46142068190`) passed, including the shutdown retry test after fixing the error-label overwrite; Debian package run 120 (ID `46142068204`) passed build/install/upgrade/remove. Python bridge run 1301 (ID `46142068195`) was cancelled before any job was reported. The preceding GTK run 349 failed because refresh overwrote the actionable drain-failure label; that bug is fixed in the current head.
+- Current docs-only head: `57e52b511c63fec922f39cac5c83b3cefdf7a394`. Latest PR workflows: Python run 1303 (ID `46142156482`), GTK run 355 (ID `46142156520`), Debian package run 122 (ID `46142156527`) are pending/queued with no jobs reported yet. Source code is unchanged from the GTK/package-passing commit `2863933`.
+- No local test/build, live Almas, Writer, printer, or scanner hardware acceptance was performed in this work session.
+- Full five-workstream boundaries and acceptance criteria: `docs/PARALLEL-CLOSURE-WORKLOG-2026-11-28.md`.
+
 ## 2026-11-28 — Run 50 native pending-request timing
 
 - The ~54.56-second PCAP request-to-response gap is explained by TWordViwer.OnTmrAutoSave polling viewer field +0x58 until the Word close callback clears it at 0x004CD154/0x004CD31C. This is the long user editing interval.
@@ -9,10 +77,10 @@
 
 - Static EditWordDocument dispatch is closed: TEditWordDocument VMT 0x005ED764 -> concrete method 0x005EE82C; TEmwatMethod Invoke wrapper is 0x0046C9E0; WordViewer loader 0x004B7724.
 - Successful wire response is established from PCAP: HTTP 200, text/html; charset=ISO-8859-1, response-word status=success, application/msword/base64, decoded CFB DOC. PCAP response has 68 missing TCP payload bytes.
-- XHR Origin and init Referer origin are both http://127.0.0.1:1984. GTK startup wiring plan is documented but not implemented.
+- XHR Origin and init Referer origin are both http://127.0.0.1:1984. GTK startup composition is implemented on the isolated work branch; live Almas acceptance remains pending.
 - Writer local Save/Don't Save/Cancel behavior and pending HTTP lifecycle are implemented/tested in previous local acceptance, but real Almas persistence is not verified.
 - Run67 word-print-com and image-ui-and-vmt analysis jobs passed. Native regression step passed. Python regression step was cancelled; no full Python test result.
-- Current release blockers: GTK BridgeSupervisor startup injection; live Almas->Writer->save->response->Almas persistence; full response bytes if exact parity required; targeted WordConfig/signData mappings; local execution of new drain/race tests. No Linux package is built or released.
+- Current release blockers: live Almas->Writer->save->response->Almas persistence; full response bytes if exact parity required; targeted WordConfig/signData mappings; exact print/TIFF and scanner acceptance; Python bridge suite on the current commit. GTK startup injection is implemented but not live-accepted. No release is approved.
 
 ## 2026-11-28 — Run 49 ClassType/EFOpenError wait interpretation
 
@@ -193,3 +261,74 @@ Documentation commit: `38f68dc0f0c2acbf8b9039f29d10287ded835358`.
 - Actual Windows forced-termination behavior remains outside the bounded graceful-shutdown guarantee.
 
 No Linux release package was built. No additional workflow was dispatched. PR #2 remains open Draft; no PR was merged.
+
+
+## 2026-11-28 — Python Bridge CI stall source audit
+
+- Added `docs/BRIDGE-CI-STALL-INVESTIGATION-2026-11-28.md` after auditing the active Python test suite's wait/join sites and the BridgeRuntime startup path.
+- Latest observed run `46149684182` remained in `Run bridge transport tests`; GTK and Debian package jobs passed on the same commit. The diagnostics artifact had not yet uploaded, and active job-log retrieval returned 404/BlobNotFound.
+- Most explicit test waits/joins are bounded. `BridgeRuntime.start()` still relies on an unbounded `wait_until_serving()` contract; the real server currently signals it on serve-loop entry and exit. This is a lifecycle hardening candidate, not a proven cause of the CI stall.
+- Next action is to inspect the uploaded per-test log/traceback, identify the exact blocking test, then make a targeted fix. No Python runtime code change or complete-suite pass is claimed.
+
+
+## 2026-11-28 — REA Delphi VMT capability boundary
+
+- Current work-branch head at this note: `39e4b859a55ba77c8830a3ac2527706efda3e628`; PR #6 remains Draft/open/unmerged.
+- REA source review found its Delphi VMT/class recovery is still a proposed feature request (#2811), not a built-in parser. Its Ghidra provider accepts `REA_GHIDRA_SEED_FILE` in `address<TAB>kind[<TAB>name]` format; the issue reports one external Delphi 7 PE32 parser experiment importing 1,610 method seeds successfully.
+- Next REA step is a read-only, external VMT parser pilot on the exact EMWAT PE/BPL after compiler-layout invariants are proven. Do not assume Delphi 7 from PE32 alone, and do not claim any REA run or recovered EMWAT class/method count yet.
+- Ghidra/REA installation is an analyst-host prerequisite and version-sensitive; run `rea doctor --json` on the actual analyst host before selecting a provider. REA is not an EMWAT runtime dependency.
+- Detailed boundary and procedure: `docs/REA-ASSISTED-REVERSE-ENGINEERING-PLAN-2026-11-28.md`.
+
+
+## 2026-11-28 — Python Bridge root cause and fix handoff
+
+- Artifact `python-bridge-diagnostics-46149684182` identifies the stall: 337 tests finished in 11.037s, then interpreter shutdown hung on a non-daemon fake serve thread left alive by two Runtime cleanup failures.
+- Fixed `BridgeRuntime._close_once()` to close the listening socket after a successful bounded request drain even when shutdown raises, preserving the first error and retry behavior.
+- `EditWordDocumentRequest.external_parameter_bindings` now defaults to `()` for backward-compatible manual construction; parser-created requests continue to pass actual resolved bindings.
+- Added optional pytest test extra and installed it in the Python Bridge workflow; this addresses the `test_pe_va_ranges` import error.
+- Latest validation queued on head `714b06f10e390688e584eec87c87a8d3dcf32544`: Python `46150833510`, GTK `46150833548`, Debian `46150833597`. Inspect results before claiming green.
+- Full diagnostic and failure list: `docs/BRIDGE-CI-STALL-INVESTIGATION-2026-11-28.md`.
+
+
+## 2026-11-28 — scanner ColorDepth/VMT findings
+
+- Run 51 deep scanner artifact `15263439921` closes the `colorDepth` internal mapping: 1=black/white, 4=grayscale, 8=grayscale-or-256-colour, 24=24-bit colour; zero is unmatched/default. Both `VerifyConstraints` and `Finalization` agree.
+- `TScanCommand` stores the options at `+0x08/+0x0C/+0x10/+0x14`: colour selector, min resolution, max resolution, max file size.
+- Existing EMWAT VMT script assumes a later Win32 layout, unlike REA issue #2811's Delphi 2–2007 profile. Candidate `TScanCommand` VMT `0x004F1F94` validates self/class-name/size/parent; `0x004F1F3C` is the self-pointer slot, not a separate false candidate. Field-table raw bytes contain candidate names but are not structurally parsed; method-table pointer `0x004F20B9` reports count zero and trailing bytes are not yet attributable to methods. Do not use Delphi 7 offsets blindly.
+- Details: `docs/SCANNER-XML-SERIALIZATION-CONTRACT-2026-11-28.md`, `docs/IMAGE-SCANNER-EDITOR-CALLGRAPH-INVENTORY.md`, `docs/REA-ASSISTED-REVERSE-ENGINEERING-PLAN-2026-11-28.md`.
+
+
+## 2026-11-28 — Word close/save, SignData and Delphi 10 metadata
+
+- undelphi 0.5.1 successfully parsed the actual EMWAT BPL as Delphi 10 Seattle 30.0 Win32: 526 classes, 3,862 extended methods, 1,192 extended fields, 3,834 Ghidra seeds. This is not yet an REA/Ghidra execution.
+- VMT header start for TScanCommand is `0x004F1F3C`; class pointer is `0x004F1F94`. The previous apparent second candidate was the header/self-pointer address, not a separate VMT.
+- TWordApplication event fields and TMethod assignments prove `0x004CD154` is BeforeClose and `0x004CD54C` is BeforeSave despite stale TD32 labels.
+- BeforeClose checks `ReadyToClose`, queries Document.Saved, and conditionally shows the Persian Yes/No/Cancel prompt when unsaved and `OpenAsFree` is true. Yes prepares SaveChanges=-1; No prepares 0; Cancel sets the event Cancel word.
+- BeforeSave intercepts Word's event, handles the custom save path, and can invoke `PrintWithGamPrintOptions`; controller autosave is a separate `OnControlerNotify -> CostumizeRecAndCC -> Document.Save` route.
+- `SignData` is stored at TWordViwer+0xF4 and consumed by GetCaptionItemFont for the caption-item key `signData`; its payload format remains opaque.
+- `ReadyToClose` is a busy gate toggled by field processing/save/controller paths. `OpenAsFree` is read but no direct writes were found in this BPL; locate host-side initialization before asserting the Almas-mode prompt behavior.
+- Full trace: `docs/WORD-AUTOMATION-CLOSE-SAVE-EVENT-CROSSWALK-2026-11-28.md`.
+- Next: trace host-side `OpenAsFree` initialization, the `TWordApplication` connection-point helper/IID, `PrintWithGamPrintOptions` and BeforePrint selection, then merge TD32 seeds with undelphi seeds and run REA/Ghidra. Keep live Almas acceptance marked pending.
+
+
+## Latest handoff — 2026-11-28
+
+- Latest analysis artifact run `46153451750` succeeded. It parsed 8,411 TD32 procedures into validated executable addresses and emitted `rea-combined-seeds.tsv` with 8,411 unique function labels. The Word/scan index contains 859 procedures. REA/Ghidra has not yet been run; use the artifact from the workflow run.
+- Current branch PR checks on head `23b4d38`: Python Bridge, GTK and Debian package all passed. PR #6 remains Draft/open/unmerged.
+- Word close/save event mapping is now strong: BeforeClose `0x004CD154`, BeforeSave `0x004CD54C`; the Persian Save/Discard/Cancel prompt and its SaveChanges branches are documented.
+- SignData is stored in `TWordViwer+0xF4` and consumed by GetCaptionItemFont for the caption key `signData`; payload encoding/rendering parity remains open.
+- Save may invoke `PrintWithGamPrintOptions`; BeforePrint selects between `LoadOptions` and `WordAppDocumentBeforePrintBGPrint` using `fBG_Printing`. Save-before-print policy is controlled by registry flags.
+- Next: trace `THidePrintingThread.Execute` (`0x004A1AA0`) and `TEmwatDocPrintHandler.Execute` (`0x004A609C`), prove file wait/worker completion, then import the combined seed file into REA/Ghidra. Also locate the host-side writer of `OpenAsFree`; do not infer its runtime value from this BPL alone.
+
+
+## Latest handoff — print worker and SignData CFG — 2026-11-28
+
+- Latest CFG/VMT run `46154581970` succeeded; artifact `emwat-undelphi-rtti-and-rea-seeds`.
+- VMT confirms `THidePrintingThread.Execute=0x004A1AA0` and `TEmwatDocPrintHandler.Execute=0x004A609C`. TD32 labels at these addresses are stale.
+- THidePrintingThread hides the Word window titled `Printing` using FindWindowW/ShowWindow(SW_HIDE), 15 ms polling, with a 500- or 10,000-iteration cap.
+- TEmwatDocPrintHandler.ForgotMe sets FAbort and terminates/waits; TEDPController.Notify invokes it. TPrintJobs uses GetCurrentThread pseudo-handle keys, not process IDs.
+- TCreateTiff.SeparateImages checks GAM printer pause state and uses LZW/MultiFrame TIFF settings; GDI+ vtable method names still need exact mapping.
+- SignData is read for caption key `signData` in GetCaptionItemFont and flows to EmbedTextToImage with TCaptionItem metadata; payload decoding and output byte parity remain unverified.
+- TWordViwer has no published properties; OpenAsFree remains private with no direct writer found in this BPL.
+- Next: decode caption XML attributes and image helper calls, trace main print-worker helpers and string xrefs, map Save/SaveAdd/Flush slots, and locate host-side OpenAsFree initialization.
+- Detailed report: `docs/PRINT-WORKER-TIFF-SIGNDATA-CROSSWALK-2026-11-28.md`.

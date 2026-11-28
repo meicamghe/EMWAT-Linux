@@ -128,3 +128,28 @@ References:
 - [IXMLNode.GetAttribute](https://docwiki.embarcadero.com/Libraries/Athens/en/Xml.XMLIntf.IXMLNode.GetAttribute)
 - [IXMLNode.ChildNodes](https://docwiki.embarcadero.com/Libraries/Alexandria/en/Xml.XMLIntf.IXMLNode.ChildNodes)
 - [IXMLNodeList.FindNode](https://docwiki.embarcadero.com/Libraries/Athens/en/Xml.XMLIntf.IXMLNodeList.FindNode)
+
+
+## Run 51 — exact ColorDepth selector mapping
+
+The successful deep scanner artifact from run `46146595651` (artifact `15263439921`) contains complete callsite traces for `TScanCommand.VerifyConstraints` at `0x004F2C4C` and `TScanCommand.Finalization` at `0x004F32F4`. Cross-reading both directions closes the internal selector mapping:
+
+| `colorDepth` numeric selector | Internal byte at `TScanCommand+0x08` | Finalization label |
+|---:|---:|---|
+| 1 | `1` | `سياه/سفيد` (black/white) |
+| 4 | `4` | `طيف سياه و سفيد` (grayscale) |
+| 8 | `8` | `طيف سياه و سفيد يا 256 رنگ` (grayscale or 256 colours) |
+| 24 | `0x18` | `رنگي 24 بيت` (24-bit colour) |
+
+Evidence chain:
+
+- `VerifyConstraints` reads the XML constraint value and writes exactly `1`, `4`, `8`, or `0x18` to byte offset `+0x08`; the unmatched/default branch writes zero (`0x004F2F34–0x004F2F67`).
+- `Finalization` reads that same byte and maps the four values back to the four string globals at `0x00628260`, `0x00628264`, `0x00628268`, and `0x0062826C` (`0x004F334A–0x004F33B2`).
+- The selector is therefore a numeric value, not an ordinal 0–3 enum. Preserve the exact values 1/4/8/24. Do not normalize them to 0/1/2/3.
+- Zero is the no-match/default representation in this code path; it is not one of the four supported colour labels. Do not silently treat it as a valid colour depth.
+
+The four contiguous option values begin at `TScanCommand+0x08`: colour selector byte at `+0x08`, minimum resolution at `+0x0C`, maximum resolution at `+0x10`, and maximum file size at `+0x14`. `VerifyConstraints` stores the latter three values at those exact offsets. This agrees with the previously recovered KiB conversion for MaxFileSize and the constraint property names.
+
+`FHasConstraints` at `+0x38` is computed by summing the colour byte and the three numeric option values and testing whether the sum is positive. This is the literal implementation; do not replace it with a guessed null/empty policy without checking signed-value behavior and upstream validation.
+
+This is static callsite evidence, not a live scanner capture. It closes the numeric selector mapping but does not prove the physical scanner driver's accepted modes, bit-depth behavior, or SANE backend equivalence.

@@ -24,8 +24,9 @@ permissions:
   contents: read
 
 concurrency:
-  group: emwat-parallel-re-${{ github.ref }}
-  cancel-in-progress: true
+  # Preserve independent commit evidence runs; newer pushes must not cancel active analysis.
+  group: emwat-parallel-re-${{ github.ref }}-${{ github.sha }}
+  cancel-in-progress: false
 
 jobs:
   word-print-com:
