@@ -47,6 +47,18 @@ Its direct callers include:
 
 This is strong evidence that EMWAT correlates an Office/Word print operation with the Windows spool queue using the job's document name. It does not prove the final GAM TIFF output is complete or that the queue job has fully drained.
 
+
+## 4A. Word queue polling is now directly connected
+
+A second pass over `BGPrintWithGamPrintOptions` at `0x004C5FF8` confirms the direct queue-match call that was previously only inferred from the helper:
+
+- At `0x004C6099`, the routine calls `getPrinterNumJobs` and stores the returned printer handle in local `[EBP-0xDC]`.
+- For each generated document-name candidate, it calls `0x004563A8` to prepare the UnicodeString, places that name in `EDX`, the printer handle in `EAX`, and calls `ExtractFileNameEX` at `0x004C8949`.
+- If the helper returns false, the caller enters a retry/wait branch (including a `push 5` delay) and repeats the queue check. A true result advances the per-document loop.
+- The routine closes the printer handle through `ClosePrinter` at `0x004C8B72`.
+
+This proves that the Word print path actively waits for the corresponding job document name to appear in the spool queue. It proves job appearance/matching, not successful completion, spool drain, or final TIFF archive completion. The queue helper's direct caller is now established even though the separate TD32 direct-caller report missed this callsite.
+
 ## 4. Other printer enumeration path
 
 `Emwatutils.euIsValidFileName` at `0x00456870` also calls `EnumPrintersW` (`0x004044C4`) twice at level 2 with flags value 6. It walks `PRINTER_INFO_2W`-shaped records (stride `0x54`) and compares printer-related fields through a helper object. Its exact semantic purpose is not yet settled despite the symbol name.
