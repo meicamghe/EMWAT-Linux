@@ -1,3 +1,10 @@
+## 2026-11-28 — Run 40 connector class VMT resolution boundary
+
+- Run-67 artifact `15260427307` reports two shortstring occurrences each for `TEmwatMethod`, `TEditWordDocument`, and `TScanDocument`, but no standard-layout VMT candidate for any of them.
+- The only `TWordViwer` candidate (`0x004B10A4`) is explicitly unverified and has an implausible parent/type profile; do not treat it as a true VMT.
+- The Word-edit handler class name exists in the BPL, but its VMT/registration association is not resolved. Next analysis target is custom RTTI/interface/registration references, not more guessing from TD32 labels.
+- Updated Almas acceptance doc commit `770af79`; Run 40 report commit `b1b66c9`.
+
 ## 2026-11-28 — Run 39 TD32 handler-name caveat
 
 - In Run-67 artifact `15260640277`, the procedure labelled `TCompareWordDocument.PerformMethod` at `0x005EF8AC` actually reads `ExcelConfig` and `ExcelWorkBookContent` dictionary keys. This confirms a mismatch between at least one TD32 connector class label and the actual request data flow.
