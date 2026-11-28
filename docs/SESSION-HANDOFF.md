@@ -2121,3 +2121,15 @@ Next probes: recover the four filename-table strings and state-byte meanings; re
 - ImageEn Acquire is an external PKIECtrl23.bpl import reached from TfrmImageTools.InsertPicture. The package binary is absent from analysis-input; do not invent its internal behavior.
 - Continue with the 15-Variant Word PrintOut arguments, print-worker to JOB_INFO_1W/GAM artifact correlation, archive output slot +0x44 mapping, scanner XML property names and the opaque +0x14 threshold.
 - Keep this session in reverse-engineering mode. No production Linux implementation, merge or rebase until the Windows behavior contracts are sufficiently recovered.
+
+
+## 2026-11-28 latest parallel reverse-engineering handoff
+
+Current branch: `feature/recovery-retention-policy`. Static-analysis runs 22–25 succeeded (except superseded/cancelled attempts that uploaded partial artifacts); see `docs/SESSION-HANDOFF-2026-11-28-RUN22.md` for the full current handoff.
+
+Key new evidence:
+- Scanner XML root `scan-document`, child `constraints`, and exact UTF-16LE keys are documented in `docs/SCANNER-XML-SERIALIZATION-CONTRACT-2026-11-28.md`.
+- GAM printer discovery, paused-state check, and EnumJobsW/JOB_INFO_1W document-name matching are documented in `docs/PRINTER-QUEUE-AND-GAM-DRIVER-REVERSE-ENGINEERING-2026-11-28.md`.
+- Four Word PrintOut calls each pass 18 Variant pointers, while generated wrappers stop at 17; see `docs/WORD-PRINTOUT-18-VARIANT-ABI-RECHECK-2026-11-28.md`.
+
+Next active lane: workflow `EMWAT print queue completion and GAM driver follow-up` (run ID `46117826449`) is tracing `TrimLF`, `ExtractFileNameEX` pointer/VMT references, `InstallZanPrinter`, and the literal driver name at `0x0047CC64`. Inspect its artifact before making claims. Reverse engineering only; do not start Linux/Windows release builds, merge/rebase, or alter main.
