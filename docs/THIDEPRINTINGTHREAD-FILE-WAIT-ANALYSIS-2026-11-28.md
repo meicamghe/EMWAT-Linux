@@ -74,3 +74,10 @@ The full skipdata trace of `TWordViwer.LoadDocument` (`0x004B7724–0x004B8A83`)
 - On state change or timeout it exits the poll, logs through the status string at `0x004B8768`, and continues through the caller's completion/error handling.
 
 This is a bounded, UI-pumped state wait of approximately 500 ms, not a file-existence poll. It is separate from (1) spooler job disappearance and (2) `THidePrintingThread`'s output-file existence gate. The exact meaning of the ESI state and sentinel `0x0062F850` remains unresolved; do not rename it as a print-worker completion flag without mapping the object constructor and VMT slot.
+
+
+## Run 48 — identify the WordViewer poll comparison target
+
+The Run-67 import map resolves global address `0x0062F850` as the imported class reference `@System@Classes@EFOpenError@`. Therefore the comparison at `0x004B7D57–0x004B7D64` is not against an arbitrary state sentinel: it compares the result of `0x004010A8(ESI)` with the EFOpenError class reference. The loop repeats while they compare equal (and the counter remains below 100), after calling the application message-pump helper and sleeping 5 ms.
+
+This is more consistent with polling an object/operation state related to an open-file error than a generic printer-worker completion flag. The exact contract of `0x004010A8` and the construction/ownership of ESI remain unresolved, so do not label this as a specific exception recovery or file-open completion condition yet.
