@@ -81,3 +81,14 @@ This is a bounded, UI-pumped state wait of approximately 500 ms, not a file-exis
 The Run-67 import map resolves global address `0x0062F850` as the imported class reference `@System@Classes@EFOpenError@`. Therefore the comparison at `0x004B7D57–0x004B7D64` is not against an arbitrary state sentinel: it compares the result of `0x004010A8(ESI)` with the EFOpenError class reference. The loop repeats while they compare equal (and the counter remains below 100), after calling the application message-pump helper and sleeping 5 ms.
 
 This is more consistent with polling an object/operation state related to an open-file error than a generic printer-worker completion flag. The exact contract of `0x004010A8` and the construction/ownership of ESI remain unresolved, so do not label this as a specific exception recovery or file-open completion condition yet.
+
+
+## Run 49 — identify 0x004010A8 as TObject.ClassType
+
+Cross-correlation with the Run-67 GearImgProc traces resolves helper `0x004010A8` as a class-type/VMT accessor (high confidence):
+
+- In `TGearImgProc.SaveCPinMultiPageFile` at `0x004EF40C`, the code calls `0x004010A8` on the object at `[EBX+0x28]` and compares the returned pointer with ESI, which is the expected class/VMT pointer passed into the routine.
+- In the GearImgProc constructor, it calls `0x004010A8` on two object instances and compares their returned class pointers before choosing the image-processing path.
+- This matches Delphi `TObject.ClassType` behavior.
+
+Therefore the WordViewer loop at `0x004B7D57` compares `ESI.ClassType` with the imported `EFOpenError` class pointer at `0x0062F850`. It repeats while the object's class is EFOpenError, pumping application messages and sleeping 5 ms, for up to 101 iterations. This is a bounded wait for an object currently in an EFOpenError class state to change; it is not the printer-worker completion signal. The remaining unknown is which object ESI references and which operation changes its class/state.
