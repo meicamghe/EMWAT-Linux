@@ -3403,3 +3403,6 @@ The `emwat-print-queue-completion` workflow completed successfully (run `4611782
 Reverse engineering only. No production Linux code or release builds were changed; no merge/rebase was performed.
 
 - Additional direct correlation: `BGPrintWithGamPrintOptions` obtains the printer handle, checks each generated document name against `JOB_INFO_1W.pDocument` through `ExtractFileNameEX`, waits/retries while the queue entry exists, and advances when it disappears. This proves the program's queue-disappearance heuristic, not successful printing or final TIFF/archive completion.
+
+
+- Scanner size unit closed in run `46118303840`: `TScanCommand.Finalization` multiplies `MaxFileSize` by 1024 before comparing with the 64-bit result of `0x004ECD60`, establishing a KiB limit. Confirm the helper's source length before implementation; root metadata/defaults remain open.
