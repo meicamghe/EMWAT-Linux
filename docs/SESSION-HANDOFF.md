@@ -288,3 +288,11 @@ No Linux release package was built. No additional workflow was dispatched. PR #2
 - Added optional pytest test extra and installed it in the Python Bridge workflow; this addresses the `test_pe_va_ranges` import error.
 - Latest validation queued on head `714b06f10e390688e584eec87c87a8d3dcf32544`: Python `46150833510`, GTK `46150833548`, Debian `46150833597`. Inspect results before claiming green.
 - Full diagnostic and failure list: `docs/BRIDGE-CI-STALL-INVESTIGATION-2026-11-28.md`.
+
+
+## 2026-11-28 — scanner ColorDepth/VMT findings
+
+- Run 51 deep scanner artifact `15263439921` closes the `colorDepth` internal mapping: 1=black/white, 4=grayscale, 8=grayscale-or-256-colour, 24=24-bit colour; zero is unmatched/default. Both `VerifyConstraints` and `Finalization` agree.
+- `TScanCommand` stores the options at `+0x08/+0x0C/+0x10/+0x14`: colour selector, min resolution, max resolution, max file size.
+- Existing EMWAT VMT script assumes a later Win32 layout, unlike REA issue #2811's Delphi 2–2007 profile. Candidate `TScanCommand` VMT `0x004F1F94` validates self/class-name/size/parent, but published-method-table decoding remains unresolved. Do not use Delphi 7 offsets blindly.
+- Details: `docs/SCANNER-XML-SERIALIZATION-CONTRACT-2026-11-28.md`, `docs/IMAGE-SCANNER-EDITOR-CALLGRAPH-INVENTORY.md`, `docs/REA-ASSISTED-REVERSE-ENGINEERING-PLAN-2026-11-28.md`.
