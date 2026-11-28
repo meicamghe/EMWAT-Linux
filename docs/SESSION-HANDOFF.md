@@ -2072,3 +2072,13 @@ Next probes: recover the four filename-table strings and state-byte meanings; re
 - Scanner string extraction surfaced 'none', 'jpg', 'yes', 'no' constants used in VerifyConstraints, but broad probing also produced false positives from code/data bytes. Treat only the four verified UTF-16 literals and Persian UI messages as valid; exact XML property names remain unresolved.
 - Run 15 instrumentation commit ca1fcdd4cc5ed03add211aededab09c89074b172 adds targeted decoding of referenced XML constants and traces helper 0x004E9D5C plus request-state helper 0x004F32F4. Await workflow result before further changes.
 - No production runtime behavior changed. PR #2 remains Draft; do not merge/rebase or modify main.
+
+
+## 2026-11-28 — Run 15 green; scanner validation fields mapped; Run 16 queued
+
+- Run 15 (46108848523) passed all four jobs on commit ca1fcdd4cc5ed03add211aededab09c89074b172. Artifacts: scanner 15248996936, ImageEn 15248821979, Word/printer 15248538749.
+- The procedure at 0x004F32F4 is TD32-labelled Finalization, but its sole direct caller is TScanCommand.DoRequest at 0x004F23B4. DoRequest sets state +0x28 to 1, calls it, then sets state to 2 on a true result. The helper validates fields +0x38 (gate), +0x08 (selector 1/4/8/0x10), +0x0C/+0x10 (resolution bounds), and +0x14 (maximum size).
+- Validation messages recovered: 'تصوير بايد %s باشد.', 'رزولوشن تصوير بايد حد اقل %d باشد.', 'رزولوشن تصوير بايد بين %d و %d باشد.', and 'رزولوشن تصوير بايد حداكثر %d باشد.'. Current resolution comes from 0x004EEF30; size uses TResultImage.GetFileStream at 0x004ECD60 and compares against the configured limit scaled by 1024.
+- Correction: 0x004E9D5C is ScanResponseXML.NewScanDocument, not a generic conversion helper. It reads a property via VMT +0x8C and writes a value into a response/dictionary path; key semantics remain open.
+- Run 16 instrumentation commit d44699cdcf5ae9da2d5a4191e5358b819be79262 dereferences the four global selector strings and traces 0x004EEF30 and 0x004EFF94. Await results.
+- No production runtime behavior changed. PR #2 remains Draft; main remains untouched.
