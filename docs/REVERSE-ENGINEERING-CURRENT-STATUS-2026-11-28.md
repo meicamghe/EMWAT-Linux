@@ -1,3 +1,10 @@
+## 2026-11-28 — Run 43 WordViewer state wait
+
+- Full Run-50 skipdata trace of `TWordViwer.LoadDocument` exposes a second bounded wait: counter 0..100, each cycle calls the application message-pump helper at `0x00404F04`, checks an object state via `0x004010A8` against sentinel `0x0062F850`, and sleeps 5 ms via `0x004028D0` while equal.
+- Nominal maximum sleep is ~505 ms, plus message-pump/check time. Exact object/sentinel meaning remains open; it is not proven to be the printer-worker completion flag.
+- This is distinct from spooler job disappearance and THidePrintingThread's output-file existence gate.
+- Updated worker analysis commit `d4a6612`; Run 43 report `bfd5ad3`.
+
 ## 2026-11-28 — Run 42 correction: wordBody success-path requirement
 
 - Correction after reading the full skipdata trace of `TWordViwer.LoadDocument` from Run-50 artifact `15253702066`: the connector's TryGetValue for `wordBody` is unchecked at the handler level, but the loader decodes it and tests the decoded length at `0x004B77AB–0x004B77B5`; zero enters an error path.
