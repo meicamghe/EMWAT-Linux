@@ -124,3 +124,10 @@ candidate, not a verified Almas-compatible release.
 The completed `word-print-com` artifact traces `TWordViwer.LoadDocument` (TD32 symbol spelling) and shows two calls to `TCreateTiff.SeparteImages` at `0x004B7A9C` and `0x004B7ABD`. This confirms a Word-viewer document-load path enters the Word-to-TIFF conversion pipeline. It does **not** prove that this is the `EditWordDocument` browser connector handler or its response contract.
 
 The same artifact's symbol index does not contain a `TEditWordDocument.PerformMethod` symbol. It does contain generic `TEmwatMethod.Invoke` and other connector handlers, including ScanDocument, FaxDocument, EditExcelWorkBook, and CompareWordDocument. Because dispatch is indirect/VMT-based, the absence of a direct callsite or a TD32 symbol is not proof the handler does not exist; it remains a targeted reverse-engineering gap. The live Almas request/response fixture is still required as the protocol source of truth.
+
+
+## Run 67 VMT scan — handler class names exist but standard VMT resolution fails
+
+The `image-ui-and-vmt` artifact (`15260427307`) finds two shortstring occurrences each for `TEmwatMethod`, `TEditWordDocument`, and `TScanDocument`, but the standard Delphi VMT resolver produces no verified VMT candidate for any of them. It also reports an `Unverified VMT candidate` for `TWordViwer` at `0x004B10A4`, but its parent pointer resolves to a `System@PVariant`-style name and its first 32 dwords do not form a credible method-pointer table. Do not treat that candidate as a real VMT.
+
+This is consistent with the TD32/registration naming caveat: the relevant classes are present in the binary, but the current standard-layout VMT heuristic cannot identify their class tables reliably. The Almas handler discovery must move to custom RTTI/interface-table and registration-reference analysis; absence of a resolved VMT is not evidence the handler is absent.
