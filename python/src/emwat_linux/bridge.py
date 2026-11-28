@@ -37,11 +37,41 @@ RequestHandler = Callable[[BridgeRequest], BridgeResponse]
 
 
 class _ServingThreadingHTTPServer(ThreadingHTTPServer):
-    """ThreadingHTTPServer with a reliable serve-loop readiness handshake."""
+    """ThreadingHTTPServer with readiness and bounded request-drain tracking."""
 
     def __init__(self, *args: object, **kwargs: object) -> None:
         self._serving_event = threading.Event()
+        self._request_condition = threading.Condition()
+        self._active_requests = 0
         super().__init__(*args, **kwargs)
+
+    def process_request_thread(self, request: object, client_address: object) -> None:
+        # Count only after the serving loop has started the worker. shutdown()
+        # first joins the accept loop, so no new worker can appear after this
+        # count reaches zero.
+        with self._request_condition:
+            self._active_requests += 1
+        try:
+            super().process_request_thread(request, client_address)
+        finally:
+            with self._request_condition:
+                self._active_requests -= 1
+                self._request_condition.notify_all()
+
+    def wait_for_requests_idle(self, timeout_seconds: float) -> bool:
+        """Wait at most timeout_seconds for all accepted HTTP workers to finish."""
+        deadline = threading.current_thread()
+        del deadline
+        import time
+
+        end = time.monotonic() + timeout_seconds
+        with self._request_condition:
+            while self._active_requests:
+                remaining = end - time.monotonic()
+                if remaining <= 0:
+                    return False
+                self._request_condition.wait(remaining)
+            return True
 
     def service_actions(self) -> None:
         # BaseServer calls this only after serve_forever has entered its loop.
@@ -470,6 +500,10 @@ class BridgeHTTPServer:
 
     def shutdown(self) -> None:
         self._server.shutdown()
+
+    def wait_for_requests_idle(self, timeout_seconds: float) -> bool:
+        """Bounded drain hook used before ThreadingMixIn.server_close()."""
+        return self._server.wait_for_requests_idle(timeout_seconds)
 
     def server_close(self) -> None:
         self._server.server_close()
