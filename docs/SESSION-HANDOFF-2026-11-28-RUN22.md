@@ -105,3 +105,6 @@ The 5 ms queue loop is confirmed as `kernel32!Sleep(5)` followed by `Vcl.Forms.T
 
 
 GDI+ caveat: the PE import table and TD32 thunk labels disagree for the save APIs. Treat PE import names as primary but cross-check with a second parser and TGPImage VMT slots before mapping a specific Save overload; TD32 also mislabeled the verified Sleep thunk.
+
+
+GDI+ encoder parameters are now decoded: `0x0062A84C` points to the standard `EncoderCompression` GUID and is passed value 2 (LZW); `0x0062A804` points to the standard `EncoderSaveFlag` GUID and is passed value 18 (MultiFrame). This is strong evidence for multipage TIFF with LZW compression. Interface VMT mapping for initial Save / SaveAdd / final flush remains open.
