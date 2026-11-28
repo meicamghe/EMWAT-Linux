@@ -183,12 +183,13 @@ Updated `docs/ALMAS-LIVE-END-TO-END-ACCEPTANCE.md`: the implementation now has a
 
 Documentation commit: `38f68dc0f0c2acbf8b9039f29d10287ded835358`.
 
-## Remaining external gates
+## Remaining external gates (current)
 
-- Real Almas XHR Origin and parent-page Referer origins.
-- Sanitized Windows `EditWordDocument` request and corresponding response bytes/headers.
-- Confirmation that Almas accepts and persists the returned edited document.
-- Local execution of the targeted Python tests and GTK tests on a machine with GTK 4/PyGObject.
+- Implement the evidence-backed GTK startup injection in docs/ALMAS-GTK-STARTUP-WIRING-PLAN.md. The loopback Origin/Referer and successful request/response envelope are already captured; do not ask for or guess an external Almas hostname.
+- Run the actual Almas -> LibreOffice Writer -> Save/close -> response -> Almas persistence test and reopen the document to verify a unique saved marker.
+- Run the targeted Python bridge drain/race and GTK shutdown tests locally. Run-67's automatic Python regression step was cancelled; no full suite pass/fail result exists.
+- Obtain a gap-free successful Windows response capture only if byte-for-byte full-body parity is required; the current PCAP has 68 missing response payload bytes.
+- Complete WordConfig/signData mapping only to the extent required by the live acceptance fixture. TIFF-only letterImages remains deferred.
 - Actual Windows forced-termination behavior remains outside the bounded graceful-shutdown guarantee.
 
-No release package was built, no CI workflow was started, and no PR was merged.
+No Linux release package was built. No additional workflow was dispatched. PR #2 remains open Draft; no PR was merged.
