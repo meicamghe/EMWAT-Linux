@@ -1,3 +1,11 @@
+## 2026-11-28 — bounded shutdown for pending Writer requests
+
+- The bridge now tracks active HTTP request workers and provides a bounded drain wait before closing its `ThreadingHTTPServer`.
+- `BridgeRuntime` uses a configurable `request_drain_timeout_seconds` (default 5 seconds). A still-open Writer request produces a retryable shutdown failure instead of an unbounded `server_close()` wait.
+- GTK window close is asynchronous when the bridge is active. A drain timeout keeps the window open so the user can close Writer and retry; successful drain closes the bridge before GTK exits.
+- Added transport/runtime and GTK regression tests. **Not executed in this session**; no CI workflow was started.
+- This is lifecycle hardening only. Live Almas browser integration, exact Windows response parity, production origins/configuration, and persisted-document acceptance remain unverified.
+
 ## 2026-11-26 — SANE ADF capability boundary documented
 
 - Source/test audit confirms simplex ADF batches are implemented behind explicit source-label detection, capped at 100 pages and 4 GiB. Ambiguous feeder labels are rejected.
