@@ -134,3 +134,8 @@ The `+0xD8` getter and `+0xDC` setter are consistent with the Word `Document.Sav
 - `THidePrintingThread`: VMT header `0x004A0090`; Execute virtual slot target `0x004A1AA0`.
 - `TEmwatDocPrintHandler`: VMT header `0x004A2298`; Execute virtual slot target `0x004A609C`; instance fields include `fWordApp +0x48`, `fWordDoc +0x4C`, `fJob +0x50`, `fDocFileName +0x68`, and `fPrintingOption +0x6C`.
 - These are the next exact targets for resolving the print-worker wait condition and page-file handoff. No worker completion condition is claimed yet.
+
+
+## VMT/property cross-check correction — 2026-11-28
+
+The VMT inspection now confirms `TWordViwer.Create=0x004D0D24` and the Destroy slot `0x004D1148`. The TD32 labels around these addresses are stale; the VMT and constructor body take precedence. `TWordViwer` has no published/extended properties, so `OpenAsFree` is not exposed as a property. The `TWordDocument` property table also confirms `OnClose +0x70` and the `Saved` getter/setter wrappers at `0x0042BD94`/`0x0042BDF8`.

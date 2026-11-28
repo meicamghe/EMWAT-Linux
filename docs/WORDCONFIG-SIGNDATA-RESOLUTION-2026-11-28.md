@@ -37,3 +37,12 @@ Until these are available, the correct status is: WordConfig is parsed, catalogu
 - This proves that the request's `signData` value is consumed by the native caption-item path. It does not reveal the payload's encoding or fully reconstruct the final rendered object; keep the resolver's payload opaque and bounded until a non-empty Windows fixture and output comparison are available.
 - The field RTTI type reference is `0x0062EEBC` and remains unresolved. The native copy pattern is consistent with Delphi string assignment.
 - No use of `SignData` was found in the current BeforeClose/BeforeSave callback traces.
+
+
+## Native caption-image consumption — 2026-11-28
+
+- `signData` is stored in `TWordViwer+0xF4`; the native string key `signData` is compared in `GetCaptionItemFont` (`0x004C19C0`).
+- When a caption item has that key, the routine copies the external SignData value into the caption value and later calls `EmbedTextToImage` (`0x004C436C`) with a UnicodeString and a dynamic array of `TCaptionItem`.
+- `GetCaptionItems` (`0x004C2B20`) parses the caption-item structure and maps multiple attributes into XML.
+- This establishes a caption/image-rendering consumer for SignData. It does not establish how the base64 value is decoded or how the PNG/TIFF bytes are produced; do not decode/split the external payload by assumption.
+- The WordConfig fixture's `mimetype=image/png` and `encryption=base64` remain the authoritative metadata for the external binding; the native caption path explains where it is consumed, not the exact byte-level transformation.

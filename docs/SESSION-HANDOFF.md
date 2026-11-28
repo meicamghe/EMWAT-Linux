@@ -319,3 +319,16 @@ No Linux release package was built. No additional workflow was dispatched. PR #2
 - SignData is stored in `TWordViwer+0xF4` and consumed by GetCaptionItemFont for the caption key `signData`; payload encoding/rendering parity remains open.
 - Save may invoke `PrintWithGamPrintOptions`; BeforePrint selects between `LoadOptions` and `WordAppDocumentBeforePrintBGPrint` using `fBG_Printing`. Save-before-print policy is controlled by registry flags.
 - Next: trace `THidePrintingThread.Execute` (`0x004A1AA0`) and `TEmwatDocPrintHandler.Execute` (`0x004A609C`), prove file wait/worker completion, then import the combined seed file into REA/Ghidra. Also locate the host-side writer of `OpenAsFree`; do not infer its runtime value from this BPL alone.
+
+
+## Latest handoff — print worker and SignData CFG — 2026-11-28
+
+- Latest CFG/VMT run `46154581970` succeeded; artifact `emwat-undelphi-rtti-and-rea-seeds`.
+- VMT confirms `THidePrintingThread.Execute=0x004A1AA0` and `TEmwatDocPrintHandler.Execute=0x004A609C`. TD32 labels at these addresses are stale.
+- THidePrintingThread hides the Word window titled `Printing` using FindWindowW/ShowWindow(SW_HIDE), 15 ms polling, with a 500- or 10,000-iteration cap.
+- TEmwatDocPrintHandler.ForgotMe sets FAbort and terminates/waits; TEDPController.Notify invokes it. TPrintJobs uses GetCurrentThread pseudo-handle keys, not process IDs.
+- TCreateTiff.SeparateImages checks GAM printer pause state and uses LZW/MultiFrame TIFF settings; GDI+ vtable method names still need exact mapping.
+- SignData is read for caption key `signData` in GetCaptionItemFont and flows to EmbedTextToImage with TCaptionItem metadata; payload decoding and output byte parity remain unverified.
+- TWordViwer has no published properties; OpenAsFree remains private with no direct writer found in this BPL.
+- Next: decode caption XML attributes and image helper calls, trace main print-worker helpers and string xrefs, map Save/SaveAdd/Flush slots, and locate host-side OpenAsFree initialization.
+- Detailed report: `docs/PRINT-WORKER-TIFF-SIGNDATA-CROSSWALK-2026-11-28.md`.

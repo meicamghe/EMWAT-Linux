@@ -150,3 +150,15 @@ Next VMT step: reconcile the raw method-table and field-table record formats aga
 - Combined REA/Ghidra seed file: 8,411 unique function addresses. Word/scan procedure index: 859 rows.
 - Artifact: [workflow run 46153451750](https://github.com/meicamghe/EMWAT-Linux/actions/runs/46153451750), artifact `emwat-undelphi-rtti-and-rea-seeds`.
 - Actual REA/Ghidra execution remains pending; generated seeds are static-analysis inputs only.
+
+
+## CFG, VMT and print-worker analysis — 2026-11-28
+
+- Added `tools/trace_td32_cfg.py`, a control-flow-aware disassembler that follows reachable branches and calls while avoiding linear disassembly of inline data.
+- Run `46154581970` succeeded. Key CFG results: TEmwatDocPrintHandler.Execute 1,480 instructions/264 calls; TCreateTiff.SeparateImages 390 instructions/49 calls; GetCaptionItemFont 793 instructions/108 calls; GetCaptionItems 154 instructions/35 calls; EmbedTextToImage 152 instructions/17 calls.
+- VMT inspection validates Execute targets: `THidePrintingThread=0x004A1AA0`, `TEmwatDocPrintHandler=0x004A609C`. TD32 labels at those addresses are stale.
+- THidePrintingThread is a UI-hiding loop for the Word window caption `Printing`: FindWindowW + ShowWindow(SW_HIDE), 15 ms polling, bounded by 500 or 10,000 iterations depending on its flag.
+- TEmwatDocPrintHandler.ForgotMe sets FAbort and invokes the thread termination/wait path; TEDPController.Notify calls it. TPrintJobs tracks jobs by GetCurrentThread pseudo-handle, despite the legacy `finsPid` field name.
+- TCreateTiff.SeparateImages checks GAM printer paused state, emits the Persian/English paused-printer message, uses LZW + MultiFrame TIFF settings, and starts the hide-printing thread. Exact GDI+ wrapper vtable names remain open.
+- SignData is consumed by GetCaptionItemFont for the caption key `signData` and flows into EmbedTextToImage. Base64/delimiter/output-byte parity remains open.
+- Full report: `docs/PRINT-WORKER-TIFF-SIGNDATA-CROSSWALK-2026-11-28.md`.

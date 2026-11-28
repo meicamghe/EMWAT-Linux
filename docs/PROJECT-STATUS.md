@@ -3628,3 +3628,15 @@ Base64/GDI+ load closure (run 46121270958): Base64Decode is a shared AnsiString-
 - The Save callback can invoke `PrintWithGamPrintOptions` for the `GamElectronic EMWAT` document-window condition. BeforePrint callback selection depends on the `Background Priniting` registry flag; `LoadOptions` calls `ProtectDocument`, which applies `Dont Ask Save On Print` and `Save Before Print`.
 - Worker anchors are now exact: `THidePrintingThread.Execute=0x004A1AA0`; `TEmwatDocPrintHandler.Execute=0x004A609C`. Their wait/output completion conditions are the next print-analysis target.
 - Full Word close/save/print evidence: `docs/WORD-AUTOMATION-CLOSE-SAVE-EVENT-CROSSWALK-2026-11-28.md`.
+
+
+## 2026-11-28 — Print worker, TIFF and SignData native path
+
+- Run `46154581970` passed; CFG/VMT artifact confirms the print worker, TIFF conversion, and caption-image path.
+- `THidePrintingThread.Execute` hides the Word `Printing` window via FindWindowW/ShowWindow(SW_HIDE), polling every 15 ms with bounded 500/10,000 iteration limits. It is not the TIFF completion waiter.
+- `TEmwatDocPrintHandler.Execute` is the main worker; `ForgotMe` sets FAbort and terminates/waits. TEDPController.Notify calls it.
+- TPrintJobs keys job records using the GetCurrentThread pseudo-handle; do not interpret legacy `finsPid` as a process ID.
+- TCreateTiff.SeparateImages checks GAM printer paused state, configures LZW/MultiFrame TIFF, and creates the hide-printing helper thread.
+- SignData is substituted into the caption item whose key is `signData` and reaches EmbedTextToImage; exact payload decoding/rendering remains open.
+- TWordViwer has no published properties; OpenAsFree is private and has no direct writer found in this BPL. Host-side initialization remains the close-path blocker.
+- Full crosswalk: `docs/PRINT-WORKER-TIFF-SIGNDATA-CROSSWALK-2026-11-28.md`.
