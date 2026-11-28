@@ -3522,3 +3522,11 @@ Base64/GDI+ load closure (run 46121270958): Base64Decode is a shared AnsiString-
 - Scanner: getter helper families are mapped (`0x0044B4D8`, `0x0044B4C0`, `0x0044B508`), but XMLRTL semantics/defaults are not. `none/jpg/yes/no` are confirmed literals, not yet mapped conclusively to individual properties. Numeric absent-attribute zero behavior and MaxFileSize KiB remain confirmed.
 - GAM queue disappearance remains a heuristic, not print-success proof. The printer `JobFinishes.GAM` sentinel remains separate from the Agent heartbeat. SevenZip output remains unconnected to the TIFF path and encryption remains unproven.
 - No production code, build, release, merge, rebase, or new Actions run was performed.
+
+## 2026-11-28 — Run 30: XMLRTL, worker file wait, and GDI+ SaveAdd
+
+- Added Run-30 report and three focused crosswalks. Existing artifacts only; no new Actions run or production implementation.
+- **XMLRTL:** `0x0044B498` = HasAttribute, `0x0044B488` = GetAttribute, `0x0044B4C0` = SetAttribute. `0x0044B4D8` is child-node collection/navigation; exact internal split still needs direct helper-body decoding. TD32 getter/setter labels in this generated block are shifted/misleading; property direction now follows actual argument flow and literals. `0x0044B508` ForceSinglePageFiles default remains open.
+- **Worker:** `0x004032C0` call shape matches `FileExists(FileName, FollowLink=True)`. The Worker deletes a stale pre-existing path, polls a generated path at 10 ms cadence under a computed deadline, and returns success when the later existence check passes. Exact path strings and producer remain open.
+- **GDI+:** functional sequence is now mapped with high confidence: interface `+0x48` initial SaveImageToFile; `+0x5C` SaveAddImage inside the page loop; `+0x58` final SaveAdd after setting Flush value 20. The raw Delphi RTTI is still not a flat VMT; slot mapping is based on ABI/call-site/import evidence. Runtime TIFF fixture still required.
+- No production code, build, release, merge/rebase, or new Actions run.

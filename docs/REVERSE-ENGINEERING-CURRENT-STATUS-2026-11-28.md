@@ -84,3 +84,7 @@ Base64/GDI+ load closure (run 46121270958): Base64Decode is a shared AnsiString-
 ## Run 29 correction and next gates
 
 Run 29 reconciles existing artifacts across Word, scanner XML, and TIFF output. The key correction is that `0x004CD154` is functionally the registered close/save-decision callback that releases the HTTP wait, but its COM event DISPID remains unknown; `0x004CCBBC` is the unrelated print-field helper. The hidden TIFF worker now has complete byte coverage (3,096 bytes, 28 skipdata bytes), not complete instruction decoding. Scanner string/boolean getter helper families are identified, but their XMLRTL default semantics and the `none/jpg/yes/no` property mapping remain unresolved. See `docs/REVERSE-ENGINEERING-PARALLEL-FOLLOWUP-2026-11-28-RUN29.md`.
+
+## Run 30: three proof tracks advanced
+
+Run 30 resolves the core XMLRTL attribute helpers (`HasAttribute`, `GetAttribute`, `SetAttribute`), identifies the hidden print Worker's completion gate as a `FileExists(path, True)` poll after stale-file cleanup, and closes the functional GDI+ Save/SaveAdd sequence (`+0x48` initial SaveImageToFile, `+0x5C` SaveAddImage per later page, `+0x58` final SaveAdd with Flush=20). The raw TGPImage RTTI is still not a flat VMT; slot mapping is grounded in import targets, ABI and control-flow position. Exact Worker path strings/producer, XMLRTL `0x0044B508` semantics, and a runtime TIFF fixture remain open. See the Run-30 report and the three focused crosswalk documents.

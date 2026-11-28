@@ -2235,3 +2235,12 @@ Detailed report: `docs/REVERSE-ENGINEERING-PARALLEL-FOLLOWUP-2026-11-28-RUN29.md
 - **SevenZip:** keep the output archive separate from TIFF until a direct stream hand-off is found; `SetPassword` remains a stub and encryption is unproven.
 
 Next: resolve XMLRTL helper semantics and the Word event DISPID; identify the hidden print worker's polling predicate; map TGPImage Save/SaveAdd/final flush; then seek controlled scanner and multipage TIFF fixtures. Reverse engineering only; no builds/releases or new Actions runs without explicit request.
+
+## 2026-11-28 — Run 30 handoff: XMLRTL semantics, file wait, SaveAdd cycle
+
+Detailed report: `docs/REVERSE-ENGINEERING-PARALLEL-FOLLOWUP-2026-11-28-RUN30.md`.
+
+- **XMLRTL:** `0x0044B498` HasAttribute; `0x0044B488` GetAttribute; `0x0044B4C0` SetAttribute. `0x0044B4D8` obtains the child-node/list path used to resolve `constraints`. Several TD32 Get/Set labels in this generated block are reversed/stale; trust argument flow and UTF-16 property literals. `0x0044B508` ForceSinglePageFiles default is unresolved.
+- **Worker:** `0x004032C0` matches `FileExists(path, True)`. Worker removes a stale file, polls a new path every 10 ms under a computed deadline, and sets success when the expected file appears. Exact path and producer are open. Do not equate this with queue disappearance or `JobFinishes.GAM`.
+- **GDI+:** high-confidence functional mapping: `+0x48` initial SaveImageToFile; `+0x5C` SaveAddImage for each later page; `+0x58` final SaveAdd(Flush=20). Import thunks/direct wrapper callsites corroborate. The raw RTTI is not itself the live VMT; this is a callsite/ABI mapping.
+- Next: recover Worker path literals and producer; resolve `0x004026B4`/`0x00404494`; disassemble `0x0044B4D8`/`0x0044B508`; validate a real multipage TIFF fixture before implementation.

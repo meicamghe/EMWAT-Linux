@@ -84,3 +84,11 @@ Review of the scanner contract artifact `15252222043` confirms these helper call
 `VerifyConstraints` contains the literals `none`, `jpg`, `yes`, and `no` in several comparison branches. The current trace does not conclusively assign each pair to a specific XML property; do not map these values to `type`, `multiJpegSupport`, `driverDialog`, or `imageEditor` by adjacency or intuition.
 
 The numeric getters remain a distinct case: they explicitly test `HasAttribute`, and absent numeric fields return zero before conversion. Present malformed/empty numeric values still enter Variant-to-integer conversion. String-field defaults, requiredness, empty-value behavior, and XML serialization order remain open.
+
+## Run 30 correction — XMLRTL helper identities and generated accessor direction
+
+Run 30 resolves the core helper roles from register/value flow: `0x0044B498` HasAttribute, `0x0044B488` GetAttribute, and `0x0044B4C0` SetAttribute. `0x0044B4D8` is used for the child-node collection/navigation path that resolves the `constraints` child. These correspond to the documented XMLRTL `IXMLNode` methods.
+
+Important correction: TD32 names in this generated accessor range are not reliable for getter/setter direction. `0x004EA94C` reads the `constraints` child; `0x004EAA08`, `0x004EAB58`, `0x004EACB0`, and `0x004EAE08` are numeric getters (HasAttribute/GetAttribute/conversion); `0x004EAAD8`, `0x004EAC2C`, and `0x004EAD84` are SetAttribute-shaped setters. Use the exact literal property names and the Run-30 crosswalk, not the TD32 labels.
+
+`0x0044B508` is still used by `Get_ForceSinglePageFiles`; its missing-attribute/default and conversion semantics remain unresolved. No boolean/string defaults should be inferred from the current call shape.

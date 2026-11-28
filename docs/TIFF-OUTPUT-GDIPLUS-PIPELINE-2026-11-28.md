@@ -156,3 +156,11 @@ The Run-50 artifact `15253702066` provides a skipdata-aware trace of `THidePrint
 The latest interface artifacts (`15253721199`, `15253761384`) do not close the Save/SaveAdd map. The Delphi interface metadata contains interleaved metadata records and is not a simple method-pointer array. Calls through `TGPImage` interface offsets `+0x48`, `+0x70`, `+0x74`, `+0x5C`, and `+0x58` must remain unnamed until their targets are resolved from reliable metadata/callsite evidence. Do not map them to initial Save, SaveAddImage, or final SaveAdd(Flush) based on the raw candidate table.
 
 The confirmed encoder values remain LZW compression (`2`) and MultiFrame (`18`). A runtime-generated multipage TIFF and Almas acceptance fixture are still required before implementing byte-level parity.
+
+## Run 30 — functional GDI+ Save/SaveAdd sequence mapped
+
+PE import identities and direct wrapper callsites now resolve the relevant GDI+ API set: `0x00481C64` → `GdipSaveImageToFile`; `0x00481C6C` → `GdipSaveImageToStream`; `0x00481C74` → `GdipSaveAdd`; `0x00481C7C` → `GdipSaveAddImage`. TD32 wrapper labels are shifted/stale and must not override the actual import target.
+
+In `SeparteImages`, the live interface call at `+0x48` (`0x004A0470`) is the initial SaveImageToFile path. The call at `+0x5C` (`0x004A0507`) passes the base image, next page image and encoder parameters inside the page loop, matching SaveAddImage. After the loop, the call at `+0x58` (`0x004A0568`) passes only the base image and encoder parameters; the code has just set the encoder SaveFlag to 20 (`Flush`), matching final SaveAdd. The initial Save includes the first page; later pages are appended; final Flush terminates the multipage encoder sequence.
+
+The static TGPImage RTTI/interface blocks remain non-flat Delphi metadata. The functional slot mapping is high-confidence from call-site argument shape, import thunk identities and loop/finalization placement; this does not claim a full raw VMT pointer-table reconstruction. Runtime TIFF bytes and Almas acceptance are still required.
