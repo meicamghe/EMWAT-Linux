@@ -222,3 +222,8 @@ ImageEn `TImageEnMIO.Acquire` remains an external `PKIECtrl23.bpl` dependency. S
 ## 2026-11-28 SevenZip output ownership gate
 
 The latest SevenZip pass identifies the plugin-to-output-archive ownership path and the callback/context slots. See `docs/SEVENZIP-OUTPUT-ARCHIVE-OWNERSHIP-2026-11-28.md`. The remaining implementation gate is to identify the callback/context producer, SetCompleted/progress callback role, output entry naming, and whether encryption exists. Do not infer encryption from the method name `CryptoGetTextPassword2`; output `SetPassword` is a stub and the constructor-style initializer only stores an interface object.
+
+
+## Scanner unit conversion gate updated
+
+The MaxFileSize unit is now closed as KiB: `TResultImage.GetFileStream` returns the 64-bit stream byte size, and `TScanCommand.Finalization` compares it with `MaxFileSize << 10`. `TGearImgProc.GearType` contains explicit 39.37008 and 0.3937 conversion factors; the remaining gate is matching selector values to exact ImageGear enum labels and verifying rounding/edge behavior. Evidence: `docs/SCANNER-RESOLUTION-AND-FILESIZE-UNITS-2026-11-28.md`.
