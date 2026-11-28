@@ -1,3 +1,12 @@
+## 2026-11-28 — isolated GTK bridge startup integration
+
+- New work branch: `work/parallel-closure-2026-11-28`, based on feature HEAD `00bb6a3387dddc7b25d331f879ad5c60db846fa8`.
+- Added `python/src/emwat_linux/deployment.py` with the captured IPv4 loopback bind `127.0.0.1:1984`, exact XHR Origin and init Referer allowlists, fresh server composition per start, and existing bounded request/response limits.
+- Normal `emwat-linux` startup now injects a `BridgeSupervisor` and requests auto-start after required Python, LibreOffice, and UNO dependency checks pass. The existing GTK manual controls and bounded shutdown path remain.
+- Explicit operation-level `DISCARDED` is guarded and returns a local 409/plain-text response. This is explicitly not native Windows response parity; Writer Don't Save and close-prompt Cancel remain separate.
+- Added deployment and GTK entry-point regression tests. No local test/build/hardware run was performed. PR #6 automatically triggered Python, GTK, and Debian package workflows; their status must be checked before claiming validation.
+- PR: https://github.com/meicamghe/EMWAT-Linux/pull/6 (Draft, targets `feature/recovery-retention-policy`). No merge into `main` or the long-lived feature branch has occurred.
+
 ## 2026-11-28 — bounded shutdown for pending Writer requests
 
 - The bridge now tracks active HTTP request workers and provides a bounded drain wait before closing its `ThreadingHTTPServer`.
