@@ -1,3 +1,10 @@
+## 2026-11-28 — Run 42 correction: wordBody success-path requirement
+
+- Correction after reading the full skipdata trace of `TWordViwer.LoadDocument` from Run-50 artifact `15253702066`: the connector's TryGetValue for `wordBody` is unchecked at the handler level, but the loader decodes it and tests the decoded length at `0x004B77AB–0x004B77B5`; zero enters an error path.
+- Therefore a non-empty decoded `wordBody` is required for successful native document loading. The Linux parser's requirement is consistent with the native success path; only the exact missing/empty-body error envelope may differ.
+- No evidence supports successful blank-document creation from WordConfig alone. The earlier Run42 wording suggesting that as a valid path is superseded.
+- Correction commits: Run42 report `e456bb6`; Almas acceptance doc `907d679`.
+
 ## 2026-11-28 — Run 42 native wordBody optionality mismatch
 
 - Full `0x005EE82C` trace proves `wordConfig` is required, but `wordBody`, `letterImages`, and `signData` default to empty strings when missing. The handler passes all four to `TWordViwer.LoadDocument` at `0x005EE961`.
