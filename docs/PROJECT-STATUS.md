@@ -3411,7 +3411,7 @@ Reverse engineering only. No production Linux code or release builds were change
 
 - Resolution/file-size conversion details are now documented: `TStream.Size` is returned as a 64-bit byte count, `MaxFileSize` is KiB via the `<<10` threshold, and `TGearImgProc.GearType` applies the 39.37008/0.3937 factors for metric resolution selectors. Exact ImageGear enum names and rounding still require validation.
 
-- TIFF pipeline: `TWordViewer.LoadDocument` calls `TCreateTiff.SeparteImages`; that routine checks the GAM printer, calls the hidden print worker, then processes pages with GDI+ `TGPImage` and `TGPEncoderParameters`. GDI+ save API/output filename and completion hand-off remain under investigation. See `docs/TIFF-OUTPUT-GDIPLUS-PIPELINE-2026-11-28.md`.
+- TIFF pipeline: `TWordViewer.LoadDocument` calls `TCreateTiff.SeparteImages`; that routine checks the GAM printer, calls the hidden print worker, then processes pages with GDI+ `TGPImage` and `TGPEncoderParameters`. GDI+ Save/SaveAdd wrappers and file/stream save imports are confirmed; the specific overload used by SeparteImages, output filename, encoder parameters, and completion hand-off remain under investigation. See `docs/TIFF-OUTPUT-GDIPLUS-PIPELINE-2026-11-28.md`.
 
 - The queue comparison normalizes the candidate document-name string via `FixDirectionInFarsiNumericMode` before checking `JOB_INFO_1W.pDocument`. It waits while a match exists, with no explicit timeout observed; absence is ambiguous (completion, cancellation, missing job, or name mismatch).
 
