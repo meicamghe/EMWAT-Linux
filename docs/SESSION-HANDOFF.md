@@ -1,3 +1,11 @@
+## 2026-11-28 — Run 36 diagnostic strings and automatic workflow status
+
+- Decoded the exact SeparteImages/Worker diagnostics from Run-50 inline constants: 0x004A08F4 `Gam Printer is in "Paused" state! please check.`; 0x004A0960 `Error on setting gam printer parameters.`; 0x004A09C0 `Error occured during Convert Word Document to Tiff.` (original misspelling preserved).
+- The Worker false-return path at 0x004A02C1 uses the last message. The exact path fragments and stale-output deletion helper remain open.
+- Focused doc update: `docs/THIDEPRINTINGTHREAD-FILE-WAIT-ANALYSIS-2026-11-28.md` commit `bf167a2`; Run 36 report commit `86918cc`.
+- Push of Python files automatically triggered the existing `EMWAT parallel reverse-engineering lanes` workflow, run 67 / ID `46136978712`. This was not manually dispatched. At last check, native-regression was running the full Python suite, while word-print-com and image-ui-and-vmt were continuing their static-analysis jobs.
+- No further Python/workflow-triggering file changes are planned while run 67 is in progress. Docs-only updates do not match the workflow's push path filter. No release package was built.
+
 ## 2026-11-28 — Run 35 additional failure-path coverage
 
 - Added `test_request_drain_releases_registration_if_worker_creation_raises`. It forces ThreadingMixIn worker creation to raise and verifies the synchronous active-request registration is rolled back, so the drain counter cannot remain permanently nonzero.
