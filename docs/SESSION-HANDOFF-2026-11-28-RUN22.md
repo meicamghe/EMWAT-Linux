@@ -102,3 +102,6 @@ The second call in the retry loop is now identified as `Vcl.Forms.TApplication.P
 - GDI+ Save/SaveAdd method and encoder-parameter trace: run `46119662918`, in progress at handoff time.
 
 The 5 ms queue loop is confirmed as `kernel32!Sleep(5)` followed by `Vcl.Forms.TApplication.ProcessMessages`, then a fresh `EnumJobsW` lookup. It waits while the matching job exists and advances when absent; no timeout was observed. The candidate name is normalized by `FixDirectionInFarsiNumericMode` before comparison.
+
+
+GDI+ caveat: the PE import table and TD32 thunk labels disagree for the save APIs. Treat PE import names as primary but cross-check with a second parser and TGPImage VMT slots before mapping a specific Save overload; TD32 also mislabeled the verified Sleep thunk.
