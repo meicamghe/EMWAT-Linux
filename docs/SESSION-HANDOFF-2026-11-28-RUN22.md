@@ -157,3 +157,24 @@ Base64/GDI+ load closure (run 46121270958): Base64Decode is a shared AnsiString-
 
 
 TIFF page-list orchestration (run 46121620304): `SeparteImages` checks/initializes GAM printer, calls `THidePrintingThread.Execute`, obtains a list-like page-file source via helper `0x004A0BA8`, copies indexed file paths into a TStringList, and loads those files through GDI+ before building the multipage LZW TIFF. It also calls `euGetASFileName(".tif")` for the output name. The separate ECX AnsiString is Base64-decoded during cleanup and is not the page-file list. Exact output directory/name policy and final Save/SaveAdd dispatch remain open.
+
+
+## 2026-11-28 — Run 24 follow-up completed
+
+Latest detailed report: docs/REVERSE-ENGINEERING-PARALLEL-FOLLOWUP-2026-11-28-RUN24.md.
+
+Final targeted runs passed:
+- Word close/event follow-up 46124030841 (artifact 15255360751).
+- GAM printer install/API follow-up 46124104850 (artifact 15254533525).
+- GDI+ Save/import/VMT follow-up 46124227390 (artifacts 15255092521 and 15254911990).
+- Scanner XML inline/interface follow-up 46123192414 (artifacts 15253544912 and 15254995277).
+
+Important corrections/new evidence:
+- WindowDeactivate and WordIsActivated are paired callbacks at event offsets +0xA0 and +0xA8. Activation calls SaveOriginalOptions. This is window state, not the close bridge.
+- WordAppDocumentBeforeClose is a print-field/XML metadata helper in the observed call graph, not proven COM close registration.
+- 0x00401240 is rtl230.bpl UnicodeString assignment. GetZanInstallDir launches GAMPrinterSetup.exe via ShellExecuteW, chooses Open for Windows major <=5 and RunAs for newer Windows, and waits up to 30 seconds for the printer.
+- Winspool imports are mapped; no AddPrinter/AddPrinterDriver or direct StartDocPrinter/WritePrinter proof was found. INI output policy includes TIFF/LZW/per-page-strip settings and JobFinishes.GAM sentinel.
+- GDI+ PE import map corrects stale TD32 labels. SaveImageToFile/Stream, SaveAdd and SaveAddImage thunk identities are known, but the interface-slot-to-final-flush sequence remains open.
+- Scanner LoadRequestXML uses inline error property and the diagnostic prefix <ScanDoc HasError>. ErrorXML:. XMLRTL interface slot identity and request defaults remain open.
+
+No production code or release build was started. No merge/rebase was performed.
