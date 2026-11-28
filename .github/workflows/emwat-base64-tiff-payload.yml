@@ -1,0 +1,44 @@
+name: EMWAT Base64 field and TIFF payload trace
+on:
+  push:
+    paths:
+      - 'analysis-input/EmwatMethods.bpl1'
+      - 'tools/trace_td32_procedure_skipdata.py'
+      - 'tools/trace_td32_callers.py'
+      - '.github/workflows/emwat-base64-tiff-payload.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: emwat-base64-tiff-payload-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  base64-payload:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install pefile capstone
+      - name: Trace Base64 decoder core and TIFF callers
+        shell: bash
+        run: |
+          mkdir -p base64-tiff
+          for target in 0x00473828 0x004735C4 0x004A0148 0x004BFFDC 0x00508E99 0x00490048 0x00481C3C 0x00481D7C; do
+            safe=${target#0x}
+            python tools/trace_td32_procedure_skipdata.py analysis-input/EmwatMethods.bpl1 "$target" \
+              "base64-tiff/procedure-$safe.md" || true
+            python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 "$target" \
+              "base64-tiff/callers-$safe.md" || true
+          done
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: emwat-base64-tiff-payload
+          path: base64-tiff/
+          if-no-files-found: error
