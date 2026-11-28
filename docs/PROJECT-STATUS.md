@@ -3439,3 +3439,5 @@ GDI+ interface boundary: SeparteImages creates TGPEncoderParameters (VMT pointer
 
 
 Corrected VMT pass: global slot 0x00483F4C contains 0x00483FA4 (not 0x00483FA0); TGPImage global slot 0x00484728 contains 0x00484780. The structures are Delphi class/interface metadata with interleaved records, not flat method arrays; interface dispatch semantics remain the reliable contract.
+
+- Scanner XML contract progress: root `scan-document`, constraints child `constraints`, fields `colorDepth`, `minResolution`, `maxResolution`, `maxFileSize`, error property `error`. Still need required/optional/default rules and XML interface slot semantics.
