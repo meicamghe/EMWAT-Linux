@@ -92,8 +92,9 @@ jobs:
                           out.append(f"- {enc}: {s!r}")
               except Exception as exc: out.append(f"- error: {exc}")
               out.append("")
-          out.append("## Helper IAT target")
-          out.append(f"- IAT 0x0062ED38: {next((v for k,v in imports.items() if k == 0x0062ED38), 'NOT FOUND')}")
+          out.append("## Helper IAT targets")
+          for slot in (0x0062ED38,0x0062F9B8,0x0062F9C0,0x0062F9CC,0x0062F07C,0x0062F118):
+              out.append(f"- IAT 0x{slot:08X}: {imports.get(slot,'NOT FOUND')}")
           out.append("")
           out.append("## Relevant printer, registry, shell and GDI imports")
           for desc in getattr(pe,"DIRECTORY_ENTRY_IMPORT",[]):
