@@ -274,12 +274,15 @@ def create_desktop_application(
                             close_approved = True
                             window.close()
                         else:
+                            # Refresh button sensitivity first; then preserve the
+                            # actionable drain failure instead of overwriting it
+                            # with the generic FAILED state label.
+                            refresh_bridge_controls()
                             bridge_status.set_text(
                                 "توقف کامل نشد؛ اگر سند Writer باز است آن را ببندید، "
                                 "سپس دوباره پنجره را ببندید. "
                                 + f"جزئیات: {failure or bridge_supervisor.failure}"
                             )
-                            refresh_bridge_controls()
                         return GLib.SOURCE_REMOVE
 
                     GLib.idle_add(finish_close)
