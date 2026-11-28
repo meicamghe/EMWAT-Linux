@@ -85,6 +85,18 @@ In `SeparteImages`, the `TGPEncoderParameters` instance is constructed via `0x00
 
 The PE import scan and TD32 thunk labels disagree for the GDI+ save thunks. The PE import table maps `0x00481C64` to `GdipSaveImageToFile`, `0x00481C6C` to `GdipSaveImageToStream`, `0x00481C74` to `GdipSaveAdd`, and `0x00481C7C` to `GdipSaveAddImage`. TD32 labels at those addresses are shifted/different (for example, it labels `0x00481C64` as `GdipSaveImageToStream`). Since the same TD32 symbol table mislabeled the confirmed `Sleep` thunk as `SuspendThread`, do not use those thunk symbols alone to identify the APIs. A second parser (`GNU objdump -p`) independently confirms the PE import names and IAT order: IAT RVA `0x2307C8` = `GdipGetImageGraphicsContext`, `0x2307CC` = `GdipSaveAddImage`, `0x2307D0` = `GdipSaveAdd`, `0x2307D4` = `GdipSaveImageToStream`, and `0x2307D8` = `GdipSaveImageToFile`. Therefore the PE import mapping is confirmed; TD32 thunk labels are stale/shifted. The actual TGPImage interface VMT callsites still need mapping before assigning a specific Save overload to a specific API.
 
+
+## 3C. TIFF extension, printer messages, and Base64 boundary
+
+Inline constants in `SeparteImages` establish the `.tif` extension at `0x004A071C`. The routine also contains the exact printer/error messages:
+
+- Persian: `پرينتر (مجازي) گام در حالت توقف قرار دارد. لطفا صف وظايف آن را ...`
+- English: `Gam Printer is in "Paused" state! please check.`
+- `Error on setting gam printer parameters.`
+- `Error occured during Convert Word Document to Tiff.`
+
+`Base64Decode` is called from `SeparteImages` at `0x004A05EF`, but it is a shared utility: other direct callers include `TWordViewer.StoreFieldValuesForPrint` and `TfrmImageTools.FreeRotate`. Therefore its presence in `SeparteImages` does not by itself prove it decodes an output filename; the exact source string and decoded destination still need to be traced. The TD32-named `TGPImage.FromFile` wrapper at `0x00490048` calls the `GdipDisposeImage` thunk on an existing native handle, so its symbol name alone also does not prove that this call loads a file. GDI+ file/stream load imports exist, but their callsites remain open.
+
 ## 4. Important separation from SevenZip
 
 The observed `SeparteImages` direct helper at `0x00454B9C` is `euGetASFileName` (EmailUtil). The current call graph does not establish that `T7zOutArchive` writes the TIFF page files. Keep the SevenZip output-archive investigation separate until a direct caller or output-stream hand-off connects it to this TIFF path.
