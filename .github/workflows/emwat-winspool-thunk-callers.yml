@@ -48,6 +48,7 @@ jobs:
               "startdoca","startdocw","enddoc","startpage","endpage","createdca","createdcw","deletedc"
           }
           md = Cs(CS_ARCH_X86, CS_MODE_32)
+          md.detail = True
           out = ["# Winspool/GDI import thunk callsites","",
                  "Direct CALL/JMP targets are decoded from executable sections. The caller's procedure identity is supplied separately by TD32 bounded caller scans.",""]
           jobs = []
