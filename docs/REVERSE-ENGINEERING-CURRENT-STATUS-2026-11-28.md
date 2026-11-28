@@ -1,3 +1,10 @@
+## 2026-11-28 — Run 49 ClassType/EFOpenError wait interpretation
+
+- Cross-correlation with GearImgProc procedures identifies helper 0x004010A8 as a high-confidence TObject.ClassType/VMT accessor.
+- WordViewer's 0x004B7D57 loop therefore waits while ESI.ClassType == imported EFOpenError class at 0x0062F850, with application message pumping and 5 ms sleeps, max 101 iterations (~505 ms sleep).
+- This is distinct from printer Worker file existence; ESI object ownership/mutation remains unresolved.
+- Worker analysis commit a4a315a; Run 49 report 65034ea.
+
 ## 2026-11-28 — Run 48 WordViewer poll comparison target
 
 - Run-67 import map identifies global 0x0062F850 as imported class reference @System@Classes@EFOpenError@.
