@@ -79,7 +79,10 @@ This is strong direct evidence that the TIFF encoder is configured for LZW compr
 
 ### Interface-dispatch boundary
 
-In `SeparteImages`, the `TGPEncoderParameters` instance is constructed via `0x0048F8C0` using the VMT pointer loaded from global slot `0x00483F4C` (that global contains `0x00483FA0`); its interface reference is taken from object offset `+0x28`, then interface slot `+0x20` is called twice with the two GUID/value pairs above. The `TGPImage` instance is constructed via `0x0048FF60` using the VMT pointer loaded from global slot `0x00484728` (that global contains `0x00484780`); later calls dispatch through its interface reference at slots `+0x48`, `+0x70`, `+0x74`, `+0x5C`, and `+0x58`. The raw interface metadata blocks at `0x0047DD2C` and `0x0062EE88` are Delphi interface/RTTI structures, not simple method-pointer arrays. Exact Save/SaveAdd/final-flush method identities remain unresolved.
+In `SeparteImages`, the `TGPEncoderParameters` instance is constructed via `0x0048F8C0` using the VMT pointer loaded from global slot `0x00483F4C` (that global contains `0x00483FA4`); its interface reference is taken from object offset `+0x28`, then interface slot `+0x20` is called twice with the two GUID/value pairs above. The `TGPImage` instance is constructed via `0x0048FF60` using the VMT pointer loaded from global slot `0x00484728` (that global contains `0x00484780`); later calls dispatch through its interface reference at slots `+0x48`, `+0x70`, `+0x74`, `+0x5C`, and `+0x58`. The raw interface metadata blocks at `0x0047DD2C` and `0x0062EE88` are Delphi interface/RTTI structures, not simple method-pointer arrays. Exact Save/SaveAdd/final-flush method identities remain unresolved.
+
+The corrected VMT pass confirms the constructor inputs (`0x00483FA4` for TGPEncoderParameters and `0x00484780` for TGPImage), but the pointed structures contain Delphi class/interface metadata and interleaved method records rather than a flat pointer array. The interface slot calls described above therefore remain the reliable observed contract; do not infer Save/SaveAdd identity from the raw VMT dump alone.
+
 
 ### Symbol/import discrepancy to resolve
 
