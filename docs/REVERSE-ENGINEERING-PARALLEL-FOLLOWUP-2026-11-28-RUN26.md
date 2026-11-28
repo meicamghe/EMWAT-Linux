@@ -135,3 +135,10 @@ Sources:
 - [Should I Remove It? — Emwat Service installed-file inventory](https://www.shouldiremoveit.com/Emwat-Service-37480-program.aspx), which lists GAMPrinterSetup.exe, Gear32pd.dll and IGLZW32S.DLL.
 
 **Revised next step for the printer lane:** inspect `zvprtmon5.dll`, `zvprtmonui5.dll`, `zvprtsrv.exe`, `zvprtcfg.exe`, `zvprt1.gpd`, `zvprt5.ini`, `sentineltemplate.txt`, and the active `general.ini`/save/image profiles from the exact GAMPrinterSetup.exe version shipped with EMWAT. The 2011 Zan package is a family-level lead, not a substitute for the exact EMWAT payload.
+
+
+### Additional corroboration for the external monitor/server roles
+
+A community uninstall answer for Zan Image Printer explicitly instructs users to terminate running `zvprtsrv.exe` processes, remove `zvprtmon5.dll` and `zvprtmonui5.dll` from system32, and stop the print spooler before removing those DLLs. Combined with the installer log's `AddZvprtMonitor` step, this supports the architectural classification of `zvprtmon5.dll`/ `zvprtmonui5.dll` as print-monitor components and `zvprtsrv.exe` as a resident companion process. It still does not prove which component reads `general.ini` or creates `JobFinishes.GAM`.
+
+Source: [Experts123 — Zan Image Printer component removal guidance](https://www.experts123.com/q/how-do-i-completely-uninstall-zan-image-printer.html). This is community documentation and is treated as corroboration, not vendor specification.
