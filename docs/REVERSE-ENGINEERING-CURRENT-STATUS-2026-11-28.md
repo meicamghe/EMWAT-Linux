@@ -1,3 +1,12 @@
+## 2026-11-28 — Run 46 authoritative handler/VMT and wire closure
+
+- Correction to Run 40: the Run-67 generic VMT resolver's no-candidate result was a false negative. The direct VMT/interface crosswalk already establishes TEditWordDocument VMT 0x005ED764, parent TEmwatMethod, slot +0x10 -> 0x005EE82C. TScanDocument VMT 0x005ED884 slot +0x10 -> 0x005EEB48.
+- The service constructs TEditWordDocument from XML class EditWordDocument via GetClass("T"+className), invokes TEmwatMethod VMT +0x0C wrapper 0x0046C9E0, then the concrete method through +0x10. Actual handler identity is now closed; TD32 procedure labels remain stale.
+- Successful wire response is established by PCAP: HTTP 200, Content-Type text/html; charset=ISO-8859-1, response-word/status=success, return-types/type application/msword/base64, decoded legacy DOC/CFB. Native BPL writes ContentText, calls Indy WriteContent, then sets bResultSet.
+- Request Origin and Referer evidence are loopback-local: http://127.0.0.1:1984. The captured deployment can use this explicit Origin allowlist while remaining bound to 127.0.0.1. Do not guess external Almas domain for XHR CORS.
+- PCAP response still has 68 missing TCP payload bytes, so full response bytes/hash remain unverified. Live Almas persistence through LibreOffice remains the release gate.
+- Updated acceptance doc commit 9aff17e; Run 40 correction commit 1cb571b; Run 46 report commit e3b3eb7.
+
 ## 2026-11-28 — Run 45 WordViewer ABI/output handoff
 
 - Recovered loader call ABI at 0x005EE961: EAX=wordConfig, EDX=wordBody, ECX=letterImages; stack args are output-string pointer at [EBP+8], handler state [self+4] at [EBP+0xC], and signData at [EBP+0x10]. Callee `ret 0xC` confirms three stack args.
