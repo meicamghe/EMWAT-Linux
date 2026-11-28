@@ -65,6 +65,12 @@ class GtkDesktopEntryTests(unittest.TestCase):
             auto_start_bridge=True,
         )
 
+    def test_auto_start_requires_an_explicit_supervisor(self):
+        from emwat_linux.gtk_desktop import create_desktop_application
+
+        with self.assertRaisesRegex(ValueError, "auto_start_bridge_requires_bridge_supervisor"):
+            create_desktop_application(auto_start_bridge=True)
+
     def test_desktop_module_does_not_compose_or_start_bridge(self):
         from emwat_linux import gtk_desktop
 
