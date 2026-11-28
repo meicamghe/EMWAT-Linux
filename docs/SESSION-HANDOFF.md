@@ -2193,3 +2193,18 @@ The `zvprt1` family now has an external installer-log lead. A public Microsoft Q
 Next exact targets from the EMWAT-shipped installer: `zvprtmon5.dll`, `zvprtmonui5.dll`, `zvprtsrv.exe`, `zvprtcfg.exe`, `zvprt1.gpd`, `zvprt5.ini`, `sentineltemplate.txt`, and active `general.ini`/save/image profiles. Do not equate the 2011 Zan build with the exact EMWAT payload without version/hash comparison.
 
 Community uninstall guidance further supports `zvprtsrv.exe` as a resident process and `zvprtmon5.dll`/`zvprtmonui5.dll` as spooler monitor components (remove them only after stopping the spooler). Treat this as corroboration only; it does not prove which component consumes `JobFinishes.GAM`. See Run-26 section 7.
+
+
+## 2026-11-28 — Run 27 handoff
+
+Detailed report: [REVERSE-ENGINEERING-PARALLEL-FOLLOWUP-2026-11-28-RUN27.md](REVERSE-ENGINEERING-PARALLEL-FOLLOWUP-2026-11-28-RUN27.md)
+
+Run 27 re-opened existing procedure artifacts and checked public API documentation; it did not run CI or change production code.
+
+- **GAM/Zan:** Zan Image Printer 5.0.19 is documented to append multiple files into one TIFF/PDF; Download3K lists installer hashes. This is only a family-level comparison target, not exact proof of the EMWAT GAMPrinterSetup version. The sentinel producer/consumer is still unknown. Do not execute the separate high-threat Hybrid Analysis sample.
+- **Word:** callback 0x004CD154 is strongly identified as Application.DocumentBeforeClose by its Doc/Cancel shape and Save/Discard/Cancel/Close behavior. The TD32 BeforeSave label is stale/misleading. Numeric DISPID and Almas parent-page response consumption remain open.
+- **SevenZip:** SaveToStream creates the output file and SetCompleted writes through ISequentialOutStream.Write (vtable +0x0C). The CryptoGetTextPassword2-labelled 0x004543C4 routine is a constructor by callsite shape, not proof of a password provider; SetPassword is a stub. Encryption remains unproven.
+- **Scanner:** the four numeric constraint accessors explicitly test HasAttribute. Missing colorDepth/minResolution/maxResolution/maxFileSize return zero. Present empty/malformed strings go through Variant-to-integer conversion and must not be silently defaulted to zero. String-field required/optional behavior remains open.
+- **GDI+:** initial Save includes first frame; first frame is skipped by SaveAddImage; remaining frames and later files are appended; Flush is final. Runtime TIFF output fixture is still required.
+
+Keep the five paths separate until real evidence connects their hand-offs. Next useful evidence: exact EMWAT GAMPrinterSetup payload and a queue/TIFF/sentinel trace; Word type-library and browser exchange; controlled .easz fixture; XML samples covering omitted/empty/invalid fields; original-runtime multipage TIFF fixture.
