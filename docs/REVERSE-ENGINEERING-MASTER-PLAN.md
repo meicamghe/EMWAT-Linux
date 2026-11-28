@@ -244,3 +244,5 @@ The two GUIDs passed by `SeparteImages` resolve to standard GDI+ `EncoderCompres
 ## Scanner XML name gate updated
 
 The root and constraint field names are now recovered from inline UTF-16 constants: `scan-document`, `constraints`, `colorDepth`, `minResolution`, `maxResolution`, `maxFileSize`, and `error`. Remaining scanner gate is required/optional/default behavior, XML interface slot +0x8C semantics, and serialization ordering. Evidence: `docs/SCANNER-XML-ROOT-AND-PROPERTY-NAMES-2026-11-28.md`.
+
+- TIFF print-to-file chain is now clearer: printer status checks → THidePrintingThread.Execute → page-file list → GDI+ file load → multipage LZW TIFF. Remaining gaps: exact output directory/name policy, page order/SaveAdd finalization, and mapping the page-file producer to the print worker.
