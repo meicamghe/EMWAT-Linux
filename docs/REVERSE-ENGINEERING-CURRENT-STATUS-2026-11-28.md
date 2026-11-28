@@ -1,3 +1,10 @@
+## 2026-11-28 — Run 45 WordViewer ABI/output handoff
+
+- Recovered loader call ABI at 0x005EE961: EAX=wordConfig, EDX=wordBody, ECX=letterImages; stack args are output-string pointer at [EBP+8], handler state [self+4] at [EBP+0xC], and signData at [EBP+0x10]. Callee `ret 0xC` confirms three stack args.
+- Loader obtains a UnicodeString through the output slot; handler forwards it to the output collection at 0x005EE970 and sets a completion byte at 0x005EE988.
+- Exact result meaning/output key remain unproven; do not assume it is the response `wordBody` without the Windows wire fixture.
+- Updated Almas acceptance doc commit `c71ccb4`; Run 45 report `256f030`.
+
 ## 2026-11-28 — Run 44 WordViewer argument routing
 
 - Full skipdata trace shows `wordBody` is decoded by 0x00457050/0x00454B9C, checked non-empty, and used to build the temporary source stream/file. This confirms non-empty body is required for successful native load.
