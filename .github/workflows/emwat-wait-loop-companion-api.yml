@@ -1,0 +1,51 @@
+name: EMWAT wait-loop companion API resolution
+on:
+  push:
+    paths:
+      - 'analysis-input/EmwatMethods.bpl1'
+      - '.github/workflows/emwat-wait-loop-companion-api.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: emwat-wait-loop-companion-api-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  companion-api:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install pefile capstone
+      - name: Resolve IAT thunks around 0x404F04
+        shell: bash
+        run: |
+          mkdir -p wait-companion
+          python - <<'PY'
+          from pathlib import Path
+          import struct
+          import pefile
+          blob=Path("analysis-input/EmwatMethods.bpl1").read_bytes()
+          pe=pefile.PE(data=blob,fast_load=False)
+          base=pe.OPTIONAL_HEADER.ImageBase
+          wanted={0x00630030,0x00630034,0x00630038,0x0063003C,0x00630040}
+          out=["# Companion IAT import names",""]
+          for entry in getattr(pe,"DIRECTORY_ENTRY_IMPORT",[]):
+              dll=entry.dll.decode("ascii","replace")
+              for imp in entry.imports:
+                  if imp.address in wanted:
+                      out.append(f"- IAT 0x{imp.address:08X}: {dll}!{imp.name.decode('ascii','replace') if imp.name else 'ordinal'}")
+          Path("wait-companion/imports.md").write_text("\n".join(out)+"\n")
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: emwat-wait-loop-companion-api
+          path: wait-companion/
+          if-no-files-found: error
