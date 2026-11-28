@@ -239,3 +239,8 @@ The current static call graph ties `TWordViewer.LoadDocument` to `TCreateTiff.Se
 The two GUIDs passed by `SeparteImages` resolve to standard GDI+ `EncoderCompression` and `EncoderSaveFlag`. Their values are 2 (LZW compression) and 18 (MultiFrame), respectively. This establishes the intended multi-page TIFF encoding configuration. Remaining work: map the interface VMT slots to initial Save, SaveAdd, and final flush, then confirm page ordering and output filename.
 
 - SevenZip output writer now appears stream-oriented: `SaveToFile` is a stub, `SaveToStream` is implemented, and progress/operation-result callbacks are distinct. The remaining gate is to identify the property keys and exact stream hand-off caller.
+
+
+## Scanner XML name gate updated
+
+The root and constraint field names are now recovered from inline UTF-16 constants: `scan-document`, `constraints`, `colorDepth`, `minResolution`, `maxResolution`, `maxFileSize`, and `error`. Remaining scanner gate is required/optional/default behavior, XML interface slot +0x8C semantics, and serialization ordering. Evidence: `docs/SCANNER-XML-ROOT-AND-PROPERTY-NAMES-2026-11-28.md`.
