@@ -1,0 +1,115 @@
+name: EMWAT Winspool thunk caller audit
+on:
+  push:
+    paths:
+      - 'analysis-input/EmwatMethods.bpl1'
+      - 'tools/trace_td32_callers.py'
+      - '.github/workflows/emwat-winspool-thunk-callers.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: emwat-winspool-thunks-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  winspool-thunk-callers:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install pefile capstone
+      - name: Resolve import thunks and direct callers
+        shell: bash
+        run: |
+          mkdir -p winspool-thunks
+          python - <<'PY'
+          from pathlib import Path
+          import struct
+          import subprocess
+          import sys
+          import pefile
+          from capstone import Cs, CS_ARCH_X86, CS_MODE_32
+
+          path = Path("analysis-input/EmwatMethods.bpl1")
+          blob = path.read_bytes()
+          pe = pefile.PE(data=blob, fast_load=False)
+          base = pe.OPTIONAL_HEADER.ImageBase
+          wanted = {
+              "openprintera","openprinterw","closeprinter","getprintera","getprinterw",
+              "enumprintersa","enumprintersw","enumjobsa","enumjobsw","getjoba","getjobw",
+              "setjoba","setjobw","startdocprintera","startdocprinterw","startpageprinter",
+              "writeprinter","endpageprinter","enddocprinter","abortprinter",
+              "startdoca","startdocw","enddoc","startpage","endpage","createdca","createdcw","deletedc"
+          }
+          md = Cs(CS_ARCH_X86, CS_MODE_32)
+          out = ["# Winspool/GDI import thunk callsites","",
+                 "Direct CALL/JMP targets are decoded from executable sections. The caller's procedure identity is supplied separately by TD32 bounded caller scans.",""]
+          jobs = []
+          for entry in getattr(pe, "DIRECTORY_ENTRY_IMPORT", []):
+              dll = entry.dll.decode("ascii", "replace")
+              for imp in entry.imports:
+                  if not imp.name:
+                      continue
+                  name = imp.name.decode("ascii", "replace")
+                  if name.casefold() not in wanted:
+                      continue
+                  iat_va = imp.address
+                  pattern = b"\\xff\\x25" + struct.pack("<I", iat_va)
+                  thunks = []
+                  for sec in pe.sections:
+                      if not (sec.Characteristics & 0x20000000):
+                          continue
+                      start, end = sec.PointerToRawData, sec.PointerToRawData + sec.SizeOfRawData
+                      pos = start
+                      while True:
+                          pos = blob.find(pattern, pos, end)
+                          if pos < 0: break
+                          thunks.append(base + sec.VirtualAddress + (pos-start))
+                          pos += 1
+                  out.append(f"## {dll}!{name} — IAT 0x{iat_va:08X}")
+                  if not thunks:
+                      out.append("- no FF 25 import thunk found in executable sections")
+                      continue
+                  for thunk in sorted(set(thunks)):
+                      out.append(f"- thunk VA 0x{thunk:08X}")
+                      refs = []
+                      for sec in pe.sections:
+                          if not (sec.Characteristics & 0x20000000):
+                              continue
+                          raw = blob[sec.PointerToRawData:sec.PointerToRawData+sec.SizeOfRawData]
+                          va = base + sec.VirtualAddress
+                          for ins in md.disasm(raw, va):
+                              if ins.mnemonic in ("call","jmp") and ins.operands and ins.operands[0].type == 2 and ins.operands[0].imm == thunk:
+                                  refs.append((ins.address, ins.mnemonic, ins.op_str))
+                      if not refs:
+                          out.append("  - no direct CALL/JMP callers found by instruction decode")
+                      for site, mnemonic, operand in refs:
+                          out.append(f"  - {mnemonic} site 0x{site:08X}: {operand}")
+                      jobs.append((thunk, dll, name))
+          Path("winspool-thunks/import-thunk-callsites.md").write_text("\n".join(out)+"\n")
+          for thunk, dll, name in jobs:
+              safe = f"{thunk:08X}"
+              subprocess.run([sys.executable, "tools/trace_td32_callers.py",
+                  "analysis-input/EmwatMethods.bpl1", f"0x{thunk:08X}",
+                  f"winspool-thunks/callers-{safe}.md"], check=True)
+          PY
+      - name: Capture printer API import thunk ranges
+        shell: bash
+        run: |
+          for target in 0x004044BE 0x004044C6 0x004044CE 0x004044D6 0x004044DE 0x004044E6; do
+            safe=${target#0x}
+            python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 "$target" "$((target+8))" \
+              "winspool-thunks/thunk-$safe.md"
+          done
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: emwat-winspool-thunk-callers
+          path: winspool-thunks/
+          if-no-files-found: error
