@@ -47,3 +47,8 @@ This does not mean Word close behavior is absent. It means the actual close-driv
 4. Keep the existing BeforeSave `Saved` property setter semantics separate from BeforeClose behavior.
 
 No close lifecycle should be implemented from the callback name alone.
+
+
+## Follow-up: BeforeClose-named routine is a print-field helper
+
+The next trace closes the direct-call context: `TWordViewer.GetFieldIndexInList` calls `FillImgFldsForPrint` at `0x004CB361`; that routine calls `WordAppDocumentBeforeClose` at `0x004CCF8F` while iterating field metadata. The callee reads viewer arrays at `+0xE8/+0xEC`, calls Word document interface slot `+0x38`, delegates to `0x004BCA88`, and returns a Boolean used to filter/continue field processing. This is not a close operation in the observed call graph. See `docs/WORD-BEFORECLOSE-NAMED-HELPER-AND-PRINT-FIELD-CHAIN-2026-11-28.md`.
