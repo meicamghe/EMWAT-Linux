@@ -34,3 +34,6 @@ When the local repository contains the tracked BPL input, run:
     python3 scripts/dump_pe_va_ranges.py analysis-input/EmwatMethods.bpl1
 
 The output should include the raw candidate VTable DWORDs and worker string literals needed to close the remaining analysis. Do not commit the output dump if it contains proprietary strings; share only the relevant sanitized ranges.
+
+
+The default dump range set also includes 0x004A08F4:0xD0, which covers the SeparteImages error/status string area (including the worker-failure message pointer at 0x004A09C0).
