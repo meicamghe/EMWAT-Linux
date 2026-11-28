@@ -61,7 +61,7 @@ jobs:
                   if name.casefold() not in wanted:
                       continue
                   iat_va = imp.address
-                  pattern = b"\\xff\\x25" + struct.pack("<I", iat_va)
+                  pattern = b"\xff\x25" + struct.pack("<I", iat_va)
                   thunks = []
                   for sec in pe.sections:
                       if not (sec.Characteristics & 0x20000000):
