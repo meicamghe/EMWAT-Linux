@@ -82,3 +82,6 @@ Run `46118848571` shows `TWordViewer.LoadDocument` calls `TCreateTiff.SeparteIma
 
 
 The queue polling loop also normalizes the candidate UnicodeString through `FixDirectionInFarsiNumericMode` before matching it against `JOB_INFO_1W.pDocument`. It waits while a match exists (one-argument delay call with value 5), and no explicit timeout was observed. Absence may mean completion, cancellation, no job submission, or a name mismatch; do not treat it as proof of successful print output.
+
+
+The 5 ms wait call is now verified as `kernel32!Sleep` at thunk `0x004028D0` / IAT `0x0062F09C`. TD32 labels the same thunk `SuspendThread`, which is a stale/misleading symbol; trust the PE import. The next thunk `0x00404F04` is still being identified.
