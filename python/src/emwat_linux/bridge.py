@@ -61,7 +61,19 @@ class _ServingThreadingHTTPServer(ThreadingHTTPServer):
 
     def wait_for_requests_idle(self, timeout_seconds: float) -> bool:
         """Wait at most timeout_seconds for all accepted HTTP workers to finish."""
-        end = time.monotonic() + timeout_seconds
+        if isinstance(timeout_seconds, bool) or not isinstance(
+            timeout_seconds, (int, float)
+        ):
+            raise ValueError("timeout_seconds must be a finite non-negative number")
+        try:
+            timeout_value = float(timeout_seconds)
+        except OverflowError as exc:
+            raise ValueError(
+                "timeout_seconds must be a finite non-negative number"
+            ) from exc
+        if not math.isfinite(timeout_value) or timeout_value < 0:
+            raise ValueError("timeout_seconds must be a finite non-negative number")
+        end = time.monotonic() + timeout_value
         with self._request_condition:
             while self._active_requests:
                 remaining = end - time.monotonic()
