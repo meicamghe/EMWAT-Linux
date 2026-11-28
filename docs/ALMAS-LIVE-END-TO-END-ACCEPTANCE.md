@@ -168,3 +168,17 @@ The complete Run-50 skipdata trace narrows the three non-config inputs:
 - `signData` is passed as an additional argument and is subsequently used in XML-node/interface operations around `0x004B7AEB–0x004B7B2F`. It is not safe to discard, but its exact schema and effect on Writer fields are still unresolved.
 
 This refines the parity priorities: preserve `signData` and recover its mapping before claiming signature parity; do not block the basic Word edit/save milestone solely on `letterImages`/TIFF generation, provided the real Almas acceptance fixture does not require those preview artifacts.
+
+
+## Run 45 — WordViewer call ABI and result hand-off
+
+The caller at `0x005EE961` and full loader prologue/epilogue establish the call ABI despite the stale TD32 signature:
+
+- EAX = `wordConfig`
+- EDX = `wordBody`
+- ECX = `letterImages`
+- stack arg 1 = output-string pointer (callee `[EBP+8]`)
+- stack arg 2 = handler field `[self+4]`
+- stack arg 3 = `signData` (callee `[EBP+0x10]`)
+
+The loader returns with `ret 0xC`, confirming three stack arguments. It writes/obtains a UnicodeString result through the out pointer at `[EBP+8]`; the handler then forwards that string to its output collection at `0x005EE970` and sets a completion byte at `0x005EE988`. The exact semantic of the returned string (updated document body versus another serialized result) and the output collection key are not proven without the response XML/wire fixture.
