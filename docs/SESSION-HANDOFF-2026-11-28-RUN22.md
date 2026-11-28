@@ -69,3 +69,8 @@ A direct caller trace of `BGPrintWithGamPrintOptions` now proves the queue polli
 ## SevenZip output ownership update
 
 Run `46118303840` shows `T7zPlugin.Create` calls `T7zOutArchive.CryptoGetTextPassword2` at `0x004543C4` in Delphi constructor-style convention, stores the returned object at plugin offset +0x44, then passes it through plugin interface slot +0x30. The initializer stores a global interface from `0x0062FBB8` at object +0x2C and clears callback/context +0x30/+0x34. `SetPropertie` later installs callback/context; `SetOperationResult` invokes it. Output `SetPassword` remains a stub. `euResetMemory` is a distinct helper, with direct callers only from application finalization and autosave deletion. See `docs/SEVENZIP-OUTPUT-ARCHIVE-OWNERSHIP-2026-11-28.md`.
+
+
+## Scanner units update
+
+Run `46118668134` closes the size-unit question: `TResultImage.GetFileStream` returns 64-bit `TStream.Size` bytes; `Finalization` compares it against `MaxFileSize << 10`, so MaxFileSize is KiB. `TGearImgProc.GearType` uses constants 39.37008 and 0.3937; unit selectors 2/3/4 apply divide-by-39.37008 / no conversion / divide-by-0.3937. Exact ImageGear enum names and rounding remain to verify. See `docs/SCANNER-RESOLUTION-AND-FILESIZE-UNITS-2026-11-28.md`.
