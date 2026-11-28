@@ -1,9 +1,24 @@
 from __future__ import annotations
 
+import importlib.util
 import struct
+import sys
+from pathlib import Path
+
 import pytest
 
-from scripts.dump_pe_va_ranges import dump_range, find_printable_runs, parse_pe_bytes
+ROOT = Path(__file__).resolve().parents[2]
+SPEC = importlib.util.spec_from_file_location(
+    "emwat_dump_pe_va_ranges", ROOT / "scripts" / "dump_pe_va_ranges.py"
+)
+assert SPEC is not None and SPEC.loader is not None
+PE_DUMP = importlib.util.module_from_spec(SPEC)
+sys.modules[SPEC.name] = PE_DUMP
+SPEC.loader.exec_module(PE_DUMP)
+
+dump_range = PE_DUMP.dump_range
+find_printable_runs = PE_DUMP.find_printable_runs
+parse_pe_bytes = PE_DUMP.parse_pe_bytes
 
 
 def make_pe32(
