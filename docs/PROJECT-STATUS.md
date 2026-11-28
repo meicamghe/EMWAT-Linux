@@ -3557,3 +3557,16 @@ Base64/GDI+ load closure (run 46121270958): Base64Decode is a shared AnsiString-
 - **Worker:** `0x004032C0` call shape matches `FileExists(FileName, FollowLink=True)`. The Worker deletes a stale pre-existing path, polls a generated path at 10 ms cadence under a computed deadline, and returns success when the later existence check passes. Exact path strings and producer remain open.
 - **GDI+:** functional sequence is now mapped with high confidence: interface `+0x48` initial SaveImageToFile; `+0x5C` SaveAddImage inside the page loop; `+0x58` final SaveAdd after setting Flush value 20. The raw Delphi RTTI is still not a flat VMT; slot mapping is based on ABI/call-site/import evidence. Runtime TIFF fixture still required.
 - No production code, build, release, merge/rebase, or new Actions run.
+
+
+## 2026-11-28 — refreshed validation snapshot (commit eb5933a10c443cc3cba54fb8204b1239b677700b)
+
+- PR #6 remains Draft/open and unmerged; head is `eb5933a10c443cc3cba54fb8204b1239b677700b`, base is `feature/recovery-retention-policy`.
+- Python bridge run 1313 (`46146776197`) is still in progress at the last check; its Python regression step has started but has no reported conclusion. Do not claim a full Python pass.
+- GTK desktop run 365 (`46146776209`) completed successfully on this exact commit.
+- Debian package run 132 (`46146776259`) completed successfully on this exact commit.
+- Reverse-engineering run 78 (`46146592017`): `image-ui-and-vmt` and `word-print-com` completed successfully; `native-regression` completed native build/regression and was still executing the Python bridge regression step at the last check. Artifacts were uploaded for the two completed analysis jobs.
+- Deep-follow-up run 51 (`46146595651`): `scanner-result-ownership`, `imageen-acquisition`, and `word-printer-thread` completed successfully; `native-regression` completed native build/regression and was still executing Python bridge regression at the last check. Artifacts were uploaded for the three completed analysis jobs.
+- Successful static-analysis jobs are evidence-generation results, not proof of scanner/printer hardware behavior or live Almas compatibility. Review their uploaded artifacts before promoting any new reverse-engineering conclusion into runtime code.
+- No live Almas -> Writer -> Save -> response -> Almas persistence acceptance has been performed. signData non-empty fixture, TIFF/GDI+ runtime parity, physical printer/scanner acceptance, and Duplex ADF remain open.
+- The earlier snapshot below naming head `a1d7ef...` is historical; this section supersedes its CI status. Workflow concurrency repair is present on the current branch, but do not infer unlimited runner capacity from it.
