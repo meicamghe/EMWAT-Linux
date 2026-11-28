@@ -58,3 +58,8 @@ Current branch: `feature/recovery-retention-policy`
 ## Guardrails
 
 Reverse engineering only. Do not start Windows or Linux release builds, do not implement inferred protocols, do not merge/rebase, and do not alter main. Static CI success is not physical-device or Almas acceptance.
+
+
+## Confirmed Word-to-spool queue gate
+
+A direct caller trace of `BGPrintWithGamPrintOptions` now proves the queue polling sequence: it obtains a printer handle with `getPrinterNumJobs`, prepares each document-name string, calls `ExtractFileNameEX` with the handle and name, retries after a short delay when no matching `JOB_INFO_1W.pDocument` is found, and closes the handle with `ClosePrinter`. This is job-appearance detection, not proof of completed printing or final TIFF/archive success. Full evidence: `docs/PRINTER-QUEUE-AND-GAM-DRIVER-REVERSE-ENGINEERING-2026-11-28.md`.
