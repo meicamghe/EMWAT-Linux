@@ -187,6 +187,7 @@ def dump_range(image: PEImage, va: int, length: int) -> str:
 DEFAULT_RANGES = (
     (0x0047DD2C, 0xA0),  # TGPImage interface metadata
     (0x0062EE88, 0x90),  # candidate interface VTable blocks
+    (0x004A08F4, 0xD0),  # SeparteImages error/status strings
     (0x004A1784, 0x190),  # hidden print-worker string area
     (0x004026B4, 0x80),  # stale-output helper
     (0x0044B508, 0x80),  # ForceSinglePageFiles XMLRTL helper
