@@ -1,3 +1,13 @@
+## 2026-11-28 — Run 35: accepted-request drain race fixed
+
+- Found a race in the bounded request drain: counting in `process_request_thread` starts too late because ThreadingMixIn starts the worker asynchronously after the accept loop has already accepted the socket.
+- Fixed by registering the request synchronously in `_ServingThreadingHTTPServer.process_request` before starting the worker, and decrementing only when the worker exits (or worker creation raises).
+- Added deterministic regression test `test_request_drain_counts_accepted_socket_before_worker_first_instruction`, which pauses the worker before its first base-class instruction and verifies the drain still sees the accepted request.
+- Implementation commit: `eaa87e4903b47fecf1c5af7aa9503ba44fe16f63`; test commit: `063f0c63666040b2d4d149fae08a3382db168a30`.
+- Updated the Almas live acceptance gate to reflect implemented bounded drain/retry, while keeping test execution and live Almas acceptance as blockers (commit `38f68dc0f0c2acbf8b9039f29d10287ded835358`).
+- Full report: `docs/ENGINEERING-FOLLOWUP-2026-11-28-RUN35.md`.
+- Tests not executed: the environment could not resolve github.com for a local clone. No GitHub Actions workflow was started; no package built.
+
 ## 2026-11-28 — Run 34 print-worker caller gate
 
 - The only direct caller of THidePrintingThread.Execute is TCreateTiff.SeparteImages at 0x004A02B8.
