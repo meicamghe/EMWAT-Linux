@@ -1,0 +1,58 @@
+name: EMWAT TIFF stream and Base64 decoder closure
+on:
+  push:
+    paths:
+      - 'analysis-input/EmwatMethods.bpl1'
+      - 'tools/trace_td32_procedure_skipdata.py'
+      - 'tools/trace_td32_callers.py'
+      - '.github/workflows/emwat-tiff-stream-base64.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: emwat-tiff-stream-base64-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  stream-and-base64:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install pefile capstone
+      - name: Trace load branches and Base64 decoder internals
+        shell: bash
+        run: |
+          mkdir -p tiff-stream-base64
+          for target in 0x00481C4C 0x00481C3C 0x0048FF60 0x0049007C 0x00491360 0x004912A8 0x004735DC 0x00473644 0x00473828 0x004A0148; do
+            safe=${target#0x}
+            python tools/trace_td32_procedure_skipdata.py analysis-input/EmwatMethods.bpl1 "$target" \
+              "tiff-stream-base64/procedure-$safe.md" || true
+            python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 "$target" \
+              "tiff-stream-base64/callers-$safe.md" || true
+          done
+          python - <<'PY'
+          from pathlib import Path
+          import pefile
+          blob=Path("analysis-input/EmwatMethods.bpl1").read_bytes()
+          pe=pefile.PE(data=blob,fast_load=False)
+          out=["# GDI+ load import mapping",""]
+          for entry in getattr(pe,"DIRECTORY_ENTRY_IMPORT",[]):
+              dll=entry.dll.decode("ascii","replace")
+              if dll.casefold()!="gdiplus.dll": continue
+              for imp in entry.imports:
+                  if imp.address in (0x006307EC,0x006307E8,0x006307E4,0x006307E0,0x006307DC,0x006307D8,0x006307D4):
+                      out.append(f"- IAT 0x{imp.address:08X}: {imp.name.decode('ascii','replace') if imp.name else 'ordinal'}")
+          Path("tiff-stream-base64/load-imports.md").write_text("\n".join(out)+"\n")
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: emwat-tiff-stream-base64
+          path: tiff-stream-base64/
+          if-no-files-found: error
