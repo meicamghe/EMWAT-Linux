@@ -32,9 +32,10 @@ class BridgeRuntime:
 
     The runtime is intentionally one-shot: a closed HTTPServer cannot safely
     be restarted. A successful close joins the serving thread. If shutdown
-    fails, the join is bounded and the caller receives a failure instead of
-    waiting forever; a later close may retry shutdown. The underlying server's
-    server_close() can still wait for active non-daemon request workers.
+    fails, the caller receives a failure instead of waiting forever. Active
+    request workers are drained with a separate bounded timeout before
+    server_close(); a timed-out drain leaves cleanup retryable and never
+    silently abandons the pending request.
     """
 
     def __init__(
