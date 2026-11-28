@@ -1,0 +1,47 @@
+name: EMWAT SevenZip output callback detail
+on:
+  push:
+    paths:
+      - 'analysis-input/EmwatMethods.bpl1'
+      - 'tools/trace_td32_procedure_skipdata.py'
+      - 'tools/trace_td32_callers.py'
+      - 'tools/scan_pe_pointer_refs.py'
+      - '.github/workflows/emwat-sevenzip-output-callback-details.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: emwat-sevenzip-output-callback-details-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  output-callback-details:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install pefile capstone
+      - name: Trace output archive callbacks and save methods
+        shell: bash
+        run: |
+          mkdir -p sevenzip-callback-details
+          for target in 0x00454450 0x00454488 0x00454644 0x00454668 0x004546C4 0x004547B0 0x004547DC 0x004547E8 0x00454800 0x00454818; do
+            safe=${target#0x}
+            python tools/trace_td32_procedure_skipdata.py analysis-input/EmwatMethods.bpl1 "$target" \
+              "sevenzip-callback-details/procedure-$safe.md" || true
+            python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 "$target" \
+              "sevenzip-callback-details/callers-$safe.md" || true
+            python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 "$target" \
+              "sevenzip-callback-details/pointers-$safe.md" || true
+          done
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: emwat-sevenzip-output-callback-details
+          path: sevenzip-callback-details/
+          if-no-files-found: error
