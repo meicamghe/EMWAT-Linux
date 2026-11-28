@@ -129,21 +129,17 @@ candidate, not a verified Almas-compatible release.
 
 ## Run 67 static-analysis boundary — Word viewer is not the Almas edit handler
 
-The completed `word-print-com` artifact traces `TWordViwer.LoadDocument` (TD32 symbol spelling) and shows two calls to `TCreateTiff.SeparteImages` at `0x004B7A9C` and `0x004B7ABD`. This confirms a Word-viewer document-load path enters the Word-to-TIFF conversion pipeline. It does **not** prove that this is the `EditWordDocument` browser connector handler or its response contract.
-
-The same artifact's symbol index does not contain a `TEditWordDocument.PerformMethod` symbol. It does contain generic `TEmwatMethod.Invoke` and other connector handlers, including ScanDocument, FaxDocument, EditExcelWorkBook, and CompareWordDocument. Because dispatch is indirect/VMT-based, the absence of a direct callsite or a TD32 symbol is not proof the handler does not exist; it remains a targeted reverse-engineering gap. The live Almas request/response fixture is still required as the protocol source of truth.
+The Run-67 `word-print-com` artifact shows `TWordViwer.LoadDocument` calls `TCreateTiff.SeparteImages` at `0x004B7A9C` and `0x004B7ABD`. Run 46 cross-checked this with the earlier direct VMT/interface map and **confirmed** that the handler at `0x005EE82C` is the concrete `TEditWordDocument.PerformMethod`, despite its stale TD32 label `TScanDocument.PerformMethod`. This handler invokes the WordViewer loader. The static EditWordDocument dispatch identity is therefore closed; the remaining live gate is Almas persistence through LibreOffice.
 
 
 ## Run 67 VMT scan — handler class names exist but standard VMT resolution fails
 
-The `image-ui-and-vmt` artifact (`15260427307`) finds two shortstring occurrences each for `TEmwatMethod`, `TEditWordDocument`, and `TScanDocument`, but the standard Delphi VMT resolver produces no verified VMT candidate for any of them. It also reports an `Unverified VMT candidate` for `TWordViwer` at `0x004B10A4`, but its parent pointer resolves to a `System@PVariant`-style name and its first 32 dwords do not form a credible method-pointer table. Do not treat that candidate as a real VMT.
-
-This is consistent with the TD32/registration naming caveat: the relevant classes are present in the binary, but the current standard-layout VMT heuristic cannot identify their class tables reliably. The Almas handler discovery must move to custom RTTI/interface-table and registration-reference analysis; absence of a resolved VMT is not evidence the handler is absent.
+The Run-67 generic `resolve_delphi_vmt_slots.py` artifact reported no standard-layout candidate for these classes and one unverified `TWordViwer` candidate. This was a **false negative of that generic heuristic**, not absence of a VMT. Run 46 supersedes this observation with the direct VMT/interface crosswalk: `TEditWordDocument` VMT `0x005ED764`, parent `TEmwatMethod`, concrete slot `+0x10 -> 0x005EE82C`. Do not use the generic resolver's no-candidate result to override the direct VMT evidence.
 
 
-## Run 67 — strongest EditWordDocument handler data-flow candidate
+## Run 67/46 — confirmed EditWordDocument handler data flow
 
-A second pass over the Run-67 artifact identifies a stronger candidate than the TD32 class label: procedure `0x005EE82C`, decorated as `TScanDocument.PerformMethod`, performs these dictionary lookups:
+Run 46's direct VMT map confirms that procedure `0x005EE82C`, decorated by stale TD32 as `TScanDocument.PerformMethod`, is the concrete `TEditWordDocument.PerformMethod`. Its actual dictionary data flow is:
 
 - `wordConfig` (`0x005EE9F4`) is required; if absent, it raises the message `Requset XML is not valid (wordConfig parameter is null)` (`0x005EEA0C`).
 - `wordBody` (`0x005EEA88`) is looked up and an empty value is initialized when absent/empty.
