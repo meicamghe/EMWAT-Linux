@@ -7,6 +7,8 @@ on:
       - 'tools/trace_td32_procedure_skipdata.py'
       - 'tools/trace_td32_callers.py'
       - 'tools/scan_pe_pointer_refs.py'
+      - 'tools/trace_pe_range.py'
+      - 'tools/decode_pe_strings.py'
       - '.github/workflows/emwat-printer-driver-install-followup.yml'
   workflow_dispatch:
 
@@ -47,11 +49,24 @@ jobs:
             python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 "$target" \
               "printer-driver-install/pointers-$safe.md" || true
           done
+          python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x00401200 0x00401280 \
+            printer-driver-install/runtime-helper-00401200-00401280.md
+          python tools/decode_pe_strings.py analysis-input/EmwatMethods.bpl1 \
+            0x0047CF90 0x0047CFB8 0x0047CFC4 0x0047CFDC 0x0047CFEC \
+            0x0047D00C 0x0047D02C 0x0047D048 0x0047D3CC 0x0047D3DC \
+            0x0047D3F8 0x0047D408 0x0047D434 \
+            0x0047D678 0x0047D688 0x0047D69C 0x0047D6AC 0x0047D6B8 \
+            0x0047D6D4 0x0047D6EC 0x0047D704 0x0047D708 0x0047D72C \
+            0x0047D740 0x0047D74C 0x0047D764 0x0047D770 0x0047D778 \
+            0x0047D790 0x0047D798 0x0047D7B0 0x0047D7B4 0x0047D7C8 \
+            0x0047D800 0x0047D828 0x0047D840 0x0047D85C 0x0047D86C \
+            0x0047D880 0x0047D8A0 > printer-driver-install/printer-strings.md
           python - <<'PY'
           from pathlib import Path
           import pefile
           blob=Path("analysis-input/EmwatMethods.bpl1").read_bytes()
-          pe=pefile.PE(data=blob,fast_load=True)
+          pe=pefile.PE(data=blob,fast_load=False)
+          pe.parse_data_directories(directories=[pefile.DIRECTORY_ENTRY["IMAGE_DIRECTORY_ENTRY_IMPORT"]])
           base=pe.OPTIONAL_HEADER.ImageBase
           out=["# GAM printer install constants and Winspool imports",""]
           for va in (0x0047CC64,0x0047CC60,0x0047CC68,0x0047CC70,0x0047CC94):
@@ -66,14 +81,17 @@ jobs:
                           out.append(f"- {enc}: {s!r}")
               except Exception as exc: out.append(f"- error: {exc}")
               out.append("")
-          out.append("## Winspool-related imports")
+          out.append("## Relevant printer, registry and GDI imports")
           for desc in getattr(pe,"DIRECTORY_ENTRY_IMPORT",[]):
               dll=desc.dll.decode("ascii","replace")
-              if "spool" not in dll.lower() and "winspool" not in dll.lower():
-                  continue
               for imp in desc.imports:
                   name=imp.name.decode("ascii","replace") if imp.name else f"ordinal_{imp.ordinal}"
-                  out.append(f"- {dll}!{name} — IAT VA 0x{imp.address:08X}")
+                  if ("spool" in dll.lower() or "printer" in name.lower() or
+                      name.lower().startswith("reg") or name.lower() in {
+                          "getprivateprofilestringw","writeprivateprofilestringw",
+                          "getmodulefilenamew","getsystemdirectoryw","getwindowsdirectoryw"
+                      }):
+                      out.append(f"- {dll}!{name} — IAT VA 0x{imp.address:08X}")
           Path("printer-driver-install/constants-and-imports.md").write_text("\n".join(out)+"\n")
           PY
       - uses: actions/upload-artifact@v4
