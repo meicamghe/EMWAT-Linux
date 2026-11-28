@@ -40,7 +40,7 @@ jobs:
             > printer-driver-install/symbol-index.md
           for target in \
             0x0047CAF0 0x0047CC6C 0x0047CC94 0x0047D238 \
-            0x0047D448 0x0047D8BC 0x00401240 \\
+            0x0047D448 0x0047D8BC 0x00401240 \
             0x00404494 0x00402910 0x00402754 0x00402818; do
             safe=${target#0x}
             python tools/trace_td32_procedure_skipdata.py analysis-input/EmwatMethods.bpl1 "$target" \
