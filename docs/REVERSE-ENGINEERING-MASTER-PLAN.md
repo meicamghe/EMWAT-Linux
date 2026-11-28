@@ -227,3 +227,8 @@ The latest SevenZip pass identifies the plugin-to-output-archive ownership path 
 ## Scanner unit conversion gate updated
 
 The MaxFileSize unit is now closed as KiB: `TResultImage.GetFileStream` returns the 64-bit stream byte size, and `TScanCommand.Finalization` compares it with `MaxFileSize << 10`. `TGearImgProc.GearType` contains explicit 39.37008 and 0.3937 conversion factors; the remaining gate is matching selector values to exact ImageGear enum labels and verifying rounding/edge behavior. Evidence: `docs/SCANNER-RESOLUTION-AND-FILESIZE-UNITS-2026-11-28.md`.
+
+
+## TIFF output lifecycle gate
+
+The current static call graph ties `TWordViewer.LoadDocument` to `TCreateTiff.SeparteImages`, then to printer checks, `THidePrintingThread.Execute`, and GDI+ page processing via `TGPImage`/`TGPEncoderParameters`. The remaining gate is to identify the exact GDI+ save API, output naming, compression parameters, and how the Word queue-disappearance condition/hidden worker result gates TIFF completion. Evidence: `docs/TIFF-OUTPUT-GDIPLUS-PIPELINE-2026-11-28.md`.
