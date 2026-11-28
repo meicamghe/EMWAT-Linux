@@ -1,0 +1,74 @@
+name: EMWAT GDI+ VMT and encoder GUID mapping
+on:
+  push:
+    paths:
+      - 'analysis-input/EmwatMethods.bpl1'
+      - 'tools/trace_td32_procedure_skipdata.py'
+      - '.github/workflows/emwat-gdiplus-vmt-encoder-map.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: emwat-gdiplus-vmt-encoder-map-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  vmt-encoder-map:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install pefile capstone
+      - name: Dump GDI+ VMT slots and follow encoder GUID pointers
+        shell: bash
+        run: |
+          mkdir -p gdiplus-vmt
+          python - <<'PY'
+          from pathlib import Path
+          import pefile
+          blob=Path("analysis-input/EmwatMethods.bpl1").read_bytes()
+          pe=pefile.PE(data=blob,fast_load=True)
+          base=pe.OPTIONAL_HEADER.ImageBase
+          def read(va,n):
+              off=pe.get_offset_from_rva(va-base)
+              return blob[off:off+n]
+          out=["# GDI+ VMT slot dump",""]
+          for label,va in (("TGPEncoderParameters VMT",0x00483F4C),("TGPImage VMT",0x00484728)):
+              out += [f"## {label} at 0x{va:08X}"]
+              raw=read(va,0xA0)
+              for off in range(0,0xA0,4):
+                  ptr=int.from_bytes(raw[off:off+4],"little")
+                  out.append(f"- +0x{off:02X}: 0x{ptr:08X}")
+          out += ["","## Encoder GUID pointer chains"]
+          for label,va in (("encoder parameter A",0x0062A84C),("encoder parameter B",0x0062A804)):
+              out.append(f"### {label} global 0x{va:08X}")
+              first=read(va,4)
+              ptr=int.from_bytes(first,"little")
+              out.append(f"- first pointer: 0x{ptr:08X}")
+              for depth in range(3):
+                  try:
+                      raw=read(ptr,32)
+                      out.append(f"- depth {depth+1} @0x{ptr:08X}: {raw.hex(' ')}")
+                      nxt=int.from_bytes(raw[:4],"little")
+                      if not (0x00400000 <= nxt < 0x00700000): break
+                      ptr=nxt
+                  except Exception as exc:
+                      out.append(f"- decode error: {exc}"); break
+          Path("gdiplus-vmt/vmt-and-guid-pointers.md").write_text("\n".join(out)+"\n")
+          PY
+          for target in 0x0048ED70 0x0048F780 0x004908AC 0x004908E4 0x00490950 0x004909B4 0x00490A18 0x00490A84; do
+            safe=${target#0x}
+            python tools/trace_td32_procedure_skipdata.py analysis-input/EmwatMethods.bpl1 "$target" \
+              "gdiplus-vmt/procedure-$safe.md" || true
+          done
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: emwat-gdiplus-vmt-encoder-map
+          path: gdiplus-vmt/
+          if-no-files-found: error
