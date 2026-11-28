@@ -1,3 +1,10 @@
+## 2026-11-28 — Run 39 TD32 handler-name caveat
+
+- In Run-67 artifact `15260640277`, the procedure labelled `TCompareWordDocument.PerformMethod` at `0x005EF8AC` actually reads `ExcelConfig` and `ExcelWorkBookContent` dictionary keys. This confirms a mismatch between at least one TD32 connector class label and the actual request data flow.
+- Therefore no conclusion about the EditWordDocument handler's presence/absence can be drawn from the missing `TEditWordDocument.PerformMethod` symbol. Resolve via literal keys, VMT/registration data, and live Windows capture.
+- Run 39 report commit `0c2add6`; Run 38 report refined in `f17293c`.
+- No production code or workflow source changed.
+
 ## 2026-11-28 — Run 38 WordViewer/connector distinction
 
 - Run-67 artifact `15260640277` shows `TWordViwer.LoadDocument` calls `TCreateTiff.SeparteImages` at `0x004B7A9C` and `0x004B7ABD`. This connects viewer document-load to the Word-to-TIFF path, not to the Almas browser edit protocol.
