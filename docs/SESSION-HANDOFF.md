@@ -2082,3 +2082,13 @@ Next probes: recover the four filename-table strings and state-byte meanings; re
 - Correction: 0x004E9D5C is ScanResponseXML.NewScanDocument, not a generic conversion helper. It reads a property via VMT +0x8C and writes a value into a response/dictionary path; key semantics remain open.
 - Run 16 instrumentation commit d44699cdcf5ae9da2d5a4191e5358b819be79262 dereferences the four global selector strings and traces 0x004EEF30 and 0x004EFF94. Await results.
 - No production runtime behavior changed. PR #2 remains Draft; main remains untouched.
+
+
+## 2026-11-28 — Run 16 green; scan color modes decoded; Run 17 queued
+
+- Run 16 (46109194651) passed all four jobs on commit d44699cdcf5ae9da2d5a4191e5358b819be79262. Artifacts: scanner 15249375549, Word/printer 15249236179, ImageEn 15248776617.
+- Decoded color-mode selector field +0x08: 1 = black/white (سياه/سفيد), 4 = grayscale (طيف سياه و سفيد), 8 = grayscale or 256 colors (طيف سياه و سفيد يا 256 رنگ), 0x10 = pointed string at 0x004F32DC, still pending robust decoding. This is a local image color-mode constraint, not an external protocol field.
+- 0x004F32F4 is a DoRequest-called validation helper. It validates image color mode, resolution bounds (+0x0C/+0x10) and maximum file size (+0x14, compared against TResultImage.GetFileStream size scaled by 1024).
+- Corrections: 0x004EEF30 is TGearImgProc.GearType (its numeric return is used as the constrained image metric); 0x004EFF94 is TGearImgProc.SetEditorForm, not request setup. Its callers include SaveCPinMultiPageFile, Flip, and the simple image editor.
+- Run 17 instrumentation commit b6a219332e81ca3ddb8a8c5ba692be670684e3c2 uses replacement-safe UTF-16 decoding for the fourth mode string and traces 0x004AFF08 image metadata helper.
+- No production runtime behavior changed; PR #2 remains Draft and main is untouched.
