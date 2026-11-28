@@ -108,7 +108,14 @@ The callsite resolves the constructor flag: at `0x004A03C9` and `0x004A03F9`, `S
 
 ## 3D. TGPImage constructor load branch
 
-The `TGPImage` constructor at `0x0048FF60` has two load branches. Based on the constructor's stack flag, it calls either thunk `0x00481C4C` or `0x00481C3C`, then wraps the returned native image handle. The PE import scan maps `0x00481C3C` to `GdipLoadImageFromFile`; the import behind `0x00481C4C` is not yet identified. The separate TD32-named `TGPImage.FromFile` method at `0x00490048` only disposes an existing native handle via `GdipDisposeImage` and resets the object; its name is not evidence of a load call. The exact file-vs-stream branch used by `SeparteImages` remains to be confirmed from its stack argument and the `0x00481C4C` import.
+The `TGPImage` constructor at `0x0048FF60` has two load branches. Based on the constructor's stack flag, it calls either thunk `0x00481C4C` or `0x00481C3C`, then wraps the returned native image handle. The PE import table and GNU objdump map `0x00481C3C` to `GdipLoadImageFromFile` and `0x00481C4C` to `GdipLoadImageFromFileICM`. The separate TD32-named `TGPImage.FromFile` method at `0x00490048` only disposes an existing native handle via `GdipDisposeImage` and resets the object; its name is not evidence of a load call. The nonzero stack flag selects the ICM file-load branch; the zero flag selects the non-ICM file-load branch. `SeparteImages` passes zero twice, so its observed inputs use `GdipLoadImageFromFile`.
+
+
+## 3E. Base64 decoder contract
+
+The `Base64Decode` wrapper (`0x004735C4`) calls `@Base64@Base64Decode` at `0x00473828`, which calculates output storage, calls the shared Base64 size helper at `0x004735DC`, and decodes through `0x00473644` using the lookup table at `0x00627F58`. The decoder consumes an `AnsiString` and produces an `AnsiString`; its bit operations implement the standard 4-character-to-3-byte Base64 mapping. The size helper is shared with Base64Encode and its name/size formula should not be used alone to infer the final decoded length.
+
+The direct callers include `SeparteImages`, `TWordViewer.StoreFieldValuesForPrint`, and `TfrmImageTools.FreeRotate`. It is a generic payload/field decoder, not a filename-specific helper. The value decoded by the `SeparteImages` call remains to be identified.
 
 ## 4. Important separation from SevenZip
 
