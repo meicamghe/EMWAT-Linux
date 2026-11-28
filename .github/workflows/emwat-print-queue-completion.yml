@@ -1,0 +1,92 @@
+name: EMWAT print queue completion and GAM driver follow-up
+on:
+  push:
+    paths:
+      - 'analysis-input/EmwatMethods.bpl1'
+      - 'tools/list_td32_symbols.py'
+      - 'tools/trace_td32_procedure_skipdata.py'
+      - 'tools/trace_td32_callers.py'
+      - 'tools/scan_pe_pointer_refs.py'
+      - '.github/workflows/emwat-print-queue-completion.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: emwat-print-queue-completion-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  queue-match-call-chain:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install pefile capstone
+      - name: Trace TrimLF, queue matching, and indirect references
+        shell: bash
+        run: |
+          mkdir -p print-queue-completion
+          python tools/list_td32_symbols.py analysis-input/EmwatMethods.bpl1 \
+            TrimLF ExtractFileNameEX getPrinterNumJobs BGPrintWithGamPrintOptions \
+            CheckPrinterPaused InstallZanPrinter GetZanInstallDir GetPrinterName \
+            Zanprinter@Finalization TEmwatDocPrintHandler \
+            > print-queue-completion/symbol-index.md
+          python - <<'PY'
+          from pathlib import Path
+          import subprocess, sys
+          src = Path("print-queue-completion/symbol-index.md").read_text()
+          terms = (
+              "trimlf", "extractfilenameex", "getprinternumjobs",
+              "bgprintwithgamprintoptions", "checkprinterpaused",
+              "installzanprinter", "getzaninstalldir", "getprintername",
+              "zanprinter@finalization", "temwatdocprinthandler"
+          )
+          rows = []
+          for line in src.splitlines():
+              cols = [x.strip() for x in line.strip().strip("|").split("|")]
+              if len(cols) != 5 or not cols[0].startswith("`0x"):
+                  continue
+              address, name = cols[0].strip("`"), cols[4].strip("`")
+              if any(t in name.casefold() for t in terms):
+                  rows.append((address,name))
+          rows = sorted(set(rows))
+          Path("print-queue-completion/selected-symbols.txt").write_text(
+              "\n".join(f"{a} {n}" for a,n in rows)+"\n")
+          for address,name in rows:
+              safe=address.replace("0x","")
+              for script,suffix in (("trace_td32_procedure_skipdata.py","procedure"),
+                                    ("trace_td32_callers.py","callers"),
+                                    ("scan_pe_pointer_refs.py","pointers")):
+                  subprocess.run([sys.executable,f"tools/{script}",
+                      "analysis-input/EmwatMethods.bpl1",address,
+                      f"print-queue-completion/{suffix}-{safe}.md"],check=True)
+          PY
+      - name: Decode GAM printer driver-name constant
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import pefile
+          blob=Path("analysis-input/EmwatMethods.bpl1").read_bytes()
+          pe=pefile.PE(data=blob,fast_load=True)
+          base=pe.OPTIONAL_HEADER.ImageBase
+          va=0x0047CC64
+          off=pe.get_offset_from_rva(va-base)
+          raw=blob[off:off+160]
+          out=["# Printer driver-name constant","",f"- VA: 0x{va:08X}",f"- raw offset: 0x{off:08X}",
+               f"- UTF-16LE: {raw.decode('utf-16le',errors='replace').split(chr(0))[0]!r}",
+               f"- ANSI: {raw.split(bytes([0]),1)[0].decode('cp1252',errors='replace')!r}",
+               f"- raw[0:96]: {raw[:96].hex(' ')}"]
+          Path("print-queue-completion/gam-driver-name.md").write_text("\n".join(out)+"\n")
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: emwat-print-queue-completion
+          path: print-queue-completion/
+          if-no-files-found: error
