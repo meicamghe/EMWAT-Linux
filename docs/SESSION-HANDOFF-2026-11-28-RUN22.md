@@ -18,6 +18,10 @@ Current branch: `feature/recovery-retention-policy`
 - Print preparation: `SeparteImages` runs printer preflight, calls `THidePrintingThread.Execute`, and iterates image collection items. The worker trace has full byte coverage via skipdata but contains 28 undecoded data pseudo-instructions; no actual spool submission/completion is proven.
 - SevenZip: output `SetPropertie` stores callback/context at +0x30/+0x34 and `SetOperationResult` invokes that callback. Output `SetPassword` is a stub; `CryptoGetTextPassword2` alone does not prove encryption. `euResetMemory` uses a different object and virtual slots +0x44/+0x0C/+0x3C.
 
+## Word PrintOut ABI re-check
+
+- Run 23 Word artifact (`15252266519`) confirms four separate calls through document slot `+0x3F0` at `0x004C70B6`, `0x004C78A4`, `0x004C7F50`, and `0x004C87FA`. Each repeats eighteen Variant-record pointer arguments: fifteen `EmptyParam` records plus three pre-populated records. The TD32 wrapper inventory only exposes 15-, 16-, and 17-Variant overloads; the 18-vs-17 ABI discrepancy remains unresolved. See `docs/WORD-PRINTOUT-18-VARIANT-ABI-RECHECK-2026-11-28.md`.
+
 ## Immediate parallel priorities
 
 1. Resolve the 18 local Variant pointers at `BGPrintWithGamPrintOptions` against the 17-Variant `TWordDocument.PrintOut` wrapper; do not assume the arity discrepancy is solved.
