@@ -25,16 +25,17 @@ Verified:
 - A supervised, restartable bridge lifecycle exists.
 - The runtime uses a non-daemon serving thread, waits for serving readiness, drains active request workers with a bounded timeout, and permits cleanup retry after a drain timeout.
 - GTK already supports an injected supervisor, background start/stop operations, state polling, and stop-before-window-close.
-- The default `main()` creates the recovery controller but does not inject a bridge supervisor. The GTK module explicitly describes itself as a diagnostics/recovery shell, not a bridge launcher.
-- Production bridge composition requires explicit allowed origins and an evidence-backed Cancel response factory. The default path intentionally does not invent either.
+- The initial feature branch left the ordinary `main()` entry point without a supervisor. This work branch now adds `deployment.py`, using the captured loopback bind/Origin/Referer values and a fresh server factory per start.
+- The normal GTK entry point now injects that supervisor and requests auto-start after required dependency checks pass. The existing manual Stop control, state polling, and bounded shutdown flow remain in place.
+- Explicit operation-level discard is mapped to a local HTTP 409/plain-text response only when the session state is exactly `DISCARDED`. This is a fail-closed local policy, not Windows wire parity. Writer Don't Save and close-prompt Cancel remain distinct.
+- New composition tests cover the exact loopback values, request/response limits, and discard guard. They have not yet been executed.
 
-Closure criteria:
-- Add a deployment-owned configuration source for exact Almas origins and the captured Cancel response contract.
-- Build a production server factory from that configuration and inject its supervisor into GTK.
-- Add composition tests proving invalid/missing configuration leaves the bridge disabled and valid configuration starts/stops cleanly.
+Remaining closure criteria:
+- Execute Python and GTK test suites on this exact branch.
+- Verify port-conflict and missing-dependency behavior on a target desktop.
 - Complete a real Almas request → Writer → user decision → HTTP response → Almas acceptance test.
 
-Do not enable a guessed Cancel response or wildcard Origin policy.
+Do not enable wildcard Origin policy or represent the local 409 as the native Windows discard envelope.
 
 ### 2. Writer lifecycle, document mapping, and recovery
 
