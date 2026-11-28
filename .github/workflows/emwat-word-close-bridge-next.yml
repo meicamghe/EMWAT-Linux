@@ -34,12 +34,12 @@ jobs:
           python tools/list_td32_symbols.py analysis-input/EmwatMethods.bpl1 \
             FormClose FormCloseQuery FormActivate FormDeactivate OnClose OnCloseQuery \
             OnDeactivate WindowDeactivate DocumentClose BeforeClose BeforeSave \
-            Quit Terminate CloseDocument DocumentOpen DocumentChange WindowActivate WindowDeactivate BGPrintWithGamPrintOptions PrintWithGamPrintOptions \
+            Quit Terminate CloseDocument DocumentOpen DocumentChange WindowActivate WindowDeactivate WordIsActivated BGPrintWithGamPrintOptions PrintWithGamPrintOptions \
             Get_Name Get_FullName Get_Path \
             > word-close-bridge/symbol-index.md
           for target in \
             0x004B8A84 0x004CCBBC 0x004CCDC8 0x004CD154 \
-            0x004CD54C 0x004CD9C0 0x004CDB2C 0x004CDB3C 0x004CDB54 0x004CE030 \
+            0x004CD54C 0x004CD9C0 0x004CDB2C 0x004CDB3C 0x004CDB54 0x004C5CDC 0x004CE030 \
             0x004402A4 0x00441C68 0x0043F360 0x0044ABE4; do
             safe=${target#0x}
             python tools/trace_td32_procedure_skipdata.py analysis-input/EmwatMethods.bpl1 "$target" \
