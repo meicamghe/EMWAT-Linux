@@ -2092,3 +2092,12 @@ Next probes: recover the four filename-table strings and state-byte meanings; re
 - Corrections: 0x004EEF30 is TGearImgProc.GearType (its numeric return is used as the constrained image metric); 0x004EFF94 is TGearImgProc.SetEditorForm, not request setup. Its callers include SaveCPinMultiPageFile, Flip, and the simple image editor.
 - Run 17 instrumentation commit b6a219332e81ca3ddb8a8c5ba692be670684e3c2 uses replacement-safe UTF-16 decoding for the fourth mode string and traces 0x004AFF08 image metadata helper.
 - No production runtime behavior changed; PR #2 remains Draft and main is untouched.
+
+
+## 2026-11-28 — Run 17 green; all scanner color modes recovered; Run 18 queued
+
+- Run 17 (46109436699) passed all four jobs on commit b6a219332e81ca3ddb8a8c5ba692be670684e3c2. Artifacts: scanner 15248931884, Word/printer 15248941798, ImageEn 15248688481.
+- Completed color selector mapping: 1 = black/white, 4 = grayscale, 8 = grayscale or 256 colors, 0x10 = 24-bit color ('رنگي 24 بيت').
+- 0x004AFF08 is an import thunk to ImageGear `IG_image_resolution_set` via IAT slot 0x00630CF4, not a local metadata helper. It is called from TGearImgProc.GearType and WordViewer.EmbedTextToImage. GearType returns the metric used in the scan resolution-bound comparisons.
+- Track U's generic 'image metadata helper' wording is superseded by this exact import identification. 0x004EFF94 remains TGearImgProc.SetEditorForm.
+- Run 18 instrumentation commit (to be recorded after push) inspects pointer chains and Delphi string headers for globals 0x0062A800, 0x0062A7FC and 0x0062A850 to recover exact XML field names. No production runtime changes.
