@@ -102,6 +102,11 @@ jobs:
             python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 "$target" \
               "gdiplus-followup/tiff-page-save/callers-$safe.md" || true
           done
+          for target in 0x004908AC 0x004908E4 0x00490950 0x004909B4 0x00490A18 0x00490A84; do
+            safe=${target#0x}
+            python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 "$target" \
+              "gdiplus-followup/tiff-page-save/wrapper-pointer-refs-$safe.md" || true
+          done
           python - <<'PY'
           from pathlib import Path
           import pefile
