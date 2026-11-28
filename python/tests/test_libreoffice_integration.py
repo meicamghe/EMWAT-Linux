@@ -204,7 +204,7 @@ class LibreOfficeIntegrationTests(unittest.TestCase):
             runtime.start()
             connection.request(
                 "POST",
-                "/?invoke=integration-nonce",
+                "/?invoke=54321",
                 body=call_xml,
                 headers={
                     "Content-Type": "text/plain;charset=UTF-8",
