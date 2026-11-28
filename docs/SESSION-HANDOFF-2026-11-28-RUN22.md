@@ -117,3 +117,15 @@ SevenZip callback-detail run `46119766144` further shows `SaveToFile` is a stub 
 
 
 GDI+ interface boundary: SeparteImages creates TGPEncoderParameters (class VMT 0x00483F4C) and obtains its interface at object +0x28, then calls interface slot +0x20 with the compression/save-flag GUIDs. TGPImage is created with class VMT 0x00484728; its interface is called through slots +0x48/+0x70/+0x74/+0x5C/+0x58. The interface metadata blocks are complex Delphi RTTI structures, not simple pointer arrays; exact Save/SaveAdd/final-flush identities remain open.
+
+
+## GDI+ and SevenZip closure run updates
+
+- GDI+ Save/SaveAdd methods and encoder constants: run `46119662918`, success, artifact `15252784605`.
+- GDI+ VMT/encoder GUID pointer analysis: run `46120082255`, success, artifact `15253750667`.
+- GDI+ PE import cross-check with GNU objdump: run `46120131505`, success, artifact `15253595662`.
+- GDI+ interface VMT candidate dump: run `46120260548`, success, artifact `15253721199`.
+- GDI+ interface method detail: run `46120428310`, success, artifact `15253761384`.
+- SevenZip output callback detail: run `46119766144`, success, artifact `15253196955`.
+
+Latest branch head at this handoff: `37dbd31b38a1a89dcbe88e8ad23f9f02f39a9d0f`. New three-lane Word/TIFF/scanner closure workflow was added at this commit; no run ID was visible yet.
