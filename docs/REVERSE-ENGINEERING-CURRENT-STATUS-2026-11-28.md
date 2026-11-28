@@ -1,3 +1,10 @@
+## 2026-11-28 — Run 48 WordViewer poll comparison target
+
+- Run-67 import map identifies global 0x0062F850 as imported class reference @System@Classes@EFOpenError@.
+- The WordViewer loop at 0x004B7D57 compares 0x004010A8(ESI) against this EFOpenError class pointer; it repeats while equal, with message pumping and 5 ms sleeps, up to 101 iterations.
+- This is not a generic completion sentinel. Exact 0x004010A8 semantics and ESI object ownership remain open; do not label it a print-worker completion condition.
+- Worker analysis commit f5deca4; Run 48 report 6949eca.
+
 ## 2026-11-28 — Run 47 GTK startup wiring plan
 
 - Exact loopback values are evidence-backed: bind 127.0.0.1:1984; allowed XHR Origin http://127.0.0.1:1984; allowed parent Referer origin http://127.0.0.1:1984; numeric invoke nonce.
