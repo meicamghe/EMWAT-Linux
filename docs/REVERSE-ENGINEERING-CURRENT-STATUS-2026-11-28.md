@@ -65,3 +65,5 @@ GDI+ interface boundary: SeparteImages creates TGPEncoderParameters (VMT pointer
 ## Latest GDI+ / SevenZip run inventory
 
 GDI+ Save/SaveAdd methods `46119662918`, VMT/encoder GUIDs `46120082255`, GNU objdump import cross-check `46120131505`, interface VMT dump `46120260548`, interface method detail `46120428310`, and SevenZip callback detail `46119766144` all completed successfully. The latest three-lane Word/TIFF/scanner workflow was added in commit `37dbd31b38a1a89dcbe88e8ad23f9f02f39a9d0f`; no run was visible at the time of this update.
+
+- Word BeforeClose-named helper is now classified: GetFieldIndexInList → FillImgFldsForPrint → WordAppDocumentBeforeClose; the last routine returns a Boolean for print-field filtering and is not a close operation. The actual close-to-Almas bridge remains unresolved.
