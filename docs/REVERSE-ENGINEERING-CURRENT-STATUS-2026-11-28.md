@@ -48,3 +48,5 @@ No production Linux code changed. No Windows/Linux release build, merge or rebas
 ## Latest run inventory
 
 The following additional static-analysis runs passed: TIFF lifecycle `46118848571`; GearType constants `46118936944`; GearType consumer `46119039684`; GDI+ save API surface `46119009748`; Word spool loop `46119247319`; Sleep import verification `46119407268`; VCL ProcessMessages import resolution `46119495733`. GDI+ Save/SaveAdd method and encoder-parameter trace `46119662918` is still running. Artifacts and findings are indexed in the session handoff.
+
+- GDI+ caveat: PE import names and TD32 thunk labels disagree on the Save/SaveAdd thunk addresses. The exact Save overload used by SeparteImages remains provisional until a second import parser and VMT-slot mapping agree.
