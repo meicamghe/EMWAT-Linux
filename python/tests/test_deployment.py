@@ -35,6 +35,18 @@ class DeploymentCompositionTests(unittest.TestCase):
         self.assertEqual(ALMAS_BRIDGE_PORT, 1984)
         self.assertEqual(ALMAS_LOOPBACK_ORIGIN, "http://127.0.0.1:1984")
 
+    def test_server_factory_builds_a_fresh_server_for_each_restart(self):
+        first = object()
+        second = object()
+        with patch(
+            "emwat_linux.deployment.create_libreoffice_bridge_server",
+            side_effect=[first, second],
+        ) as create:
+            supervisor = create_default_bridge_supervisor()
+            self.assertIs(supervisor._server_factory(), first)
+            self.assertIs(supervisor._server_factory(), second)
+        self.assertEqual(create.call_count, 2)
+
     def test_explicit_discard_is_fail_closed_and_not_success(self):
         result = SimpleNamespace(
             session=SimpleNamespace(state=DocumentState.DISCARDED),
