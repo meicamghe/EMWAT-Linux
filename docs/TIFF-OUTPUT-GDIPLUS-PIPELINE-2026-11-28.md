@@ -51,6 +51,20 @@ After the worker stage, `SeparteImages`:
 
 This is strong evidence that GDI+ is involved in page/image conversion and encoding. The exact GDI+ save API, output filename, encoder GUID, compression parameter values, and final output-file hand-off are not yet proven.
 
+
+## 3A. GDI+ save API surface confirmed
+
+The CreateTiff module imports these GDI+ APIs:
+
+- `GdipSaveImageToFile` (thunk `0x00481C64`)
+- `GdipSaveImageToStream` (thunk `0x00481C6C`)
+- `GdipSaveAdd` (thunk `0x00481C74`)
+- `GdipSaveAddImage` (thunk `0x00481C7C`)
+- `GdipGetImageEncoders` (thunk `0x00482394`)
+- `GdipCreateBitmapFromFile` / `GdipCreateBitmapFromStream` (thunks `0x00481D7C` / `0x00481D74`)
+
+TD32 also contains `TGPImage.Save` file/stream overloads at `0x004908AC`, `0x004908E4`, `0x00490950`, and `0x004909B4`, plus `SaveAdd` overloads at `0x00490A18` and `0x00490A84`. This confirms the GDI+ save surface exists in the exact module. The direct VMT/call path from `SeparteImages` to the specific Save/SaveAdd overload and the encoder GUID/value pair are being cross-checked.
+
 ## 4. Important separation from SevenZip
 
 The observed `SeparteImages` direct helper at `0x00454B9C` is `euGetASFileName` (EmailUtil). The current call graph does not establish that `T7zOutArchive` writes the TIFF page files. Keep the SevenZip output-archive investigation separate until a direct caller or output-stream hand-off connects it to this TIFF path.
