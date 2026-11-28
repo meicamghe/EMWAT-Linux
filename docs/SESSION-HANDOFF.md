@@ -1,3 +1,10 @@
+## 2026-11-28 — Run 50 native pending-request timing
+
+- The ~54.56-second PCAP request-to-response gap is explained by TWordViwer.OnTmrAutoSave polling viewer field +0x58 until the Word close callback clears it at 0x004CD154/0x004CD31C. This is the long user editing interval.
+- The EFOpenError class poll at 0x004B7D57 is a separate short ~505 ms wait and must not be confused with the close wait.
+- LibreOfficeAdapter.close_timeout_seconds defaults to None; keep it indefinite so the HTTP request remains pending until Writer terminal close. Bridge socket timeout applies to I/O, not this lifecycle wait.
+- Acceptance doc update commit 9a3d9d1.
+
 ## Current verified snapshot — 2026-11-28
 
 - Static EditWordDocument dispatch is closed: TEditWordDocument VMT 0x005ED764 -> concrete method 0x005EE82C; TEmwatMethod Invoke wrapper is 0x0046C9E0; WordViewer loader 0x004B7724.
