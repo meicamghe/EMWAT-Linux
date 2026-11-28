@@ -2168,3 +2168,19 @@ Evidence limits:
 - This follow-up re-downloads/reviews existing workflow artifacts; it did not trigger another GitHub Actions run.
 - No production code, build, release, merge or rebase was performed.
 - Do not invent XML defaults, sentinel-consumer behavior, archive encryption, or Windows Word close semantics.
+
+
+## 2026-11-28 — Run 26 cross-artifact reconciliation handoff
+
+Current branch: `feature/recovery-retention-policy`  
+Detailed report: [REVERSE-ENGINEERING-PARALLEL-FOLLOWUP-2026-11-28-RUN26.md](REVERSE-ENGINEERING-PARALLEL-FOLLOWUP-2026-11-28-RUN26.md)
+
+Five tracks were re-opened from existing artifacts; no new Actions run or production implementation was performed.
+
+- **GDI+ TIFF:** first-frame duplication is ruled out statically. The first page's frame 0 is written by initial Save and skipped by SaveAddImage; later frames and later files are appended in order, then Flush. Runtime TIFF fixture/Almas acceptance remains.
+- **GAM printer:** queue selection matches PRINTER_INFO_2A.pDriverName `zvprt1`, then stores the queue's actual pPrinterName. Finalization tests Status==1 (paused). JobFinishes.GAM consumer and final TIFF delivery still require the external GAM driver/port-monitor/server.
+- **Word:** callback 0x004CD154 is installed at event offset +0x80. It implements the close decision: modal result 2 cancels, 6 saves, other non-cancel results discard; it calls Document.Close at interface slot +0x29C and clears viewer +0x58. Run 153 proves the wait loop then releases response-word over the local HTTP request. Formal COM DISPID and browser/Almas parent-side response handling remain open. Do not confuse this callback with 0x004CCBBC, the print-field helper.
+- **SevenZip:** SaveToStream creates the destination TFileStream and calls SetCompleted; SaveToFile is an out-parameter callback. Operation-result callback/context are +0x30/+0x34 and progress is +0x38. Output encryption and callback installer/owner remain unproven.
+- **Scanner:** numeric getter fallback storage is initialized to zero before XML helper lookup, but absent/empty/malformed semantics are only probable until XMLRTL or runtime samples are available. Preserve exact root and case-sensitive keys.
+
+Next evidence gates: external GAM driver/port-monitor binary or sanitized file/queue trace; Word type-library/event metadata and sanitized HTTP exchange; SevenZip callback-installing interface and synthetic .easz; XMLRTL runtime/schema and scanner samples; original-runtime multipage TIFF fixture. Keep this branch in reverse-engineering mode until those boundaries are proven.
