@@ -111,3 +111,6 @@ GDI+ encoder parameters are now decoded: `0x0062A84C` points to the standard `En
 
 
 GDI+ import identity is now independently confirmed: GNU `objdump -p` agrees with the PE import parser for GdipGetImageGraphicsContext, GdipSaveAddImage, GdipSaveAdd, GdipSaveImageToStream, and GdipSaveImageToFile. The TD32 labels on the corresponding thunk addresses are shifted/stale. Remaining work is the TGPImage interface VMT slot-to-call mapping.
+
+
+SevenZip callback-detail run `46119766144` further shows `SaveToFile` is a stub (fixed out values, returns zero), while `SaveToStream` creates a stream wrapper and calls `SetCompleted`. Progress callback is stored separately at +0x38; operation-result callback/context are +0x30/+0x34. See `docs/SEVENZIP-OUTPUT-ARCHIVE-OWNERSHIP-2026-11-28.md`.
