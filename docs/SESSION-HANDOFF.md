@@ -2244,3 +2244,10 @@ Detailed report: `docs/REVERSE-ENGINEERING-PARALLEL-FOLLOWUP-2026-11-28-RUN30.md
 - **Worker:** `0x004032C0` matches `FileExists(path, True)`. Worker removes a stale file, polls a new path every 10 ms under a computed deadline, and sets success when the expected file appears. Exact path and producer are open. Do not equate this with queue disappearance or `JobFinishes.GAM`.
 - **GDI+:** high-confidence functional mapping: `+0x48` initial SaveImageToFile; `+0x5C` SaveAddImage for each later page; `+0x58` final SaveAdd(Flush=20). Import thunks/direct wrapper callsites corroborate. The raw RTTI is not itself the live VMT; this is a callsite/ABI mapping.
 - Next: recover Worker path literals and producer; resolve `0x004026B4`/`0x00404494`; disassemble `0x0044B4D8`/`0x0044B508`; validate a real multipage TIFF fixture before implementation.
+
+## 2026-11-28 — Real Almas acceptance gate documented
+
+- Added `docs/ALMAS-LIVE-END-TO-END-ACCEPTANCE.md` in commit `c830387`.
+- The document separates local implementation evidence from live Almas acceptance and records the release blockers: verified XHR/parent origins, a sanitized real request/Windows response fixture, the explicit non-success response contract, desktop BridgeSupervisor bootstrap, and proof that Almas persists the returned document.
+- It records the critical close semantics: Save and Don't Save both return the latest confirmed saved state; a close-prompt Cancel keeps Writer open and the HTTP request pending; explicit operation-level discard is a separate, not-yet-captured wire outcome.
+- No application behavior was changed and no Linux release package was produced. No workflow was started for this documentation-only commit.
