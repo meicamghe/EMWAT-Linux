@@ -90,6 +90,15 @@ jobs:
           for pid in "${pids[@]}"; do wait "$pid" || status=1; done
           exit "$status"
 
+      - name: Merge TD32 and undelphi function seeds
+        shell: bash
+        run: |
+          set -euo pipefail
+          python tools/emit_td32_ghidra_seeds.py \
+            analysis-input/EmwatMethods.bpl1 \
+            analysis-output/undelphi/rea-method-seeds.tsv \
+            analysis-output/undelphi
+
       - name: Upload Delphi metadata and REA seeds
         if: always()
         uses: actions/upload-artifact@v4
