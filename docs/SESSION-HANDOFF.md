@@ -2063,3 +2063,12 @@ Next probes: recover the four filename-table strings and state-byte meanings; re
 - The sole direct GetNextPage caller is TFaxDocument.PerformMethod at 0x005EECBD. It passes class reference 0x004F1F3C to TD32 entry 0x004F21DC and stores the returned object; 0x004F21DC is labelled $bdtr although its body appears to initialize child fields and return an instance. Keep the constructor/destructor naming discrepancy open.
 - OnTmrAutoSave (0x004B8A84), called from LoadDocument, installs callback/instance pairs into the event-source object: +0x80/+0x84 -> 0x004CD154/this; +0x90/+0x94 -> 0x004CD54C/this; +0x98/+0x9C -> 0x004CD9C0/this; conditional +0x88/+0x8C -> 0x004D00AC or 0x004CE030. Combined with prior RTTI/event-slot evidence, 0x004CD154 is consistent with the actual OnDocumentBeforeClose callback despite its TD32 BeforeSave label.
 - WordAppDocumentBeforeClose at 0x004CCBBC is not the registered callback: its direct caller is FillImgFldsForPrint (0x004CCDC8), which loops document image fields and calls it as a helper. See Track R in docs/REVERSE-ENGINEERING-PARALLEL-FOLLOWUP-2026-11-26.md. No production Linux behavior changed.
+
+
+## 2026-11-28 — Run 14 green; Run 15 targeted scanner XML tracing queued
+
+- Run 14 (45804829668) passed all four jobs on commit 0fee55712cad7f46e1755b35ee64d983764039f0. Artifacts: Word/printer 15109695301, ImageEn 15108723614, scanner 15107709681.
+- Confirmed OnTmrAutoSave writes callback/instance pairs for 0x004CD154, 0x004CD54C and 0x004CD9C0 to event-source offsets +0x80, +0x90 and +0x98 respectively. Conditional event slot +0x88 selects 0x004D00AC or 0x004CE030. Direct-call scans find no direct callers, consistent with indirect event dispatch. The 0x004CCBBC helper is not registered; its caller is FillImgFldsForPrint.
+- Scanner string extraction surfaced 'none', 'jpg', 'yes', 'no' constants used in VerifyConstraints, but broad probing also produced false positives from code/data bytes. Treat only the four verified UTF-16 literals and Persian UI messages as valid; exact XML property names remain unresolved.
+- Run 15 instrumentation commit ca1fcdd4cc5ed03add211aededab09c89074b172 adds targeted decoding of referenced XML constants and traces helper 0x004E9D5C plus request-state helper 0x004F32F4. Await workflow result before further changes.
+- No production runtime behavior changed. PR #2 remains Draft; do not merge/rebase or modify main.
