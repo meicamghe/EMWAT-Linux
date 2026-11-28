@@ -21,7 +21,7 @@ Current branch: `feature/recovery-retention-policy`
 - `TScanCommand.DoRequest` owns XML load + finalization; `GetNextPage` owns per-page constraint verification.
 - Root XML name is UTF-16LE `scan-document`; output child `constraints`.
 - Exact serialized keys recovered: `type`, `driverDialog`, `imageEditor`, `multiJpegSupport`, `previousImageName`, `forceSinglePageFiles`, `constraints`, `colorDepth`, `minResolution`, `maxResolution`, `maxFileSize`.
-- `MaxFileSize` is compared to an image-derived stream size scaled by 1024; exact unit/conversion remains open.
+- `MaxFileSize` is interpreted in KiB: `Finalization` multiplies the configured integer by 1024 (`shl 10`) before comparing it with the 64-bit image-size result from `0x004ECD60`. Confirm that helper's source length before implementing.
 - Four color modes and resolution validation are recovered. Root metadata/defaults and runtime XML examples remain open.
 
 ## Confirmed printer / Word / queue contract
@@ -53,7 +53,7 @@ Current branch: `feature/recovery-retention-policy`
 3. Trace `Zanprinter.CheckPrinterPaused` at `0x0047D448` and reconcile it with Finalization.
 4. Resolve the 18-vs-17 Word PrintOut ABI against exact WordXP type-library metadata.
 5. Map SevenZip output callback construction and `euResetMemory` VMT slots.
-6. Confirm scanner MaxFileSize unit and root metadata/default behavior.
+6. Confirm the exact byte source behind `0x004ECD60` and scanner root metadata/default behavior.
 7. Keep ImageEn Acquire blocked at the missing matching `PKIECtrl23.bpl` boundary.
 
 ## Guardrails
