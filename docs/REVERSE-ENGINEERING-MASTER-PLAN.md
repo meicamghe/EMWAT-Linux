@@ -217,3 +217,8 @@ Printer analysis now establishes GAM-printer discovery by `PRINTER_INFO_2A.pDriv
 Word PrintOut remains blocked on a reproducible 18-Variant caller versus 17-Variant generated-wrapper mismatch. Resolve against the exact WordXP type-library metadata; do not drop an argument or infer parameter names.
 
 ImageEn `TImageEnMIO.Acquire` remains an external `PKIECtrl23.bpl` dependency. SevenZip output encryption and `euResetMemory` VMT identities remain open. No implementation/release work until these contracts are closed and runtime acceptance is available.
+
+
+## 2026-11-28 SevenZip output ownership gate
+
+The latest SevenZip pass identifies the plugin-to-output-archive ownership path and the callback/context slots. See `docs/SEVENZIP-OUTPUT-ARCHIVE-OWNERSHIP-2026-11-28.md`. The remaining implementation gate is to identify the callback/context producer, SetCompleted/progress callback role, output entry naming, and whether encryption exists. Do not infer encryption from the method name `CryptoGetTextPassword2`; output `SetPassword` is a stub and the constructor-style initializer only stores an interface object.
