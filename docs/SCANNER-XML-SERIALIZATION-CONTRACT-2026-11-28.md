@@ -60,3 +60,8 @@ These names are static-analysis evidence. Do not implement a serializer solely f
 - `TResultImage.GetFileStream` at `0x004ECD60` returns the underlying stream's 64-bit `TStream.Size` value (bytes).
 - `TScanCommand.Finalization` compares that byte count against `MaxFileSize << 10`; therefore `MaxFileSize` is definitively KiB (1024-byte units).
 - `TGearImgProc.GearType` uses x87 constants 39.37008 and 0.3937. Selector 2 divides resolution by 39.37008; selector 3 leaves it unchanged; selector 4 divides by 0.3937. This is consistent with normalizing metric resolution units to DPI, but exact ImageGear enum labels and rounding need confirmation. See `docs/SCANNER-RESOLUTION-AND-FILESIZE-UNITS-2026-11-28.md`.
+
+
+## XML root/property string closure (run 46120998177)
+
+Recovered exact names: root `scan-document`; constraints object `constraints`; fields `colorDepth`, `minResolution`, `maxResolution`, `maxFileSize`; error property `error`. The error prefix is `<ScanDoc HasError>. ErrorXML: `. The root string is passed by `NewScanDocument` to XML interface slot +0x8C. See `docs/SCANNER-XML-ROOT-AND-PROPERTY-NAMES-2026-11-28.md`.
