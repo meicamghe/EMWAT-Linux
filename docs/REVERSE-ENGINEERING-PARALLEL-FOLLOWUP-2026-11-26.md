@@ -500,3 +500,30 @@ This closes the fourth color-mode label. The helper's separate resolution lower/
 Track U's wording that 0x004AFF08 was a generic 'image metadata helper' is superseded by this exact import-thunk identification. The helper at 0x004EFF94 remains TGearImgProc.SetEditorForm. No production Linux behavior changed.
 
 Run 18 now examines pointer chains from the scanner globals at 0x0062A800, 0x0062A7FC and 0x0062A850, including Delphi string headers, to identify XML property-name constants used by VerifyConstraints and LoadRequestXML. The exact external XML field names remain the primary unresolved protocol question.
+
+
+## Track W — Run 18 green: scanner XML globals and Word event targets
+
+Run 18 (46109783738) completed successfully on commit a11690bd5ecb1976708a440d4f862868ef6bd499. All four jobs passed: scanner/result ownership, Word/printer thread, native regression, and ImageEn acquisition. Artifacts: scanner 15249461514, Word/printer 15249466339, ImageEn 15249311917.
+
+### Scanner XML global-pointer result — no property names recovered
+
+The static pointer-chain probe found:
+- Global 0x0062A800 points to 0x00627BB0, a table of Delphi strings including Err_0, Err_20000 through Err_20008, Err_Ignore, and the message prefix "Exception: ". This is an error/message catalog, not evidence of XML property names.
+- Globals 0x0062A7FC and 0x0062A850 point to zero-filled regions in the on-disk image (0x0062B098 and 0x0062B09C respectively). Their runtime values may be initialized dynamically; the static dump cannot establish their eventual contents.
+- Consequently, this probe does not identify the XML property names used by VerifyConstraints or LoadRequestXML. Do not map these globals to XML fields or implement protocol keys from this result.
+
+The next scanner probe should follow the initialization/write sites for 0x0062A7FC and 0x0062A850, then trace the exact interface implementations behind the VMT slots used by VerifyConstraints (notably +0xAC, +0xB0, +0xB4, +0xB8 and +0xBC) and the helper at 0x004E9D5C. Keep XML field semantics unresolved until a concrete string-to-interface call chain confirms them.
+
+### Word event targets — TD32 identities confirmed, registration caveat retained
+
+The five event target addresses resolve to these TD32 methods:
+- 0x004CD154: TWordViwer.WordAppDocumentBeforeSave
+- 0x004CD54C: TWordViwer.WordAppNewDocument
+- 0x004CD9C0: TWordViwer.WordAppWindowActivate
+- 0x004CE030: TWordViwer.WordAppDocumentBeforePrintBGPrint
+- 0x004D00AC: TWordViwer.LoadOptions
+
+The OnTimer pointer writes previously recovered associate event-sink offsets +0x80, +0x90 and +0x98 with the first three targets; offset +0x88 is conditionally assigned either LoadOptions or WordAppDocumentBeforePrintBGPrint. This confirms target method identities and pointer values, but not by itself the COM event DISPIDs, event-interface ordering, or the exact event subscription contract. Preserve that distinction in any Linux event bridge.
+
+No production Linux behavior changed. Native regression and Python bridge regression both passed in Run 18. PR #2 remains Draft; main was not modified.
