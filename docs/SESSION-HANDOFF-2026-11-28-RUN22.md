@@ -64,3 +64,8 @@ Reverse engineering only. Do not start Windows or Linux release builds, do not i
 ## Confirmed Word-to-spool queue gate
 
 A direct caller trace of `BGPrintWithGamPrintOptions` now proves the queue polling sequence: it obtains a printer handle with `getPrinterNumJobs`, prepares each document-name string, calls `ExtractFileNameEX` with the handle and name, waits/retries while the matching `JOB_INFO_1W.pDocument` remains in the queue, and advances when the match disappears. It then closes the handle with `ClosePrinter`. This is the program's queue-disappearance completion heuristic, not proof of successful printing or final TIFF/archive success. Full evidence: `docs/PRINTER-QUEUE-AND-GAM-DRIVER-REVERSE-ENGINEERING-2026-11-28.md`.
+
+
+## SevenZip output ownership update
+
+Run `46118303840` shows `T7zPlugin.Create` calls `T7zOutArchive.CryptoGetTextPassword2` at `0x004543C4` in Delphi constructor-style convention, stores the returned object at plugin offset +0x44, then passes it through plugin interface slot +0x30. The initializer stores a global interface from `0x0062FBB8` at object +0x2C and clears callback/context +0x30/+0x34. `SetPropertie` later installs callback/context; `SetOperationResult` invokes it. Output `SetPassword` remains a stub. `euResetMemory` is a distinct helper, with direct callers only from application finalization and autosave deletion. See `docs/SEVENZIP-OUTPUT-ARCHIVE-OWNERSHIP-2026-11-28.md`.
