@@ -78,3 +78,14 @@ A standard-library-only dumper is available at scripts/dump_pe_va_ranges.py. It 
     python3 scripts/dump_pe_va_ranges.py analysis-input/EmwatMethods.bpl1
 
 Synthetic PE tests were added but have not yet been run. The raw TGPImage pointer values remain unverified until this command is executed against the original BPL.
+
+
+## Run 37 — VMT tooling coverage gap
+
+Review of `tools/resolve_delphi_vmt_slots.py` found that its hard-coded `TARGET_CLASSES` includes the image/scanner classes but omits both `TGPImage` and `TGPEncoderParameters`. Therefore the current `image-ui-and-vmt` workflow step cannot emit a direct VMT candidate/slot listing for these two GDI+ classes, even though it is named as an image/VMT lane. The class metadata and candidate interface pointer evidence in this document remain useful, but this specific automated pass does not close the GDI+ VMT.
+
+The next local extraction command should include the class metadata and the candidate interface pointer region in one pass:
+
+    python3 scripts/dump_pe_va_ranges.py analysis-input/EmwatMethods.bpl1 --range 0x00484700:0x300 --range 0x0047DD2C:0xA0 --range 0x0062EE88:0x90
+
+This exposes the candidate VMT/class records around `0x00484728`, the interface metadata, and the candidate pointer region. The actual pointer values must be checked against executable PE sections and TD32 procedure boundaries before assigning method names. No code/workflow change was made here because changing `tools/**` would trigger another push workflow.
