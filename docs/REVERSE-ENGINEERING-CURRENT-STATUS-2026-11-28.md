@@ -1,3 +1,11 @@
+## 2026-11-28 — Run 37 GDI+ VMT tooling coverage
+
+- Audited `tools/resolve_delphi_vmt_slots.py`, called by the existing `image-ui-and-vmt` job. Its `TARGET_CLASSES` omits `TGPImage` and `TGPEncoderParameters`; therefore that automated VMT pass cannot close the raw GDI+ method table.
+- Added the targeted extraction command to the GDI+ crosswalk:
+  `python3 scripts/dump_pe_va_ranges.py analysis-input/EmwatMethods.bpl1 --range 0x00484700:0x300 --range 0x0047DD2C:0xA0 --range 0x0062EE88:0x90`.
+- Run 37 report: `docs/REVERSE-ENGINEERING-PARALLEL-FOLLOWUP-2026-11-28-RUN37.md`; crosswalk update commit `c2aa4f0`; report commit `ca8553d`.
+- No tool or workflow source was modified; no new workflow was triggered.
+
 ## 2026-11-28 — Run 36 diagnostic strings and automatic workflow status
 
 - Decoded the exact SeparteImages/Worker diagnostics from Run-50 inline constants: 0x004A08F4 `Gam Printer is in "Paused" state! please check.`; 0x004A0960 `Error on setting gam printer parameters.`; 0x004A09C0 `Error occured during Convert Word Document to Tiff.` (original misspelling preserved).
