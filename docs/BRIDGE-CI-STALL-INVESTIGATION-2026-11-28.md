@@ -54,3 +54,30 @@ This is a hardening candidate, not a proven explanation for the currently runnin
 - No product/runtime code was modified in this investigation.
 - No Windows/Almas live round-trip, physical printer, or scanner behavior is inferred from CI.
 - PR #6 remains Draft/open/unmerged; do not merge without explicit user authorization.
+
+
+## Diagnostic artifact result and targeted fixes
+
+Artifact `python-bridge-diagnostics-46149684182` (artifact ID `15266130172`) resolved the failure. The test runner itself completed in 11.037 seconds: 337 tests, 2 failures, 9 errors, 3 skipped. The subsequent Python interpreter shutdown then remained blocked by a non-daemon fake serving thread; recurring faulthandler dumps showed it waiting at `test_application_runtime.py:19`. The 12-minute command timeout therefore fired after test reporting, not because an individual test was still executing.
+
+Exact failures:
+
+- `test_shutdown_failure_has_bounded_join_and_can_be_retried`
+- `test_shutdown_failure_still_closes_socket_and_joins_thread`
+
+Both exposed the same cleanup defect: when `shutdown()` raised, `_close_once()` skipped `server_close()`, leaving the listening socket open and, in one test, the fake serve thread alive. The fix now attempts the bounded request-drain and closes the listening socket when the drain succeeds even if shutdown already reported an error. The first error is preserved; a later close can retry shutdown/join. A failed request drain still prevents socket closure so cleanup remains retryable.
+
+The other test errors were:
+
+- Eight `DocumentCoordinatorTests` constructors failed because the newly added `external_parameter_bindings` dataclass field was required for manually constructed requests. It now defaults to an empty tuple; parsed requests still provide the resolved bindings.
+- `test_pe_va_ranges` could not import `pytest`. Pytest is now declared in the optional `test` extra and the Python Bridge workflow installs that extra.
+
+### Fix commits and validation
+
+- `application_runtime.py`: shutdown-error cleanup no longer suppresses socket close after successful bounded drain.
+- `editword_request.py`: external parameter bindings default to an empty tuple for backward-compatible manual construction.
+- `pyproject.toml`: add optional `test = ["pytest>=8,<9"]` dependency.
+- `.github/workflows/python-bridge.yml`: install `.[test]` with the normal Python requirements.
+- New validation workflows were queued on head `714b06f10e390688e584eec87c87a8d3dcf32544`: Python Bridge run `46150833510`, GTK run `46150833548`, Debian package run `46150833597`. Their results must be checked before claiming the fix passes.
+
+This evidence supersedes the earlier "root cause not yet identified" note above. The unbounded `wait_until_serving()` interface remains a separate hardening candidate, but it was not the cause of this CI stall.
