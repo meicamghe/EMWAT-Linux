@@ -23,3 +23,14 @@ The operation-level Save/SaveAdd map remains independently supported:
 - +0x58: final SaveAdd with EncoderValueFlush=20
 
 No tests, CI, or package build were run.
+
+
+## Local raw-range extraction helper
+
+Added scripts/dump_pe_va_ranges.py with standard-library PE32/PE32+ VA-to-file-offset mapping, section-boundary validation, DWORD/hex output, and ANSI/UTF-16LE string scanning. Its default ranges cover the TGPImage interface metadata, candidate table blocks, hidden worker string area, 0x004026B4, and 0x0044B508. Six synthetic-PE tests were added in python/tests/test_pe_va_ranges.py; they have not been executed.
+
+When the local repository contains the tracked BPL input, run:
+
+    python3 scripts/dump_pe_va_ranges.py analysis-input/EmwatMethods.bpl1
+
+The output should include the raw candidate VTable DWORDs and worker string literals needed to close the remaining analysis. Do not commit the output dump if it contains proprietary strings; share only the relevant sanitized ranges.
