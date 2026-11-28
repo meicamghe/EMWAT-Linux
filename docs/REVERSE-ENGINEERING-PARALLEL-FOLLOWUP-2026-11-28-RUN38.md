@@ -36,3 +36,8 @@ Evidence:
 - Updated acceptance gate: `docs/ALMAS-LIVE-END-TO-END-ACCEPTANCE.md`.
 
 No production code or workflow source was changed in this run.
+
+
+## TD32 naming caveat from the same artifact
+
+The procedure labelled `TCompareWordDocument.PerformMethod` at `0x005EF8AC` actually reads the literal keys `ExcelConfig` and `ExcelWorkBookContent` (pointers `0x005EFAF0` and `0x005EFB20`). This is a concrete mismatch between the TD32 decorated class name and the request keys visible in the procedure. Therefore handler discovery must use string references, callsite data flow, VMT/registration identity, and runtime captures together; TD32 class names alone are not reliable evidence for the EditWordDocument handler identity.
