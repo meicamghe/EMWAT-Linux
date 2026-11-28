@@ -76,6 +76,11 @@ The GDI+ VMT/data pass follows the two globals passed to the encoder-parameter i
 
 This is strong direct evidence that the TIFF encoder is configured for LZW compression and a multi-frame/multipage save sequence. The exact interface VMT slots used for initial Save, subsequent SaveAdd, and final flush are still being mapped; do not yet infer page ordering or finalization behavior.
 
+
+### Interface-dispatch boundary
+
+In `SeparteImages`, the `TGPEncoderParameters` instance is constructed with class VMT `0x00483F4C` via `0x0048F8C0`; its interface reference is taken from object offset `+0x28`, then interface slot `+0x20` is called twice with the two GUID/value pairs above. The `TGPImage` instance is constructed with class VMT `0x00484728` via `0x0048FF60`; later calls dispatch through its interface reference at slots `+0x48`, `+0x70`, `+0x74`, `+0x5C`, and `+0x58`. The raw interface metadata blocks at `0x0047DD2C` and `0x0062EE88` are Delphi interface/RTTI structures, not simple method-pointer arrays. Exact Save/SaveAdd/final-flush method identities remain unresolved.
+
 ### Symbol/import discrepancy to resolve
 
 The PE import scan and TD32 thunk labels disagree for the GDI+ save thunks. The PE import table maps `0x00481C64` to `GdipSaveImageToFile`, `0x00481C6C` to `GdipSaveImageToStream`, `0x00481C74` to `GdipSaveAdd`, and `0x00481C7C` to `GdipSaveAddImage`. TD32 labels at those addresses are shifted/different (for example, it labels `0x00481C64` as `GdipSaveImageToStream`). Since the same TD32 symbol table mislabeled the confirmed `Sleep` thunk as `SuspendThread`, do not use those thunk symbols alone to identify the APIs. A second parser (`GNU objdump -p`) independently confirms the PE import names and IAT order: IAT RVA `0x2307C8` = `GdipGetImageGraphicsContext`, `0x2307CC` = `GdipSaveAddImage`, `0x2307D0` = `GdipSaveAdd`, `0x2307D4` = `GdipSaveImageToStream`, and `0x2307D8` = `GdipSaveImageToFile`. Therefore the PE import mapping is confirmed; TD32 thunk labels are stale/shifted. The actual TGPImage interface VMT callsites still need mapping before assigning a specific Save overload to a specific API.
