@@ -237,3 +237,5 @@ The current static call graph ties `TWordViewer.LoadDocument` to `TCreateTiff.Se
 ## GDI+ TIFF encoder parameters resolved
 
 The two GUIDs passed by `SeparteImages` resolve to standard GDI+ `EncoderCompression` and `EncoderSaveFlag`. Their values are 2 (LZW compression) and 18 (MultiFrame), respectively. This establishes the intended multi-page TIFF encoding configuration. Remaining work: map the interface VMT slots to initial Save, SaveAdd, and final flush, then confirm page ordering and output filename.
+
+- SevenZip output writer now appears stream-oriented: `SaveToFile` is a stub, `SaveToStream` is implemented, and progress/operation-result callbacks are distinct. The remaining gate is to identify the property keys and exact stream hand-off caller.
