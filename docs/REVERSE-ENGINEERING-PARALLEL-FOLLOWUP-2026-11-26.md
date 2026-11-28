@@ -477,3 +477,26 @@ The helper at 0x004EFF94 is TGearImgProc.SetEditorForm, not a request setup help
 The 0x004E9D5C helper remains ScanResponseXML.NewScanDocument, which accesses an interface VMT slot +0x8C and stores a returned value in a response/dictionary path; exact key semantics are still unresolved.
 
 Run 17 instrumentation changes the fourth color-mode string decode to replacement-safe UTF-16 handling and traces the image metadata helper at 0x004AFF08, which feeds TGearImgProc.GearType. No production Linux code changed.
+
+
+## Track V — Run 17 green: fourth scan color mode and ImageGear resolution import
+
+Run 17 (46109436699) completed successfully on commit b6a219332e81ca3ddb8a8c5ba692be670684e3c2. All four jobs passed: scanner/result ownership, Word/printer thread, native regression, and ImageEn acquisition. Artifacts: scanner 15248931884, Word/printer 15248941798, ImageEn 15248688481.
+
+### All four validation color modes recovered
+
+The final global selector pointer at 0x0062826C resolves to 0x004F32DC and replacement-safe UTF-16 decoding confirms 'رنگي 24 بيت' (24-bit color). The complete +0x08 selector mapping in the 0x004F32F4 validation helper is therefore:
+- 1: 'سياه/سفيد' — black/white
+- 4: 'طيف سياه و سفيد' — grayscale
+- 8: 'طيف سياه و سفيد يا 256 رنگ' — grayscale or 256 colors
+- 0x10: 'رنگي 24 بيت' — 24-bit color
+
+This closes the fourth color-mode label. The helper's separate resolution lower/upper bounds (+0x0C/+0x10) and max-size field (+0x14) remain as previously documented.
+
+### ImageGear resolution import identity
+
+0x004AFF08 is not a local helper body: it is a six-byte import thunk `jmp dword ptr [0x00630CF4]`, TD32-labelled `IG_image_resolution_set`. Direct callers include `TGearImgProc.GearType` (0x004EEF30) and `TWordViwer.EmbedTextToImage` (0x004C43EE). In the scan-validation path, GearType calls this ImageGear API with image metadata arguments, queries the image interface, normalizes values according to the unit selector, and returns the numeric metric that is compared with the configured resolution bounds. Keep the API identity distinct from the higher-level GearType calculation.
+
+Track U's wording that 0x004AFF08 was a generic 'image metadata helper' is superseded by this exact import-thunk identification. The helper at 0x004EFF94 remains TGearImgProc.SetEditorForm. No production Linux behavior changed.
+
+Run 18 now examines pointer chains from the scanner globals at 0x0062A800, 0x0062A7FC and 0x0062A850, including Delphi string headers, to identify XML property-name constants used by VerifyConstraints and LoadRequestXML. The exact external XML field names remain the primary unresolved protocol question.
