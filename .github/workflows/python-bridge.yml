@@ -41,5 +41,36 @@ jobs:
           emwat-linux-desktop-entry --help
       - name: Run bridge transport tests
         working-directory: python
+        shell: bash
         run: |
-          timeout --kill-after=30s 12m python -c 'import faulthandler, unittest; faulthandler.dump_traceback_later(300, repeat=True); suite = unittest.defaultTestLoader.discover("tests"); result = unittest.TextTestRunner(verbosity=2).run(suite); raise SystemExit(not result.wasSuccessful())'
+          set -o pipefail
+          timeout --kill-after=30s 12m python -u - <<'PY' 2>&1 | tee bridge-test.log
+          import faulthandler
+          import unittest
+
+          faulthandler.dump_traceback_later(300, repeat=True)
+
+          class StreamingResult(unittest.TextTestResult):
+              def startTest(self, test):
+                  super().startTest(test)
+                  self.stream.flush()
+
+              def stopTest(self, test):
+                  self.stream.flush()
+                  super().stopTest(test)
+
+          suite = unittest.defaultTestLoader.discover("tests")
+          result = unittest.TextTestRunner(
+              verbosity=2,
+              resultclass=StreamingResult,
+          ).run(suite)
+          raise SystemExit(not result.wasSuccessful())
+          PY
+      - name: Upload Python bridge diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-bridge-diagnostics-${{ github.run_id }}
+          path: python/bridge-test.log
+          if-no-files-found: warn
+          retention-days: 7
