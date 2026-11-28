@@ -52,3 +52,8 @@ No close lifecycle should be implemented from the callback name alone.
 ## Follow-up: BeforeClose-named routine is a print-field helper
 
 The next trace closes the direct-call context: `TWordViewer.GetFieldIndexInList` calls `FillImgFldsForPrint` at `0x004CB361`; that routine calls `WordAppDocumentBeforeClose` at `0x004CCF8F` while iterating field metadata. The callee reads viewer arrays at `+0xE8/+0xEC`, calls Word document interface slot `+0x38`, delegates to `0x004BCA88`, and returns a Boolean used to filter/continue field processing. This is not a close operation in the observed call graph. See `docs/WORD-BEFORECLOSE-NAMED-HELPER-AND-PRINT-FIELD-CHAIN-2026-11-28.md`.
+
+
+## WindowActivate body cross-check
+
+The registered `WordAppWindowActivate` callback at `0x004CD9C0` does not call a local close/quit handler. Its observed body queries the Word Window interface through slot `+0x29C`, then releases temporary interface values. The registered `WordAppNewDocument` callback manages document/window state and may close a prior document when a new one arrives, but it is not a DocumentBeforeClose event. Combined with the print-field-only `WordAppDocumentBeforeClose` helper, no active COM DocumentBeforeClose callback has been established in this registration path. The Word-close-to-Almas return mechanism remains an explicit unresolved item.
