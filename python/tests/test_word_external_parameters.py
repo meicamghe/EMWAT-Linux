@@ -19,7 +19,7 @@ class ExternalParameterBindingTests(unittest.TestCase):
             "<field id='SignsStart&#8224;SignsEnd' paramId='signData' "
             "mimetype='image/png' encryption='base64' separator='&amp;' "
             "concater='\\\\n' concator='\\\\r'/>"
-            "<field id='LetterSignerPer0'>Signer</field>"
+            "<field id='LetterSignerPer0' encryption='unsupported'>Signer</field>"
             "</fields></word-document>"
         )
         opaque = "one%26two&three+four\\nEND"
@@ -45,22 +45,21 @@ class ExternalParameterBindingTests(unittest.TestCase):
             "<field id='ExternalB' paramId='letterImages' mimetype='image/png'/>"
             "</fields></word-document>"
         )
-        present_empty, missing = resolve_external_parameter_bindings(
-            parsed, {"signData": ""}
-        )
+        present_empty, missing = resolve_external_parameter_bindings(parsed, {"signData": ""})
         self.assertTrue(present_empty.present)
         self.assertEqual(present_empty.raw_value, "")
         self.assertFalse(missing.present)
         self.assertEqual(missing.raw_value, "")
 
-    def test_repeated_references_preserve_wordconfig_order(self):
+    def test_repeated_references_preserve_order_and_count_payload_once(self):
         parsed = config(
             "<word-document><fields>"
-            "<field id='A' paramId='signData'/>"
-            "<field id='B' paramId='signData'/>"
+            "<field id='A' paramId='signData'/><field id='B' paramId='signData'/>"
             "</fields></word-document>"
         )
-        result = resolve_external_parameter_bindings(parsed, {"signData": "opaque"})
+        result = resolve_external_parameter_bindings(
+            parsed, {"signData": "opaque"}, max_total_parameter_chars=6
+        )
         self.assertEqual([item.field_id for item in result], ["A", "B"])
         self.assertEqual([item.field_index for item in result], [0, 1])
 

@@ -1,8 +1,7 @@
 """Resolve WordConfig external-parameter references without guessing wire encoding.
 
-The native request proves that fields may point at outer method parameters
-(such as signData). This module binds those references to their exact opaque
-outer values, but deliberately does not split, decode, join, or apply them.
+This module binds paramId metadata to exact outer request values. It deliberately
+does not split, decode, join, or apply opaque payloads such as signData.
 """
 from __future__ import annotations
 
@@ -10,7 +9,6 @@ from collections.abc import Mapping
 from dataclasses import dataclass, field
 
 from emwat_linux.word_config import WordDocumentConfig
-from emwat_linux.word_fields import decode_word_fields
 
 
 class ExternalParameterResolutionError(ValueError):
@@ -42,17 +40,17 @@ def resolve_external_parameter_bindings(
     max_parameter_chars: int = 64 * 1024 * 1024,
     max_total_parameter_chars: int = 96 * 1024 * 1024,
 ) -> tuple[ExternalParameterBinding, ...]:
-    """Bind every paramId field to the exact outer parameter value.
+    """Bind every paramId field to its exact outer parameter value.
 
-    Missing outer parameters are represented as present=False with an empty
-    raw value, matching the native dictionary lookup's empty fallback. A
+    Missing values are represented as present=False and empty raw text; a
     present-but-empty parameter remains distinguishable. Repeated references
-    produce repeated bindings in WordConfig order.
+    are preserved in WordConfig order, while size accounting counts each
+    distinct outer parameter only once.
 
-    The three delimiter attributes are preserved independently. In particular,
-    concater is never aliased to concator. No Base64/URL decoding or
-    concatenation is performed because the native signData composition path
-    has not yet been proven.
+    Fields are read structurally without decoding unrelated field payloads.
+    The separator, concater, and concator attributes remain independent. No
+    Base64/URL decoding or concatenation is performed because native signData
+    composition has not yet been proven.
     """
     if not isinstance(config, WordDocumentConfig):
         raise TypeError("invalid_word_document_config")
@@ -66,29 +64,31 @@ def resolve_external_parameter_bindings(
            for key, value in parameters.items()):
         raise ExternalParameterResolutionError("outer_parameters_must_be_text")
 
-    decoded = decode_word_fields(config)
     bindings: list[ExternalParameterBinding] = []
+    accounted_parameters: set[str] = set()
     total_chars = 0
-    for index, item in enumerate(decoded):
-        parameter_id = item.external_parameter
+    for index, field_node in enumerate(config.fields):
+        attrs = field_node.attributes
+        parameter_id = attrs.get("paramId")
         if not parameter_id:
             continue
         present = parameter_id in parameters
         raw_value = parameters[parameter_id] if present else ""
         if len(raw_value) > max_parameter_chars:
             raise ExternalParameterResolutionError("external_parameter_size_exceeded")
-        total_chars += len(raw_value)
-        if total_chars > max_total_parameter_chars:
-            raise ExternalParameterResolutionError("total_external_parameter_size_exceeded")
-        attrs = item.attributes
+        if present and parameter_id not in accounted_parameters:
+            total_chars += len(raw_value)
+            accounted_parameters.add(parameter_id)
+            if total_chars > max_total_parameter_chars:
+                raise ExternalParameterResolutionError("total_external_parameter_size_exceeded")
         bindings.append(ExternalParameterBinding(
             field_index=index,
-            field_id=item.field_id,
+            field_id=field_node.field_id,
             parameter_id=parameter_id,
             present=present,
             raw_value=raw_value,
-            mimetype=item.mimetype,
-            encryption=item.encoding,
+            mimetype=attrs.get("mimetype"),
+            encryption=attrs.get("encryption"),
             separator=attrs.get("separator"),
             concater=attrs.get("concater"),
             concator=attrs.get("concator"),

@@ -12,8 +12,9 @@
 
 ## Implemented in this branch
 
-- EditWordDocumentRequest keeps signData and other auxiliary parameters opaque, bounds their sizes, and excludes document/signature payloads from repr() to reduce accidental log exposure.
+- EditWordDocumentRequest keeps signData and other auxiliary parameters opaque, bounds their sizes, and excludes document bytes, the full WordConfig (including field values), signData, and auxiliary payloads from repr().
 - resolve_external_parameter_bindings() associates every WordConfig paramId with the exact outer request parameter, preserving field order, repeated references, missing-versus-present-empty state, MIME type, encoding label, and raw separator / concater / concator attributes.
+- The resolver reads the WordConfig structure without decoding unrelated field values. Size accounting counts each distinct outer parameter once, even when multiple fields reference it.
 - Raw parameter values are never copied into diagnostics or dataclass representations.
 - The resolver intentionally performs no Base64/URL decoding, splitting, joining, or Writer mutation. This is a safe binding layer, not a claim that signData processing is complete.
 

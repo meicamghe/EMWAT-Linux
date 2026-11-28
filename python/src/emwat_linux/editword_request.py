@@ -17,7 +17,7 @@ class EditWordDocumentRequestError(ValueError):
 
 @dataclass(frozen=True)
 class EditWordDocumentRequest:
-    config: WordDocumentConfig
+    config: WordDocumentConfig = field(repr=False)
     document_bytes: bytes = field(repr=False)
     sign_data_text: str = field(repr=False)
     extra_parameters: Mapping[str, str] = field(repr=False)
@@ -37,8 +37,8 @@ def parse_editword_request(
     The captured request confirms Base64 wordConfig and wordBody. signData and
     letterImages/other auxiliary parameters remain opaque text because the
     native external-parameter concatenation and per-field encoding contract is
-    not fully resolved. Their lengths are bounded and their contents are
-    excluded from the request object's repr to prevent accidental log leaks.
+    not fully resolved. Their lengths are bounded and all document/config/
+    auxiliary payloads are excluded from repr to prevent accidental log leaks.
     """
     if not isinstance(call, MethodCall):
         raise EditWordDocumentRequestError("method_call_invalid")

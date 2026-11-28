@@ -2,10 +2,7 @@ import base64
 import unittest
 from types import MappingProxyType
 
-from emwat_linux.editword_request import (
-    EditWordDocumentRequestError,
-    parse_editword_request,
-)
+from emwat_linux.editword_request import EditWordDocumentRequestError, parse_editword_request
 from emwat_linux.protocol import MethodCall
 
 
@@ -35,18 +32,21 @@ class EditWordDocumentRequestTests(unittest.TestCase):
         self.assertEqual(request.sign_data_text, "one%26two&three")
         self.assertEqual(request.extra_parameters["customFlag"], "opaque")
 
-    def test_request_repr_does_not_expose_document_or_auxiliary_payloads(self):
+    def test_request_repr_does_not_expose_document_config_or_auxiliary_payloads(self):
         secret = "PRIVATE_SIGN_DATA_MARKER"
+        private_field = "PRIVATE_WORD_FIELD_MARKER"
         request = parse_editword_request(self.make_call(
-            wordConfig=b64(b"<word-document/>"),
+            wordConfig=b64(
+                ("<word-document><fields><field id='secret'>" + private_field +
+                 "</field></fields></word-document>").encode()
+            ),
             wordBody=b64(bytes.fromhex("d0cf11e0a1b11ae1") + b"private"),
             signData=secret,
             letterImages="PRIVATE_LETTER_IMAGES_MARKER",
         ))
         rendered = repr(request)
-        self.assertNotIn(secret, rendered)
-        self.assertNotIn("PRIVATE_LETTER_IMAGES_MARKER", rendered)
-        self.assertNotIn("private", rendered)
+        for value in (secret, private_field, "PRIVATE_LETTER_IMAGES_MARKER", "private"):
+            self.assertNotIn(value, rendered)
 
     def test_enforces_auxiliary_parameter_size_limits(self):
         args = dict(wordConfig=b64(b"<word-document/>"), wordBody=b64(b"doc"))
