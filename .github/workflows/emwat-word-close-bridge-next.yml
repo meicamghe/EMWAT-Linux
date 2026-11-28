@@ -35,7 +35,7 @@ jobs:
             FormClose FormCloseQuery FormActivate FormDeactivate OnClose OnCloseQuery \
             OnDeactivate WindowDeactivate DocumentClose BeforeClose BeforeSave \
             Quit Terminate CloseDocument DocumentOpen DocumentChange WindowActivate WindowDeactivate WordIsActivated BGPrintWithGamPrintOptions PrintWithGamPrintOptions \
-            Get_Name Get_FullName Get_Path FillImgFldsForPrint SaveOriginalOptions \\
+            Get_Name Get_FullName Get_Path FillImgFldsForPrint SaveOriginalOptions \
             > word-close-bridge/symbol-index.md
           for target in \
             0x004B8A84 0x004CCBBC 0x004CCDC8 0x004CD154 \
