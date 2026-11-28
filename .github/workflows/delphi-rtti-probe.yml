@@ -1,0 +1,45 @@
+name: Delphi RTTI Probe
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - work/parallel-closure-2026-11-28
+    paths:
+      - "analysis-input/EmwatMethods.bpl1"
+      - "tools/undelphi_probe/**"
+      - ".github/workflows/delphi-rtti-probe.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install stable Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Run read-only Delphi metadata probe
+        shell: bash
+        run: |
+          set -o pipefail
+          mkdir -p analysis-output/undelphi
+          sha256sum analysis-input/EmwatMethods.bpl1 | tee analysis-output/undelphi/input-sha256.txt
+          timeout --kill-after=30s 8m cargo run --release \
+            --manifest-path tools/undelphi_probe/Cargo.toml -- \
+            analysis-input/EmwatMethods.bpl1 analysis-output/undelphi \
+            2>&1 | tee analysis-output/undelphi/build-and-probe.log
+
+      - name: Upload Delphi metadata and REA seeds
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: emwat-undelphi-rtti-and-rea-seeds
+          path: analysis-output/undelphi/
+          if-no-files-found: warn
+          retention-days: 14
