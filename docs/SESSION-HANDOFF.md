@@ -2133,3 +2133,18 @@ Key new evidence:
 - Four Word PrintOut calls each pass 18 Variant pointers, while generated wrappers stop at 17; see `docs/WORD-PRINTOUT-18-VARIANT-ABI-RECHECK-2026-11-28.md`.
 
 Next active lane: workflow `EMWAT print queue completion and GAM driver follow-up` (run ID `46117826449`) is tracing `TrimLF`, `ExtractFileNameEX` pointer/VMT references, `InstallZanPrinter`, and the literal driver name at `0x0047CC64`. Inspect its artifact before making claims. Reverse engineering only; do not start Linux/Windows release builds, merge/rebase, or alter main.
+
+
+## 2026-11-28 — latest parallel reverse-engineering handoff
+
+Start with docs/REVERSE-ENGINEERING-PARALLEL-FOLLOWUP-2026-11-28-RUN24.md. Final targeted static-analysis runs passed: Word 46124030841, printer 46124104850, GDI+ 46124227390, scanner XML 46123192414.
+
+Current conclusions:
+- Word: OnTmrAutoSave registers paired WindowDeactivate and WordIsActivated callbacks. WordIsActivated saves original Word options. The separately named WordAppDocumentBeforeClose procedure is in the print-field/XML metadata call chain; it is not proven to be the active COM close event. The actual close/Save/Discard/Cancel and return-to-Almas bridge remains unresolved.
+- Printer: InstallZanPrinter only assigns a UnicodeString; GetZanInstallDir launches GAMPrinterSetup.exe via ShellExecuteW (Open on Windows <=5, RunAs on newer versions) and waits up to 30 seconds for the queue. Winspool API imports are mapped. No AddPrinter/AddPrinterDriver or direct StartDocPrinter/WritePrinter import was found.
+- GAM output config: save.ini/image.ini/general.ini include TIFF, LZW, per-page strip and JobFinishes.GAM sentinel settings. The sentinel consumer and final print/archive completion are still unknown.
+- GDI+: PE import mapping corrects stale TD32 thunk names. SaveImageToFile/Stream, SaveAdd and SaveAddImage thunks are known, but the exact TGPImage interface slot sequence used by SeparteImages is still open.
+- Scanner: LoadRequestXML uses the inline error property and XML error prefix; external XMLRTL slot identity and request required/optional/default rules remain open.
+- ImageEn Acquire remains external to the absent matching PKIECtrl23.bpl. Do not infer its internals.
+
+Next parallel tasks: map TGPImage interface slots to the actual GDI+ save/flush sequence; locate JobFinishes.GAM production/consumption and final TIFF/archive hand-off; continue the real Word close bridge; resolve SevenZip output callback/encryption; close scanner XML defaults. Reverse engineering only: no production implementation, release build, merge or rebase.
