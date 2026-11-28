@@ -74,3 +74,8 @@ Run `46118303840` shows `T7zPlugin.Create` calls `T7zOutArchive.CryptoGetTextPas
 ## Scanner units update
 
 Run `46118668134` closes the size-unit question: `TResultImage.GetFileStream` returns 64-bit `TStream.Size` bytes; `Finalization` compares it against `MaxFileSize << 10`, so MaxFileSize is KiB. `TGearImgProc.GearType` uses constants 39.37008 and 0.3937; unit selectors 2/3/4 apply divide-by-39.37008 / no conversion / divide-by-0.3937. Exact ImageGear enum names and rounding remain to verify. See `docs/SCANNER-RESOLUTION-AND-FILESIZE-UNITS-2026-11-28.md`.
+
+
+## TIFF/GDI+ pipeline update
+
+Run `46118848571` shows `TWordViewer.LoadDocument` calls `TCreateTiff.SeparteImages` twice; that routine performs GAM-printer checks, invokes `THidePrintingThread.Execute`, then constructs GDI+ `TGPEncoderParameters` and `TGPImage` objects, initializes codecs, and iterates image pages through GDI+ VMT methods. Exact save API/output filename and worker completion contract remain open. See `docs/TIFF-OUTPUT-GDIPLUS-PIPELINE-2026-11-28.md`.
