@@ -3599,3 +3599,12 @@ Base64/GDI+ load closure (run 46121270958): Base64Decode is a shared AnsiString-
 - Fixed `test_pe_va_ranges` import by adding optional `pytest>=8,<9` test dependency and installing `.[test]` in Python Bridge CI.
 - Validation queued on head `714b06f10e390688e584eec87c87a8d3dcf32544`: Python Bridge `46150833510`, GTK `46150833548`, Debian `46150833597`. Do not call the fix green until those complete.
 - Full evidence and exact changes: `docs/BRIDGE-CI-STALL-INVESTIGATION-2026-11-28.md`.
+
+
+## 2026-11-28 — scanner ColorDepth and VMT profile cross-check
+
+- Deep scanner artifact `15263439921` (run `46146595651`) cross-checks `VerifyConstraints` and `Finalization`: `colorDepth` numeric values are exactly 1=black/white, 4=grayscale, 8=grayscale-or-256-colour, 24=24-bit colour. Default/unmatched is zero, not a fifth supported mode. Contract and scanner inventory docs now record both directions.
+- The same artifact shows option storage at `TScanCommand+0x08/+0x0C/+0x10/+0x14`: colour selector, min resolution, max resolution, max file size. Existing KiB interpretation for maxFileSize remains unchanged.
+- VMT cross-check: the existing EMWAT script uses a later Win32 profile (self pointer -0x58, class name -0x38, instance size -0x34, parent -0x30). Candidate `TScanCommand` VMT `0x004F1F94` matches self pointer, class-name `TScanCommand`, size `0x40`, parent `0x0062EEA4`; a nearby false candidate fails metadata checks. Method-table parser still reports zero entries despite raw record-like bytes. REA's Delphi 7 profile must not be applied blindly; reconcile the exact EMWAT method-table layout first.
+- Full details: `docs/SCANNER-XML-SERIALIZATION-CONTRACT-2026-11-28.md` and `docs/REA-ASSISTED-REVERSE-ENGINEERING-PLAN-2026-11-28.md`.
+- Python Bridge fix validation runs remain queued: `46150833510`, `46150833548`, `46150833597`. No green claim yet.
