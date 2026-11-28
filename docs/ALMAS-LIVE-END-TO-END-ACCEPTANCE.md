@@ -117,3 +117,10 @@ workflow pass against the Linux implementation, the exact origins and response
 contract are recorded, and the normal desktop entry point starts/stops the
 configured bridge reliably. Until then, the project remains an integration
 candidate, not a verified Almas-compatible release.
+
+
+## Run 67 static-analysis boundary — Word viewer is not the Almas edit handler
+
+The completed `word-print-com` artifact traces `TWordViwer.LoadDocument` (TD32 symbol spelling) and shows two calls to `TCreateTiff.SeparteImages` at `0x004B7A9C` and `0x004B7ABD`. This confirms a Word-viewer document-load path enters the Word-to-TIFF conversion pipeline. It does **not** prove that this is the `EditWordDocument` browser connector handler or its response contract.
+
+The same artifact's symbol index does not contain a `TEditWordDocument.PerformMethod` symbol. It does contain generic `TEmwatMethod.Invoke` and other connector handlers, including ScanDocument, FaxDocument, EditExcelWorkBook, and CompareWordDocument. Because dispatch is indirect/VMT-based, the absence of a direct callsite or a TD32 symbol is not proof the handler does not exist; it remains a targeted reverse-engineering gap. The live Almas request/response fixture is still required as the protocol source of truth.
