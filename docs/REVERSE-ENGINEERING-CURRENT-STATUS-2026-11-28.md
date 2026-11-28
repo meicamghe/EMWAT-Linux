@@ -2,7 +2,7 @@
 
 The latest verified static-analysis run is Run 22 (`46112005385`), with all four jobs successful. The complete evidence and caveats are in `docs/REVERSE-ENGINEERING-PARALLEL-FOLLOWUP-2026-11-28-RUN22.md`.
 
-- Scanner request/constraint path is better bounded: request parsing/finalization and per-page validation are separate; four image modes and resolution bounds are decoded; maximum-size field semantics remain partially open.
+- Scanner request/constraint path is better bounded: request parsing/finalization and per-page validation are separate; four image modes and resolution bounds are decoded. The +0x14 field maps to `TXMLConstraintsType.MaxFileSize` and is compared with stream size after scaling by 1024; exact external units/conversion remain open.
 - ImageEn `Acquire` is an external import from `PKIECtrl23.bpl`; its internals are not present in the current analysis input.
 - Word callback correction is maintained: `0x004CD154` is BeforeSave, not BeforeClose. Active BeforeClose registration and browser close bridge are still open.
 - `SeparteImages` orchestrates printer checks, hidden worker invocation and per-image processing. Actual Winspool job submission, completion and GAM artifact hand-off remain unproven.
