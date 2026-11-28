@@ -140,4 +140,13 @@ Next VMT step: reconcile the raw method-table and field-table record formats aga
 - VMT address convention is now reconciled: undelphi reports the VMT header start `0x004F1F3C` for `TScanCommand`; the class pointer used by `inspect_delphi_vmt_address.py` is `0x004F1F94`, stored in the self-pointer slot at header offset `+0x58`. `0x004F1F3C` is not a false second candidate.
 - The TScanCommand extended field table parses into ten typed field entries, and its extended method metadata contains Create/Destroy/DoRequest. The legacy published-method-table count of zero is not evidence that the class has no methods; Delphi 10 extended method metadata is separate.
 - `TWordViwer` metadata identifies VMT header `0x004B104C`, instance size `0x11C`, and the state fields documented in `WORD-AUTOMATION-CLOSE-SAVE-EVENT-CROSSWALK-2026-11-28.md`.
-- The generated seeds cover extended RTTI methods, not every private TD32 procedure. Next add a separate TD32 symbol seed pass and merge by validated executable VA before importing into REA/Ghidra.
+- The separate TD32 symbol pass is now implemented in `tools/emit_td32_ghidra_seeds.py`: 8,411 executable procedure addresses were parsed with no ambiguous addresses, then merged with the 3,834 undelphi RTTI seeds into 8,411 combined addresses. The Word/scan index contains 859 relevant procedures. Artifact: workflow run `46153451750`, artifact `15265729959`. Next import `rea-combined-seeds.tsv` into REA/Ghidra.
+
+
+### TD32 seed merge result — 2026-11-28
+
+- TD32 stream: 204 directory entries, 8,411 procedures parsed, 8,411 validated executable addresses, zero ambiguous addresses.
+- undelphi RTTI seeds: 3,834 addresses; all were covered by the TD32 address set.
+- Combined REA/Ghidra seed file: 8,411 unique function addresses. Word/scan procedure index: 859 rows.
+- Artifact: [workflow run 46153451750](https://github.com/meicamghe/EMWAT-Linux/actions/runs/46153451750), artifact `emwat-undelphi-rtti-and-rea-seeds`.
+- Actual REA/Ghidra execution remains pending; generated seeds are static-analysis inputs only.

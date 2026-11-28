@@ -109,3 +109,28 @@ The `+0xD8` getter and `+0xDC` setter are consistent with the Word `Document.Sav
 - `TWordDocument.FOnClose` exists at `+0x70`, but its callback registration/use is not yet mapped.
 - `TWordApplication.ConnectTo` at `0x0043E0FC` stores the default `_Application` interface and calls helper `0x00404FAC`; the actual connection-point IID/Advise path is not yet proven.
 - No live Word/Almas round-trip has been run. Save/Discard/Cancel acceptance still needs the original Windows/Almas environment or a faithful runtime harness.
+
+
+## Print integration and worker handoff — 2026-11-28
+
+### BeforePrint selection and save-before-print policy
+
+- `TWordViwer.Create` at `0x004D0D24` initializes and reads registry settings for `Background Priniting`, `Dont Ask Save On Print`, `Save Before Print`, and `AutoSaveInterval`. Defaults visible in the constructor are `fBG_Printing=1`, `fDontAskSaveBeforePrint=1`, and `fSaveBeforePrint=0`, then registry values can override them.
+- The event-binding block at `0x004B8C80` chooses `FOnDocumentBeforePrint` based on `fBG_Printing` at `TWordViwer+0x3C`: nonzero selects `0x004D00AC` (`LoadOptions`); zero selects `0x004CE030` (`WordAppDocumentBeforePrintBGPrint`).
+- `LoadOptions` calls `ProtectDocument` at `0x004C9EA8`. That method returns early when `OpenAsFree` is false. When true, `fDontAskSaveBeforePrint` and `fSaveBeforePrint` control behavior:
+  - both true: save automatically through `CostumizeRecAndCC` at `0x004D281C`;
+  - `fDontAskSaveBeforePrint` false and the document is unsaved: show the Yes/No prompt `آيا مايل به ذخيره تغييرات قبل از چاپ هستيد؟`; Yes invokes `CostumizeRecAndCC`;
+  - if the document is already saved, no prompt/save is needed.
+- The constructor's default `fDontAskSaveBeforePrint=1` and `fSaveBeforePrint=0` therefore do not imply an automatic save; registry overrides matter.
+
+### Save-to-print connection
+
+- The BeforeSave callback `0x004CD54C` invokes `PrintWithGamPrintOptions` at `0x004C5E04` only when its document-window condition matches `GamElectronic EMWAT`.
+- `PrintWithGamPrintOptions` constructs/uses `TPrintOptions` and calls a Word document interface slot at `+0x6C`. The exact COM method name at that slot is not yet independently mapped, so do not label it `PrintOut` as a proven fact.
+- This statically links a qualifying Save event to the GAM print-options path, but it does not yet prove the final printer queue/TIFF output timing.
+
+### Worker and print-handler anchors
+
+- `THidePrintingThread`: VMT header `0x004A0090`; Execute virtual slot target `0x004A1AA0`.
+- `TEmwatDocPrintHandler`: VMT header `0x004A2298`; Execute virtual slot target `0x004A609C`; instance fields include `fWordApp +0x48`, `fWordDoc +0x4C`, `fJob +0x50`, `fDocFileName +0x68`, and `fPrintingOption +0x6C`.
+- These are the next exact targets for resolving the print-worker wait condition and page-file handoff. No worker completion condition is claimed yet.

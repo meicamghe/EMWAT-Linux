@@ -3619,3 +3619,12 @@ Base64/GDI+ load closure (run 46121270958): Base64Decode is a shared AnsiString-
 - Recovered the Persian Save/Discard/Cancel prompt and conditional close path, plus the BeforeSave interception and autosave state flags. `OpenAsFree` remains read-only in this BPL scan; its host-side initialization is unresolved.
 - Confirmed `TWordViwer.SignData +0xF4` is consumed by `GetCaptionItemFont` when a caption-item key equals `signData`. Payload decoding/rendering parity is still open.
 - Full evidence and caveats: `docs/WORD-AUTOMATION-CLOSE-SAVE-EVENT-CROSSWALK-2026-11-28.md`.
+
+
+## 2026-11-28 — TD32 seeds and print-worker handoff
+
+- The read-only Delphi metadata/trace workflow passed run `46153451750`; it generated 8,411 validated TD32 function seeds and an 8,411-address combined TD32/undelphi Ghidra seed file. The Word/scan procedure index contains 859 entries.
+- Python Bridge, GTK and Debian package checks are green on the current analysis branch head `23b4d38`; PR #6 remains Draft/open/unmerged.
+- The Save callback can invoke `PrintWithGamPrintOptions` for the `GamElectronic EMWAT` document-window condition. BeforePrint callback selection depends on the `Background Priniting` registry flag; `LoadOptions` calls `ProtectDocument`, which applies `Dont Ask Save On Print` and `Save Before Print`.
+- Worker anchors are now exact: `THidePrintingThread.Execute=0x004A1AA0`; `TEmwatDocPrintHandler.Execute=0x004A609C`. Their wait/output completion conditions are the next print-analysis target.
+- Full Word close/save/print evidence: `docs/WORD-AUTOMATION-CLOSE-SAVE-EVENT-CROSSWALK-2026-11-28.md`.

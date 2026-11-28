@@ -309,3 +309,13 @@ No Linux release package was built. No additional workflow was dispatched. PR #2
 - `ReadyToClose` is a busy gate toggled by field processing/save/controller paths. `OpenAsFree` is read but no direct writes were found in this BPL; locate host-side initialization before asserting the Almas-mode prompt behavior.
 - Full trace: `docs/WORD-AUTOMATION-CLOSE-SAVE-EVENT-CROSSWALK-2026-11-28.md`.
 - Next: trace host-side `OpenAsFree` initialization, the `TWordApplication` connection-point helper/IID, `PrintWithGamPrintOptions` and BeforePrint selection, then merge TD32 seeds with undelphi seeds and run REA/Ghidra. Keep live Almas acceptance marked pending.
+
+
+## Latest handoff — 2026-11-28
+
+- Latest analysis artifact run `46153451750` succeeded. It parsed 8,411 TD32 procedures into validated executable addresses and emitted `rea-combined-seeds.tsv` with 8,411 unique function labels. The Word/scan index contains 859 procedures. REA/Ghidra has not yet been run; use the artifact from the workflow run.
+- Current branch PR checks on head `23b4d38`: Python Bridge, GTK and Debian package all passed. PR #6 remains Draft/open/unmerged.
+- Word close/save event mapping is now strong: BeforeClose `0x004CD154`, BeforeSave `0x004CD54C`; the Persian Save/Discard/Cancel prompt and its SaveChanges branches are documented.
+- SignData is stored in `TWordViwer+0xF4` and consumed by GetCaptionItemFont for the caption key `signData`; payload encoding/rendering parity remains open.
+- Save may invoke `PrintWithGamPrintOptions`; BeforePrint selects between `LoadOptions` and `WordAppDocumentBeforePrintBGPrint` using `fBG_Printing`. Save-before-print policy is controlled by registry flags.
+- Next: trace `THidePrintingThread.Execute` (`0x004A1AA0`) and `TEmwatDocPrintHandler.Execute` (`0x004A609C`), prove file wait/worker completion, then import the combined seed file into REA/Ghidra. Also locate the host-side writer of `OpenAsFree`; do not infer its runtime value from this BPL alone.
