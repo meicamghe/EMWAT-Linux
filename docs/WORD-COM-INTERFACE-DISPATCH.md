@@ -1187,3 +1187,10 @@ The remaining stream-class question is resolved:
 - It then passes the resulting stream to `T7zOutArchive.SetCompleted` at `0x004546C4`, which performs the archive completion path.
 
 Therefore the `.easz` path is not merely an abstract stream name: the routine creates a real file at that path and hands the file stream to the 7z output archive. This closes the static file-output side of the archive pipeline; runtime bytes and actual extraction/consumer behavior remain untested.
+
+
+## 2026-11-28 event registration re-check
+
+The `OnTmrAutoSave` registration procedure at `0x004B8A84` writes these callback/context pairs: `+0x80` BeforeSave (`0x004CD154`), `+0x90` NewDocument (`0x004CD54C`), `+0x98` WindowActivate (`0x004CD9C0`), and conditional `+0x88` LoadOptions (`0x004D00AC`) or BeforePrintBGPrint (`0x004CE030`). It does not store `0x004CCBBC`.
+
+The TD32-named `WordAppDocumentBeforeClose` at `0x004CCBBC` has no static code-pointer reference in the scan and only one direct bounded caller, `FillImgFldsForPrint` at `0x004CCF8F`. This does not establish an active COM BeforeClose subscription. See `docs/WORD-EVENT-REGISTRATION-CROSSWALK-2026-11-28.md`.
