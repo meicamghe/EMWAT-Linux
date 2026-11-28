@@ -1,3 +1,10 @@
+## 2026-11-28 — Run 44 WordViewer argument routing
+
+- Full skipdata trace shows `wordBody` is decoded by 0x00457050/0x00454B9C, checked non-empty, and used to build the temporary source stream/file. This confirms non-empty body is required for successful native load.
+- `letterImages` is passed into `SeparteImages` at 0x004B7A9C/0x004B7ABD; its proven use is TIFF/preview. Defer with TIFF while not required by live Almas fixture.
+- `signData` enters XML/interface operations at 0x004B7AEB–0x004B7B2F. Preserve opaque; exact schema/field mapping unresolved.
+- Updated Almas acceptance doc commit `0540a65`; Run 44 report `ee4c943`.
+
 ## 2026-11-28 — Run 43 WordViewer state wait
 
 - Full Run-50 skipdata trace of `TWordViwer.LoadDocument` exposes a second bounded wait: counter 0..100, each cycle calls the application message-pump helper at `0x00404F04`, checks an object state via `0x004010A8` against sentinel `0x0062F850`, and sleeps 5 ms via `0x004028D0` while equal.
