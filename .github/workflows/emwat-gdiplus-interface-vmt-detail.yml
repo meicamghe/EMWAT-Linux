@@ -1,0 +1,59 @@
+name: EMWAT GDI+ interface method table detail
+on:
+  push:
+    paths:
+      - 'analysis-input/EmwatMethods.bpl1'
+      - 'tools/trace_pe_range.py'
+      - '.github/workflows/emwat-gdiplus-interface-vmt-detail.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: emwat-gdiplus-interface-vmt-detail-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  interface-methods:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install pefile capstone
+      - name: Resolve interface VMT and encoder Add implementation
+        shell: bash
+        run: |
+          mkdir -p gdiplus-interface-detail
+          python - <<'PY'
+          from pathlib import Path
+          import pefile
+          blob=Path("analysis-input/EmwatMethods.bpl1").read_bytes()
+          pe=pefile.PE(data=blob,fast_load=True)
+          base=pe.OPTIONAL_HEADER.ImageBase
+          def read(va,n):
+              return blob[pe.get_offset_from_rva(va-base):pe.get_offset_from_rva(va-base)+n]
+          out=["# GDI+ interface method table detail",""]
+          for label,va in (("TGPImage interface VMT candidate",0x0047DD84),
+                           ("TGPEncoderParameters interface VMT candidate",0x00632BB8)):
+              out.append(f"## {label} at 0x{va:08X}")
+              try:
+                  raw=read(va,0xA0)
+                  for off in range(0,0x80,4):
+                      ptr=int.from_bytes(raw[off:off+4],"little")
+                      out.append(f"- +0x{off:02X}: 0x{ptr:08X}")
+              except Exception as exc: out.append(f"- error: {exc}")
+          Path("gdiplus-interface-detail/vmt-candidates.md").write_text("\n".join(out)+"\n")
+          PY
+          python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x00484050 0x004840B0 gdiplus-interface-detail/encoder-add-range.md
+          python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x0047DD84 0x0047DE50 gdiplus-interface-detail/tgpimage-interface-range.md
+          python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x00632BB8 0x00632C80 gdiplus-interface-detail/encoder-interface-range.md
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: emwat-gdiplus-interface-method-detail
+          path: gdiplus-interface-detail/
+          if-no-files-found: error
