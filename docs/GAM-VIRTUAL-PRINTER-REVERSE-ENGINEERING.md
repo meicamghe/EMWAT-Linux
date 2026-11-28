@@ -234,3 +234,26 @@ The TIFF profile values correlate strongly with standard TIFF tag values:
 This mapping is a standards-based correlation, not yet a binary-proven enum mapping. It is supported by the fact that `image.fileformat=1` is now confirmed as TIFF and that the Fax profile explicitly carries TIFF-FAX fields.
 
 **Validation required:** inspect a real output TIFF's tags (Compression 259, FillOrder 266, T4Options 292, X/YResolution 282/283 and ResolutionUnit 296). Until a real file is checked, retain these as candidate mappings rather than hardcoded implementation facts.
+
+
+## 2026-11-28 — exact bundled payload hashes and sentinel boundary (Run 28)
+
+The exact EMWAT-bundled payload is available in the repository's `EMWAT_Extracted.zip`; it is not necessary to substitute a public Zan installer. The archive inventory records the 4,008,872-byte `GAMPrinterSetup.exe` (SHA-256 `cdec0363d420d8b1e7109e2a5624e0ed834a82b43b437c8d1c85a3c6303a6d15`) and its nested LZX CAB with 49 files.
+
+Key exact x86 payload hashes:
+
+| File | Size | SHA-256 |
+|---|---:|---|
+| `zvprtsrv_x86.exe` | 2,506,752 | `7ed0c5433d7429798dbfa5ddfa1205eb845d27b7af565f547dd039c27cb54f46` |
+| `zvprtmon5_x86.dll` | 13,921 | `4110a7fa9e25d41fa6ce5cc103dc58c524afe639545e9062d71a3f4822431459` |
+| `zvprtuni5_x86.dll` | 44,544 | `6862709326702e1e2cef24369185a218a0a01aaae6268f491707d3844e0c7236` |
+| `zvprtui5_x86.dll` | 195,072 | `5d16f384a9c87d0e517ad617448c50d533a91a85afedfd4b165f9cb51fc9ff0f` |
+| `sentineltemplate.txt` | 40 | `3813c0a65ad3f24416d34303c94f7ea2660401d4c58551c7f3c4a8831051c54e` |
+
+The monitor exports/contains `InitializePrintMonitor2`, `LcmOpenPort`, `LcmStartDocPort`, `LcmWritePort`, `LcmEndDocPort`; the OEM driver has `Render_StartDoc`/page/band/SendPage/EndDoc stages; and the server has GDI page operations, TIFF/PDF/PNG/BMP codecs and `Global\\zvprtapi...` shared-memory/event names. This is the strongest static pipeline model, but the exact IPC order and sentinel writer remain unproven.
+
+The BPL writes `[general] sentinel=1` and `sentinelfile=JobFinishes.GAM`; the exact package contains the 40-byte `sentineltemplate.txt`. The current text inventory records only its hash/size, not its content. No inspected code yet proves which component creates it or whether creation follows TIFF close/flush. Keep the monitor, OEM driver, server and template as separate targets until the writer is found.
+
+Do not confuse this printer sentinel with Agent's `TEmwatSentinel` heartbeat: the Agent performs loopback GET `http://127.0.0.1:1984/?heartbeat` and expects `TickTack`; that is service health, not `JobFinishes.GAM`.
+
+See [Run-28 exact-payload report](REVERSE-ENGINEERING-PARALLEL-FOLLOWUP-2026-11-28-RUN28.md) for evidence boundaries and next probes.
