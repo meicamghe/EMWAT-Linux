@@ -3393,12 +3393,12 @@ The next meaningful Almas acceptance input is a sanitized, synthetic-or-test-acc
 Static-analysis runs 22–25 are complete and documented in the dated current-status report. New verified evidence:
 
 - Scanner XML root is `scan-document`; the constraints child is `constraints`. UTF-16LE serialized keys are `type`, `driverDialog`, `imageEditor`, `multiJpegSupport`, `previousImageName`, `forceSinglePageFiles`, `colorDepth`, `minResolution`, `maxResolution`, and `maxFileSize`. See `docs/SCANNER-XML-SERIALIZATION-CONTRACT-2026-11-28.md`.
-- GAM printer discovery enumerates `PRINTER_INFO_2A`, matches `pDriverName` against a constant at `0x0047CC64`, and stores the selected `pPrinterName` at global `0x0062B310`. The constant's literal and install branch are still being traced.
+- GAM printer discovery enumerates `PRINTER_INFO_2A`, matches `pDriverName` against the exact ANSI driver literal `zvprt1` at `0x0047CC64`, and stores the selected `pPrinterName` at global `0x0062B310`. `GetZanInstallDir` includes a bounded 300×100 ms retry loop while waiting for the printer to appear; helper `0x00401240` side effects and full install semantics remain open.
 - Printer status check reads `PRINTER_INFO_2A.Status` at +0x48 and compares it with 1. Queue correlation opens a printer handle with `OpenPrinterW`; `ExtractFileNameEX` uses two-pass `EnumJobsW`, walks 64-byte `JOB_INFO_1W` records, and compares `pDocument` (+0x10) with the supplied document name. See `docs/PRINTER-QUEUE-AND-GAM-DRIVER-REVERSE-ENGINEERING-2026-11-28.md`.
 - Word PrintOut has four repeated callsites through interface slot +0x3F0, each passing 18 Variant-record pointers (15 EmptyParam + 3 prepared). TD32 wrappers stop at 17; the exact ABI remains unresolved. See `docs/WORD-PRINTOUT-18-VARIANT-ABI-RECHECK-2026-11-28.md`.
 - ImageEn Acquire remains external to `PKIECtrl23.bpl`; SevenZip output encryption remains unproven; no direct EMWAT StartDocPrinter/WritePrinter call was recovered. Word may own job submission.
 
-The current follow-up workflow `emwat-print-queue-completion` is tracing TrimLF, pointer/VMT references to ExtractFileNameEX, printer installation, and the literal GAM driver name. Do not claim those results until its artifact is inspected.
+The `emwat-print-queue-completion` workflow completed successfully (run `46117826449`). It found `TrimLF` in `frmWordPrintOptionUnit` (not `TCreateTiff`) and decoded the GAM driver literal as `zvprt1`. The direct Word-to-queue wait is separately proven; final TIFF/archive completion remains open.
 
 Reverse engineering only. No production Linux code or release builds were changed; no merge/rebase was performed.
 
