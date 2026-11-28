@@ -1,0 +1,70 @@
+name: EMWAT GDI+ corrected VMT slot mapping
+on:
+  push:
+    paths:
+      - 'analysis-input/EmwatMethods.bpl1'
+      - 'tools/trace_pe_range.py'
+      - 'tools/trace_td32_procedure_skipdata.py'
+      - '.github/workflows/emwat-gdiplus-vmt-corrected.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: emwat-gdiplus-vmt-corrected-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  corrected-vmt:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install pefile capstone
+      - name: Read class VMT pointers and dump actual method tables
+        shell: bash
+        run: |
+          mkdir -p gdiplus-vmt-corrected
+          python - <<'PY'
+          from pathlib import Path
+          import pefile
+          blob=Path("analysis-input/EmwatMethods.bpl1").read_bytes()
+          pe=pefile.PE(data=blob,fast_load=True)
+          base=pe.OPTIONAL_HEADER.ImageBase
+          def read(va,n):
+              off=pe.get_offset_from_rva(va-base)
+              return blob[off:off+n]
+          out=["# Corrected GDI+ VMT pointers and slots",""]
+          for label,global_va,slots in (
+              ("TGPEncoderParameters",0x00483F4C,[0x20,0x28]),
+              ("TGPImage",0x00484728,[0x48,0x58,0x5C,0x70,0x74,0x28]),
+          ):
+              vmt=int.from_bytes(read(global_va,4),"little")
+              out += [f"## {label}",f"- global slot 0x{global_va:08X} contains VMT 0x{vmt:08X}"]
+              raw=read(vmt,0xA0)
+              for off in range(0,0x80,4):
+                  ptr=int.from_bytes(raw[off:off+4],"little")
+                  marker=" <-- relevant" if off in slots else ""
+                  out.append(f"- VMT+0x{off:02X}: 0x{ptr:08X}{marker}")
+              iface=int.from_bytes(raw[0x28:0x2c],"little")
+              if 0x00400000 <= iface < 0x00700000:
+                  out.append(f"- interface table at 0x{iface:08X}: {read(iface,0x40).hex(' ')}")
+          Path("gdiplus-vmt-corrected/vmt.md").write_text("\n".join(out)+"\n")
+          PY
+          python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x00483FA0 0x00484040 gdiplus-vmt-corrected/encoder-vmt-range.md
+          python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x00484780 0x00484820 gdiplus-vmt-corrected/image-vmt-range.md
+          for target in 0x00483FC0 0x004847C8 0x004847D8 0x004847DC 0x004847F0 0x004847F4; do
+            safe=${target#0x}
+            python tools/trace_td32_procedure_skipdata.py analysis-input/EmwatMethods.bpl1 "$target" \
+              "gdiplus-vmt-corrected/procedure-$safe.md" || true
+          done
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: emwat-gdiplus-corrected-vmt
+          path: gdiplus-vmt-corrected/
+          if-no-files-found: error
