@@ -106,6 +106,24 @@ class BridgeSupervisorTests(unittest.TestCase):
                 except BaseException:
                     pass
 
+    def test_request_drain_releases_registration_if_worker_creation_raises(self):
+        server = BridgeHTTPServer(lambda _request: BridgeResponse(b""), port=0)
+        try:
+            with patch(
+                "http.server.ThreadingHTTPServer.process_request",
+                side_effect=OSError("simulated_thread_start_failure"),
+            ):
+                with self.assertRaisesRegex(
+                    OSError, "simulated_thread_start_failure"
+                ):
+                    server._server.process_request(
+                        object(),
+                        ("127.0.0.1", 12345),
+                    )
+            self.assertTrue(server.wait_for_requests_idle(0))
+        finally:
+            server.server_close()
+
     def test_runtime_bounds_active_http_request_drain_and_allows_cleanup_retry(self):
         request_entered = threading.Event()
         release_request = threading.Event()
