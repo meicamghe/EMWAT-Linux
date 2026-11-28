@@ -1,3 +1,12 @@
+## 2026-11-28 — Run 31 cross-artifact reverse-engineering
+
+- Added Run 31 after correlating the existing scanner XML, hidden print worker, printer import, and GDI+ metadata artifacts. No new Actions workflow was started.
+- XMLRTL child lookup is now functionally identified as ChildNodes -> FindNode("constraints"); helper 0x0044B508 and ForceSinglePageFiles missing-attribute semantics remain open.
+- Hidden print worker: 0x00404494 is shell32!ShellExecuteW via IAT 0x0062F9CC. 0x00402818 is the GetVersionEx thunk. The worker's 276-byte caller buffer matches OSVERSIONINFOW, despite a TD32 OSVERSIONINFOEXW suffix. Its OS major-version branch gates staged ShellExecuteW calls; those calls are not the final completion signal. The worker success byte is set only after FileExists at 0x004A121B succeeds.
+- GDI+ functional slot map remains +0x48 initial SaveImageToFile, +0x5C SaveAddImage, +0x58 final SaveAdd(Flush=20). Raw interface VTable bytes are still absent; the Delphi RTTI block is not a flat VMT.
+- Run report: docs/REVERSE-ENGINEERING-PARALLEL-FOLLOWUP-2026-11-28-RUN31.md. Updated focused docs in commits 7169bfb, 5f96fe1, dd1da1d; Run 31 report commit 7305007.
+- No tests run, no CI started, no Linux/Windows package built. Remaining blockers are raw worker string literals and helper 0x004026B4, 0x0044B508 semantics, and raw GDI+ interface table bytes. TIFF fixture remains lower priority.
+
 ## 2026-11-28 — bounded bridge request drain and GTK close retry
 
 - Audited the actual `ThreadingHTTPServer` shutdown path: the bridge intentionally uses non-daemon request workers, while `ThreadingMixIn.server_close()` joins those workers without a timeout. A pending Almas `EditWordDocument` request can therefore block the desktop shutdown path indefinitely.
