@@ -54,7 +54,7 @@ A second pass over `BGPrintWithGamPrintOptions` at `0x004C5FF8` confirms the dir
 
 - At `0x004C6099`, the routine calls `getPrinterNumJobs` and stores the returned printer handle in local `[EBP-0xDC]`.
 - For each document-name candidate, it calls `0x004563A8` (`FixDirectionInFarsiNumericMode`) to normalize the UnicodeString, places the normalized name in `EDX`, the printer handle in `EAX`, and calls `ExtractFileNameEX` at `0x004C8949`.
-- If the helper returns true (matching job is still present), the caller waits via a one-argument delay call (`push 5`; target `0x004028D0`) and repeats the same queue check. A false result advances to the next document/page. The delay target's import identity is being verified separately.
+- If the helper returns true (matching job is still present), the caller waits via a one-argument delay call (`push 5`; target `0x004028D0`) and repeats the same queue check. A false result advances to the next document/page. The delay target is confirmed as `kernel32!Sleep` (IAT `0x0062F09C`) even though TD32 labels the thunk `SuspendThread`; the following thunk at `0x00404F04` is still being identified.
 - The routine closes the printer handle through `ClosePrinter` at `0x004C8B72`.
 
 This proves that the Word print path waits while the matching document job remains in the spool queue and advances when that job is no longer found. No explicit timeout was observed in this loop. The code treats queue disappearance as its completion condition, but absence can also result from cancellation, deletion, a job that was never submitted, or a document-name mismatch; it does not independently prove successful printing or final TIFF archive completion. The queue helper's direct caller is now established even though the separate TD32 direct-caller report missed this callsite.
@@ -94,4 +94,9 @@ This is static binary analysis only. No physical printer, real Word, or Almas ru
 - `InstallZanPrinter` at `0x0047CC6C` is a short helper that calls `GetPrinterName`; when a printer is found, it passes the selected queue name to helper `0x00401240`. The exact side effect of that helper is not yet named.
 - `GetZanInstallDir` at `0x0047CC94` checks printer presence, performs path/registry/string work, and includes a bounded retry loop (up to 300 iterations with 100 ms delay) while waiting for the printer to appear. It also calls `0x0047D238` with the selected printer name.
 - `CheckPrinterPaused` at `0x0047D448` independently calls `GetPrinterName` and `0x0047D238`; it is not yet proven to be the same status test as `Finalization`'s direct `PRINTER_INFO_2A.Status` check.
+
+
+## 4B. Delay API symbol cross-check
+
+The one-argument call target `0x004028D0` is confirmed by the PE import table as `kernel32.dll!Sleep` (IAT `0x0062F09C`). The TD32 symbol name `Winapi.Windows.SuspendThread` at the same thunk is therefore a stale/misleading debug symbol; trust the import table and call shape. The Word queue loop's `push 5; call 0x004028D0` is a 5 ms Sleep before the next queue check. The hidden worker uses the same Sleep thunk with other millisecond values. The following `0x00404F04` thunk is a separate imported function and remains to be identified.
 
