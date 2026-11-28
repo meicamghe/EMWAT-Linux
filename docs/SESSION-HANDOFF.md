@@ -1,3 +1,15 @@
+## 2026-11-28 — Python CI timeout diagnostics and current continuation
+
+- PR #6 remains Draft/open/unmerged. The workflow code change is commit `556c99379544c80c9b0521d11d76b9627ad71e4f`; the accompanying status note is `c83338ff53f5b7f096112031ba05fa7fcf80a491`.
+- Python Bridge workflow repeatedly reaches `Run bridge transport tests` after successful dependency installation and CLI entrypoint checks, but does not report completion. Active job logs could not be retrieved from GitHub while running; the exact test is unknown.
+- Added a 15-minute job limit, 12-minute test-command timeout, and faulthandler thread dumps every 5 minutes to expose a stuck test on the next run. Latest observed Python run for the diagnostic workflow commit was still executing the test step; do not mark it passed.
+- On the preceding commit `0725cd2...`, GTK and Debian package workflows passed. New GTK and package runs for `556c993...` were still running at last check.
+- The static WordConfig/signData implementation remains deliberately conservative: request binding and metadata inventory are implemented, but non-empty signData decoding/placement is not. No synthetic decoder should be added without a paired Windows fixture and trace.
+- Reviewed RE run 78 / deep run 51 artifacts; findings and caveats are in `docs/REVERSE-ENGINEERING-RUN78-RUN51-2026-11-28.md`. TIFF procedure remains partially disassembled; scanner colour labels are known but numeric protocol values are not.
+- Next action: inspect the timed Python workflow output after the 5-minute faulthandler dump, identify the exact blocked test, then make a narrowly targeted fix and rerun. Do not change runtime semantics based on speculation.
+
+---
+
 ## 2026-11-28 — reviewed CI artifacts and evidence report
 
 - Latest PR head at this note: `811b91760d390a95de36c71783a130b038fbfb48`; PR #6 remains Draft/open and unmerged.
