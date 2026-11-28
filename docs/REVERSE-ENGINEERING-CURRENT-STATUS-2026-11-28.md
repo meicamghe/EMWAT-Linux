@@ -55,3 +55,5 @@ The following additional static-analysis runs passed: TIFF lifecycle `4611884857
 
 
 GDI+ import identity is now independently confirmed: GNU `objdump -p` agrees with the PE import parser for GdipGetImageGraphicsContext, GdipSaveAddImage, GdipSaveAdd, GdipSaveImageToStream, and GdipSaveImageToFile. The TD32 labels on the corresponding thunk addresses are shifted/stale. Remaining work is the TGPImage interface VMT slot-to-call mapping.
+
+- SevenZip output detail: SaveToFile is a stub; SaveToStream is the implemented path and calls SetCompleted. Progress callback +0x38 is separate from operation-result callback/context +0x30/+0x34. No output password path is proven.
