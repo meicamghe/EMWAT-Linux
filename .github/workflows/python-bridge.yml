@@ -23,6 +23,7 @@ permissions:
 jobs:
   test:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -41,4 +42,4 @@ jobs:
       - name: Run bridge transport tests
         working-directory: python
         run: |
-          PYTHONPATH=src python -m unittest discover -s tests -v
+          timeout --kill-after=30s 12m python -c 'import faulthandler, unittest; faulthandler.dump_traceback_later(300, repeat=True); suite = unittest.defaultTestLoader.discover("tests"); result = unittest.TextTestRunner(verbosity=2).run(suite); raise SystemExit(not result.wasSuccessful())'
