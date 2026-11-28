@@ -42,3 +42,9 @@ The encoder configuration remains `EncoderCompression=2` (LZW) and `EncoderSaveF
 ## Acceptance boundary
 
 No runtime multipage TIFF was generated in this run. A real output fixture is still required to validate frame count/order, LZW encoding, final stream/file close, and Almas acceptance before changing Linux output code.
+
+## Run 31 — raw RTTI boundary and functional dispatch status
+
+The class metadata dump confirms that the pointer stored in the `TGPImage` class slot leads into Delphi interface/type metadata. The bounded range at `0x0047DD84` contains interface RTTI fields and names such as `NativeHandle` / `TGdiPlusBase`; it is not a flat array of implementation pointers. The functional `SeparteImages` interface slots therefore remain mapped from call-site ABI, the matching wrapper bodies, the independently verified PE import targets, and their loop/finalization positions—not from treating raw metadata DWORDs as code pointers.
+
+The operation-level mapping is complete enough to describe the Save/SaveAdd lifecycle, but the raw interface VTable pointer table itself is **not** fully reconstructed from the available artifacts. The pointer to the interface metadata (`0x0047DD2C`) and the RTTI candidate range (`0x0047DD84`) are known; the raw method table contents needed to map every interface slot directly to a code VA are not present in the downloaded artifact. No Linux TIFF behavior should be changed on the basis of a guessed raw table.
