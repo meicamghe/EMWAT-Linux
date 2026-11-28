@@ -254,6 +254,72 @@ jobs:
             deep-followup/scanner-result/image-metadata-helper.md
           python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004AFF08 \
             deep-followup/scanner-result/image-metadata-helper-callers.md
+      - name: Inspect scanner XML global pointer chains and Delphi string headers
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import struct
+          import pefile
+
+          path = Path("analysis-input/EmwatMethods.bpl1")
+          blob = path.read_bytes()
+          pe = pefile.PE(data=blob, fast_load=True)
+          base = pe.OPTIONAL_HEADER.ImageBase
+
+          def offset(va):
+              return pe.get_offset_from_rva(va - base)
+
+          def u32(va):
+              return struct.unpack_from("<I", blob, offset(va))[0]
+
+          def decode(ptr):
+              try:
+                  off = offset(ptr)
+              except Exception:
+                  return "<pointer outside mapped PE>"
+              raw = blob[off:off + 256]
+              results = []
+              for enc in ("utf-16le", "cp1252"):
+                  try:
+                      value = raw.decode(enc, errors="replace").split("\x00", 1)[0]
+                  except Exception:
+                      continue
+                  if value and sum(ch.isprintable() for ch in value) / len(value) > 0.8:
+                      results.append(f"{enc}={value!r}")
+              for header_delta in (4, 8, 12):
+                  try:
+                      length = u32(ptr - header_delta)
+                      if 0 < length <= 512:
+                          value = blob[off:off + min(length * 2, 1024)].decode("utf-16le", errors="replace")
+                          if value and sum(ch.isprintable() for ch in value) / len(value) > 0.8:
+                              results.append(f"header[-{header_delta}]={value!r}")
+                  except Exception:
+                      pass
+              return "; ".join(results[:4]) if results else f"raw={raw[:32].hex()}"
+
+          out = [
+              "# Scanner XML global pointer-chain inspection",
+              "",
+              "This is a pointer/string candidate dump. Property names are not assigned unless confirmed by the calling procedure and the referenced XML interface method.",
+              "",
+          ]
+          for root in (0x0062A800, 0x0062A7FC, 0x0062A850):
+              try:
+                  ptr = u32(root)
+              except Exception as exc:
+                  out.append(f"- root 0x{root:08X}: read failed: {exc}")
+                  continue
+              out.append(f"## Global 0x{root:08X} -> 0x{ptr:08X}")
+              out.append(f"- direct target: {decode(ptr)}")
+              for delta in (0, 4, 8, 12, 0x18, 0x20, 0x28, 0x30, 0x34, 0x38, 0x40, 0x48, 0x50):
+                  try:
+                      candidate = u32(ptr + delta)
+                      out.append(f"- [+0x{delta:X}] 0x{candidate:08X}: {decode(candidate)}")
+                  except Exception as exc:
+                      out.append(f"- [+0x{delta:X}] read failed: {exc}")
+          Path("deep-followup/scanner-result/xml-global-pointer-chains.md").write_text("\n".join(out) + "\n")
+          PY
       - name: Decode exact scanner XML property and value constants
         shell: bash
         run: |
