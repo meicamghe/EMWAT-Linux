@@ -117,6 +117,22 @@ The `Base64Decode` wrapper (`0x004735C4`) calls `@Base64@Base64Decode` at `0x004
 
 The direct callers include `SeparteImages`, `TWordViewer.StoreFieldValuesForPrint`, and `TfrmImageTools.FreeRotate`. It is a generic payload/field decoder, not a filename-specific helper. The value decoded by the `SeparteImages` call remains to be identified.
 
+
+## 3F. SeparteImages orchestration and file-list contract
+
+The full `TCreateTiff.SeparteImages` entry (`0x004A0148`) establishes the higher-level sequence:
+
+1. Logs `CreateTiff.TiffOut` / `Tiffout function called.`.
+2. Calls `euGetASFileName` with `.tif` to obtain a TIFF output-name/path value; later concatenates the same `.tif` suffix to the resolved path before adding it to a string list.
+3. Checks GAM printer installation/status, runs `Zanprinter.Finalization`, checks pause state, and then calls `THidePrintingThread.Execute` at `0x004A0E88`. A false result produces `Error occured during Convert Word Document to Tiff.`
+4. Calls helper `0x004A0BA8` on the supplied list-like input object, obtains its count and indexed path strings through virtual slots `+0x14` and `+0x0C`, and copies those paths into a local `TStringList` via `+0x3C` (Add).
+5. Iterates the resulting path list and constructs GDI+ image objects from those file paths; the two constructor calls use the zero flag and therefore `GdipLoadImageFromFile`.
+6. Builds the TIFF encoder configuration (`EncoderCompression=LZW`, `EncoderSaveFlag=MultiFrame`) for the page conversion path.
+
+The method has two explicit inputs in the machine-level calling convention: a list-like object in `EDX` and an `AnsiString` in `ECX`, in addition to `Self` in `EAX`. The `AnsiString` is Base64-decoded in a cleanup/finalization path; its semantic role is still unresolved and it is not the page-file list. The page-file list comes from the separate `EDX` object via helper `0x004A0BA8`.
+
+This ties the print worker to the TIFF conversion: GAM printing runs first, then the returned page-file list is loaded from disk and assembled into the multipage LZW TIFF. The exact output directory/name policy inside `euGetASFileName` and the final GDI+ Save/SaveAdd dispatch remain open.
+
 ## 4. Important separation from SevenZip
 
 The observed `SeparteImages` direct helper at `0x00454B9C` is `euGetASFileName` (EmailUtil). The current call graph does not establish that `T7zOutArchive` writes the TIFF page files. Keep the SevenZip output-archive investigation separate until a direct caller or output-stream hand-off connects it to this TIFF path.
