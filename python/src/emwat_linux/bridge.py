@@ -367,9 +367,9 @@ class BridgeHTTPServer:
             do_HEAD = _unsupported
 
         self._server = _ServingThreadingHTTPServer((host, port), Handler)
-        # Do not abandon active document requests during shutdown. The caller
-        # must call shutdown() and then server_close(); ThreadingMixIn will join
-        # request workers before server_close() returns.
+        # Do not abandon active document requests during shutdown. The
+        # runtime first waits for the tracked workers to drain, then calls
+        # server_close(); direct callers retain ThreadingMixIn's join behavior.
         self._server.daemon_threads = False
         self._server.request_queue_size = 32
 
