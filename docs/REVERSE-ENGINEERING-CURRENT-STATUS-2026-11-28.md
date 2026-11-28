@@ -1,3 +1,10 @@
+## 2026-11-28 — Run 42 native wordBody optionality mismatch
+
+- Full `0x005EE82C` trace proves `wordConfig` is required, but `wordBody`, `letterImages`, and `signData` default to empty strings when missing. The handler passes all four to `TWordViwer.LoadDocument` at `0x005EE961`.
+- Current Linux `parse_editword_request()` incorrectly requires a non-empty Base64 `wordBody`. This is a concrete compatibility gap for body-less/new-document requests.
+- Do not only relax the parser: the full empty-body branch of `TWordViwer.LoadDocument` is still not traced, and the Writer adapter needs a verified blank/template creation path.
+- Almas acceptance update commit `77da960`; Run 42 report commit `bd32b58`.
+
 ## 2026-11-28 — Run 41 parity boundary refinement
 
 - Corrected the image/signature parity statement after reviewing existing `word_assets.py` and `libreoffice_adapter.py`: inline Base64 `image/*` WordConfig inventory and controlled Writer graphic updates already exist; explicit text/image update APIs are available but require caller-supplied verified target maps and are not auto-applied at open.
