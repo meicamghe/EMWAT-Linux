@@ -1,0 +1,64 @@
+name: EMWAT GDI+ save methods and encoder parameters
+on:
+  push:
+    paths:
+      - 'analysis-input/EmwatMethods.bpl1'
+      - 'tools/trace_td32_procedure_skipdata.py'
+      - 'tools/trace_td32_callers.py'
+      - 'tools/scan_pe_pointer_refs.py'
+      - '.github/workflows/emwat-gdiplus-save-methods.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: emwat-gdiplus-save-methods-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  save-methods:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install pefile capstone
+      - name: Trace GDI+ Save, SaveAdd, and encoder parameter methods
+        shell: bash
+        run: |
+          mkdir -p gdiplus-methods
+          for target in 0x004908AC 0x004908E4 0x00490950 0x004909B4 0x00490A18 0x00490A84 0x0048F308 0x0048F328 0x0048F364 0x0048F410 0x0048F780 0x00481C64 0x00481C6C 0x00481C74 0x00481C7C 0x0048ED70; do
+            safe=${target#0x}
+            python tools/trace_td32_procedure_skipdata.py analysis-input/EmwatMethods.bpl1 "$target" \
+              "gdiplus-methods/procedure-$safe.md" || true
+            python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 "$target" \
+              "gdiplus-methods/callers-$safe.md" || true
+            python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 "$target" \
+              "gdiplus-methods/pointers-$safe.md" || true
+          done
+          python - <<'PY'
+          from pathlib import Path
+          import pefile
+          blob=Path("analysis-input/EmwatMethods.bpl1").read_bytes()
+          pe=pefile.PE(data=blob,fast_load=True)
+          base=pe.OPTIONAL_HEADER.ImageBase
+          addresses=[0x0062A84C,0x0062A804,0x0062A810,0x0062A800,0x0062A85C,0x0062A86C]
+          out=["# GDI+ encoder GUID/data constants",""]
+          for va in addresses:
+              try:
+                  off=pe.get_offset_from_rva(va-base)
+                  raw=blob[off:off+32]
+                  out += [f"## VA 0x{va:08X} / raw 0x{off:08X}",f"- bytes: {raw.hex(' ')}",
+                          f"- GUID candidate: {raw[:16].hex()}"]
+              except Exception as exc: out.append(f"0x{va:08X}: {exc}")
+          Path("gdiplus-methods/encoder-constants.md").write_text("\n".join(out)+"\n")
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: emwat-gdiplus-save-methods
+          path: gdiplus-methods/
+          if-no-files-found: error
