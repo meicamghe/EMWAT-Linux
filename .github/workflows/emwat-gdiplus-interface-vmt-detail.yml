@@ -106,7 +106,8 @@ jobs:
           from pathlib import Path
           import pefile
           blob=Path("analysis-input/EmwatMethods.bpl1").read_bytes()
-          pe=pefile.PE(data=blob,fast_load=True)
+          pe=pefile.PE(data=blob,fast_load=False)
+          pe.parse_data_directories(directories=[pefile.DIRECTORY_ENTRY["IMAGE_DIRECTORY_ENTRY_IMPORT"]])
           base=pe.OPTIONAL_HEADER.ImageBase
           imports={}
           for desc in getattr(pe,"DIRECTORY_ENTRY_IMPORT",[]):
@@ -115,7 +116,17 @@ jobs:
                   name=imp.name.decode("ascii","replace") if imp.name else f"ordinal_{imp.ordinal}"
                   imports[imp.address]=f"{dll}!{name}"
           out=["# GDI+ code thunk to actual PE import map","",
-               "This maps each 6-byte JMP [IAT] thunk to the import address and imported symbol; TD32 names are not treated as authoritative.",""]
+               "This maps each 6-byte JMP [IAT] thunk to the import address and imported symbol; TD32 names are not treated as authoritative.","",
+               "## Parsed GDI+ imports"]
+          for va in (0x00481C5C,0x00481C64,0x00481C6C,0x00481C74,0x00481C7C,0x00481D14):
+              try:
+                  off=pe.get_offset_from_rva(va-base)
+                  raw=blob[off:off+6]
+                  iat=int.from_bytes(raw[2:6],"little") if raw[:2]==b"\xff\x25" else None
+                  for slot, symbol in sorted(imports.items()):
+              if "gdip" in symbol.lower():
+                  out.append(f"- {symbol} — IAT VA 0x{slot:08X}")
+          out.append("")
           for va in (0x00481C5C,0x00481C64,0x00481C6C,0x00481C74,0x00481C7C,0x00481D14):
               try:
                   off=pe.get_offset_from_rva(va-base)
