@@ -145,3 +145,6 @@ Corrected VMT pass: global slot 0x00483F4C contains 0x00483FA4 (not 0x00483FA0);
 - Base64/TIFF payload trace: run `46121009769`, in progress.
 
 New Word finding: `WordAppDocumentBeforeClose` is a Boolean print-field helper called only from `FillImgFldsForPrint`, itself called by `GetFieldIndexInList`; it is not a COM close event handler in this call graph. New TIFF constants: `.tif` extension and paused-printer/error messages; Base64Decode is shared by print fields and image rotation, so its TIFF call does not prove filename decoding.
+
+
+Scanner XML root/property names are now recovered: `scan-document` root; `constraints` child; `colorDepth`, `minResolution`, `maxResolution`, `maxFileSize` fields; `error` property and its XML error prefix. See `docs/SCANNER-XML-ROOT-AND-PROPERTY-NAMES-2026-11-28.md`. Required/optional/default semantics remain open.
