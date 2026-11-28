@@ -66,10 +66,12 @@ after a Don't Save choice.
    outcomes. The exact Windows wire response for explicit operation-level
    discard is not established; use a fail-closed local policy and do not claim
    Windows parity for it.
-4. **Desktop bootstrap:** the ordinary GTK entry point still does not inject
-   a deployment-configured `BridgeSupervisor`. The exact loopback composition
-   is documented in `docs/ALMAS-GTK-STARTUP-WIRING-PLAN.md`, but startup
-   wiring is not implemented.
+4. **Desktop bootstrap:** the work branch now implements the normal GTK
+   entry-point composition in `python/src/emwat_linux/deployment.py` and
+   `gtk_desktop.py`, including the captured loopback-only bind and Origin /
+   Referer allowlists. This is implementation evidence, not live deployment
+   acceptance; verify dependency failure, port conflict, start/stop, and the
+   real Almas browser workflow before release.
 5. **Almas persistence:** no test has yet shown that the real Almas application
    receives, accepts, and persists the returned edited document from Linux.
 6. **In-flight shutdown acceptance and test result:** the bridge now tracks
@@ -231,7 +233,12 @@ The earlier Run-40 statement that TEditWordDocument had no VMT is superseded: it
 
 The bridge already supports separate XHR Origin and parent-page Referer allowlists. The PCAP/screenshot establishes both origins as http://127.0.0.1:1984, with the bridge bound to 127.0.0.1:1984. The external Almas web page hostname is not the Origin of the captured loopback XHR and should not be guessed or required for this listener. A precise startup composition and explicit-discard fallback policy are documented in docs/ALMAS-GTK-STARTUP-WIRING-PLAN.md.
 
-The remaining gap is implementation: the normal GTK entry point still creates the desktop without an injected BridgeSupervisor. The plan specifies the exact composition but no code was changed here. The CancelResponseFactory remains a fail-closed local 409 only for explicit operation-level DISCARDED; Writer's Save/Don't Save/Cancel lifecycle is separate and already modeled.
+This Run-47 implementation-gap statement is superseded by the isolated
+work-branch implementation recorded in the implementation-status section of
+`docs/ALMAS-GTK-STARTUP-WIRING-PLAN.md` and by PR #6. The remaining gate is
+runtime acceptance against real Almas, not the existence of the GTK composition.
+The CancelResponseFactory remains a fail-closed local 409 only for explicit
+operation-level DISCARDED; Writer's Save/Don't Save/Cancel lifecycle is separate.
 
 
 ## Run 50 — preserve the native pending-request duration
