@@ -3377,3 +3377,12 @@ The next meaningful Almas acceptance input is a sanitized, synthetic-or-test-acc
 - `Save_Tiff_MultyPages` is a separate operation; its path/format branches are not interchangeable with `Scan`.
 - Keep both `SinglePageFileSet` and `MultiPageFile` in the native model because Windows has distinct result classes, but do not map this Scan method to a page-file set or implement a production adapter until final naming and connector response semantics are recovered.
 - This is static disassembly plus ImageGear API-reference corroboration, not physical scanner/ADF/duplex or live Almas acceptance. No native production code changed.
+
+
+## 2026-11-28 — parallel reverse-engineering follow-up (run 22)
+
+- Added a durable evidence report: docs/REVERSE-ENGINEERING-PARALLEL-FOLLOWUP-2026-11-28.md.
+- Scanner request flow is now cross-checked across TFaxDocument.PerformMethod, TScanCommand.DoRequest, LoadRequestXML, Finalization, GetNextPage, VerifyConstraints and HasError. Finalization maps selector values 1/4/8/24 to four localized scan-mode labels and checks min/max resolution; the +0x14 image-derived threshold remains semantically unknown.
+- ImageEn imports are confirmed as a separate external package boundary: InsertPicture calls PKIECtrl23.bpl!TImageEnMIO.Acquire; DoPrintingPanel calls TImageEnMIO.PrintImage. ScanPicture remains a one-byte RET stub. PKIECtrl23.bpl is not present in analysis-input, so Acquire internals are not yet reversed.
+- Word callback correction remains: OnTmrAutoSave registers 0x004CD154 as BeforeSave. The separately named 0x004CCBBC BeforeClose has one direct bounded caller and no raw-pointer registration reference; its active event role is unproven. See docs/WORD-COM-INTERFACE-DISPATCH.md.
+- Run 22 (46112005385): scanner, ImageEn and Native regression lanes passed; Word/Printer lane was still running when this entry was written. No production Linux code changed; no hardware or live Almas E2E acceptance is claimed.
