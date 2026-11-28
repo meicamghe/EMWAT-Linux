@@ -3420,3 +3420,5 @@ Reverse engineering only. No production Linux code or release builds were change
 - Word queue wait implementation is now identified: `kernel32!Sleep(5)` followed by `Vcl.Forms.TApplication.ProcessMessages`, then another `EnumJobsW` check. No timeout was observed in the loop.
 
 - Additional static lanes passed: TIFF lifecycle, GearType constants/consumer, GDI+ save API surface, Word spool loop, Sleep import, and VCL ProcessMessages import resolution. The GDI+ Save/SaveAdd and encoder-parameter detail lane is still in progress.
+
+- GDI+ save wrapper names are not yet fully trusted: PE import table and TD32 thunk labels disagree on Save/SaveAdd addresses. Exact VMT-to-import mapping is pending independent cross-check.
