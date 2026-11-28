@@ -207,6 +207,32 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
 
+    writeln!(report)?;
+    writeln!(report, "## Word Automation method signatures")?;
+    writeln!(report, "The following decoded overloads are included to expose the actual COM wrapper parameters; names alone are not treated as proof of close/save semantics.")?;
+    let signature_targets = ["TWordDocument", "TWordApplication"];
+    let signature_names = ["Close", "Save", "SaveAs2000", "Quit", "Connect", "ConnectTo", "Disconnect"];
+    for class in bin.classes().iter().filter(|class| signature_targets.contains(&class.name())) {
+        writeln!(report)?;
+        writeln!(report, "### {}", class.name())?;
+        let signature_report = bin.method_signatures(class);
+        let decoded = signature_report.decoded();
+        if decoded.is_empty() {
+            writeln!(report, "- Signature RTTI: `{:?}`", signature_report)?;
+            continue;
+        }
+        for signature in decoded {
+            let name = signature.name.unwrap_or("<unnamed>");
+            if !signature_names.contains(&name) {
+                continue;
+            }
+            writeln!(report, "- `{}` code VA: `{:?}`", name, signature.code_va)?;
+            writeln!(report, "```text")?;
+            writeln!(report, "{:#?}", signature)?;
+            writeln!(report, "```")?;
+        }
+    }
+
     let mut seeds = String::from("# REA Ghidra seed file: address<TAB>kind<TAB>name\n");
     let mut ambiguous = Vec::new();
     let mut emitted = 0usize;
@@ -228,7 +254,7 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
     writeln!(report, "- Extended fields decoded: {extended_field_count}")?;
     writeln!(report, "- Unique method addresses considered: {}", seed_candidates.len())?;
     writeln!(report, "- REA function seeds emitted (unique names, .text only): {emitted}")?;
-    writeln!(report, "- Methods rejected outside .text: {out_of_text_methods}")?;
+    writeln!(report, "- Methods rejected from seeds (outside .text or non-ASCII): {out_of_text_methods}")?;
     writeln!(report, "- Ambiguous code addresses omitted: {}", ambiguous.len())?;
     for (address, names) in ambiguous {
         writeln!(report, "  - `0x{address:08X}`: {}", names.join(" | "))?;
