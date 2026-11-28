@@ -3449,3 +3449,14 @@ TIFF load path resolved: `SeparteImages` pushes zero for both `TGPImage` constru
 Base64/GDI+ load closure (run 46121270958): Base64Decode is a shared AnsiString-to-AnsiString Base64 decoder used by SeparteImages, StoreFieldValuesForPrint, and FreeRotate; it is not filename-specific. GDI+ constructor load branches are both file APIs: zero flag → GdipLoadImageFromFile; nonzero flag → GdipLoadImageFromFileICM (GNU objdump confirms the imports). SeparteImages passes zero twice, so it uses non-ICM file loading.
 
 - TIFF pipeline: SeparteImages invokes the GAM print worker, receives/iterates page-file paths, loads them from disk with GDI+, and configures multipage LZW TIFF output. euGetASFileName(".tif") supplies the output-name path; exact path policy and final SaveAdd sequence remain unresolved.
+
+
+## 2026-11-28 — parallel reverse-engineering follow-up (Run 24)
+
+- Detailed evidence and artifact IDs: docs/REVERSE-ENGINEERING-PARALLEL-FOLLOWUP-2026-11-28-RUN24.md. Final Word (46124030841), GAM printer (46124104850), GDI+ (46124227390) and scanner XML (46123192414) analysis runs passed.
+- Word event crosswalk: OnTmrAutoSave registers WindowDeactivate at event offset +0xA0 and WordIsActivated at +0xA8. Activation calls SaveOriginalOptions. The TD32-named WordAppDocumentBeforeClose remains a print-field/XML metadata helper, not a proven COM close callback. The real close-to-Almas Save/Discard/Cancel bridge remains open.
+- GAM printer: InstallZanPrinter's 0x00401240 is rtl230.bpl UnicodeString assignment, not an install side effect. GetZanInstallDir launches GAMPrinterSetup.exe through ShellExecuteW; it uses Open on Windows major version <=5 and RunAs on later versions, then waits up to 300 × 100 ms for the printer. No AddPrinter/AddPrinterDriver import exists in EMWAT; installation is external.
+- Printer APIs are mapped to OpenPrinterA/W, GetPrinterA, EnumPrintersA/W, EnumJobsW and ClosePrinter. CheckPrinterPaused writes save.ini/image.ini/general.ini settings including TIFF/LZW/multiframe-strip policy and JobFinishes.GAM sentinel configuration. No direct StartDocPrinter/WritePrinter or successful completion proof.
+- GDI+ thunk map is corrected from PE imports, not TD32 labels: 0x481C64=GdipSaveImageToFile, 0x481C6C=GdipSaveImageToStream, 0x481C74=GdipSaveAdd, 0x481C7C=GdipSaveAddImage; 0x481C5C=GdipDisposeImage and 0x481D14=GdipImageRotateFlip. TGPImage interface slot → Save/SaveAdd/final-flush mapping remains open; raw pointer scans found no runtime-section references to the candidate wrappers.
+- Scanner LoadRequestXML passes inline property error to XML interface slot +0xB8; adjacent diagnostic prefix is <ScanDoc HasError>. ErrorXML:. Required/optional/default semantics and external XMLRTL slot identity remain open.
+- No production Linux/Windows code or release build was changed; no merge/rebase was performed.
