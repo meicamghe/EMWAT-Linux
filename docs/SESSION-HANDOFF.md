@@ -1,3 +1,14 @@
+## 2026-11-28 — persistent per-test Python CI diagnostics
+
+- Current diagnostic workflow commit: `adb12c426c3fbc0baef73f4bb516e7310f747e69`.
+- The Python Bridge run on prior head `0fea5f9...` remained stuck in the transport-test step; the GitHub job-log endpoint returned 404 while the job was active, so the blocked test is still unknown.
+- Improved the workflow to stream and flush each unittest's start line, keep the 5-minute faulthandler dumps, tee all output to `python/bridge-test.log`, and upload that log with `if: always()` so a timeout still leaves a downloadable diagnostic artifact.
+- This is CI-only instrumentation; no EMWAT runtime behavior changed. The new run must complete or time out before the artifact can be inspected. Do not claim the Python suite passes until then.
+- Latest status before this commit: PR #6 Draft/open/unmerged; GTK succeeded on `0fea5f9`; Debian lifecycle succeeded on the same head; Python remained in progress.
+- Current priority: inspect the uploaded per-test log and faulthandler trace, isolate the exact hanging test/thread, then make the smallest runtime/test fix with a targeted regression test. Keep PR #6 unmerged.
+
+---
+
 ## 2026-11-28 — Python CI timeout diagnostics and current continuation
 
 - PR #6 remains Draft/open/unmerged. The workflow code change is commit `556c99379544c80c9b0521d11d76b9627ad71e4f`; the accompanying status note is `c83338ff53f5b7f096112031ba05fa7fcf80a491`.
