@@ -56,6 +56,12 @@ jobs:
             python tools/trace_td32_immediate_refs.py analysis-input/EmwatMethods.bpl1 \
               "0x$target" "$out/event-$target-immediate-refs.md"
           done
+          for target in 004BB3B0 004BB81C 004CB1B4 004C9EA8 004C1A18 004D0E9B; do
+            python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 \
+              "0x$target" "$out/state-procedure-$target.md"
+            python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 \
+              "0x$target" "$out/state-callers-$target.md"
+          done
           targets=(5C 5D 5E 5F 79 F4)
           pids=()
           for target in "${targets[@]}"; do
