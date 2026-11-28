@@ -73,6 +73,12 @@ jobs:
           pe=pefile.PE(data=blob,fast_load=False)
           pe.parse_data_directories(directories=[pefile.DIRECTORY_ENTRY["IMAGE_DIRECTORY_ENTRY_IMPORT"]])
           base=pe.OPTIONAL_HEADER.ImageBase
+          imports={}
+          for desc in getattr(pe,"DIRECTORY_ENTRY_IMPORT",[]):
+              dll=desc.dll.decode("ascii","replace")
+              for imp in desc.imports:
+                  name=imp.name.decode("ascii","replace") if imp.name else f"ordinal_{imp.ordinal}"
+                  imports[imp.address]=f"{dll}!{name}"
           out=["# GAM printer install constants and Winspool imports",""]
           for va in (0x0047CC64,0x0047CC60,0x0047CC68,0x0047CC70,0x0047CC94):
               try:
