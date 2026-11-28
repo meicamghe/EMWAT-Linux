@@ -79,3 +79,6 @@ Run `46118668134` closes the size-unit question: `TResultImage.GetFileStream` re
 ## TIFF/GDI+ pipeline update
 
 Run `46118848571` shows `TWordViewer.LoadDocument` calls `TCreateTiff.SeparteImages` twice; that routine performs GAM-printer checks, invokes `THidePrintingThread.Execute`, then constructs GDI+ `TGPEncoderParameters` and `TGPImage` objects, initializes codecs, and iterates image pages through GDI+ VMT methods. Exact save API/output filename and worker completion contract remain open. See `docs/TIFF-OUTPUT-GDIPLUS-PIPELINE-2026-11-28.md`.
+
+
+The queue polling loop also normalizes the candidate UnicodeString through `FixDirectionInFarsiNumericMode` before matching it against `JOB_INFO_1W.pDocument`. It waits while a match exists (one-argument delay call with value 5), and no explicit timeout was observed. Absence may mean completion, cancellation, no job submission, or a name mismatch; do not treat it as proof of successful print output.
