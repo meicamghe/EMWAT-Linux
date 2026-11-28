@@ -113,6 +113,28 @@ jobs:
             0x00404FAC "$out/word-connection-helper-00404FAC.md" || status=1
           exit "$status"
 
+      - name: CFG trace print worker, TIFF and signData paths
+        shell: bash
+        run: |
+          set -euo pipefail
+          out=analysis-output/undelphi/cfg
+          mkdir -p "$out"
+          for target in 004A609C 004A1AA0 004A0148 004C1A18 004C2B20 004C436C; do
+            python tools/trace_td32_cfg.py analysis-input/EmwatMethods.bpl1 \
+              "0x$target" "$out/cfg-$target.md"
+          done
+          python tools/decode_pe_strings.py analysis-input/EmwatMethods.bpl1 \
+            0x004A1AF4 0x004A1AF8 0x004A0B24 0x004A0E88 0x004A0BA8 \
+            0x004A07F4 0x004A08F4 0x004A09C0 > "$out/print-worker-strings.md"
+          for target in 00402A38 00402AF0 00404224 0040271C 00404FAC; do
+            python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 \
+              "0x$target" "$out/helper-$target.md"
+          done
+          for class_pointer in 004A00E8 004A22F0 004B10A4; do
+            python tools/inspect_delphi_vmt_address.py analysis-input/EmwatMethods.bpl1 \
+              "0x$class_pointer" "$out/vmt-$class_pointer.md"
+          done
+
       - name: Merge TD32 and undelphi function seeds
         shell: bash
         run: |
