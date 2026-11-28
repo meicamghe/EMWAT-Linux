@@ -2148,3 +2148,23 @@ Current conclusions:
 - ImageEn Acquire remains external to the absent matching PKIECtrl23.bpl. Do not infer its internals.
 
 Next parallel tasks: map TGPImage interface slots to the actual GDI+ save/flush sequence; locate JobFinishes.GAM production/consumption and final TIFF/archive hand-off; continue the real Word close bridge; resolve SevenZip output callback/encryption; close scanner XML defaults. Reverse engineering only: no production implementation, release build, merge or rebase.
+
+
+## 2026-11-28 — Run 25 artifact re-analysis handoff
+
+Current branch: feature/recovery-retention-policy  
+Latest documentation commit: 65194993ed036f02f9bccd702bbc3bf8abc9e900  
+Detailed report: docs/REVERSE-ENGINEERING-PARALLEL-FOLLOWUP-2026-11-28-RUN25.md
+
+Five workstreams were re-analyzed in parallel from the completed Run-24 artifacts:
+
+1. GDI+: initial TIFF Save, frame enumeration/selection, SaveAddImage and final Flush are mapped by call arguments and control flow. Next verify the first-iteration dual-image behavior and actual multipage output order with a runtime fixture.
+2. GAM printer: CheckPrinterPaused is the INI writer, not the PRINTER_STATUS_PAUSED query. Exact save.ini/image.ini/general.ini settings are documented. JobFinishes.GAM is configured as a sentinel filename, but its external driver/port-monitor consumer is not in EmwatMethods.bpl1.
+3. Word: the BeforeClose-named helper is not a close callback; QuitWord is a Caption/Activation check. Find the Almas parent-page/host event or obtain a sanitized close-time loopback HTTP capture before implementing a close bridge.
+4. SevenZip: output archive object, callback/context fields and distinct progress callback are mapped. Find the callback installer/owner and the actual archive consumer; do not infer encryption from the SetPassword stub.
+5. Scanner XML: exact root/keys and numeric constraints are mapped. XMLRTL defaults, required/optional rules and option-literal mapping remain open.
+
+Evidence limits:
+- This follow-up re-downloads/reviews existing workflow artifacts; it did not trigger another GitHub Actions run.
+- No production code, build, release, merge or rebase was performed.
+- Do not invent XML defaults, sentinel-consumer behavior, archive encryption, or Windows Word close semantics.
