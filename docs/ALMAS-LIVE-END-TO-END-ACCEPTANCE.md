@@ -235,3 +235,10 @@ The earlier Run-40 statement that TEditWordDocument had no VMT is superseded: it
 The bridge already supports separate XHR Origin and parent-page Referer allowlists. The PCAP/screenshot establishes both origins as http://127.0.0.1:1984, with the bridge bound to 127.0.0.1:1984. The external Almas web page hostname is not the Origin of the captured loopback XHR and should not be guessed or required for this listener. A precise startup composition and explicit-discard fallback policy are documented in docs/ALMAS-GTK-STARTUP-WIRING-PLAN.md.
 
 The remaining gap is implementation: the normal GTK entry point still creates the desktop without an injected BridgeSupervisor. The plan specifies the exact composition but no code was changed here. The CancelResponseFactory remains a fail-closed local 409 only for explicit operation-level DISCARDED; Writer's Save/Don't Save/Cancel lifecycle is separate and already modeled.
+
+
+## Run 50 — preserve the native pending-request duration
+
+The approximately 54.56-second PCAP gap from the final request-body byte to the first response byte is explained by the separate `TWordViwer.OnTmrAutoSave` close loop documented in `docs/WORD-RESPONSE-TIMER-CORRELATION-2026-11-16.md`: it pumps messages, sleeps 5 ms, and waits until viewer field `+0x58` is cleared by the Word close/registration callback at `0x004CD154/0x004CD31C`. This is the main user-open duration, distinct from the short EFOpenError class poll at `0x004B7D57`.
+
+The Linux `LibreOfficeAdapter` has `close_timeout_seconds=None` by default, so its `wait_for_close` remains pending until the Writer close listener fires. Keep that default for parity; do not add a 30/60-second lifecycle timeout. The bridge's 10-second socket timeout governs socket I/O, not the synchronous office-session wait after the request body has been read. The browser-side XHR must likewise remain pending for the user's editing session.
