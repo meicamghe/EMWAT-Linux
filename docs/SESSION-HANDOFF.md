@@ -1,3 +1,11 @@
+## 2026-11-28 — Run 34 print-worker caller gate
+
+- The only direct caller of THidePrintingThread.Execute is TCreateTiff.SeparteImages at 0x004A02B8.
+- The caller tests AL immediately; false branches to failure at 0x004A02C1, true continues at 0x004A02D7. Worker success is therefore a hard precondition for the GDI+ TIFF continuation.
+- Combined acceptance has two distinct gates: spooler queue disappearance, then generated TIFF file existence accepted by THidePrintingThread. Queue disappearance alone is not proof of output completion.
+- Report: docs/REVERSE-ENGINEERING-PARALLEL-FOLLOWUP-2026-11-28-RUN34.md; focused worker doc updated in commit e9b5252; report commit 782d6b9.
+- No tests, CI, or package build were run.
+
 ## GitHub verification — 2026-11-28
 
 - PR #2 remains open and Draft, base main, head feature/recovery-retention-policy at 4fe67b63879440f9353997d1c6f5a42f5b82df81 (1,418 commits / 246 changed files).
