@@ -27,3 +27,13 @@
 5. A Windows-saved response document and a round-trip comparison against LibreOffice output.
 
 Until these are available, the correct status is: WordConfig is parsed, catalogued and externally bound; inline images and signer slots are inventoried; external signData is resolved to its request parameter but remains opaque and unapplied. Do not advertise full signature parity.
+
+
+## Native SignData storage and consumption — 2026-11-28
+
+- The actual `TWordViwer` class has a private field `SignData` at instance offset `+0xF4`. The LoadDocument path stores the external request value in this field.
+- Native string key `0x004C2718` decodes to ASCII `signData`.
+- `TWordViwer.GetCaptionItemFont` at `0x004C1A18` compares a caption item's key against `signData`; on the matching branch it copies the `SignData` field into a local string for caption-item processing.
+- This proves that the request's `signData` value is consumed by the native caption-item path. It does not reveal the payload's encoding or fully reconstruct the final rendered object; keep the resolver's payload opaque and bounded until a non-empty Windows fixture and output comparison are available.
+- The field RTTI type reference is `0x0062EEBC` and remains unresolved. The native copy pattern is consistent with Delphi string assignment.
+- No use of `SignData` was found in the current BeforeClose/BeforeSave callback traces.

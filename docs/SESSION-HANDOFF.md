@@ -296,3 +296,16 @@ No Linux release package was built. No additional workflow was dispatched. PR #2
 - `TScanCommand` stores the options at `+0x08/+0x0C/+0x10/+0x14`: colour selector, min resolution, max resolution, max file size.
 - Existing EMWAT VMT script assumes a later Win32 layout, unlike REA issue #2811's Delphi 2–2007 profile. Candidate `TScanCommand` VMT `0x004F1F94` validates self/class-name/size/parent; `0x004F1F3C` is the self-pointer slot, not a separate false candidate. Field-table raw bytes contain candidate names but are not structurally parsed; method-table pointer `0x004F20B9` reports count zero and trailing bytes are not yet attributable to methods. Do not use Delphi 7 offsets blindly.
 - Details: `docs/SCANNER-XML-SERIALIZATION-CONTRACT-2026-11-28.md`, `docs/IMAGE-SCANNER-EDITOR-CALLGRAPH-INVENTORY.md`, `docs/REA-ASSISTED-REVERSE-ENGINEERING-PLAN-2026-11-28.md`.
+
+
+## 2026-11-28 — Word close/save, SignData and Delphi 10 metadata
+
+- undelphi 0.5.1 successfully parsed the actual EMWAT BPL as Delphi 10 Seattle 30.0 Win32: 526 classes, 3,862 extended methods, 1,192 extended fields, 3,834 Ghidra seeds. This is not yet an REA/Ghidra execution.
+- VMT header start for TScanCommand is `0x004F1F3C`; class pointer is `0x004F1F94`. The previous apparent second candidate was the header/self-pointer address, not a separate VMT.
+- TWordApplication event fields and TMethod assignments prove `0x004CD154` is BeforeClose and `0x004CD54C` is BeforeSave despite stale TD32 labels.
+- BeforeClose checks `ReadyToClose`, queries Document.Saved, and conditionally shows the Persian Yes/No/Cancel prompt when unsaved and `OpenAsFree` is true. Yes prepares SaveChanges=-1; No prepares 0; Cancel sets the event Cancel word.
+- BeforeSave intercepts Word's event, handles the custom save path, and can invoke `PrintWithGamPrintOptions`; controller autosave is a separate `OnControlerNotify -> CostumizeRecAndCC -> Document.Save` route.
+- `SignData` is stored at TWordViwer+0xF4 and consumed by GetCaptionItemFont for the caption-item key `signData`; its payload format remains opaque.
+- `ReadyToClose` is a busy gate toggled by field processing/save/controller paths. `OpenAsFree` is read but no direct writes were found in this BPL; locate host-side initialization before asserting the Almas-mode prompt behavior.
+- Full trace: `docs/WORD-AUTOMATION-CLOSE-SAVE-EVENT-CROSSWALK-2026-11-28.md`.
+- Next: trace host-side `OpenAsFree` initialization, the `TWordApplication` connection-point helper/IID, `PrintWithGamPrintOptions` and BeforePrint selection, then merge TD32 seeds with undelphi seeds and run REA/Ghidra. Keep live Almas acceptance marked pending.

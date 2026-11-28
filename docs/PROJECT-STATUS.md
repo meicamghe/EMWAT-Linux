@@ -3608,3 +3608,14 @@ Base64/GDI+ load closure (run 46121270958): Base64Decode is a shared AnsiString-
 - VMT cross-check: the existing EMWAT script uses a later Win32 profile (self pointer -0x58, class name -0x38, instance size -0x34, parent -0x30). Candidate `TScanCommand` VMT `0x004F1F94` matches self pointer, class-name `TScanCommand`, size `0x40`, parent `0x0062EEA4`; `0x004F1F3C` is its self-pointer slot, not a false candidate. The field-table target bytes contain candidate field names but the extended record layout is not parsed. The method-table pointer `0x004F20B9` has a leading count of zero; trailing bytes are not yet proven method records. REA's Delphi 7 profile must not be applied blindly.
 - Full details: `docs/SCANNER-XML-SERIALIZATION-CONTRACT-2026-11-28.md` and `docs/REA-ASSISTED-REVERSE-ENGINEERING-PLAN-2026-11-28.md`.
 - Python Bridge fix validation runs remain queued: `46150833510`, `46150833548`, `46150833597`. No green claim yet.
+
+
+## 2026-11-28 — Word Automation lifecycle and SignData crosswalk
+
+- Python Bridge CI instrumentation is now green: run `46150833510` passed 336 tests in 11.448 seconds with 3 skips; GTK and Debian package workflows passed on the same runtime fix. The later PR-head checks for the analysis-only updates also passed.
+- The actual EMWAT BPL was parsed by undelphi 0.5.1: Delphi 10 Seattle 30.0 Win32, 526 classes, 3,862 extended methods, 1,192 extended fields, 3,834 Ghidra seed addresses.
+- Reconciled the TScanCommand VMT header/class-pointer distinction and decoded its extended fields/methods. See the REA-assisted plan.
+- Mapped TWordApplication event fields to callbacks. The actual BeforeClose callback is `0x004CD154` despite its stale TD32 BeforeSave label; actual BeforeSave is `0x004CD54C` despite its stale NewDocument label.
+- Recovered the Persian Save/Discard/Cancel prompt and conditional close path, plus the BeforeSave interception and autosave state flags. `OpenAsFree` remains read-only in this BPL scan; its host-side initialization is unresolved.
+- Confirmed `TWordViwer.SignData +0xF4` is consumed by `GetCaptionItemFont` when a caption-item key equals `signData`. Payload decoding/rendering parity is still open.
+- Full evidence and caveats: `docs/WORD-AUTOMATION-CLOSE-SAVE-EVENT-CROSSWALK-2026-11-28.md`.

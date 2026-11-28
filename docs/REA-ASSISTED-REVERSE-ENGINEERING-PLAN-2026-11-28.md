@@ -129,3 +129,15 @@ The current EMWAT artifact set already contains a candidate Delphi class metadat
 This is a material profile warning: REA issue #2811 discusses Delphi 2–2007 Win32 VMT recovery, while the existing EMWAT script targets a later Win32 VMT layout. Do not apply the issue's Delphi 7 offsets blindly to EMWAT. The exact compiler version is still not conclusively identified; the current later-layout candidate is a working profile backed by repository evidence, not a complete compiler fingerprint.
 
 Next VMT step: reconcile the raw method-table and field-table record formats against this exact `TScanCommand` candidate, validate the same negative-offset layout against at least two unrelated classes, then emit only executable method-entry seeds. Keep the zero-entry method-table parse as an explicit unresolved discrepancy.
+
+
+## Actual EMWAT BPL pilot with undelphi — 2026-11-28
+
+- The read-only `tools/undelphi_probe` was executed against the committed `analysis-input/EmwatMethods.bpl1` (SHA-256 `6ff7d262f46ab009e3eecf20fca40cd41ec8ad937adf7bbfe2f6eddd56aaea2d`).
+- undelphi 0.5.1 identified Delphi 10 Seattle, compiler version 30.0, Win32, with high confidence.
+- The probe recovered 526 classes, 3,862 extended methods, 1,192 extended fields and emitted 3,834 unique in-.text method seeds in `rea-method-seeds.tsv`.
+- This is a successful independent parser run, **not** an execution of REA itself. REA/Ghidra still needs to consume the seed file.
+- VMT address convention is now reconciled: undelphi reports the VMT header start `0x004F1F3C` for `TScanCommand`; the class pointer used by `inspect_delphi_vmt_address.py` is `0x004F1F94`, stored in the self-pointer slot at header offset `+0x58`. `0x004F1F3C` is not a false second candidate.
+- The TScanCommand extended field table parses into ten typed field entries, and its extended method metadata contains Create/Destroy/DoRequest. The legacy published-method-table count of zero is not evidence that the class has no methods; Delphi 10 extended method metadata is separate.
+- `TWordViwer` metadata identifies VMT header `0x004B104C`, instance size `0x11C`, and the state fields documented in `WORD-AUTOMATION-CLOSE-SAVE-EVENT-CROSSWALK-2026-11-28.md`.
+- The generated seeds cover extended RTTI methods, not every private TD32 procedure. Next add a separate TD32 symbol seed pass and merge by validated executable VA before importing into REA/Ghidra.
