@@ -1,3 +1,11 @@
+## 2026-11-28 — Run 31 reverse-engineering cross-correlation
+
+- XMLRTL: the scanner Get_ColorDepth path now maps to IXMLNode.ChildNodes followed by IXMLNodeList.FindNode("constraints"). The ForceSinglePageFiles helper at 0x0044B508 remains unresolved; its zero-valued call argument does not prove the missing-attribute default.
+- THidePrintingThread: 0x00404494 is resolved as shell32!ShellExecuteW (IAT 0x0062F9CC), not a printer-status helper. 0x00402818 is the GetVersionEx thunk. The caller initializes 0x114 (276) bytes, matching OSVERSIONINFOW rather than OSVERSIONINFOEXW (284 bytes), despite the TD32 decorated suffix. The worker branches on dwMajorVersion > 5 and performs staged ShellExecuteW calls; their return >32 gates later stages, but final worker success still depends on the final FileExists check.
+- GDI+: functional Save/SaveAdd slot mapping remains high-confidence (+0x48 initial SaveImageToFile, +0x5C SaveAddImage, +0x58 final SaveAdd Flush=20). Raw Delphi interface VTable pointer bytes are not present in the current artifacts; the RTTI block must not be treated as a flat method pointer array.
+- Run report: docs/REVERSE-ENGINEERING-PARALLEL-FOLLOWUP-2026-11-28-RUN31.md. Focused crosswalks updated. No tests or CI were run and no package was built.
+- Remaining exact blockers: recover worker string literals and identify 0x004026B4; disassemble 0x0044B508; obtain raw GDI+ interface table bytes if direct slot-to-code mapping is required. A real TIFF fixture remains lower priority.
+
 # EMWAT-Linux reverse-engineering status — 2026-11-28
 
 Parallel static-analysis runs 22–25 have produced several new contracts. The evidence is recorded in:
