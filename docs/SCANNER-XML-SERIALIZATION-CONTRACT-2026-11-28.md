@@ -92,3 +92,15 @@ Run 30 resolves the core helper roles from register/value flow: `0x0044B498` Has
 Important correction: TD32 names in this generated accessor range are not reliable for getter/setter direction. `0x004EA94C` reads the `constraints` child; `0x004EAA08`, `0x004EAB58`, `0x004EACB0`, and `0x004EAE08` are numeric getters (HasAttribute/GetAttribute/conversion); `0x004EAAD8`, `0x004EAC2C`, and `0x004EAD84` are SetAttribute-shaped setters. Use the exact literal property names and the Run-30 crosswalk, not the TD32 labels.
 
 `0x0044B508` is still used by `Get_ForceSinglePageFiles`; its missing-attribute/default and conversion semantics remain unresolved. No boolean/string defaults should be inferred from the current call shape.
+
+
+## Run 31 — XMLRTL child-node call chain cross-check
+
+The `Get_ColorDepth` path at `0x004EA94C` calls `0x0044B4D8` with the current `IXMLNode` and an output interface slot. The returned interface is then called through its first custom-method slot with the literal node name `constraints`, and the result is retained as an `IXMLNode` interface. This call shape matches the XMLRTL chain:
+
+1. `IXMLNode.ChildNodes` returns an `IXMLNodeList`.
+2. `IXMLNodeList.FindNode(NodeName)` resolves and returns the named child `IXMLNode`.
+
+The literal `constraints` and the interface return shape support identifying the second dispatch as `FindNode`; the official XMLRTL contracts confirm that `ChildNodes` is an `IXMLNodeList` and `FindNode` accepts a `NodeName` and returns the matching `IXMLNode`. References: [IXMLNode.ChildNodes](https://docwiki.embarcadero.com/Libraries/Alexandria/en/Xml.XMLIntf.IXMLNode.ChildNodes) and [IXMLNodeList.FindNode](https://docwiki.embarcadero.com/Libraries/Athens/en/Xml.XMLIntf.IXMLNodeList.FindNode).
+
+This closes the practical `constraints` navigation chain. It does not identify the internal implementation split inside helper `0x0044B4D8` beyond its ChildNodes-return role. The `0x0044B508` ForceSinglePageFiles helper remains unresolved: the generated accessor supplies the key `forceSinglePageFiles`, a global interface/context argument, and a zero-valued fallback argument before Boolean conversion. Do not claim that missing attributes necessarily resolve to false until that helper's implementation is traced.
