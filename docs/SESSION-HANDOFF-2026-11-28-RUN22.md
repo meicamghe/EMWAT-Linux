@@ -29,7 +29,7 @@ Current branch: `feature/recovery-retention-policy`
 - `Zanprinter.Finalization` opens that printer, gets `PRINTER_INFO_2A` level 2, closes it, and checks Status at +0x48 for value 1 (paused).
 - `getPrinterNumJobs` actually calls `OpenPrinterW` and returns the handle; it does not count jobs itself.
 - `ExtractFileNameEX` calls `EnumJobsW` twice (buffer sizing + data), iterates `JOB_INFO_1W` records at 0x40 stride, reads `pDocument` at +0x10, and compares the job document name with the supplied UnicodeString.
-- Direct callers of `getPrinterNumJobs` include `TWordViewer.BGPrintWithGamPrintOptions` and `TCreateTiff.TrimLF`. This establishes the queue-polling path's key components, but the exact call/indirect-reference link to `ExtractFileNameEX` and the final TIFF/archive gate still need proving.
+- Direct callers of `getPrinterNumJobs` include `TWordViewer.BGPrintWithGamPrintOptions` and `TCreateTiff.TrimLF`. The direct link from `BGPrintWithGamPrintOptions` to `ExtractFileNameEX` is now proven: it retries the document-name check until the matching `JOB_INFO_1W.pDocument` appears, then closes the printer handle. The final TIFF/archive gate remains open.
 - No direct EMWAT `StartDocPrinter`/`WritePrinter` calls were recovered. Word may own job submission through its print stack; do not mistake missing direct imports for missing spool jobs.
 
 ## Confirmed Word PrintOut discrepancy
