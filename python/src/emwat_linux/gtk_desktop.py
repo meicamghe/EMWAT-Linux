@@ -1,8 +1,8 @@
-"""Minimal GTK 4 control shell for EMWAT Linux.
+"""GTK 4 desktop shell for EMWAT Linux diagnostics, recovery, and bridge control.
 
-This is deliberately a diagnostics/recovery shell, not a bridge launcher:
-the Almas Origin allowlist and Cancel wire response must be supplied by a
-deployment-specific, evidence-backed configuration before a bridge can start.
+The normal entry point injects the captured loopback deployment configuration.
+Explicit operation discard remains fail-closed with a local 409 response; this
+is a safety policy, not a claim of Windows wire compatibility.
 """
 from __future__ import annotations
 
