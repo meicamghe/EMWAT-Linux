@@ -135,3 +135,13 @@ Word close-handler correction: the TD32-named `WordAppDocumentBeforeClose` is no
 
 
 Corrected VMT pass: global slot 0x00483F4C contains 0x00483FA4 (not 0x00483FA0); TGPImage global slot 0x00484728 contains 0x00484780. The structures are Delphi class/interface metadata with interleaved records, not flat method arrays; interface dispatch semantics remain the reliable contract.
+
+
+## New contract closure lanes
+
+- Parallel Word/TIFF/scanner trace: run `46120657637`, success; artifacts `15253243404` (Word), `15253702066` (TIFF), `15252979938` (scanner).
+- Corrected GDI+ class-pointer pass: run `46120792038`, success; artifact `15253014782`. It corrected the TGPEncoderParameters class pointer to `0x00483FA4` and TGPImage pointer to `0x00484780`; raw structures are Delphi metadata/interleaved records, not flat vtables.
+- Scanner XML root/property-string closure: run `46120998177`, in progress.
+- Base64/TIFF payload trace: run `46121009769`, in progress.
+
+New Word finding: `WordAppDocumentBeforeClose` is a Boolean print-field helper called only from `FillImgFldsForPrint`, itself called by `GetFieldIndexInList`; it is not a COM close event handler in this call graph. New TIFF constants: `.tif` extension and paused-printer/error messages; Base64Decode is shared by print fields and image rotation, so its TIFF call does not prove filename decoding.
