@@ -179,29 +179,36 @@ class BridgeRuntime:
                 with self._lock:
                     self._shutdown_complete = True
 
-        if close_socket and close_error is None:
+        if close_socket:
             # ThreadingMixIn.server_close() joins non-daemon request workers
             # without a timeout. Drain them explicitly first so application
             # shutdown remains bounded and a timed-out close can be retried.
+            # A shutdown error must not suppress socket cleanup when the
+            # request workers have drained: closing the listening socket is
+            # still necessary to avoid leaking the bound endpoint.
+            drained = True
             drain_requests = getattr(self._server, "wait_for_requests_idle", None)
             if callable(drain_requests):
                 try:
                     drained = drain_requests(self._request_drain_timeout_seconds)
-                    if not drained:
+                    if not drained and close_error is None:
                         close_error = TimeoutError(
                             "bridge_request_workers_did_not_drain_before_timeout"
                         )
                 except BaseException as exc:
-                    close_error = exc
+                    drained = False
+                    if close_error is None:
+                        close_error = exc
 
-        if close_socket and close_error is None:
-            try:
-                self._server.server_close()
-            except BaseException as exc:
-                close_error = exc
-            else:
-                with self._lock:
-                    self._closed_socket = True
+            if drained:
+                try:
+                    self._server.server_close()
+                except BaseException as exc:
+                    if close_error is None:
+                        close_error = exc
+                else:
+                    with self._lock:
+                        self._closed_socket = True
 
         if thread is not None:
             thread.join(timeout=self._join_timeout_seconds)
