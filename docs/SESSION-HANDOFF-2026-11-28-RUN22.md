@@ -85,3 +85,6 @@ The queue polling loop also normalizes the candidate UnicodeString through `FixD
 
 
 The 5 ms wait call is now verified as `kernel32!Sleep` at thunk `0x004028D0` / IAT `0x0062F09C`. TD32 labels the same thunk `SuspendThread`, which is a stale/misleading symbol; trust the PE import. The next thunk `0x00404F04` is still being identified.
+
+
+The second call in the retry loop is now identified as `Vcl.Forms.TApplication.ProcessMessages` at thunk `0x00404F04` / IAT `0x00630038`. Thus the loop is explicitly `Sleep(5 ms)` + VCL message pumping + queue recheck; no timeout was observed.
