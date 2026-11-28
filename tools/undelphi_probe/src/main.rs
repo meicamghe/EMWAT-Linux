@@ -63,7 +63,7 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
         writeln!(report, "## Compiler identification")?;
         writeln!(report, "- Compiler: `{:?}`", info.compiler)?;
         writeln!(report, "- Version: `{:?}`", info.version)?;
-        writeln!(report, "- Product: `{}`", info.product_name().unwrap_or("<unknown>"))?;
+        writeln!(report, "- Product: `{}`", info.product_name().unwrap_or_else(|| "<unknown>".to_string()))?;
         writeln!(report, "- Target: `{:?}/{:?}`", info.os, info.arch)?;
         writeln!(report, "- Detection source: `{:?}`", info.source)?;
         writeln!(report, "- Raw marker: `{}`", info.raw)?;
@@ -86,7 +86,7 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
     writeln!(report)?;
 
     let text_section = bin.ctx().sections().text;
-    let text_range = text_section.map(|section| (section.va, section.va.saturating_add(section.size)));
+    let text_range = text_section.map(|section| {\n        let size = u64::try_from(section.size).unwrap_or(u64::MAX);\n        (section.va, section.va.saturating_add(size))\n    });
     if let Some((start, end)) = text_range {
         writeln!(report, "## Executable section")?;
         writeln!(report, "- .text VA range: `0x{start:08X}–0x{end:08X}`")?;
