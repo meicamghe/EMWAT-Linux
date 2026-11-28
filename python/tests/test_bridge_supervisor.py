@@ -2,9 +2,14 @@ import http.client
 import threading
 import time
 import unittest
+from unittest.mock import patch
 
 from emwat_linux.application_runtime import BridgeRuntime, BridgeRuntimeState
-from emwat_linux.bridge import BridgeHTTPServer, BridgeResponse
+from emwat_linux.bridge import (
+    BridgeHTTPServer,
+    BridgeResponse,
+    _ServingThreadingHTTPServer,
+)
 from emwat_linux.bridge_supervisor import (
     BridgeSupervisor,
     BridgeSupervisorState,
@@ -36,6 +41,71 @@ class FakeServer:
 
 
 class BridgeSupervisorTests(unittest.TestCase):
+    def test_request_drain_counts_accepted_socket_before_worker_first_instruction(self):
+        worker_entered = threading.Event()
+        release_worker = threading.Event()
+        response_result = {}
+
+        def delayed_worker(server, request, client_address):
+            worker_entered.set()
+            if not release_worker.wait(3):
+                raise TimeoutError("test_worker_release_timeout")
+            original(server, request, client_address)
+
+        server = BridgeHTTPServer(lambda _request: BridgeResponse(b""), port=0)
+        host, port = server.address
+        runtime = BridgeRuntime(server, request_drain_timeout_seconds=0.05)
+
+        def send_heartbeat():
+            connection = http.client.HTTPConnection(host, port, timeout=3)
+            try:
+                connection.request("GET", "/?heartbeat")
+                response = connection.getresponse()
+                response_result["status"] = response.status
+                response_result["body"] = response.read()
+            except BaseException as exc:
+                response_result["error"] = exc
+            finally:
+                connection.close()
+
+        request_thread = threading.Thread(
+            target=send_heartbeat,
+            name="emwat-test-worker-start-race",
+            daemon=True,
+        )
+        original = _ServingThreadingHTTPServer.process_request_thread
+        runtime.start()
+        try:
+            with patch.object(
+                _ServingThreadingHTTPServer,
+                "process_request_thread",
+                delayed_worker,
+            ):
+                request_thread.start()
+                self.assertTrue(worker_entered.wait(2), "request worker did not start")
+                # The worker has not executed its first base-class instruction.
+                # The accept loop must already have registered this request.
+                self.assertFalse(server.wait_for_requests_idle(0.01))
+                release_worker.set()
+                request_thread.join(timeout=2)
+                self.assertFalse(request_thread.is_alive())
+                self.assertEqual(
+                    response_result,
+                    {"status": 200, "body": b"TickTack"},
+                )
+            self.assertTrue(server.wait_for_requests_idle(1))
+            runtime.close()
+            self.assertEqual(runtime.state, BridgeRuntimeState.STOPPED)
+        finally:
+            release_worker.set()
+            if request_thread.is_alive():
+                request_thread.join(timeout=2)
+            if runtime.state is not BridgeRuntimeState.STOPPED:
+                try:
+                    runtime.close()
+                except BaseException:
+                    pass
+
     def test_runtime_bounds_active_http_request_drain_and_allows_cleanup_retry(self):
         request_entered = threading.Event()
         release_request = threading.Event()
