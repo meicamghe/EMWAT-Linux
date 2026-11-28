@@ -1,3 +1,12 @@
+## 2026-11-28 — Run 41 Word handler input data flow
+
+- Best-supported EditWordDocument data-flow candidate is procedure `0x005EE82C` (TD32 label `TScanDocument.PerformMethod`): requires `wordConfig`, reads `wordBody`, `letterImages`, and `signData`, then calls `TWordViwer.LoadDocument` at `0x005EE961`.
+- Missing `wordConfig` raises `Requset XML is not valid (wordConfig parameter is null)`; other three fields default to empty when absent/empty according to the shared dictionary lookup helper.
+- The separate `TFaxDocument`-labelled procedure at `0x005EEB48` reads `document` and calls `TScanCommand.GetNextPage`, consistent with ScanDocument. TD32 labels are demonstrably mismatched in this region.
+- Linux currently preserves `signData` and `letterImages` as opaque data, but LibreOfficeAdapter does not apply them or EMWAT field substitutions. Basic open/edit/save is not full parity.
+- `TWordViwer.AddImagesToDoc` exists at `0x004C0410`; its callsite/payload format remain open.
+- Updated Almas acceptance doc commit `1aa7391`; Run 41 report commit `83a7964`.
+
 ## 2026-11-28 — Run 40 connector class VMT resolution boundary
 
 - Run-67 artifact `15260427307` reports two shortstring occurrences each for `TEmwatMethod`, `TEditWordDocument`, and `TScanDocument`, but no standard-layout VMT candidate for any of them.
