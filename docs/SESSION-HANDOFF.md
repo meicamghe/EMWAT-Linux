@@ -269,3 +269,12 @@ No Linux release package was built. No additional workflow was dispatched. PR #2
 - Latest observed run `46149684182` remained in `Run bridge transport tests`; GTK and Debian package jobs passed on the same commit. The diagnostics artifact had not yet uploaded, and active job-log retrieval returned 404/BlobNotFound.
 - Most explicit test waits/joins are bounded. `BridgeRuntime.start()` still relies on an unbounded `wait_until_serving()` contract; the real server currently signals it on serve-loop entry and exit. This is a lifecycle hardening candidate, not a proven cause of the CI stall.
 - Next action is to inspect the uploaded per-test log/traceback, identify the exact blocking test, then make a targeted fix. No Python runtime code change or complete-suite pass is claimed.
+
+
+## 2026-11-28 — REA Delphi VMT capability boundary
+
+- Current work-branch head at this note: `39e4b859a55ba77c8830a3ac2527706efda3e628`; PR #6 remains Draft/open/unmerged.
+- REA source review found its Delphi VMT/class recovery is still a proposed feature request (#2811), not a built-in parser. Its Ghidra provider accepts `REA_GHIDRA_SEED_FILE` in `address<TAB>kind[<TAB>name]` format; the issue reports one external Delphi 7 PE32 parser experiment importing 1,610 method seeds successfully.
+- Next REA step is a read-only, external VMT parser pilot on the exact EMWAT PE/BPL after compiler-layout invariants are proven. Do not assume Delphi 7 from PE32 alone, and do not claim any REA run or recovered EMWAT class/method count yet.
+- Ghidra/REA installation is an analyst-host prerequisite and version-sensitive; run `rea doctor --json` on the actual analyst host before selecting a provider. REA is not an EMWAT runtime dependency.
+- Detailed boundary and procedure: `docs/REA-ASSISTED-REVERSE-ENGINEERING-PLAN-2026-11-28.md`.
