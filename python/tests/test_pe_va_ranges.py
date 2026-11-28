@@ -1,15 +1,9 @@
 from __future__ import annotations
 
 import struct
-import sys
-from pathlib import Path
-
 import pytest
 
-ROOT = Path(__file__).resolve().parents[2]
-sys.path.insert(0, str(ROOT / "scripts"))
-
-from dump_pe_va_ranges import dump_range, find_printable_runs, parse_pe_bytes
+from scripts.dump_pe_va_ranges import dump_range, find_printable_runs, parse_pe_bytes
 
 
 def make_pe32(
