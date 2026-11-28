@@ -9,7 +9,7 @@
 
 - Run-67 import map identifies global 0x0062F850 as imported class reference @System@Classes@EFOpenError@.
 - The WordViewer loop at 0x004B7D57 compares 0x004010A8(ESI) against this EFOpenError class pointer; it repeats while equal, with message pumping and 5 ms sleeps, up to 101 iterations.
-- This is not a generic completion sentinel. Exact 0x004010A8 semantics and ESI object ownership remain open; do not label it a print-worker completion condition.
+- 0x004010A8 is now identified as a high-confidence TObject.ClassType/VMT accessor; ESI object ownership and the operation that changes its class/state remain open. This is not the printer-worker file-existence gate.
 - Worker analysis commit f5deca4; Run 48 report 6949eca.
 
 ## 2026-11-28 — Run 47 GTK startup wiring plan
@@ -53,8 +53,8 @@
 
 ## 2026-11-28 — Run 43 WordViewer state wait
 
-- Full Run-50 skipdata trace of `TWordViwer.LoadDocument` exposes a second bounded wait: counter 0..100, each cycle calls the application message-pump helper at `0x00404F04`, checks an object state via `0x004010A8` against sentinel `0x0062F850`, and sleeps 5 ms via `0x004028D0` while equal.
-- Nominal maximum sleep is ~505 ms, plus message-pump/check time. Exact object/sentinel meaning remains open; it is not proven to be the printer-worker completion flag.
+- Full Run-50 skipdata trace exposes a second bounded wait: counter 0..100, application message-pump helper 0x00404F04, TObject.ClassType helper 0x004010A8, comparison against imported EFOpenError class 0x0062F850, and Sleep(5) via 0x004028D0 while equal.
+- Nominal maximum sleep is ~505 ms plus processing. ESI object ownership/state mutation remains open; this is not the printer-worker file-existence gate.
 - This is distinct from spooler job disappearance and THidePrintingThread's output-file existence gate.
 - Updated worker analysis commit `d4a6612`; Run 43 report `bfd5ad3`.
 
@@ -67,9 +67,9 @@
 
 ## 2026-11-28 — Run 42 native wordBody optionality mismatch
 
-- Full `0x005EE82C` trace proves `wordConfig` is required, but `wordBody`, `letterImages`, and `signData` default to empty strings when missing. The handler passes all four to `TWordViwer.LoadDocument` at `0x005EE961`.
-- Current Linux `parse_editword_request()` incorrectly requires a non-empty Base64 `wordBody`. This is a concrete compatibility gap for body-less/new-document requests.
-- Do not only relax the parser: the full empty-body branch of `TWordViwer.LoadDocument` is still not traced, and the Writer adapter needs a verified blank/template creation path.
+- Initial handler-level TryGetValue analysis showed `wordBody` may default empty, but the full loader trace corrects this: TWordViwer.LoadDocument decodes wordBody and rejects a zero-length result before successful load.
+- A non-empty decoded `wordBody` is required for successful native document loading; Linux parser requirement matches success-path semantics. Only early-error envelope timing may differ.
+- No evidence supports successful blank-document creation from WordConfig alone; do not relax the parser or fabricate a template.
 - Almas acceptance update commit `77da960`; Run 42 report commit `bd32b58`.
 
 ## 2026-11-28 — Run 41 parity boundary refinement
@@ -80,7 +80,7 @@
 
 ## 2026-11-28 — Run 41 Word handler input data flow
 
-- Best-supported EditWordDocument data-flow candidate is procedure `0x005EE82C` (TD32 label `TScanDocument.PerformMethod`): requires `wordConfig`, reads `wordBody`, `letterImages`, and `signData`, then calls `TWordViwer.LoadDocument` at `0x005EE961`.
+- Confirmed concrete EditWordDocument.PerformMethod is 0x005EE82C: TEditWordDocument VMT 0x005ED764 slot +0x10 points to it. TD32 decorates it as TScanDocument.PerformMethod; that label is stale. It requires wordConfig, reads wordBody/letterImages/signData, and calls TWordViwer.LoadDocument at 0x005EE961.
 - Missing `wordConfig` raises `Requset XML is not valid (wordConfig parameter is null)`; other three fields default to empty when absent/empty according to the shared dictionary lookup helper.
 - The separate `TFaxDocument`-labelled procedure at `0x005EEB48` reads `document` and calls `TScanCommand.GetNextPage`, consistent with ScanDocument. TD32 labels are demonstrably mismatched in this region.
 - Linux currently preserves `signData` and `letterImages` as opaque data, but LibreOfficeAdapter does not apply them or EMWAT field substitutions. Basic open/edit/save is not full parity.
@@ -89,7 +89,7 @@
 
 ## 2026-11-28 — Run 40 connector class VMT resolution boundary
 
-- Run-67 artifact `15260427307` reports two shortstring occurrences each for `TEmwatMethod`, `TEditWordDocument`, and `TScanDocument`, but no standard-layout VMT candidate for any of them.
+- Run-67 artifact `15260427307` generic resolver reports no standard-layout candidate for these classes; this is a tooling false negative superseded by the direct VMT/interface crosswalk (TEditWordDocument VMT 0x005ED764, slot +0x10 -> 0x005EE82C).
 - The only `TWordViwer` candidate (`0x004B10A4`) is explicitly unverified and has an implausible parent/type profile; do not treat it as a true VMT.
 - The Word-edit handler class name exists in the BPL, but its VMT/registration association is not resolved. Next analysis target is custom RTTI/interface/registration references, not more guessing from TD32 labels.
 - Updated Almas acceptance doc commit `770af79`; Run 40 report commit `b1b66c9`.
@@ -104,7 +104,7 @@
 ## 2026-11-28 — Run 38 WordViewer/connector distinction
 
 - Run-67 artifact `15260640277` shows `TWordViwer.LoadDocument` calls `TCreateTiff.SeparteImages` at `0x004B7A9C` and `0x004B7ABD`. This connects viewer document-load to the Word-to-TIFF path, not to the Almas browser edit protocol.
-- The same connector symbol scan finds `TEmwatMethod.Invoke`, ScanDocument, FaxDocument, EditExcelWorkBook, and CompareWordDocument handlers, but no `TEditWordDocument.PerformMethod` TD32 symbol. Because runtime dispatch is indirect/VMT-based, this is an unresolved handler discovery gap, not proof of absence.
+- The same connector symbol scan omitted a TEditWordDocument.PerformMethod TD32 symbol, but direct VMT evidence resolves the handler to 0x005EE82C. The absence is a TD32 symbol-selection/label mismatch, not an unresolved handler identity.
 - Updated Almas acceptance doc commit `b2c0cc4`; Run 38 report commit `aad3209`.
 - Exact EditWordDocument handler registration, dictionary keys, and Windows wire response remain unproven. Real sanitized request/response is still required.
 
