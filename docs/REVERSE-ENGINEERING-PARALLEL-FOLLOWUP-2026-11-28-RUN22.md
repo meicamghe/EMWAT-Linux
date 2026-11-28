@@ -17,7 +17,7 @@ The scanner artifact confirms these direct relationships:
 - `TScanCommand.DoRequest` (`0x004F22E4`) calls `LoadRequestXML` (`0x004F2B18`), `Finalization` (`0x004F32F4`) and `HasError` (`0x004F2A94`).
 - `TScanCommand.GetNextPage` (`0x004F2558`) calls `VerifyConstraints` (`0x004F2C4C`) and `HasError`.
 - `Finalization` reads selector byte `+0x08`; values 1, 4, 8 and 24 map to the localized labels سیاه/سفید, طیف سیاه و سفید, طیف سیاه و سفید یا 256 رنگ, and رنگی 24 بیت.
-- Fields `+0x0C` and `+0x10` participate in minimum/maximum resolution checks through `TGearImgProc.GearType`. Field `+0x14` is the previously mapped `TXMLConstraintsType.MaxFileSize` field: it is compared with an image-derived stream-size value scaled by 1024. The precise external unit/conversion contract still needs confirmation.
+- Fields `+0x0C` and `+0x10` participate in minimum/maximum resolution checks through `TGearImgProc.GearType`. Field `+0x14` is the previously mapped `TXMLConstraintsType.MaxFileSize` field: it is compared with an image-derived stream-size value scaled by 1024. The later contract-closure run (46118303840) resolves the unit convention: Finalization shifts the configured MaxFileSize left by 10 (×1024) before comparing it with a 64-bit image-size result. This is a KiB limit; see docs/SCANNER-XML-SERIALIZATION-CONTRACT-2026-11-28.md.
 - Validation errors distinguish requested image mode, minimum resolution, bounded resolution and maximum resolution. Failure can expose Retry/Cancel; a future adapter must not silently coerce invalid images.
 - Exact XML serialized names/root-child contract and the precise MaxFileSize unit/conversion remain open. Do not infer strict-vs-maximum mode semantics solely from the labels.
 
