@@ -145,3 +145,15 @@ A second pass over the Run-67 artifact identifies a stronger candidate than the 
 This is the best-supported static data-flow candidate for the EditWordDocument route, because it consumes the Word-specific request keys and enters the WordViewer loader. Its TD32 class name `TScanDocument` is not accepted as the actual external method name without registration evidence. The separate `TFaxDocument`-labelled procedure at `0x005EEB48` consumes `document` and calls the scanner command's `GetNextPage`, which is consistent with an actual ScanDocument path and demonstrates the label mismatch.
 
 **Linux implementation gap:** `editword_request.py` decodes `wordConfig`/`wordBody`, preserves `signData` as text, and retains `letterImages` in `extra_parameters`. Stage-A inventory already decodes inline Base64 `image/*` WordConfig fields, identifies signer slots and external `paramId` references, and exposes controlled Writer image/text update APIs. Those update APIs require explicit evidence-backed target maps and are not automatically invoked during open. The outer `letterImages` parameter is not yet resolved against `paramId`/separator/`concater` metadata, and `signData` remains opaque and unapplied. `TWordViwer.AddImagesToDoc` at `0x004C0410` confirms the native Word field path routes `image/*` fields, but the exact external-parameter binding and call relation still need proof. Thus the basic open/edit/save lifecycle exists, and controlled inline-image machinery exists, but full Almas parity for external images, signatures, and field substitutions is not established.
+
+
+## Run 67 — required/optional request-key correction
+
+The full `0x005EE82C` procedure proves the outer request-key requirements more precisely:
+
+- `wordConfig` is the only key explicitly checked as required; absence raises the WordConfig-null error.
+- `wordBody` is looked up conditionally. If absent, its initialized empty string is retained and passed to `TWordViwer.LoadDocument`; it is not rejected by this handler.
+- `letterImages` and `signData` are looked up into initialized strings, and the TryGetValue Boolean is ignored, so absent keys remain empty.
+- The loader call at `0x005EE961` receives `wordConfig`, `wordBody`, `letterImages`, and `signData` (plus the handler's output/owner arguments).
+
+**Immediate Linux protocol mismatch:** `parse_editword_request()` currently rejects a missing or empty `wordBody` and requires a non-empty Base64 document. The native handler does not impose that requirement. This is a release blocker for requests that create a document from WordConfig without an incoming body. Before changing the parser/adapter, trace the full `TWordViwer.LoadDocument` empty-body branch to determine whether it creates a blank document, loads a template, or uses another source; do not fabricate a template. The current Writer adapter cannot safely open an empty payload as a document.
