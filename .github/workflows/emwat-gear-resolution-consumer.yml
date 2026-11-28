@@ -1,0 +1,44 @@
+name: EMWAT GearType resolution consumer trace
+on:
+  push:
+    paths:
+      - 'analysis-input/EmwatMethods.bpl1'
+      - 'tools/trace_td32_procedure_skipdata.py'
+      - 'tools/trace_td32_callers.py'
+      - '.github/workflows/emwat-gear-resolution-consumer.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: emwat-gear-resolution-consumer-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  resolution-consumer:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install pefile capstone
+      - name: Trace GearImgProc resolution consumers
+        shell: bash
+        run: |
+          mkdir -p gear-resolution-consumer
+          for target in 0x004EEEC4 0x004EEF30 0x004AFF08 0x004F32F4; do
+            safe=${target#0x}
+            python tools/trace_td32_procedure_skipdata.py analysis-input/EmwatMethods.bpl1 "$target" \
+              "gear-resolution-consumer/procedure-$safe.md" || true
+            python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 "$target" \
+              "gear-resolution-consumer/callers-$safe.md" || true
+          done
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: emwat-gear-resolution-consumer
+          path: gear-resolution-consumer/
+          if-no-files-found: error
