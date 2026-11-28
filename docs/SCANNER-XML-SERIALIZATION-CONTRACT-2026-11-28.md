@@ -85,13 +85,13 @@ Review of the scanner contract artifact `15252222043` confirms these helper call
 
 The numeric getters remain a distinct case: they explicitly test `HasAttribute`, and absent numeric fields return zero before conversion. Present malformed/empty numeric values still enter Variant-to-integer conversion. String-field defaults, requiredness, empty-value behavior, and XML serialization order remain open.
 
-## Run 30 correction — XMLRTL helper identities and generated accessor direction
+## Run 30 helper map — superseded by Run 32 call-shape cross-check
 
-Run 30 resolves the core helper roles from register/value flow: `0x0044B498` HasAttribute, `0x0044B488` GetAttribute, and `0x0044B4C0` SetAttribute. `0x0044B4D8` is used for the child-node collection/navigation path that resolves the `constraints` child. These correspond to the documented XMLRTL `IXMLNode` methods.
+The initial Run 30 label set assigned `0x0044B488` to GetAttribute and `0x0044B4C0` to SetAttribute. Run 32 rechecked the actual generated getter/setter callsites and found that assignment too coarse. Use the corrected Run 32 map below instead.
 
-Important correction: TD32 names in this generated accessor range are not reliable for getter/setter direction. `0x004EA94C` reads the `constraints` child; `0x004EAA08`, `0x004EAB58`, `0x004EACB0`, and `0x004EAE08` are numeric getters (HasAttribute/GetAttribute/conversion); `0x004EAAD8`, `0x004EAC2C`, and `0x004EAD84` are SetAttribute-shaped setters. Use the exact literal property names and the Run-30 crosswalk, not the TD32 labels.
+TD32 names in this generated accessor range are not reliable for getter/setter direction. The callsite behavior and interface return types are more reliable than the symbol labels. The exact property keys remain those listed above.
 
-`0x0044B508` is still used by `Get_ForceSinglePageFiles`; its missing-attribute/default and conversion semantics remain unresolved. No boolean/string defaults should be inferred from the current call shape.
+`0x0044B508` is still used by `Get_ForceSinglePageFiles`; its missing-attribute/default and conversion semantics remain unresolved. No Boolean/string defaults should be inferred from the current call shape.
 
 
 ## Run 31 — XMLRTL child-node call chain cross-check
@@ -104,3 +104,27 @@ The `Get_ColorDepth` path at `0x004EA94C` calls `0x0044B4D8` with the current `I
 The literal `constraints` and the interface return shape support identifying the second dispatch as `FindNode`; the official XMLRTL contracts confirm that `ChildNodes` is an `IXMLNodeList` and `FindNode` accepts a `NodeName` and returns the matching `IXMLNode`. References: [IXMLNode.ChildNodes](https://docwiki.embarcadero.com/Libraries/Alexandria/en/Xml.XMLIntf.IXMLNode.ChildNodes) and [IXMLNodeList.FindNode](https://docwiki.embarcadero.com/Libraries/Athens/en/Xml.XMLIntf.IXMLNodeList.FindNode).
 
 This closes the practical `constraints` navigation chain. It does not identify the internal implementation split inside helper `0x0044B4D8` beyond its ChildNodes-return role. The `0x0044B508` ForceSinglePageFiles helper remains unresolved: the generated accessor supplies the key `forceSinglePageFiles`, a global interface/context argument, and a zero-valued fallback argument before Boolean conversion. Do not claim that missing attributes necessarily resolve to false until that helper's implementation is traced.
+
+
+## Run 32 — XMLRTL node-list and attribute access crosswalk
+
+Reinspection of the scanner accessor artifact distinguishes attribute-list access from child-node access:
+
+| Helper | Observed call shape | Best-supported XMLRTL role | Confidence |
+|---|---|---|---|
+| `0x0044B498` | node + property-name; Boolean in AL | `IXMLNode.HasAttribute(Name)` | High |
+| `0x0044B488` | node + out interface; returned list receives `FindNode(name)` | `IXMLNode.AttributeNodes` getter | High |
+| `0x0044B4C0` | node + property-name + out value in generated getters | `IXMLNode.GetAttribute(AttrName)`-style value getter | Medium-high |
+| `0x0044B4D8` | node + out interface; returned list receives `FindNode("constraints")` | `IXMLNode.ChildNodes` getter | High |
+| `0x0044B508` | ForceSinglePageFiles key + context/default arguments, then Boolean conversion | unresolved specialized getter/default wrapper | Open |
+
+Why the distinction matters: the numeric accessors test HasAttribute, obtain AttributeNodes, find the named attribute node, and read its value. The string-property setter traces similarly obtain the attribute-node list and find the named node before operating on its value. By contrast, the Get_ColorDepth path obtains ChildNodes and resolves the nested `constraints` element. Embarcadero explicitly documents AttributeNodes as an IXMLNodeList of attribute nodes and notes that attributes are not child nodes; this matches the separate helper addresses and call paths.
+
+The 0x0044B4C0 identification as GetAttribute is based on generated getters passing the literal property key and an output-value slot; it should remain medium-high rather than absolute until the helper body is directly disassembled. No direct SetAttribute helper is proven in this range: the observed setter paths navigate AttributeNodes.FindNode(name) and operate on the returned attribute node.
+
+References:
+- [IXMLNode.AttributeNodes](https://docwiki.embarcadero.com/Libraries/Alexandria/en/Xml.XMLIntf.IXMLNode.AttributeNodes)
+- [IXMLNode.HasAttribute](https://docwiki.embarcadero.com/Libraries/Alexandria/en/Xml.XMLIntf.IXMLNode.HasAttribute)
+- [IXMLNode.GetAttribute](https://docwiki.embarcadero.com/Libraries/Athens/en/Xml.XMLIntf.IXMLNode.GetAttribute)
+- [IXMLNode.ChildNodes](https://docwiki.embarcadero.com/Libraries/Alexandria/en/Xml.XMLIntf.IXMLNode.ChildNodes)
+- [IXMLNodeList.FindNode](https://docwiki.embarcadero.com/Libraries/Athens/en/Xml.XMLIntf.IXMLNodeList.FindNode)
