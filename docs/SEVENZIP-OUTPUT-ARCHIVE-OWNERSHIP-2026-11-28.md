@@ -28,6 +28,20 @@ The target method initializes an object, obtains an interface object from global
 - This establishes a callback/context handoff and later invocation. The semantic identity of the callback, context object, and result fields is still unresolved.
 - `T7zOutArchive.SetPassword` (`0x004547DC`) is a nine-byte stub that returns zero. No output password-setting logic is implemented in that method body.
 
+
+## 2A. Stream-only output and separate progress/completion callbacks
+
+The callback-detail pass adds these distinctions:
+
+- `T7zOutArchive.SaveToFile` at `0x00454644` is a stub: it writes fixed values `1`, `1`, and `-1` to three out parameters and returns zero. It contains no file-writing path.
+- `T7zOutArchive.SaveToStream` at `0x00454668` creates a stream wrapper using global class pointer `0x0062F800` and helper `0x004041BC`, then calls `SetCompleted` at `0x004546C4` and releases the wrapper. This is the implemented output entry point in this class.
+- `SetCompleted` has one direct caller: `SaveToStream`. It obtains a property object through `GetProperty` and invokes an interface method on that object; its property key and semantic result are not yet decoded.
+- `SetProgressCallback` at `0x004547E8` stores a separate callback at object offset `+0x38`.
+- `SetPropertie` stores the operation-result callback at `+0x30` and its context at `+0x34`. `SetOperationResult` invokes that callback with the context, a zero flag, and the two leading fields from the operation-result record.
+- `SetTotal` uses `GetProperty` and an interface setter to update a separate total/progress property.
+
+Thus the output archive class exposes distinct stream completion, progress, and operation-result callback paths. Do not conflate the `+0x38` progress callback with the `+0x30/+0x34` operation-result callback.
+
 ## 3. Separate reset helper
 
 `euResetMemory` at `0x00456F00` is not the same object as the `T7zOutArchive` callback object:
