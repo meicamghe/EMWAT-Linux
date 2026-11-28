@@ -3570,3 +3570,11 @@ Base64/GDI+ load closure (run 46121270958): Base64Decode is a shared AnsiString-
 - Successful static-analysis jobs are evidence-generation results, not proof of scanner/printer hardware behavior or live Almas compatibility. Review their uploaded artifacts before promoting any new reverse-engineering conclusion into runtime code.
 - No live Almas -> Writer -> Save -> response -> Almas persistence acceptance has been performed. signData non-empty fixture, TIFF/GDI+ runtime parity, physical printer/scanner acceptance, and Duplex ADF remain open.
 - The earlier snapshot below naming head `a1d7ef...` is historical; this section supersedes its CI status. Workflow concurrency repair is present on the current branch, but do not infer unlimited runner capacity from it.
+
+
+## 2026-11-28 — Python bridge CI stall investigation
+
+- Latest checked head before this change: `0725cd2951041527d1caecad395740be7ab4d117`. GTK and Debian package workflows passed; Python bridge runs repeatedly remained in the `Run bridge transport tests` step after dependency installation and console-entrypoint checks succeeded.
+- The workflow runs the complete `unittest discover -s tests -v` suite. Active job logs were unavailable through the GitHub connector while the jobs were running, so the exact blocking test is not yet identified. Do not call this a test failure or pass.
+- Added a diagnostic safety bound to `.github/workflows/python-bridge.yml`: job timeout 15 minutes, test command timeout 12 minutes, and recurring faulthandler thread dumps after 5 minutes. This should expose stack traces if a test deadlocks and prevent unbounded runner consumption.
+- This is CI diagnostic hardening, not a product behavior change. The next run must be inspected for traceback output and the exact hanging test; only then should a targeted fix be made.
