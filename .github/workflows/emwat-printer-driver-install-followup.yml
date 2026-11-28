@@ -41,7 +41,8 @@ jobs:
           for target in \
             0x0047CAF0 0x0047CC6C 0x0047CC94 0x0047D238 \
             0x0047D448 0x0047D8BC 0x00401240 \
-            0x00404494 0x00402910 0x00402754 0x00402818; do
+            0x00404494 0x00402910 0x00402754 0x00402818 \
+            0x004044AC 0x004044B4 0x004044D4 0x004044E4; do
             safe=${target#0x}
             python tools/trace_td32_procedure_skipdata.py analysis-input/EmwatMethods.bpl1 "$target" \
               "printer-driver-install/procedure-$safe.md" || true
@@ -54,6 +55,8 @@ jobs:
             printer-driver-install/runtime-helper-00401200-00401280.md
           python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x00404480 0x004044A0 \
             printer-driver-install/shell-execute-helper-00404480-004044A0.md
+          python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x004044A0 0x004044F0 \
+            printer-driver-install/winspool-helper-thunks-004044A0-004044F0.md
           python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x00402900 0x00402940 \
             printer-driver-install/ini-helper-00402900-00402940.md
           python tools/decode_pe_strings.py analysis-input/EmwatMethods.bpl1 \
