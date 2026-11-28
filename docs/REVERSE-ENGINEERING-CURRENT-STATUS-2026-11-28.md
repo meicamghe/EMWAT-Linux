@@ -52,3 +52,6 @@ The following additional static-analysis runs passed: TIFF lifecycle `4611884857
 - GDI+ caveat: PE import names and TD32 thunk labels disagree on the Save/SaveAdd thunk addresses. The exact Save overload used by SeparteImages remains provisional until a second import parser and VMT-slot mapping agree.
 
 - TIFF encoder settings resolved: the encoder receives `EncoderCompression=2` (LZW) and `EncoderSaveFlag=18` (MultiFrame) via the standard GDI+ GUIDs. This is strong evidence for multipage LZW TIFF; exact Save/SaveAdd/final-flush VMT mapping remains open.
+
+
+GDI+ import identity is now independently confirmed: GNU `objdump -p` agrees with the PE import parser for GdipGetImageGraphicsContext, GdipSaveAddImage, GdipSaveAdd, GdipSaveImageToStream, and GdipSaveImageToFile. The TD32 labels on the corresponding thunk addresses are shifted/stale. Remaining work is the TGPImage interface VMT slot-to-call mapping.
