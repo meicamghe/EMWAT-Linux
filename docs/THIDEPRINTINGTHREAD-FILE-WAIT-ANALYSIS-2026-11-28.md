@@ -61,3 +61,16 @@ The Run-50 `inline-constants.md` artifact contains the UTF-16LE literals referen
 | `0x004A09C0` | `Error occured during Convert Word Document to Tiff.` | Failure when `THidePrintingThread.Execute` returns false |
 
 The misspelling `occured` is present in the original binary string and is quoted exactly. These are diagnostic strings only; they do not identify the hidden output path or the producer process. The Run-50 artifact also contains a Persian printer-paused message at `0x004A07F4`, but the extracted byte window ends before the full string boundary, so its complete text is intentionally not reconstructed here.
+
+
+## Run 43 — separate WordViewer UI-pumped wait loop
+
+The full skipdata trace of `TWordViwer.LoadDocument` (`0x004B7724–0x004B8A83`) exposes a second wait mechanism, distinct from the hidden printer Worker:
+
+- Loop setup at `0x004B7C07` initializes a counter to zero.
+- Each iteration calls `0x00404F04` through the global object at `0x00630138`; this is an application-level message-pump helper (strongly consistent with `TApplication.ProcessMessages`, but the exact imported/VMT identity is not yet proven).
+- The loop obtains a value from object `ESI` through `0x004010A8` and compares it with global `0x0062F850` at `0x004B7D57–0x004B7D64`.
+- If the values still match and the counter is below `0x64`, it sleeps `5 ms` via `0x004028D0` at `0x004B7D78`, increments the counter, and repeats. The counter reaches `0x65` (101 iterations maximum).
+- On state change or timeout it exits the poll, logs through the status string at `0x004B8768`, and continues through the caller's completion/error handling.
+
+This is a bounded, UI-pumped state wait of approximately 500 ms, not a file-existence poll. It is separate from (1) spooler job disappearance and (2) `THidePrintingThread`'s output-file existence gate. The exact meaning of the ESI state and sentinel `0x0062F850` remains unresolved; do not rename it as a print-worker completion flag without mapping the object constructor and VMT slot.
