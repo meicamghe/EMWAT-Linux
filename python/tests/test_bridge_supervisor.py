@@ -1,7 +1,11 @@
+import http.client
+import socket
 import threading
+import time
 import unittest
 
 from emwat_linux.application_runtime import BridgeRuntime, BridgeRuntimeState
+from emwat_linux.bridge import BridgeHTTPServer, BridgeResponse
 from emwat_linux.bridge_supervisor import (
     BridgeSupervisor,
     BridgeSupervisorState,
@@ -33,6 +37,90 @@ class FakeServer:
 
 
 class BridgeSupervisorTests(unittest.TestCase):
+    def test_runtime_bounds_active_http_request_drain_and_allows_cleanup_retry(self):
+        request_entered = threading.Event()
+        release_request = threading.Event()
+        response_result = {}
+
+        def handler(_request):
+            request_entered.set()
+            if not release_request.wait(3):
+                raise TimeoutError("test_request_release_timeout")
+            return BridgeResponse(b"completed", content_type="text/plain")
+
+        with socket.socket() as probe:
+            probe.bind(("127.0.0.1", 0))
+            port = probe.getsockname()[1]
+        server = BridgeHTTPServer(
+            handler,
+            host="127.0.0.1",
+            port=port,
+            allowed_origins=frozenset({"http://127.0.0.1"}),
+        )
+        runtime = BridgeRuntime(
+            server,
+            join_timeout_seconds=1.0,
+            request_drain_timeout_seconds=0.05,
+        )
+
+        def send_request():
+            connection = http.client.HTTPConnection("127.0.0.1", port, timeout=3)
+            try:
+                connection.request(
+                    "POST",
+                    "/?invoke=12345",
+                    body=b"pending",
+                    headers={
+                        "Origin": "http://127.0.0.1",
+                        "Content-Type": "text/plain",
+                    },
+                )
+                response = connection.getresponse()
+                response_result["status"] = response.status
+                response_result["body"] = response.read()
+            except BaseException as exc:
+                response_result["error"] = exc
+            finally:
+                connection.close()
+
+        request_thread = threading.Thread(
+            target=send_request,
+            name="emwat-test-pending-http-request",
+            daemon=True,
+        )
+        runtime.start()
+        request_thread.start()
+        try:
+            self.assertTrue(request_entered.wait(2), "HTTP handler did not start")
+            started = time.monotonic()
+            with self.assertRaisesRegex(
+                TimeoutError, "bridge_request_workers_did_not_drain"
+            ):
+                runtime.close()
+            self.assertLess(time.monotonic() - started, 1.0)
+            self.assertEqual(runtime.state, BridgeRuntimeState.FAILED)
+
+            # The listener is stopped, but the active non-daemon request is
+            # deliberately allowed to finish; a second close then owns cleanup.
+            release_request.set()
+            request_thread.join(timeout=2)
+            self.assertFalse(request_thread.is_alive())
+            self.assertNotIn("error", response_result)
+            self.assertEqual(response_result, {"status": 200, "body": b"completed"})
+
+            runtime.close()
+            self.assertEqual(runtime.state, BridgeRuntimeState.STOPPED)
+        finally:
+            release_request.set()
+            if request_thread.is_alive():
+                request_thread.join(timeout=2)
+            if runtime.state not in (BridgeRuntimeState.STOPPED,):
+                try:
+                    runtime.close()
+                except BaseException:
+                    pass
+
+
     def test_start_is_idempotent_and_stop_closes_runtime(self):
         servers = []
 
