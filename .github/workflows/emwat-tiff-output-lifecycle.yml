@@ -1,0 +1,51 @@
+name: EMWAT TIFF output lifecycle follow-up
+on:
+  push:
+    paths:
+      - 'analysis-input/EmwatMethods.bpl1'
+      - 'tools/trace_td32_procedure_skipdata.py'
+      - 'tools/trace_td32_callers.py'
+      - 'tools/scan_pe_pointer_refs.py'
+      - '.github/workflows/emwat-tiff-output-lifecycle.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: emwat-tiff-output-lifecycle-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  tiff-helper-ownership:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install pefile capstone
+      - name: Resolve TIFF orchestration helper targets
+        shell: bash
+        run: |
+          mkdir -p tiff-lifecycle
+          for target in 0x00454B9C 0x0048FF60 0x0048F8C0 0x0048ED8C 0x004735C4 0x00467088 0x004A0148 0x004A0E88 0x004B7A9C; do
+            safe=${target#0x}
+            python tools/trace_td32_procedure_skipdata.py analysis-input/EmwatMethods.bpl1 "$target" \
+              "tiff-lifecycle/procedure-$safe.md" || true
+            python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 "$target" \
+              "tiff-lifecycle/callers-$safe.md" || true
+            python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 "$target" \
+              "tiff-lifecycle/pointers-$safe.md" || true
+          done
+          python tools/list_td32_symbols.py analysis-input/EmwatMethods.bpl1 \
+            TCreateTiff THidePrintingThread LoadDocument SeparteImages \
+            TEmwatDocPrintHandler PrintImage T7zOutArchive \
+            > tiff-lifecycle/symbol-index.md
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: emwat-tiff-output-lifecycle
+          path: tiff-lifecycle/
+          if-no-files-found: error
