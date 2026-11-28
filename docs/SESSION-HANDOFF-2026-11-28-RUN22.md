@@ -129,3 +129,6 @@ GDI+ interface boundary: SeparteImages creates TGPEncoderParameters (VMT pointer
 - SevenZip output callback detail: run `46119766144`, success, artifact `15253196955`.
 
 Latest branch head at this handoff: `37dbd31b38a1a89dcbe88e8ad23f9f02f39a9d0f`. New three-lane Word/TIFF/scanner closure workflow was added at this commit; no run ID was visible yet.
+
+
+Word close-handler correction: the TD32-named `WordAppDocumentBeforeClose` is now identified as a Boolean print-field helper. Call chain: `GetFieldIndexInList` → `FillImgFldsForPrint` → `WordAppDocumentBeforeClose`; it inspects field arrays and document metadata. It is not an active COM close callback in the observed wiring. See `docs/WORD-BEFORECLOSE-NAMED-HELPER-AND-PRINT-FIELD-CHAIN-2026-11-28.md`.
