@@ -14,7 +14,7 @@
 - First pass uses flags `8`, level `2`, null buffer, and output-size/count pointers.
 - Second pass allocates the required buffer and enumerates `PRINTER_INFO_2A` records.
 - It walks records at stride `0x54` (84 bytes), compares the `pDriverName` field at offset `+0x10` with a constant at `0x0047CC64`, then copies `pPrinterName` at offset `+0x04` into global `0x0062B310`.
-- This is a driver-name based selection of the target printer. The exact string at `0x0047CC64` still needs decoding; do not yet hard-code the literal driver name.
+- This is a driver-name based selection of the target printer. The exact ANSI driver-name literal at `0x0047CC64` is `zvprt1`; this is the driver name, not necessarily the user-visible printer queue name.
 
 Direct callers include `Zanprinter.InstallZanPrinter`, `Zanprinter.GetZanInstallDir`, `Zanprinter.CheckPrinterPaused`, `Zanprinter.Finalization`, and `TCreateTiff.SeparteImages`.
 
@@ -36,7 +36,7 @@ Direct callers include `Zanprinter.InstallZanPrinter`, `Zanprinter.GetZanInstall
 
 Its direct callers include:
 - `TWordViewer.BGPrintWithGamPrintOptions` at `0x004C6099`
-- `TCreateTiff.TrimLF` at `0x004A6173`
+- `TrimLF` in module `frmWordPrintOptionUnit` at `0x004A6173` (procedure start `0x004A609C`). This routine opens the printer handle and later closes it; its broader role is still being analyzed. It is not a `TCreateTiff.TrimLF` method.
 
 `Emwatutils.ExtractFileNameEX` at `0x004562C4` calls `EnumJobsW` through thunk `0x004044BC` twice:
 
@@ -88,3 +88,10 @@ No direct EMWAT `StartDocPrinter`/`WritePrinter` call was recovered. This is com
 ## Guardrails
 
 This is static binary analysis only. No physical printer, real Word, or Almas run was performed. The observed queue matching is not yet a complete print-success contract.
+
+## 7. Driver installation / printer helper boundaries
+
+- `InstallZanPrinter` at `0x0047CC6C` is a short helper that calls `GetPrinterName`; when a printer is found, it passes the selected queue name to helper `0x00401240`. The exact side effect of that helper is not yet named.
+- `GetZanInstallDir` at `0x0047CC94` checks printer presence, performs path/registry/string work, and includes a bounded retry loop (up to 300 iterations with 100 ms delay) while waiting for the printer to appear. It also calls `0x0047D238` with the selected printer name.
+- `CheckPrinterPaused` at `0x0047D448` independently calls `GetPrinterName` and `0x0047D238`; it is not yet proven to be the same status test as `Finalization`'s direct `PRINTER_INFO_2A.Status` check.
+
