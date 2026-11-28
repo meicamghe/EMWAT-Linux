@@ -1,3 +1,12 @@
+## Current verified snapshot — 2026-11-28
+
+- Static EditWordDocument dispatch is closed: TEditWordDocument VMT 0x005ED764 -> concrete method 0x005EE82C; TEmwatMethod Invoke wrapper is 0x0046C9E0; WordViewer loader 0x004B7724.
+- Successful wire response is established from PCAP: HTTP 200, text/html; charset=ISO-8859-1, response-word status=success, application/msword/base64, decoded CFB DOC. PCAP response has 68 missing TCP payload bytes.
+- XHR Origin and init Referer origin are both http://127.0.0.1:1984. GTK startup wiring plan is documented but not implemented.
+- Writer local Save/Don't Save/Cancel behavior and pending HTTP lifecycle are implemented/tested in previous local acceptance, but real Almas persistence is not verified.
+- Run67 word-print-com and image-ui-and-vmt analysis jobs passed. Native regression step passed. Python regression step was cancelled; no full Python test result.
+- Current release blockers: GTK BridgeSupervisor startup injection; live Almas->Writer->save->response->Almas persistence; full response bytes if exact parity required; targeted WordConfig/signData mappings; local execution of new drain/race tests. No Linux package is built or released.
+
 ## 2026-11-28 — Run 49 ClassType/EFOpenError wait interpretation
 
 - Cross-correlation with GearImgProc procedures identifies helper 0x004010A8 as a high-confidence TObject.ClassType/VMT accessor.
@@ -8,8 +17,8 @@
 ## 2026-11-28 — Run 48 WordViewer poll comparison target
 
 - Run-67 import map identifies global 0x0062F850 as imported class reference @System@Classes@EFOpenError@.
-- The WordViewer loop at 0x004B7D57 compares 0x004010A8(ESI) against this EFOpenError class pointer; it repeats while equal, with message pumping and 5 ms sleeps, up to 101 iterations.
-- This is not a generic completion sentinel. Exact 0x004010A8 semantics and ESI object ownership remain open; do not label it a print-worker completion condition.
+- Run49 cross-correlation identifies 0x004010A8 as a high-confidence TObject.ClassType/VMT accessor. The WordViewer loop therefore repeats while ESI.ClassType == EFOpenError, with message pumping and 5 ms sleeps, up to 101 iterations.
+- ESI object ownership and the operation that changes its class/state remain open; this is not the printer-worker file-existence gate.
 - Worker analysis commit f5deca4; Run 48 report 6949eca.
 
 ## 2026-11-28 — Run 47 GTK startup wiring plan
@@ -53,8 +62,8 @@
 
 ## 2026-11-28 — Run 43 WordViewer state wait
 
-- Full Run-50 skipdata trace of `TWordViwer.LoadDocument` exposes a second bounded wait: counter 0..100, each cycle calls the application message-pump helper at `0x00404F04`, checks an object state via `0x004010A8` against sentinel `0x0062F850`, and sleeps 5 ms via `0x004028D0` while equal.
-- Nominal maximum sleep is ~505 ms, plus message-pump/check time. Exact object/sentinel meaning remains open; it is not proven to be the printer-worker completion flag.
+- Full Run-50 skipdata trace exposes a second bounded wait: counter 0..100, message-pump helper 0x00404F04, ClassType helper 0x004010A8, comparison to imported EFOpenError class 0x0062F850, and Sleep(5) via 0x004028D0 while equal.
+- Nominal maximum sleep is ~505 ms plus processing. ESI ownership/state mutation remains open; this is not the printer-worker file-existence gate.
 - This is distinct from spooler job disappearance and THidePrintingThread's output-file existence gate.
 - Updated worker analysis commit `d4a6612`; Run 43 report `bfd5ad3`.
 
@@ -67,9 +76,9 @@
 
 ## 2026-11-28 — Run 42 native wordBody optionality mismatch
 
-- Full `0x005EE82C` trace proves `wordConfig` is required, but `wordBody`, `letterImages`, and `signData` default to empty strings when missing. The handler passes all four to `TWordViwer.LoadDocument` at `0x005EE961`.
-- Current Linux `parse_editword_request()` incorrectly requires a non-empty Base64 `wordBody`. This is a concrete compatibility gap for body-less/new-document requests.
-- Do not only relax the parser: the full empty-body branch of `TWordViwer.LoadDocument` is still not traced, and the Writer adapter needs a verified blank/template creation path.
+- Initial handler-level analysis showed wordBody TryGetValue may default empty, but the full LoadDocument trace corrects this: it decodes wordBody and rejects a zero-length result before successful load.
+- A non-empty decoded wordBody is required for successful native open; the Linux parser's requirement is consistent with success-path semantics. Only the exact early-error envelope may differ.
+- No evidence supports successful blank-document creation from WordConfig alone; do not relax the parser or fabricate a template.
 - Almas acceptance update commit `77da960`; Run 42 report commit `bd32b58`.
 
 ## 2026-11-28 — Run 41 parity boundary refinement
@@ -80,7 +89,7 @@
 
 ## 2026-11-28 — Run 41 Word handler input data flow
 
-- Best-supported EditWordDocument data-flow candidate is procedure `0x005EE82C` (TD32 label `TScanDocument.PerformMethod`): requires `wordConfig`, reads `wordBody`, `letterImages`, and `signData`, then calls `TWordViwer.LoadDocument` at `0x005EE961`.
+- Confirmed concrete EditWordDocument.PerformMethod is procedure 0x005EE82C: TEditWordDocument VMT 0x005ED764 slot +0x10 points to it. TD32 decorates it as TScanDocument.PerformMethod; the label is stale. It requires wordConfig, reads wordBody/letterImages/signData, and calls TWordViwer.LoadDocument at 0x005EE961.
 - Missing `wordConfig` raises `Requset XML is not valid (wordConfig parameter is null)`; other three fields default to empty when absent/empty according to the shared dictionary lookup helper.
 - The separate `TFaxDocument`-labelled procedure at `0x005EEB48` reads `document` and calls `TScanCommand.GetNextPage`, consistent with ScanDocument. TD32 labels are demonstrably mismatched in this region.
 - Linux currently preserves `signData` and `letterImages` as opaque data, but LibreOfficeAdapter does not apply them or EMWAT field substitutions. Basic open/edit/save is not full parity.
