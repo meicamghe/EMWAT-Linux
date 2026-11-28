@@ -1,0 +1,35 @@
+name: EMWAT GDI+ import table cross-parser check
+on:
+  push:
+    paths:
+      - 'analysis-input/EmwatMethods.bpl1'
+      - '.github/workflows/emwat-gdiplus-import-crosscheck.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: emwat-gdiplus-import-crosscheck-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  import-crosscheck:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - name: Dump GDI+ imports with GNU objdump
+        shell: bash
+        run: |
+          objdump -p analysis-input/EmwatMethods.bpl1 > gdiplus-imports-objdump.txt
+          grep -i -A80 -B5 'gdiplus.dll' gdiplus-imports-objdump.txt > gdiplus-imports-focused.txt || true
+          cat gdiplus-imports-focused.txt
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: emwat-gdiplus-import-crosscheck
+          path: |
+            gdiplus-imports-objdump.txt
+            gdiplus-imports-focused.txt
+          if-no-files-found: error
