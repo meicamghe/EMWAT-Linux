@@ -3424,3 +3424,6 @@ Reverse engineering only. No production Linux code or release builds were change
 - GDI+ save wrapper names are not yet fully trusted: PE import table and TD32 thunk labels disagree on Save/SaveAdd addresses. Exact VMT-to-import mapping is pending independent cross-check.
 
 - GDI+ TIFF encoder settings: standard `EncoderCompression` GUID with value 2 (LZW), plus standard `EncoderSaveFlag` GUID with value 18 (MultiFrame). Strong evidence for multipage LZW TIFF; exact SaveAdd/final-flush slot sequence remains to confirm.
+
+
+GDI+ import identity is now independently confirmed: GNU `objdump -p` agrees with the PE import parser for GdipGetImageGraphicsContext, GdipSaveAddImage, GdipSaveAdd, GdipSaveImageToStream, and GdipSaveImageToFile. The TD32 labels on the corresponding thunk addresses are shifted/stale. Remaining work is the TGPImage interface VMT slot-to-call mapping.
