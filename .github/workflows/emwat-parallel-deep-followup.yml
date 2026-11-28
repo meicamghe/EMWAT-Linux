@@ -206,6 +206,57 @@ jobs:
             deep-followup/scanner-result/fax-temp-path-helper-callers.md
           python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 0x00454B9C \
             deep-followup/scanner-result/fax-temp-path-helper-pointer-refs.md
+      - name: Decode exact scanner XML property and value constants
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import pefile
+
+          path = Path("analysis-input/EmwatMethods.bpl1")
+          blob = path.read_bytes()
+          pe = pefile.PE(data=blob, fast_load=True)
+          base = pe.OPTIONAL_HEADER.ImageBase
+          addresses = [
+              0x004F2BF8, 0x004F2C0C, 0x004F302E, 0x004F31D8,
+              0x004F31E2, 0x004F31F8, 0x004F3210, 0x004F3224,
+              0x004F3238, 0x004F3578, 0x004F358C, 0x004F35C0,
+              0x004F3614, 0x004F366C, 0x004F36C0,
+          ]
+          out = [
+              "# Targeted scanner XML constants",
+              "",
+              "These addresses are immediate operands passed to XML/interface helper routines in TScanCommand procedures. Values are decoded directly from the PE at the specified VAs; the surrounding call sites must still be used to determine each property's exact semantic role.",
+              "",
+          ]
+          for va in addresses:
+              try:
+                  off = pe.get_offset_from_rva(va - base)
+              except Exception as exc:
+                  out.append(f"- 0x{va:08X}: unmapped ({exc})")
+                  continue
+              raw = blob[off:off + 192]
+              value = None
+              for enc in ("utf-16le", "cp1252", "utf-8"):
+                  try:
+                      candidate = raw.decode(enc, errors="strict").split("\x00", 1)[0]
+                  except UnicodeError:
+                      continue
+                  if len(candidate) >= 1 and all(ch.isprintable() for ch in candidate):
+                      if enc == "utf-16le" or any(ch.isalpha() for ch in candidate):
+                          value = (enc, candidate)
+                          break
+              out.append(f"- VA 0x{va:08X}, raw 0x{off:08X}: {value[0] + ': ' + repr(value[1]) if value else 'no printable string at this VA'}")
+          Path("deep-followup/scanner-result/request-xml-targeted-constants.md").write_text("\n".join(out) + "\n")
+          PY
+          python tools/trace_td32_procedure_skipdata.py analysis-input/EmwatMethods.bpl1 0x004E9D5C \
+            deep-followup/scanner-result/xml-value-conversion-helper.md
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004E9D5C \
+            deep-followup/scanner-result/xml-value-conversion-helper-callers.md
+          python tools/trace_td32_procedure_skipdata.py analysis-input/EmwatMethods.bpl1 0x004F32F4 \
+            deep-followup/scanner-result/request-state-helper.md
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004F32F4 \
+            deep-followup/scanner-result/request-state-helper-callers.md
       - uses: actions/upload-artifact@v4
         if: always()
         with:
