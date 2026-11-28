@@ -65,3 +65,22 @@ These names are static-analysis evidence. Do not implement a serializer solely f
 ## XML root/property string closure (run 46120998177)
 
 Recovered exact names: root `scan-document`; constraints object `constraints`; fields `colorDepth`, `minResolution`, `maxResolution`, `maxFileSize`; error property `error`. The error prefix is `<ScanDoc HasError>. ErrorXML: `. The root string is passed by `NewScanDocument` to XML interface slot +0x8C. See `docs/SCANNER-XML-ROOT-AND-PROPERTY-NAMES-2026-11-28.md`.
+
+## Run 29 — generated getter helper crosswalk
+
+Review of the scanner contract artifact `15252222043` confirms these helper call families:
+
+| Generated getter | Helper call |
+|---|---|
+| `TXMLConfigType.Get_Type` (`0x004E9FFC`) | `0x0044B4D8` |
+| `Get_DriverDialog` (`0x004EA164`) | `0x0044B4C0` |
+| `Get_ImageEditor` (`0x004EA2AC`) | `0x0044B4C0` |
+| `Get_MultiJpegSupport` (`0x004EA400`) | `0x0044B4C0` |
+| `Get_PreviousImageName` (`0x004EA55C`) | `0x0044B4C0` |
+| `TXMLOutputType.Get_ForceSinglePageFiles` (`0x004EA760`) | `0x0044B508`, followed by conversion helper `0x00401448` |
+
+`Get_ForceSinglePageFiles` passes a zero-valued argument to `0x0044B508`; this alone does not establish the helper's absent-attribute default. The helper implementations/semantics remain to be resolved before claiming a Boolean default.
+
+`VerifyConstraints` contains the literals `none`, `jpg`, `yes`, and `no` in several comparison branches. The current trace does not conclusively assign each pair to a specific XML property; do not map these values to `type`, `multiJpegSupport`, `driverDialog`, or `imageEditor` by adjacency or intuition.
+
+The numeric getters remain a distinct case: they explicitly test `HasAttribute`, and absent numeric fields return zero before conversion. Present malformed/empty numeric values still enter Variant-to-integer conversion. String-field defaults, requiredness, empty-value behavior, and XML serialization order remain open.

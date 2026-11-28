@@ -146,3 +146,13 @@ The observed `SeparteImages` direct helper at `0x00454B9C` is `euGetASFileName` 
 5. Connect the Word queue-disappearance condition to the hidden worker and TIFF output completion.
 
 No physical printer/Word/Almas run was performed. Static control flow is not end-to-end acceptance.
+
+## Run 29 — hidden worker coverage and GDI+ interface boundary
+
+The Run-50 artifact `15253702066` provides a skipdata-aware trace of `THidePrintingThread.Execute` across its full 3,096-byte range, with 28 `.byte` pseudo-instructions. This is complete byte coverage, not full instruction decoding. The body includes repeated polling/retry branches, `Sleep(10)`, `TApplication.ProcessMessages`, and additional 3,000 ms / 50 ms delays. The exact checked predicate and object/file identity remain unresolved.
+
+`SeparteImages` invokes the worker before it copies the separate page-file list into a local `TStringList`; the worker's Boolean result gates the TIFF conversion path. The later list is enumerated through `0x004A0BA8`, and each selected path is loaded with the non-ICM `GdipLoadImageFromFile` branch. Keep the list of rendered page files distinct from the `.tif` output name and from the separate Base64-decoded ANSI argument.
+
+The latest interface artifacts (`15253721199`, `15253761384`) do not close the Save/SaveAdd map. The Delphi interface metadata contains interleaved metadata records and is not a simple method-pointer array. Calls through `TGPImage` interface offsets `+0x48`, `+0x70`, `+0x74`, `+0x5C`, and `+0x58` must remain unnamed until their targets are resolved from reliable metadata/callsite evidence. Do not map them to initial Save, SaveAddImage, or final SaveAdd(Flush) based on the raw candidate table.
+
+The confirmed encoder values remain LZW compression (`2`) and MultiFrame (`18`). A runtime-generated multipage TIFF and Almas acceptance fixture are still required before implementing byte-level parity.

@@ -2223,3 +2223,15 @@ Correction to Run 27: exact EMWAT `GAMPrinterSetup.exe` is already inside reposi
 - No new CI, binary execution, build, production-code edit, merge or rebase.
 
 Next: recover template content, follow LcmEndDocPort into server IPC and file-create/write calls, and identify which exact-hash component creates JobFinishes.GAM.
+
+## 2026-11-28 — Run 29 handoff: close-event correction and output/XML proof gates
+
+Detailed report: `docs/REVERSE-ENGINEERING-PARALLEL-FOLLOWUP-2026-11-28-RUN29.md`.
+
+- **Word:** distinguish `0x004CD154` (registered close/save-decision callback; calls `Document.Close`, clears viewer `+0x58`, and releases the HTTP wait) from `0x004CCBBC` (print-field Boolean helper called by `FillImgFldsForPrint`). The formal COM event DISPID for `0x004CD154` is still unknown; use neutral naming.
+- **TIFF:** Run-50 worker artifact `15253702066` has full 3,096-byte coverage with 28 skipdata bytes. Polling/retry is visible, but the exact predicate is unresolved. `SeparteImages` gates GDI+ conversion on the worker Boolean, then enumerates the page-file list and loads file-backed images. LZW/MultiFrame values are known; Save/SaveAdd VMT identities are not.
+- **Scanner:** generated getter helper families are recorded in the Run-29 report. Do not infer absent defaults for string/boolean properties from helper call shape. The `none/jpg/yes/no` literals are not yet assigned conclusively to specific fields.
+- **GAM:** queue disappearance is only the native wait condition; it is not proof of successful TIFF creation. `JobFinishes.GAM` remains an external printer-driver boundary, distinct from Agent heartbeat.
+- **SevenZip:** keep the output archive separate from TIFF until a direct stream hand-off is found; `SetPassword` remains a stub and encryption is unproven.
+
+Next: resolve XMLRTL helper semantics and the Word event DISPID; identify the hidden print worker's polling predicate; map TGPImage Save/SaveAdd/final flush; then seek controlled scanner and multipage TIFF fixtures. Reverse engineering only; no builds/releases or new Actions runs without explicit request.

@@ -3513,3 +3513,12 @@ Base64/GDI+ load closure (run 46121270958): Base64Decode is a shared AnsiString-
 - BPL's `sentinel=1` / `sentinelfile=JobFinishes.GAM` and package's `sentineltemplate.txt` are now tied to the exact payload inventory, but the template contents and writer component remain unproven.
 - Agent's `TEmwatSentinel` is separately identified as loopback heartbeat GET `/?heartbeat` expecting `TickTack`; it is not the printer's `JobFinishes.GAM` sentinel.
 - No new Actions run, binary execution, production code change, build/release, merge or rebase was performed.
+
+## 2026-11-28 — Run 29 cross-lane proof-boundary audit
+
+- Added `docs/REVERSE-ENGINEERING-PARALLEL-FOLLOWUP-2026-11-28-RUN29.md` and reconciled the Word event, TIFF/GDI+, and scanner XML evidence against the existing artifacts. No new Actions run or production implementation was performed.
+- Word: `0x004CD154` remains the registered close/save-decision callback that calls `Document.Close` and clears viewer `+0x58`, releasing the `LoadDocument` wait loop. Its formal COM event DISPID is unresolved. The different `0x004CCBBC` routine is a print-field Boolean helper called from `FillImgFldsForPrint`, not the close callback.
+- TIFF: the Run-50 hidden-worker trace now covers all 3,096 bytes with 28 `.byte` pseudo-instructions; it contains polling/retry logic, but its checked predicate is not identified. `SeparteImages` gates GDI+ conversion on the worker result, then loads the separate page-file list from disk and configures LZW/MultiFrame. Save/SaveAdd interface mapping remains open.
+- Scanner: getter helper families are mapped (`0x0044B4D8`, `0x0044B4C0`, `0x0044B508`), but XMLRTL semantics/defaults are not. `none/jpg/yes/no` are confirmed literals, not yet mapped conclusively to individual properties. Numeric absent-attribute zero behavior and MaxFileSize KiB remain confirmed.
+- GAM queue disappearance remains a heuristic, not print-success proof. The printer `JobFinishes.GAM` sentinel remains separate from the Agent heartbeat. SevenZip output remains unconnected to the TIFF path and encryption remains unproven.
+- No production code, build, release, merge, rebase, or new Actions run was performed.

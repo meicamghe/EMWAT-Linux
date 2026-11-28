@@ -57,3 +57,13 @@ The next trace closes the direct-call context: `TWordViewer.GetFieldIndexInList`
 ## WindowActivate body cross-check
 
 The registered `WordAppWindowActivate` callback at `0x004CD9C0` does not call a local close/quit handler. Its observed body queries the Word Window interface through slot `+0x29C`, then releases temporary interface values. The registered `WordAppNewDocument` callback manages document/window state and may close a prior document when a new one arrives, but it is not a DocumentBeforeClose event. Combined with the print-field-only `WordAppDocumentBeforeClose` helper, no active COM DocumentBeforeClose callback has been established in this registration path. The Word-close-to-Almas return mechanism remains an explicit unresolved item.
+
+## Run 29 reconciliation — callback behavior versus COM event identity
+
+The callback at `0x004CD154` remains the function that performs the close/save decision and clears viewer state `+0x58` after calling Word `Document.Close` through slot `+0x29C`. It is stored at event-record offset `+0x80` by `OnTmrAutoSave`, with the current viewer as context. Run 153's `Sleep(5)` / `ProcessMessages` wait loop and the subsequent `response-word` write remain consistent with this functional release path.
+
+However, the formal COM event DISPID for that record is still not mapped. Use the neutral description **registered close/save-decision callback at `0x004CD154`**; do not assert that the event is definitively `DocumentBeforeClose` or `DocumentBeforeSave` from the TD32 label or diagnostic string alone.
+
+`0x004CCBBC`, despite its `WordAppDocumentBeforeClose` TD32 label, is a different routine. Its bounded direct caller is `FillImgFldsForPrint` (`0x004CCF8F`), where its Boolean return participates in print-field filtering. It is not the callback that releases the HTTP request.
+
+Evidence crosswalk: Run-153 request/wait artifacts; Run 50 Word/Printer artifact `15104841284`; Run 29 re-audit of event registration and helper callers.
