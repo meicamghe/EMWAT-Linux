@@ -189,3 +189,15 @@ These are related workflows, but current evidence does **not** establish them as
 4. Prove or exclude indirect calls into the `T7zOutArchive` wrapper stored at `T7zPlugin+0x44`; current direct-call scans show no application caller of `SaveToStream`/`SaveToFile`, and `SetPassword` is a no-op. Search other modules/processes for `.easz` writes and correlate a real file before implementing archive creation.
 5. Complete WordConfig signature/twin/image field coverage.
 6. Resolve the Agent config-record initializer and registered-message trailing-underscore mismatch. Also replace the Windows watchdog's process-wide `taskkill WINWORD.EXE` recovery side effect with document-session-scoped graceful recovery; then resolve the actual Word image caption save API/output format and `FillMSWFields` COM operations, followed by Excel and installer/updater details. The heartbeat contract is implemented in the native bridge and passed CI run `45352644056`, including a concurrency test that keeps heartbeat responsive during a blocked document POST. The original Service DFM also confirms loopback binding at `127.0.0.1:1984`, queue 100, and a 15-second server shutdown wait.
+
+
+## 2026-11-28 — parallel analysis update
+
+Run 22 added focused scanner request/constraint, ImageEn import, Word COM callback and printer/archive traces. See docs/REVERSE-ENGINEERING-PARALLEL-FOLLOWUP-2026-11-28.md for evidence and open questions.
+
+Immediate execution order:
+1. Review the pending Word/Printer artifact from run 22.
+2. Map the 15-Variant Word PrintOut call to the actual printer job and GAM artifact.
+3. Resolve the SevenZip output object +0x44 callback and prove or exclude encryption.
+4. Continue scanner XML property names and the +0x14 image-derived threshold.
+5. Obtain the exact PKIECtrl23.bpl from this EMWAT build before attempting to reverse the ImageEn Acquire implementation.
