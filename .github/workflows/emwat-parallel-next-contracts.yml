@@ -1,0 +1,134 @@
+name: EMWAT parallel next contract closure
+on:
+  push:
+    paths:
+      - 'analysis-input/EmwatMethods.bpl1'
+      - 'tools/list_td32_symbols.py'
+      - 'tools/trace_td32_procedure_skipdata.py'
+      - 'tools/trace_td32_callers.py'
+      - 'tools/scan_pe_pointer_refs.py'
+      - '.github/workflows/emwat-parallel-next-contracts.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: emwat-parallel-next-contracts-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  word-close-helper:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install pefile capstone
+      - name: Trace BeforeClose-named helper and caller
+        shell: bash
+        run: |
+          mkdir -p next-contracts/word
+          python tools/list_td32_symbols.py analysis-input/EmwatMethods.bpl1 \
+            FillImgFldsForPrint WordAppDocumentBeforeClose WordAppDocumentBeforeSave \
+            OnTmrAutoSave LoadDocument UnloadDocument CloseDocument \
+            > next-contracts/word/symbol-index.md
+          for target in 0x004CCBBC 0x004CCDC8 0x004B8A84 0x004CD154 0x004CD54C 0x004CD9C0 0x004CE030 0x004D00AC; do
+            safe=${target#0x}
+            python tools/trace_td32_procedure_skipdata.py analysis-input/EmwatMethods.bpl1 "$target" \
+              "next-contracts/word/procedure-$safe.md" || true
+            python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 "$target" \
+              "next-contracts/word/callers-$safe.md" || true
+            python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 "$target" \
+              "next-contracts/word/pointers-$safe.md" || true
+          done
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: emwat-next-word-close-helper
+          path: next-contracts/word/
+          if-no-files-found: error
+
+  tiff-output-name:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install pefile capstone
+      - name: Trace Base64 and TIFF input/output naming
+        shell: bash
+        run: |
+          mkdir -p next-contracts/tiff
+          for target in 0x004735C4 0x00490048 0x004A0148 0x004A0E88 0x004B7724 0x00454B9C; do
+            safe=${target#0x}
+            python tools/trace_td32_procedure_skipdata.py analysis-input/EmwatMethods.bpl1 "$target" \
+              "next-contracts/tiff/procedure-$safe.md" || true
+            python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 "$target" \
+              "next-contracts/tiff/callers-$safe.md" || true
+          done
+          python - <<'PY'
+          from pathlib import Path
+          import pefile
+          blob=Path("analysis-input/EmwatMethods.bpl1").read_bytes()
+          pe=pefile.PE(data=blob,fast_load=True)
+          base=pe.OPTIONAL_HEADER.ImageBase
+          addresses=[0x004A071C,0x004A07F4,0x004A08E4,0x004A08F4,0x004A0960,0x004A09C0,0x004A09C0,0x004A09C0]
+          out=["# TIFF procedure inline constants",""]
+          for va in sorted(set(addresses)):
+              try:
+                  off=pe.get_offset_from_rva(va-base)
+                  raw=blob[off:off+128]
+                  out.append(f"## 0x{va:08X} raw 0x{off:08X}")
+                  out.append(f"- bytes: {raw[:64].hex(' ')}")
+                  for enc in ("utf-16le","latin1"):
+                      try:
+                          s=raw.decode(enc,"ignore").split("\0",1)[0]
+                          if s and sum(ch.isprintable() for ch in s)>3: out.append(f"- {enc}: {s!r}")
+                      except Exception: pass
+              except Exception as exc: out.append(f"0x{va:08X}: {exc}")
+          Path("next-contracts/tiff/inline-constants.md").write_text("\n".join(out)+"\n")
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: emwat-next-tiff-output-name
+          path: next-contracts/tiff/
+          if-no-files-found: error
+
+  scanner-xml-root:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install pefile capstone
+      - name: Trace scanner XML document creation and request loading
+        shell: bash
+        run: |
+          mkdir -p next-contracts/scanner
+          python tools/list_td32_symbols.py analysis-input/EmwatMethods.bpl1 \
+            NewScanDocument LoadRequestXML TXMLConstraintsType TXMLRequestType \
+            TScanCommand Get_MaxFileSize Set_MaxFileSize \
+            > next-contracts/scanner/symbol-index.md
+          for target in 0x004E9D5C 0x004F2B18 0x004EAD84 0x004EAE08 0x004F2C4C 0x004F32F4; do
+            safe=${target#0x}
+            python tools/trace_td32_procedure_skipdata.py analysis-input/EmwatMethods.bpl1 "$target" \
+              "next-contracts/scanner/procedure-$safe.md" || true
+            python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 "$target" \
+              "next-contracts/scanner/callers-$safe.md" || true
+            python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 "$target" \
+              "next-contracts/scanner/pointers-$safe.md" || true
+          done
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: emwat-next-scanner-xml-root
+          path: next-contracts/scanner/
+          if-no-files-found: error
