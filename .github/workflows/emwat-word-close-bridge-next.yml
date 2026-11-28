@@ -27,7 +27,7 @@ jobs:
         with:
           python-version: '3.12'
       - run: pip install pefile capstone
-      - name: Trace Word close, deactivation, and event callback ownership
+      - name: Trace Word close, deactivation, QuitWord predicate and callback ownership
         shell: bash
         run: |
           mkdir -p word-close-bridge
@@ -35,10 +35,12 @@ jobs:
             FormClose FormCloseQuery FormActivate FormDeactivate OnClose OnCloseQuery \
             OnDeactivate WindowDeactivate DocumentClose BeforeClose BeforeSave \
             Quit Terminate CloseDocument BGPrintWithGamPrintOptions PrintWithGamPrintOptions \
+            Get_Name Get_FullName Get_Path \
             > word-close-bridge/symbol-index.md
           for target in \
             0x004B8A84 0x004CCBBC 0x004CCDC8 0x004CD154 \
-            0x004CD54C 0x004CD9C0 0x004CDB2C 0x004CDB54 0x004CE030; do
+            0x004CD54C 0x004CD9C0 0x004CDB2C 0x004CDB54 0x004CE030 \
+            0x004402A4 0x00441C68 0x0043F360 0x0044ABE4; do
             safe=${target#0x}
             python tools/trace_td32_procedure_skipdata.py analysis-input/EmwatMethods.bpl1 "$target" \
               "word-close-bridge/procedure-$safe.md" || true
@@ -47,6 +49,26 @@ jobs:
             python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 "$target" \
               "word-close-bridge/pointers-$safe.md" || true
           done
+          python - <<'PY'
+          from pathlib import Path
+          import pefile
+          blob=Path("analysis-input/EmwatMethods.bpl1").read_bytes()
+          pe=pefile.PE(data=blob,fast_load=True)
+          base=pe.OPTIONAL_HEADER.ImageBase
+          out=["# QuitWord embedded string and helper bytes","",
+               "These are raw bytes for static decoding; candidate text must be checked against call context.",""]
+          for va in (0x004CDC14,0x004CDC0C,0x004CDC18):
+              try:
+                  off=pe.get_offset_from_rva(va-base)
+                  raw=blob[off:off+96]
+                  out.append(f"## 0x{va:08X} (file offset 0x{off:08X})")
+                  out.append(f"- raw: {raw.hex(' ')}")
+                  out.append(f"- utf16le: {raw.decode('utf-16le','ignore').split(chr(0),1)[0]!r}")
+                  out.append(f"- latin1: {raw.decode('latin1','ignore').split(chr(0),1)[0]!r}")
+              except Exception as exc: out.append(f"- error: {exc}")
+              out.append("")
+          Path("word-close-bridge/quitword-inline-strings.md").write_text("\n".join(out)+"\n")
+          PY
       - uses: actions/upload-artifact@v4
         if: always()
         with:
