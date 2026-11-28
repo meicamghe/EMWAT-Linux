@@ -48,3 +48,24 @@ No runtime multipage TIFF was generated in this run. A real output fixture is st
 The class metadata dump confirms that the pointer stored in the `TGPImage` class slot leads into Delphi interface/type metadata. The bounded range at `0x0047DD84` contains interface RTTI fields and names such as `NativeHandle` / `TGdiPlusBase`; it is not a flat array of implementation pointers. The functional `SeparteImages` interface slots therefore remain mapped from call-site ABI, the matching wrapper bodies, the independently verified PE import targets, and their loop/finalization positions—not from treating raw metadata DWORDs as code pointers.
 
 The operation-level mapping is complete enough to describe the Save/SaveAdd lifecycle, but the raw interface VTable pointer table itself is **not** fully reconstructed from the available artifacts. The pointer to the interface metadata (`0x0047DD2C`) and the RTTI candidate range (`0x0047DD84`) are known; the raw method table contents needed to map every interface slot directly to a code VA are not present in the downloaded artifact. No Linux TIFF behavior should be changed on the basis of a guessed raw table.
+
+
+## Run 33 — interface VTable base candidates
+
+The class/interface metadata provides a narrower raw-table dump target:
+
+- TGPImage class slot: 0x00484728 + 0x28 -> interface-table metadata at 0x0047DD2C.
+- The associated interface RTTI candidate begins at 0x0047DD84. Its +0x58 DWORD is 0x0062EEA0, a candidate base pointer for the TGPImage interface method table.
+- TGPEncoderParameters class slot: 0x00483F4C + 0x28 -> 0x0062EE88, a separate interface-table candidate. The two candidate bases differ by 0x18 bytes; this is consistent with nearby interface tables but is not proof of their exact extent or layout.
+
+If 0x0062EEA0 is the TGPImage interface VTable base, the observed call slots address these DWORD locations:
+
+| Interface slot | Candidate table address |
+|---:|---:|
+| +0x48 | 0x0062EEE8 |
+| +0x58 | 0x0062EEF8 |
+| +0x5C | 0x0062EEFC |
+| +0x70 | 0x0062EF10 |
+| +0x74 | 0x0062EF14 |
+
+These are calculated addresses only; the pointer values stored there were not included in the artifact and must not be guessed. A raw dump of 0x0062EE88–0x0062EF18 from the original PE would confirm or reject the candidate and expose the actual method pointers. The operation-level Save/SaveAdd mapping remains valid independently of this raw-table gap.
