@@ -49,6 +49,12 @@ jobs:
           mkdir -p "$out"
           python tools/decode_pe_strings.py analysis-input/EmwatMethods.bpl1 \
             0x004CD3C0 0x004CD3DC 0x004CD3F0 0x004CD40C 0x004CD41C 0x004CD42C \
+            0x004CD84C 0x004CD864 0x004CD89C 0x004CD8B4 0x004CD8F0 0x004CD928 0x004CD95C \
+            0x004C2718 0x004C26B8 0x004C26BC 0x004C26C4 0x004C26E0 0x004C2730 \
+            0x004CA2E4 0x004CA300 0x004CA314 0x004CA324 0x004CA334 0x004CA398 \
+            0x004D0FF4 0x004D103C 0x004D1074 0x004D10B0 0x004D10E0 \
+            0x004BB6CC 0x004BB754 0x004BB76C \
+            0x0062E9FC 0x0062EEB4 0x0062EF18 0x0062EEC4 \
             > "$out/close-prompt-strings.md"
           for target in 004CD154 004CD54C 004CD9C0 004CE030 004D00AC; do
             python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 \
@@ -61,6 +67,12 @@ jobs:
               "0x$target" "$out/state-procedure-$target.md"
             python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 \
               "0x$target" "$out/state-callers-$target.md"
+          done
+          for target in 004C5E04 004D281C 0043E0FC 0043E174 0043E1D8; do
+            python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 \
+              "0x$target" "$out/deep-procedure-$target.md"
+            python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 \
+              "0x$target" "$out/deep-callers-$target.md"
           done
           targets=(5C 5D 5E 5F 79 F4)
           pids=()

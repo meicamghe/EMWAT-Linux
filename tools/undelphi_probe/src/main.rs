@@ -125,6 +125,10 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             for field in &fields {
                 let ty = bin.field_type(class, field)
                     .map(|header| header.name().to_string())
+                    .or_else(|| bin.type_at(match field.type_ref {
+                        undelphi::fields::FieldTypeRef::TypeInfoPtr(pointer) => pointer,
+                        undelphi::fields::FieldTypeRef::TypeIndex(_) => 0,
+                    }).map(|detail| detail.header().name().to_string()))
                     .unwrap_or_else(|| format!("{:?}", field.type_ref));
                 writeln!(report, "  - `+0x{:X}` `{}`: `{}`", field.offset, field.name(), ty)?;
             }
@@ -135,8 +139,9 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
         if !extended_fields.is_empty() {
             writeln!(report, "- Extended fields ({}):", extended_fields.len())?;
             for field in &extended_fields {
-                let ty = bin.extended_field_type(class, field)
-                    .map(|header| header.name().to_string())
+                let ty = bin.type_at(field.type_ref)
+                    .map(|detail| detail.header().name().to_string())
+                    .or_else(|| bin.extended_field_type(class, field).map(|header| header.name().to_string()))
                     .unwrap_or_else(|| format!("type-ref 0x{:X}", field.type_ref));
                 writeln!(
                     report,
@@ -227,6 +232,14 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
                 continue;
             }
             writeln!(report, "- `{}` code VA: `{:?}`", name, signature.code_va)?;
+            for parameter in &signature.params {
+                let parameter_name = parameter.name.unwrap_or("<unnamed>");
+                let parameter_type = bin.type_at(parameter.type_va)
+                    .map(|detail| detail.header().name().to_string())
+                    .or_else(|| parameter.type_name.map(|name| name.to_string()))
+                    .unwrap_or_else(|| format!("type-ref 0x{:X}", parameter.type_va));
+                writeln!(report, "  - parameter `{}`: `{}`", parameter_name, parameter_type)?;
+            }
             writeln!(report, "```text")?;
             writeln!(report, "{:#?}", signature)?;
             writeln!(report, "```")?;
