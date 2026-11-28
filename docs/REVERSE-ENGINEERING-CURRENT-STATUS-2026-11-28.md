@@ -41,3 +41,5 @@ No production Linux code changed. No Windows/Linux release build, merge or rebas
 - Queue-name handling: before the `EnumJobsW` comparison, Word passes the candidate through `FixDirectionInFarsiNumericMode`. The caller waits while a matching job remains; no explicit timeout was seen. Queue disappearance is a heuristic, not a success result.
 
 - Delay-call cross-check: `0x004028D0` is `kernel32!Sleep` (IAT `0x0062F09C`), despite a misleading TD32 `SuspendThread` symbol. Word polls every 5 ms while the matching job remains. The following `0x00404F04` import is still unresolved.
+
+- The Word queue loop is confirmed as `Sleep(5 ms)` followed by `TApplication.ProcessMessages` (thunk `0x00404F04`), then another `EnumJobsW` check. It keeps the UI responsive while waiting for the matching job to disappear; no timeout was observed.
