@@ -1,3 +1,9 @@
+## GitHub verification — 2026-11-28
+
+- PR #2 remains open and Draft, base main, head feature/recovery-retention-policy at 4fe67b63879440f9353997d1c6f5a42f5b82df81 (1,418 commits / 246 changed files).
+- PR #5 remains a separate open Draft on reconcile/word-close-contract-final; it was not modified by this work.
+- No Actions workflow was started. The newly added synthetic PE tests and lifecycle regression tests remain unexecuted.
+
 ## 2026-11-28 — PE raw-range extraction helper added
 
 - Added scripts/dump_pe_va_ranges.py: standard-library PE32/PE32+ VA-to-file-offset mapper, raw DWORD/hex dumper, and ANSI/UTF-16LE string scanner. Default ranges target the GDI+ candidate tables, hidden Worker string literals, 0x004026B4, and 0x0044B508.
