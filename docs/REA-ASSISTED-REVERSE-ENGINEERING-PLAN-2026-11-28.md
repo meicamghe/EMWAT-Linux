@@ -115,3 +115,16 @@ A current-source review of REA adds an important implementation constraint:
 - This is an analyst-side workflow only; REA remains outside EMWAT-Linux runtime dependencies.
 
 Primary references: [REA README](https://github.com/morluto/rea), [REA Ghidra provider](https://github.com/morluto/rea/blob/main/docs/providers/ghidra-provider.md), [REA installation guide](https://github.com/morluto/rea/blob/main/docs/getting-started/installation.md), [REA Delphi VMT issue #2811](https://github.com/morluto/rea/issues/2811).
+
+
+### EMWAT VMT profile cross-check from existing artifacts
+
+The current EMWAT artifact set already contains a candidate Delphi class metadata record for `TScanCommand` at `0x004F1F94` (scanner artifact `15263439921`):
+
+- The existing repository script `tools/resolve_delphi_vmt_slots.py` explicitly documents and uses a later Win32 layout: self pointer at VMT `-0x58`, class-name field at `-0x38`, instance size at `-0x34`, and parent pointer at `-0x30`.
+- The candidate record at `0x004F1F94` has a matching self pointer, class-name target `0x004F20D7` decoding to `TScanCommand`, instance size `0x40`, and parent pointer `0x0062EEA4`. A nearby false candidate at `0x004F1F3C` has implausible metadata and demonstrates why self-pointer/class-name/size/parent checks must all be enforced.
+- The candidate's field-table bytes expose named fields including `ImgProc`, `Options`, `ResultImage`, `FEditorForm`, `FCommandState`, `FIsNextPageRequest`, `FPreviousReturnedFileName`, `FRequestXML`, `FResponseXML`, and `FHasConstratints`. The artifact's published-method-table parser reports zero entries even though its raw bytes contain apparent method records; that parser/table interpretation remains unresolved.
+
+This is a material profile warning: REA issue #2811 discusses Delphi 2–2007 Win32 VMT recovery, while the existing EMWAT script targets a later Win32 VMT layout. Do not apply the issue's Delphi 7 offsets blindly to EMWAT. The exact compiler version is still not conclusively identified; the current later-layout candidate is a working profile backed by repository evidence, not a complete compiler fingerprint.
+
+Next VMT step: reconcile the raw method-table and field-table record formats against this exact `TScanCommand` candidate, validate the same negative-offset layout against at least two unrelated classes, then emit only executable method-entry seeds. Keep the zero-entry method-table parse as an explicit unresolved discrepancy.
