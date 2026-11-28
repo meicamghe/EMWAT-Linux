@@ -114,3 +114,6 @@ GDI+ import identity is now independently confirmed: GNU `objdump -p` agrees wit
 
 
 SevenZip callback-detail run `46119766144` further shows `SaveToFile` is a stub (fixed out values, returns zero), while `SaveToStream` creates a stream wrapper and calls `SetCompleted`. Progress callback is stored separately at +0x38; operation-result callback/context are +0x30/+0x34. See `docs/SEVENZIP-OUTPUT-ARCHIVE-OWNERSHIP-2026-11-28.md`.
+
+
+GDI+ interface boundary: SeparteImages creates TGPEncoderParameters (class VMT 0x00483F4C) and obtains its interface at object +0x28, then calls interface slot +0x20 with the compression/save-flag GUIDs. TGPImage is created with class VMT 0x00484728; its interface is called through slots +0x48/+0x70/+0x74/+0x5C/+0x58. The interface metadata blocks are complex Delphi RTTI structures, not simple pointer arrays; exact Save/SaveAdd/final-flush identities remain open.
