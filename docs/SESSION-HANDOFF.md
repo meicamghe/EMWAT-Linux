@@ -261,3 +261,11 @@ Documentation commit: `38f68dc0f0c2acbf8b9039f29d10287ded835358`.
 - Actual Windows forced-termination behavior remains outside the bounded graceful-shutdown guarantee.
 
 No Linux release package was built. No additional workflow was dispatched. PR #2 remains open Draft; no PR was merged.
+
+
+## 2026-11-28 — Python Bridge CI stall source audit
+
+- Added `docs/BRIDGE-CI-STALL-INVESTIGATION-2026-11-28.md` after auditing the active Python test suite's wait/join sites and the BridgeRuntime startup path.
+- Latest observed run `46149684182` remained in `Run bridge transport tests`; GTK and Debian package jobs passed on the same commit. The diagnostics artifact had not yet uploaded, and active job-log retrieval returned 404/BlobNotFound.
+- Most explicit test waits/joins are bounded. `BridgeRuntime.start()` still relies on an unbounded `wait_until_serving()` contract; the real server currently signals it on serve-loop entry and exit. This is a lifecycle hardening candidate, not a proven cause of the CI stall.
+- Next action is to inspect the uploaded per-test log/traceback, identify the exact blocking test, then make a targeted fix. No Python runtime code change or complete-suite pass is claimed.
