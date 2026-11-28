@@ -17,9 +17,9 @@ The scanner artifact confirms these direct relationships:
 - `TScanCommand.DoRequest` (`0x004F22E4`) calls `LoadRequestXML` (`0x004F2B18`), `Finalization` (`0x004F32F4`) and `HasError` (`0x004F2A94`).
 - `TScanCommand.GetNextPage` (`0x004F2558`) calls `VerifyConstraints` (`0x004F2C4C`) and `HasError`.
 - `Finalization` reads selector byte `+0x08`; values 1, 4, 8 and 24 map to the localized labels سیاه/سفید, طیف سیاه و سفید, طیف سیاه و سفید یا 256 رنگ, and رنگی 24 بیت.
-- Fields `+0x0C` and `+0x10` participate in minimum/maximum resolution checks through `TGearImgProc.GearType`. Field `+0x14` is compared with an image-derived value scaled by 1024; its exact unit/name is unresolved.
+- Fields `+0x0C` and `+0x10` participate in minimum/maximum resolution checks through `TGearImgProc.GearType`. Field `+0x14` is the previously mapped `TXMLConstraintsType.MaxFileSize` field: it is compared with an image-derived stream-size value scaled by 1024. The precise external unit/conversion contract still needs confirmation.
 - Validation errors distinguish requested image mode, minimum resolution, bounded resolution and maximum resolution. Failure can expose Retry/Cancel; a future adapter must not silently coerce invalid images.
-- Exact XML serialized names/root-child contract and the meaning/unit of `+0x14` remain open. Do not infer strict-vs-maximum mode semantics solely from the labels.
+- Exact XML serialized names/root-child contract and the precise MaxFileSize unit/conversion remain open. Do not infer strict-vs-maximum mode semantics solely from the labels.
 
 ## 2. ImageEn acquisition boundary
 
@@ -54,7 +54,7 @@ The scanner artifact confirms these direct relationships:
 1. Trace the exact Word `PrintOut` COM call ABI/Variant argument count and reconcile the 15-vs-18 discrepancy using caller stack construction and imported type-library metadata.
 2. Trace `EnumJobsW`/job-document-name matching and any indirect Winspool/VCL calls from the printer worker; connect the job to the produced TIFF/GAM artifact.
 3. Resolve `T7zOutArchive` callback object construction, `CryptoGetTextPassword2` consumers and the `euResetMemory` object VMT/slot identities; prove or exclude encryption.
-4. Continue scanner XML serialized-name recovery and resolve the `+0x14` max-file-size candidate against the request/result consumer path.
+4. Continue scanner XML serialized-name recovery and confirm the `MaxFileSize` conversion/unit against the request/result consumer path.
 5. Keep ImageEn Acquire explicitly blocked at the external `PKIECtrl23.bpl` boundary; continue caller-side source/format/ownership analysis without guessing its internals.
 6. Trace Word BeforeClose registration and parent-page close bridge independently from BeforeSave.
 
