@@ -52,12 +52,18 @@ class GtkDesktopEntryTests(unittest.TestCase):
 
         application = type("Application", (), {"run": lambda self, _args: 7})()
         controller = object()
+        supervisor = object()
         with (
             patch.object(gtk_desktop, "create_default_recovery_controller", return_value=controller),
+            patch("emwat_linux.deployment.create_default_bridge_supervisor", return_value=supervisor),
             patch.object(gtk_desktop, "create_desktop_application", return_value=application) as create_app,
         ):
             self.assertEqual(gtk_desktop.main([]), 7)
-        create_app.assert_called_once_with(recovery_controller=controller)
+        create_app.assert_called_once_with(
+            recovery_controller=controller,
+            bridge_supervisor=supervisor,
+            auto_start_bridge=True,
+        )
 
     def test_desktop_module_does_not_compose_or_start_bridge(self):
         from emwat_linux import gtk_desktop
