@@ -1,0 +1,214 @@
+name: EMWAT parallel contract closure
+on:
+  push:
+    paths:
+      - 'analysis-input/EmwatMethods.bpl1'
+      - 'tools/list_td32_symbols.py'
+      - 'tools/trace_td32_procedure.py'
+      - 'tools/trace_td32_callers.py'
+      - 'tools/scan_pe_pointer_refs.py'
+      - 'tools/trace_td32_procedure_skipdata.py'
+      - 'tools/trace_pe_range.py'
+      - '.github/workflows/emwat-parallel-contract-followup.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: emwat-contract-followup-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  scanner-xml-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install pefile capstone
+      - name: Enumerate XML constraint classes and consumers
+        shell: bash
+        run: |
+          mkdir -p contract-followup/scanner
+          python tools/list_td32_symbols.py analysis-input/EmwatMethods.bpl1 \
+            TXMLConstraintsType TXMLConfigType TXMLOutputType TScanCommand \
+            NewScanDocument VerifyConstraints LoadRequestXML DoRequest \
+            > contract-followup/scanner/symbol-index.md
+          python - <<'PY'
+          from pathlib import Path
+          import subprocess, sys
+          source = Path("contract-followup/scanner/symbol-index.md").read_text()
+          rows = []
+          for line in source.splitlines():
+              cols = [part.strip() for part in line.strip().strip("|").split("|")]
+              if len(cols) == 5 and cols[0].startswith("`0x"):
+                  rows.append((cols[0].strip("`"), cols[4].strip("`")))
+          rows = sorted(set(rows))
+          Path("contract-followup/scanner/selected-symbols.txt").write_text(
+              "\n".join(f"{a} {n}" for a,n in rows) + "\n")
+          for address, name in rows:
+              safe = address.replace("0x", "")
+              subprocess.run([sys.executable, "tools/trace_td32_procedure_skipdata.py",
+                  "analysis-input/EmwatMethods.bpl1", address,
+                  f"contract-followup/scanner/procedure-{safe}.md"], check=True)
+              subprocess.run([sys.executable, "tools/trace_td32_callers.py",
+                  "analysis-input/EmwatMethods.bpl1", address,
+                  f"contract-followup/scanner/callers-{safe}.md"], check=True)
+          PY
+          for target in 0x004E9D5C 0x004F2C4C 0x004F32F4 0x004EEF30; do
+            safe=${target#0x}
+            python tools/trace_td32_procedure_skipdata.py analysis-input/EmwatMethods.bpl1 "$target" \
+              "contract-followup/scanner/focus-$safe.md"
+            python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 "$target" \
+              "contract-followup/scanner/focus-callers-$safe.md"
+          done
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: emwat-contract-scanner-xml
+          path: contract-followup/scanner/
+          if-no-files-found: error
+
+  word-printout-abi:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install pefile capstone
+      - name: Trace caller, overload wrappers and Variant preparation
+        shell: bash
+        run: |
+          mkdir -p contract-followup/word-printout
+          python tools/list_td32_symbols.py analysis-input/EmwatMethods.bpl1 \
+            BGPrintWithGamPrintOptions PrintOut PrintOutOld TWordDocument TWordApplication \
+            > contract-followup/word-printout/symbol-index.md
+          for target in 0x004C5FF8 0x004361B0 0x00436030 0x004360F0 0x00441E44 0x00403550 0x004034E8 0x00403520; do
+            safe=${target#0x}
+            python tools/trace_td32_procedure_skipdata.py analysis-input/EmwatMethods.bpl1 "$target" \
+              "contract-followup/word-printout/procedure-$safe.md"
+            python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 "$target" \
+              "contract-followup/word-printout/callers-$safe.md"
+            python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 "$target" \
+              "contract-followup/word-printout/pointers-$safe.md"
+          done
+          python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x004C6F60 0x004C70E0 \
+            contract-followup/word-printout/bgprint-variant-callsite-range.md
+          python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x00436000 0x00436280 \
+            contract-followup/word-printout/printout-overload-wrapper-range.md
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: emwat-contract-word-printout
+          path: contract-followup/word-printout/
+          if-no-files-found: error
+
+  winspool-import-xrefs:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install pefile capstone
+      - name: Enumerate Winspool and GDI import slots and code references
+        shell: bash
+        run: |
+          mkdir -p contract-followup/winspool
+          python - <<'PY'
+          from pathlib import Path
+          import struct
+          import pefile
+          p = Path("analysis-input/EmwatMethods.bpl1")
+          blob = p.read_bytes()
+          pe = pefile.PE(data=blob, fast_load=False)
+          wanted = {
+              "openprintera","openprinterw","closeprinter","getprintera","getprinterw",
+              "enumprintersa","enumprintersw","enumjobsa","enumjobsw","getjoba","getjobw",
+              "setjoba","setjobw","startdocprintera","startdocprinterw","startpageprinter",
+              "writeprinter","endpageprinter","enddocprinter","abortprinter",
+              "startdoca","startdocw","enddoc","startpage","endpage","createdca","createdcw","deletedc"
+          }
+          out = ["# Winspool/GDI import slots and raw code references","",
+                 "References are raw 32-bit VA occurrences in executable sections. Validate each byte context before treating it as a call.",""]
+          hits = 0
+          for entry in getattr(pe, "DIRECTORY_ENTRY_IMPORT", []):
+              dll = entry.dll.decode("ascii", "replace")
+              for imp in entry.imports:
+                  if not imp.name:
+                      continue
+                  name = imp.name.decode("ascii", "replace")
+                  if name.casefold() not in wanted:
+                      continue
+                  va = pe.OPTIONAL_HEADER.ImageBase + imp.address - pe.OPTIONAL_HEADER.ImageBase
+                  out.append(f"## {dll}!{name} — IAT VA 0x{imp.address:08X}")
+                  needle = struct.pack("<I", imp.address)
+                  count = 0
+                  for sec in pe.sections:
+                      if not (sec.Characteristics & 0x20000000):
+                          continue
+                      start = sec.PointerToRawData
+                      end = start + sec.SizeOfRawData
+                      pos = start
+                      while True:
+                          pos = blob.find(needle, pos, end)
+                          if pos < 0: break
+                          rva = sec.VirtualAddress + (pos - start)
+                          site = pe.OPTIONAL_HEADER.ImageBase + rva
+                          lo, hi = max(start, pos-12), min(end, pos+16)
+                          out.append(f"- ref VA 0x{site:08X}, raw 0x{pos:08X}: {blob[lo:hi].hex(' ')}")
+                          count += 1
+                          pos += 1
+                  out.append(f"- raw reference count: {count}")
+                  hits += 1
+          if not hits:
+              out.append("No matching imports found.")
+          Path("contract-followup/winspool/import-xrefs.md").write_text("\n".join(out)+"\n")
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: emwat-contract-winspool-xrefs
+          path: contract-followup/winspool/
+          if-no-files-found: error
+
+  sevenzip-output-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install pefile capstone
+      - name: Trace archive constructors, callbacks, and helper callers
+        shell: bash
+        run: |
+          mkdir -p contract-followup/sevenzip
+          python tools/list_td32_symbols.py analysis-input/EmwatMethods.bpl1 \
+            T7zOutArchive T7zInArchive T7zPlugin CryptoGetTextPassword2 SetPassword \
+            euResetMemory euUnArchive \
+            > contract-followup/sevenzip/symbol-index.md
+          for target in 0x004543B0 0x004543C4 0x00454450 0x004547B0 0x004547DC 0x00454800 0x00456F00 0x00453860; do
+            safe=${target#0x}
+            python tools/trace_td32_procedure_skipdata.py analysis-input/EmwatMethods.bpl1 "$target" \
+              "contract-followup/sevenzip/procedure-$safe.md"
+            python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 "$target" \
+              "contract-followup/sevenzip/callers-$safe.md"
+            python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 "$target" \
+              "contract-followup/sevenzip/pointers-$safe.md"
+          done
+          python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x00452B80 0x00452D00 \
+            contract-followup/sevenzip/plugin-construction-range.md
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: emwat-contract-sevenzip
+          path: contract-followup/sevenzip/
+          if-no-files-found: error
