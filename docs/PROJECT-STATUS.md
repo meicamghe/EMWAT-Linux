@@ -3386,3 +3386,18 @@ The next meaningful Almas acceptance input is a sanitized, synthetic-or-test-acc
 - ImageEn imports are confirmed as a separate external package boundary: InsertPicture calls PKIECtrl23.bpl!TImageEnMIO.Acquire; DoPrintingPanel calls TImageEnMIO.PrintImage. ScanPicture remains a one-byte RET stub. PKIECtrl23.bpl is not present in analysis-input, so Acquire internals are not yet reversed.
 - Word callback correction remains: OnTmrAutoSave registers 0x004CD154 as BeforeSave. The separately named 0x004CCBBC BeforeClose has one direct bounded caller and no raw-pointer registration reference; its active event role is unproven. See docs/WORD-COM-INTERFACE-DISPATCH.md.
 - Run 22 (46112005385): scanner, ImageEn and Native regression lanes passed; Word/Printer lane was still running when this entry was written. No production Linux code changed; no hardware or live Almas E2E acceptance is claimed.
+
+
+## 2026-11-28 Parallel reverse-engineering update
+
+Static-analysis runs 22–25 are complete and documented in the dated current-status report. New verified evidence:
+
+- Scanner XML root is `scan-document`; the constraints child is `constraints`. UTF-16LE serialized keys are `type`, `driverDialog`, `imageEditor`, `multiJpegSupport`, `previousImageName`, `forceSinglePageFiles`, `colorDepth`, `minResolution`, `maxResolution`, and `maxFileSize`. See `docs/SCANNER-XML-SERIALIZATION-CONTRACT-2026-11-28.md`.
+- GAM printer discovery enumerates `PRINTER_INFO_2A`, matches `pDriverName` against a constant at `0x0047CC64`, and stores the selected `pPrinterName` at global `0x0062B310`. The constant's literal and install branch are still being traced.
+- Printer status check reads `PRINTER_INFO_2A.Status` at +0x48 and compares it with 1. Queue correlation opens a printer handle with `OpenPrinterW`; `ExtractFileNameEX` uses two-pass `EnumJobsW`, walks 64-byte `JOB_INFO_1W` records, and compares `pDocument` (+0x10) with the supplied document name. See `docs/PRINTER-QUEUE-AND-GAM-DRIVER-REVERSE-ENGINEERING-2026-11-28.md`.
+- Word PrintOut has four repeated callsites through interface slot +0x3F0, each passing 18 Variant-record pointers (15 EmptyParam + 3 prepared). TD32 wrappers stop at 17; the exact ABI remains unresolved. See `docs/WORD-PRINTOUT-18-VARIANT-ABI-RECHECK-2026-11-28.md`.
+- ImageEn Acquire remains external to `PKIECtrl23.bpl`; SevenZip output encryption remains unproven; no direct EMWAT StartDocPrinter/WritePrinter call was recovered. Word may own job submission.
+
+The current follow-up workflow `emwat-print-queue-completion` is tracing TrimLF, pointer/VMT references to ExtractFileNameEX, printer installation, and the literal GAM driver name. Do not claim those results until its artifact is inspected.
+
+Reverse engineering only. No production Linux code or release builds were changed; no merge/rebase was performed.
