@@ -98,5 +98,5 @@ This is static binary analysis only. No physical printer, real Word, or Almas ru
 
 ## 4B. Delay API symbol cross-check
 
-The one-argument call target `0x004028D0` is confirmed by the PE import table as `kernel32.dll!Sleep` (IAT `0x0062F09C`). The TD32 symbol name `Winapi.Windows.SuspendThread` at the same thunk is therefore a stale/misleading debug symbol; trust the import table and call shape. The Word queue loop's `push 5; call 0x004028D0` is a 5 ms Sleep before the next queue check. The hidden worker uses the same Sleep thunk with other millisecond values. The following `0x00404F04` thunk is a separate imported function and remains to be identified.
+The one-argument call target `0x004028D0` is confirmed by the PE import table as `kernel32.dll!Sleep` (IAT `0x0062F09C`). The TD32 symbol name `Winapi.Windows.SuspendThread` at the same thunk is therefore a stale/misleading debug symbol; trust the import table and call shape. The Word queue loop's `push 5; call 0x004028D0` is a 5 ms Sleep before the next queue check. The hidden worker uses the same Sleep thunk with other millisecond values. The following `0x00404F04` thunk is `Vcl.Forms.TApplication.ProcessMessages` (IAT `0x00630038`), keeping the UI responsive between queue checks.
 
