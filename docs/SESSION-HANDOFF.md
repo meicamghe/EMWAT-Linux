@@ -1,3 +1,14 @@
+## 2026-11-28 — bounded bridge request drain and GTK close retry
+
+- Audited the actual `ThreadingHTTPServer` shutdown path: the bridge intentionally uses non-daemon request workers, while `ThreadingMixIn.server_close()` joins those workers without a timeout. A pending Almas `EditWordDocument` request can therefore block the desktop shutdown path indefinitely.
+- `_ServingThreadingHTTPServer` now tracks active request workers under a condition variable and exposes a bounded `wait_for_requests_idle(timeout)` hook. The runtime calls it after stopping the accept loop and before `server_close()`.
+- `BridgeRuntime` adds a separately validated `request_drain_timeout_seconds` (default 5 seconds). If a Writer-backed request is still active, close raises `bridge_request_workers_did_not_drain_before_timeout`, leaves socket cleanup retryable, and preserves the non-daemon worker rather than abandoning the request.
+- GTK main-window close now stops the injected supervisor on a background thread. If the drain times out, the window remains open and reports that Writer must be closed; the user can retry closing after the request finishes. Successful drain then permits the window to close.
+- Regression tests added: `test_runtime_bounds_active_http_request_drain_and_allows_cleanup_retry` and `test_window_close_keeps_desktop_open_until_bridge_request_drains`.
+- Implementation commits: `a700d561`, `1737b3cc`, `fac881ed`, `ac7fcf81`, `abb07652`, `4788237d`. Test commits: `d58527a5`, `de38c978`.
+- These tests have **not been executed** in this session. No GitHub Actions workflow was started. The feature is not accepted until the tests run locally or in an explicitly authorized CI run.
+- This closes the indefinite `server_close()` wait in the normal GTK window-close path; it does not prove a live Almas request or guarantee recovery from forced process termination / `SIGKILL`. The exact Almas request/response, deployment Origin allowlists, Cancel wire contract, and live persistence acceptance remain outstanding.
+
 ## 2026-11-26 — SANE ADF boundary audited against source and tests
 
 - Current SANE backend supports single-page/flatbed capture and explicitly selected simplex ADF batches. It does not silently repeat flatbed scans.
