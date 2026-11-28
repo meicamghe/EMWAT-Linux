@@ -2258,3 +2258,9 @@ Detailed report: `docs/REVERSE-ENGINEERING-PARALLEL-FOLLOWUP-2026-11-28-RUN30.md
 - The test drives the real loopback HTTP server and EditWordDocument composition with a deterministic blocking office adapter: the POST is held while the office session is open, a second heartbeat GET must still return `TickTack`, and only after the close gate is released may the POST return the successful Base64 `response-word` payload.
 - This closes a missing local transport-lifecycle coverage gap. It is not a real Almas or real LibreOffice acceptance test.
 - Test execution and CI were intentionally not started; no release package was produced.
+
+## 2026-11-28 — Shutdown with a pending Writer session added to release gate
+
+- Added an explicit release blocker and acceptance step to `docs/ALMAS-LIVE-END-TO-END-ACCEPTANCE.md` in commit `98f30cb`.
+- The desktop currently has no explicit, tested policy for quitting EMWAT while an EditWordDocument request is waiting on Writer. The required behavior must drain the session or perform a verified cancellation; it must not silently abandon the Almas request or leave Writer/soffice orphaned.
+- This was found during a separate lifecycle review after adding the pending-request/heartbeat test. No shutdown behavior was changed because the correct cancellation contract and safe user-facing policy are not yet established.
