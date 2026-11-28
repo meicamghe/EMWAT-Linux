@@ -29,3 +29,5 @@ Parallel static-analysis runs 22–25 have produced several new contracts. The e
 - Physical scanner/printer, Office and Almas end-to-end acceptance.
 
 No production Linux code changed. No Windows/Linux release build, merge or rebase was performed. Reverse engineering remains the only active project phase.
+
+- Word-to-spool queue gate is now direct: `BGPrintWithGamPrintOptions` opens a printer handle, checks each generated document name with `ExtractFileNameEX` / `EnumJobsW`, retries after a short delay if absent, and closes the handle. This proves job appearance in the queue, not completion or final TIFF success.
