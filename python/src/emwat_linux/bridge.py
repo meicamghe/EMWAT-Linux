@@ -46,12 +46,22 @@ class _ServingThreadingHTTPServer(ThreadingHTTPServer):
         self._active_requests = 0
         super().__init__(*args, **kwargs)
 
-    def process_request_thread(self, request: object, client_address: object) -> None:
-        # Count only after the serving loop has started the worker. shutdown()
-        # first joins the accept loop, so no new worker can appear after this
-        # count reaches zero.
+    def process_request(self, request: object, client_address: object) -> None:
+        # Register synchronously in the accept-loop thread before
+        # ThreadingMixIn creates/starts the worker. Counting in
+        # process_request_thread leaves a race where shutdown can observe zero
+        # after accept but before the worker's first instruction.
         with self._request_condition:
             self._active_requests += 1
+        try:
+            super().process_request(request, client_address)
+        except BaseException:
+            with self._request_condition:
+                self._active_requests -= 1
+                self._request_condition.notify_all()
+            raise
+
+    def process_request_thread(self, request: object, client_address: object) -> None:
         try:
             super().process_request_thread(request, client_address)
         finally:
