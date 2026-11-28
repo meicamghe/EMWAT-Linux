@@ -182,3 +182,41 @@ The caller at `0x005EE961` and full loader prologue/epilogue establish the call 
 - stack arg 3 = `signData` (callee `[EBP+0x10]`)
 
 The loader returns with `ret 0xC`, confirming three stack arguments. It writes/obtains a UnicodeString result through the out pointer at `[EBP+8]`; the handler then forwards that string to its output collection at `0x005EE970` and sets a completion byte at `0x005EE988`. The exact semantic of the returned string (updated document body versus another serialized result) and the output collection key are not proven without the response XML/wire fixture.
+
+
+## Run 46 — authoritative EditWordDocument dispatch/VMT correction
+
+The Run-67 generic VMT resolver's failure to find a standard-layout candidate for TEditWordDocument is a false negative for this class and is superseded by the earlier direct VMT/interface crosswalk in docs/WORD-DOCUMENT-PROTOCOL-ANALYSIS.md and docs/WORD-LIFECYCLE-STATIC-TRACE.md:
+
+- TEmwatMethod VMT: 0x0046ABFC; slot +0x0C points to the public Invoke wrapper at 0x0046C9E0.
+- The wrapper calls the shared dictionary/XML helper at 0x0046C82C, then dispatches the concrete method through VMT slot +0x10 at 0x0046CA88.
+- TEditWordDocument VMT: 0x005ED764; parent pointer 0x0046ABA4 resolves to the TEmwatMethod VMT header; slot +0x10 points to 0x005EE82C.
+- The routine at 0x005EE82C is therefore definitively the concrete TEditWordDocument.PerformMethod, despite TD32 decorating it as TScanDocument.PerformMethod.
+- TScanDocument VMT 0x005ED884 slot +0x10 points to 0x005EEB48, despite TD32 decorating that routine as TFaxDocument.PerformMethod.
+
+The end-to-end static dispatch chain is now closed: service XML class EditWordDocument -> constructs TEditWordDocument via GetClass("T"+className) -> VMT +0x0C Invoke -> shared dictionary/XML helper -> concrete VMT +0x10 at 0x005EE82C -> WordViewer loader.
+
+## Run 46 — response and loopback origin evidence
+
+The existing PCAP round-trip is the wire source of truth for the successful path:
+
+- Request: POST /?invoke=58351, Content-Type text/plain;charset=UTF-8, Content-Length 1,177,821, Origin http://127.0.0.1:1984.
+- Response: HTTP 200, Content-Type text/html; charset=ISO-8859-1, Content-Length 1,166,820.
+- XML: response-word status="success" / return-types / type mimetype="application/msword" encryption="base64".
+- Decoded response begins with the OLE Compound File signature; it is a returned Word document, not a status-only acknowledgement.
+- The BPL assigns generated XML to AResponseInfo.ContentText, calls Indy WriteContent, and sets bResultSet on the successful branch.
+
+The PCAP response has 17 TCP sequence gaps totaling 68 missing payload bytes, so the exact full response bytes/hash remain unverified. The request body itself has no detected sequence gaps.
+
+The browser screenshot pair records Referer http://127.0.0.1:1984/?init=...; the XHR Origin in the PCAP is also http://127.0.0.1:1984. This is evidence for an allowlist entry of exactly http://127.0.0.1:1984 for the captured deployment. It is not necessary to guess the external Almas page's domain for the local XHR Origin. Keep the listener loopback-only and make the allowlist explicit/configurable.
+
+## Remaining release gates after static protocol closure
+
+1. Run the real Almas browser workflow against the GTK application with the captured loopback Origin/Referer behavior and LibreOffice Writer.
+2. Verify the same Invoke remains pending while Writer is open; Save then close; ensure Almas receives and persists the returned DOC; reopen it and verify the saved marker.
+3. Capture a gap-free response or otherwise validate the complete serialized response body against the native implementation.
+4. Execute the new bridge drain/race tests and GTK shutdown retry tests locally; the automatic Run-67 Python suite is still in progress at the time of this update.
+5. Resolve WordConfig field mapping and signData only to the extent required by the live acceptance fixture. letterImages is currently tied to the TIFF/preview path and remains deferred while TIFF is out of scope.
+6. Wire the evidence-backed loopback service configuration into normal GTK startup; do not start the listener with wildcard origins or an unverified host.
+
+The earlier Run-40 statement that TEditWordDocument had no VMT is superseded: it describes only a false negative in the newer generic resolver, not the overall evidence. The direct VMT mapping above is authoritative.
