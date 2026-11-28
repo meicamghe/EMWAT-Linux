@@ -1,5 +1,4 @@
 import http.client
-import socket
 import threading
 import time
 import unittest
@@ -48,15 +47,13 @@ class BridgeSupervisorTests(unittest.TestCase):
                 raise TimeoutError("test_request_release_timeout")
             return BridgeResponse(b"completed", content_type="text/plain")
 
-        with socket.socket() as probe:
-            probe.bind(("127.0.0.1", 0))
-            port = probe.getsockname()[1]
         server = BridgeHTTPServer(
             handler,
             host="127.0.0.1",
-            port=port,
+            port=0,
             allowed_origins=frozenset({"http://127.0.0.1"}),
         )
+        port = server.address[1]
         runtime = BridgeRuntime(
             server,
             join_timeout_seconds=1.0,
