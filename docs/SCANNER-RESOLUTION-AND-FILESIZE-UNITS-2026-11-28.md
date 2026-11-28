@@ -55,3 +55,10 @@ The factors correspond to inches-per-meter and inches-per-centimeter. The conver
 ## Implementation guardrail
 
 The safe compatibility contract is: treat MaxFileSize as KiB and compare against byte length; normalize resolution to DPI using the factors above only after verifying the ImageGear enum mapping and rounding rules.
+
+
+## Run 51 — ColorDepth numeric values closed
+
+The Run 51 scanner artifact (`15263439921`) cross-checks the XML input and finalization output paths. The exact internal `colorDepth` values are **1 = black/white, 4 = grayscale, 8 = grayscale-or-256-colour, 24 = 24-bit colour**. The XML value is written to `TScanCommand+0x08` as the same numeric byte; the default/unmatched branch stores zero. See `docs/SCANNER-XML-SERIALIZATION-CONTRACT-2026-11-28.md` for instruction ranges and both-direction evidence.
+
+This resolves the static enum mapping only. It does not establish that every physical scanner/driver accepts all four modes or that the Linux SANE mapping is behaviorally identical.
