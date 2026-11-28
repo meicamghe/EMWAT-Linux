@@ -1,0 +1,81 @@
+name: EMWAT scanner unit and size-source closure
+on:
+  push:
+    paths:
+      - 'analysis-input/EmwatMethods.bpl1'
+      - 'tools/list_td32_symbols.py'
+      - 'tools/trace_td32_procedure_skipdata.py'
+      - 'tools/trace_td32_callers.py'
+      - 'tools/scan_pe_pointer_refs.py'
+      - '.github/workflows/emwat-scanner-unit-closure.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: emwat-scanner-unit-closure-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  scanner-unit-source:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install pefile capstone
+      - name: Decode x87 conversion constants and trace 64-bit size helper
+        shell: bash
+        run: |
+          mkdir -p scanner-unit-closure
+          python - <<'PY'
+          from pathlib import Path
+          import pefile
+          blob=Path("analysis-input/EmwatMethods.bpl1").read_bytes()
+          pe=pefile.PE(data=blob,fast_load=True)
+          base=pe.OPTIONAL_HEADER.ImageBase
+
+          def x87(va):
+              off=pe.get_offset_from_rva(va-base)
+              raw=blob[off:off+10]
+              sig=int.from_bytes(raw[:8],"little")
+              se=int.from_bytes(raw[8:10],"little")
+              sign=se>>15
+              exp=se&0x7fff
+              if exp==0:
+                  val=sig*2.0**(1-16383-63)
+              else:
+                  val=sig*2.0**(exp-16383-63)
+              if sign: val=-val
+              return off,raw,val,exp,sign,sig
+
+          out=["# Scanner x87 conversion constants","",
+               "80-bit extended values referenced by TGearImgProc.GearType."]
+          for label,va in (("GearType unit constant A",0x004EF030),("GearType unit constant B",0x004EF03C)):
+              off,raw,val,exp,sign,sig=x87(va)
+              out += [f"## {label} — VA 0x{va:08X}",f"- raw offset 0x{off:08X}",
+                      f"- bytes: {raw.hex(' ')}",f"- extended value: {val:.17g}",
+                      f"- exponent={exp}, sign={sign}, significand=0x{sig:016X}"]
+          Path("scanner-unit-closure/x87-constants.md").write_text("\n".join(out)+"\n")
+          PY
+          python tools/list_td32_symbols.py analysis-input/EmwatMethods.bpl1 \
+            GetFileSize GetSize TImageResult TImageInfo TScanCommand TGearImgProc GearType \
+            > scanner-unit-closure/symbol-index.md
+          for target in 0x004ECD60 0x004EEF30 0x004F34B6; do
+            safe=${target#0x}
+            python tools/trace_td32_procedure_skipdata.py analysis-input/EmwatMethods.bpl1 "$target" \
+              "scanner-unit-closure/procedure-$safe.md" || true
+            python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 "$target" \
+              "scanner-unit-closure/callers-$safe.md" || true
+            python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 "$target" \
+              "scanner-unit-closure/pointers-$safe.md" || true
+          done
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: emwat-scanner-unit-closure
+          path: scanner-unit-closure/
+          if-no-files-found: error
