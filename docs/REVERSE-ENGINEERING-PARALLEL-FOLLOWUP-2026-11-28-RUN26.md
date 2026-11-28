@@ -115,3 +115,23 @@ No default should be added to the Linux protocol implementation solely from near
 5. A generated multipage TIFF fixture from the original runtime for byte-level and downstream-reader acceptance.
 
 No Linux implementation changes are justified by the remaining unresolved boundaries. No production code, builds/releases, merge/rebase or new Actions run were performed in this pass.
+
+
+## 7. External package-family evidence — GAM printer target set identified
+
+A public Microsoft Q&A installer log for the 32-bit Zan Image Printer 5.0.14.18 package (2011-08-11) records the same driver identity `zvprt1` and install root `C:\\Program Files\\zvprt50\\`. The log identifies the following installed payloads:
+
+- `zvprtsrv.exe` and `zvprtcfg.exe` / `zvprtcfg_win32.exe` under `zvprt50`;
+- `zvprtmon5.dll` and `zvprtmonui5.dll` under Windows system32, with an explicit `AddZvprtMonitor` installation step;
+- `zvprtui5.dll`, `zvprtuni5.dll`, `zvprt5.ini`, `zvprt1.gpd`, `configure.ini`, and `zvprthlp.chm`;
+- the printer profile list includes `save.ini`, `image_bw.ini`, `general.ini`, other output profiles, and `sentineltemplate.txt`.
+
+The same log identifies the installed printer as `Zan Image Printer (BW)`, driver `zvprt1`, and GPD `zvprt1.gpd`. This independently corroborates the BPL's `zvprt1` driver-name match. It also identifies the most useful external binaries to inspect next: the port-monitor DLL (`zvprtmon5.dll`), monitor UI DLL, server process (`zvprtsrv.exe`), configuration tools, GPD and sentinel template. The monitor DLL and server process are **candidate** locations for sentinel handling, not yet proven consumers.
+
+A separate third-party inventory of Emwat Service lists `GAMPrinterSetup.exe` as the self-extracting GAM Virtual Printer package and lists `Gear32pd.dll` plus `IGLZW32S.DLL` as AccuSoft ImageGear and its LZW extension. This is useful package-inventory corroboration only; it does not prove that the inspected BPL calls those libraries. Keep the ImageGear path separate from the statically recovered GDI+ TIFF path until imports/calls or runtime traces connect them.
+
+Sources:
+- [Microsoft Q&A — Zan Image Printer installation log](https://learn.microsoft.com/en-us/answers/questions/2472284/printer-port-installs-but-driver-install-will-not), especially the installer payload and `AddZvprtMonitor` sections.
+- [Should I Remove It? — Emwat Service installed-file inventory](https://www.shouldiremoveit.com/Emwat-Service-37480-program.aspx), which lists GAMPrinterSetup.exe, Gear32pd.dll and IGLZW32S.DLL.
+
+**Revised next step for the printer lane:** inspect `zvprtmon5.dll`, `zvprtmonui5.dll`, `zvprtsrv.exe`, `zvprtcfg.exe`, `zvprt1.gpd`, `zvprt5.ini`, `sentineltemplate.txt`, and the active `general.ini`/save/image profiles from the exact GAMPrinterSetup.exe version shipped with EMWAT. The 2011 Zan package is a family-level lead, not a substitute for the exact EMWAT payload.
