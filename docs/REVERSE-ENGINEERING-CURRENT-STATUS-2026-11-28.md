@@ -1,3 +1,9 @@
+## 2026-11-28 — local raw-PE extraction tool
+
+- Added scripts/dump_pe_va_ranges.py and six synthetic PE tests in python/tests/test_pe_va_ranges.py. The tool maps PE32/PE32+ VAs to raw file offsets and prints DWORDs plus ANSI/UTF-16LE strings for the current GDI+, Worker, and XMLRTL target ranges.
+- Tests are not executed yet. No CI workflow was started.
+- To obtain the missing raw evidence from the tracked BPL: python3 scripts/dump_pe_va_ranges.py analysis-input/EmwatMethods.bpl1
+
 ## 2026-11-28 — Runs 32–33 XMLRTL and GDI+ crosswalk refinements
 
 - XMLRTL helper map corrected from full generated-accessor call shapes: 0x0044B498 HasAttribute; 0x0044B488 AttributeNodes list getter; 0x0044B4C0 GetAttribute-style value getter (medium-high); 0x0044B4D8 ChildNodes list getter. The earlier Run 30 labels for 0x0044B488/0x0044B4C0 are superseded. 0x0044B508 remains open.
