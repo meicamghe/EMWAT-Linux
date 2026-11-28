@@ -43,6 +43,7 @@ class BridgeRuntime:
         *,
         thread_name: str = "emwat-bridge",
         join_timeout_seconds: float = 5.0,
+        request_drain_timeout_seconds: float = 5.0,
     ) -> None:
         if not all(callable(getattr(server, name, None)) for name in (
             "serve_forever", "wait_until_serving", "shutdown", "server_close"
@@ -62,9 +63,26 @@ class BridgeRuntime:
             ) from exc
         if not math.isfinite(timeout_value) or timeout_value < 0:
             raise ValueError("join_timeout_seconds must be a finite non-negative number")
+        if isinstance(request_drain_timeout_seconds, bool) or not isinstance(
+            request_drain_timeout_seconds, (int, float)
+        ):
+            raise ValueError(
+                "request_drain_timeout_seconds must be a finite non-negative number"
+            )
+        try:
+            drain_timeout_value = float(request_drain_timeout_seconds)
+        except OverflowError as exc:
+            raise ValueError(
+                "request_drain_timeout_seconds must be a finite non-negative number"
+            ) from exc
+        if not math.isfinite(drain_timeout_value) or drain_timeout_value < 0:
+            raise ValueError(
+                "request_drain_timeout_seconds must be a finite non-negative number"
+            )
         self._server = server
         self._thread_name = thread_name
         self._join_timeout_seconds = timeout_value
+        self._request_drain_timeout_seconds = drain_timeout_value
         self._lock = threading.RLock()
         self._close_lock = threading.Lock()
         self._state = BridgeRuntimeState.CREATED
@@ -160,12 +178,26 @@ class BridgeRuntime:
                 with self._lock:
                     self._shutdown_complete = True
 
-        if close_socket:
+        if close_socket and close_error is None:
+            # ThreadingMixIn.server_close() joins non-daemon request workers
+            # without a timeout. Drain them explicitly first so application
+            # shutdown remains bounded and a timed-out close can be retried.
+            drain_requests = getattr(self._server, "wait_for_requests_idle", None)
+            if callable(drain_requests):
+                try:
+                    drained = drain_requests(self._request_drain_timeout_seconds)
+                    if not drained:
+                        close_error = TimeoutError(
+                            "bridge_request_workers_did_not_drain_before_timeout"
+                        )
+                except BaseException as exc:
+                    close_error = exc
+
+        if close_socket and close_error is None:
             try:
                 self._server.server_close()
             except BaseException as exc:
-                if close_error is None:
-                    close_error = exc
+                close_error = exc
             else:
                 with self._lock:
                     self._closed_socket = True
