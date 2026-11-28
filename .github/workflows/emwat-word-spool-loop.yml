@@ -1,0 +1,44 @@
+name: EMWAT Word spool loop and document-name trace
+on:
+  push:
+    paths:
+      - 'analysis-input/EmwatMethods.bpl1'
+      - 'tools/trace_td32_procedure_skipdata.py'
+      - 'tools/trace_td32_callers.py'
+      - '.github/workflows/emwat-word-spool-loop.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: emwat-word-spool-loop-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  word-spool-loop:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install pefile capstone
+      - name: Trace job-name generation and retry helpers
+        shell: bash
+        run: |
+          mkdir -p word-spool-loop
+          for target in 0x004563A8 0x004562C4 0x00456258 0x004C5FF8 0x004028D0 0x00404F04; do
+            safe=${target#0x}
+            python tools/trace_td32_procedure_skipdata.py analysis-input/EmwatMethods.bpl1 "$target" \
+              "word-spool-loop/procedure-$safe.md" || true
+            python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 "$target" \
+              "word-spool-loop/callers-$safe.md" || true
+          done
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: emwat-word-spool-loop
+          path: word-spool-loop/
+          if-no-files-found: error
