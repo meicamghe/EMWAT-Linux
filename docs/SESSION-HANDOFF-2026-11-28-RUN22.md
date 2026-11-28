@@ -154,3 +154,6 @@ TIFF load path resolved: `SeparteImages` pushes zero for both `TGPImage` constru
 
 
 Base64/GDI+ load closure (run 46121270958): Base64Decode is a shared AnsiString-to-AnsiString Base64 decoder used by SeparteImages, StoreFieldValuesForPrint, and FreeRotate; it is not filename-specific. GDI+ constructor load branches are both file APIs: zero flag → GdipLoadImageFromFile; nonzero flag → GdipLoadImageFromFileICM (GNU objdump confirms the imports). SeparteImages passes zero twice, so it uses non-ICM file loading.
+
+
+TIFF page-list orchestration (run 46121620304): `SeparteImages` checks/initializes GAM printer, calls `THidePrintingThread.Execute`, obtains a list-like page-file source via helper `0x004A0BA8`, copies indexed file paths into a TStringList, and loads those files through GDI+ before building the multipage LZW TIFF. It also calls `euGetASFileName(".tif")` for the output name. The separate ECX AnsiString is Base64-decoded during cleanup and is not the page-file list. Exact output directory/name policy and final Save/SaveAdd dispatch remain open.
