@@ -1,3 +1,12 @@
+## 2026-11-28 — Run 32 XMLRTL helper correction
+
+- Rechecked all generated scanner accessor callsites against the XMLRTL interface contract. The previous Run 30 helper labels were too broad and are superseded.
+- Corrected map: 0x0044B498 = HasAttribute; 0x0044B488 = AttributeNodes list getter; 0x0044B4C0 = GetAttribute-style value getter (medium-high); 0x0044B4D8 = ChildNodes list getter. AttributeNodes and ChildNodes are distinct IXMLNodeList properties.
+- Setters traverse AttributeNodes.FindNode(property) and operate on the returned attribute node's value; do not describe 0x0044B4C0 as SetAttribute.
+- 0x0044B508 remains unresolved; its zero argument does not prove the absent-attribute Boolean default.
+- Run report: docs/REVERSE-ENGINEERING-PARALLEL-FOLLOWUP-2026-11-28-RUN32.md. XML contract update commit 835a4d0; Run 32 report commit e21b8d5.
+- No tests, CI, or package build were run.
+
 ## 2026-11-28 — Run 31 reverse-engineering cross-correlation
 
 - XMLRTL: the scanner Get_ColorDepth path now maps to IXMLNode.ChildNodes followed by IXMLNodeList.FindNode("constraints"). The ForceSinglePageFiles helper at 0x0044B508 remains unresolved; its zero-valued call argument does not prove the missing-attribute default.
