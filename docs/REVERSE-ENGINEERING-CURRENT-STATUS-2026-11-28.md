@@ -20,7 +20,7 @@ Parallel static-analysis runs 22–25 have produced several new contracts. The e
 ## Still not proven
 
 - Exact GAM printer driver string, install branch and printer pause helper crosswalk.
-- Exact call/indirect-reference link from `TrimLF` / Word print orchestration to `ExtractFileNameEX`, and whether a matching queue job gates final TIFF/archive output.
+- The exact role of `TrimLF`, and whether the queue match gates final TIFF/archive output.
 - Actual spool submission/completion is likely delegated to Word's print stack; no direct EMWAT StartDocPrinter/WritePrinter call was recovered.
 - WordXP type-library declaration for the 18-Variant caller.
 - SevenZip output encryption and euResetMemory VMT slot identities.
