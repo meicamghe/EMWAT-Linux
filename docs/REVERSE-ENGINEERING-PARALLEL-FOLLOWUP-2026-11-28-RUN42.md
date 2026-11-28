@@ -20,9 +20,9 @@ The call flow is explicit:
 
 ## Linux parser mismatch
 
-Current `python/src/emwat_linux/editword_request.py` requires both `wordConfig` and `wordBody`, and rejects an empty document payload. The native procedure only requires `wordConfig`; `wordBody`, `letterImages`, and `signData` default to empty strings when absent.
+Current `python/src/emwat_linux/editword_request.py` requires both `wordConfig` and `wordBody`, and rejects an empty document payload. The handler-level dictionary lookup only requires `wordConfig`; `wordBody`, `letterImages`, and `signData` default to empty strings when absent. However, the full `TWordViwer.LoadDocument` trace immediately decodes `wordBody` and checks the decoded string length at `0x004B77AB–0x004B77B5`; a zero-length body enters an error path at `0x004B77B7`. Therefore a non-empty decoded `wordBody` is required for successful document loading, even though the handler itself does not reject a missing dictionary key.
 
-This is a concrete protocol mismatch. It can reject valid native requests that create a new document without supplying an existing body. However, the complete empty-body behavior of `TWordViwer.LoadDocument` is not yet recovered: it may create a blank document, load a template, or use another source. The current LibreOffice adapter cannot open an empty byte payload as-is. Do not simply weaken the parser and return an empty document; first recover the loader's empty-body branch and required WordConfig/template semantics.
+The current parser's non-empty-body requirement is consistent with the native success path. Its error timing/envelope may differ from Windows because Linux rejects the request during parsing rather than reaching the native loader's empty-body error path, but there is no evidence that a body-less request successfully creates a blank document. Do not weaken the parser or add blank-document creation based on the handler's unchecked TryGetValue alone.
 
 ## Required next trace
 
