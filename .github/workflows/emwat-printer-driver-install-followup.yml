@@ -1,0 +1,84 @@
+name: EMWAT GAM printer installation branch follow-up
+on:
+  push:
+    paths:
+      - 'analysis-input/EmwatMethods.bpl1'
+      - 'tools/list_td32_symbols.py'
+      - 'tools/trace_td32_procedure_skipdata.py'
+      - 'tools/trace_td32_callers.py'
+      - 'tools/scan_pe_pointer_refs.py'
+      - '.github/workflows/emwat-printer-driver-install-followup.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: emwat-printer-driver-install-followup-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  printer-install:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install pefile capstone
+      - name: Trace GAM printer install and readiness methods
+        shell: bash
+        run: |
+          mkdir -p printer-driver-install
+          python tools/list_td32_symbols.py analysis-input/EmwatMethods.bpl1 \
+            InstallZanPrinter GetZanInstallDir GetPrinterName CheckPrinterPaused \
+            Finalization AddPrinter AddPrinterDriver DeletePrinterDriver \
+            OpenPrinterA GetPrinterA ClosePrinter EnumPrintersA \
+            > printer-driver-install/symbol-index.md
+          for target in \
+            0x0047CAF0 0x0047CC6C 0x0047CC94 0x0047D238 \
+            0x0047D448 0x0047D8BC 0x00401240; do
+            safe=${target#0x}
+            python tools/trace_td32_procedure_skipdata.py analysis-input/EmwatMethods.bpl1 "$target" \
+              "printer-driver-install/procedure-$safe.md" || true
+            python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 "$target" \
+              "printer-driver-install/callers-$safe.md" || true
+            python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 "$target" \
+              "printer-driver-install/pointers-$safe.md" || true
+          done
+          python - <<'PY'
+          from pathlib import Path
+          import pefile
+          blob=Path("analysis-input/EmwatMethods.bpl1").read_bytes()
+          pe=pefile.PE(data=blob,fast_load=True)
+          base=pe.OPTIONAL_HEADER.ImageBase
+          out=["# GAM printer install constants and Winspool imports",""]
+          for va in (0x0047CC64,0x0047CC60,0x0047CC68,0x0047CC70,0x0047CC94):
+              try:
+                  off=pe.get_offset_from_rva(va-base)
+                  raw=blob[off:off+128]
+                  out.append(f"## bytes at 0x{va:08X} (file 0x{off:08X})")
+                  out.append(f"- raw: {raw.hex(' ')}")
+                  for enc in ("utf-16le","utf-8","latin1"):
+                      s=raw.decode(enc,"ignore").split(chr(0),1)[0]
+                      if s and sum(ch.isprintable() for ch in s)>2:
+                          out.append(f"- {enc}: {s!r}")
+              except Exception as exc: out.append(f"- error: {exc}")
+              out.append("")
+          out.append("## Winspool-related imports")
+          for desc in getattr(pe,"DIRECTORY_ENTRY_IMPORT",[]):
+              dll=desc.dll.decode("ascii","replace")
+              if "spool" not in dll.lower() and "winspool" not in dll.lower():
+                  continue
+              for imp in desc.imports:
+                  name=imp.name.decode("ascii","replace") if imp.name else f"ordinal_{imp.ordinal}"
+                  out.append(f"- {dll}!{name} — IAT VA 0x{imp.address:08X}")
+          Path("printer-driver-install/constants-and-imports.md").write_text("\n".join(out)+"\n")
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: emwat-printer-driver-install-followup
+          path: printer-driver-install/
+          if-no-files-found: error
