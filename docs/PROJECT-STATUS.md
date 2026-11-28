@@ -3588,3 +3588,14 @@ Base64/GDI+ load closure (run 46121270958): Base64Decode is a shared AnsiString-
 - Updated `docs/REA-ASSISTED-REVERSE-ENGINEERING-PLAN-2026-11-28.md` with a newly verified REA limitation: issue [morluto/rea#2811](https://github.com/morluto/rea/issues/2811) is an open proposal for native Delphi VMT recovery; REA's existing `REA_GHIDRA_SEED_FILE` path can import externally recovered method labels. The issue author reports one Delphi 7 PE32 sample with 1,610 method seeds accepted, but this is not an EMWAT result.
 - Revised REA lane: verify the exact EMWAT compiler/VMT profile against multiple invariants, then use an external read-only parser to produce validated function seeds for Ghidra. Keep class/field metadata separate, and do not infer Delphi 7 from PE32 alone. REA has not yet been executed against EMWAT artifacts.
 - No runtime source changes, local test/build, Windows binary execution, live Almas acceptance, merge, or release were performed in this continuation.
+
+
+## 2026-11-28 — Python Bridge diagnostic root cause fixed
+
+- Diagnostic artifact `python-bridge-diagnostics-46149684182` (artifact ID `15266130172`) shows the suite completed 337 tests in 11.037s with 2 failures, 9 errors and 3 skips, then hung at interpreter shutdown because a non-daemon fake serving thread remained alive. Faulthandler identified the thread waiting in `test_application_runtime.py:19`.
+- Root cause: `BridgeRuntime._close_once()` skipped `server_close()` whenever `shutdown()` raised. The two failed tests were `test_shutdown_failure_has_bounded_join_and_can_be_retried` and `test_shutdown_failure_still_closes_socket_and_joins_thread`.
+- Fixed cleanup so a successful bounded request drain still allows listening-socket closure after a shutdown error; the first error remains surfaced and shutdown/thread cleanup can be retried.
+- Fixed eight manually constructed `EditWordDocumentRequest` test errors by defaulting the new `external_parameter_bindings` field to an empty tuple. Parsed requests still populate the resolver output.
+- Fixed `test_pe_va_ranges` import by adding optional `pytest>=8,<9` test dependency and installing `.[test]` in Python Bridge CI.
+- Validation queued on head `714b06f10e390688e584eec87c87a8d3dcf32544`: Python Bridge `46150833510`, GTK `46150833548`, Debian `46150833597`. Do not call the fix green until those complete.
+- Full evidence and exact changes: `docs/BRIDGE-CI-STALL-INVESTIGATION-2026-11-28.md`.
