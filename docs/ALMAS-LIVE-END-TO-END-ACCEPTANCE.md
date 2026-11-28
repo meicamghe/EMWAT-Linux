@@ -131,3 +131,17 @@ The same artifact's symbol index does not contain a `TEditWordDocument.PerformMe
 The `image-ui-and-vmt` artifact (`15260427307`) finds two shortstring occurrences each for `TEmwatMethod`, `TEditWordDocument`, and `TScanDocument`, but the standard Delphi VMT resolver produces no verified VMT candidate for any of them. It also reports an `Unverified VMT candidate` for `TWordViwer` at `0x004B10A4`, but its parent pointer resolves to a `System@PVariant`-style name and its first 32 dwords do not form a credible method-pointer table. Do not treat that candidate as a real VMT.
 
 This is consistent with the TD32/registration naming caveat: the relevant classes are present in the binary, but the current standard-layout VMT heuristic cannot identify their class tables reliably. The Almas handler discovery must move to custom RTTI/interface-table and registration-reference analysis; absence of a resolved VMT is not evidence the handler is absent.
+
+
+## Run 67 — strongest EditWordDocument handler data-flow candidate
+
+A second pass over the Run-67 artifact identifies a stronger candidate than the TD32 class label: procedure `0x005EE82C`, decorated as `TScanDocument.PerformMethod`, performs these dictionary lookups:
+
+- `wordConfig` (`0x005EE9F4`) is required; if absent, it raises the message `Requset XML is not valid (wordConfig parameter is null)` (`0x005EEA0C`).
+- `wordBody` (`0x005EEA88`) is looked up and an empty value is initialized when absent/empty.
+- `letterImages` (`0x005EEAA0`) and `signData` (`0x005EEABC`) are also looked up; the shared lookup helper zero-initializes its output, so missing values default to empty strings.
+- The method calls `TWordViwer.LoadDocument` at `0x004B7724` (`0x005EE961` callsite), then adds its returned string to the output collection.
+
+This is the best-supported static data-flow candidate for the EditWordDocument route, because it consumes the Word-specific request keys and enters the WordViewer loader. Its TD32 class name `TScanDocument` is not accepted as the actual external method name without registration evidence. The separate `TFaxDocument`-labelled procedure at `0x005EEB48` consumes `document` and calls the scanner command's `GetNextPage`, which is consistent with an actual ScanDocument path and demonstrates the label mismatch.
+
+**Linux implementation gap:** `editword_request.py` currently decodes `wordConfig`/`wordBody`, preserves `signData` as text, and retains unknown keys such as `letterImages` in `extra_parameters`. `LibreOfficeAdapter.open_document` currently opens only `document_bytes`; it does not apply `letterImages`, `signData`, or the EMWAT field/config mapping. The `TWordViwer.AddImagesToDoc` symbol exists at `0x004C0410`, but its call relation and image payload format are not yet proven. Therefore the current Linux path supports basic open/edit/save semantics, not full parity for EMWAT images/signatures/field substitutions.
