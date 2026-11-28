@@ -215,7 +215,7 @@ The browser screenshot pair records Referer http://127.0.0.1:1984/?init=...; the
 1. Run the real Almas browser workflow against the GTK application with the captured loopback Origin/Referer behavior and LibreOffice Writer.
 2. Verify the same Invoke remains pending while Writer is open; Save then close; ensure Almas receives and persists the returned DOC; reopen it and verify the saved marker.
 3. Capture a gap-free response or otherwise validate the complete serialized response body against the native implementation.
-4. Execute the new bridge drain/race tests and GTK shutdown retry tests locally; the automatic Run-67 Python suite is still in progress at the time of this update.
+4. Execute the new bridge drain/race tests and GTK shutdown retry tests locally; Run-67's native regression build/test step completed successfully, but its Python bridge regression step was cancelled before completion. No Python-suite pass/fail result is available.
 5. Resolve WordConfig field mapping and signData only to the extent required by the live acceptance fixture. letterImages is currently tied to the TIFF/preview path and remains deferred while TIFF is out of scope.
 6. Wire the evidence-backed loopback service configuration into normal GTK startup; do not start the listener with wildcard origins or an unverified host.
 
