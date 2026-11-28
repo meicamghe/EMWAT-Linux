@@ -120,9 +120,9 @@ flowchart LR
 
 ## Word close lifecycle correction — run 26 (2026-11-14)
 
-The previous static notes mention WordAppDocumentBeforeClose and WordAppDocumentBeforeSave, but their address mapping has since been corrected. 0x004CD154 is the registered TWordViwer.WordAppDocumentBeforeSave callback; it is not BeforeClose. The TD32-named WordAppDocumentBeforeClose procedure is 0x004CCBBC, with only one direct bounded caller found (FillImgFldsForPrint at 0x004CCF8F) and no raw-pointer registration reference. Therefore the active Word close event has not yet been identified.
+The previous static notes mention WordAppDocumentBeforeClose and WordAppDocumentBeforeSave, but their address mapping has since been corrected. The callback pointer at event-record offset +0x80 targets 0x004CD154. New TWordApplication RTTI evidence maps field +0x80 to OnDocumentBeforeClose, so the registered wrapper event property is Word.Application.OnDocumentBeforeClose even though the callback's TD32 symbol is WordAppDocumentBeforeSave. The server-data record identifies event-source IID `ApplicationEvents3` (`00020A00-0000-0000-C000-000000000046`); Word interop metadata corroborates `DocumentBeforeClose` DISPID `0x00000006`. The separately named TD32 procedure WordAppDocumentBeforeClose at 0x004CCBBC is a different routine with only the known direct caller FillImgFldsForPrint at 0x004CCF8F; it is not the callback pointer installed at +0x80.
 
-The registered BeforeSave callback checks the document's Saved property, conditionally prompts, cancels the event on Cancel, and invokes the three-argument Close interface path for Yes/No. This does not disprove the user's observed behavior: closing the document applies/registers changes even when Save was not pressed. That behavior remains a required product contract; the page-side POST/response path is still the likely place to connect the observed close event to the web application, but the exact mechanism is not yet established.
+The callback at 0x004CD154 accesses the Word document interface, conditionally prompts, sets the event Cancel value on Cancel, and invokes the three-argument Close interface path for Yes/No. Its TD32 name is BeforeSave, but RTTI identifies the wrapper event property as OnDocumentBeforeClose; only the event-source IID is `ApplicationEvents3` (`00020A00-0000-0000-C000-000000000046`) and Word interop metadata corroborates DISPID `0x00000006`. The TD32 wrapper names are reversed: `Set_Saved` at `0x0042BD94` behaves as the getter through `+0xD8`, while `Get_Saved` at `0x0042BD34` behaves as the setter through `+0xD4`; the callback reads Saved through `+0xD8`. This does not disprove the user's observed behavior: closing the document applies/registers changes even when Save was not pressed. That behavior remains a required product contract; the page-side POST/response path is still the likely place to connect the observed close event to the web application, but the exact mechanism is not yet established.
 
 
 ## Clarification from repeat user test — close without pressing Save (2026-11-14)
@@ -137,3 +137,18 @@ For reverse engineering, explicitly separate these questions:
 3. How does the local HTTP response deliver it to the browser, and how does Almas Gam persist it?
 
 Do not describe the observed behavior as “upload without saving”. The correct verified wording is: **the user does not press Save, but closing Word is sufficient for the document to be registered in Almas Gam**.
+
+
+## 2026-11-25 — decision contract cross-reference
+
+The user's Windows observation remains: closing Word is sufficient for Almas Gam registration even when the user does not press the toolbar Save button. This does not mean every close choice returns unsaved bytes. The required Linux decision semantics are now specified separately: Save returns the latest successfully saved snapshot; Don't Save returns the previous approved snapshot; Cancel keeps the same session open and the pending request waiting. See [Word close/response contract reconciliation](WORD-CLOSE-RESPONSE-CONTRACT-2026-11-25.md). The Windows event property is identified as OnDocumentBeforeClose; its numeric COM DISPID and exact wire mapping remain under investigation.
+
+
+## 2026-11-25 — wait-state field refinement
+
+The wait/release state at viewer `+0x58` is now traced to `TWordViwer.PrintWithGamPrintOptions` (`0x004C5E04`), which stores the return from `Emwatutils.DirIsEmpty` (`0x004565DC`) at `0x004C5E44`. The helper performs directory enumeration with FindFirst/FindNext and writes a filename-like UnicodeString through an output parameter. The direct caller is the RTTI-mapped `OnDocumentBeforeSave` callback (`0x004CD54C`, field `+0x90`); the timer-side call at `0x004B937C` is now confirmed and passes `ExtractFileName(+0xA0)` plus the `Gamelectronics EMWAT` label. The BeforeClose callback (`0x004CD154`, field `+0x80`) clears the status. The timer obtains the filename from viewer `+0xA0` through `System.SysUtils.ExtractFileName` (`0x00403320`); helper `0x004563A8` then normalizes the UnicodeString before `DirIsEmpty`. `PrintWithGamPrintOptions` then calls `System.SysUtils.StringReplace` (`0x00403430`) on the `+0x54` result and stores the transformed string at `+0x50`. The BeforeSave call passes the same `Gamelectronics EMWAT` literal for both replacement arguments; the timer-side argument values still need direct confirmation.
+
+
+## 2026-11-25 Saved accessor correction
+
+The TD32 wrapper names are reversed relative to actual COM behavior: `Get_Saved` at `0x0042BD34` invokes slot `+0xD4` with an input WordBool (setter), while `Set_Saved` at `0x0042BD94` invokes slot `+0xD8` with an output WordBool (getter). The registered `OnDocumentBeforeClose` callback `0x004CD154` reads `Document.Saved` through `+0xD8`; it does not set the property to false.

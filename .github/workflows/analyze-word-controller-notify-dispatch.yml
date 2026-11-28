@@ -31,15 +31,31 @@ jobs:
           python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x004B8A84 controller-notify-dispatch/OnTmrAutoSave-full.md
           python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x004B9900 0x004B9A80 controller-notify-dispatch/notify-registration-context.md
           python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x004BB3B0 0x004BB777 controller-notify-dispatch/OnControlerNotify.md
+          python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x004BB3B0 controller-notify-dispatch/OnControlerNotify-full-td32.md
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004BB581 controller-notify-dispatch/OnControlerNotify-archive-input.md 1600 ret
+          python tools/scan_td32_class_field_refs.py analysis-input/EmwatMethods.bpl1 TWordViwer controller-notify-dispatch/TWordViwer-archive-path-fields.md --offsets 0x80 0x84 0x88 0xA0 0x54 0x58
+          python tools/inspect_delphi_vmt_address.py analysis-input/EmwatMethods.bpl1 0x004B10A4
+          cp bpl-analysis/EmwatMethods-vmt-address.md controller-notify-dispatch/TWordViwer-vmt-field-table.md
           for target in 00404B94 00404B8C 00404B84; do
             python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x$target controller-notify-dispatch/helper-$target.md 1800 ret
             python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 0x$target controller-notify-dispatch/helper-refs-$target.md
           done
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x00456DFC controller-notify-dispatch/archive-helper-00456DFC.md 2200 ret
+          python tools/inspect_pe_va.py analysis-input/EmwatMethods.bpl1 0x0062F810 --before 0x40 --after 0x180 > controller-notify-dispatch/archive-class-vmt-0062F810.md
+          python tools/inspect_delphi_vmt_address.py analysis-input/EmwatMethods.bpl1 0x0062F810
+          cp bpl-analysis/EmwatMethods-vmt-address.md controller-notify-dispatch/archive-class-vmt-name.md
+          python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x00456DFC controller-notify-dispatch/archive-helper-00456DFC-td32.md
+          python tools/decode_pe_strings.py analysis-input/EmwatMethods.bpl1 0x004BB754 0x004BB76C > controller-notify-dispatch/archive-path-constants.md
           python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 0x004BB3B0 controller-notify-dispatch/OnControlerNotify-pointer-refs.md
           python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004BB3B0 controller-notify-dispatch/OnControlerNotify-callers.md
           python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004B999A controller-notify-dispatch/registration-callers.md
           python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004B999A controller-notify-dispatch/registration-target.md 1800 ret
           python tools/find_td32_class_procedures.py analysis-input/EmwatMethods.bpl1 TWordViwer TWordViewer TWordDocument TEditWordDocument > controller-notify-dispatch/word-class-procedures.md
+          python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x004D08B4 controller-notify-dispatch/TWordViwer-constructor-4D08B4.md
+          python tools/trace_pe_target.py analysis-input/EmwatMethods.bpl1 0x004D08B4 controller-notify-dispatch/TWordViwer-constructor-4D08B4-disasm.md 1800 ret
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004D08B4 controller-notify-dispatch/TWordViwer-constructor-callers.md
+          python tools/trace_td32_procedure.py analysis-input/EmwatMethods.bpl1 0x004D0D24 controller-notify-dispatch/TWordViwer-destructor-4D0D24.md
+          python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004D0D24 controller-notify-dispatch/TWordViwer-destructor-callers.md
           python tools/resolve_delphi_vmt_slots.py analysis-input/EmwatMethods.bpl1 controller-notify-dispatch/word-vmt-slots.md
       - uses: actions/upload-artifact@v4
         with:

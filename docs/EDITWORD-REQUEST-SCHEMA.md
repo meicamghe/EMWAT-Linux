@@ -184,14 +184,14 @@ The BPL response branch at `0x004B7F9C–0x004B7FD8`:
 
 Thus the successful non-empty EditWordDocument result writes the HTTP response from the BPL path; the generic service dispatcher skips its fallback writer. `TEditWordDocument.PerformMethod` copies the helper output to the method result and sets `bUnloadPkg`, but it does not itself set `bResultSet`.
 
-The capture shows the first response byte arriving about 54.558 seconds after the request body completes. The long-lived invoke is now explained statically: `LoadDocument` synchronously calls `OnTmrAutoSave`, whose loop polls viewer field `+0x58` with `Sleep(5)` and `ProcessMessages` until the close/registration callback at `0x004CD154` clears that field at `0x004CD31C`. The loop's 200-iteration cycle repeats; it is not a one-second total timeout. The `.easz` archive remains a separate local recovery path until its data flow is linked to the HTTP response.
+The capture shows the first response byte arriving about 54.558 seconds after the request body completes. The long-lived invoke is now explained statically: `LoadDocument` synchronously calls `OnTmrAutoSave`, whose loop polls viewer field `+0x58` with `Sleep(5)` and `ProcessMessages` until the registered close/save-decision callback at `0x004CD154` clears that field at `0x004CD31C`. The loop's 200-iteration cycle repeats; it is not a one-second total timeout. The `.easz` archive remains a separate local recovery path until its data flow is linked to the HTTP response.
 
 Evidence: response/controller workflow run `43872534265`, artifact `14228851062`; captured response report and static response path documented in `docs/WORD-RESPONSE-TIMER-CORRELATION-2026-11-16.md`.
 
 
 ### Long-lived request release chain
 
-`LoadDocument` calls `OnTmrAutoSave` synchronously at `0x004B7A58`. The latter waits while viewer field `+0x58` is nonzero, pumping messages and sleeping 5 ms per iteration. Every 200 iterations it runs a one-second maintenance/check cycle and continues. The callback at `0x004CD154` calls Word `Document.Close` and then clears viewer `+0x58` at `0x004CD31C`; this releases the wait. `LoadDocument` then writes the successful `response-word` HTTP body and sets `bResultSet`. This explains the observed ~54.558-second request-to-response delay. The field's initial nonzero setter and the callback's formal COM event DISPID remain under investigation.
+`LoadDocument` calls `OnTmrAutoSave` synchronously at `0x004B7A58`. The latter waits while viewer field `+0x58` is nonzero, pumping messages and sleeping 5 ms per iteration. Every 200 iterations it runs a one-second maintenance/check cycle and continues. The registered close/save-decision callback at `0x004CD154` calls Word `Document.Close` and then clears viewer `+0x58` at `0x004CD31C`; this releases the wait. `LoadDocument` then writes the successful `response-word` HTTP body and sets `bResultSet`. This explains the observed ~54.558-second request-to-response delay. The first known writer is `PrintWithGamPrintOptions` (`0x004C5E44`), which stores the `DirIsEmpty` status returned by `0x004565DC`; helper `0x004563A8` and the path/filter remain to be traced. The numeric COM DISPID/event-source IID remain under investigation.
 
 ## Service class-name resolution — 2026-11-16
 
@@ -201,3 +201,20 @@ The XML `<method class="EditWordDocument">` value is not passed verbatim to Delp
 ## Native Python structural catalog — 2026-11-17
 
 The new `emwat_linux.emwat_field_catalog` helper recognizes the seven repeated signer families observed in this capture: department, person, unit, index unit, signature number, behalf name, and signature image. It retains the original field ID and capture order, and requires the two halves of a signature-image twin to carry the same numeric index. It deliberately does not infer mappings from these identifiers to LibreOffice Writer properties; that mapping still requires verified document fixtures and native resolver evidence.
+
+
+### 2026-11-25 event-identity and return-snapshot clarification
+
+Use “registered `TWordApplication.OnDocumentBeforeClose` callback at `0x004CD154`”. RTTI maps field `+0x80` to that event property despite the TD32 label `WordAppDocumentBeforeSave`; the event-source IID is `ApplicationEvents3` (`00020A00-0000-0000-C000-000000000046`) and Word interop metadata corroborates `DocumentBeforeClose` DISPID `0x00000006`.
+
+The Linux bridge returns the approved snapshot according to the Save / Don't Save / Cancel contract in `docs/WORD-CLOSE-RESPONSE-CONTRACT-2026-11-25.md`. The periodic `.easz` archive and recovery snapshots are separate from that final response selection.
+
+
+### 2026-11-25 Word event-property correction
+
+The callback pointer `0x004CD154` stored by `OnTmrAutoSave` at `TWordApplication` field `+0x80` is now mapped by the wrapper RTTI at `0x00429128` to `OnDocumentBeforeClose`. Treat it as the registered Word BeforeClose event property; TD32's `WordAppDocumentBeforeSave` label is misleading. The event-source IID is `ApplicationEvents3` (`00020A00-0000-0000-C000-000000000046`) and Word interop metadata corroborates `DocumentBeforeClose` DISPID `0x00000006`. The distinct routine at `0x004CCBBC` is not this registered callback.
+
+
+### 2026-11-25 Saved-property accessor semantics
+
+The BeforeClose callback `0x004CD154` reads `Document.Saved` through COM slot `+0xD8`. The TD32 wrapper names are reversed: `Set_Saved` at `0x0042BD94` returns the WordBool from `+0xD8` (getter), while `Get_Saved` at `0x0042BD34` passes an input WordBool to `+0xD4` (setter). The callback does not set `Saved=False`.

@@ -4,9 +4,14 @@
 from __future__ import annotations
 
 import argparse
-import re
+import json
 from dataclasses import dataclass
+from pathlib import Path
+import sys
 from typing import Iterable
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "python" / "src"))
+from emwat_linux.http_capture import extract_http_body
 
 from scapy.layers.inet import IP, TCP
 from scapy.layers.inet6 import IPv6
@@ -102,7 +107,12 @@ def http_message_info(segments: list[Segment], capture_start: float):
         return {
             "bytes": 0,
             "header": None,
+            "header_bytes": None,
             "content_length": None,
+            "body": b"",
+            "body_complete": False,
+            "body_gap_ranges": (),
+            "body_errors": (),
             "body_complete_time": None,
             "first_payload_time": None,
             "last_payload_time": None,
@@ -111,30 +121,38 @@ def http_message_info(segments: list[Segment], capture_start: float):
 
     first_payload_time = min(s.timestamp for s in payload_segments)
     last_payload_time = max(s.timestamp for s in payload_segments)
-    split = data.find(b"\r\n\r\n")
-    header = data[:split].decode("iso-8859-1", errors="replace") if split >= 0 else None
-    content_length = None
+    gap_offsets = [
+        (start - base_sequence, end - base_sequence)
+        for start, end in gaps
+    ] if base_sequence is not None else []
+    extraction = extract_http_body(data, gap_offsets)
+    header = (
+        extraction.header.decode("iso-8859-1", errors="replace")
+        if extraction.header is not None else None
+    )
+    content_length = extraction.content_length
     body_complete_time = None
 
-    if header is not None:
-        match = re.search(r"(?im)^Content-Length:\s*(\d+)\s*$", header)
-        if match:
-            content_length = int(match.group(1))
-            header_bytes = split + 4
-            expected_end_sequence = base_sequence + header_bytes + content_length
-            candidates = [
-                segment.timestamp
-                for segment in payload_segments
-                if segment.sequence < expected_end_sequence
-                and segment.sequence + len(segment.payload) >= expected_end_sequence
-            ]
-            if candidates:
-                body_complete_time = min(candidates)
+    if extraction.header is not None and content_length is not None and base_sequence is not None:
+        expected_end_sequence = base_sequence + len(extraction.header) + content_length
+        candidates = [
+            segment.timestamp
+            for segment in payload_segments
+            if segment.sequence < expected_end_sequence
+            and segment.sequence + len(segment.payload) >= expected_end_sequence
+        ]
+        if candidates:
+            body_complete_time = min(candidates)
 
     return {
         "bytes": len(data),
         "header": header,
+        "header_bytes": extraction.header,
         "content_length": content_length,
+        "body": extraction.body,
+        "body_complete": extraction.body_complete,
+        "body_gap_ranges": extraction.body_gap_ranges,
+        "body_errors": extraction.errors,
         "body_complete_time": body_complete_time,
         "first_payload_time": first_payload_time,
         "last_payload_time": last_payload_time,
@@ -155,6 +173,7 @@ def main():
     parser.add_argument("--client-port", type=int, default=61189)
     parser.add_argument("--server-ip", default="127.0.0.1")
     parser.add_argument("--server-port", type=int, default=1984)
+    parser.add_argument("--extract-dir", type=Path, help="write HTTP bodies and metadata; partial files are explicitly marked")
     args = parser.parse_args()
 
     directions, capture_start, packet_count = collect_segments(
@@ -176,9 +195,40 @@ def main():
         print(f"- Last payload: {fmt_time(info['last_payload_time'], capture_start)}")
         print(f"- HTTP body completion packet: {fmt_time(info['body_complete_time'], capture_start)}")
         print(f"- Sequence gaps: {info['gaps']}")
+        print(f"- Extracted body bytes: {len(info['body'])}")
+        print(f"- Body exact/complete: {info['body_complete']}")
+        if info["body_errors"]:
+            print(f"- Body extraction notes: {info['body_errors']}")
         if info["header"]:
             print(info["header"])
         print()
+
+    if args.extract_dir:
+        args.extract_dir.mkdir(parents=True, exist_ok=True)
+        metadata = {}
+        for name, info in (("request", request), ("response", response)):
+            if info["header_bytes"] is None:
+                continue
+            suffix = ".bin" if info["body_complete"] else ".partial.bin"
+            body_path = args.extract_dir / f"{name}-body{suffix}"
+            header_path = args.extract_dir / f"{name}-headers.bin"
+            body_path.write_bytes(info["body"])
+            header_path.write_bytes(info["header_bytes"])
+            metadata[name] = {
+                "body_file": body_path.name,
+                "headers_file": header_path.name,
+                "body_bytes": len(info["body"]),
+                "body_complete": info["body_complete"],
+                "content_length": info["content_length"],
+                "sequence_gaps": info["gaps"],
+                "body_gap_ranges": info["body_gap_ranges"],
+                "extraction_notes": info["body_errors"],
+            }
+        (args.extract_dir / "http-extraction.json").write_text(
+            json.dumps(metadata, indent=2, default=list) + "\n",
+            encoding="utf-8",
+        )
+        print(f"- HTTP extraction written to: {args.extract_dir}")
 
     request_done = request["body_complete_time"]
     response_first = response["first_payload_time"]

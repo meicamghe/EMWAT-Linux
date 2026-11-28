@@ -84,7 +84,10 @@ class DocumentCoordinator:
             if close_event.disposition is not CloseDisposition.CLOSED:
                 raise RuntimeError("office_adapter_returned_invalid_close_event")
 
-            # A close-time return is independent of whether the user pressed Save.
+            # The adapter exports its last approved snapshot: a successful Save
+            # advances it; Don't Save leaves the prior approved snapshot intact.
+            # A cancelled close never reaches this point because wait_for_close
+            # continues waiting until the document actually closes.
             session.begin_finalize()
             payload = self._office.export_final_document(handle)
             session.complete_finalize(payload)

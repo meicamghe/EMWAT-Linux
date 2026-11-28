@@ -26,38 +26,25 @@ from emwat_linux.word_config import WordDocumentConfig
 
 
 
-class DocumentCloseListenerRetryTests(unittest.TestCase):
-    def test_snapshot_failure_is_cleared_when_close_is_retried(self):
-        from threading import Event, Lock
+class DocumentCloseListenerCancelTests(unittest.TestCase):
+    def test_cancelled_close_does_not_snapshot_and_keeps_waiter_open(self):
+        from threading import Event
         from emwat_linux.libreoffice_adapter import _DocumentCloseListener
 
-        class FlakyDocument:
-            def __init__(self):
-                self.attempts = 0
-
-            def storeToURL(self, _url, _properties):
-                self.attempts += 1
-                if self.attempts == 1:
-                    raise RuntimeError("simulated_close_attempt_cancelled")
-
-        document = FlakyDocument()
-        listener = _DocumentCloseListener(
-            document,
-            "file:///tmp/emwat-final.doc",
-            lambda: None,
-            (),
-            Lock(),
-            Event(),
-        )
+        closed = []
+        recovery_stop = Event()
+        listener = _DocumentCloseListener(lambda: closed.append(True), recovery_stop)
 
         listener.queryClosing(None, False)
-        self.assertIsInstance(listener.snapshot_error, RuntimeError)
-        self.assertTrue(listener.snapshot_ready.is_set())
+        self.assertEqual(closed, [])
+        self.assertFalse(recovery_stop.is_set())
 
-        listener.queryClosing(None, False)
-        self.assertIsNone(listener.snapshot_error)
-        self.assertTrue(listener.snapshot_ready.is_set())
-        self.assertEqual(document.attempts, 2)
+        listener.notifyClosing(None)
+        self.assertEqual(closed, [True])
+        self.assertTrue(recovery_stop.is_set())
+
+        listener.disposing(None)
+        self.assertEqual(closed, [True])
 
 
 class RecoveryWorkerTests(unittest.TestCase):
@@ -323,6 +310,16 @@ class LibreOfficeIntegrationTests(unittest.TestCase):
             self.assertEqual(saved_events, [])
             with handle.snapshot_lock:
                 self.assertEqual(handle.document.isModified(), modified_before_recovery)
+
+            # Only a completed office Save event may advance the approved copy.
+            handle.document.store()
+            save_deadline = time.monotonic() + 10
+            while not saved_events and time.monotonic() < save_deadline:
+                time.sleep(0.05)
+            self.assertEqual(saved_events, ["saved"])
+            self.assertIsNone(handle.approved_snapshot_error)
+            self.assertTrue(handle.approved_snapshot_path.is_file())
+
             handle.document.close(True)
             close_event = adapter.wait_for_close(handle)
             self.assertEqual(close_event.disposition, CloseDisposition.CLOSED)

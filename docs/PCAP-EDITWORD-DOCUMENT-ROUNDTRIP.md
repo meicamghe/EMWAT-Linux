@@ -124,6 +124,34 @@ The approximately 54.558-second gap between the final request-body byte and the 
 - The registered close/registration callback at `0x004CD154` invokes Word `Document.Close` and clears viewer `+0x58` at `0x004CD31C`.
 - The loop exits; `LoadDocument` then writes the `response-word` XML through Indy `TIdHTTPResponseInfo.WriteContent` and sets `bResultSet`.
 
-This makes the captured delay consistent with the period during which the Word document remains open. The callback's formal COM event DISPID and the initial nonzero setter for viewer `+0x58` remain under investigation. The periodic `.easz` archive remains a separate local recovery path until its relation to the returned DOC is proven.
+This makes the captured delay consistent with the period during which the Word document remains open. The wrapper RTTI now maps the callback pointer at `0x004CD154` / event field `+0x80` to `TWordApplication.OnDocumentBeforeClose`. The first known nonzero setter for viewer `+0x58` is `PrintWithGamPrintOptions` at `0x004C5E44`; the exact token returned by helper `0x004565DC` and the numeric COM DISPID remain under investigation. The periodic `.easz` archive remains a separate local recovery path until its relation to the returned DOC is proven.
 
 See `docs/WORD-RESPONSE-TIMER-CORRELATION-2026-11-16.md` and `docs/WORD-LIFECYCLE-STATIC-TRACE.md` Run 153 for the full static trace references.
+
+
+## Cross-invoke DevTools correlation — 2026-11-25
+
+The separate close-time DevTools screenshot for `invoke=29501` reports HTTP 200, `Content-Length: 1166820`, and `Content-Type: text/html; charset=ISO-8859-1`. These match the response length and HTTP content type recorded for the PCAP exchange `invoke=58351`.
+
+The PCAP body for `58351` is directly decoded far enough to identify `response-word status="success"` and a Base64 `application/msword` return item. The DevTools evidence for `29501` contains no Response/Body tab. Therefore:
+
+- The matching length and headers are strong evidence that the two exchanges follow the same response path.
+- The body structure for `29501` is not directly verified.
+- Do not state that both responses are byte-identical, have identical document content, or even that the `29501` body has been inspected.
+- Both `invoke` values are per-request nonces, so their difference does not imply different method classes or document sessions.
+
+The HTTP Content-Type is `text/html; charset=ISO-8859-1` even though the PCAP body contains the `response-word` XML-shaped envelope. Keep HTTP header media type distinct from the inner return item's `application/msword` MIME metadata.
+
+
+## 2026-11-25 HTTP body extraction utility
+
+The PCAP timing analyzer now supports gap-aware body export:
+
+```bash
+python tools/analyze_pcap_http_timing.py /path/to/emwat.pcapng \
+  --client-ip 127.0.0.1 --client-port 61189 \
+  --server-ip 127.0.0.1 --server-port 1984 \
+  --extract-dir /tmp/emwat-http-extract
+```
+
+The output directory contains request/response header bytes, body bytes, and `http-extraction.json`. A body is named `*.bin` only when Content-Length/chunk framing is complete and no TCP sequence gap intersects the header/body. If bytes are missing, the file is explicitly named `*.partial.bin` and the JSON records gap ranges; never treat zero-filled gaps as captured bytes. Run once per TCP tuple. The raw `emwat.pcapng` is still absent from the current repository tree, so this utility has been unit-tested but not yet run against a newly supplied raw capture.

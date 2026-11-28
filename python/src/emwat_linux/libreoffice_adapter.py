@@ -1,13 +1,10 @@
 """LibreOffice UNO adapter for close-driven EMWAT document sessions.
 
-This is the first concrete office-engine adapter. It opens the captured
-Word document in a visible LibreOffice instance, writes private periodic
-recovery snapshots while it is open, snapshots a Word-compatible final copy
-during close, and returns those bytes after close. Recovery snapshots use the
-Linux-native owner-only store, not the Windows .easz archive format.
-
-EMWAT-specific field IDs, signData, permissions, and cancellation semantics
-are intentionally not guessed here. Those mappings require verified fixtures.
+The adapter keeps a separate approved DOC snapshot: the original input is the
+baseline, and only a completed office-engine Save event may replace it. Close
+returns that approved snapshot, never a live unsaved buffer. Periodic recovery
+snapshots remain separate crash-recovery material and are never final output.
+A cancelled close attempt does not emit the successful-close notification, so the request keeps waiting.
 """
 from __future__ import annotations
 
@@ -125,51 +122,41 @@ class _ModifyListener:
 
 
 class _DocumentCloseListener:
-    """Snapshot the final document before close and stop periodic recovery after close."""
+    """Signal actual close; never snapshot the live document on a close attempt."""
 
     def __init__(
         self,
-        document: object,
-        output_url: str,
         on_closed: Callable[[], None],
-        snapshot_properties: tuple[object, ...],
-        snapshot_lock: Lock,
         recovery_stop: Event,
     ) -> None:
-        self._document = document
-        self._output_url = output_url
         self._on_closed = on_closed
-        self._snapshot_properties = snapshot_properties
-        self._snapshot_lock = snapshot_lock
         self._recovery_stop = recovery_stop
-        self.snapshot_error: Exception | None = None
-        self.snapshot_ready = Event()
+        self._close_lock = Lock()
+        self._closed = False
+
+    def _mark_closed(self) -> None:
+        # LibreOffice may deliver notifyClosing followed by disposing.
+        # Treat both as the same terminal transition and notify the waiter once.
+        with self._close_lock:
+            if self._closed:
+                return
+            self._closed = True
+        self._recovery_stop.set()
+        self._on_closed()
 
     def queryClosing(self, _event: object, _gets_ownership: bool) -> None:
-        # A close attempt can be vetoed/cancelled by the office UI and retried.
-        # Reset only this attempt's result; periodic recovery remains active until
-        # notifyClosed confirms that the document really closed.
-        self.snapshot_error = None
-        self.snapshot_ready.clear()
-        try:
-            # storeToURL writes a copy and does not change the document's URL.
-            with self._snapshot_lock:
-                self._document.storeToURL(self._output_url, self._snapshot_properties)
-        except Exception as exc:  # retained internally; never returned to browser
-            self.snapshot_error = exc
-        finally:
-            self.snapshot_ready.set()
-
-    def notifyClosing(self, _event: object) -> None:
+        # Save/Don't Save/Cancel must be resolved by the office UI. In particular,
+        # Cancel leaves the document open and must not advance the approved copy.
         return
 
-    def notifyClosed(self, _event: object) -> None:
-        self._recovery_stop.set()
-        self._on_closed()
+    def notifyClosing(self, _event: object) -> None:
+        # XCloseListener.notifyClosing is the actual successful-close callback.
+        # XCloseListener has no notifyClosed method; disposing is a fallback for
+        # external disposal that did not arrive through XCloseable.close().
+        self._mark_closed()
 
     def disposing(self, _event: object) -> None:
-        self._recovery_stop.set()
-        self._on_closed()
+        self._mark_closed()
 
 
 class _DocumentEventListener:
@@ -197,12 +184,15 @@ class _OfficeHandle:
         close_listener: _DocumentCloseListener | None,
         work_dir: Path,
         recovery_session_id: str,
+        approved_snapshot_path: Path | None = None,
     ) -> None:
         self.process = process
         self.document = document
         self.close_listener = close_listener
         self.work_dir = work_dir
         self.recovery_session_id = recovery_session_id
+        self.approved_snapshot_path = approved_snapshot_path or (work_dir / "approved.doc")
+        self.approved_snapshot_error: Exception | None = None
         self.closed = Event()
         self.recovery_stop = Event()
         self.snapshot_lock = Lock()
@@ -307,7 +297,7 @@ class LibreOfficeAdapter:
             recovery_session_id = self._recovery_store.create_session()
             extension = _source_extension(request.document_bytes)
             source_path = work_dir / ("incoming" + extension)
-            output_path = work_dir / "final.doc"
+            approved_path = work_dir / "approved.doc"
             profile_path = work_dir / "profile"
             source_path.write_bytes(request.document_bytes)
             port = _unused_loopback_port()
@@ -352,25 +342,37 @@ class LibreOfficeAdapter:
                 self._property(uno, "FilterName", "MS Word 97"),
                 self._property(uno, "Overwrite", True),
             )
+            # The input is the approved baseline until a Save-complete event is
+            # successfully exported. storeToURL writes a copy without changing
+            # the document's active URL or dirty state.
+            document.storeToURL(_file_url(approved_path), snapshot_properties)
             handle = _OfficeHandle(
                 process=process,
                 document=document,
                 close_listener=None,  # attached below once callback is available
                 work_dir=work_dir,
                 recovery_session_id=recovery_session_id,
+                approved_snapshot_path=approved_path,
             )
             handle.snapshot_properties = snapshot_properties
+
+            def snapshot_approved_save() -> None:
+                try:
+                    with handle.snapshot_lock:
+                        document.storeToURL(_file_url(approved_path), snapshot_properties)
+                    handle.approved_snapshot_error = None
+                except Exception as exc:
+                    handle.approved_snapshot_error = exc
+                    return
+                on_saved()
+
             close_listener = _DocumentCloseListener(
-                document,
-                _file_url(output_path),
                 handle.mark_closed,
-                snapshot_properties,
-                handle.snapshot_lock,
                 handle.recovery_stop,
             )
             handle.close_listener = close_listener
             modify_listener = _ModifyListener(on_modified)
-            save_listener = _DocumentEventListener(on_saved)
+            save_listener = _DocumentEventListener(snapshot_approved_save)
             modify_proxy = _uno_listener_proxy(
                 modify_listener,
                 uno_module=uno,
@@ -387,7 +389,7 @@ class LibreOfficeAdapter:
                 close_listener,
                 uno_module=uno,
                 interface_name="com.sun.star.util.XCloseListener",
-                methods=("queryClosing", "notifyClosing", "notifyClosed", "disposing"),
+                methods=("queryClosing", "notifyClosing", "disposing"),
             )
             document.addModifyListener(modify_proxy)
             document.addDocumentEventListener(save_proxy)
@@ -399,7 +401,7 @@ class LibreOfficeAdapter:
             handle.save_proxy = save_proxy
             handle.close_proxy = close_proxy
             handle.desktop = desktop
-            handle.output_path = output_path
+            handle.output_path = approved_path
             handle.source_path = source_path
             handle.profile_path = profile_path
             handle.context = context
@@ -506,24 +508,20 @@ class LibreOfficeAdapter:
         if handle.close_listener is None:
             self._cleanup(handle)
             raise RuntimeError("libreoffice_close_listener_missing")
-        if not handle.close_listener.snapshot_ready.wait(self._connect_timeout):
+        if handle.approved_snapshot_error is not None:
+            error = handle.approved_snapshot_error
             self._cleanup(handle)
-            raise RuntimeError("libreoffice_final_snapshot_timeout")
-        if handle.close_listener.snapshot_error is not None:
-            error = handle.close_listener.snapshot_error
+            raise RuntimeError("libreoffice_approved_snapshot_failed") from error
+        if not handle.approved_snapshot_path.is_file():
             self._cleanup(handle)
-            raise RuntimeError("libreoffice_final_snapshot_failed") from error
-        if not (handle.work_dir / "final.doc").is_file():
-            self._cleanup(handle)
-            raise RuntimeError("libreoffice_final_document_missing")
+            raise RuntimeError("libreoffice_approved_snapshot_missing")
         return OfficeCloseEvent(CloseDisposition.CLOSED)
 
     def export_final_document(self, handle: object) -> bytes:
         if not isinstance(handle, _OfficeHandle):
             raise TypeError("invalid_libreoffice_handle")
-        output_path = handle.work_dir / "final.doc"
         try:
-            payload = output_path.read_bytes()
+            payload = handle.approved_snapshot_path.read_bytes()
             if not payload.startswith(_CFB_SIGNATURE):
                 raise RuntimeError("libreoffice_export_not_legacy_word_format")
             try:

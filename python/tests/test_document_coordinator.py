@@ -27,11 +27,22 @@ def sample_request():
 
 
 class FakeOffice:
-    def __init__(self, *, close=CloseDisposition.CLOSED, output=b"final-document", save=False, veto_close_attempts=0):
+    def __init__(
+        self,
+        *,
+        close=CloseDisposition.CLOSED,
+        initial_approved=b"initial-approved-document",
+        saved_output=b"latest-saved-document",
+        save=False,
+        veto_close_attempts=0,
+        dirty_after_save=False,
+    ):
         self.close = close
-        self.output = output
+        self.approved_output = initial_approved
+        self.saved_output = saved_output
         self.save = save
         self.veto_close_attempts = veto_close_attempts
+        self.dirty_after_save = dirty_after_save
         self.calls = []
         self.on_modified = None
         self.on_saved = None
@@ -49,7 +60,10 @@ class FakeOffice:
         self.calls.append(("wait_for_close", handle))
         self.on_modified()
         if self.save:
+            self.approved_output = self.saved_output
             self.on_saved()
+        if self.dirty_after_save:
+            self.on_modified()
         # The adapter consumes vetoed close attempts and waits for a later choice.
         for _ in range(self.veto_close_attempts):
             self.calls.append(("close_attempt_vetoed", handle))
@@ -57,17 +71,17 @@ class FakeOffice:
 
     def export_final_document(self, handle):
         self.calls.append(("export_final_document", handle))
-        return self.output
+        return self.approved_output
 
 
 class DocumentCoordinatorTests(unittest.TestCase):
-    def test_close_returns_final_bytes_without_explicit_save(self):
+    def test_dont_save_returns_initial_approved_snapshot_not_unsaved_edits(self):
         office = FakeOffice()
         result = DocumentCoordinator(office).run(
             session_id="local-session-1", request=sample_request()
         )
         self.assertTrue(result.returned)
-        self.assertEqual(result.payload, b"final-document")
+        self.assertEqual(result.payload, b"initial-approved-document")
         self.assertEqual(result.session.state, DocumentState.RETURNED)
         self.assertEqual(result.session.revision, 1)
         self.assertIsNone(result.session.saved_revision)
@@ -76,17 +90,28 @@ class DocumentCoordinatorTests(unittest.TestCase):
             ["open", "wait_for_close", "export_final_document"],
         )
 
-    def test_engine_save_is_recorded_but_does_not_trigger_return(self):
+    def test_save_returns_latest_successfully_saved_snapshot(self):
         office = FakeOffice(save=True)
         result = DocumentCoordinator(office).run(
             session_id="local-session-save", request=sample_request()
         )
         self.assertEqual(result.session.saved_revision, 1)
         self.assertEqual(result.session.state, DocumentState.RETURNED)
+        self.assertEqual(result.payload, b"latest-saved-document")
         self.assertEqual(
             [call[0] for call in office.calls],
             ["open", "wait_for_close", "export_final_document"],
         )
+
+    def test_dont_save_after_a_prior_save_returns_that_prior_saved_snapshot(self):
+        office = FakeOffice(save=True, dirty_after_save=True)
+        result = DocumentCoordinator(office).run(
+            session_id="local-session-save-then-dirty", request=sample_request()
+        )
+        self.assertEqual(result.payload, b"latest-saved-document")
+        self.assertEqual(result.session.saved_revision, 1)
+        self.assertEqual(result.session.revision, 2)
+        self.assertEqual(result.session.state, DocumentState.RETURNED)
 
     def test_discard_does_not_export_document(self):
         office = FakeOffice(close=CloseDisposition.DISCARDED)
@@ -106,7 +131,7 @@ class DocumentCoordinatorTests(unittest.TestCase):
                 # while closing or exporting. They must not mutate a terminal session.
                 self.on_modified()
                 self.on_saved()
-                return self.output
+                return self.approved_output
 
         office = LateCallbackOffice()
         result = DocumentCoordinator(office).run(
@@ -128,7 +153,7 @@ class DocumentCoordinatorTests(unittest.TestCase):
             session_id="local-session-vetoed-close", request=sample_request()
         )
         self.assertEqual(result.session.state, DocumentState.RETURNED)
-        self.assertEqual(result.payload, b"final-document")
+        self.assertEqual(result.payload, b"initial-approved-document")
         self.assertEqual(result.session.revision, 1)
         self.assertIsNone(result.session.saved_revision)
         self.assertEqual(
@@ -149,7 +174,7 @@ class DocumentCoordinatorTests(unittest.TestCase):
         self.assertIsInstance(caught.exception.__cause__, RuntimeError)
 
     def test_invalid_output_bytes_fail_closed(self):
-        office = FakeOffice(output="not-bytes")
+        office = FakeOffice(initial_approved="not-bytes")
         with self.assertRaises(OfficeCoordinationError):
             DocumentCoordinator(office).run(
                 session_id="local-session-4", request=sample_request()

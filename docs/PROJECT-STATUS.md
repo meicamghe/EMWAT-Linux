@@ -1,3 +1,25 @@
+# Latest reconciliation — 2026-11-25 (main baseline)
+
+This section is the current authority for the Word close/response contract. Older dated entries below are historical checkpoints and must not override this reconciliation.
+
+- Reviewed current `main` HEAD: `0f95be8577718e16b6c59afb1f43fe561dabe517`. The current `emwat_strings.txt` blob is **13,722,034 bytes**. Any previous empty-file observation belongs to an older tree.
+- PCAP `invoke=58351` has a 54.557883-second request-body-to-response delay, HTTP 200, response Content-Length 1,166,820, and HTTP Content-Type `text/html; charset=ISO-8859-1`. Its captured inner body contains `response-word` and Base64 `application/msword`; TCP gaps prevent a complete document hash.
+- DevTools `invoke=29501` has the same response length and HTTP content type/charset. Its body was not captured. Treat this as strong correlation, not proof of identical body semantics.
+- The Linux decision contract is Save → latest successfully saved snapshot; Don't Save → previous approved snapshot (initial input if no successful Save); Cancel → leave the session open and keep the pending request waiting. Periodic recovery snapshots are not approved final output.
+- The LibreOffice adapter seeds an approved DOC snapshot from the input, advances it only on successful `OnSaveDone`/`OnSaveAsDone`, and exports only that approved snapshot after actual close. `XCloseListener.notifyClosing` is now the actual close signal; `disposing` is an idempotent fallback. The listener no longer depends on the nonexistent `notifyClosed` callback. Generic `queryClosing` does not snapshot the live document. `cancel_close_attempt()` preserves OPENED/DIRTY state; terminal application cancellation remains separate.
+- Word event identity is improved: `TWordApplication` RTTI maps event field `+0x80` to `OnDocumentBeforeClose`, and `OnTmrAutoSave` stores callback `0x004CD154` there. The TD32 name `WordAppDocumentBeforeSave` is misleading. The TWordApplication server-data record at `0x00627B74` contains the event-source IID `ApplicationEvents3` (`00020A00-0000-0000-C000-000000000046`); its trailing 20 pointers are error strings, not callbacks. Word interop metadata corroborates `DocumentBeforeClose` DISPID `0x00000006`; direct parsing of the embedded typelib member record remains optional confirmation.
+
+- **Field-owner correction (Run 152):** the callback slot at event-record `+0x80` belongs to the `TWordApplication` object reached through `TWordViwer+0x44`; it stores `0x004CD154` as the `OnDocumentBeforeClose` callback. Separately, `OnControlerNotify` reads `TWordViwer+0x80` as the base path for `.easd/.easz` derivation. Same offset, different objects. The field-reference artifact's `OnTmrAutoSave` entry is a nested-object write, not a write to the viewer's own `+0x80`. The viewer base-path initialization site is still open; constructor/destructor traces are now added to the controller workflow. See `docs/WORD-LIFECYCLE-STATIC-TRACE.md`, Run 152.
+
+- The first known writer for viewer `+0x58` is `PrintWithGamPrintOptions` (`0x004C5E04`), directly called from the RTTI-mapped `OnDocumentBeforeSave` callback (`0x004CD54C`); the timer-side call at `0x004B937C` is also confirmed and receives `ExtractFileName(+0xA0)`. It stores the return from `Emwatutils.DirIsEmpty` (`0x004565DC`) at `Self+0x58` (`0x004C5E44`); that helper performs FindFirst/FindNext and returns a directory-enumeration status, not an object pointer. The close callback clears the field at `0x004CD31C`. Path helper `0x004563A8` is resolved as `FixDirectionInFarsiNumericMode`; it normalizes the UnicodeString before enumeration. `+0xA0` is the document-path string passed by `LoadDocument` to `OnTmrAutoSave`; the timer extracts its filename via `System.SysUtils.ExtractFileName` (`0x00403320`) before the `DirIsEmpty` check and is also consumed by the controller's TStringList manifest flow. `+0x54` is the separate enumeration output buffer. The directory-enumeration output string is `+0x54`, transformed to `+0x50` by `StringReplace`, with status at `+0x58`. The timer passes `ExtractFileName(+0xA0)` to `PrintWithGamPrintOptions`, not the full path. `0x00403430` is resolved as `rtl230.bpl!System.SysUtils.StringReplace`; it transforms `+0x54` into `+0x50` using the two method string arguments.
+- Added gap-aware HTTP body extraction (`emwat_linux.http_capture`) and `--extract-dir` to `tools/analyze_pcap_http_timing.py`. Exact bodies are written as `.bin`; captures with missing TCP bytes are marked `.partial.bin` and carry gap metadata. This prepares direct extraction of `invoke=29501` when the raw capture becomes available.
+- Latest verification on code/test tree `6d9feef110f215393026e05068c494ae7081ef08`: Python Bridge run `45589112172` passed **154 tests (2 optional skips)**; LibreOffice UNO run `45589112177` passed **13 tests**. Event-sink run 28 (artifact `15009034578`) resolved `DirIsEmpty`; run 34 (artifact `15010103394`) resolved path helper `FixDirectionInFarsiNumericMode`. Run 42 confirmed the timer callsite and Run 44 resolved `0x00403320` as `System.SysUtils.ExtractFileName` (artifact `15015875555`). Controller-notify run artifact `15015721064` confirms `+0xA0` is passed into an archive object's virtual method at slot `+0x3C`; the class/interface mapping and helper `0x00456DFC` are being traced.
+- Direct response body for `invoke=29501`, direct binary extraction of the event member metadata and the exact FindFirst search mask, how the extracted filename is combined with a directory, and the exact meaning of viewer `+0x80` and the final `.easz` list serialization format remain open.
+
+Detailed contract and evidence: [Word close/response contract reconciliation](WORD-CLOSE-RESPONSE-CONTRACT-2026-11-25.md), [runtime capture](RUNTIME-CAPTURE-2026-11-25.md), [PCAP round-trip](PCAP-EDITWORD-DOCUMENT-ROUNDTRIP.md).
+
+---
+
 ## تکمیل موازی Native scanner و اعتبارسنجی — 2026-11-18
 
 - سند scanner اکنون مرز دقیق کد SANE موجود و قابلیت‌های هنوز تأییدنشده را تفکیک می‌کند: یک frame هشت‌بیتی Gray/RGB، محدودیت 1 GiB، گزینه‌های mode/source/DPI و نبود تأیید ADF/duplex/multi-frame یا سخت‌افزار واقعی.
@@ -1786,7 +1808,7 @@ The BPL export/API analysis resolves the earlier naming ambiguity. The public TE
 ### رفع ابهام چرخهٔ بستن Word — 2026-11-16
 
 - مسیر اصلی اکنون مشخص است: callback ثبت‌شده `WordAppDocumentBeforeSave` در `0x004CD154` است، نه `WordAppDocumentBeforeClose`.
-- callback ابتدا `Saved=False` را از COM slot `+0xD8` تنظیم می‌کند، سپس prompt ثبت تغییرات را نشان می‌دهد.
+- **اصلاح جدید:** callback مقدار `Document.Saved` را از COM slot `+0xD8` می‌خواند؛ TD32 نام wrapperها معکوس است و callback مقدار Saved را False نمی‌کند.
 - Yes → آرگومان اول `_Document.Close` برابر `-1`؛ No → برابر `0`؛ Cancel → فیلد Cancel رویداد برابر `0xFFFF` و سند باز می‌ماند.
 - برای Yes/No از overload سه‌آرگومانی `TWordDocument.Close` و COM slot `+0x29C` استفاده می‌شود؛ overloadهای 1/2/3 آرگومان همگی به همین slot ختم می‌شوند.
 - این یافته رفتار مشاهده‌شدهٔ کاربر را توضیح می‌دهد: بستن Word بدون فشردن Save هم می‌تواند ثبت را آغاز کند. اما POST/response نهایی Almas هنوز اثبات نشده است.
@@ -2400,3 +2422,11 @@ Python bridge CI در run `44031548179` موفق شد: **111 تست موفق، 2
 Two DevTools screenshots now provide runtime evidence for the close-time local bridge transaction. The selected request is a POST to `127.0.0.1:1984/?invoke=29501`, returning HTTP 200. Request content type is `text/plain; charset=UTF-8`; response headers report 1,166,820 bytes and `text/html; charset=ISO-8859-1`, with connection close. The request referer includes the local `?init=84760_34426` endpoint. Full evidence boundaries and next actions are documented in [RUNTIME-CAPTURE-2026-11-25.md](RUNTIME-CAPTURE-2026-11-25.md).
 
 This narrows the critical unknown: capture and decode the POST body and response body, then correlate the Initiator stack with the parent-page `postMessage` and Word close sequence. The screenshots do not prove the response is an HTML document or identify the exact document payload. No production-compatible response parser or Almas end-to-end behavior is claimed from headers alone.
+
+
+- Saved property accessors: `TWordDocument.Set_Saved` at `0x0042BD94` behaves as getter through slot `+0xD8`; `TWordDocument.Get_Saved` at `0x0042BD34` behaves as setter through `+0xD4`. The BeforeClose callback reads the actual Saved state; it does not set it false.
+
+
+- Run 44 (artifact `15015875555`) resolved helper `0x00403320` as `System.SysUtils.ExtractFileName` via IAT `0x0062F288`. The timer passes the filename component of the LoadDocument path to `PrintWithGamPrintOptions`; the full path is separately retained in `+0xA0` for the archive/AddFiles path.
+
+- Controller archive follow-up (artifact `15015542774`): VMT/import metadata resolves `0x0062F810` as `System.Classes.TStringList`. `OnControlerNotify` adds `+0xA0` to one list, derives `.easd` and `.easz` paths from `+0x80` for another list, then calls `Emwatutils.euUnArchive` (`0x00456DFC`) with both lists and the `.easz` output path. The previous SevenZip-interface interpretation of slot `+0x3C` is superseded.

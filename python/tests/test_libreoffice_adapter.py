@@ -6,6 +6,7 @@ from pathlib import Path
 from emwat_linux.libreoffice_adapter import (
     _CFB_SIGNATURE,
     _DocumentCloseListener,
+    _DocumentEventListener,
     _ModifyListener,
     _file_url,
     _source_extension,
@@ -104,39 +105,35 @@ class LibreOfficeAdapterUnitTests(unittest.TestCase):
             self.assertTrue(url.startswith("file://"))
             self.assertIn("emwat%20space", url)
 
-    def test_close_listener_snapshots_word_97_before_close(self):
-        document = FakeDocument()
+    def test_close_listener_does_not_snapshot_on_cancelled_close_attempt(self):
         closed = []
-        listener = _DocumentCloseListener(
-            document,
-            "file:///tmp/final.doc",
-            lambda: closed.append(True),
-            fake_snapshot_properties(),
-            Lock(),
-            Event(),
-        )
+        recovery_stop = Event()
+        listener = _DocumentCloseListener(lambda: closed.append(True), recovery_stop)
+
         listener.queryClosing(object(), False)
-        self.assertTrue(listener.snapshot_ready.is_set())
-        self.assertIsNone(listener.snapshot_error)
-        self.assertEqual(
-            document.calls,
-            [("file:///tmp/final.doc", [("FilterName", "MS Word 97"), ("Overwrite", True)])],
-        )
-        listener.notifyClosed(object())
+        self.assertEqual(closed, [])
+        self.assertFalse(recovery_stop.is_set())
+
+        listener.notifyClosing(object())
+        self.assertEqual(closed, [True])
+        self.assertTrue(recovery_stop.is_set())
+
+        # Disposal after notifyClosing is permitted and must be idempotent.
+        listener.disposing(object())
         self.assertEqual(closed, [True])
 
-    def test_close_listener_retains_snapshot_error_for_caller(self):
-        listener = _DocumentCloseListener(
-            FakeDocument(fail=True),
-            "file:///tmp/final.doc",
-            lambda: None,
-            (FakeUno().createUnoStruct("com.sun.star.beans.PropertyValue"),),
-            Lock(),
-            Event(),
-        )
-        listener.queryClosing(object(), False)
-        self.assertTrue(listener.snapshot_ready.is_set())
-        self.assertIsInstance(listener.snapshot_error, RuntimeError)
+    def test_document_event_listener_only_forwards_completed_saves(self):
+        events = []
+        listener = _DocumentEventListener(lambda: events.append("saved"))
+
+        class Event:
+            def __init__(self, name):
+                self.EventName = name
+
+        listener.documentEventOccured(Event("OnSave"))
+        listener.documentEventOccured(Event("OnSaveDone"))
+        listener.documentEventOccured(Event("OnSaveAsDone"))
+        self.assertEqual(events, ["saved", "saved"])
 
     def test_modify_listener_forwards_document_change(self):
         changes = []

@@ -142,35 +142,35 @@ The service-side `GetClass("T"+className)` resolution and the VMT `+0x0C` call a
 
 ## Run 150 — Word event wiring and save/close checkpoints
 
-Source: Word lifecycle artifact `14226866454` (dispatch crosswalk run 6). These are static traces; the complete-range rerun is in progress.
+Source: Word lifecycle artifact `14226866454` (dispatch crosswalk run 6), superseded where noted by later runs 25–26, 95–99, and the event-sink artifact `14305641689`. Run 27 completed and produced artifact `15008774182`; run 28 expands the first `+0x58` setter helper and is pending.
 
 ### Timer-side event registration
 
-`TWordViwer.OnTmrAutoSave` at `0x004B8A84` (procedure range `0x004B8A84–0x004BB3AF`) registers Word application event callbacks. In the decoded setup path it writes:
-- WordApp event slot `+0x80` → `TWordViwer.WordAppDocumentBeforeSave` at `0x004CD154`;
+`TWordViwer.OnTmrAutoSave` at `0x004B8A84` (procedure range `0x004B8A84–0x004BB3AF`) writes callback/owner pointer pairs into event-related fields of the `TWordApplication` wrapper. In the decoded setup path it writes:
+- event-record field `+0x80` → callback pointer `0x004CD154` (RTTI: `OnDocumentBeforeClose`; TD32 symbol `TWordViwer.WordAppDocumentBeforeSave`);
 - slot `+0x90` → `WordAppNewDocument` at `0x004CD54C`;
 - slot `+0x98` → `WordAppWindowActivate` at `0x004CD9C0`;
 - slot `+0x88` → `WordAppDocumentBeforePrintBGPrint` at `0x004CE030` (or alternate handler `0x004D00AC`, based on a viewer flag).
 The corresponding owner pointers are stored in adjacent event fields. This confirms the event wiring, not yet the full timer's repeated-save behavior; the first TD32 trace decoded only 1,159 of 10,540 procedure bytes.
 
-### BeforeSave behavior
+### Callback body at `0x004CD154` (TD32 symbol: BeforeSave)
 
-`WordAppDocumentBeforeSave` at `0x004CD154` checks that the event document matches the active document. If viewer flag `+0x5E` is clear, it sets the Word `Cancel` output to `-1` and exits. Otherwise it reads the Word document's `Saved` property through interface slot `+0xD8`. For an unsaved document and viewer flag `+0x5F`, it presents a three-choice dialog; one choice explicitly sets `Cancel=-1`. On the continuing path it changes viewer flags, calls a Word document interface method at slot `+0x29C`, clears the stored document interface, and resets state.
+`WordAppDocumentBeforeSave` at `0x004CD154` checks that the event document matches the active document. If viewer flag `+0x5E` is clear, it sets the Word `Cancel` output to `-1` and exits. Otherwise it reads the Word document's `Saved` property through interface slot `+0xD8`. The TD32 wrapper label `Set_Saved` is reversed: its wrapper returns a WordBool from an output pointer, while `Get_Saved` at `+0xD4` passes an input WordBool (actual setter). For an unsaved document and viewer flag `+0x5F`, it presents a three-choice dialog; one choice explicitly sets `Cancel=-1`. On the continuing path it changes viewer flags, calls a Word document interface method at slot `+0x29C`, clears the stored document interface, and resets state.
 
-The dialog's exact labels and the semantics of slot `+0x29C` are not yet decoded. Do not equate this callback with the Almas close-time commit until the downstream calls are traced.
+The dialog's exact labels and the semantics of slot `+0x29C` are not yet decoded. The server-data record at `0x00627B74` identifies event-source IID `ApplicationEvents3` (`00020A00-0000-0000-C000-000000000046`), and Word interop metadata corroborates `DocumentBeforeClose` DISPID `0x00000006`. This identifies the COM event contract; it does not by itself prove that the event is the final Almas commit.
 
 ### BeforeClose and silent-save candidates
 
-- `WordAppDocumentBeforeClose` at `0x004CCBBC` calls helper `0x004BCA88`; this helper is now a priority target for identifying the actual close decision/commit behavior.
+- The TD32-named `WordAppDocumentBeforeClose` at `0x004CCBBC` has a known direct caller in `FillImgFldsForPrint`; its live event-registration role is unproven. `0x004BCA88` is identified elsewhere as a `GetXmlFieldInfo` overload, not a dedicated close/commit helper.
 - `TWordViwer.SilentSaveEmwatDoc` at `0x004D23D8` creates two `TStringList` objects, fills them from viewer collections at `+0x90/+0x94/+0x98/+0x9C`, and passes them with the archive object to helper `0x004AEBBC`. Its exact archive/commit role is not yet established.
 - `OnControlerNotify` at `0x004BB3B0` separately reads the Word document content and creates the passworded `.easz` archive described in Run 148/149.
 
-Keep three events separate until their call/data flow is linked: timer-driven `OnTmrAutoSave`, Word `BeforeSave`/`BeforeClose`, and the controller-notify archive operation. The next run traces the full procedure ranges and the `0x004BCA88`/`0x004AEBBC` helpers.
+Keep the timer callback wiring, the `0x004CD154` callback body, the TD32-named `0x004CCBBC` helper, and the controller-notify archive operation separate until their COM dispatch and data flow are linked. The new event-sink workflow expands field-offset and dispatch-helper tracing.
 
 
 ### LoadDocument → autosave path → archive source linkage
 
-The existing full-range `TWordViwer.LoadDocument` trace (`0x004B7724`) shows it calls `TWordViwer.OnTmrAutoSave` at `0x004B8A84` with a document path string (`0x004B7A58`). The timer routine copies that string into `TWordViwer+0xA0` (`0x004B8AE8`). Later, `OnControlerNotify` reads `TWordViwer+0xA0` and passes it as the first/source path to the `T7zOutArchive.AddFiles` operation.
+The existing full-range `TWordViwer.LoadDocument` trace (`0x004B7724`) shows it calls `TWordViwer.OnTmrAutoSave` at `0x004B8A84` with a document path string (`0x004B7A58`). The callsite at `0x004B7A58` passes the prepared document-path UnicodeString in EDX to `OnTmrAutoSave` (despite the TD32 parameter label `TObject`). The timer routine converts that value with `OleVarFromUStr` and copies it into `TWordViwer+0xA0` (`0x004B8AE8`). Later, `OnControlerNotify` reads `TWordViwer+0xA0` and adds it to a controller TStringList used by `euUnArchive`. This `+0xA0` archive source is distinct from the `+0x54` output string used by `PrintWithGamPrintOptions` and `DirIsEmpty`.
 
 The same `LoadDocument` path creates a file stream from the document path through `0x004041BC` (`TFileStream.$bctr`) at `0x004B7C39`, then writes document data into it. This connects the Word document file created during `LoadDocument` to the file later packaged as the `.easd` archive entry and saved in the `.easz` archive.
 
@@ -206,11 +206,11 @@ Source: Word response/controller workflow run `43872534265`, artifact `142288510
 - `OnTmrAutoSave` installs `OnControlerNotify` as the `TTimer.OnTimer` callback on the timer stored at viewer offset `+0x7C`; the timer interval at viewer offset `+0x88` is clamped to at least 10,000 ms and the timer is enabled.
 - `OnControlerNotify` is therefore a periodic local content/archive callback, not the Word `BeforeClose` event. It reads Word Content through slot `+0xDC` and creates .easd/.easz local archive paths. It is not currently proven to submit the final Almas registration.
 - `TEDPController.Notify` at `0x004D2EC8` is a separate print-handler controller callback; it invokes `TEmwatDocPrintHandler.GetDocFieldName` and must not be conflated with `TWordViwer.OnControlerNotify`.
-- The response appears approximately 54.558 seconds after the request body completes. The static wait/release chain is now mapped: `LoadDocument` calls `OnTmrAutoSave` synchronously at `0x004B7A58`; `OnTmrAutoSave` repeats a `Sleep(5)` + `ProcessMessages` loop while viewer `+0x58` is nonzero; the close/registration callback at `0x004CD154` clears that field after Word `Document.Close` at `0x004CD31C`; then `LoadDocument` writes the HTTP response. The 200-iteration cycle is a repeating maintenance interval, not a one-second total timeout. The formal COM event DISPID and the initial nonzero setter for `+0x58` remain under investigation.
+- The response appears approximately 54.558 seconds after the request body completes. The static wait/release chain is now mapped: `LoadDocument` calls `OnTmrAutoSave` synchronously at `0x004B7A58`; `OnTmrAutoSave` repeats a `Sleep(5)` + `ProcessMessages` loop while viewer `+0x58` is nonzero; the callback at `0x004CD154` clears that field after Word `Document.Close` at `0x004CD31C`; then `LoadDocument` writes the HTTP response. The 200-iteration cycle is a repeating maintenance interval, not a one-second total timeout. The embedded typelib's raw DISPID record is not yet parsed, but the Word interop cross-check identifies `DocumentBeforeClose` as DISPID `0x00000006`; the semantic convention of `DirIsEmpty` remains under investigation.
 
 ### Event identity caution — 2026-11-16
 
-The callback pointer at Word event-record offset `+0x80` is `0x004CD154`. TD32 names the procedure `WordAppDocumentBeforeSave`, but its first log string is `Document.OnBeforeClose Called.` and its behavior prompts for change registration before calling the three-argument `Document.Close` wrapper. The event-record slot's actual COM DISPID (DocumentBeforeSave versus DocumentBeforeClose) is not yet mapped. Do not use the TD32 method name alone as proof of the COM event identity. The metadata block at `0x00627B74` has since been decoded as an error-message/resource map and auto-save interval labels, not an event DISPID table; it does not resolve the formal COM event identity.
+The callback pointer at event-record offset `+0x80` is `0x004CD154`. TD32 names the procedure `WordAppDocumentBeforeSave`, but its first log string is `Document.OnBeforeClose Called.` and its body prompts for change registration before calling the three-argument `Document.Close` wrapper. The formal COM event DISPID and event-source mapping are not yet established. Do not use the TD32 method name alone as proof of the COM event identity. The metadata block at `0x00627B74` has since been decoded as an error-message/resource map and auto-save interval labels, not an event DISPID table; it does not resolve the formal COM event identity.
 
 
 ## Run 153 — synchronous Word-close wait releases HTTP response — 2026-11-16
@@ -220,10 +220,105 @@ The request-lifecycle and wait-mechanism artifacts reveal the full static wait c
 1. `TWordViwer.LoadDocument` calls `OnTmrAutoSave` synchronously at `0x004B7A58` and tests its return value before proceeding to the response branch.
 2. `OnTmrAutoSave` waits at `0x004B9AE8`: `kernel32!Sleep(5)`, `TApplication.ProcessMessages`, then compare viewer field `+0x58` with zero.
 3. If the field remains nonzero, it loops. Every 200 iterations it resets the counter and runs the maintenance/check block around `0x004B9B38` (calls `0x00445B10` and `0x00455108`), then repeats. Thus 200 × 5 ms is the maintenance cycle, not the total wait limit.
-4. The registered close/registration callback at `0x004CD154` calls the Word `Document.Close` wrapper at `0x004CD2FF`, then clears viewer field `+0x58` at `0x004CD31C`.
+4. The callback body at `0x004CD154` calls the Word `Document.Close` wrapper at `0x004CD2FF`, then clears viewer field `+0x58` at `0x004CD31C`.
 5. The wait loop sees zero, disables the 10-second timer, and returns from `OnTmrAutoSave`.
 6. `LoadDocument` then takes its successful branch at `0x004B7F31`, writes the `response-word` XML via Indy `WriteContent`, and sets `bResultSet`.
 
-This explains why the local HTTP request remains open during Word editing and returns the document after the close/registration path. The observed ~54.558-second delay is consistent with the user's Word session duration. The initial setter of viewer `+0x58` and the formal COM event identity of callback `0x004CD154` remain open.
+This explains why the local HTTP request remains open during Word editing and returns the document after the close/registration path. The observed ~54.558-second delay is consistent with the user's Word session duration. The first known setter of viewer `+0x58` is `PrintWithGamPrintOptions` at `0x004C5E44`; the returned token's semantics and numeric COM DISPID remain open.
 
 Evidence: wait-mechanism run `43874638245`, artifact `14229716255`; request-lifecycle run `43873354906`, artifact `14229047092`; Word response run `43872534265`, artifact `14228851062`.
+
+
+## 2026-11-25 — Linux close-decision contract and implementation boundary
+
+The Linux implementation must distinguish the office engine's successful Save event from close-time finalization:
+
+- Save returns the latest approved snapshot only after `OnSaveDone` or `OnSaveAsDone` has been observed and the corresponding DOC snapshot write succeeds.
+- Don't Save closes normally but returns the previous approved snapshot; if no Save completed, that is the initial input baseline.
+- Cancel is a cancelled close attempt, not a terminal session cancellation. No response is emitted and the same request/session remains pending until a later decision closes the document.
+- Periodic recovery snapshots are separate and are never the final response.
+
+The current reconciliation branch implements this boundary in `LibreOfficeAdapter` by keeping `approved.doc` separate from periodic recovery data and by removing live-buffer snapshotting from `queryClosing`. The Windows event contract is cross-identified as `ApplicationEvents3.DocumentBeforeClose` (DISPID `0x00000006`); the `+0x58` setter is traced to `DirIsEmpty`. The original path source/filter and the page-side commit remain to be mapped.
+
+
+## Run 154 — RTTI resolves the registered Word close event and wait-token writer (2026-11-25)
+
+**New evidence: Word wrapper RTTI, event-record assignments, and full-class field scan.** Artifact: workflow run `45587968139`, artifact `15008774182`.
+
+### Event identity crosswalk
+
+The `TWordApplication` class type information at `0x00429128` explicitly names the event properties and their instance-field offsets:
+
+| TWordApplication event property | Event field offset |
+|---|---:|
+| `OnDocumentBeforeClose` | `+0x80` |
+| `OnDocumentBeforePrint` | `+0x88` |
+| `OnDocumentBeforeSave` | `+0x90` |
+| `OnNewDocument` | `+0x98` |
+| `OnWindowActivate` | `+0xA0` |
+| `OnWindowDeactivate` | `+0xA8` |
+
+The `OnTmrAutoSave` registration instructions at `0x004B8C9C–0x004B8CCE` write callback `0x004CD154` to field `+0x80`. Combining the assignment with RTTI now resolves the event property as **Word.Application.OnDocumentBeforeClose**. The TD32 procedure label `WordAppDocumentBeforeSave` is misleading for this callback. This also agrees with its diagnostic string `Document.OnBeforeClose Called.` and its three-argument `Document.Close` path.
+
+The other observed assignments crosswalk as follows:
+
+- `+0x88` / `OnDocumentBeforePrint` → `0x004D00AC` or `0x004CE030` (conditional print handlers).
+- `+0x90` / `OnDocumentBeforeSave` → `0x004CD54C` (TD32 label `WordAppNewDocument`; misleading).
+- `+0x98` / `OnNewDocument` → `0x004CD9C0` (TD32 label `WordAppWindowActivate`).
+
+This identifies the Delphi wrapper event property. The TWordApplication server-data record at `0x00627B74` supplies event-source IID `00020A00-0000-0000-C000-000000000046` (`ApplicationEvents3`); Word interop metadata assigns `DocumentBeforeClose` DISPID `0x00000006`. The exact embedded typelib member record has not been decoded directly. Earlier run-25/26 claims that `0x004CD154` was a registered BeforeSave event are superseded.
+
+### First nonzero write to viewer +0x58
+
+The full `TWordViwer` field scan found one nonzero write besides the close-time clear:
+
+1. Fresh bounded disassembly of `0x004B9300–0x004B9400` confirms the timer-side call at `0x004B937C`: it reads `Self+0xA0`, passes it through helper `0x00403320`, then calls `PrintWithGamPrintOptions` with that output in EDX and `Gamelectronics EMWAT` in ECX.
+2. That method writes `Self+0x58 = EAX` at `0x004C5E44`; EAX is returned by helper `0x004565DC`.
+3. The wait loop checks viewer `+0x58` for nonzero at `0x004B9AE8` / `0x004BB3F2`.
+4. The now-identified `OnDocumentBeforeClose` callback at `0x004CD154` clears viewer `+0x58` at `0x004CD31C`.
+
+This locates the first known writer and ties it to the synchronous wait/release path. The helper `0x004565DC` is TD32-named `Emwatutils.DirIsEmpty`; its body uses `FindFirst`/`FindNext`, returns the final enumeration status in EAX, and writes a filename-like UnicodeString through the out parameter. Thus `+0x58` holds a directory-enumeration status/empty indicator, not a heap-object pointer. The exact path source/filter remain open. The `DirIsEmpty` body returns the final FindFirst/FindNext status (zero when an eligible entry is found, nonzero when enumeration terminates/fails), while writing a filename-like UnicodeString through its output parameter. The timer-side call at `0x004B937C` and BeforeSave call at `0x004CD6EC` are both confirmed. The former supplies the transformed `+0xA0` document path; the latter supplies `Gamelectronics EMWAT` for both string parameters.
+
+The follow-up trace identifies `0x004563A8` as `Emwatutils.FixDirectionInFarsiNumericMode`: it normalizes a UnicodeString for Farsi/numeric direction handling and returns the normalized string. `PrintWithGamPrintOptions` applies this normalization before calling `DirIsEmpty`; it is not a filesystem path-discovery helper.
+
+
+### Event-source metadata cross-check
+
+The TWordApplication server-data block at `0x00627B74` contains Word.Application CLSID `000209FF-0000-0000-C000-000000000046`, default interface IID `00020970-0000-0000-C000-000000000046`, and event-source IID `00020A00-0000-0000-C000-000000000046` (ApplicationEvents3). The Word PIA exposes `ApplicationEvents3.DocumentBeforeClose`; Word interop event definitions corroborate DISPID `0x00000006`. The BPL's embedded member metadata has not yet been independently decoded for the numeric ID.
+
+
+### Run 34 — path normalizer resolution
+
+Event-sink run 34 artifact `15010103394` resolves `0x004563A8` as `Emwatutils.FixDirectionInFarsiNumericMode`. It accepts a UnicodeString and flags, applies string normalization, and writes a normalized UnicodeString to its output parameter. `PrintWithGamPrintOptions` calls it before `DirIsEmpty`, so the directory check is performed on a normalized path string. This does not yet reveal the original path source or the filename filter.
+
+
+### Run 38 — path-source and string-literal findings
+
+The expanded field/path artifact `15011890875` shows:
+
+- `LoadDocument` passes the prepared document-path UnicodeString to `OnTmrAutoSave` at `0x004B7A58`. The timer copies it into `TWordViwer+0xA0` with `UStrAsg` (`0x00401240`), reads it at `0x004B9360`, transforms it through `0x00403320`, and calls `PrintWithGamPrintOptions` at `0x004B937C`.
+- The copied string is passed through `FixDirectionInFarsiNumericMode` (`0x004563A8`) and then to `DirIsEmpty` (`0x004565DC`).
+- The timer call's `ECX` argument `0x004BA84C` is the UTF-16 literal `Gamelectronics EMWAT`.
+- The actual `OnDocumentBeforeSave` callback `0x004CD54C` calls the same method with `EDX=ECX=0x004CD928`, which is the same UTF-16 literal `Gamelectronics EMWAT`.
+
+`0x00403520` is `rtl230.bpl!System.Variants.OleVarFromUStr`; `0x00401240` is `rtl230.bpl!System.UStrAsg`; `0x00403430` is `rtl230.bpl!System.SysUtils.StringReplace`. The timer passes the transformed document path as EDX and the UTF-16 label `Gamelectronics EMWAT` as ECX. This label is a replacement string, not an absolute path.
+
+
+### Run 39 — Saved accessor semantics resolved
+
+The wrapper trace confirms that TD32 names are reversed relative to actual COM behavior: `Get_Saved` (`0x0042BD34`) invokes slot `+0xD4` with an input WordBool (setter), while `Set_Saved` (`0x0042BD94`) invokes slot `+0xD8` with an output WordBool (getter). The registered `OnDocumentBeforeClose` callback at `0x004CD154` reads `Document.Saved` through `+0xD8` and branches on the returned value.
+
+
+## Run 152 — disambiguate same numeric field offset by object owner
+
+Source: successful controller-notify workflow artifact `15016516836` (run `45602986551`), cross-checked against event-sink artifact `15015875555` (run `45599975084`).
+
+The numeric offset `+0x80` occurs in two different objects in this path. Do not merge these into one field:
+
+1. **Word application event record.** In `TWordViwer.OnTmrAutoSave` (`0x004B8A84`), the code first loads `[Self+0x44]` and passes that object to `TWordApplication` methods, including `SetConnectKind` (`0x00404FBC`) and `Get_DisplayAutoCompleteTips` (`0x00440950`). It then writes callback/context pairs through that object pointer: `[object+0x80] = 0x004CD154`, `[object+0x84] = Self`; corresponding pairs are written at `+0x90/+0x94`, `+0x98/+0x9C`, and conditionally `+0x88/+0x8C`. The TWordApplication RTTI crosswalk maps its event field `+0x80` to `OnDocumentBeforeClose`. This is the event callback slot, not the viewer's archive-path field.
+
+2. **Word viewer base-path string.** In `TWordViwer.OnControlerNotify` (`0x004BB3B0`), the method's viewer instance pointer (`[ebp-4]`) is used directly to read `[Self+0x80]` at `0x004BB596` and `0x004BB5C4`. Both values are passed to `FixDirectionInFarsiNumericMode` (`0x004563A8`); the resulting paths receive `.easd` and `.easz` suffixes and are passed to the archive helper. This is the viewer's base-path use.
+
+The controller workflow's class-field scan groups references by the enclosing TD32 class/procedure, but the `OnTmrAutoSave` writes above are through the nested object at `Self+0x44`. They are not writes to `TWordViwer+0x80`. The current scan has not identified the initialization/write site for the viewer's base-path string.
+
+**Next trace:** inspect `TWordViwer.$bctr` (`0x004D08B4`), `TWordViwer.$bdtr` (`0x004D0D24`), and their callers/field references. The controller workflow now emits these constructor/destructor traces. Do not infer the path's directory/filename derivation until those traces or runtime evidence establish it.

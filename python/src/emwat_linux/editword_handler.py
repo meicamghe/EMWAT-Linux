@@ -1,8 +1,9 @@
 """HTTP-dispatch adapter for the EditWordDocument domain service.
 
-Non-success response semantics are deliberately injected because the
-captured successful response is known but the Windows discard/cancel envelopes
-have not yet been recovered.
+Non-success response semantics for explicit terminal discard/cancellation are
+deliberately injected because the Windows envelopes have not been recovered.
+The office UI's close-dialog Cancel is not a terminal cancellation: it keeps
+the same invoke pending and does not reach this response factory.
 """
 from __future__ import annotations
 
@@ -26,11 +27,11 @@ def create_editword_handler(
     *,
     cancel_response_factory: CancelResponseFactory,
 ) -> Callable[[MethodCall, BridgeRequest], BridgeResponse]:
-    """Create a dispatcher handler with explicit discard/cancel response policy.
+    """Create a handler with explicit terminal discard/cancel response policy.
 
-    The injected factory is called for both DISCARDED and CANCELLED sessions;
-    their distinct DocumentState values let the caller choose a verified wire
-    response without conflating "No" with "Cancel".
+    This factory handles terminal application outcomes only. A Cancel in the
+    office close dialog leaves wait_for_close pending and produces no response
+    until the user later chooses Save or Don't Save.
     """
 
     def handle(call: MethodCall, request: BridgeRequest) -> BridgeResponse:

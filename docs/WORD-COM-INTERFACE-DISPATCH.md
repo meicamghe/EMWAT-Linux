@@ -93,11 +93,11 @@ A direct TD32 CALL-xref scan for `0x004CD54C` found no direct callers. This is c
 The `_Document` slot `+0x2BC` is now mapped with high confidence to `PrintOutOld()` from the generated `Wordxp.TWordDocument` wrapper. Remaining work is to explain the business reason for this call in the Word viewer callbacks and distinguish other interface types that reuse the same numeric offset.
 
 
-## Callback registration cross-check — corrected by runs 25–26
+## Historical callback registration cross-check — superseded by run-27 RTTI
 
-The full TWordViwer.OnTmrAutoSave trace at 0x004B8A84 stores callback pointers in the event record: +0x80 = 0x004CD154 (TD32: WordAppDocumentBeforeSave); +0x90 = 0x004CD54C; +0x98 = 0x004CD9C0; and +0x88 = 0x004D00AC or 0x004CE030 (conditional BeforePrint). The earlier interpretation that +0x80 was WordAppDocumentBeforeClose was incorrect. The registered 0x004CD154 callback checks _Document.Saved via +0xD8, calls PreparePrintDocument at 0x004CB108, conditionally prompts, sets event Cancel to 0xFFFF on Cancel, and directly invokes interface slot +0x29C with three OleVariant arguments on Yes/No. This is the same dispatch slot used by the three-argument TWordDocument.Close wrapper at 0x0042FFF4. 0x00430070 is SaveAs2000, not Close. The no-argument Close wrapper 0x0042FEB0 uses +0x4D4; one/two/three-argument wrappers use +0x29C.
+The full OnTmrAutoSave trace stores callback/data pairs in TWordApplication event fields. Run-27 RTTI at 0x00429128 maps +0x80 to OnDocumentBeforeClose, +0x88 to OnDocumentBeforePrint, +0x90 to OnDocumentBeforeSave, and +0x98 to OnNewDocument. The corresponding callback pointers are +0x80 → 0x004CD154 (TD32 label WordAppDocumentBeforeSave), +0x88 → 0x004D00AC or 0x004CE030, +0x90 → 0x004CD54C (TD32 label WordAppNewDocument), and +0x98 → 0x004CD9C0 (TD32 label WordAppWindowActivate). Thus the earlier run-25/26 interpretation of +0x80 as BeforeSave is superseded: 0x004CD154 is the registered OnDocumentBeforeClose callback. It calls PreparePrintDocument at 0x004CB108, accesses _Document slot +0xD8 (the TD32 wrapper label Set_Saved is misleading: its wrapper at 0x0042BD94 calls +0xD8 with an output pointer and returns WordBool, so +0xD8 is the Saved getter), conditionally prompts, sets event Cancel to 0xFFFF on Cancel, and invokes interface slot +0x29C with three OleVariant arguments on Yes/No. This is the same dispatch slot used by the three-argument TWordDocument.Close wrapper at 0x0042FFF4. 0x00430070 is SaveAs2000, not Close. The no-argument Close wrapper 0x0042FEB0 uses +0x4D4; one/two/three-argument wrappers use +0x29C. The event-source IID is `00020A00-0000-0000-C000-000000000046` (`ApplicationEvents3`), and `DocumentBeforeClose` is DISPID `0x00000006` per Word interop event metadata; direct decoding of the embedded typelib member record remains optional confirmation.
 
-The separate TD32-named WordAppDocumentBeforeClose at 0x004CCBBC has only one direct bounded caller, FillImgFldsForPrint at 0x004CCF8F, and no raw-pointer registration reference was found. Its active event role is unproven. The callback body at 0x004CD154 contains no direct HTTP request call. The parent-page message and close-time POST/response path remain to be mapped.
+The separate TD32-named WordAppDocumentBeforeClose at 0x004CCBBC is a different routine: it has only the bounded caller FillImgFldsForPrint at 0x004CCF8F and is not the callback pointer installed at +0x80. The registered OnDocumentBeforeClose callback at 0x004CD154 contains no direct HTTP request call. The parent-page message and close-time POST/response path remain to be mapped.
 
 
 ## Slot collision scan (run 19)
@@ -398,11 +398,11 @@ Direct TD32 call-site scans established these caller relationships:
 This makes `GetDocFieldIndex` a central field-processing routine: it iterates a Word collection, calls `FillMSWFields` for selected entries and conditionally calls `AddImagesToDoc`; the text-field routine separately dispatches into its nested image-field helper. The exact `Wordxp.Field` property names used by `FillImageField` remain unresolved; its typed body uses slots `+0x40`, `+0x38`, and `+0x20` on interface receivers. Lifecycle run 46 adds a complete trace of the parent `FillTextField` procedure and caller scans for `GetDocFieldIndex`.
 
 
-## Raw PE callback-pointer audit — corrected classification (runs 25–26)
+## Historical raw PE callback-pointer audit — superseded by run-27 RTTI
 
-The whole-PE pointer scan found no raw pointer to 0x004CCBBC; its only direct bounded caller is FillImgFldsForPrint at 0x004CCF8F. The callback pointer stored at event-record +0x80 is 0x004CD154, but TD32 identifies that target as TWordViwer.WordAppDocumentBeforeSave, not BeforeClose. The registration assignments at 0x004B8C9C–0x004B8CCE are: +0x80 -> 0x004CD154 (BeforeSave), +0x90 -> 0x004CD54C, +0x98 -> 0x004CD9C0 (NewDocument export), and +0x88 -> 0x004D00AC or 0x004CE030 (conditional BeforePrint). The previous run-44 interpretation of 0x004CD154 as a registered BeforeClose callback was wrong and is superseded.
+The whole-PE pointer scan found no raw pointer to 0x004CCBBC; its only direct bounded caller is FillImgFldsForPrint at 0x004CCF8F. Run-27 RTTI maps the callback field +0x80 to OnDocumentBeforeClose, so pointer 0x004CD154 is the registered BeforeClose callback despite TD32's WordAppDocumentBeforeSave label. The complete field crosswalk is +0x80 OnDocumentBeforeClose → 0x004CD154; +0x88 OnDocumentBeforePrint → 0x004D00AC/0x004CE030; +0x90 OnDocumentBeforeSave → 0x004CD54C; +0x98 OnNewDocument → 0x004CD9C0. Earlier name-based classifications are superseded.
 
-The registered BeforeSave callback at 0x004CD154 has no direct HTTP call. It checks _Document.Saved, conditionally prompts, sets the event Cancel word on Cancel, and directly invokes interface slot +0x29C with three OleVariant arguments on Yes/No. The separate TD32-named WordAppDocumentBeforeClose at 0x004CCBBC has no raw-pointer registration reference and only the FillImgFldsForPrint caller in the bounded call scan; its active event role is unproven. The bridge's parent-page message and final commit path remain to be mapped.
+The registered OnDocumentBeforeClose callback at 0x004CD154 has no direct HTTP call. It reads _Document.Saved through slot +0xD8 (the TD32 wrapper label Set_Saved is reversed; its wrapper returns WordBool), conditionally prompts, sets event Cancel on Cancel, and invokes interface slot +0x29C with three OleVariant arguments on Yes/No. The separate TD32-named WordAppDocumentBeforeClose at 0x004CCBBC is not the installed pointer and has only the FillImgFldsForPrint caller in the bounded scan. The bridge's parent-page message and final commit path remain to be mapped.
 
 
 ## Additional WordXP collection RTTI (lifecycle run 45)
@@ -718,7 +718,7 @@ The collection's virtual method implementation and external class metadata remai
  
 ## Correction — run 25 address/symbol verification (2026-11-14)
 
-Run 25 (`43580008821`, artifact `14108665890`) exposed incorrect target labels in the preceding analysis step. The TD32 symbol at `0x004CD154` is `TWordViwer.WordAppDocumentBeforeSave`, not `WordAppDocumentBeforeClose`. The LoadDocument/OnTmrAutoSave registration code at `0x004B8C9C–0x004B8CCE` explicitly stores `0x004CD154` at callback field `+0x80`, `0x004CD54C` at `+0x90`, and `0x004CD9C0` at `+0x98`; the conditional callback at `+0x88` is `0x004D00AC` or `0x004CE030`. Thus `0x004CD154` is conclusively the registered BeforeSave callback. Do not call it a close callback.
+Run 25 (`43580008821`, artifact `14108665890`) identified the TD32 symbol `WordAppDocumentBeforeSave` at `0x004CD154` and the callback field assignment `+0x80`, but did not decode the TWordApplication RTTI event-property offsets. Run 27 later maps `+0x80` to `OnDocumentBeforeClose`; the earlier conclusion that the callback was not a close callback is superseded.
 
 The actual TD32 procedure named `TWordViwer.WordAppDocumentBeforeClose` begins at `0x004CCBBC`, but its only direct immediate caller found is `FillImgFldsForPrint` at `0x004CCF8F`; no registration reference was found in the scanned raw pointer data. Therefore its name alone does not prove that this procedure is the live Word application close-event handler.
 
@@ -740,7 +740,7 @@ Run 26 (43584217243, artifact 14109926135) completed successfully. TD32 symbols 
 
 The three-argument wrapper forwards its three OleVariant arguments through document interface slot +0x29C. The concrete runtime target and effective argument meanings are not identified by this wrapper alone.
 
-Callback identity correction: 0x004CD154 is the registered TWordViwer.WordAppDocumentBeforeSave, not BeforeClose. It checks _Document.Saved through slot +0xD8, calls PreparePrintDocument at 0x004CB108, conditionally prompts when the document is changed and viewer flags allow it, sets the event Cancel word to 0xFFFF on Cancel, and directly invokes interface slot +0x29C with three OleVariant arguments (the same dispatch slot used by the three-argument wrapper at 0x0042FFF4) for Yes/No. The TD32-named WordAppDocumentBeforeClose at 0x004CCBBC has only one direct bounded caller, FillImgFldsForPrint at 0x004CCF8F; no raw-pointer registration reference was found. This negative scan does not prove that no computed/runtime registration exists.
+Run-27 callback identity correction: 0x004CD154 is installed at TWordApplication.OnDocumentBeforeClose field +0x80 despite the TD32 symbol WordAppDocumentBeforeSave. It reads _Document.Saved through slot +0xD8 (the TD32 wrapper label Set_Saved is reversed; its wrapper returns WordBool), calls PreparePrintDocument at 0x004CB108, conditionally prompts, sets event Cancel to 0xFFFF on Cancel, and invokes interface slot +0x29C with three OleVariant arguments on Yes/No. The separate TD32-named WordAppDocumentBeforeClose at 0x004CCBBC is not the installed callback; its bounded direct caller is FillImgFldsForPrint at 0x004CCF8F.
 
 The no-argument overload's +0x4D4 slot must not be conflated with the optional-argument overloads' +0x29C slot. 0x00430070 is SaveAs2000, not Close. Remaining work: resolve the COM interface implementation behind +0x29C, find any actual close-event registration, and trace the page-side close-time POST. No apply-on-close explanation is established.
 
@@ -756,9 +756,9 @@ Run 26 (`43584217243`, artifact `14109926135`) independently traced the generate
 | `Close(OleVariant, OleVariant)` | `0x0042FF7C` | `+0x29C` |
 | `Close(OleVariant, OleVariant, OleVariant)` | `0x0042FFF4` | `+0x29C` |
 
-The wrappers obtain the underlying interface through `0x0042ABA0` and invoke the corresponding vtable slot. The three-argument overload is called from the registered BeforeSave callback at `0x004CD154` in the Yes/No prompt branches. The no-argument overload uses a different slot. Until the `_Document` type-library declarations or a matching wrapper map both slots, do not assign method names to raw offsets beyond the TD32 wrapper names.
+The wrappers obtain the underlying interface through `0x0042ABA0` and invoke the corresponding vtable slot. The three-argument overload is called from the registered `OnDocumentBeforeClose` callback at `0x004CD154` (TD32 label `WordAppDocumentBeforeSave`) in the Yes/No prompt branches. The no-argument overload uses a different slot. Until the `_Document` type-library declarations or a matching wrapper map both slots, do not assign method names to raw offsets beyond the TD32 wrapper names.
 
-The separate `WordAppDocumentBeforeClose` symbol at `0x004CCBBC` is still not proven to be registered as a live event handler. Its known direct caller is `FillImgFldsForPrint`. The user's observed close-time HTTP POST is not yet tied to either wrapper path.
+The separate `WordAppDocumentBeforeClose` symbol at `0x004CCBBC` is not the registered callback; its known direct caller is `FillImgFldsForPrint`. The user's observed close-time HTTP POST is not yet tied to the COM callback's parent-page message.
 
 
 ### Invoke wrapper/helper naming clarification — 2026-11-15
@@ -781,7 +781,7 @@ The first attempt to trace those targets with TD32 procedure boundaries reports 
 The event sink remains distinct from the TWordViwer callback record assignments. The latter prove that the main viewer registers its BeforeSave handler at `0x004CD154`; the 20 generated event-table targets still need to be mapped to event DISPIDs/names before they can be associated with specific Word events.
 
 
-## Correction — 2026-11-15: 0x00627B74 is an error-string table, not an event callback table
+## Correction — 2026-11-15: 0x00627B74 is TServerData with trailing error strings, not an event callback table
 
 The run #8 extraction correctly found 20 pointers, but the initial interpretation of those pointers as Word event callbacks was wrong. Run #9 (`43716905570`, artifact `14162568118`) decoded the targets as Delphi string literals, not executable callback routines. The raw disassembly attempt at `0x004499B8–0x00449E20` yielded data-like bytes and is not valid evidence of callback code.
 
@@ -798,7 +798,7 @@ The decoded strings include:
 - `Temp path not Found.`;
 - `Scan failed on %s. The error code(s)= %s\\r%s`.
 
-Therefore the pointer region beginning at `0x00627BB0` is a server error-message/string mapping structure (exact record semantics still need full structure analysis). It must not be used to identify Word event callback functions. The earlier subsection titled “Generated Word event callback table — extraction corrected” is superseded by this correction.
+Therefore the pointer region beginning at `0x00627BB0` is the trailing error-message/string mapping portion of the TWordApplication server-data record. The record itself begins at `0x00627B74` with Word.Application CLSID `000209FF-0000-0000-C000-000000000046`, default interface IID `00020970-0000-0000-C000-000000000046`, and event-source IID `00020A00-0000-0000-C000-000000000046` (ApplicationEvents3). The 20 pointers are error strings, not callback functions; the record's leading GUIDs still provide the event-source identity. The earlier subsection titled “Generated Word event callback table — extraction corrected” is superseded by this correction.
 
 The live main-viewer event registration evidence is unchanged: `OnTmrAutoSave` assigns `TWordViwer.WordAppDocumentBeforeSave` (`0x004CD154`) to callback field `+0x80`, plus other event handlers at `+0x90`, `+0x98`, and conditional `+0x88`. The 20 string pointers provide error handling text for the Word/EMWAT subsystem, not a map of those event registrations.
 
@@ -815,9 +815,9 @@ Word event-sink workflow run #3 (`43722341799`, artifact `14164794063`) adds the
 - `TWordApplication.InitServerData` (`0x0043E070`) passes the data record at `0x00627A38` to helper `0x0040479C`.
 - `TWordDocument.InitServerData` (`0x0042AA20`) does the same with a separate data record at `0x00627768`.
 - The broad Delphi interface-table scan reports `TWordApplication` VMT `0x004202A8` with a null interface-table pointer. This does not rule out its generated OLE event connection-point machinery; it means the event source is not represented as a direct Delphi VMT interface-table entry in this scan.
-- The `0x00627B74` region remains the server error-string map described above. It is not reclassified as an event table.
+- The `0x00627B74` block is the TWordApplication server-data record: its leading GUIDs identify Word.Application, `_Application`, and ApplicationEvents3; its trailing 20 pointers are the error-string map. It is not an event callback table.
 
-A targeted follow-up run (`43722702804`) now traces helper `0x0040479C` and the supporting RTL helpers, and expands/scans the `TWordDocument` server-data record at `0x00627768`. The actual event IID/DISPID-to-callback mapping remains unresolved until that artifact is inspected.
+A targeted follow-up run (`43722702804`) traces helper `0x0040479C` and the separate `TWordDocument` server-data record at `0x00627768`. The TWordApplication event source is now identified from the third GUID in its server-data record at `0x00627B74`; RTTI maps the callback field to OnDocumentBeforeClose, and Word interop metadata corroborates DISPID `0x00000006`.
 
 
 ## `WordAppDocumentBeforeClose` helper cross-reference — 2026-11-15
@@ -858,7 +858,7 @@ Word event-sink follow-up run `43723423283` (artifact `14165491351`) resolved th
 - The `0x00627A38` and `0x00627768` blocks contain Word class/interface GUID metadata. Their presence helps identify generated COM wrappers but does not provide the event-handler method pointer or prove which `IConnectionPoint::Advise` call subscribes the main editor.
 - `0x00401420` and `0x00401430` remain external/import thunks not resolved to a file-backed implementation in this package; do not assign them a semantic name from these traces alone.
 
-The missing step is now narrower: trace the generated event-sink/connection-point registration path that consumes the server data and connects the `WordAppDocumentBeforeSave`/`WordAppDocumentBeforeClose` handlers. The new lifecycle run is still tracing controller field assignments and callback registration.
+The TWordApplication connection path is now cross-identified: its server-data record at `0x00627B74` names ApplicationEvents3, and RTTI maps event field `+0x80` to OnDocumentBeforeClose callback `0x004CD154`. Word interop metadata corroborates DISPID `0x00000006`. Remaining COM work is direct extraction of the embedded typelib member record and a complete mapping of the other callback fields; the main close-event identity is no longer open.
 
 
 
@@ -903,7 +903,7 @@ The follow-up wrapper traces (run 43814055308, artifact 14200974814) resolve the
 - TWordDocument.Get_Saved at 0x0042BD34 dispatches through _Document byte offset +0xD4.
 - TWordDocument.Set_Saved at 0x0042BD94 dispatches through _Document byte offset +0xD8.
 
-Therefore, the direct call at 0x004CD1F5 inside WordAppDocumentBeforeSave, which uses _Document slot +0xD8, maps to the generated Set_Saved wrapper—not Get_Saved. The earlier interpretation of that instruction as reading Document.Saved is not supported and is withdrawn. The callback's local OleVariant setup and the value it supplies to Set_Saved need a separate trace before assigning business meaning.
+Therefore, the direct call at 0x004CD1F5 inside the callback at 0x004CD154 uses slot +0xD8, whose TD32 wrapper label is Set_Saved. Wrapper call-shape analysis resolves this slot as the actual get_Saved getter: it returns a WordBool through an output pointer. The callback reads Document.Saved; the earlier withdrawal of that interpretation is superseded. The wrapper name, not the callsite, was misleading.
 
 The OnControlerNotify call at 0x004BB514 uses slot +0xDC. The follow-up trace resolves TWordDocument.Get_Content at 0x0042BDF8 to the same slot +0xDC. Thus the controller path is calling the Word document Content member, not a Saved getter/setter. OnControlerNotify supplies -1 in the argument position; the precise meaning of that value in this call context remains unresolved.
 
@@ -941,20 +941,20 @@ The bounded callback-registration code at 0x004B8C60–0x004B8D10 writes callbac
 
 | Event callback pointer | Context pointer | TD32 method |
 |---:|---:|---|
-| 0x004CD154 at record +0x80 | viewer at +0x84 | TWordViwer.WordAppDocumentBeforeSave |
+| 0x004CD154 at record +0x80 | viewer at +0x84 | RTTI: OnDocumentBeforeClose; TD32: TWordViwer.WordAppDocumentBeforeSave |
 | 0x004CD54C at record +0x90 | viewer at +0x94 | TWordViwer.WordAppNewDocument |
 | 0x004CD9C0 at record +0x98 | viewer at +0x9C | TWordViwer.WordAppWindowActivate |
 | 0x004D00AC at record +0x88, conditional on viewer byte +0x3C | viewer at +0x8C | callback target not yet resolved |
 
-This confirms that WordAppDocumentBeforeSave is explicitly installed as an application event callback. The callback is not merely an unreferenced routine discovered by scanning.
+This confirms that the callback pointer is explicitly installed as the application OnDocumentBeforeClose event property, according to TWordApplication RTTI. The TD32 procedure name is misleading.
 
-### BeforeClose distinction
+### Separate TD32-named routine at `0x004CCBBC`
 
-WordAppDocumentBeforeClose at 0x004CCBBC has one direct bounded caller in the current artifact: FillImgFldsForPrint at 0x004CCF8F. It is not one of the callback pointers listed in the event-record assignments above. This supports keeping the BeforeSave callback path separate from the print-only BeforeClose helper.
+WordAppDocumentBeforeClose at 0x004CCBBC has one direct bounded caller in the current artifact: FillImgFldsForPrint at 0x004CCF8F. It is not one of the callback pointers listed in the event-record assignments above. This supports keeping the registered OnDocumentBeforeClose callback at `0x004CD154` separate from the distinct TD32-named helper at `0x004CCBBC`.
 
 ### Evidence boundary
 
-The event-sink wiring explains how the BeforeSave callback is reached from Word automation. It does not prove that the callback itself posts the final document to Almas. The exact response-word HTTP handoff and registration trigger remain separate unresolved protocol steps.
+The event-sink wiring explains how the OnDocumentBeforeClose callback is reached from Word automation. It does not prove that the callback itself posts the final document to Almas. The exact response-word HTTP handoff and registration trigger remain separate unresolved protocol steps.
 
 
 ## Run 130 — ردیابی رکوردهای event sink و جایگاه BeforeClose
@@ -965,9 +965,9 @@ Source: artifact اجرای Word event sink، run `43815900228`، artifact `1420
 
 در بدنه‌ی `TWordViwer.OnTmrAutoSave` (procedure از `0x004B8A84`)، بلوک `0x004B8C60–0x004B8D10` روی شیء event/controller در `viewer+0x44` رکوردهای callback را مقداردهی می‌کند:
 
-- offset `+0x80` ← `WordAppDocumentBeforeSave` در `0x004CD154`.
-- offset `+0x90` ← `WordAppNewDocument` در `0x004CD54C`.
-- offset `+0x98` ← `WordAppWindowActivate` در `0x004CD9C0`.
+- offset `+0x80` ← `OnDocumentBeforeClose` در RTTI، callback `0x004CD154` (TD32 label: `WordAppDocumentBeforeSave`).
+- offset `+0x90` ← `OnDocumentBeforeSave` در RTTI، callback `0x004CD54C` (TD32 label: `WordAppNewDocument`).
+- offset `+0x98` ← `OnNewDocument` در RTTI، callback `0x004CD9C0` (TD32 label: `WordAppWindowActivate`).
 - offset `+0x88` ← callback در `0x004D00AC`، با شرط flag در `viewer+0x3C`.
 
 این شواهد ثبت callback در event record را ثابت می‌کند؛ اما نام/معنای callback چهارم و اینکه این رکورد دقیقاً در کدام مرحله به connection point ورد متصل می‌شود، هنوز باید با trace چرخه‌ی WordApplication تکمیل شود.
@@ -978,11 +978,11 @@ Source: artifact اجرای Word event sink، run `43815900228`، artifact `1420
 - bounded direct-call scan تنها caller مستقیم آن را `FillImgFldsForPrint` در `0x004CCF8F` نشان می‌دهد.
 - در بلوک event-record assignment بالا، هیچ فیلدی به `0x004CCBBC` تنظیم نشده است.
 
-بنابراین هنوز مدرکی نداریم که `WordAppDocumentBeforeClose` callback فعال main editor باشد. وجود بدنه‌ی callback به‌تنهایی برای فرض ثبت آن کافی نیست. مسیر اصلی BeforeSave به‌صورت مجزا در event record ثبت شده است.
+بنابراین routine جداگانه‌ی `WordAppDocumentBeforeClose` در `0x004CCBBC` callback ثبت‌شده‌ی main editor نیست. اما run 27 با RTTI ثابت می‌کند که callback `0x004CD154` در فیلد `+0x80` به event property واقعی `OnDocumentBeforeClose` متصل است؛ TD32 label آن misleading است.
 
 ### ارتباط با BeforeSave
 
-بدنه‌ی `WordAppDocumentBeforeSave` در `0x004CD154` از `_Document` slot `+0xD8` استفاده می‌کند که wrapper آن `TWordDocument.Set_Saved` است؛ سپس در شاخه‌ی ادامه‌ی close، wrapper سه‌آرگومانی `TWordDocument.Close` را از slot `+0x29C` فراخوانی می‌کند. این مسیر با getter محتوای `+0xDC` در `OnControlerNotify` متفاوت است.
+بدنه‌ی callback ثبت‌شده به‌عنوان `OnDocumentBeforeClose` در `0x004CD154` از `_Document` slot `+0xD8` استفاده می‌کند؛ wrapper crosswalk آن را `TWordDocument.Set_Saved` می‌نامد، اما callsite یک local صفرشده را با reference به آن می‌دهد و سپس همان local را می‌خواند، بنابراین getter/setter semantics در این callsite هنوز نیازمند type-library cross-check است. سپس در شاخه‌ی ادامه‌ی close، wrapper سه‌آرگومانی `TWordDocument.Close` را از slot `+0x29C` فراخوانی می‌کند. این مسیر با getter محتوای `+0xDC` در `OnControlerNotify` متفاوت است.
 
 **Confidence:** ثبت سه callback اول در event record تأییدشده؛ اتصال نهایی به COM connection point و نقش callback چهارم هنوز باز؛ فعال بودن BeforeClose در main editor اثبات‌نشده.
 
@@ -995,10 +995,10 @@ Artifact اجرای callback trace (run `43816996023`, artifact `14203047153`) �
 
 | offset در رکورد | callback | نتیجه |
 |---|---|---|
-| `+0x80` | `WordAppDocumentBeforeSave` (`0x004CD154`) | ثبت شده |
+| `+0x80` | `OnDocumentBeforeClose` (`0x004CD154`; TD32 `WordAppDocumentBeforeSave`) | ثبت شده |
 | `+0x88` | `LoadOptions` / `Document.OnBeforePrint` (`0x004D00AC`) | ثبت شرطی با flag در `viewer+0x3C` |
-| `+0x90` | `WordAppNewDocument` (`0x004CD54C`) | ثبت شده |
-| `+0x98` | `WordAppWindowActivate` (`0x004CD9C0`) | ثبت شده |
+| `+0x90` | `OnDocumentBeforeSave` (`0x004CD54C`; TD32 `WordAppNewDocument`) | ثبت شده |
+| `+0x98` | `OnNewDocument` (`0x004CD9C0`; TD32 `WordAppWindowActivate`) | ثبت شده |
 
 `LoadOptions` در این بدنه تنظیمات چاپ را بارگذاری/نمایش می‌دهد و رشته‌های `Word Print Dialog`، `SOFTWARE\\Emwat\\Dynamic Config` و پیام دسترسی چاپ را مصرف می‌کند؛ این callback به close/registration مربوط نیست.
 
@@ -1009,17 +1009,17 @@ Artifact اجرای callback trace (run `43816996023`, artifact `14203047153`) �
 
 Artifact: Word lifecycle run `43817445960`, artifact `14203757393`.
 
-### Active callback is BeforeSave, not BeforeClose
+### Active callback is OnDocumentBeforeClose; TD32 label is misleading
 
-- The event record from `OnTmrAutoSave` registers `WordAppDocumentBeforeSave` at `0x004CD154`.
+- The event record from `OnTmrAutoSave` stores `0x004CD154` at field `+0x80`; TWordApplication RTTI names this property `OnDocumentBeforeClose`.
 - The main editor's `WordAppDocumentBeforeClose` at `0x004CCBBC` still has no proven event-record assignment and only the separate print-handler caller. It is not the demonstrated main close path.
 
 ### Exact user-choice → COM Close flow
 
-In `TWordViwer.WordAppDocumentBeforeSave` (`0x004CD154`):
+In the callback at `0x004CD154` (TD32 symbol `TWordViwer.WordAppDocumentBeforeSave`, RTTI event property `OnDocumentBeforeClose`):
 
 1. It verifies that the event's document matches `viewer+0x48` and that the viewer state permits handling.
-2. It calls `TWordDocument.Set_Saved` through COM slot `+0xD8` with a false/zero value, marking the Word document as not saved.
+2. It passes a zero-initialized local by reference through COM slot `+0xD8`; the call returns the actual `get_Saved` WordBool, despite the TD32 wrapper label `Set_Saved`. The callback reads `Document.Saved` and uses it to decide whether to prompt; it does not write `Saved=False`.
 3. It displays the registration prompt. The dialog result is then mapped as follows:
    - Yes (`MessageDlg` result 6): the first `OleVariant` passed to Close is set to `-1` (True / SaveChanges).
    - No: the first `OleVariant` remains `0` (False / do not save changes).
@@ -1028,11 +1028,11 @@ In `TWordViwer.WordAppDocumentBeforeSave` (`0x004CD154`):
 
 ### Overload verification
 
-TD32 procedure traces show the one-, two-, and three-argument `TWordDocument.Close` wrappers at `0x0042FF08`, `0x0042FF7C`, and `0x0042FFF4`. All resolve through `0x0042ABA0` to the underlying Word document interface and dispatch slot `+0x29C`. The main BeforeSave callback uses the three-argument form, matching Word's `_Document.Close(SaveChanges, OriginalFormat, RouteDocument)` signature.
+TD32 procedure traces show the one-, two-, and three-argument `TWordDocument.Close` wrappers at `0x0042FF08`, `0x0042FF7C`, and `0x0042FFF4`. All resolve through `0x0042ABA0` to the underlying Word document interface and dispatch slot `+0x29C`. The main OnDocumentBeforeClose callback uses the three-argument form, matching Word's `_Document.Close(SaveChanges, OriginalFormat, RouteDocument)` signature.
 
 ### What this proves — and what it does not
 
-This explains why closing Word can register/return a document even when the user did not press the Word Save button: the registered BeforeSave handler asks whether to register changes and then explicitly closes the Word document with SaveChanges True/False. Cancel vetoes the close. This is a much stronger lifecycle proof than the earlier BeforeClose hypothesis.
+This explains why closing Word can register/return a document even when the user did not press the Word Save button: the registered OnDocumentBeforeClose handler asks whether to register changes and then explicitly closes the Word document with SaveChanges True/False. Cancel sets the event Cancel value and leaves Word open.
 
 It still does **not** identify the exact HTTP POST/response envelope used to return the resulting document to Almas. The controller-notify/Get_Content and paired `.easd/.easz` paths remain under analysis; do not conflate COM Close with the final local HTTP response.
 
@@ -1190,3 +1190,50 @@ The remaining stream-class question is resolved:
 - It then passes the resulting stream to `T7zOutArchive.SetCompleted` at `0x004546C4`, which performs the archive completion path.
 
 Therefore the `.easz` path is not merely an abstract stream name: the routine creates a real file at that path and hands the file stream to the 7z output archive. This closes the static file-output side of the archive pipeline; runtime bytes and actual extraction/consumer behavior remain untested.
+
+
+## 2026-11-25 authoritative RTTI and wait-state correction
+
+Run 27 artifact `15008774182` proves the wrapper event-property mapping. The TWordApplication RTTI at `0x00429128` identifies fields `+0x80/+0x88/+0x90/+0x98` as `OnDocumentBeforeClose`, `OnDocumentBeforePrint`, `OnDocumentBeforeSave`, and `OnNewDocument`, respectively. The callback pointer assignments map as follows:
+
+| Event field | Actual wrapper event property | Callback pointer | TD32 symbol |
+|---|---|---|---|
+| `+0x80` | `OnDocumentBeforeClose` | `0x004CD154` | `WordAppDocumentBeforeSave` |
+| `+0x88` | `OnDocumentBeforePrint` | `0x004D00AC` / `0x004CE030` | conditional print handler |
+| `+0x90` | `OnDocumentBeforeSave` | `0x004CD54C` | `WordAppNewDocument` |
+| `+0x98` | `OnNewDocument` | `0x004CD9C0` | `WordAppWindowActivate` |
+
+The TD32 labels are misleading; use RTTI property names for event identity. Event-source IID `00020A00-0000-0000-C000-000000000046` (`ApplicationEvents3`) is read from the server-data record at `0x00627B74`; `DocumentBeforeClose` is DISPID `0x00000006` per Word interop event metadata. The embedded type-library record itself has not yet been decoded directly. The separate routine `0x004CCBBC` is not the registered close event.
+
+The first known writer of viewer `+0x58` is `PrintWithGamPrintOptions` (`0x004C5E04`), directly called from the actual BeforeSave callback `0x004CD54C`; the timer-side call at `0x004B937C` is confirmed and supplies `ExtractFileName(+0xA0)` in EDX. It stores the return of `Emwatutils.DirIsEmpty` (`0x004565DC`) at `Self+0x58` (`0x004C5E44`). That helper enumerates a directory with FindFirst/FindNext and returns the final enumeration status; the close callback `0x004CD154` clears the field at `0x004CD31C`. `0x004563A8` is now identified as `Emwatutils.FixDirectionInFarsiNumericMode`, which normalizes the UnicodeString before enumeration. `PrintWithGamPrintOptions` passes the `+0x54` result to `System.SysUtils.StringReplace` (`0x00403430`) and stores the transformed result at `+0x50`; the BeforeSave call supplies the same `Gamelectronics EMWAT` literal for both replacement parameters. The timer passes the transformed `+0xA0` document path in EDX and `Gamelectronics EMWAT` in ECX.
+
+The `+0xD8` Saved-accessor conflict is resolved by wrapper call shape. `TWordDocument.Set_Saved` at `0x0042BD94` calls vtable `+0xD8` with an output pointer and returns the resulting WordBool, so `+0xD8` is the actual `get_Saved` getter despite the TD32 name. `TWordDocument.Get_Saved` at `0x0042BD34` passes an input value to vtable `+0xD4` and returns void, so `+0xD4` is the actual `put_Saved` setter despite its TD32 name. The close callback at `0x004CD154` calls `+0xD8` and branches on the returned WordBool; it reads `Document.Saved`, not writes `Saved=False`.
+
+
+### Event-source IID and DISPID cross-check
+
+The TWordApplication server-data record at `0x00627B74` begins with:
+
+- CLSID: `000209FF-0000-0000-C000-000000000046` (Word.Application)
+- default interface IID: `00020970-0000-0000-C000-000000000046`
+- event-source IID: `00020A00-0000-0000-C000-000000000046` (Word `ApplicationEvents3`)
+
+Microsoft's Word PIA documents `ApplicationEvents3.DocumentBeforeClose`; the Word interop event contract assigns `DocumentBeforeClose` DISPID `0x00000006`. This matches the RTTI property mapping and the callback signature/control flow. The exact DISPID value was corroborated against interop metadata rather than extracted from the BPL's embedded type-library member record.
+
+References:
+- Microsoft Learn, [ApplicationEvents3 interface](https://learn.microsoft.com/en-us/dotnet/api/microsoft.office.interop.word.applicationevents3?view=word-pia)
+- Microsoft Learn, [ApplicationEvents3.DocumentBeforeClose](https://learn.microsoft.com/en-us/dotnet/api/microsoft.office.interop.word.applicationevents3.documentbeforeclose?view=word-pia)
+- Word interop event test, [JNA ComEventCallbacks2_Test](https://github.com/java-native-access/jna/blob/c24bbfad90e49730202cc439f436c1a6820f2dba/contrib/platform/test/com/sun/jna/platform/win32/COM/util/ComEventCallbacks2_Test.java)
+- Microsoft VBA docs, [Application.DocumentBeforeClose](https://github.com/microsoftdocs/vba-docs/blob/cfee1b35b419270636defdbee0ac96e5ded071bb/api/Word.Application.DocumentBeforeClose.md)
+
+
+### Saved property accessor crosswalk — wrapper names are reversed
+
+The TD32-named wrapper procedures are:
+
+- `TWordDocument.Get_Saved` at `0x0042BD34–0x0042BD91`: accepts a value through EDX, passes it to COM vtable slot `+0xD4`, and returns void. This is the actual `put_Saved` setter.
+- `TWordDocument.Set_Saved` at `0x0042BD94–0x0042BDF6`: allocates an output WordBool, passes its address to COM vtable slot `+0xD8`, reads the returned WordBool, and returns it. This is the actual `get_Saved` getter.
+
+Thus the imported wrapper names are reversed relative to the COM property accessors. The callback at `0x004CD154` passes a zero-initialized local to slot `+0xD8`, then branches on the returned word. It is reading the actual `Document.Saved` property. It does not set `Saved=False`.
+
+Reference: Microsoft Learn, [Document.Saved property](https://learn.microsoft.com/en-us/dotnet/api/microsoft.office.interop.word._document.saved?view=word-pia).
