@@ -1,3 +1,11 @@
+## 2026-11-28 — Run 34 print-worker caller gate
+
+- The only direct caller of THidePrintingThread.Execute is TCreateTiff.SeparteImages at 0x004A02B8.
+- The caller tests AL immediately; false branches to failure at 0x004A02C1, true continues at 0x004A02D7. Worker success is therefore a hard precondition for the GDI+ TIFF continuation.
+- Combined acceptance has two distinct gates: spooler queue disappearance, then generated TIFF file existence accepted by THidePrintingThread. Queue disappearance alone is not proof of output completion.
+- Report: docs/REVERSE-ENGINEERING-PARALLEL-FOLLOWUP-2026-11-28-RUN34.md; focused worker doc updated in commit e9b5252; report commit 782d6b9.
+- No tests, CI, or package build were run.
+
 ## 2026-11-28 — local raw-PE extraction tool
 
 - Added scripts/dump_pe_va_ranges.py and six synthetic PE tests in python/tests/test_pe_va_ranges.py. The tool maps PE32/PE32+ VAs to raw file offsets and prints DWORDs plus ANSI/UTF-16LE strings for the current GDI+, Worker, and XMLRTL target ranges.
