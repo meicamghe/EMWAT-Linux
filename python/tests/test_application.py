@@ -257,5 +257,120 @@ class ApplicationCompositionTests(unittest.TestCase):
             server.server_close()
 
 
+    def test_editword_http_request_stays_pending_until_writer_close_and_heartbeat_stays_live(self):
+        opened = threading.Event()
+        allow_close = threading.Event()
+        office_document = bytes.fromhex("d0cf11e0a1b11ae1") + b"edited-after-writer-close"
+
+        class BlockingOffice:
+            def open_document(self, request, *, on_modified, on_saved):
+                opened.set()
+                return object()
+
+            def wait_for_close(self, handle):
+                if not allow_close.wait(5):
+                    raise TimeoutError("test_close_gate_timeout")
+                from emwat_linux.office_adapter import CloseDisposition, OfficeCloseEvent
+                return OfficeCloseEvent(CloseDisposition.CLOSED)
+
+            def export_final_document(self, handle):
+                return office_document
+
+        port = self.free_port()
+        local_origin = f"http://127.0.0.1:{port}"
+        server = create_libreoffice_bridge_server(
+            allowed_origins=frozenset({local_origin}),
+            office_adapter=BlockingOffice(),
+            cancel_response_factory=lambda _result, _request: BridgeResponse(
+                b"synthetic-cancel", status=409
+            ),
+            port=port,
+        )
+        server_thread = threading.Thread(target=server.serve_forever, daemon=True)
+        response_done = threading.Event()
+        response_result = {}
+
+        config = base64.b64encode(b"<word-document/>").decode("ascii")
+        document = base64.b64encode(
+            bytes.fromhex("d0cf11e0a1b11ae1") + b"input-word-document"
+        ).decode("ascii")
+        request_body = (
+            '<emwat version="1.0"><method class="EditWordDocument">'
+            f'<param name="wordConfig">{config}</param>'
+            f'<param name="wordBody">{document}</param>'
+            '<param name="signData"></param>'
+            '</method></emwat>'
+        ).encode("utf-8")
+
+        def send_editword_request():
+            connection = http.client.HTTPConnection("127.0.0.1", port, timeout=8)
+            try:
+                connection.request(
+                    "POST",
+                    "/?invoke=987654",
+                    body=request_body,
+                    headers={
+                        "Content-Type": "text/plain;charset=UTF-8",
+                        "Origin": local_origin,
+                    },
+                )
+                response = connection.getresponse()
+                response_result["status"] = response.status
+                response_result["content_type"] = response.getheader("Content-Type")
+                response_result["body"] = response.read()
+            except BaseException as exc:
+                response_result["error"] = exc
+            finally:
+                connection.close()
+                response_done.set()
+
+        request_thread = threading.Thread(
+            target=send_editword_request,
+            name="emwat-test-editword-request",
+            daemon=True,
+        )
+        try:
+            server_thread.start()
+            request_thread.start()
+            self.assertTrue(opened.wait(3), "office document was not opened")
+            self.assertFalse(
+                response_done.is_set(),
+                "EditWordDocument returned before the Writer session closed",
+            )
+
+            # A second request must be served while the first POST is waiting
+            # for the user to finish editing the document.
+            heartbeat = http.client.HTTPConnection("127.0.0.1", port, timeout=3)
+            heartbeat.request("GET", "/?heartbeat")
+            heartbeat_response = heartbeat.getresponse()
+            self.assertEqual(heartbeat_response.status, 200)
+            self.assertEqual(heartbeat_response.read(), b"TickTack")
+            heartbeat.close()
+            self.assertFalse(response_done.is_set())
+
+            allow_close.set()
+            self.assertTrue(response_done.wait(5), "EditWordDocument response did not complete")
+            request_thread.join(timeout=2)
+            self.assertNotIn("error", response_result)
+            self.assertEqual(response_result["status"], 200)
+            self.assertEqual(response_result["content_type"], "text/html; charset=ISO-8859-1")
+
+            import xml.etree.ElementTree as ET
+            response_root = ET.fromstring(response_result["body"])
+            response_type = response_root.find("./return-types/type")
+            self.assertIsNotNone(response_type)
+            self.assertEqual(
+                base64.b64decode(response_type.text, validate=True),
+                office_document,
+            )
+        finally:
+            allow_close.set()
+            if request_thread.is_alive():
+                request_thread.join(timeout=2)
+            server.shutdown()
+            server.server_close()
+            server_thread.join(timeout=2)
+
+
 if __name__ == "__main__":
     unittest.main()
