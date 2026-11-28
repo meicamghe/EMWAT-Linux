@@ -69,3 +69,12 @@ If 0x0062EEA0 is the TGPImage interface VTable base, the observed call slots add
 | +0x74 | 0x0062EF14 |
 
 These are calculated addresses only; the pointer values stored there were not included in the artifact and must not be guessed. A raw dump of 0x0062EE88–0x0062EF18 from the original PE would confirm or reject the candidate and expose the actual method pointers. The operation-level Save/SaveAdd mapping remains valid independently of this raw-table gap.
+
+
+## Raw table extraction command
+
+A standard-library-only dumper is available at scripts/dump_pe_va_ranges.py. It maps VAs through PE section headers and prints raw DWORDs plus nearby ANSI/UTF-16LE strings. To inspect the candidate interface tables and the worker/XML helper addresses in one pass:
+
+    python3 scripts/dump_pe_va_ranges.py analysis-input/EmwatMethods.bpl1
+
+Synthetic PE tests were added but have not yet been run. The raw TGPImage pointer values remain unverified until this command is executed against the original BPL.
