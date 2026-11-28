@@ -2184,3 +2184,10 @@ Five tracks were re-opened from existing artifacts; no new Actions run or produc
 - **Scanner:** numeric getter fallback storage is initialized to zero before XML helper lookup, but absent/empty/malformed semantics are only probable until XMLRTL or runtime samples are available. Preserve exact root and case-sensitive keys.
 
 Next evidence gates: external GAM driver/port-monitor binary or sanitized file/queue trace; Word type-library/event metadata and sanitized HTTP exchange; SevenZip callback-installing interface and synthetic .easz; XMLRTL runtime/schema and scanner samples; original-runtime multipage TIFF fixture. Keep this branch in reverse-engineering mode until those boundaries are proven.
+
+
+### New external evidence for the GAM printer lane
+
+The `zvprt1` family now has an external installer-log lead. A public Microsoft Q&A log for Zan Image Printer 5.0.14.18 lists `zvprtmon5.dll`, `zvprtmonui5.dll`, `zvprtsrv.exe`, `zvprtcfg.exe`, `zvprt1.gpd`, `zvprt5.ini`, `configure.ini`, and `sentineltemplate.txt`; it explicitly records `AddZvprtMonitor` and the profile names `save.ini`, `image_bw.ini`, and `general.ini`. A third-party Emwat Service inventory lists `GAMPrinterSetup.exe`, `Gear32pd.dll`, and `IGLZW32S.DLL`. These are external package-family clues, not proof of the exact shipped version or of which binary consumes JobFinishes.GAM.
+
+Next exact targets from the EMWAT-shipped installer: `zvprtmon5.dll`, `zvprtmonui5.dll`, `zvprtsrv.exe`, `zvprtcfg.exe`, `zvprt1.gpd`, `zvprt5.ini`, `sentineltemplate.txt`, and active `general.ini`/save/image profiles. Do not equate the 2011 Zan build with the exact EMWAT payload without version/hash comparison.
