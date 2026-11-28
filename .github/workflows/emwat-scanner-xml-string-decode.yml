@@ -36,24 +36,17 @@ jobs:
           pe = pefile.PE(data=blob, fast_load=True)
           base = pe.OPTIONAL_HEADER.ImageBase
           targets = {
-              "NewScanDocument.root-or-type": 0x004E9DE4,
-              "NewScanDocument.interface-or-namespace": 0x004E9E00,
-              "Config.Type.get": 0x004EA158,
-              "Config.DriverDialog.get": 0x004EA1DC,
-              "Config.ImageEditor.get": 0x004EA290,
-              "Config.MultiJpegSupport.get": 0x004EA324,
-              "Config.PreviousImageName.get": 0x004EA3E8,
-              "Output.ForceSinglePageFiles.get": 0x004EA86C,
+              "NewScanDocument.root": 0x004E9DE4,
+              "Config.Type.set": 0x004EA158,
+              "Config.DriverDialog.set": 0x004EA290,
+              "Config.ImageEditor.set": 0x004EA3E8,
+              "Config.MultiJpegSupport.set": 0x004EA538,
+              "Config.PreviousImageName.set": 0x004EA6A0,
               "Output.ForceSinglePageFiles.set": 0x004EA87C,
-              "Output.Constraints": 0x004EA920,
-              "Constraints.ColorDepth.get": 0x004EA9E0,
-              "Constraints.ColorDepth.get-conversion": 0x004EA9F8,
+              "Output.Constraints.child-name": 0x004EA9E0,
               "Constraints.ColorDepth.set": 0x004EAAC0,
-              "Constraints.MinResolution.get": 0x004EAB40,
               "Constraints.MinResolution.set": 0x004EAC10,
-              "Constraints.MaxResolution.get": 0x004EAC94,
               "Constraints.MaxResolution.set": 0x004EAD68,
-              "Constraints.MaxFileSize.get": 0x004EADEC,
               "Constraints.MaxFileSize.set": 0x004EAEC0,
           }
 
