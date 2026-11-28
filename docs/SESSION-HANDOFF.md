@@ -1,3 +1,9 @@
+## 2026-11-28 — Run 41 parity boundary refinement
+
+- Corrected the image/signature parity statement after reviewing existing `word_assets.py` and `libreoffice_adapter.py`: inline Base64 `image/*` WordConfig inventory and controlled Writer graphic updates already exist; explicit text/image update APIs are available but require caller-supplied verified target maps and are not auto-applied at open.
+- Outer `letterImages` is preserved in `extra_parameters`; WordConfig `paramId` external-image references are inventoried but not resolved against the outer parameter. `signData` remains opaque and is not split/applied. This is the remaining image/signature binding gap, not absence of all image support.
+- Updated Run 41 and Almas acceptance docs: Run 41 refinement commit `0741bdf`; acceptance doc refinement `73bd75c`.
+
 ## 2026-11-28 — Run 41 Word handler input data flow
 
 - Best-supported EditWordDocument data-flow candidate is procedure `0x005EE82C` (TD32 label `TScanDocument.PerformMethod`): requires `wordConfig`, reads `wordBody`, `letterImages`, and `signData`, then calls `TWordViwer.LoadDocument` at `0x005EE961`.
