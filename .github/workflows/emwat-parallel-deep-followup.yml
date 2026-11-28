@@ -386,6 +386,24 @@ jobs:
             deep-followup/scanner-result/request-state-helper.md
           python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x004F32F4 \
             deep-followup/scanner-result/request-state-helper-callers.md
+      - name: Resolve ScanCommand constraint and request lifecycle consumers
+        shell: bash
+        run: |
+          for target in 0x004F21DC 0x004F22AC 0x004F22E4 0x004F2B18 0x004F2C4C 0x004F32F4; do
+            safe=${target#0x}
+            python tools/trace_td32_procedure_skipdata.py analysis-input/EmwatMethods.bpl1 "$target" \
+              "deep-followup/scanner-result/contract-$safe.md"
+            python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 "$target" \
+              "deep-followup/scanner-result/contract-callers-$safe.md"
+          done
+          for target in 0x00628260 0x00628264 0x00628268 0x0062826C; do
+            safe=${target#0x}
+            python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 "$target" \
+              "deep-followup/scanner-result/constraint-pointer-refs-$safe.md"
+          done
+          python tools/list_td32_symbols.py analysis-input/EmwatMethods.bpl1 \
+            TScanCommand NewScanDocument VerifyConstraints LoadRequestXML DoRequest GetNextPage \
+            > deep-followup/scanner-result/contract-symbol-candidates.md
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -493,6 +511,44 @@ jobs:
             deep-followup/imageen/helper-00404F3C.md
           python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 0x00404F3C \
             deep-followup/imageen/helper-00404F3C-callers.md
+      - name: Expand ImageEn TWAIN and WIA acquisition call graph
+        shell: bash
+        run: |
+          python tools/list_td32_symbols.py analysis-input/EmwatMethods.bpl1 \
+            TIEWia TIEWiaSource TIEAcquire TImageEnMIO TWAIN WIA Acquire \
+            > deep-followup/imageen/acquisition-symbol-candidates.md
+          python - <<'PY'
+          from pathlib import Path
+          import subprocess
+          import sys
+
+          source = Path("deep-followup/imageen/acquisition-symbol-candidates.md").read_text()
+          rows = []
+          for line in source.splitlines():
+              cols = [part.strip() for part in line.strip().strip("|").split("|")]
+              if len(cols) != 5 or not cols[0].startswith("`0x"):
+                  continue
+              address, name = cols[0].strip("`"), cols[4].strip("`")
+              folded = name.casefold()
+              if any(term in folded for term in ("twain", "wia", "acquire", "selectsource", "scan")):
+                  rows.append((address, name))
+          rows = sorted(set(rows))
+          Path("deep-followup/imageen/acquisition-selected-symbols.txt").write_text(
+              "\n".join(f"{address} {name}" for address, name in rows) + "\n"
+          )
+          for address, name in rows:
+              safe = address.replace("0x", "")
+              subprocess.run([
+                  sys.executable, "tools/trace_td32_procedure_skipdata.py",
+                  "analysis-input/EmwatMethods.bpl1", address,
+                  f"deep-followup/imageen/acquisition-{safe}.md"
+              ], check=True)
+              subprocess.run([
+                  sys.executable, "tools/trace_td32_callers.py",
+                  "analysis-input/EmwatMethods.bpl1", address,
+                  f"deep-followup/imageen/acquisition-callers-{safe}.md"
+              ], check=True)
+          PY
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -676,6 +732,74 @@ jobs:
             deep-followup/word-printer/on-timer-method-pointer-refs.md
           python tools/trace_td32_procedure_skipdata.py analysis-input/EmwatMethods.bpl1 0x004B8A84 \
             deep-followup/word-printer/on-timer-autosave-full.md
+      - name: Resolve BeforeClose versus BeforeSave callback identity
+        shell: bash
+        run: |
+          for target in 0x004CCBBC 0x004CD154 0x004CD54C 0x004CD9C0 0x004CDC2C 0x004CE030 0x004D00AC; do
+            safe=${target#0x}
+            python tools/trace_td32_procedure_skipdata.py analysis-input/EmwatMethods.bpl1 "$target" \
+              "deep-followup/word-printer/event-crosswalk-$safe.md"
+            python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 "$target" \
+              "deep-followup/word-printer/event-crosswalk-callers-$safe.md"
+            python tools/scan_pe_pointer_refs.py analysis-input/EmwatMethods.bpl1 "$target" \
+              "deep-followup/word-printer/event-crosswalk-pointers-$safe.md"
+          done
+          python tools/list_td32_symbols.py analysis-input/EmwatMethods.bpl1 \
+            IConnectionPoint IConnectionPointContainer TConnectionPoint Advise Unadvise \
+            WordAppDocumentBeforeClose WordAppDocumentBeforeSave \
+            > deep-followup/word-printer/connection-point-symbol-candidates.md
+          python tools/trace_td32_procedure_skipdata.py analysis-input/EmwatMethods.bpl1 0x004B7724 \
+            deep-followup/word-printer/load-document-event-context.md
+          python tools/trace_pe_range.py analysis-input/EmwatMethods.bpl1 0x004B8C80 0x004B8D20 \
+            deep-followup/word-printer/event-registration-records.md
+      - name: Trace print-worker ownership and SevenZip archive callbacks
+        shell: bash
+        run: |
+          python tools/list_td32_symbols.py analysis-input/EmwatMethods.bpl1 \
+            THidePrintingThread TCreateTiff TEmwatDocPrintHandler euResetMemory euUnArchive \
+            T7zOutArchive T7zInArchive GetOutArchive SaveToStream SetPassword \
+            > deep-followup/word-printer/print-archive-symbol-candidates.md
+          python - <<'PY'
+          from pathlib import Path
+          import subprocess
+          import sys
+
+          source = Path("deep-followup/word-printer/print-archive-symbol-candidates.md").read_text()
+          rows = []
+          for line in source.splitlines():
+              cols = [part.strip() for part in line.strip().strip("|").split("|")]
+              if len(cols) != 5 or not cols[0].startswith("`0x"):
+                  continue
+              address, name = cols[0].strip("`"), cols[4].strip("`")
+              folded = name.casefold()
+              if any(term in folded for term in (
+                  "thideprintingthread", "tcreatetiff", "temwatdocprinthandler",
+                  "euresetmemory", "euunarchive", "t7zoutarchive", "t7zinarchive",
+                  "getoutarchive", "savetostream", "setpassword"
+              )):
+                  rows.append((address, name))
+          rows = sorted(set(rows))
+          Path("deep-followup/word-printer/print-archive-selected-symbols.txt").write_text(
+              "\n".join(f"{address} {name}" for address, name in rows) + "\n"
+          )
+          for address, name in rows:
+              safe = address.replace("0x", "")
+              subprocess.run([
+                  sys.executable, "tools/trace_td32_procedure_skipdata.py",
+                  "analysis-input/EmwatMethods.bpl1", address,
+                  f"deep-followup/word-printer/print-archive-{safe}.md"
+              ], check=True)
+              subprocess.run([
+                  sys.executable, "tools/trace_td32_callers.py",
+                  "analysis-input/EmwatMethods.bpl1", address,
+                  f"deep-followup/word-printer/print-archive-callers-{safe}.md"
+              ], check=True)
+              subprocess.run([
+                  sys.executable, "tools/scan_pe_pointer_refs.py",
+                  "analysis-input/EmwatMethods.bpl1", address,
+                  f"deep-followup/word-printer/print-archive-pointers-{safe}.md"
+              ], check=True)
+          PY
       - uses: actions/upload-artifact@v4
         if: always()
         with:
