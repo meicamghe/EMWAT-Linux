@@ -40,7 +40,7 @@ The property names are case-sensitive as shown in the UTF-16LE data. Do not chan
 
 - `ColorDepth` selector values are 1, 4, 8 and 24, with labels already recovered in the Run-22 scanner report.
 - `MinResolution` and `MaxResolution` feed the corresponding resolution constraints.
-- `MaxFileSize` is compared with an image-derived size after scaling by 1024. Its public unit and whether this is a KiB conversion or another legacy unit convention remain unverified.
+- `MaxFileSize` is interpreted in KiB: `TScanCommand.Finalization` multiplies the configured integer at object offset `+0x14` by 1024 (`shl eax, 10`) before comparing it with the 64-bit image-size value returned by `0x004ECD60`. The helper's exact stream/file source is being cross-checked, but the 1024-byte unit convention is explicit in the comparison.
 - `ForceSinglePageFiles` is a separate output-level property, not a constraint field.
 
 ## Still open
