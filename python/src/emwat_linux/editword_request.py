@@ -9,6 +9,11 @@ from typing import Mapping
 
 from emwat_linux.protocol import MethodCall
 from emwat_linux.word_config import WordDocumentConfig, WordConfigError, parse_word_config
+from emwat_linux.word_external_parameters import (
+    ExternalParameterBinding,
+    ExternalParameterResolutionError,
+    resolve_external_parameter_bindings,
+)
 
 
 class EditWordDocumentRequestError(ValueError):
@@ -21,6 +26,7 @@ class EditWordDocumentRequest:
     document_bytes: bytes = field(repr=False)
     sign_data_text: str = field(repr=False)
     extra_parameters: Mapping[str, str] = field(repr=False)
+    external_parameter_bindings: tuple[ExternalParameterBinding, ...] = field(repr=False)
 
 
 def parse_editword_request(
@@ -32,13 +38,13 @@ def parse_editword_request(
     max_encoded_config_chars: int = 24 * 1024 * 1024,
     max_auxiliary_parameter_chars: int = 64 * 1024 * 1024,
 ) -> EditWordDocumentRequest:
-    """Decode confirmed Base64 parameters and retain auxiliary values opaquely.
+    """Decode confirmed Base64 parameters and bind opaque external parameters.
 
     The captured request confirms Base64 wordConfig and wordBody. signData and
     letterImages/other auxiliary parameters remain opaque text because the
     native external-parameter concatenation and per-field encoding contract is
-    not fully resolved. Their lengths are bounded and all document/config/
-    auxiliary payloads are excluded from repr to prevent accidental log leaks.
+    not fully resolved. Their lengths are bounded; payload-bearing fields and
+    the resulting bindings are excluded from repr to prevent accidental leaks.
     """
     if not isinstance(call, MethodCall):
         raise EditWordDocumentRequestError("method_call_invalid")
@@ -102,9 +108,20 @@ def parse_editword_request(
     if any(len(value) > max_auxiliary_parameter_chars for value in extras.values()):
         raise EditWordDocumentRequestError("extra_parameter_size_exceeded")
 
+    outer_parameters = {"signData": sign_data, **extras}
+    try:
+        external_bindings = resolve_external_parameter_bindings(
+            config,
+            outer_parameters,
+            max_parameter_chars=max_auxiliary_parameter_chars,
+        )
+    except (ExternalParameterResolutionError, TypeError, ValueError) as exc:
+        raise EditWordDocumentRequestError("external_parameter_binding_invalid") from exc
+
     return EditWordDocumentRequest(
         config=config,
         document_bytes=document_bytes,
         sign_data_text=sign_data,
         extra_parameters=MappingProxyType(extras),
+        external_parameter_bindings=external_bindings,
     )

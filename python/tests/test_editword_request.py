@@ -31,6 +31,31 @@ class EditWordDocumentRequestTests(unittest.TestCase):
         self.assertEqual(request.document_bytes, doc_bytes)
         self.assertEqual(request.sign_data_text, "one%26two&three")
         self.assertEqual(request.extra_parameters["customFlag"], "opaque")
+        self.assertEqual(request.external_parameter_bindings, ())
+
+    def test_request_binds_sign_data_and_letter_images_to_exact_param_ids(self):
+        config_xml = (
+            b"<word-document><fields>"
+            b"<field id='SignsStart&#8224;SignsEnd' paramId='signData' "
+            b"mimetype='image/png' encryption='base64' separator='&amp;' concater='\\\\n'/>"
+            b"<field id='LetterImage' paramId='letterImages' mimetype='image/tiff' encryption='base64'/>"
+            b"</fields></word-document>"
+        )
+        request = parse_editword_request(self.make_call(
+            wordConfig=b64(config_xml),
+            wordBody=b64(bytes.fromhex("d0cf11e0a1b11ae1") + b"doc"),
+            signData="opaque-sign-data",
+            letterImages="opaque-letter-images",
+        ))
+        self.assertEqual(
+            [(item.field_id, item.parameter_id, item.raw_value) for item in request.external_parameter_bindings],
+            [
+                ("SignsStart†SignsEnd", "signData", "opaque-sign-data"),
+                ("LetterImage", "letterImages", "opaque-letter-images"),
+            ],
+        )
+        self.assertEqual(request.external_parameter_bindings[0].separator, "&")
+        self.assertNotIn("opaque-sign-data", repr(request))
 
     def test_request_repr_does_not_expose_document_config_or_auxiliary_payloads(self):
         secret = "PRIVATE_SIGN_DATA_MARKER"
