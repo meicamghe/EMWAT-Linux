@@ -2251,3 +2251,10 @@ Detailed report: `docs/REVERSE-ENGINEERING-PARALLEL-FOLLOWUP-2026-11-28-RUN30.md
 - The document separates local implementation evidence from live Almas acceptance and records the release blockers: verified XHR/parent origins, a sanitized real request/Windows response fixture, the explicit non-success response contract, desktop BridgeSupervisor bootstrap, and proof that Almas persists the returned document.
 - It records the critical close semantics: Save and Don't Save both return the latest confirmed saved state; a close-prompt Cancel keeps Writer open and the HTTP request pending; explicit operation-level discard is a separate, not-yet-captured wire outcome.
 - No application behavior was changed and no Linux release package was produced. No workflow was started for this documentation-only commit.
+
+## 2026-11-28 — Almas request-wait / heartbeat concurrency test
+
+- Added `test_editword_http_request_stays_pending_until_writer_close_and_heartbeat_stays_live` to `python/tests/test_application.py` in commit `10392e9`.
+- The test drives the real loopback HTTP server and EditWordDocument composition with a deterministic blocking office adapter: the POST is held while the office session is open, a second heartbeat GET must still return `TickTack`, and only after the close gate is released may the POST return the successful Base64 `response-word` payload.
+- This closes a missing local transport-lifecycle coverage gap. It is not a real Almas or real LibreOffice acceptance test.
+- Test execution and CI were intentionally not started; no release package was produced.
