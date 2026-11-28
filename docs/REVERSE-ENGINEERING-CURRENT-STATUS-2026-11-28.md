@@ -1,3 +1,10 @@
+## 2026-11-28 — Run 38 WordViewer/connector distinction
+
+- Run-67 artifact `15260640277` shows `TWordViwer.LoadDocument` calls `TCreateTiff.SeparteImages` at `0x004B7A9C` and `0x004B7ABD`. This connects viewer document-load to the Word-to-TIFF path, not to the Almas browser edit protocol.
+- The same connector symbol scan finds `TEmwatMethod.Invoke`, ScanDocument, FaxDocument, EditExcelWorkBook, and CompareWordDocument handlers, but no `TEditWordDocument.PerformMethod` TD32 symbol. Because runtime dispatch is indirect/VMT-based, this is an unresolved handler discovery gap, not proof of absence.
+- Updated Almas acceptance doc commit `b2c0cc4`; Run 38 report commit `aad3209`.
+- Exact EditWordDocument handler registration, dictionary keys, and Windows wire response remain unproven. Real sanitized request/response is still required.
+
 ## 2026-11-28 — Run 37 GDI+ VMT tooling coverage
 
 - Audited `tools/resolve_delphi_vmt_slots.py`, called by the existing `image-ui-and-vmt` job. Its `TARGET_CLASSES` omits `TGPImage` and `TGPEncoderParameters`; therefore that automated VMT pass cannot close the raw GDI+ method table.
