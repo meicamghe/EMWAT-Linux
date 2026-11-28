@@ -15,11 +15,7 @@ def b64(value: bytes) -> str:
 
 class EditWordDocumentRequestTests(unittest.TestCase):
     def make_call(self, **params):
-        return MethodCall(
-            class_name="EditWordDocument",
-            params=MappingProxyType(params),
-            version="1.0",
-        )
+        return MethodCall("EditWordDocument", MappingProxyType(params), "1.0")
 
     def test_decodes_document_and_inner_config_but_preserves_sign_data(self):
         config_xml = (
@@ -29,18 +25,35 @@ class EditWordDocumentRequestTests(unittest.TestCase):
             b'</word-document>'
         )
         doc_bytes = bytes.fromhex("d0cf11e0a1b11ae1") + b"synthetic-doc"
-        call = self.make_call(
-            wordConfig=b64(config_xml),
-            wordBody=b64(doc_bytes),
-            signData="one%26two&three",
-            customFlag="opaque",
-        )
-        request = parse_editword_request(call)
+        request = parse_editword_request(self.make_call(
+            wordConfig=b64(config_xml), wordBody=b64(doc_bytes),
+            signData="one%26two&three", customFlag="opaque",
+        ))
         self.assertEqual(request.config.root_attributes["status"], "edit")
         self.assertEqual(request.config.fields[0].text, "A%20B")
         self.assertEqual(request.document_bytes, doc_bytes)
         self.assertEqual(request.sign_data_text, "one%26two&three")
         self.assertEqual(request.extra_parameters["customFlag"], "opaque")
+
+    def test_request_repr_does_not_expose_document_or_auxiliary_payloads(self):
+        secret = "PRIVATE_SIGN_DATA_MARKER"
+        request = parse_editword_request(self.make_call(
+            wordConfig=b64(b"<word-document/>"),
+            wordBody=b64(bytes.fromhex("d0cf11e0a1b11ae1") + b"private"),
+            signData=secret,
+            letterImages="PRIVATE_LETTER_IMAGES_MARKER",
+        ))
+        rendered = repr(request)
+        self.assertNotIn(secret, rendered)
+        self.assertNotIn("PRIVATE_LETTER_IMAGES_MARKER", rendered)
+        self.assertNotIn("private", rendered)
+
+    def test_enforces_auxiliary_parameter_size_limits(self):
+        args = dict(wordConfig=b64(b"<word-document/>"), wordBody=b64(b"doc"))
+        with self.assertRaisesRegex(EditWordDocumentRequestError, "sign_data_size_exceeded"):
+            parse_editword_request(self.make_call(**args, signData="1234"), max_auxiliary_parameter_chars=3)
+        with self.assertRaisesRegex(EditWordDocumentRequestError, "extra_parameter_size_exceeded"):
+            parse_editword_request(self.make_call(**args, letterImages="1234"), max_auxiliary_parameter_chars=3)
 
     def test_rejects_wrong_class_and_missing_required_parameters(self):
         wrong = MethodCall("OtherMethod", MappingProxyType({}), "1.0")
@@ -61,34 +74,23 @@ class EditWordDocumentRequestTests(unittest.TestCase):
         config = b64(b"<word-document/>")
         body = b64(b"document")
         with self.assertRaises(EditWordDocumentRequestError):
-            parse_editword_request(
-                self.make_call(wordConfig=config, wordBody=body),
-                max_encoded_document_chars=4,
-            )
+            parse_editword_request(self.make_call(wordConfig=config, wordBody=body), max_encoded_document_chars=4)
         with self.assertRaises(EditWordDocumentRequestError):
-            parse_editword_request(
-                self.make_call(wordConfig=config, wordBody=body),
-                max_document_bytes=4,
-            )
+            parse_editword_request(self.make_call(wordConfig=config, wordBody=body), max_document_bytes=4)
 
     def test_enforces_encoded_config_limit_before_base64_decode(self):
         config = b64(b"<word-document/>")
         body = b64(b"document")
         with self.assertRaisesRegex(EditWordDocumentRequestError, "word_config_invalid"):
-            parse_editword_request(
-                self.make_call(wordConfig=config, wordBody=body),
-                max_encoded_config_chars=len(config) - 1,
-            )
+            parse_editword_request(self.make_call(wordConfig=config, wordBody=body), max_encoded_config_chars=len(config) - 1)
 
     def test_all_size_limits_require_positive_builtin_integers(self):
         config = b64(b"<word-document/>")
         body = b64(b"document")
         invalid_values = (True, False, 1.5, 16.0, "16", 0, -1, None)
         for parameter in (
-            "max_document_bytes",
-            "max_encoded_document_chars",
-            "max_config_bytes",
-            "max_encoded_config_chars",
+            "max_document_bytes", "max_encoded_document_chars", "max_config_bytes",
+            "max_encoded_config_chars", "max_auxiliary_parameter_chars",
         ):
             for value in invalid_values:
                 with self.subTest(parameter=parameter, value=value):
@@ -118,9 +120,7 @@ class EditWordDocumentRequestTests(unittest.TestCase):
 
     def test_wraps_invalid_inner_config(self):
         with self.assertRaises(EditWordDocumentRequestError):
-            parse_editword_request(
-                self.make_call(wordConfig="not-base64", wordBody=b64(b"doc"))
-            )
+            parse_editword_request(self.make_call(wordConfig="not-base64", wordBody=b64(b"doc")))
 
 
 if __name__ == "__main__":

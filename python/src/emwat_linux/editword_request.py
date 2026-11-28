@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import base64
 import binascii
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from types import MappingProxyType
 from typing import Mapping
 
@@ -18,9 +18,9 @@ class EditWordDocumentRequestError(ValueError):
 @dataclass(frozen=True)
 class EditWordDocumentRequest:
     config: WordDocumentConfig
-    document_bytes: bytes
-    sign_data_text: str
-    extra_parameters: Mapping[str, str]
+    document_bytes: bytes = field(repr=False)
+    sign_data_text: str = field(repr=False)
+    extra_parameters: Mapping[str, str] = field(repr=False)
 
 
 def parse_editword_request(
@@ -30,12 +30,15 @@ def parse_editword_request(
     max_encoded_document_chars: int = 90 * 1024 * 1024,
     max_config_bytes: int = 16 * 1024 * 1024,
     max_encoded_config_chars: int = 24 * 1024 * 1024,
+    max_auxiliary_parameter_chars: int = 64 * 1024 * 1024,
 ) -> EditWordDocumentRequest:
-    """Decode confirmed Base64 parameters while retaining signData as opaque text.
+    """Decode confirmed Base64 parameters and retain auxiliary values opaquely.
 
-    The captured request confirms Base64 wordConfig and wordBody. signData is
-    deliberately retained as text because the inner config describes its
-    concatenation and per-field encoding; it is not necessarily one Base64 blob.
+    The captured request confirms Base64 wordConfig and wordBody. signData and
+    letterImages/other auxiliary parameters remain opaque text because the
+    native external-parameter concatenation and per-field encoding contract is
+    not fully resolved. Their lengths are bounded and their contents are
+    excluded from the request object's repr to prevent accidental log leaks.
     """
     if not isinstance(call, MethodCall):
         raise EditWordDocumentRequestError("method_call_invalid")
@@ -49,6 +52,7 @@ def parse_editword_request(
         max_encoded_document_chars,
         max_config_bytes,
         max_encoded_config_chars,
+        max_auxiliary_parameter_chars,
     )
     if any(type(limit) is not int or limit <= 0 for limit in limits):
         raise ValueError("size limits must be positive integers")
@@ -85,6 +89,9 @@ def parse_editword_request(
     sign_data = call.params.get("signData", "")
     if not isinstance(sign_data, str):
         raise EditWordDocumentRequestError("sign_data_invalid_type")
+    if len(sign_data) > max_auxiliary_parameter_chars:
+        raise EditWordDocumentRequestError("sign_data_size_exceeded")
+
     extras = {
         key: value
         for key, value in call.params.items()
@@ -92,6 +99,8 @@ def parse_editword_request(
     }
     if any(not isinstance(key, str) or not isinstance(value, str) for key, value in extras.items()):
         raise EditWordDocumentRequestError("extra_parameter_invalid_type")
+    if any(len(value) > max_auxiliary_parameter_chars for value in extras.values()):
+        raise EditWordDocumentRequestError("extra_parameter_size_exceeded")
 
     return EditWordDocumentRequest(
         config=config,
