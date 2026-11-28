@@ -1,0 +1,48 @@
+name: EMWAT GearType resolution field mapping
+on:
+  push:
+    paths:
+      - 'analysis-input/EmwatMethods.bpl1'
+      - 'tools/list_td32_symbols.py'
+      - 'tools/trace_td32_procedure_skipdata.py'
+      - 'tools/trace_td32_callers.py'
+      - '.github/workflows/emwat-gear-resolution-mapping.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: emwat-gear-resolution-mapping-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  gear-resolution-fields:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install pefile capstone
+      - name: Trace image resolution metadata extraction
+        shell: bash
+        run: |
+          mkdir -p gear-resolution
+          python tools/list_td32_symbols.py analysis-input/EmwatMethods.bpl1 \
+            TGearImgProc TImageFormat TImageResolution GetResolution Resolution \
+            > gear-resolution/symbol-index.md
+          for target in 0x004AFF08 0x004EEF30 0x004ECD60; do
+            safe=${target#0x}
+            python tools/trace_td32_procedure_skipdata.py analysis-input/EmwatMethods.bpl1 "$target" \
+              "gear-resolution/procedure-$safe.md" || true
+            python tools/trace_td32_callers.py analysis-input/EmwatMethods.bpl1 "$target" \
+              "gear-resolution/callers-$safe.md" || true
+          done
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: emwat-gear-resolution-field-mapping
+          path: gear-resolution/
+          if-no-files-found: error
