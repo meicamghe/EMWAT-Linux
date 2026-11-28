@@ -3471,3 +3471,14 @@ Base64/GDI+ load closure (run 46121270958): Base64Decode is a shared AnsiString-
 - SevenZip output wrapper and separate progress/operation-result callbacks are confirmed. SaveToFile and SetPassword are stubs; callback installer/owner and encryption policy remain unproven.
 - Scanner XML: root, case-sensitive keys, error property and numeric constraint behavior are consolidated. Values none/jpg/yes/no are recognized but not assigned to specific properties without the XMLRTL interface implementation. XML defaults and required/optional behavior remain open.
 - No production implementation, build, release, merge or rebase was performed.
+
+
+## 2026-11-28 — five-track cross-artifact reconciliation (Run 26)
+
+- Added `docs/REVERSE-ENGINEERING-PARALLEL-FOLLOWUP-2026-11-28-RUN26.md` after re-opening the existing Word, printer, GDI+, SevenZip and scanner artifacts. This was artifact re-analysis, not a new Actions run.
+- GDI+ first-frame behavior is now resolved statically: initial Save writes the first frame; the first-frame flag skips SaveAddImage for that same frame; remaining frames of the first source and all frames of subsequent sources are appended in list order, then Flush.
+- Word close behavior is more complete than Run 25 stated. OnTmrAutoSave installs 0x004CD154 at event offset +0x80; the handler reads Document.Saved, handles modal results 2/6/other as Cancel/Save/Discard, calls Document.Close through interface slot +0x29C, and clears viewer +0x58. Run 153 ties that clear to release of the long-lived response-word HTTP request. Formal COM DISPID and browser-side response handling remain open. The unrelated 0x004CCBBC BeforeClose-named print-field helper remains excluded.
+- GAM queue identity is narrowed to PRINTER_INFO_2A.pDriverName == `zvprt1`, with the actual pPrinterName captured from the matching entry. Finalization opens that queue and tests Status == PRINTER_STATUS_PAUSED. JobFinishes.GAM remains an external-driver boundary.
+- SevenZip SaveToStream is confirmed to create a TFileStream with fmCreate and pass it to SetCompleted. SaveToFile is only an out-parameter callback; output SetPassword remains a stub. Callback installer/owner and output encryption remain unresolved.
+- Scanner numeric getters initialize fallback storage to zero before XML helper calls, supporting a probable zero fallback. XMLRTL behavior for absent/empty/malformed attributes and required/optional fields remains unproven.
+- No production code, build, release, merge/rebase or new Actions run was performed. See the Run-26 report for exact artifact IDs and caveats.
