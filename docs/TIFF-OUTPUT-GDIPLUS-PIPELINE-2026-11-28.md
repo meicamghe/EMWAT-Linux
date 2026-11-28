@@ -32,6 +32,11 @@ Before that, it calls `euGetASFileName` at `0x00454B9C` to derive a filename fro
 
 The exact relationship between the two pause-related methods and the hidden worker's completion signal remains open.
 
+
+## 2A. Hidden-worker wait primitives
+
+The wait API cross-check confirms `0x004028D0` is `kernel32!Sleep`, despite its stale TD32 label `SuspendThread`. `THidePrintingThread.Execute` uses Sleep intervals of 10 ms, 50 ms, 3000 ms, and 5000 ms at different branches, and calls `TApplication.ProcessMessages` through `0x00404F04` at two points. The exact branch conditions and whether the 3/5-second waits are retry timeouts or delayed status checks still need to be mapped.
+
 ## 3. GDI+ page-processing evidence
 
 After the worker stage, `SeparteImages`:
