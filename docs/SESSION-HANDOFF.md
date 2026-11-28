@@ -1,3 +1,14 @@
+## 2026-11-28 — isolated parallel closure branch
+
+- Working branch: `work/parallel-closure-2026-11-28`; based on `feature/recovery-retention-policy` HEAD `00bb6a3387dddc7b25d331f879ad5c60db846fa8`.
+- PR #6: https://github.com/meicamghe/EMWAT-Linux/pull/6 — Draft, base `feature/recovery-retention-policy`; do not merge to `main` until the long-lived branch's 9-commit divergence is reconciled.
+- Implemented on this work branch: `deployment.py` composes a fresh LibreOffice bridge server per start using the captured loopback bind/Origin/Referer `127.0.0.1:1984`; normal GTK entry point injects the supervisor and auto-starts after required Python/LibreOffice/UNO checks pass.
+- Explicit operation-level `DISCARDED` gets a local HTTP 409/plain-text fail-closed response only. This is not Windows wire parity. Writer Don't Save returns the last confirmed saved document; close-prompt Cancel keeps Writer open and the HTTP request pending.
+- Added tests for deployment composition, fresh server factory behavior, explicit-discard guard, GTK main injection, and missing-supervisor auto-start rejection.
+- CI runs automatically triggered by the PR: Python bridge run 1297 (ID `46141924560`), GTK desktop run 349 (ID `46141924566`), Debian package run 116 (ID `46141924590`). At handoff, Python was pending with no jobs reported; GTK and package jobs were still installing dependencies. Recheck these exact runs before claiming a result.
+- No local test/build, live Almas, Writer, printer, or scanner hardware acceptance was performed in this work session.
+- Full five-workstream boundaries and acceptance criteria: `docs/PARALLEL-CLOSURE-WORKLOG-2026-11-28.md`.
+
 ## 2026-11-28 — Run 50 native pending-request timing
 
 - The ~54.56-second PCAP request-to-response gap is explained by TWordViwer.OnTmrAutoSave polling viewer field +0x58 until the Word close callback clears it at 0x004CD154/0x004CD31C. This is the long user editing interval.
